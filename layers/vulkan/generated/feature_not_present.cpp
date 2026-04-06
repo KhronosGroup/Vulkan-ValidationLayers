@@ -25,14 +25,14 @@
 
 namespace vvl {
 
-void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDeviceCreateInfo &create_info) {
+void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDeviceCreateInfo& create_info) {
     std::ostringstream ss;
     ss << "returned VK_ERROR_FEATURE_NOT_PRESENT because the following features were not supported on this physical device:\n";
 
     // First do 1.0 VkPhysicalDeviceFeatures
-    const auto *features2_in = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(create_info.pNext);
+    const auto* features2_in = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(create_info.pNext);
     if (create_info.pEnabledFeatures || features2_in) {
-        const VkPhysicalDeviceFeatures &enabling =
+        const VkPhysicalDeviceFeatures& enabling =
             create_info.pEnabledFeatures ? *create_info.pEnabledFeatures : features2_in->features;
 
         VkPhysicalDeviceFeatures supported = {};
@@ -204,15 +204,15 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
         }
     }
     VkPhysicalDeviceFeatures2 features_2 = vku::InitStructHelper();
-    for (const VkBaseInStructure *current = static_cast<const VkBaseInStructure *>(create_info.pNext); current != nullptr;
+    for (const VkBaseInStructure* current = static_cast<const VkBaseInStructure*>(create_info.pNext); current != nullptr;
          current = current->pNext) {
         switch (current->sType) {
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES: {
                 VkPhysicalDevice16BitStorageFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevice16BitStorageFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDevice16BitStorageFeatures *>(current);
+                const VkPhysicalDevice16BitStorageFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDevice16BitStorageFeatures*>(current);
                 if (enabling->storageBuffer16BitAccess && !supported.storageBuffer16BitAccess) {
                     ss << "VkPhysicalDevice16BitStorageFeatures::storageBuffer16BitAccess is not supported\n";
                 }
@@ -231,8 +231,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevice4444FormatsFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevice4444FormatsFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDevice4444FormatsFeaturesEXT *>(current);
+                const VkPhysicalDevice4444FormatsFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDevice4444FormatsFeaturesEXT*>(current);
                 if (enabling->formatA4R4G4B4 && !supported.formatA4R4G4B4) {
                     ss << "VkPhysicalDevice4444FormatsFeaturesEXT::formatA4R4G4B4 is not supported\n";
                 }
@@ -245,8 +245,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevice8BitStorageFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevice8BitStorageFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDevice8BitStorageFeatures *>(current);
+                const VkPhysicalDevice8BitStorageFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDevice8BitStorageFeatures*>(current);
                 if (enabling->storageBuffer8BitAccess && !supported.storageBuffer8BitAccess) {
                     ss << "VkPhysicalDevice8BitStorageFeatures::storageBuffer8BitAccess is not supported\n";
                 }
@@ -262,8 +262,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceASTCDecodeFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceASTCDecodeFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceASTCDecodeFeaturesEXT *>(current);
+                const VkPhysicalDeviceASTCDecodeFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceASTCDecodeFeaturesEXT*>(current);
                 if (enabling->decodeModeSharedExponent && !supported.decodeModeSharedExponent) {
                     ss << "VkPhysicalDeviceASTCDecodeFeaturesEXT::decodeModeSharedExponent is not supported\n";
                 }
@@ -273,8 +273,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceAccelerationStructureFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceAccelerationStructureFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceAccelerationStructureFeaturesKHR *>(current);
+                const VkPhysicalDeviceAccelerationStructureFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceAccelerationStructureFeaturesKHR*>(current);
                 if (enabling->accelerationStructure && !supported.accelerationStructure) {
                     ss << "VkPhysicalDeviceAccelerationStructureFeaturesKHR::accelerationStructure is not supported\n";
                 }
@@ -298,8 +298,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceAddressBindingReportFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceAddressBindingReportFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceAddressBindingReportFeaturesEXT *>(current);
+                const VkPhysicalDeviceAddressBindingReportFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceAddressBindingReportFeaturesEXT*>(current);
                 if (enabling->reportAddressBinding && !supported.reportAddressBinding) {
                     ss << "VkPhysicalDeviceAddressBindingReportFeaturesEXT::reportAddressBinding is not supported\n";
                 }
@@ -309,8 +309,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceAmigoProfilingFeaturesSEC supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceAmigoProfilingFeaturesSEC *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceAmigoProfilingFeaturesSEC *>(current);
+                const VkPhysicalDeviceAmigoProfilingFeaturesSEC* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceAmigoProfilingFeaturesSEC*>(current);
                 if (enabling->amigoProfiling && !supported.amigoProfiling) {
                     ss << "VkPhysicalDeviceAmigoProfilingFeaturesSEC::amigoProfiling is not supported\n";
                 }
@@ -320,8 +320,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceAntiLagFeaturesAMD supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceAntiLagFeaturesAMD *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceAntiLagFeaturesAMD *>(current);
+                const VkPhysicalDeviceAntiLagFeaturesAMD* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceAntiLagFeaturesAMD*>(current);
                 if (enabling->antiLag && !supported.antiLag) {
                     ss << "VkPhysicalDeviceAntiLagFeaturesAMD::antiLag is not supported\n";
                 }
@@ -331,8 +331,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT *>(current);
+                const VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT*>(current);
                 if (enabling->attachmentFeedbackLoopDynamicState && !supported.attachmentFeedbackLoopDynamicState) {
                     ss << "VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT::attachmentFeedbackLoopDynamicState is "
                           "not supported\n";
@@ -343,8 +343,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT *>(current);
+                const VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT*>(current);
                 if (enabling->attachmentFeedbackLoopLayout && !supported.attachmentFeedbackLoopLayout) {
                     ss << "VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT::attachmentFeedbackLoopLayout is not "
                           "supported\n";
@@ -355,8 +355,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT *>(current);
+                const VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT*>(current);
                 if (enabling->advancedBlendCoherentOperations && !supported.advancedBlendCoherentOperations) {
                     ss << "VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT::advancedBlendCoherentOperations is not supported\n";
                 }
@@ -366,8 +366,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceBorderColorSwizzleFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceBorderColorSwizzleFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceBorderColorSwizzleFeaturesEXT *>(current);
+                const VkPhysicalDeviceBorderColorSwizzleFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceBorderColorSwizzleFeaturesEXT*>(current);
                 if (enabling->borderColorSwizzle && !supported.borderColorSwizzle) {
                     ss << "VkPhysicalDeviceBorderColorSwizzleFeaturesEXT::borderColorSwizzle is not supported\n";
                 }
@@ -380,8 +380,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceBufferDeviceAddressFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceBufferDeviceAddressFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceBufferDeviceAddressFeatures *>(current);
+                const VkPhysicalDeviceBufferDeviceAddressFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceBufferDeviceAddressFeatures*>(current);
                 if (enabling->bufferDeviceAddress && !supported.bufferDeviceAddress) {
                     ss << "VkPhysicalDeviceBufferDeviceAddressFeatures::bufferDeviceAddress is not supported\n";
                 }
@@ -397,8 +397,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceBufferDeviceAddressFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceBufferDeviceAddressFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceBufferDeviceAddressFeaturesEXT *>(current);
+                const VkPhysicalDeviceBufferDeviceAddressFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceBufferDeviceAddressFeaturesEXT*>(current);
                 if (enabling->bufferDeviceAddress && !supported.bufferDeviceAddress) {
                     ss << "VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::bufferDeviceAddress is not supported\n";
                 }
@@ -414,8 +414,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceClusterAccelerationStructureFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceClusterAccelerationStructureFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceClusterAccelerationStructureFeaturesNV *>(current);
+                const VkPhysicalDeviceClusterAccelerationStructureFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceClusterAccelerationStructureFeaturesNV*>(current);
                 if (enabling->clusterAccelerationStructure && !supported.clusterAccelerationStructure) {
                     ss << "VkPhysicalDeviceClusterAccelerationStructureFeaturesNV::clusterAccelerationStructure is not supported\n";
                 }
@@ -425,8 +425,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI *>(current);
+                const VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI*>(current);
                 if (enabling->clustercullingShader && !supported.clustercullingShader) {
                     ss << "VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI::clustercullingShader is not supported\n";
                 }
@@ -439,8 +439,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCoherentMemoryFeaturesAMD supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCoherentMemoryFeaturesAMD *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCoherentMemoryFeaturesAMD *>(current);
+                const VkPhysicalDeviceCoherentMemoryFeaturesAMD* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCoherentMemoryFeaturesAMD*>(current);
                 if (enabling->deviceCoherentMemory && !supported.deviceCoherentMemory) {
                     ss << "VkPhysicalDeviceCoherentMemoryFeaturesAMD::deviceCoherentMemory is not supported\n";
                 }
@@ -450,8 +450,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceColorWriteEnableFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceColorWriteEnableFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceColorWriteEnableFeaturesEXT *>(current);
+                const VkPhysicalDeviceColorWriteEnableFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceColorWriteEnableFeaturesEXT*>(current);
                 if (enabling->colorWriteEnable && !supported.colorWriteEnable) {
                     ss << "VkPhysicalDeviceColorWriteEnableFeaturesEXT::colorWriteEnable is not supported\n";
                 }
@@ -461,8 +461,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCommandBufferInheritanceFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCommandBufferInheritanceFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCommandBufferInheritanceFeaturesNV *>(current);
+                const VkPhysicalDeviceCommandBufferInheritanceFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCommandBufferInheritanceFeaturesNV*>(current);
                 if (enabling->commandBufferInheritance && !supported.commandBufferInheritance) {
                     ss << "VkPhysicalDeviceCommandBufferInheritanceFeaturesNV::commandBufferInheritance is not supported\n";
                 }
@@ -472,8 +472,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV *>(current);
+                const VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV*>(current);
                 if (enabling->computeOccupancyPriority && !supported.computeOccupancyPriority) {
                     ss << "VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV::computeOccupancyPriority is not supported\n";
                 }
@@ -483,8 +483,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR *>(current);
+                const VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR*>(current);
                 if (enabling->computeDerivativeGroupQuads && !supported.computeDerivativeGroupQuads) {
                     ss << "VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR::computeDerivativeGroupQuads is not supported\n";
                 }
@@ -497,8 +497,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceConditionalRenderingFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceConditionalRenderingFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceConditionalRenderingFeaturesEXT *>(current);
+                const VkPhysicalDeviceConditionalRenderingFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceConditionalRenderingFeaturesEXT*>(current);
                 if (enabling->conditionalRendering && !supported.conditionalRendering) {
                     ss << "VkPhysicalDeviceConditionalRenderingFeaturesEXT::conditionalRendering is not supported\n";
                 }
@@ -511,8 +511,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCooperativeMatrix2FeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCooperativeMatrix2FeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrix2FeaturesNV *>(current);
+                const VkPhysicalDeviceCooperativeMatrix2FeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrix2FeaturesNV*>(current);
                 if (enabling->cooperativeMatrixWorkgroupScope && !supported.cooperativeMatrixWorkgroupScope) {
                     ss << "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixWorkgroupScope is not supported\n";
                 }
@@ -540,8 +540,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM *>(current);
+                const VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM*>(current);
                 if (enabling->cooperativeMatrixConversion && !supported.cooperativeMatrixConversion) {
                     ss << "VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM::cooperativeMatrixConversion is not supported\n";
                 }
@@ -551,8 +551,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCooperativeMatrixFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCooperativeMatrixFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixFeaturesKHR *>(current);
+                const VkPhysicalDeviceCooperativeMatrixFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixFeaturesKHR*>(current);
                 if (enabling->cooperativeMatrix && !supported.cooperativeMatrix) {
                     ss << "VkPhysicalDeviceCooperativeMatrixFeaturesKHR::cooperativeMatrix is not supported\n";
                 }
@@ -565,8 +565,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCooperativeMatrixFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCooperativeMatrixFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixFeaturesNV *>(current);
+                const VkPhysicalDeviceCooperativeMatrixFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixFeaturesNV*>(current);
                 if (enabling->cooperativeMatrix && !supported.cooperativeMatrix) {
                     ss << "VkPhysicalDeviceCooperativeMatrixFeaturesNV::cooperativeMatrix is not supported\n";
                 }
@@ -579,8 +579,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCooperativeVectorFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCooperativeVectorFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCooperativeVectorFeaturesNV *>(current);
+                const VkPhysicalDeviceCooperativeVectorFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCooperativeVectorFeaturesNV*>(current);
                 if (enabling->cooperativeVector && !supported.cooperativeVector) {
                     ss << "VkPhysicalDeviceCooperativeVectorFeaturesNV::cooperativeVector is not supported\n";
                 }
@@ -593,8 +593,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR *>(current);
+                const VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR*>(current);
                 if (enabling->indirectMemoryCopy && !supported.indirectMemoryCopy) {
                     ss << "VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR::indirectMemoryCopy is not supported\n";
                 }
@@ -607,8 +607,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCopyMemoryIndirectFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCopyMemoryIndirectFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCopyMemoryIndirectFeaturesNV *>(current);
+                const VkPhysicalDeviceCopyMemoryIndirectFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCopyMemoryIndirectFeaturesNV*>(current);
                 if (enabling->indirectCopy && !supported.indirectCopy) {
                     ss << "VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::indirectCopy is not supported\n";
                 }
@@ -618,8 +618,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCornerSampledImageFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCornerSampledImageFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCornerSampledImageFeaturesNV *>(current);
+                const VkPhysicalDeviceCornerSampledImageFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCornerSampledImageFeaturesNV*>(current);
                 if (enabling->cornerSampledImage && !supported.cornerSampledImage) {
                     ss << "VkPhysicalDeviceCornerSampledImageFeaturesNV::cornerSampledImage is not supported\n";
                 }
@@ -629,8 +629,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCoverageReductionModeFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCoverageReductionModeFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCoverageReductionModeFeaturesNV *>(current);
+                const VkPhysicalDeviceCoverageReductionModeFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCoverageReductionModeFeaturesNV*>(current);
                 if (enabling->coverageReductionMode && !supported.coverageReductionMode) {
                     ss << "VkPhysicalDeviceCoverageReductionModeFeaturesNV::coverageReductionMode is not supported\n";
                 }
@@ -640,8 +640,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCubicClampFeaturesQCOM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCubicClampFeaturesQCOM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCubicClampFeaturesQCOM *>(current);
+                const VkPhysicalDeviceCubicClampFeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCubicClampFeaturesQCOM*>(current);
                 if (enabling->cubicRangeClamp && !supported.cubicRangeClamp) {
                     ss << "VkPhysicalDeviceCubicClampFeaturesQCOM::cubicRangeClamp is not supported\n";
                 }
@@ -651,8 +651,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCubicWeightsFeaturesQCOM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCubicWeightsFeaturesQCOM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCubicWeightsFeaturesQCOM *>(current);
+                const VkPhysicalDeviceCubicWeightsFeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCubicWeightsFeaturesQCOM*>(current);
                 if (enabling->selectableCubicWeights && !supported.selectableCubicWeights) {
                     ss << "VkPhysicalDeviceCubicWeightsFeaturesQCOM::selectableCubicWeights is not supported\n";
                 }
@@ -663,8 +663,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCudaKernelLaunchFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCudaKernelLaunchFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCudaKernelLaunchFeaturesNV *>(current);
+                const VkPhysicalDeviceCudaKernelLaunchFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCudaKernelLaunchFeaturesNV*>(current);
                 if (enabling->cudaKernelLaunchFeatures && !supported.cudaKernelLaunchFeatures) {
                     ss << "VkPhysicalDeviceCudaKernelLaunchFeaturesNV::cudaKernelLaunchFeatures is not supported\n";
                 }
@@ -675,8 +675,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCustomBorderColorFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCustomBorderColorFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCustomBorderColorFeaturesEXT *>(current);
+                const VkPhysicalDeviceCustomBorderColorFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCustomBorderColorFeaturesEXT*>(current);
                 if (enabling->customBorderColors && !supported.customBorderColors) {
                     ss << "VkPhysicalDeviceCustomBorderColorFeaturesEXT::customBorderColors is not supported\n";
                 }
@@ -689,8 +689,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceCustomResolveFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceCustomResolveFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceCustomResolveFeaturesEXT *>(current);
+                const VkPhysicalDeviceCustomResolveFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCustomResolveFeaturesEXT*>(current);
                 if (enabling->customResolve && !supported.customResolve) {
                     ss << "VkPhysicalDeviceCustomResolveFeaturesEXT::customResolve is not supported\n";
                 }
@@ -700,8 +700,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDataGraphFeaturesARM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDataGraphFeaturesARM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDataGraphFeaturesARM *>(current);
+                const VkPhysicalDeviceDataGraphFeaturesARM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDataGraphFeaturesARM*>(current);
                 if (enabling->dataGraph && !supported.dataGraph) {
                     ss << "VkPhysicalDeviceDataGraphFeaturesARM::dataGraph is not supported\n";
                 }
@@ -723,8 +723,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDataGraphModelFeaturesQCOM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDataGraphModelFeaturesQCOM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDataGraphModelFeaturesQCOM *>(current);
+                const VkPhysicalDeviceDataGraphModelFeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDataGraphModelFeaturesQCOM*>(current);
                 if (enabling->dataGraphModel && !supported.dataGraphModel) {
                     ss << "VkPhysicalDeviceDataGraphModelFeaturesQCOM::dataGraphModel is not supported\n";
                 }
@@ -734,8 +734,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV *>(current);
+                const VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV*>(current);
                 if (enabling->dedicatedAllocationImageAliasing && !supported.dedicatedAllocationImageAliasing) {
                     ss << "VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::dedicatedAllocationImageAliasing is not "
                           "supported\n";
@@ -747,8 +747,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX *>(current);
+                const VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX*>(current);
                 if (enabling->denseGeometryFormat && !supported.denseGeometryFormat) {
                     ss << "VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX::denseGeometryFormat is not supported\n";
                 }
@@ -759,8 +759,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDepthBiasControlFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDepthBiasControlFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDepthBiasControlFeaturesEXT *>(current);
+                const VkPhysicalDeviceDepthBiasControlFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDepthBiasControlFeaturesEXT*>(current);
                 if (enabling->depthBiasControl && !supported.depthBiasControl) {
                     ss << "VkPhysicalDeviceDepthBiasControlFeaturesEXT::depthBiasControl is not supported\n";
                 }
@@ -781,8 +781,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDepthClampControlFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDepthClampControlFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDepthClampControlFeaturesEXT *>(current);
+                const VkPhysicalDeviceDepthClampControlFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDepthClampControlFeaturesEXT*>(current);
                 if (enabling->depthClampControl && !supported.depthClampControl) {
                     ss << "VkPhysicalDeviceDepthClampControlFeaturesEXT::depthClampControl is not supported\n";
                 }
@@ -792,8 +792,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDepthClampZeroOneFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDepthClampZeroOneFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDepthClampZeroOneFeaturesKHR *>(current);
+                const VkPhysicalDeviceDepthClampZeroOneFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDepthClampZeroOneFeaturesKHR*>(current);
                 if (enabling->depthClampZeroOne && !supported.depthClampZeroOne) {
                     ss << "VkPhysicalDeviceDepthClampZeroOneFeaturesKHR::depthClampZeroOne is not supported\n";
                 }
@@ -803,8 +803,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDepthClipControlFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDepthClipControlFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDepthClipControlFeaturesEXT *>(current);
+                const VkPhysicalDeviceDepthClipControlFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDepthClipControlFeaturesEXT*>(current);
                 if (enabling->depthClipControl && !supported.depthClipControl) {
                     ss << "VkPhysicalDeviceDepthClipControlFeaturesEXT::depthClipControl is not supported\n";
                 }
@@ -814,8 +814,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDepthClipEnableFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDepthClipEnableFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDepthClipEnableFeaturesEXT *>(current);
+                const VkPhysicalDeviceDepthClipEnableFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDepthClipEnableFeaturesEXT*>(current);
                 if (enabling->depthClipEnable && !supported.depthClipEnable) {
                     ss << "VkPhysicalDeviceDepthClipEnableFeaturesEXT::depthClipEnable is not supported\n";
                 }
@@ -825,8 +825,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDescriptorBufferFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDescriptorBufferFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDescriptorBufferFeaturesEXT *>(current);
+                const VkPhysicalDeviceDescriptorBufferFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDescriptorBufferFeaturesEXT*>(current);
                 if (enabling->descriptorBuffer && !supported.descriptorBuffer) {
                     ss << "VkPhysicalDeviceDescriptorBufferFeaturesEXT::descriptorBuffer is not supported\n";
                 }
@@ -845,8 +845,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDescriptorBufferTensorFeaturesARM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDescriptorBufferTensorFeaturesARM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDescriptorBufferTensorFeaturesARM *>(current);
+                const VkPhysicalDeviceDescriptorBufferTensorFeaturesARM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDescriptorBufferTensorFeaturesARM*>(current);
                 if (enabling->descriptorBufferTensorDescriptors && !supported.descriptorBufferTensorDescriptors) {
                     ss << "VkPhysicalDeviceDescriptorBufferTensorFeaturesARM::descriptorBufferTensorDescriptors is not supported\n";
                 }
@@ -856,8 +856,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDescriptorHeapFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDescriptorHeapFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDescriptorHeapFeaturesEXT *>(current);
+                const VkPhysicalDeviceDescriptorHeapFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDescriptorHeapFeaturesEXT*>(current);
                 if (enabling->descriptorHeap && !supported.descriptorHeap) {
                     ss << "VkPhysicalDeviceDescriptorHeapFeaturesEXT::descriptorHeap is not supported\n";
                 }
@@ -870,8 +870,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDescriptorIndexingFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDescriptorIndexingFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDescriptorIndexingFeatures *>(current);
+                const VkPhysicalDeviceDescriptorIndexingFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDescriptorIndexingFeatures*>(current);
                 if (enabling->shaderInputAttachmentArrayDynamicIndexing && !supported.shaderInputAttachmentArrayDynamicIndexing) {
                     ss << "VkPhysicalDeviceDescriptorIndexingFeatures::shaderInputAttachmentArrayDynamicIndexing is not "
                           "supported\n";
@@ -966,8 +966,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV *>(current);
+                const VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV*>(current);
                 if (enabling->descriptorPoolOverallocation && !supported.descriptorPoolOverallocation) {
                     ss << "VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV::descriptorPoolOverallocation is not supported\n";
                 }
@@ -977,8 +977,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE *>(current);
+                const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE*>(current);
                 if (enabling->descriptorSetHostMapping && !supported.descriptorSetHostMapping) {
                     ss << "VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::descriptorSetHostMapping is not supported\n";
                 }
@@ -988,8 +988,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR *>(current);
+                const VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR*>(current);
                 if (enabling->deviceAddressCommands && !supported.deviceAddressCommands) {
                     ss << "VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR::deviceAddressCommands is not supported\n";
                 }
@@ -999,8 +999,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV *>(current);
+                const VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV*>(current);
                 if (enabling->deviceGeneratedCompute && !supported.deviceGeneratedCompute) {
                     ss << "VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV::deviceGeneratedCompute is not supported\n";
                 }
@@ -1018,8 +1018,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT *>(current);
+                const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT*>(current);
                 if (enabling->deviceGeneratedCommands && !supported.deviceGeneratedCommands) {
                     ss << "VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT::deviceGeneratedCommands is not supported\n";
                 }
@@ -1032,8 +1032,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV *>(current);
+                const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV*>(current);
                 if (enabling->deviceGeneratedCommands && !supported.deviceGeneratedCommands) {
                     ss << "VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV::deviceGeneratedCommands is not supported\n";
                 }
@@ -1043,8 +1043,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDeviceMemoryReportFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *>(current);
+                const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT*>(current);
                 if (enabling->deviceMemoryReport && !supported.deviceMemoryReport) {
                     ss << "VkPhysicalDeviceDeviceMemoryReportFeaturesEXT::deviceMemoryReport is not supported\n";
                 }
@@ -1054,8 +1054,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDiagnosticsConfigFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDiagnosticsConfigFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDiagnosticsConfigFeaturesNV *>(current);
+                const VkPhysicalDeviceDiagnosticsConfigFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDiagnosticsConfigFeaturesNV*>(current);
                 if (enabling->diagnosticsConfig && !supported.diagnosticsConfig) {
                     ss << "VkPhysicalDeviceDiagnosticsConfigFeaturesNV::diagnosticsConfig is not supported\n";
                 }
@@ -1066,8 +1066,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDisplacementMicromapFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDisplacementMicromapFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDisplacementMicromapFeaturesNV *>(current);
+                const VkPhysicalDeviceDisplacementMicromapFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDisplacementMicromapFeaturesNV*>(current);
                 if (enabling->displacementMicromap && !supported.displacementMicromap) {
                     ss << "VkPhysicalDeviceDisplacementMicromapFeaturesNV::displacementMicromap is not supported\n";
                 }
@@ -1078,8 +1078,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDynamicRenderingFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDynamicRenderingFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDynamicRenderingFeatures *>(current);
+                const VkPhysicalDeviceDynamicRenderingFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDynamicRenderingFeatures*>(current);
                 if (enabling->dynamicRendering && !supported.dynamicRendering) {
                     ss << "VkPhysicalDeviceDynamicRenderingFeatures::dynamicRendering is not supported\n";
                 }
@@ -1089,8 +1089,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDynamicRenderingLocalReadFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDynamicRenderingLocalReadFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDynamicRenderingLocalReadFeatures *>(current);
+                const VkPhysicalDeviceDynamicRenderingLocalReadFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDynamicRenderingLocalReadFeatures*>(current);
                 if (enabling->dynamicRenderingLocalRead && !supported.dynamicRenderingLocalRead) {
                     ss << "VkPhysicalDeviceDynamicRenderingLocalReadFeatures::dynamicRenderingLocalRead is not supported\n";
                 }
@@ -1100,8 +1100,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT *>(current);
+                const VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT*>(current);
                 if (enabling->dynamicRenderingUnusedAttachments && !supported.dynamicRenderingUnusedAttachments) {
                     ss << "VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT::dynamicRenderingUnusedAttachments is not "
                           "supported\n";
@@ -1112,8 +1112,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceExclusiveScissorFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceExclusiveScissorFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceExclusiveScissorFeaturesNV *>(current);
+                const VkPhysicalDeviceExclusiveScissorFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceExclusiveScissorFeaturesNV*>(current);
                 if (enabling->exclusiveScissor && !supported.exclusiveScissor) {
                     ss << "VkPhysicalDeviceExclusiveScissorFeaturesNV::exclusiveScissor is not supported\n";
                 }
@@ -1123,8 +1123,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceExtendedDynamicState2FeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceExtendedDynamicState2FeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceExtendedDynamicState2FeaturesEXT *>(current);
+                const VkPhysicalDeviceExtendedDynamicState2FeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceExtendedDynamicState2FeaturesEXT*>(current);
                 if (enabling->extendedDynamicState2 && !supported.extendedDynamicState2) {
                     ss << "VkPhysicalDeviceExtendedDynamicState2FeaturesEXT::extendedDynamicState2 is not supported\n";
                 }
@@ -1141,8 +1141,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceExtendedDynamicState3FeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceExtendedDynamicState3FeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceExtendedDynamicState3FeaturesEXT *>(current);
+                const VkPhysicalDeviceExtendedDynamicState3FeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceExtendedDynamicState3FeaturesEXT*>(current);
                 if (enabling->extendedDynamicState3TessellationDomainOrigin &&
                     !supported.extendedDynamicState3TessellationDomainOrigin) {
                     ss << "VkPhysicalDeviceExtendedDynamicState3FeaturesEXT::extendedDynamicState3TessellationDomainOrigin is not "
@@ -1281,8 +1281,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceExtendedDynamicStateFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceExtendedDynamicStateFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceExtendedDynamicStateFeaturesEXT *>(current);
+                const VkPhysicalDeviceExtendedDynamicStateFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceExtendedDynamicStateFeaturesEXT*>(current);
                 if (enabling->extendedDynamicState && !supported.extendedDynamicState) {
                     ss << "VkPhysicalDeviceExtendedDynamicStateFeaturesEXT::extendedDynamicState is not supported\n";
                 }
@@ -1292,8 +1292,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV *>(current);
+                const VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV*>(current);
                 if (enabling->extendedSparseAddressSpace && !supported.extendedSparseAddressSpace) {
                     ss << "VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV::extendedSparseAddressSpace is not supported\n";
                 }
@@ -1304,8 +1304,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceExternalFormatResolveFeaturesANDROID supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceExternalFormatResolveFeaturesANDROID *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceExternalFormatResolveFeaturesANDROID *>(current);
+                const VkPhysicalDeviceExternalFormatResolveFeaturesANDROID* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceExternalFormatResolveFeaturesANDROID*>(current);
                 if (enabling->externalFormatResolve && !supported.externalFormatResolve) {
                     ss << "VkPhysicalDeviceExternalFormatResolveFeaturesANDROID::externalFormatResolve is not supported\n";
                 }
@@ -1316,8 +1316,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceExternalMemoryRDMAFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceExternalMemoryRDMAFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceExternalMemoryRDMAFeaturesNV *>(current);
+                const VkPhysicalDeviceExternalMemoryRDMAFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceExternalMemoryRDMAFeaturesNV*>(current);
                 if (enabling->externalMemoryRDMA && !supported.externalMemoryRDMA) {
                     ss << "VkPhysicalDeviceExternalMemoryRDMAFeaturesNV::externalMemoryRDMA is not supported\n";
                 }
@@ -1328,8 +1328,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX *>(current);
+                const VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX*>(current);
                 if (enabling->screenBufferImport && !supported.screenBufferImport) {
                     ss << "VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX::screenBufferImport is not supported\n";
                 }
@@ -1340,8 +1340,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceFaultFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceFaultFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceFaultFeaturesEXT *>(current);
+                const VkPhysicalDeviceFaultFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceFaultFeaturesEXT*>(current);
                 if (enabling->deviceFault && !supported.deviceFault) {
                     ss << "VkPhysicalDeviceFaultFeaturesEXT::deviceFault is not supported\n";
                 }
@@ -1354,8 +1354,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceFaultFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceFaultFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceFaultFeaturesKHR *>(current);
+                const VkPhysicalDeviceFaultFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceFaultFeaturesKHR*>(current);
                 if (enabling->deviceFault && !supported.deviceFault) {
                     ss << "VkPhysicalDeviceFaultFeaturesKHR::deviceFault is not supported\n";
                 }
@@ -1374,8 +1374,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceFormatPackFeaturesARM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceFormatPackFeaturesARM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceFormatPackFeaturesARM *>(current);
+                const VkPhysicalDeviceFormatPackFeaturesARM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceFormatPackFeaturesARM*>(current);
                 if (enabling->formatPack && !supported.formatPack) {
                     ss << "VkPhysicalDeviceFormatPackFeaturesARM::formatPack is not supported\n";
                 }
@@ -1385,8 +1385,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceFragmentDensityMap2FeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceFragmentDensityMap2FeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceFragmentDensityMap2FeaturesEXT *>(current);
+                const VkPhysicalDeviceFragmentDensityMap2FeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceFragmentDensityMap2FeaturesEXT*>(current);
                 if (enabling->fragmentDensityMapDeferred && !supported.fragmentDensityMapDeferred) {
                     ss << "VkPhysicalDeviceFragmentDensityMap2FeaturesEXT::fragmentDensityMapDeferred is not supported\n";
                 }
@@ -1396,8 +1396,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceFragmentDensityMapFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceFragmentDensityMapFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapFeaturesEXT *>(current);
+                const VkPhysicalDeviceFragmentDensityMapFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapFeaturesEXT*>(current);
                 if (enabling->fragmentDensityMap && !supported.fragmentDensityMap) {
                     ss << "VkPhysicalDeviceFragmentDensityMapFeaturesEXT::fragmentDensityMap is not supported\n";
                 }
@@ -1413,8 +1413,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE *>(current);
+                const VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE*>(current);
                 if (enabling->fragmentDensityMapLayered && !supported.fragmentDensityMapLayered) {
                     ss << "VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE::fragmentDensityMapLayered is not supported\n";
                 }
@@ -1424,8 +1424,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT *>(current);
+                const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT*>(current);
                 if (enabling->fragmentDensityMapOffset && !supported.fragmentDensityMapOffset) {
                     ss << "VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT::fragmentDensityMapOffset is not supported\n";
                 }
@@ -1435,8 +1435,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR *>(current);
+                const VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR*>(current);
                 if (enabling->fragmentShaderBarycentric && !supported.fragmentShaderBarycentric) {
                     ss << "VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR::fragmentShaderBarycentric is not supported\n";
                 }
@@ -1446,8 +1446,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT *>(current);
+                const VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT*>(current);
                 if (enabling->fragmentShaderSampleInterlock && !supported.fragmentShaderSampleInterlock) {
                     ss << "VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderSampleInterlock is not supported\n";
                 }
@@ -1464,8 +1464,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV *>(current);
+                const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV*>(current);
                 if (enabling->fragmentShadingRateEnums && !supported.fragmentShadingRateEnums) {
                     ss << "VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::fragmentShadingRateEnums is not supported\n";
                 }
@@ -1481,8 +1481,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceFragmentShadingRateFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceFragmentShadingRateFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceFragmentShadingRateFeaturesKHR *>(current);
+                const VkPhysicalDeviceFragmentShadingRateFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceFragmentShadingRateFeaturesKHR*>(current);
                 if (enabling->pipelineFragmentShadingRate && !supported.pipelineFragmentShadingRate) {
                     ss << "VkPhysicalDeviceFragmentShadingRateFeaturesKHR::pipelineFragmentShadingRate is not supported\n";
                 }
@@ -1498,8 +1498,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceFrameBoundaryFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceFrameBoundaryFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceFrameBoundaryFeaturesEXT *>(current);
+                const VkPhysicalDeviceFrameBoundaryFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceFrameBoundaryFeaturesEXT*>(current);
                 if (enabling->frameBoundary && !supported.frameBoundary) {
                     ss << "VkPhysicalDeviceFrameBoundaryFeaturesEXT::frameBoundary is not supported\n";
                 }
@@ -1509,8 +1509,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceGlobalPriorityQueryFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceGlobalPriorityQueryFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceGlobalPriorityQueryFeatures *>(current);
+                const VkPhysicalDeviceGlobalPriorityQueryFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceGlobalPriorityQueryFeatures*>(current);
                 if (enabling->globalPriorityQuery && !supported.globalPriorityQuery) {
                     ss << "VkPhysicalDeviceGlobalPriorityQueryFeatures::globalPriorityQuery is not supported\n";
                 }
@@ -1520,8 +1520,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT *>(current);
+                const VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT*>(current);
                 if (enabling->graphicsPipelineLibrary && !supported.graphicsPipelineLibrary) {
                     ss << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary is not supported\n";
                 }
@@ -1531,8 +1531,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceHdrVividFeaturesHUAWEI supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceHdrVividFeaturesHUAWEI *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceHdrVividFeaturesHUAWEI *>(current);
+                const VkPhysicalDeviceHdrVividFeaturesHUAWEI* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceHdrVividFeaturesHUAWEI*>(current);
                 if (enabling->hdrVivid && !supported.hdrVivid) {
                     ss << "VkPhysicalDeviceHdrVividFeaturesHUAWEI::hdrVivid is not supported\n";
                 }
@@ -1542,8 +1542,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceHostImageCopyFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceHostImageCopyFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceHostImageCopyFeatures *>(current);
+                const VkPhysicalDeviceHostImageCopyFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceHostImageCopyFeatures*>(current);
                 if (enabling->hostImageCopy && !supported.hostImageCopy) {
                     ss << "VkPhysicalDeviceHostImageCopyFeatures::hostImageCopy is not supported\n";
                 }
@@ -1553,8 +1553,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceHostQueryResetFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceHostQueryResetFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceHostQueryResetFeatures *>(current);
+                const VkPhysicalDeviceHostQueryResetFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceHostQueryResetFeatures*>(current);
                 if (enabling->hostQueryReset && !supported.hostQueryReset) {
                     ss << "VkPhysicalDeviceHostQueryResetFeatures::hostQueryReset is not supported\n";
                 }
@@ -1564,8 +1564,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceImage2DViewOf3DFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceImage2DViewOf3DFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceImage2DViewOf3DFeaturesEXT *>(current);
+                const VkPhysicalDeviceImage2DViewOf3DFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceImage2DViewOf3DFeaturesEXT*>(current);
                 if (enabling->image2DViewOf3D && !supported.image2DViewOf3D) {
                     ss << "VkPhysicalDeviceImage2DViewOf3DFeaturesEXT::image2DViewOf3D is not supported\n";
                 }
@@ -1578,8 +1578,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceImageAlignmentControlFeaturesMESA supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceImageAlignmentControlFeaturesMESA *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceImageAlignmentControlFeaturesMESA *>(current);
+                const VkPhysicalDeviceImageAlignmentControlFeaturesMESA* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceImageAlignmentControlFeaturesMESA*>(current);
                 if (enabling->imageAlignmentControl && !supported.imageAlignmentControl) {
                     ss << "VkPhysicalDeviceImageAlignmentControlFeaturesMESA::imageAlignmentControl is not supported\n";
                 }
@@ -1589,8 +1589,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceImageCompressionControlFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceImageCompressionControlFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceImageCompressionControlFeaturesEXT *>(current);
+                const VkPhysicalDeviceImageCompressionControlFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceImageCompressionControlFeaturesEXT*>(current);
                 if (enabling->imageCompressionControl && !supported.imageCompressionControl) {
                     ss << "VkPhysicalDeviceImageCompressionControlFeaturesEXT::imageCompressionControl is not supported\n";
                 }
@@ -1600,8 +1600,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT *>(current);
+                const VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT*>(current);
                 if (enabling->imageCompressionControlSwapchain && !supported.imageCompressionControlSwapchain) {
                     ss << "VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT::imageCompressionControlSwapchain is not "
                           "supported\n";
@@ -1612,8 +1612,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceImageProcessing2FeaturesQCOM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceImageProcessing2FeaturesQCOM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceImageProcessing2FeaturesQCOM *>(current);
+                const VkPhysicalDeviceImageProcessing2FeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceImageProcessing2FeaturesQCOM*>(current);
                 if (enabling->textureBlockMatch2 && !supported.textureBlockMatch2) {
                     ss << "VkPhysicalDeviceImageProcessing2FeaturesQCOM::textureBlockMatch2 is not supported\n";
                 }
@@ -1623,8 +1623,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceImageProcessingFeaturesQCOM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceImageProcessingFeaturesQCOM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceImageProcessingFeaturesQCOM *>(current);
+                const VkPhysicalDeviceImageProcessingFeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceImageProcessingFeaturesQCOM*>(current);
                 if (enabling->textureSampleWeighted && !supported.textureSampleWeighted) {
                     ss << "VkPhysicalDeviceImageProcessingFeaturesQCOM::textureSampleWeighted is not supported\n";
                 }
@@ -1640,8 +1640,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceImageRobustnessFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceImageRobustnessFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceImageRobustnessFeatures *>(current);
+                const VkPhysicalDeviceImageRobustnessFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceImageRobustnessFeatures*>(current);
                 if (enabling->robustImageAccess && !supported.robustImageAccess) {
                     ss << "VkPhysicalDeviceImageRobustnessFeatures::robustImageAccess is not supported\n";
                 }
@@ -1651,8 +1651,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT *>(current);
+                const VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT*>(current);
                 if (enabling->imageSlicedViewOf3D && !supported.imageSlicedViewOf3D) {
                     ss << "VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT::imageSlicedViewOf3D is not supported\n";
                 }
@@ -1662,8 +1662,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceImageViewMinLodFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceImageViewMinLodFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceImageViewMinLodFeaturesEXT *>(current);
+                const VkPhysicalDeviceImageViewMinLodFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceImageViewMinLodFeaturesEXT*>(current);
                 if (enabling->minLod && !supported.minLod) {
                     ss << "VkPhysicalDeviceImageViewMinLodFeaturesEXT::minLod is not supported\n";
                 }
@@ -1673,8 +1673,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceImagelessFramebufferFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceImagelessFramebufferFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceImagelessFramebufferFeatures *>(current);
+                const VkPhysicalDeviceImagelessFramebufferFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceImagelessFramebufferFeatures*>(current);
                 if (enabling->imagelessFramebuffer && !supported.imagelessFramebuffer) {
                     ss << "VkPhysicalDeviceImagelessFramebufferFeatures::imagelessFramebuffer is not supported\n";
                 }
@@ -1684,8 +1684,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceIndexTypeUint8Features supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceIndexTypeUint8Features *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceIndexTypeUint8Features *>(current);
+                const VkPhysicalDeviceIndexTypeUint8Features* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceIndexTypeUint8Features*>(current);
                 if (enabling->indexTypeUint8 && !supported.indexTypeUint8) {
                     ss << "VkPhysicalDeviceIndexTypeUint8Features::indexTypeUint8 is not supported\n";
                 }
@@ -1695,8 +1695,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceInheritedViewportScissorFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceInheritedViewportScissorFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceInheritedViewportScissorFeaturesNV *>(current);
+                const VkPhysicalDeviceInheritedViewportScissorFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceInheritedViewportScissorFeaturesNV*>(current);
                 if (enabling->inheritedViewportScissor2D && !supported.inheritedViewportScissor2D) {
                     ss << "VkPhysicalDeviceInheritedViewportScissorFeaturesNV::inheritedViewportScissor2D is not supported\n";
                 }
@@ -1706,8 +1706,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceInlineUniformBlockFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceInlineUniformBlockFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceInlineUniformBlockFeatures *>(current);
+                const VkPhysicalDeviceInlineUniformBlockFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceInlineUniformBlockFeatures*>(current);
                 if (enabling->inlineUniformBlock && !supported.inlineUniformBlock) {
                     ss << "VkPhysicalDeviceInlineUniformBlockFeatures::inlineUniformBlock is not supported\n";
                 }
@@ -1722,8 +1722,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR *>(current);
+                const VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR*>(current);
                 if (enabling->internallySynchronizedQueues && !supported.internallySynchronizedQueues) {
                     ss << "VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR::internallySynchronizedQueues is not "
                           "supported\n";
@@ -1734,8 +1734,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceInvocationMaskFeaturesHUAWEI supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceInvocationMaskFeaturesHUAWEI *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceInvocationMaskFeaturesHUAWEI *>(current);
+                const VkPhysicalDeviceInvocationMaskFeaturesHUAWEI* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceInvocationMaskFeaturesHUAWEI*>(current);
                 if (enabling->invocationMask && !supported.invocationMask) {
                     ss << "VkPhysicalDeviceInvocationMaskFeaturesHUAWEI::invocationMask is not supported\n";
                 }
@@ -1745,8 +1745,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceLegacyDitheringFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceLegacyDitheringFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceLegacyDitheringFeaturesEXT *>(current);
+                const VkPhysicalDeviceLegacyDitheringFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceLegacyDitheringFeaturesEXT*>(current);
                 if (enabling->legacyDithering && !supported.legacyDithering) {
                     ss << "VkPhysicalDeviceLegacyDitheringFeaturesEXT::legacyDithering is not supported\n";
                 }
@@ -1756,8 +1756,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT *>(current);
+                const VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT*>(current);
                 if (enabling->legacyVertexAttributes && !supported.legacyVertexAttributes) {
                     ss << "VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT::legacyVertexAttributes is not supported\n";
                 }
@@ -1767,8 +1767,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceLineRasterizationFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceLineRasterizationFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceLineRasterizationFeatures *>(current);
+                const VkPhysicalDeviceLineRasterizationFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceLineRasterizationFeatures*>(current);
                 if (enabling->rectangularLines && !supported.rectangularLines) {
                     ss << "VkPhysicalDeviceLineRasterizationFeatures::rectangularLines is not supported\n";
                 }
@@ -1793,8 +1793,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceLinearColorAttachmentFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceLinearColorAttachmentFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceLinearColorAttachmentFeaturesNV *>(current);
+                const VkPhysicalDeviceLinearColorAttachmentFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceLinearColorAttachmentFeaturesNV*>(current);
                 if (enabling->linearColorAttachment && !supported.linearColorAttachment) {
                     ss << "VkPhysicalDeviceLinearColorAttachmentFeaturesNV::linearColorAttachment is not supported\n";
                 }
@@ -1804,8 +1804,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMaintenance10FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMaintenance10FeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMaintenance10FeaturesKHR *>(current);
+                const VkPhysicalDeviceMaintenance10FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance10FeaturesKHR*>(current);
                 if (enabling->maintenance10 && !supported.maintenance10) {
                     ss << "VkPhysicalDeviceMaintenance10FeaturesKHR::maintenance10 is not supported\n";
                 }
@@ -1815,8 +1815,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMaintenance4Features supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMaintenance4Features *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMaintenance4Features *>(current);
+                const VkPhysicalDeviceMaintenance4Features* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance4Features*>(current);
                 if (enabling->maintenance4 && !supported.maintenance4) {
                     ss << "VkPhysicalDeviceMaintenance4Features::maintenance4 is not supported\n";
                 }
@@ -1826,8 +1826,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMaintenance5Features supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMaintenance5Features *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMaintenance5Features *>(current);
+                const VkPhysicalDeviceMaintenance5Features* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance5Features*>(current);
                 if (enabling->maintenance5 && !supported.maintenance5) {
                     ss << "VkPhysicalDeviceMaintenance5Features::maintenance5 is not supported\n";
                 }
@@ -1837,8 +1837,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMaintenance6Features supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMaintenance6Features *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMaintenance6Features *>(current);
+                const VkPhysicalDeviceMaintenance6Features* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance6Features*>(current);
                 if (enabling->maintenance6 && !supported.maintenance6) {
                     ss << "VkPhysicalDeviceMaintenance6Features::maintenance6 is not supported\n";
                 }
@@ -1848,8 +1848,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMaintenance7FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMaintenance7FeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMaintenance7FeaturesKHR *>(current);
+                const VkPhysicalDeviceMaintenance7FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance7FeaturesKHR*>(current);
                 if (enabling->maintenance7 && !supported.maintenance7) {
                     ss << "VkPhysicalDeviceMaintenance7FeaturesKHR::maintenance7 is not supported\n";
                 }
@@ -1859,8 +1859,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMaintenance8FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMaintenance8FeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMaintenance8FeaturesKHR *>(current);
+                const VkPhysicalDeviceMaintenance8FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance8FeaturesKHR*>(current);
                 if (enabling->maintenance8 && !supported.maintenance8) {
                     ss << "VkPhysicalDeviceMaintenance8FeaturesKHR::maintenance8 is not supported\n";
                 }
@@ -1870,8 +1870,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMaintenance9FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMaintenance9FeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMaintenance9FeaturesKHR *>(current);
+                const VkPhysicalDeviceMaintenance9FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance9FeaturesKHR*>(current);
                 if (enabling->maintenance9 && !supported.maintenance9) {
                     ss << "VkPhysicalDeviceMaintenance9FeaturesKHR::maintenance9 is not supported\n";
                 }
@@ -1881,8 +1881,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMapMemoryPlacedFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMapMemoryPlacedFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMapMemoryPlacedFeaturesEXT *>(current);
+                const VkPhysicalDeviceMapMemoryPlacedFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMapMemoryPlacedFeaturesEXT*>(current);
                 if (enabling->memoryMapPlaced && !supported.memoryMapPlaced) {
                     ss << "VkPhysicalDeviceMapMemoryPlacedFeaturesEXT::memoryMapPlaced is not supported\n";
                 }
@@ -1898,8 +1898,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMemoryDecompressionFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMemoryDecompressionFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMemoryDecompressionFeaturesEXT *>(current);
+                const VkPhysicalDeviceMemoryDecompressionFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMemoryDecompressionFeaturesEXT*>(current);
                 if (enabling->memoryDecompression && !supported.memoryDecompression) {
                     ss << "VkPhysicalDeviceMemoryDecompressionFeaturesEXT::memoryDecompression is not supported\n";
                 }
@@ -1909,8 +1909,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMemoryPriorityFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMemoryPriorityFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMemoryPriorityFeaturesEXT *>(current);
+                const VkPhysicalDeviceMemoryPriorityFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMemoryPriorityFeaturesEXT*>(current);
                 if (enabling->memoryPriority && !supported.memoryPriority) {
                     ss << "VkPhysicalDeviceMemoryPriorityFeaturesEXT::memoryPriority is not supported\n";
                 }
@@ -1920,8 +1920,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMeshShaderFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMeshShaderFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMeshShaderFeaturesEXT *>(current);
+                const VkPhysicalDeviceMeshShaderFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMeshShaderFeaturesEXT*>(current);
                 if (enabling->taskShader && !supported.taskShader) {
                     ss << "VkPhysicalDeviceMeshShaderFeaturesEXT::taskShader is not supported\n";
                 }
@@ -1943,8 +1943,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMeshShaderFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMeshShaderFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMeshShaderFeaturesNV *>(current);
+                const VkPhysicalDeviceMeshShaderFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMeshShaderFeaturesNV*>(current);
                 if (enabling->taskShader && !supported.taskShader) {
                     ss << "VkPhysicalDeviceMeshShaderFeaturesNV::taskShader is not supported\n";
                 }
@@ -1957,8 +1957,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMultiDrawFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMultiDrawFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMultiDrawFeaturesEXT *>(current);
+                const VkPhysicalDeviceMultiDrawFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMultiDrawFeaturesEXT*>(current);
                 if (enabling->multiDraw && !supported.multiDraw) {
                     ss << "VkPhysicalDeviceMultiDrawFeaturesEXT::multiDraw is not supported\n";
                 }
@@ -1968,8 +1968,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT *>(current);
+                const VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT*>(current);
                 if (enabling->multisampledRenderToSingleSampled && !supported.multisampledRenderToSingleSampled) {
                     ss << "VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT::multisampledRenderToSingleSampled is not "
                           "supported\n";
@@ -1980,8 +1980,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMultiviewFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMultiviewFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMultiviewFeatures *>(current);
+                const VkPhysicalDeviceMultiviewFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMultiviewFeatures*>(current);
                 if (enabling->multiview && !supported.multiview) {
                     ss << "VkPhysicalDeviceMultiviewFeatures::multiview is not supported\n";
                 }
@@ -1997,8 +1997,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM *>(current);
+                const VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM*>(current);
                 if (enabling->multiviewPerViewRenderAreas && !supported.multiviewPerViewRenderAreas) {
                     ss << "VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::multiviewPerViewRenderAreas is not supported\n";
                 }
@@ -2008,8 +2008,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM *>(current);
+                const VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM*>(current);
                 if (enabling->multiviewPerViewViewports && !supported.multiviewPerViewViewports) {
                     ss << "VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::multiviewPerViewViewports is not supported\n";
                 }
@@ -2019,8 +2019,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT *>(current);
+                const VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT*>(current);
                 if (enabling->mutableDescriptorType && !supported.mutableDescriptorType) {
                     ss << "VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT::mutableDescriptorType is not supported\n";
                 }
@@ -2030,8 +2030,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceNestedCommandBufferFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceNestedCommandBufferFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceNestedCommandBufferFeaturesEXT *>(current);
+                const VkPhysicalDeviceNestedCommandBufferFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceNestedCommandBufferFeaturesEXT*>(current);
                 if (enabling->nestedCommandBuffer && !supported.nestedCommandBuffer) {
                     ss << "VkPhysicalDeviceNestedCommandBufferFeaturesEXT::nestedCommandBuffer is not supported\n";
                 }
@@ -2047,8 +2047,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT *>(current);
+                const VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT*>(current);
                 if (enabling->nonSeamlessCubeMap && !supported.nonSeamlessCubeMap) {
                     ss << "VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT::nonSeamlessCubeMap is not supported\n";
                 }
@@ -2058,8 +2058,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceOpacityMicromapFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceOpacityMicromapFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceOpacityMicromapFeaturesEXT *>(current);
+                const VkPhysicalDeviceOpacityMicromapFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceOpacityMicromapFeaturesEXT*>(current);
                 if (enabling->micromap && !supported.micromap) {
                     ss << "VkPhysicalDeviceOpacityMicromapFeaturesEXT::micromap is not supported\n";
                 }
@@ -2075,8 +2075,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceOpticalFlowFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceOpticalFlowFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceOpticalFlowFeaturesNV *>(current);
+                const VkPhysicalDeviceOpticalFlowFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceOpticalFlowFeaturesNV*>(current);
                 if (enabling->opticalFlow && !supported.opticalFlow) {
                     ss << "VkPhysicalDeviceOpticalFlowFeaturesNV::opticalFlow is not supported\n";
                 }
@@ -2086,8 +2086,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *>(current);
+                const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT*>(current);
                 if (enabling->pageableDeviceLocalMemory && !supported.pageableDeviceLocalMemory) {
                     ss << "VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT::pageableDeviceLocalMemory is not supported\n";
                 }
@@ -2097,8 +2097,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV *>(current);
+                const VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV*>(current);
                 if (enabling->partitionedAccelerationStructure && !supported.partitionedAccelerationStructure) {
                     ss << "VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV::partitionedAccelerationStructure is not "
                           "supported\n";
@@ -2109,8 +2109,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePerStageDescriptorSetFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePerStageDescriptorSetFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePerStageDescriptorSetFeaturesNV *>(current);
+                const VkPhysicalDevicePerStageDescriptorSetFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePerStageDescriptorSetFeaturesNV*>(current);
                 if (enabling->perStageDescriptorSet && !supported.perStageDescriptorSet) {
                     ss << "VkPhysicalDevicePerStageDescriptorSetFeaturesNV::perStageDescriptorSet is not supported\n";
                 }
@@ -2123,8 +2123,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePerformanceCountersByRegionFeaturesARM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePerformanceCountersByRegionFeaturesARM *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePerformanceCountersByRegionFeaturesARM *>(current);
+                const VkPhysicalDevicePerformanceCountersByRegionFeaturesARM* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePerformanceCountersByRegionFeaturesARM*>(current);
                 if (enabling->performanceCountersByRegion && !supported.performanceCountersByRegion) {
                     ss << "VkPhysicalDevicePerformanceCountersByRegionFeaturesARM::performanceCountersByRegion is not supported\n";
                 }
@@ -2134,8 +2134,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePerformanceQueryFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePerformanceQueryFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePerformanceQueryFeaturesKHR *>(current);
+                const VkPhysicalDevicePerformanceQueryFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePerformanceQueryFeaturesKHR*>(current);
                 if (enabling->performanceCounterQueryPools && !supported.performanceCounterQueryPools) {
                     ss << "VkPhysicalDevicePerformanceQueryFeaturesKHR::performanceCounterQueryPools is not supported\n";
                 }
@@ -2148,8 +2148,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePipelineBinaryFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePipelineBinaryFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePipelineBinaryFeaturesKHR *>(current);
+                const VkPhysicalDevicePipelineBinaryFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePipelineBinaryFeaturesKHR*>(current);
                 if (enabling->pipelineBinaries && !supported.pipelineBinaries) {
                     ss << "VkPhysicalDevicePipelineBinaryFeaturesKHR::pipelineBinaries is not supported\n";
                 }
@@ -2159,8 +2159,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC *>(current);
+                const VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC*>(current);
                 if (enabling->pipelineCacheIncrementalMode && !supported.pipelineCacheIncrementalMode) {
                     ss << "VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC::pipelineCacheIncrementalMode is not "
                           "supported\n";
@@ -2171,8 +2171,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePipelineCreationCacheControlFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePipelineCreationCacheControlFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePipelineCreationCacheControlFeatures *>(current);
+                const VkPhysicalDevicePipelineCreationCacheControlFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePipelineCreationCacheControlFeatures*>(current);
                 if (enabling->pipelineCreationCacheControl && !supported.pipelineCreationCacheControl) {
                     ss << "VkPhysicalDevicePipelineCreationCacheControlFeatures::pipelineCreationCacheControl is not supported\n";
                 }
@@ -2182,8 +2182,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR *>(current);
+                const VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR*>(current);
                 if (enabling->pipelineExecutableInfo && !supported.pipelineExecutableInfo) {
                     ss << "VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR::pipelineExecutableInfo is not supported\n";
                 }
@@ -2193,8 +2193,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT *>(current);
+                const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT*>(current);
                 if (enabling->pipelineLibraryGroupHandles && !supported.pipelineLibraryGroupHandles) {
                     ss << "VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT::pipelineLibraryGroupHandles is not supported\n";
                 }
@@ -2204,8 +2204,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePipelineOpacityMicromapFeaturesARM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePipelineOpacityMicromapFeaturesARM *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePipelineOpacityMicromapFeaturesARM *>(current);
+                const VkPhysicalDevicePipelineOpacityMicromapFeaturesARM* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePipelineOpacityMicromapFeaturesARM*>(current);
                 if (enabling->pipelineOpacityMicromap && !supported.pipelineOpacityMicromap) {
                     ss << "VkPhysicalDevicePipelineOpacityMicromapFeaturesARM::pipelineOpacityMicromap is not supported\n";
                 }
@@ -2215,8 +2215,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePipelinePropertiesFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePipelinePropertiesFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePipelinePropertiesFeaturesEXT *>(current);
+                const VkPhysicalDevicePipelinePropertiesFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePipelinePropertiesFeaturesEXT*>(current);
                 if (enabling->pipelinePropertiesIdentifier && !supported.pipelinePropertiesIdentifier) {
                     ss << "VkPhysicalDevicePipelinePropertiesFeaturesEXT::pipelinePropertiesIdentifier is not supported\n";
                 }
@@ -2226,8 +2226,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePipelineProtectedAccessFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePipelineProtectedAccessFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePipelineProtectedAccessFeatures *>(current);
+                const VkPhysicalDevicePipelineProtectedAccessFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePipelineProtectedAccessFeatures*>(current);
                 if (enabling->pipelineProtectedAccess && !supported.pipelineProtectedAccess) {
                     ss << "VkPhysicalDevicePipelineProtectedAccessFeatures::pipelineProtectedAccess is not supported\n";
                 }
@@ -2237,8 +2237,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePipelineRobustnessFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePipelineRobustnessFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePipelineRobustnessFeatures *>(current);
+                const VkPhysicalDevicePipelineRobustnessFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePipelineRobustnessFeatures*>(current);
                 if (enabling->pipelineRobustness && !supported.pipelineRobustness) {
                     ss << "VkPhysicalDevicePipelineRobustnessFeatures::pipelineRobustness is not supported\n";
                 }
@@ -2249,8 +2249,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePortabilitySubsetFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePortabilitySubsetFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePortabilitySubsetFeaturesKHR *>(current);
+                const VkPhysicalDevicePortabilitySubsetFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePortabilitySubsetFeaturesKHR*>(current);
                 if (enabling->constantAlphaColorBlendFactors && !supported.constantAlphaColorBlendFactors) {
                     ss << "VkPhysicalDevicePortabilitySubsetFeaturesKHR::constantAlphaColorBlendFactors is not supported\n";
                 }
@@ -2303,8 +2303,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePresentBarrierFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePresentBarrierFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePresentBarrierFeaturesNV *>(current);
+                const VkPhysicalDevicePresentBarrierFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePresentBarrierFeaturesNV*>(current);
                 if (enabling->presentBarrier && !supported.presentBarrier) {
                     ss << "VkPhysicalDevicePresentBarrierFeaturesNV::presentBarrier is not supported\n";
                 }
@@ -2314,8 +2314,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePresentId2FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePresentId2FeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePresentId2FeaturesKHR *>(current);
+                const VkPhysicalDevicePresentId2FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePresentId2FeaturesKHR*>(current);
                 if (enabling->presentId2 && !supported.presentId2) {
                     ss << "VkPhysicalDevicePresentId2FeaturesKHR::presentId2 is not supported\n";
                 }
@@ -2325,8 +2325,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePresentIdFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePresentIdFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePresentIdFeaturesKHR *>(current);
+                const VkPhysicalDevicePresentIdFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePresentIdFeaturesKHR*>(current);
                 if (enabling->presentId && !supported.presentId) {
                     ss << "VkPhysicalDevicePresentIdFeaturesKHR::presentId is not supported\n";
                 }
@@ -2336,8 +2336,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePresentMeteringFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePresentMeteringFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePresentMeteringFeaturesNV *>(current);
+                const VkPhysicalDevicePresentMeteringFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePresentMeteringFeaturesNV*>(current);
                 if (enabling->presentMetering && !supported.presentMetering) {
                     ss << "VkPhysicalDevicePresentMeteringFeaturesNV::presentMetering is not supported\n";
                 }
@@ -2347,8 +2347,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR *>(current);
+                const VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR*>(current);
                 if (enabling->presentModeFifoLatestReady && !supported.presentModeFifoLatestReady) {
                     ss << "VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR::presentModeFifoLatestReady is not supported\n";
                 }
@@ -2358,8 +2358,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePresentTimingFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePresentTimingFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePresentTimingFeaturesEXT *>(current);
+                const VkPhysicalDevicePresentTimingFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePresentTimingFeaturesEXT*>(current);
                 if (enabling->presentTiming && !supported.presentTiming) {
                     ss << "VkPhysicalDevicePresentTimingFeaturesEXT::presentTiming is not supported\n";
                 }
@@ -2375,8 +2375,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePresentWait2FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePresentWait2FeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePresentWait2FeaturesKHR *>(current);
+                const VkPhysicalDevicePresentWait2FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePresentWait2FeaturesKHR*>(current);
                 if (enabling->presentWait2 && !supported.presentWait2) {
                     ss << "VkPhysicalDevicePresentWait2FeaturesKHR::presentWait2 is not supported\n";
                 }
@@ -2386,10 +2386,21 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePresentWaitFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePresentWaitFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePresentWaitFeaturesKHR *>(current);
+                const VkPhysicalDevicePresentWaitFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePresentWaitFeaturesKHR*>(current);
                 if (enabling->presentWait && !supported.presentWait) {
                     ss << "VkPhysicalDevicePresentWaitFeaturesKHR::presentWait is not supported\n";
+                }
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT: {
+                VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT*>(current);
+                if (enabling->primitiveRestartIndex && !supported.primitiveRestartIndex) {
+                    ss << "VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT::primitiveRestartIndex is not supported\n";
                 }
                 break;
             }
@@ -2397,8 +2408,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT *>(current);
+                const VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT*>(current);
                 if (enabling->primitiveTopologyListRestart && !supported.primitiveTopologyListRestart) {
                     ss << "VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT::primitiveTopologyListRestart is not "
                           "supported\n";
@@ -2413,8 +2424,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT *>(current);
+                const VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT*>(current);
                 if (enabling->primitivesGeneratedQuery && !supported.primitivesGeneratedQuery) {
                     ss << "VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT::primitivesGeneratedQuery is not supported\n";
                 }
@@ -2433,8 +2444,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePrivateDataFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePrivateDataFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePrivateDataFeatures *>(current);
+                const VkPhysicalDevicePrivateDataFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePrivateDataFeatures*>(current);
                 if (enabling->privateData && !supported.privateData) {
                     ss << "VkPhysicalDevicePrivateDataFeatures::privateData is not supported\n";
                 }
@@ -2444,8 +2455,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceProtectedMemoryFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceProtectedMemoryFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceProtectedMemoryFeatures *>(current);
+                const VkPhysicalDeviceProtectedMemoryFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceProtectedMemoryFeatures*>(current);
                 if (enabling->protectedMemory && !supported.protectedMemory) {
                     ss << "VkPhysicalDeviceProtectedMemoryFeatures::protectedMemory is not supported\n";
                 }
@@ -2455,8 +2466,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceProvokingVertexFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceProvokingVertexFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceProvokingVertexFeaturesEXT *>(current);
+                const VkPhysicalDeviceProvokingVertexFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceProvokingVertexFeaturesEXT*>(current);
                 if (enabling->provokingVertexLast && !supported.provokingVertexLast) {
                     ss << "VkPhysicalDeviceProvokingVertexFeaturesEXT::provokingVertexLast is not supported\n";
                 }
@@ -2470,10 +2481,21 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDevicePushConstantBankFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePushConstantBankFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDevicePushConstantBankFeaturesNV *>(current);
+                const VkPhysicalDevicePushConstantBankFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePushConstantBankFeaturesNV*>(current);
                 if (enabling->pushConstantBank && !supported.pushConstantBank) {
                     ss << "VkPhysicalDevicePushConstantBankFeaturesNV::pushConstantBank is not supported\n";
+                }
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_QUEUE_PERF_HINT_FEATURES_QCOM: {
+                VkPhysicalDeviceQueuePerfHintFeaturesQCOM supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceQueuePerfHintFeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceQueuePerfHintFeaturesQCOM*>(current);
+                if (enabling->queuePerfHint && !supported.queuePerfHint) {
+                    ss << "VkPhysicalDeviceQueuePerfHintFeaturesQCOM::queuePerfHint is not supported\n";
                 }
                 break;
             }
@@ -2481,8 +2503,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT *>(current);
+                const VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT*>(current);
                 if (enabling->formatRgba10x6WithoutYCbCrSampler && !supported.formatRgba10x6WithoutYCbCrSampler) {
                     ss << "VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT::formatRgba10x6WithoutYCbCrSampler is not supported\n";
                 }
@@ -2492,8 +2514,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT *>(current);
+                const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT*>(current);
                 if (enabling->rasterizationOrderColorAttachmentAccess && !supported.rasterizationOrderColorAttachmentAccess) {
                     ss << "VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT::rasterizationOrderColorAttachmentAccess "
                           "is not supported\n";
@@ -2512,8 +2534,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRawAccessChainsFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRawAccessChainsFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRawAccessChainsFeaturesNV *>(current);
+                const VkPhysicalDeviceRawAccessChainsFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRawAccessChainsFeaturesNV*>(current);
                 if (enabling->shaderRawAccessChains && !supported.shaderRawAccessChains) {
                     ss << "VkPhysicalDeviceRawAccessChainsFeaturesNV::shaderRawAccessChains is not supported\n";
                 }
@@ -2523,8 +2545,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRayQueryFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRayQueryFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRayQueryFeaturesKHR *>(current);
+                const VkPhysicalDeviceRayQueryFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRayQueryFeaturesKHR*>(current);
                 if (enabling->rayQuery && !supported.rayQuery) {
                     ss << "VkPhysicalDeviceRayQueryFeaturesKHR::rayQuery is not supported\n";
                 }
@@ -2534,8 +2556,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT *>(current);
+                const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT*>(current);
                 if (enabling->rayTracingInvocationReorder && !supported.rayTracingInvocationReorder) {
                     ss << "VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT::rayTracingInvocationReorder is not supported\n";
                 }
@@ -2545,8 +2567,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV *>(current);
+                const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV*>(current);
                 if (enabling->rayTracingInvocationReorder && !supported.rayTracingInvocationReorder) {
                     ss << "VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::rayTracingInvocationReorder is not supported\n";
                 }
@@ -2556,8 +2578,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV *>(current);
+                const VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV*>(current);
                 if (enabling->spheres && !supported.spheres) {
                     ss << "VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV::spheres is not supported\n";
                 }
@@ -2570,8 +2592,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR *>(current);
+                const VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR*>(current);
                 if (enabling->rayTracingMaintenance1 && !supported.rayTracingMaintenance1) {
                     ss << "VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR::rayTracingMaintenance1 is not supported\n";
                 }
@@ -2585,8 +2607,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRayTracingMotionBlurFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRayTracingMotionBlurFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRayTracingMotionBlurFeaturesNV *>(current);
+                const VkPhysicalDeviceRayTracingMotionBlurFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRayTracingMotionBlurFeaturesNV*>(current);
                 if (enabling->rayTracingMotionBlur && !supported.rayTracingMotionBlur) {
                     ss << "VkPhysicalDeviceRayTracingMotionBlurFeaturesNV::rayTracingMotionBlur is not supported\n";
                 }
@@ -2601,8 +2623,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRayTracingPipelineFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRayTracingPipelineFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRayTracingPipelineFeaturesKHR *>(current);
+                const VkPhysicalDeviceRayTracingPipelineFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRayTracingPipelineFeaturesKHR*>(current);
                 if (enabling->rayTracingPipeline && !supported.rayTracingPipeline) {
                     ss << "VkPhysicalDeviceRayTracingPipelineFeaturesKHR::rayTracingPipeline is not supported\n";
                 }
@@ -2628,8 +2650,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR *>(current);
+                const VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR*>(current);
                 if (enabling->rayTracingPositionFetch && !supported.rayTracingPositionFetch) {
                     ss << "VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR::rayTracingPositionFetch is not supported\n";
                 }
@@ -2639,8 +2661,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRayTracingValidationFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRayTracingValidationFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRayTracingValidationFeaturesNV *>(current);
+                const VkPhysicalDeviceRayTracingValidationFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRayTracingValidationFeaturesNV*>(current);
                 if (enabling->rayTracingValidation && !supported.rayTracingValidation) {
                     ss << "VkPhysicalDeviceRayTracingValidationFeaturesNV::rayTracingValidation is not supported\n";
                 }
@@ -2650,8 +2672,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG *>(current);
+                const VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG*>(current);
                 if (enabling->relaxedLineRasterization && !supported.relaxedLineRasterization) {
                     ss << "VkPhysicalDeviceRelaxedLineRasterizationFeaturesIMG::relaxedLineRasterization is not supported\n";
                 }
@@ -2661,8 +2683,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRenderPassStripedFeaturesARM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRenderPassStripedFeaturesARM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRenderPassStripedFeaturesARM *>(current);
+                const VkPhysicalDeviceRenderPassStripedFeaturesARM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRenderPassStripedFeaturesARM*>(current);
                 if (enabling->renderPassStriped && !supported.renderPassStriped) {
                     ss << "VkPhysicalDeviceRenderPassStripedFeaturesARM::renderPassStriped is not supported\n";
                 }
@@ -2672,8 +2694,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV *>(current);
+                const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV*>(current);
                 if (enabling->representativeFragmentTest && !supported.representativeFragmentTest) {
                     ss << "VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::representativeFragmentTest is not supported\n";
                 }
@@ -2683,8 +2705,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceRobustness2FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRobustness2FeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRobustness2FeaturesKHR *>(current);
+                const VkPhysicalDeviceRobustness2FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRobustness2FeaturesKHR*>(current);
                 if (enabling->robustBufferAccess2 && !supported.robustBufferAccess2) {
                     ss << "VkPhysicalDeviceRobustness2FeaturesKHR::robustBufferAccess2 is not supported\n";
                 }
@@ -2700,8 +2722,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceSamplerYcbcrConversionFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceSamplerYcbcrConversionFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceSamplerYcbcrConversionFeatures *>(current);
+                const VkPhysicalDeviceSamplerYcbcrConversionFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceSamplerYcbcrConversionFeatures*>(current);
                 if (enabling->samplerYcbcrConversion && !supported.samplerYcbcrConversion) {
                     ss << "VkPhysicalDeviceSamplerYcbcrConversionFeatures::samplerYcbcrConversion is not supported\n";
                 }
@@ -2711,8 +2733,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceScalarBlockLayoutFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceScalarBlockLayoutFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceScalarBlockLayoutFeatures *>(current);
+                const VkPhysicalDeviceScalarBlockLayoutFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceScalarBlockLayoutFeatures*>(current);
                 if (enabling->scalarBlockLayout && !supported.scalarBlockLayout) {
                     ss << "VkPhysicalDeviceScalarBlockLayoutFeatures::scalarBlockLayout is not supported\n";
                 }
@@ -2722,8 +2744,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceSchedulingControlsFeaturesARM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceSchedulingControlsFeaturesARM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceSchedulingControlsFeaturesARM *>(current);
+                const VkPhysicalDeviceSchedulingControlsFeaturesARM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceSchedulingControlsFeaturesARM*>(current);
                 if (enabling->schedulingControls && !supported.schedulingControls) {
                     ss << "VkPhysicalDeviceSchedulingControlsFeaturesARM::schedulingControls is not supported\n";
                 }
@@ -2733,8 +2755,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures *>(current);
+                const VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures*>(current);
                 if (enabling->separateDepthStencilLayouts && !supported.separateDepthStencilLayouts) {
                     ss << "VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures::separateDepthStencilLayouts is not supported\n";
                 }
@@ -2744,8 +2766,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShader64BitIndexingFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShader64BitIndexingFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShader64BitIndexingFeaturesEXT *>(current);
+                const VkPhysicalDeviceShader64BitIndexingFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShader64BitIndexingFeaturesEXT*>(current);
                 if (enabling->shader64BitIndexing && !supported.shader64BitIndexing) {
                     ss << "VkPhysicalDeviceShader64BitIndexingFeaturesEXT::shader64BitIndexing is not supported\n";
                 }
@@ -2755,8 +2777,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderAbortFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderAbortFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderAbortFeaturesKHR *>(current);
+                const VkPhysicalDeviceShaderAbortFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderAbortFeaturesKHR*>(current);
                 if (enabling->shaderAbort && !supported.shaderAbort) {
                     ss << "VkPhysicalDeviceShaderAbortFeaturesKHR::shaderAbort is not supported\n";
                 }
@@ -2766,8 +2788,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV *>(current);
+                const VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV*>(current);
                 if (enabling->shaderFloat16VectorAtomics && !supported.shaderFloat16VectorAtomics) {
                     ss << "VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV::shaderFloat16VectorAtomics is not supported\n";
                 }
@@ -2777,8 +2799,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT *>(current);
+                const VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT*>(current);
                 if (enabling->shaderBufferFloat16Atomics && !supported.shaderBufferFloat16Atomics) {
                     ss << "VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT::shaderBufferFloat16Atomics is not supported\n";
                 }
@@ -2821,8 +2843,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderAtomicFloatFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT *>(current);
+                const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT*>(current);
                 if (enabling->shaderBufferFloat32Atomics && !supported.shaderBufferFloat32Atomics) {
                     ss << "VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::shaderBufferFloat32Atomics is not supported\n";
                 }
@@ -2865,8 +2887,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderAtomicInt64Features supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderAtomicInt64Features *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderAtomicInt64Features *>(current);
+                const VkPhysicalDeviceShaderAtomicInt64Features* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderAtomicInt64Features*>(current);
                 if (enabling->shaderBufferInt64Atomics && !supported.shaderBufferInt64Atomics) {
                     ss << "VkPhysicalDeviceShaderAtomicInt64Features::shaderBufferInt64Atomics is not supported\n";
                 }
@@ -2879,8 +2901,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderBfloat16FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderBfloat16FeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderBfloat16FeaturesKHR *>(current);
+                const VkPhysicalDeviceShaderBfloat16FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderBfloat16FeaturesKHR*>(current);
                 if (enabling->shaderBFloat16Type && !supported.shaderBFloat16Type) {
                     ss << "VkPhysicalDeviceShaderBfloat16FeaturesKHR::shaderBFloat16Type is not supported\n";
                 }
@@ -2896,8 +2918,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderClockFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderClockFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderClockFeaturesKHR *>(current);
+                const VkPhysicalDeviceShaderClockFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderClockFeaturesKHR*>(current);
                 if (enabling->shaderSubgroupClock && !supported.shaderSubgroupClock) {
                     ss << "VkPhysicalDeviceShaderClockFeaturesKHR::shaderSubgroupClock is not supported\n";
                 }
@@ -2910,8 +2932,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderConstantDataFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderConstantDataFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderConstantDataFeaturesKHR *>(current);
+                const VkPhysicalDeviceShaderConstantDataFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderConstantDataFeaturesKHR*>(current);
                 if (enabling->shaderConstantData && !supported.shaderConstantData) {
                     ss << "VkPhysicalDeviceShaderConstantDataFeaturesKHR::shaderConstantData is not supported\n";
                 }
@@ -2921,8 +2943,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM *>(current);
+                const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM*>(current);
                 if (enabling->shaderCoreBuiltins && !supported.shaderCoreBuiltins) {
                     ss << "VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::shaderCoreBuiltins is not supported\n";
                 }
@@ -2932,8 +2954,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures *>(current);
+                const VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures*>(current);
                 if (enabling->shaderDemoteToHelperInvocation && !supported.shaderDemoteToHelperInvocation) {
                     ss << "VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures::shaderDemoteToHelperInvocation is not "
                           "supported\n";
@@ -2944,8 +2966,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderDrawParametersFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderDrawParametersFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderDrawParametersFeatures *>(current);
+                const VkPhysicalDeviceShaderDrawParametersFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderDrawParametersFeatures*>(current);
                 if (enabling->shaderDrawParameters && !supported.shaderDrawParameters) {
                     ss << "VkPhysicalDeviceShaderDrawParametersFeatures::shaderDrawParameters is not supported\n";
                 }
@@ -2955,8 +2977,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD *>(current);
+                const VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD*>(current);
                 if (enabling->shaderEarlyAndLateFragmentTests && !supported.shaderEarlyAndLateFragmentTests) {
                     ss << "VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD::shaderEarlyAndLateFragmentTests is not "
                           "supported\n";
@@ -2968,8 +2990,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderEnqueueFeaturesAMDX supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderEnqueueFeaturesAMDX *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderEnqueueFeaturesAMDX *>(current);
+                const VkPhysicalDeviceShaderEnqueueFeaturesAMDX* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderEnqueueFeaturesAMDX*>(current);
                 if (enabling->shaderEnqueue && !supported.shaderEnqueue) {
                     ss << "VkPhysicalDeviceShaderEnqueueFeaturesAMDX::shaderEnqueue is not supported\n";
                 }
@@ -2983,8 +3005,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderExpectAssumeFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderExpectAssumeFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderExpectAssumeFeatures *>(current);
+                const VkPhysicalDeviceShaderExpectAssumeFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderExpectAssumeFeatures*>(current);
                 if (enabling->shaderExpectAssume && !supported.shaderExpectAssume) {
                     ss << "VkPhysicalDeviceShaderExpectAssumeFeatures::shaderExpectAssume is not supported\n";
                 }
@@ -2994,8 +3016,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderFloat16Int8Features supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderFloat16Int8Features *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderFloat16Int8Features *>(current);
+                const VkPhysicalDeviceShaderFloat16Int8Features* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderFloat16Int8Features*>(current);
                 if (enabling->shaderFloat16 && !supported.shaderFloat16) {
                     ss << "VkPhysicalDeviceShaderFloat16Int8Features::shaderFloat16 is not supported\n";
                 }
@@ -3008,8 +3030,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderFloat8FeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderFloat8FeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderFloat8FeaturesEXT *>(current);
+                const VkPhysicalDeviceShaderFloat8FeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderFloat8FeaturesEXT*>(current);
                 if (enabling->shaderFloat8 && !supported.shaderFloat8) {
                     ss << "VkPhysicalDeviceShaderFloat8FeaturesEXT::shaderFloat8 is not supported\n";
                 }
@@ -3022,8 +3044,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderFloatControls2Features supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderFloatControls2Features *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderFloatControls2Features *>(current);
+                const VkPhysicalDeviceShaderFloatControls2Features* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderFloatControls2Features*>(current);
                 if (enabling->shaderFloatControls2 && !supported.shaderFloatControls2) {
                     ss << "VkPhysicalDeviceShaderFloatControls2Features::shaderFloatControls2 is not supported\n";
                 }
@@ -3033,8 +3055,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderFmaFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderFmaFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderFmaFeaturesKHR *>(current);
+                const VkPhysicalDeviceShaderFmaFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderFmaFeaturesKHR*>(current);
                 if (enabling->shaderFmaFloat16 && !supported.shaderFmaFloat16) {
                     ss << "VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat16 is not supported\n";
                 }
@@ -3050,8 +3072,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT *>(current);
+                const VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT*>(current);
                 if (enabling->shaderImageInt64Atomics && !supported.shaderImageInt64Atomics) {
                     ss << "VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT::shaderImageInt64Atomics is not supported\n";
                 }
@@ -3064,8 +3086,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderImageFootprintFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderImageFootprintFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderImageFootprintFeaturesNV *>(current);
+                const VkPhysicalDeviceShaderImageFootprintFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderImageFootprintFeaturesNV*>(current);
                 if (enabling->imageFootprint && !supported.imageFootprint) {
                     ss << "VkPhysicalDeviceShaderImageFootprintFeaturesNV::imageFootprint is not supported\n";
                 }
@@ -3075,8 +3097,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderInstrumentationFeaturesARM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderInstrumentationFeaturesARM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderInstrumentationFeaturesARM *>(current);
+                const VkPhysicalDeviceShaderInstrumentationFeaturesARM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderInstrumentationFeaturesARM*>(current);
                 if (enabling->shaderInstrumentation && !supported.shaderInstrumentation) {
                     ss << "VkPhysicalDeviceShaderInstrumentationFeaturesARM::shaderInstrumentation is not supported\n";
                 }
@@ -3086,8 +3108,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderIntegerDotProductFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderIntegerDotProductFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderIntegerDotProductFeatures *>(current);
+                const VkPhysicalDeviceShaderIntegerDotProductFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderIntegerDotProductFeatures*>(current);
                 if (enabling->shaderIntegerDotProduct && !supported.shaderIntegerDotProduct) {
                     ss << "VkPhysicalDeviceShaderIntegerDotProductFeatures::shaderIntegerDotProduct is not supported\n";
                 }
@@ -3097,8 +3119,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL *>(current);
+                const VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL*>(current);
                 if (enabling->shaderIntegerFunctions2 && !supported.shaderIntegerFunctions2) {
                     ss << "VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::shaderIntegerFunctions2 is not supported\n";
                 }
@@ -3108,8 +3130,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderLongVectorFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderLongVectorFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderLongVectorFeaturesEXT *>(current);
+                const VkPhysicalDeviceShaderLongVectorFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderLongVectorFeaturesEXT*>(current);
                 if (enabling->longVector && !supported.longVector) {
                     ss << "VkPhysicalDeviceShaderLongVectorFeaturesEXT::longVector is not supported\n";
                 }
@@ -3119,8 +3141,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR *>(current);
+                const VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR*>(current);
                 if (enabling->shaderMaximalReconvergence && !supported.shaderMaximalReconvergence) {
                     ss << "VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR::shaderMaximalReconvergence is not supported\n";
                 }
@@ -3130,8 +3152,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE *>(current);
+                const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE*>(current);
                 if (enabling->shaderMixedFloatDotProductFloat16AccFloat32 &&
                     !supported.shaderMixedFloatDotProductFloat16AccFloat32) {
                     ss << "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat16AccFloat32 is "
@@ -3156,8 +3178,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT *>(current);
+                const VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT*>(current);
                 if (enabling->shaderModuleIdentifier && !supported.shaderModuleIdentifier) {
                     ss << "VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT::shaderModuleIdentifier is not supported\n";
                 }
@@ -3167,8 +3189,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderObjectFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderObjectFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderObjectFeaturesEXT *>(current);
+                const VkPhysicalDeviceShaderObjectFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderObjectFeaturesEXT*>(current);
                 if (enabling->shaderObject && !supported.shaderObject) {
                     ss << "VkPhysicalDeviceShaderObjectFeaturesEXT::shaderObject is not supported\n";
                 }
@@ -3178,8 +3200,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderQuadControlFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderQuadControlFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderQuadControlFeaturesKHR *>(current);
+                const VkPhysicalDeviceShaderQuadControlFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderQuadControlFeaturesKHR*>(current);
                 if (enabling->shaderQuadControl && !supported.shaderQuadControl) {
                     ss << "VkPhysicalDeviceShaderQuadControlFeaturesKHR::shaderQuadControl is not supported\n";
                 }
@@ -3189,8 +3211,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR *>(current);
+                const VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR*>(current);
                 if (enabling->shaderRelaxedExtendedInstruction && !supported.shaderRelaxedExtendedInstruction) {
                     ss << "VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR::shaderRelaxedExtendedInstruction is not "
                           "supported\n";
@@ -3201,8 +3223,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT *>(current);
+                const VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT*>(current);
                 if (enabling->shaderReplicatedComposites && !supported.shaderReplicatedComposites) {
                     ss << "VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT::shaderReplicatedComposites is not supported\n";
                 }
@@ -3212,8 +3234,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderSMBuiltinsFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderSMBuiltinsFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderSMBuiltinsFeaturesNV *>(current);
+                const VkPhysicalDeviceShaderSMBuiltinsFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderSMBuiltinsFeaturesNV*>(current);
                 if (enabling->shaderSMBuiltins && !supported.shaderSMBuiltins) {
                     ss << "VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::shaderSMBuiltins is not supported\n";
                 }
@@ -3223,8 +3245,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures *>(current);
+                const VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures*>(current);
                 if (enabling->shaderSubgroupExtendedTypes && !supported.shaderSubgroupExtendedTypes) {
                     ss << "VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures::shaderSubgroupExtendedTypes is not supported\n";
                 }
@@ -3234,8 +3256,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT *>(current);
+                const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT*>(current);
                 if (enabling->shaderSubgroupPartitioned && !supported.shaderSubgroupPartitioned) {
                     ss << "VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT::shaderSubgroupPartitioned is not supported\n";
                 }
@@ -3245,8 +3267,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderSubgroupRotateFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderSubgroupRotateFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderSubgroupRotateFeatures *>(current);
+                const VkPhysicalDeviceShaderSubgroupRotateFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderSubgroupRotateFeatures*>(current);
                 if (enabling->shaderSubgroupRotate && !supported.shaderSubgroupRotate) {
                     ss << "VkPhysicalDeviceShaderSubgroupRotateFeatures::shaderSubgroupRotate is not supported\n";
                 }
@@ -3259,8 +3281,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR *>(current);
+                const VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR*>(current);
                 if (enabling->shaderSubgroupUniformControlFlow && !supported.shaderSubgroupUniformControlFlow) {
                     ss << "VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR::shaderSubgroupUniformControlFlow is not "
                           "supported\n";
@@ -3271,8 +3293,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderTerminateInvocationFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderTerminateInvocationFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderTerminateInvocationFeatures *>(current);
+                const VkPhysicalDeviceShaderTerminateInvocationFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderTerminateInvocationFeatures*>(current);
                 if (enabling->shaderTerminateInvocation && !supported.shaderTerminateInvocation) {
                     ss << "VkPhysicalDeviceShaderTerminateInvocationFeatures::shaderTerminateInvocation is not supported\n";
                 }
@@ -3282,8 +3304,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderTileImageFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderTileImageFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderTileImageFeaturesEXT *>(current);
+                const VkPhysicalDeviceShaderTileImageFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderTileImageFeaturesEXT*>(current);
                 if (enabling->shaderTileImageColorReadAccess && !supported.shaderTileImageColorReadAccess) {
                     ss << "VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageColorReadAccess is not supported\n";
                 }
@@ -3299,8 +3321,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT *>(current);
+                const VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT*>(current);
                 if (enabling->shaderUniformBufferUnsizedArray && !supported.shaderUniformBufferUnsizedArray) {
                     ss << "VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT::shaderUniformBufferUnsizedArray is not "
                           "supported\n";
@@ -3311,8 +3333,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShaderUntypedPointersFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShaderUntypedPointersFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShaderUntypedPointersFeaturesKHR *>(current);
+                const VkPhysicalDeviceShaderUntypedPointersFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderUntypedPointersFeaturesKHR*>(current);
                 if (enabling->shaderUntypedPointers && !supported.shaderUntypedPointers) {
                     ss << "VkPhysicalDeviceShaderUntypedPointersFeaturesKHR::shaderUntypedPointers is not supported\n";
                 }
@@ -3322,8 +3344,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceShadingRateImageFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceShadingRateImageFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceShadingRateImageFeaturesNV *>(current);
+                const VkPhysicalDeviceShadingRateImageFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShadingRateImageFeaturesNV*>(current);
                 if (enabling->shadingRateImage && !supported.shadingRateImage) {
                     ss << "VkPhysicalDeviceShadingRateImageFeaturesNV::shadingRateImage is not supported\n";
                 }
@@ -3336,8 +3358,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceSubgroupSizeControlFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceSubgroupSizeControlFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceSubgroupSizeControlFeatures *>(current);
+                const VkPhysicalDeviceSubgroupSizeControlFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceSubgroupSizeControlFeatures*>(current);
                 if (enabling->subgroupSizeControl && !supported.subgroupSizeControl) {
                     ss << "VkPhysicalDeviceSubgroupSizeControlFeatures::subgroupSizeControl is not supported\n";
                 }
@@ -3350,8 +3372,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT *>(current);
+                const VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT*>(current);
                 if (enabling->subpassMergeFeedback && !supported.subpassMergeFeedback) {
                     ss << "VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT::subpassMergeFeedback is not supported\n";
                 }
@@ -3361,8 +3383,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceSubpassShadingFeaturesHUAWEI supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceSubpassShadingFeaturesHUAWEI *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceSubpassShadingFeaturesHUAWEI *>(current);
+                const VkPhysicalDeviceSubpassShadingFeaturesHUAWEI* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceSubpassShadingFeaturesHUAWEI*>(current);
                 if (enabling->subpassShading && !supported.subpassShading) {
                     ss << "VkPhysicalDeviceSubpassShadingFeaturesHUAWEI::subpassShading is not supported\n";
                 }
@@ -3372,8 +3394,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR *>(current);
+                const VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR*>(current);
                 if (enabling->swapchainMaintenance1 && !supported.swapchainMaintenance1) {
                     ss << "VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR::swapchainMaintenance1 is not supported\n";
                 }
@@ -3383,8 +3405,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceSynchronization2Features supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceSynchronization2Features *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceSynchronization2Features *>(current);
+                const VkPhysicalDeviceSynchronization2Features* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceSynchronization2Features*>(current);
                 if (enabling->synchronization2 && !supported.synchronization2) {
                     ss << "VkPhysicalDeviceSynchronization2Features::synchronization2 is not supported\n";
                 }
@@ -3394,8 +3416,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceTensorFeaturesARM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceTensorFeaturesARM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceTensorFeaturesARM *>(current);
+                const VkPhysicalDeviceTensorFeaturesARM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceTensorFeaturesARM*>(current);
                 if (enabling->tensorNonPacked && !supported.tensorNonPacked) {
                     ss << "VkPhysicalDeviceTensorFeaturesARM::tensorNonPacked is not supported\n";
                 }
@@ -3421,8 +3443,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT *>(current);
+                const VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT*>(current);
                 if (enabling->texelBufferAlignment && !supported.texelBufferAlignment) {
                     ss << "VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT::texelBufferAlignment is not supported\n";
                 }
@@ -3432,8 +3454,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT *>(current);
+                const VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT*>(current);
                 if (enabling->textureCompressionASTC_3D && !supported.textureCompressionASTC_3D) {
                     ss << "VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT::textureCompressionASTC_3D is not supported\n";
                 }
@@ -3443,8 +3465,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceTextureCompressionASTCHDRFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceTextureCompressionASTCHDRFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceTextureCompressionASTCHDRFeatures *>(current);
+                const VkPhysicalDeviceTextureCompressionASTCHDRFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceTextureCompressionASTCHDRFeatures*>(current);
                 if (enabling->textureCompressionASTC_HDR && !supported.textureCompressionASTC_HDR) {
                     ss << "VkPhysicalDeviceTextureCompressionASTCHDRFeatures::textureCompressionASTC_HDR is not supported\n";
                 }
@@ -3454,8 +3476,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceTileMemoryHeapFeaturesQCOM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceTileMemoryHeapFeaturesQCOM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceTileMemoryHeapFeaturesQCOM *>(current);
+                const VkPhysicalDeviceTileMemoryHeapFeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceTileMemoryHeapFeaturesQCOM*>(current);
                 if (enabling->tileMemoryHeap && !supported.tileMemoryHeap) {
                     ss << "VkPhysicalDeviceTileMemoryHeapFeaturesQCOM::tileMemoryHeap is not supported\n";
                 }
@@ -3465,8 +3487,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceTilePropertiesFeaturesQCOM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceTilePropertiesFeaturesQCOM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceTilePropertiesFeaturesQCOM *>(current);
+                const VkPhysicalDeviceTilePropertiesFeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceTilePropertiesFeaturesQCOM*>(current);
                 if (enabling->tileProperties && !supported.tileProperties) {
                     ss << "VkPhysicalDeviceTilePropertiesFeaturesQCOM::tileProperties is not supported\n";
                 }
@@ -3476,8 +3498,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceTileShadingFeaturesQCOM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceTileShadingFeaturesQCOM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceTileShadingFeaturesQCOM *>(current);
+                const VkPhysicalDeviceTileShadingFeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceTileShadingFeaturesQCOM*>(current);
                 if (enabling->tileShading && !supported.tileShading) {
                     ss << "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShading is not supported\n";
                 }
@@ -3526,8 +3548,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceTimelineSemaphoreFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceTimelineSemaphoreFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceTimelineSemaphoreFeatures *>(current);
+                const VkPhysicalDeviceTimelineSemaphoreFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceTimelineSemaphoreFeatures*>(current);
                 if (enabling->timelineSemaphore && !supported.timelineSemaphore) {
                     ss << "VkPhysicalDeviceTimelineSemaphoreFeatures::timelineSemaphore is not supported\n";
                 }
@@ -3537,8 +3559,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceTransformFeedbackFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceTransformFeedbackFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceTransformFeedbackFeaturesEXT *>(current);
+                const VkPhysicalDeviceTransformFeedbackFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceTransformFeedbackFeaturesEXT*>(current);
                 if (enabling->transformFeedback && !supported.transformFeedback) {
                     ss << "VkPhysicalDeviceTransformFeedbackFeaturesEXT::transformFeedback is not supported\n";
                 }
@@ -3551,8 +3573,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR *>(current);
+                const VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR*>(current);
                 if (enabling->unifiedImageLayouts && !supported.unifiedImageLayouts) {
                     ss << "VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR::unifiedImageLayouts is not supported\n";
                 }
@@ -3565,8 +3587,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceUniformBufferStandardLayoutFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceUniformBufferStandardLayoutFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceUniformBufferStandardLayoutFeatures *>(current);
+                const VkPhysicalDeviceUniformBufferStandardLayoutFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceUniformBufferStandardLayoutFeatures*>(current);
                 if (enabling->uniformBufferStandardLayout && !supported.uniformBufferStandardLayout) {
                     ss << "VkPhysicalDeviceUniformBufferStandardLayoutFeatures::uniformBufferStandardLayout is not supported\n";
                 }
@@ -3576,8 +3598,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVariablePointersFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVariablePointersFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVariablePointersFeatures *>(current);
+                const VkPhysicalDeviceVariablePointersFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVariablePointersFeatures*>(current);
                 if (enabling->variablePointersStorageBuffer && !supported.variablePointersStorageBuffer) {
                     ss << "VkPhysicalDeviceVariablePointersFeatures::variablePointersStorageBuffer is not supported\n";
                 }
@@ -3590,8 +3612,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVertexAttributeDivisorFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVertexAttributeDivisorFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVertexAttributeDivisorFeatures *>(current);
+                const VkPhysicalDeviceVertexAttributeDivisorFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVertexAttributeDivisorFeatures*>(current);
                 if (enabling->vertexAttributeInstanceRateDivisor && !supported.vertexAttributeInstanceRateDivisor) {
                     ss << "VkPhysicalDeviceVertexAttributeDivisorFeatures::vertexAttributeInstanceRateDivisor is not supported\n";
                 }
@@ -3605,8 +3627,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT *>(current);
+                const VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT*>(current);
                 if (enabling->vertexAttributeRobustness && !supported.vertexAttributeRobustness) {
                     ss << "VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT::vertexAttributeRobustness is not supported\n";
                 }
@@ -3616,8 +3638,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT *>(current);
+                const VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT*>(current);
                 if (enabling->vertexInputDynamicState && !supported.vertexInputDynamicState) {
                     ss << "VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT::vertexInputDynamicState is not supported\n";
                 }
@@ -3627,8 +3649,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVideoDecodeVP9FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVideoDecodeVP9FeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVideoDecodeVP9FeaturesKHR *>(current);
+                const VkPhysicalDeviceVideoDecodeVP9FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVideoDecodeVP9FeaturesKHR*>(current);
                 if (enabling->videoDecodeVP9 && !supported.videoDecodeVP9) {
                     ss << "VkPhysicalDeviceVideoDecodeVP9FeaturesKHR::videoDecodeVP9 is not supported\n";
                 }
@@ -3638,8 +3660,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVideoEncodeAV1FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVideoEncodeAV1FeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVideoEncodeAV1FeaturesKHR *>(current);
+                const VkPhysicalDeviceVideoEncodeAV1FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVideoEncodeAV1FeaturesKHR*>(current);
                 if (enabling->videoEncodeAV1 && !supported.videoEncodeAV1) {
                     ss << "VkPhysicalDeviceVideoEncodeAV1FeaturesKHR::videoEncodeAV1 is not supported\n";
                 }
@@ -3649,8 +3671,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR *>(current);
+                const VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR*>(current);
                 if (enabling->videoEncodeIntraRefresh && !supported.videoEncodeIntraRefresh) {
                     ss << "VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR::videoEncodeIntraRefresh is not supported\n";
                 }
@@ -3660,8 +3682,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR *>(current);
+                const VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR*>(current);
                 if (enabling->videoEncodeQuantizationMap && !supported.videoEncodeQuantizationMap) {
                     ss << "VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR::videoEncodeQuantizationMap is not supported\n";
                 }
@@ -3671,8 +3693,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE *>(current);
+                const VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE*>(current);
                 if (enabling->videoEncodeRgbConversion && !supported.videoEncodeRgbConversion) {
                     ss << "VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE::videoEncodeRgbConversion is not supported\n";
                 }
@@ -3682,8 +3704,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVideoMaintenance1FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVideoMaintenance1FeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVideoMaintenance1FeaturesKHR *>(current);
+                const VkPhysicalDeviceVideoMaintenance1FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVideoMaintenance1FeaturesKHR*>(current);
                 if (enabling->videoMaintenance1 && !supported.videoMaintenance1) {
                     ss << "VkPhysicalDeviceVideoMaintenance1FeaturesKHR::videoMaintenance1 is not supported\n";
                 }
@@ -3693,8 +3715,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVideoMaintenance2FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVideoMaintenance2FeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVideoMaintenance2FeaturesKHR *>(current);
+                const VkPhysicalDeviceVideoMaintenance2FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVideoMaintenance2FeaturesKHR*>(current);
                 if (enabling->videoMaintenance2 && !supported.videoMaintenance2) {
                     ss << "VkPhysicalDeviceVideoMaintenance2FeaturesKHR::videoMaintenance2 is not supported\n";
                 }
@@ -3704,8 +3726,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVulkan11Features supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVulkan11Features *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVulkan11Features *>(current);
+                const VkPhysicalDeviceVulkan11Features* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVulkan11Features*>(current);
                 if (enabling->storageBuffer16BitAccess && !supported.storageBuffer16BitAccess) {
                     ss << "VkPhysicalDeviceVulkan11Features::storageBuffer16BitAccess is not supported\n";
                 }
@@ -3748,8 +3770,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVulkan12Features supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVulkan12Features *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVulkan12Features *>(current);
+                const VkPhysicalDeviceVulkan12Features* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVulkan12Features*>(current);
                 if (enabling->samplerMirrorClampToEdge && !supported.samplerMirrorClampToEdge) {
                     ss << "VkPhysicalDeviceVulkan12Features::samplerMirrorClampToEdge is not supported\n";
                 }
@@ -3909,8 +3931,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVulkan13Features supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVulkan13Features *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVulkan13Features *>(current);
+                const VkPhysicalDeviceVulkan13Features* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVulkan13Features*>(current);
                 if (enabling->robustImageAccess && !supported.robustImageAccess) {
                     ss << "VkPhysicalDeviceVulkan13Features::robustImageAccess is not supported\n";
                 }
@@ -3963,8 +3985,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVulkan14Features supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVulkan14Features *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVulkan14Features *>(current);
+                const VkPhysicalDeviceVulkan14Features* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVulkan14Features*>(current);
                 if (enabling->globalPriorityQuery && !supported.globalPriorityQuery) {
                     ss << "VkPhysicalDeviceVulkan14Features::globalPriorityQuery is not supported\n";
                 }
@@ -4034,8 +4056,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceVulkanMemoryModelFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceVulkanMemoryModelFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceVulkanMemoryModelFeatures *>(current);
+                const VkPhysicalDeviceVulkanMemoryModelFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVulkanMemoryModelFeatures*>(current);
                 if (enabling->vulkanMemoryModel && !supported.vulkanMemoryModel) {
                     ss << "VkPhysicalDeviceVulkanMemoryModelFeatures::vulkanMemoryModel is not supported\n";
                 }
@@ -4053,8 +4075,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR *>(current);
+                const VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR*>(current);
                 if (enabling->workgroupMemoryExplicitLayout && !supported.workgroupMemoryExplicitLayout) {
                     ss << "VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::workgroupMemoryExplicitLayout is not "
                           "supported\n";
@@ -4078,8 +4100,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT *>(current);
+                const VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT*>(current);
                 if (enabling->ycbcr2plane444Formats && !supported.ycbcr2plane444Formats) {
                     ss << "VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT::ycbcr2plane444Formats is not supported\n";
                 }
@@ -4089,8 +4111,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceYcbcrDegammaFeaturesQCOM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceYcbcrDegammaFeaturesQCOM *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceYcbcrDegammaFeaturesQCOM *>(current);
+                const VkPhysicalDeviceYcbcrDegammaFeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceYcbcrDegammaFeaturesQCOM*>(current);
                 if (enabling->ycbcrDegamma && !supported.ycbcrDegamma) {
                     ss << "VkPhysicalDeviceYcbcrDegammaFeaturesQCOM::ycbcrDegamma is not supported\n";
                 }
@@ -4100,8 +4122,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceYcbcrImageArraysFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceYcbcrImageArraysFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceYcbcrImageArraysFeaturesEXT *>(current);
+                const VkPhysicalDeviceYcbcrImageArraysFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceYcbcrImageArraysFeaturesEXT*>(current);
                 if (enabling->ycbcrImageArrays && !supported.ycbcrImageArrays) {
                     ss << "VkPhysicalDeviceYcbcrImageArraysFeaturesEXT::ycbcrImageArrays is not supported\n";
                 }
@@ -4111,8 +4133,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT *>(current);
+                const VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT*>(current);
                 if (enabling->zeroInitializeDeviceMemory && !supported.zeroInitializeDeviceMemory) {
                     ss << "VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT::zeroInitializeDeviceMemory is not supported\n";
                 }
@@ -4122,8 +4144,8 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures *>(current);
+                const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures*>(current);
                 if (enabling->shaderZeroInitializeWorkgroupMemory && !supported.shaderZeroInitializeWorkgroupMemory) {
                     ss << "VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures::shaderZeroInitializeWorkgroupMemory is not "
                           "supported\n";

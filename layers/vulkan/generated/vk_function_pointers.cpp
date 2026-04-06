@@ -712,6 +712,7 @@ PFN_vkCreatePrivateDataSlotEXT CreatePrivateDataSlotEXT;
 PFN_vkDestroyPrivateDataSlotEXT DestroyPrivateDataSlotEXT;
 PFN_vkSetPrivateDataEXT SetPrivateDataEXT;
 PFN_vkGetPrivateDataEXT GetPrivateDataEXT;
+PFN_vkQueueSetPerfHintQCOM QueueSetPerfHintQCOM;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 PFN_vkCreateCudaModuleNV CreateCudaModuleNV;
 PFN_vkGetCudaModuleCacheNV GetCudaModuleCacheNV;
@@ -793,6 +794,7 @@ PFN_vkGetMicromapBuildSizesEXT GetMicromapBuildSizesEXT;
 PFN_vkCmdDrawClusterHUAWEI CmdDrawClusterHUAWEI;
 PFN_vkCmdDrawClusterIndirectHUAWEI CmdDrawClusterIndirectHUAWEI;
 PFN_vkSetDeviceMemoryPriorityEXT SetDeviceMemoryPriorityEXT;
+PFN_vkCmdSetDispatchParametersARM CmdSetDispatchParametersARM;
 PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE GetDescriptorSetLayoutHostMappingInfoVALVE;
 PFN_vkGetDescriptorSetHostMappingVALVE GetDescriptorSetHostMappingVALVE;
 PFN_vkCmdCopyMemoryIndirectNV CmdCopyMemoryIndirectNV;
@@ -882,6 +884,7 @@ PFN_vkGetDataGraphPipelineAvailablePropertiesARM GetDataGraphPipelineAvailablePr
 PFN_vkGetDataGraphPipelinePropertiesARM GetDataGraphPipelinePropertiesARM;
 PFN_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM;
 PFN_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM;
+PFN_vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM;
 PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT CmdSetAttachmentFeedbackLoopEnableEXT;
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 PFN_vkGetScreenBufferPropertiesQNX GetScreenBufferPropertiesQNX;
@@ -928,6 +931,7 @@ PFN_vkCmdSetComputeOccupancyPriorityNV CmdSetComputeOccupancyPriorityNV;
 PFN_vkCreateUbmSurfaceSEC CreateUbmSurfaceSEC;
 PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC GetPhysicalDeviceUbmPresentationSupportSEC;
 #endif  // VK_USE_PLATFORM_UBM_SEC
+PFN_vkCmdSetPrimitiveRestartIndexEXT CmdSetPrimitiveRestartIndexEXT;
 PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
 PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;
 PFN_vkCmdBuildAccelerationStructuresKHR CmdBuildAccelerationStructuresKHR;
@@ -2404,6 +2408,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetPrivateDataEXT = reinterpret_cast<PFN_vkGetPrivateDataEXT>(GetDeviceProcAddr(device, "vkGetPrivateDataEXT"));
             }
         },
+        {
+            "VK_QCOM_queue_perf_hint", [](VkInstance , VkDevice device) {
+                QueueSetPerfHintQCOM = reinterpret_cast<PFN_vkQueueSetPerfHintQCOM>(GetDeviceProcAddr(device, "vkQueueSetPerfHintQCOM"));
+            }
+        },
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         {
             "VK_NV_cuda_kernel_launch", [](VkInstance , VkDevice device) {
@@ -2564,6 +2573,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
         {
             "VK_EXT_pageable_device_local_memory", [](VkInstance , VkDevice device) {
                 SetDeviceMemoryPriorityEXT = reinterpret_cast<PFN_vkSetDeviceMemoryPriorityEXT>(GetDeviceProcAddr(device, "vkSetDeviceMemoryPriorityEXT"));
+            }
+        },
+        {
+            "VK_ARM_scheduling_controls", [](VkInstance , VkDevice device) {
+                CmdSetDispatchParametersARM = reinterpret_cast<PFN_vkCmdSetDispatchParametersARM>(GetDeviceProcAddr(device, "vkCmdSetDispatchParametersARM"));
             }
         },
         {
@@ -2765,6 +2779,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_ARM_data_graph_instruction_set_tosa", [](VkInstance instance, VkDevice ) {
+                GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM"));
+            }
+        },
+        {
             "VK_EXT_attachment_feedback_loop_dynamic_state", [](VkInstance , VkDevice device) {
                 CmdSetAttachmentFeedbackLoopEnableEXT = reinterpret_cast<PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetAttachmentFeedbackLoopEnableEXT"));
             }
@@ -2866,6 +2885,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
         {
             "VK_NV_compute_occupancy_priority", [](VkInstance , VkDevice device) {
                 CmdSetComputeOccupancyPriorityNV = reinterpret_cast<PFN_vkCmdSetComputeOccupancyPriorityNV>(GetDeviceProcAddr(device, "vkCmdSetComputeOccupancyPriorityNV"));
+            }
+        },
+        {
+            "VK_EXT_primitive_restart_index", [](VkInstance , VkDevice device) {
+                CmdSetPrimitiveRestartIndexEXT = reinterpret_cast<PFN_vkCmdSetPrimitiveRestartIndexEXT>(GetDeviceProcAddr(device, "vkCmdSetPrimitiveRestartIndexEXT"));
             }
         },
         {
@@ -3315,6 +3339,7 @@ void ResetAllExtensions() {
     DestroyPrivateDataSlotEXT = nullptr;
     SetPrivateDataEXT = nullptr;
     GetPrivateDataEXT = nullptr;
+    QueueSetPerfHintQCOM = nullptr;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     CreateCudaModuleNV = nullptr;
     GetCudaModuleCacheNV = nullptr;
@@ -3396,6 +3421,7 @@ void ResetAllExtensions() {
     CmdDrawClusterHUAWEI = nullptr;
     CmdDrawClusterIndirectHUAWEI = nullptr;
     SetDeviceMemoryPriorityEXT = nullptr;
+    CmdSetDispatchParametersARM = nullptr;
     GetDescriptorSetLayoutHostMappingInfoVALVE = nullptr;
     GetDescriptorSetHostMappingVALVE = nullptr;
     CmdCopyMemoryIndirectNV = nullptr;
@@ -3485,6 +3511,7 @@ void ResetAllExtensions() {
     GetDataGraphPipelinePropertiesARM = nullptr;
     GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM = nullptr;
     GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM = nullptr;
+    GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM = nullptr;
     CmdSetAttachmentFeedbackLoopEnableEXT = nullptr;
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     GetScreenBufferPropertiesQNX = nullptr;
@@ -3531,6 +3558,7 @@ void ResetAllExtensions() {
     CreateUbmSurfaceSEC = nullptr;
     GetPhysicalDeviceUbmPresentationSupportSEC = nullptr;
 #endif  // VK_USE_PLATFORM_UBM_SEC
+    CmdSetPrimitiveRestartIndexEXT = nullptr;
     CreateAccelerationStructureKHR = nullptr;
     DestroyAccelerationStructureKHR = nullptr;
     CmdBuildAccelerationStructuresKHR = nullptr;

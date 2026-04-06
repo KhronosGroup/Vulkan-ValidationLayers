@@ -2984,12 +2984,12 @@ void PostCallRecordDestroyAccelerationStructureNV(VkDevice device, VkAcceleratio
 
 void PreCallRecordGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
                                                                const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-                                                               VkMemoryRequirements2KHR* pMemoryRequirements,
+                                                               VkMemoryRequirements2* pMemoryRequirements,
                                                                const RecordObject& record_obj) override;
 
 void PostCallRecordGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
                                                                 const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-                                                                VkMemoryRequirements2KHR* pMemoryRequirements,
+                                                                VkMemoryRequirements2* pMemoryRequirements,
                                                                 const RecordObject& record_obj) override;
 
 void PreCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
@@ -3493,6 +3493,12 @@ void PreCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objectType, ui
 void PostCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                      VkPrivateDataSlot privateDataSlot, uint64_t* pData, const RecordObject& record_obj) override;
 
+void PreCallRecordQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo,
+                                       const RecordObject& record_obj) override;
+
+void PostCallRecordQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo,
+                                        const RecordObject& record_obj) override;
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 void PreCallRecordCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
@@ -3759,10 +3765,10 @@ void PreCallRecordGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRem
 void PostCallRecordGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo,
                                             VkRemoteAddressNV* pAddress, const RecordObject& record_obj) override;
 
-void PreCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+void PreCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                            VkBaseOutStructure* pPipelineProperties, const RecordObject& record_obj) override;
 
-void PostCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+void PostCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                             VkBaseOutStructure* pPipelineProperties, const RecordObject& record_obj) override;
 
 void PreCallRecordCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints,
@@ -3928,6 +3934,12 @@ void PreCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory mem
 
 void PostCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
                                               const RecordObject& record_obj) override;
+
+void PreCallRecordCmdSetDispatchParametersARM(VkCommandBuffer commandBuffer, const VkDispatchParametersARM* pDispatchParameters,
+                                              const RecordObject& record_obj) override;
+
+void PostCallRecordCmdSetDispatchParametersARM(VkCommandBuffer commandBuffer, const VkDispatchParametersARM* pDispatchParameters,
+                                               const RecordObject& record_obj) override;
 
 void PreCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device,
                                                              const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
@@ -4748,6 +4760,12 @@ void PreCallRecordCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer
 void PostCallRecordCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
                                                     const VkComputeOccupancyPriorityParametersNV* pParameters,
                                                     const RecordObject& record_obj) override;
+
+void PreCallRecordCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
+                                                 const RecordObject& record_obj) override;
+
+void PostCallRecordCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
+                                                  const RecordObject& record_obj) override;
 
 void PreCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator,

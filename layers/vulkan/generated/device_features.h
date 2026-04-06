@@ -720,6 +720,8 @@ struct DeviceFeatures {
     bool presentWait2;
     // VkPhysicalDevicePresentWaitFeaturesKHR
     bool presentWait;
+    // VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT
+    bool primitiveRestartIndex;
     // VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT
     bool primitiveTopologyListRestart;
     // VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT
@@ -740,6 +742,8 @@ struct DeviceFeatures {
     bool transformFeedbackPreservesProvokingVertex;
     // VkPhysicalDevicePushConstantBankFeaturesNV
     bool pushConstantBank;
+    // VkPhysicalDeviceQueuePerfHintFeaturesQCOM
+    bool queuePerfHint;
     // VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT
     bool formatRgba10x6WithoutYCbCrSampler;
     // VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT

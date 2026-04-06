@@ -336,6 +336,11 @@ void PostCallRecordGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pQueueFamilyDataGraphPropertyCount,
     VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties, const RecordObject& record_obj) override;
 
+void PostCallRecordGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+    const VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties, VkBaseOutStructure* pProperties,
+    const RecordObject& record_obj) override;
+
 #ifdef VK_USE_PLATFORM_OHOS
 void PostCallRecordCreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,

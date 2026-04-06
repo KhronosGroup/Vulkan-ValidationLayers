@@ -3956,16 +3956,16 @@ virtual void PostCallRecordDestroyAccelerationStructureNV(VkDevice device, VkAcc
                                                           const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
 }
 virtual bool PreCallValidateGetAccelerationStructureMemoryRequirementsNV(
-    VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2KHR* pMemoryRequirements,
+    VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2* pMemoryRequirements,
     const ErrorObject& error_obj) const {
     return false;
 }
 virtual void PreCallRecordGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
                                                                        const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-                                                                       VkMemoryRequirements2KHR* pMemoryRequirements,
+                                                                       VkMemoryRequirements2* pMemoryRequirements,
                                                                        const RecordObject& record_obj) {}
 virtual void PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
-    VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2KHR* pMemoryRequirements,
+    VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2* pMemoryRequirements,
     const RecordObject& record_obj) {}
 virtual bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                               const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
@@ -4685,6 +4685,14 @@ virtual void PreCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType object
                                             VkPrivateDataSlot privateDataSlot, uint64_t* pData, const RecordObject& record_obj) {}
 virtual void PostCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                              VkPrivateDataSlot privateDataSlot, uint64_t* pData, const RecordObject& record_obj) {}
+virtual bool PreCallValidateQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo,
+                                                 const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo,
+                                               const RecordObject& record_obj) {}
+virtual void PostCallRecordQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo,
+                                                const RecordObject& record_obj) {}
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 virtual bool PreCallValidateCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
@@ -5065,13 +5073,13 @@ virtual void PreCallRecordGetMemoryRemoteAddressNV(VkDevice device,
 virtual void PostCallRecordGetMemoryRemoteAddressNV(VkDevice device,
                                                     const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo,
                                                     VkRemoteAddressNV* pAddress, const RecordObject& record_obj) {}
-virtual bool PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+virtual bool PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                                      VkBaseOutStructure* pPipelineProperties, const ErrorObject& error_obj) const {
     return false;
 }
-virtual void PreCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+virtual void PreCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                                    VkBaseOutStructure* pPipelineProperties, const RecordObject& record_obj) {}
-virtual void PostCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+virtual void PostCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                                     VkBaseOutStructure* pPipelineProperties, const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints,
                                                         const ErrorObject& error_obj) const {
@@ -5299,6 +5307,17 @@ virtual void PreCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMe
                                                      const RecordObject& record_obj) {}
 virtual void PostCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
                                                       const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdSetDispatchParametersARM(VkCommandBuffer commandBuffer,
+                                                        const VkDispatchParametersARM* pDispatchParameters,
+                                                        const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdSetDispatchParametersARM(VkCommandBuffer commandBuffer,
+                                                      const VkDispatchParametersARM* pDispatchParameters,
+                                                      const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdSetDispatchParametersARM(VkCommandBuffer commandBuffer,
+                                                       const VkDispatchParametersARM* pDispatchParameters,
+                                                       const RecordObject& record_obj) {}
 virtual bool PreCallValidateGetDescriptorSetLayoutHostMappingInfoVALVE(
     VkDevice device, const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
     VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping, const ErrorObject& error_obj) const {
@@ -6487,6 +6506,14 @@ virtual void PreCallRecordCmdSetComputeOccupancyPriorityNV(VkCommandBuffer comma
 virtual void PostCallRecordCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
                                                             const VkComputeOccupancyPriorityParametersNV* pParameters,
                                                             const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
+                                                           const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
+                                                         const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
+                                                          const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkAccelerationStructureKHR* pAccelerationStructure,

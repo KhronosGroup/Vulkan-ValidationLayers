@@ -923,7 +923,7 @@ void PreCallRecordDestroyAccelerationStructureNV(VkDevice device, VkAcceleration
                                                  const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 bool PreCallValidateGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
                                                                  const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-                                                                 VkMemoryRequirements2KHR* pMemoryRequirements,
+                                                                 VkMemoryRequirements2* pMemoryRequirements,
                                                                  const ErrorObject& error_obj) const override;
 bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                       const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
@@ -1159,7 +1159,7 @@ bool PreCallValidateCmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBuffer, V
                                                 const ErrorObject& error_obj) const override;
 bool PreCallValidateGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo,
                                              VkRemoteAddressNV* pAddress, const ErrorObject& error_obj) const override;
-bool PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+bool PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                              VkBaseOutStructure* pPipelineProperties, const ErrorObject& error_obj) const override;
 bool PreCallValidateCreateMicromapEXT(VkDevice device, const VkMicromapCreateInfoEXT* pCreateInfo,
                                       const VkAllocationCallbacks* pAllocator, VkMicromapEXT* pMicromap,

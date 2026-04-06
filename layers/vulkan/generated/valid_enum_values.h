@@ -190,6 +190,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkIndirectCommandsTokenTypeNV va
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDepthBiasRepresentationEXT value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkPerfHintTypeQCOM value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkFragmentShadingRateTypeNV value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkFragmentShadingRateNV value) const;

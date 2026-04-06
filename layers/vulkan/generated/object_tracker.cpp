@@ -5819,7 +5819,7 @@ void Device::PreCallRecordDestroyAccelerationStructureNV(VkDevice device, VkAcce
 }
 
 bool Device::PreCallValidateGetAccelerationStructureMemoryRequirementsNV(
-    VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2KHR* pMemoryRequirements,
+    VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2* pMemoryRequirements,
     const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkGetAccelerationStructureMemoryRequirementsNV-device-parameter"
@@ -6662,6 +6662,10 @@ bool Device::PreCallValidateGetPrivateDataEXT(VkDevice device, VkObjectType obje
                                               const ErrorObject& error_obj) const {
     return PreCallValidateGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData, error_obj);
 }
+
+// vkQueueSetPerfHintQCOM:
+// Checked by chassis: queue: "VUID-vkQueueSetPerfHintQCOM-queue-parameter"
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 // vkCreateCudaModuleNV:
@@ -7133,7 +7137,7 @@ bool Device::PreCallValidateGetMemoryRemoteAddressNV(VkDevice device,
     return skip;
 }
 
-bool Device::PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+bool Device::PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                                      VkBaseOutStructure* pPipelineProperties, const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkGetPipelinePropertiesEXT-device-parameter"
@@ -7443,6 +7447,9 @@ bool Device::PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDevice
 
     return skip;
 }
+
+// vkCmdSetDispatchParametersARM:
+// Checked by chassis: commandBuffer: "VUID-vkCmdSetDispatchParametersARM-commandBuffer-parameter"
 
 bool Device::PreCallValidateGetDescriptorSetLayoutHostMappingInfoVALVE(
     VkDevice device, const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
@@ -8338,6 +8345,10 @@ bool Device::PreCallValidateGetDataGraphPipelinePropertiesARM(VkDevice device, c
 // Checked by chassis: physicalDevice:
 // "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM-physicalDevice-parameter"
 
+// vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM:
+// Checked by chassis: physicalDevice:
+// "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM-physicalDevice-parameter"
+
 // vkCmdSetAttachmentFeedbackLoopEnableEXT:
 // Checked by chassis: commandBuffer: "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-commandBuffer-parameter"
 
@@ -8832,6 +8843,9 @@ void Instance::PostCallRecordCreateUbmSurfaceSEC(VkInstance instance, const VkUb
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceUbmPresentationSupportSEC-physicalDevice-parameter"
 
 #endif  // VK_USE_PLATFORM_UBM_SEC
+
+// vkCmdSetPrimitiveRestartIndexEXT:
+// Checked by chassis: commandBuffer: "VUID-vkCmdSetPrimitiveRestartIndexEXT-commandBuffer-parameter"
 
 bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,

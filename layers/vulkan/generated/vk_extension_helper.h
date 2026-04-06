@@ -420,6 +420,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_pipeline_creation_cache_control{kNotSupported};
     ExtEnabled vk_nv_device_diagnostics_config{kNotSupported};
     ExtEnabled vk_qcom_render_pass_store_ops{kNotSupported};
+    ExtEnabled vk_qcom_queue_perf_hint{kNotSupported};
     ExtEnabled vk_nv_cuda_kernel_launch{kNotSupported};
     ExtEnabled vk_qcom_tile_shading{kNotSupported};
     ExtEnabled vk_nv_low_latency{kNotSupported};
@@ -514,6 +515,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_dynamic_rendering_unused_attachments{kNotSupported};
     ExtEnabled vk_nv_low_latency2{kNotSupported};
     ExtEnabled vk_arm_data_graph{kNotSupported};
+    ExtEnabled vk_arm_data_graph_instruction_set_tosa{kNotSupported};
     ExtEnabled vk_qcom_multiview_per_view_render_areas{kNotSupported};
     ExtEnabled vk_nv_per_stage_descriptor_set{kNotSupported};
     ExtEnabled vk_qcom_image_processing2{kNotSupported};
@@ -561,6 +563,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_compute_occupancy_priority{kNotSupported};
     ExtEnabled vk_ext_shader_subgroup_partitioned{kNotSupported};
     ExtEnabled vk_valve_shader_mixed_float_dot_product{kNotSupported};
+    ExtEnabled vk_ext_primitive_restart_index{kNotSupported};
     ExtEnabled vk_khr_acceleration_structure{kNotSupported};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotSupported};
     ExtEnabled vk_khr_ray_query{kNotSupported};
@@ -908,6 +911,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_pipeline_creation_cache_control:
         case vvl::Extension::_VK_NV_device_diagnostics_config:
         case vvl::Extension::_VK_QCOM_render_pass_store_ops:
+        case vvl::Extension::_VK_QCOM_queue_perf_hint:
         case vvl::Extension::_VK_NV_cuda_kernel_launch:
         case vvl::Extension::_VK_QCOM_tile_shading:
         case vvl::Extension::_VK_NV_low_latency:
@@ -1002,6 +1006,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_dynamic_rendering_unused_attachments:
         case vvl::Extension::_VK_NV_low_latency2:
         case vvl::Extension::_VK_ARM_data_graph:
+        case vvl::Extension::_VK_ARM_data_graph_instruction_set_tosa:
         case vvl::Extension::_VK_QCOM_multiview_per_view_render_areas:
         case vvl::Extension::_VK_NV_per_stage_descriptor_set:
         case vvl::Extension::_VK_QCOM_image_processing2:
@@ -1049,6 +1054,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_compute_occupancy_priority:
         case vvl::Extension::_VK_EXT_shader_subgroup_partitioned:
         case vvl::Extension::_VK_VALVE_shader_mixed_float_dot_product:
+        case vvl::Extension::_VK_EXT_primitive_restart_index:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:
         case vvl::Extension::_VK_KHR_ray_query:

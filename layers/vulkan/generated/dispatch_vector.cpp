@@ -1600,6 +1600,9 @@ void DispatchDevice::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetPrivateDataEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetPrivateDataEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetPrivateDataEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateQueueSetPerfHintQCOM);
+    BUILD_DISPATCH_VECTOR(PreCallRecordQueueSetPerfHintQCOM);
+    BUILD_DISPATCH_VECTOR(PostCallRecordQueueSetPerfHintQCOM);
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateCudaModuleNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateCudaModuleNV);
@@ -1794,6 +1797,9 @@ void DispatchDevice::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateSetDeviceMemoryPriorityEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordSetDeviceMemoryPriorityEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordSetDeviceMemoryPriorityEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetDispatchParametersARM);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetDispatchParametersARM);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetDispatchParametersARM);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDescriptorSetLayoutHostMappingInfoVALVE);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE);
@@ -2135,6 +2141,9 @@ void DispatchDevice::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetComputeOccupancyPriorityNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetComputeOccupancyPriorityNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetComputeOccupancyPriorityNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetPrimitiveRestartIndexEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetPrimitiveRestartIndexEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetPrimitiveRestartIndexEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);

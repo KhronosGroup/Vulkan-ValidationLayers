@@ -3119,7 +3119,7 @@ static inline void DispatchDestroyAccelerationStructureNV(VkDevice device, VkAcc
 }
 
 static inline void DispatchGetAccelerationStructureMemoryRequirementsNV(
-    VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2KHR* pMemoryRequirements) {
+    VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
     auto dispatch = vvl::GetDispatchDevice(device);
     dispatch->GetAccelerationStructureMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
 }
@@ -3628,6 +3628,11 @@ static inline void DispatchGetPrivateDataEXT(VkDevice device, VkObjectType objec
     auto dispatch = vvl::GetDispatchDevice(device);
     dispatch->GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
 }
+
+static inline VkResult DispatchQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo) {
+    auto dispatch = vvl::GetDispatchDevice(queue);
+    return dispatch->QueueSetPerfHintQCOM(queue, pPerfHintInfo);
+}
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 static inline VkResult DispatchCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
@@ -3893,7 +3898,7 @@ static inline VkResult DispatchGetMemoryRemoteAddressNV(VkDevice device,
     return dispatch->GetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress);
 }
 
-static inline VkResult DispatchGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+static inline VkResult DispatchGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                                         VkBaseOutStructure* pPipelineProperties) {
     auto dispatch = vvl::GetDispatchDevice(device);
     return dispatch->GetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties);
@@ -4054,6 +4059,12 @@ static inline void DispatchCmdDrawClusterIndirectHUAWEI(VkCommandBuffer commandB
 static inline void DispatchSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority) {
     auto dispatch = vvl::GetDispatchDevice(device);
     dispatch->SetDeviceMemoryPriorityEXT(device, memory, priority);
+}
+
+static inline void DispatchCmdSetDispatchParametersARM(VkCommandBuffer commandBuffer,
+                                                       const VkDispatchParametersARM* pDispatchParameters) {
+    auto dispatch = vvl::GetDispatchDevice(commandBuffer);
+    dispatch->CmdSetDispatchParametersARM(commandBuffer, pDispatchParameters);
 }
 
 static inline void DispatchGetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device,
@@ -4589,6 +4600,14 @@ static inline void DispatchGetPhysicalDeviceQueueFamilyDataGraphProcessingEngine
         physicalDevice, pQueueFamilyDataGraphProcessingEngineInfo, pQueueFamilyDataGraphProcessingEngineProperties);
 }
 
+static inline VkResult DispatchGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+    const VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties, VkBaseOutStructure* pProperties) {
+    auto dispatch = vvl::GetDispatchInstance(physicalDevice);
+    return dispatch->GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+        physicalDevice, queueFamilyIndex, pQueueFamilyDataGraphProperties, pProperties);
+}
+
 static inline void DispatchCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) {
     auto dispatch = vvl::GetDispatchDevice(commandBuffer);
     dispatch->CmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask);
@@ -4841,6 +4860,11 @@ static inline VkBool32 DispatchGetPhysicalDeviceUbmPresentationSupportSEC(VkPhys
     return dispatch->GetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, device);
 }
 #endif  // VK_USE_PLATFORM_UBM_SEC
+
+static inline void DispatchCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex) {
+    auto dispatch = vvl::GetDispatchDevice(commandBuffer);
+    dispatch->CmdSetPrimitiveRestartIndexEXT(commandBuffer, primitiveRestartIndex);
+}
 
 static inline VkResult DispatchCreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

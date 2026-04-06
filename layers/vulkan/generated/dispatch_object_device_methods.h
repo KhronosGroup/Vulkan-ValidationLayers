@@ -670,7 +670,7 @@ VkResult CreateAccelerationStructureNV(VkDevice device, const VkAccelerationStru
 void DestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                     const VkAllocationCallbacks* pAllocator);
 void GetAccelerationStructureMemoryRequirementsNV(VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-                                                  VkMemoryRequirements2KHR* pMemoryRequirements);
+                                                  VkMemoryRequirements2* pMemoryRequirements);
 VkResult BindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                            const VkBindAccelerationStructureMemoryInfoNV* pBindInfos);
 void CmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
@@ -788,6 +788,7 @@ VkResult SetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t ob
                            uint64_t data);
 void GetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot,
                        uint64_t* pData);
+VkResult QueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo);
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 VkResult CreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                             VkCudaModuleNV* pModule);
@@ -854,7 +855,7 @@ void CmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffer);
 void CmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBuffer, VkImageView imageView, VkImageLayout imageLayout);
 VkResult GetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo,
                                   VkRemoteAddressNV* pAddress);
-VkResult GetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo, VkBaseOutStructure* pPipelineProperties);
+VkResult GetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo, VkBaseOutStructure* pPipelineProperties);
 void CmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints);
 void CmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable);
 void CmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable);
@@ -890,6 +891,7 @@ void GetMicromapBuildSizesEXT(VkDevice device, VkAccelerationStructureBuildTypeK
 void CmdDrawClusterHUAWEI(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 void CmdDrawClusterIndirectHUAWEI(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset);
 void SetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority);
+void CmdSetDispatchParametersARM(VkCommandBuffer commandBuffer, const VkDispatchParametersARM* pDispatchParameters);
 void GetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device, const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
                                                 VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping);
 void GetDescriptorSetHostMappingVALVE(VkDevice device, VkDescriptorSet descriptorSet, void** ppData);
@@ -1077,6 +1079,7 @@ void ClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentati
 void CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo);
 void CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer, const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo);
 void CmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer, const VkComputeOccupancyPriorityParametersNV* pParameters);
+void CmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex);
 VkResult CreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator,
                                         VkAccelerationStructureKHR* pAccelerationStructure);

@@ -73,13 +73,15 @@ class SyncValidationOutputGenerator(BaseGenerator):
         def make_flag(name):
             return Flag(name = name,
                         aliases = [],
+                        parent = 'VkPipelineStageFlagBits2',
                         protect = None,
                         value = 0,
                         valueStr = "",
                         bitpos = None,
                         multiBit = False,
                         zero = False,
-                        extensions = [])
+                        extensions = [],
+                        extending = False)
         self.pipelineStagePresentEngine = make_flag('VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL')
 
     def generate(self):

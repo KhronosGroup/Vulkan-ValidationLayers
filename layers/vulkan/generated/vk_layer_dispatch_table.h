@@ -178,6 +178,8 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM;
     PFN_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM
         GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM;
+    PFN_vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM
+        GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM;
 #ifdef VK_USE_PLATFORM_OHOS
     PFN_vkCreateSurfaceOHOS CreateSurfaceOHOS;
 #endif  // VK_USE_PLATFORM_OHOS
@@ -703,6 +705,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkDestroyPrivateDataSlotEXT DestroyPrivateDataSlotEXT;
     PFN_vkSetPrivateDataEXT SetPrivateDataEXT;
     PFN_vkGetPrivateDataEXT GetPrivateDataEXT;
+    PFN_vkQueueSetPerfHintQCOM QueueSetPerfHintQCOM;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCreateCudaModuleNV CreateCudaModuleNV;
     PFN_vkGetCudaModuleCacheNV GetCudaModuleCacheNV;
@@ -772,6 +775,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdDrawClusterHUAWEI CmdDrawClusterHUAWEI;
     PFN_vkCmdDrawClusterIndirectHUAWEI CmdDrawClusterIndirectHUAWEI;
     PFN_vkSetDeviceMemoryPriorityEXT SetDeviceMemoryPriorityEXT;
+    PFN_vkCmdSetDispatchParametersARM CmdSetDispatchParametersARM;
     PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE GetDescriptorSetLayoutHostMappingInfoVALVE;
     PFN_vkGetDescriptorSetHostMappingVALVE GetDescriptorSetHostMappingVALVE;
     PFN_vkCmdCopyMemoryIndirectNV CmdCopyMemoryIndirectNV;
@@ -892,6 +896,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdEndRendering2EXT CmdEndRendering2EXT;
     PFN_vkCmdBeginCustomResolveEXT CmdBeginCustomResolveEXT;
     PFN_vkCmdSetComputeOccupancyPriorityNV CmdSetComputeOccupancyPriorityNV;
+    PFN_vkCmdSetPrimitiveRestartIndexEXT CmdSetPrimitiveRestartIndexEXT;
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
     PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;
     PFN_vkCmdBuildAccelerationStructuresKHR CmdBuildAccelerationStructuresKHR;

@@ -482,8 +482,11 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
             case VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkTensorDependencyInfoARM*>(cur_pnext);
                 if (safe_struct->pTensorMemoryBarriers) {
-                    if (safe_struct->pTensorMemoryBarriers->tensor) {
-                        safe_struct->pTensorMemoryBarriers->tensor = Unwrap(safe_struct->pTensorMemoryBarriers->tensor);
+                    for (uint32_t index0 = 0; index0 < safe_struct->tensorMemoryBarrierCount; ++index0) {
+                        if (safe_struct->pTensorMemoryBarriers[index0].tensor) {
+                            safe_struct->pTensorMemoryBarriers[index0].tensor =
+                                Unwrap(safe_struct->pTensorMemoryBarriers[index0].tensor);
+                        }
                     }
                 }
             } break;
@@ -6598,7 +6601,7 @@ void DispatchDevice::DestroyAccelerationStructureNV(VkDevice device, VkAccelerat
 
 void DispatchDevice::GetAccelerationStructureMemoryRequirementsNV(VkDevice device,
                                                                   const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-                                                                  VkMemoryRequirements2KHR* pMemoryRequirements) {
+                                                                  VkMemoryRequirements2* pMemoryRequirements) {
     if (!wrap_handles)
         return device_dispatch_table.GetAccelerationStructureMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
     vku::safe_VkAccelerationStructureMemoryRequirementsInfoNV var_local_pInfo;
@@ -7590,6 +7593,12 @@ void DispatchDevice::GetPrivateDataEXT(VkDevice device, VkObjectType objectType,
     }
     device_dispatch_table.GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
 }
+
+VkResult DispatchDevice::QueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo) {
+    VkResult result = device_dispatch_table.QueueSetPerfHintQCOM(queue, pPerfHintInfo);
+
+    return result;
+}
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VkResult DispatchDevice::CreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
@@ -8087,7 +8096,7 @@ VkResult DispatchDevice::GetMemoryRemoteAddressNV(VkDevice device,
     return result;
 }
 
-VkResult DispatchDevice::GetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+VkResult DispatchDevice::GetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                                   VkBaseOutStructure* pPipelineProperties) {
     if (!wrap_handles) return device_dispatch_table.GetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties);
     vku::safe_VkPipelineInfoKHR var_local_pPipelineInfo;
@@ -8483,6 +8492,11 @@ void DispatchDevice::SetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory 
         memory = Unwrap(memory);
     }
     device_dispatch_table.SetDeviceMemoryPriorityEXT(device, memory, priority);
+}
+
+void DispatchDevice::CmdSetDispatchParametersARM(VkCommandBuffer commandBuffer,
+                                                 const VkDispatchParametersARM* pDispatchParameters) {
+    device_dispatch_table.CmdSetDispatchParametersARM(commandBuffer, pDispatchParameters);
 }
 
 void DispatchDevice::GetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device,
@@ -9360,6 +9374,15 @@ void DispatchInstance::GetPhysicalDeviceQueueFamilyDataGraphProcessingEngineProp
         physicalDevice, pQueueFamilyDataGraphProcessingEngineInfo, pQueueFamilyDataGraphProcessingEngineProperties);
 }
 
+VkResult DispatchInstance::GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+    const VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties, VkBaseOutStructure* pProperties) {
+    VkResult result = instance_dispatch_table.GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+        physicalDevice, queueFamilyIndex, pQueueFamilyDataGraphProperties, pProperties);
+
+    return result;
+}
+
 void DispatchDevice::CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) {
     device_dispatch_table.CmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask);
 }
@@ -9769,6 +9792,10 @@ VkBool32 DispatchInstance::GetPhysicalDeviceUbmPresentationSupportSEC(VkPhysical
     return result;
 }
 #endif  // VK_USE_PLATFORM_UBM_SEC
+
+void DispatchDevice::CmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex) {
+    device_dispatch_table.CmdSetPrimitiveRestartIndexEXT(commandBuffer, primitiveRestartIndex);
+}
 
 VkResult DispatchDevice::CreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator,

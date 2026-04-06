@@ -1879,6 +1879,19 @@ ValidValue stateless::Context::IsValidEnumValue(VkDepthBiasRepresentationEXT val
 }
 
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkPerfHintTypeQCOM value) const {
+    switch (value) {
+        case VK_PERF_HINT_TYPE_DEFAULT_QCOM:
+        case VK_PERF_HINT_TYPE_FREQUENCY_MIN_QCOM:
+        case VK_PERF_HINT_TYPE_FREQUENCY_MAX_QCOM:
+        case VK_PERF_HINT_TYPE_FREQUENCY_SCALED_QCOM:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkFragmentShadingRateTypeNV value) const {
     switch (value) {
         case VK_FRAGMENT_SHADING_RATE_TYPE_FRAGMENT_SIZE_NV:
@@ -3702,6 +3715,15 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkDepthBiasRepresentationE
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkDepthBiasRepresentationEXT value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkPerfHintTypeQCOM value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkPerfHintTypeQCOM value) const {
     return nullptr;
 }
 

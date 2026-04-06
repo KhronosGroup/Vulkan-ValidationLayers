@@ -5841,13 +5841,13 @@ void Device::PostCallRecordDestroyAccelerationStructureNV(VkDevice device, VkAcc
 
 void Device::PreCallRecordGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
                                                                        const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-                                                                       VkMemoryRequirements2KHR* pMemoryRequirements,
+                                                                       VkMemoryRequirements2* pMemoryRequirements,
                                                                        const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
 }
 
 void Device::PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
-    VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2KHR* pMemoryRequirements,
+    VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2* pMemoryRequirements,
     const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
 }
@@ -6865,6 +6865,20 @@ void Device::PostCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objec
     PostCallRecordGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData, record_obj);
 }
 
+void Device::PreCallRecordQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo,
+                                               const RecordObject& record_obj) {
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        StartWriteObject(queue, record_obj.location);
+    }
+}
+
+void Device::PostCallRecordQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo,
+                                                const RecordObject& record_obj) {
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        FinishWriteObject(queue, record_obj.location);
+    }
+}
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 void Device::PreCallRecordCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
@@ -7368,12 +7382,12 @@ void Device::PostCallRecordGetMemoryRemoteAddressNV(VkDevice device,
     FinishReadObjectParentInstance(device, record_obj.location);
 }
 
-void Device::PreCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+void Device::PreCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                                    VkBaseOutStructure* pPipelineProperties, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
 }
 
-void Device::PostCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+void Device::PostCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                                     VkBaseOutStructure* pPipelineProperties, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
 }
@@ -7729,6 +7743,20 @@ void Device::PostCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceM
                                                       const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
     FinishReadObject(memory, record_obj.location);
+}
+
+void Device::PreCallRecordCmdSetDispatchParametersARM(VkCommandBuffer commandBuffer,
+                                                      const VkDispatchParametersARM* pDispatchParameters,
+                                                      const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdSetDispatchParametersARM(VkCommandBuffer commandBuffer,
+                                                       const VkDispatchParametersARM* pDispatchParameters,
+                                                       const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void Device::PreCallRecordGetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device,
@@ -9314,6 +9342,18 @@ void Instance::PostCallRecordCreateUbmSurfaceSEC(VkInstance instance, const VkUb
 }
 
 #endif  // VK_USE_PLATFORM_UBM_SEC
+void Device::PreCallRecordCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
+                                                         const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
+                                                          const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void Device::PreCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator,
                                                          VkAccelerationStructureKHR* pAccelerationStructure,

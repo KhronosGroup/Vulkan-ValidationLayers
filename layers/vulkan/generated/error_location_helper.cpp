@@ -287,6 +287,7 @@ const char* String(Func func) {
     {"vkCmdSetDiscardRectangleEXT", 28},
     {"vkCmdSetDiscardRectangleEnableEXT", 34},
     {"vkCmdSetDiscardRectangleModeEXT", 32},
+    {"vkCmdSetDispatchParametersARM", 30},
     {"vkCmdSetEvent", 14},
     {"vkCmdSetEvent2", 15},
     {"vkCmdSetEvent2KHR", 18},
@@ -312,6 +313,7 @@ const char* String(Func func) {
     {"vkCmdSetPolygonModeEXT", 23},
     {"vkCmdSetPrimitiveRestartEnable", 31},
     {"vkCmdSetPrimitiveRestartEnableEXT", 34},
+    {"vkCmdSetPrimitiveRestartIndexEXT", 33},
     {"vkCmdSetPrimitiveTopology", 26},
     {"vkCmdSetPrimitiveTopologyEXT", 29},
     {"vkCmdSetProvokingVertexModeEXT", 31},
@@ -692,6 +694,7 @@ const char* String(Func func) {
     {"vkGetPhysicalDeviceProperties", 30},
     {"vkGetPhysicalDeviceProperties2", 31},
     {"vkGetPhysicalDeviceProperties2KHR", 34},
+    {"vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM", 68},
     {"vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM", 69},
     {"vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM", 53},
     {"vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR", 56},
@@ -787,6 +790,7 @@ const char* String(Func func) {
     {"vkQueueInsertDebugUtilsLabelEXT", 32},
     {"vkQueueNotifyOutOfBandNV", 25},
     {"vkQueuePresentKHR", 18},
+    {"vkQueueSetPerfHintQCOM", 23},
     {"vkQueueSetPerformanceConfigurationINTEL", 40},
     {"vkQueueSubmit", 14},
     {"vkQueueSubmit2", 15},
@@ -1052,6 +1056,7 @@ const char* String(Struct structure) {
     {"VkDataGraphPipelineSessionMemoryRequirementsInfoARM", 52},
     {"VkDataGraphPipelineShaderModuleCreateInfoARM", 45},
     {"VkDataGraphProcessingEngineCreateInfoARM", 41},
+    {"VkDataGraphTOSANameQualityARM", 30},
     {"VkDebugMarkerMarkerInfoEXT", 27},
     {"VkDebugMarkerObjectNameInfoEXT", 31},
     {"VkDebugMarkerObjectTagInfoEXT", 30},
@@ -1149,6 +1154,7 @@ const char* String(Struct structure) {
     {"VkDispatchGraphInfoAMDX", 24},
     {"VkDispatchIndirect2InfoKHR", 27},
     {"VkDispatchIndirectCommand", 26},
+    {"VkDispatchParametersARM", 24},
     {"VkDispatchTileInfoQCOM", 23},
     {"VkDisplayEventInfoEXT", 22},
     {"VkDisplayModeCreateInfoKHR", 27},
@@ -1418,6 +1424,7 @@ const char* String(Struct structure) {
     {"VkPastPresentationTimingPropertiesEXT", 38},
     {"VkPerTileBeginInfoQCOM", 23},
     {"VkPerTileEndInfoQCOM", 21},
+    {"VkPerfHintInfoQCOM", 19},
     {"VkPerformanceConfigurationAcquireInfoINTEL", 43},
     {"VkPerformanceCounterARM", 24},
     {"VkPerformanceCounterDescriptionARM", 35},
@@ -1677,6 +1684,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDevicePresentTimingFeaturesEXT", 41},
     {"VkPhysicalDevicePresentWait2FeaturesKHR", 40},
     {"VkPhysicalDevicePresentWaitFeaturesKHR", 39},
+    {"VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT", 49},
     {"VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT", 56},
     {"VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT", 52},
     {"VkPhysicalDevicePrivateDataFeatures", 36},
@@ -1690,6 +1698,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDevicePushConstantBankPropertiesNV", 45},
     {"VkPhysicalDevicePushDescriptorProperties", 41},
     {"VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM", 60},
+    {"VkPhysicalDeviceQueuePerfHintFeaturesQCOM", 42},
+    {"VkPhysicalDeviceQueuePerfHintPropertiesQCOM", 44},
     {"VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT", 43},
     {"VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT", 62},
     {"VkPhysicalDeviceRawAccessChainsFeaturesNV", 42},
@@ -1716,6 +1726,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceSamplerFilterMinmaxProperties", 46},
     {"VkPhysicalDeviceSamplerYcbcrConversionFeatures", 47},
     {"VkPhysicalDeviceScalarBlockLayoutFeatures", 42},
+    {"VkPhysicalDeviceSchedulingControlsDispatchParametersPropertiesARM", 66},
     {"VkPhysicalDeviceSchedulingControlsFeaturesARM", 46},
     {"VkPhysicalDeviceSchedulingControlsPropertiesARM", 48},
     {"VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures", 52},
@@ -1931,6 +1942,7 @@ const char* String(Struct structure) {
     {"VkQueueFamilyCheckpointPropertiesNV", 36},
     {"VkQueueFamilyDataGraphProcessingEnginePropertiesARM", 52},
     {"VkQueueFamilyDataGraphPropertiesARM", 36},
+    {"VkQueueFamilyDataGraphTOSAPropertiesARM", 40},
     {"VkQueueFamilyGlobalPriorityProperties", 38},
     {"VkQueueFamilyOwnershipTransferPropertiesKHR", 44},
     {"VkQueueFamilyProperties", 24},
@@ -2873,6 +2885,7 @@ const char* String(Field field) {
     {"extendedSparseAddressSpaceSize", 31},
     {"extendedSparseBufferUsageFlags", 31},
     {"extendedSparseImageUsageFlags", 30},
+    {"extensionCount", 15},
     {"extensionName", 14},
     {"extent", 7},
     {"externalDataSize", 17},
@@ -3525,6 +3538,7 @@ const char* String(Field field) {
     {"maxQpDelta", 11},
     {"maxQualityLevels", 17},
     {"maxQuantizationMapExtent", 25},
+    {"maxQueuedWorkGroupBatches", 26},
     {"maxRateControlLayers", 21},
     {"maxRayDispatchInvocationCount", 30},
     {"maxRayHitAttributeSize", 23},
@@ -3626,6 +3640,7 @@ const char* String(Field field) {
     {"maxVgprAllocation", 18},
     {"maxViewportDimensions", 22},
     {"maxViewports", 13},
+    {"maxWarpsPerShaderCore", 22},
     {"maxWeightFilterDimension", 25},
     {"maxWeightFilterPhases", 22},
     {"maxWidth", 9},
@@ -4001,6 +4016,7 @@ const char* String(Field field) {
     {"pDisabledValidationChecks", 26},
     {"pDisabledValidationFeatures", 28},
     {"pDiscardRectangles", 19},
+    {"pDispatchParameters", 20},
     {"pDispatchTileInfo", 18},
     {"pDisplay", 9},
     {"pDisplayCount", 14},
@@ -4034,6 +4050,7 @@ const char* String(Field field) {
     {"pExecuteInfo", 13},
     {"pExecutionSet", 14},
     {"pExecutionSetWrites", 20},
+    {"pExtensions", 12},
     {"pExtent", 8},
     {"pExternalBufferInfo", 20},
     {"pExternalBufferProperties", 26},
@@ -4200,6 +4217,7 @@ const char* String(Field field) {
     {"pPerTileBeginInfo", 18},
     {"pPerTileEndInfo", 16},
     {"pPerViewRenderAreas", 20},
+    {"pPerfHintInfo", 14},
     {"pPerformanceQueryCreateInfo", 28},
     {"pPhysicalDeviceCount", 21},
     {"pPhysicalDeviceGroupCount", 26},
@@ -4639,6 +4657,7 @@ const char* String(Field field) {
     {"primitiveOffset", 16},
     {"primitiveOverestimationSize", 28},
     {"primitiveRestartEnable", 23},
+    {"primitiveRestartIndex", 22},
     {"primitiveTopology", 18},
     {"primitiveTopologyListRestart", 29},
     {"primitiveTopologyPatchListRestart", 34},
@@ -4686,6 +4705,7 @@ const char* String(Field field) {
     {"qpP", 4},
     {"quadDivergentImplicitLod", 25},
     {"quadOperationsInAllStages", 26},
+    {"qualityFlags", 13},
     {"qualityLevel", 13},
     {"quantizationMap", 16},
     {"quantizationMapExtent", 22},
@@ -4706,6 +4726,7 @@ const char* String(Field field) {
     {"queueFlags", 11},
     {"queueIndex", 11},
     {"queueLabelCount", 16},
+    {"queuePerfHint", 14},
     {"queueSubmitBoundary", 20},
     {"queueType", 10},
     {"qw", 3},
@@ -4876,9 +4897,13 @@ const char* String(Field field) {
     {"samples", 8},
     {"saturatingAccumulation", 23},
     {"scalarBlockLayout", 18},
+    {"scale", 6},
     {"scalingBehavior", 16},
     {"schedulingControls", 19},
     {"schedulingControlsFlags", 24},
+    {"schedulingControlsMaxQueuedBatchesCount", 40},
+    {"schedulingControlsMaxWarpsCount", 32},
+    {"schedulingControlsMaxWorkGroupBatchSize", 40},
     {"scissorCount", 13},
     {"scope", 6},
     {"scratch", 8},
@@ -5509,6 +5534,7 @@ const char* String(Field field) {
     {"window", 7},
     {"windowCompareMode", 18},
     {"windowExtent", 13},
+    {"workGroupBatchSize", 19},
     {"workgroupInvocations", 21},
     {"workgroupMemoryExplicitLayout", 30},
     {"workgroupMemoryExplicitLayout16BitAccess", 41},
@@ -5581,6 +5607,7 @@ const char* String(Enum value) {
     {"VkDataGraphPipelinePropertyARM", 31},
     {"VkDataGraphPipelineSessionBindPointARM", 39},
     {"VkDataGraphPipelineSessionBindPointTypeARM", 43},
+    {"VkDataGraphTOSALevelARM", 24},
     {"VkDebugReportObjectTypeEXT", 27},
     {"VkDefaultVertexAttributeValueKHR", 33},
     {"VkDepthBiasRepresentationEXT", 29},
@@ -5632,6 +5659,7 @@ const char* String(Enum value) {
     {"VkOpticalFlowSessionBindingPointNV", 35},
     {"VkOutOfBandQueueTypeNV", 23},
     {"VkPartitionedAccelerationStructureOpTypeNV", 43},
+    {"VkPerfHintTypeQCOM", 19},
     {"VkPerformanceConfigurationTypeINTEL", 36},
     {"VkPerformanceCounterScopeKHR", 29},
     {"VkPerformanceCounterStorageKHR", 31},
@@ -5728,6 +5756,7 @@ const char* String(FlagBitmask value) {
     {"VkCullModeFlagBits", 19},
     {"VkDataGraphPipelineDispatchFlagBitsARM", 39},
     {"VkDataGraphPipelineSessionCreateFlagBitsARM", 44},
+    {"VkDataGraphTOSAQualityFlagBitsARM", 34},
     {"VkDebugReportFlagBitsEXT", 25},
     {"VkDebugUtilsMessageSeverityFlagBitsEXT", 39},
     {"VkDebugUtilsMessageTypeFlagBitsEXT", 35},
@@ -5903,6 +5932,7 @@ const char* String(Extension extension) {
     {"VK_ANDROID_external_format_resolve", 35},
     {"VK_ANDROID_external_memory_android_hardware_buffer", 51},
     {"VK_ARM_data_graph", 18},
+    {"VK_ARM_data_graph_instruction_set_tosa", 39},
     {"VK_ARM_format_pack", 19},
     {"VK_ARM_performance_counters_by_region", 38},
     {"VK_ARM_pipeline_opacity_micromap", 33},
@@ -6010,6 +6040,7 @@ const char* String(Extension extension) {
     {"VK_EXT_post_depth_coverage", 27},
     {"VK_EXT_present_mode_fifo_latest_ready", 38},
     {"VK_EXT_present_timing", 22},
+    {"VK_EXT_primitive_restart_index", 31},
     {"VK_EXT_primitive_topology_list_restart", 39},
     {"VK_EXT_primitives_generated_query", 34},
     {"VK_EXT_private_data", 20},
@@ -6308,6 +6339,7 @@ const char* String(Extension extension) {
     {"VK_QCOM_image_processing2", 26},
     {"VK_QCOM_multiview_per_view_render_areas", 40},
     {"VK_QCOM_multiview_per_view_viewports", 37},
+    {"VK_QCOM_queue_perf_hint", 24},
     {"VK_QCOM_render_pass_shader_resolve", 35},
     {"VK_QCOM_render_pass_store_ops", 30},
     {"VK_QCOM_render_pass_transform", 30},
@@ -6502,6 +6534,7 @@ bool IsFieldPointer(Field field) {
     case Field::pDisabledValidationChecks:
     case Field::pDisabledValidationFeatures:
     case Field::pDiscardRectangles:
+    case Field::pDispatchParameters:
     case Field::pDispatchTileInfo:
     case Field::pDisplay:
     case Field::pDisplayCount:
@@ -6535,6 +6568,7 @@ bool IsFieldPointer(Field field) {
     case Field::pExecuteInfo:
     case Field::pExecutionSet:
     case Field::pExecutionSetWrites:
+    case Field::pExtensions:
     case Field::pExtent:
     case Field::pExternalBufferInfo:
     case Field::pExternalBufferProperties:
@@ -6701,6 +6735,7 @@ bool IsFieldPointer(Field field) {
     case Field::pPerTileBeginInfo:
     case Field::pPerTileEndInfo:
     case Field::pPerViewRenderAreas:
+    case Field::pPerfHintInfo:
     case Field::pPerformanceQueryCreateInfo:
     case Field::pPhysicalDeviceCount:
     case Field::pPhysicalDeviceGroupCount:
@@ -8515,6 +8550,12 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceDiagnosticsConfigFeaturesNV;
     case VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV:
        return Struct::VkDeviceDiagnosticsConfigCreateInfoNV;
+    case VK_STRUCTURE_TYPE_PERF_HINT_INFO_QCOM:
+       return Struct::VkPerfHintInfoQCOM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_QUEUE_PERF_HINT_FEATURES_QCOM:
+       return Struct::VkPhysicalDeviceQueuePerfHintFeaturesQCOM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_QUEUE_PERF_HINT_PROPERTIES_QCOM:
+       return Struct::VkPhysicalDeviceQueuePerfHintPropertiesQCOM;
     case VK_STRUCTURE_TYPE_CUDA_MODULE_CREATE_INFO_NV:
        return Struct::VkCudaModuleCreateInfoNV;
     case VK_STRUCTURE_TYPE_CUDA_FUNCTION_CREATE_INFO_NV:
@@ -8565,8 +8606,6 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkImportMetalSharedEventInfoEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT:
        return Struct::VkPhysicalDeviceDescriptorBufferPropertiesEXT;
-    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_DENSITY_MAP_PROPERTIES_EXT:
-       return Struct::VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT:
        return Struct::VkPhysicalDeviceDescriptorBufferFeaturesEXT;
     case VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT:
@@ -8589,6 +8628,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkOpaqueCaptureDescriptorDataCreateInfoEXT;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CAPTURE_DESCRIPTOR_DATA_INFO_EXT:
        return Struct::VkAccelerationStructureCaptureDescriptorDataInfoEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_DENSITY_MAP_PROPERTIES_EXT:
+       return Struct::VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT:
        return Struct::VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_PROPERTIES_EXT:
@@ -8795,6 +8836,10 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceSchedulingControlsFeaturesARM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_PROPERTIES_ARM:
        return Struct::VkPhysicalDeviceSchedulingControlsPropertiesARM;
+    case VK_STRUCTURE_TYPE_DISPATCH_PARAMETERS_ARM:
+       return Struct::VkDispatchParametersARM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_DISPATCH_PARAMETERS_PROPERTIES_ARM:
+       return Struct::VkPhysicalDeviceSchedulingControlsDispatchParametersPropertiesARM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_SLICED_VIEW_OF_3D_FEATURES_EXT:
        return Struct::VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT;
     case VK_STRUCTURE_TYPE_IMAGE_VIEW_SLICED_CREATE_INFO_EXT:
@@ -9075,6 +9120,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkQueueFamilyDataGraphProcessingEnginePropertiesARM;
     case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CONSTANT_TENSOR_SEMI_STRUCTURED_SPARSITY_INFO_ARM:
        return Struct::VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM;
+    case VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_TOSA_PROPERTIES_ARM:
+       return Struct::VkQueueFamilyDataGraphTOSAPropertiesARM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM:
        return Struct::VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM;
     case VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM:
@@ -9313,6 +9360,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkUbmSurfaceCreateInfoSEC;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE:
        return Struct::VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT:
+       return Struct::VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:
        return Struct::VkAccelerationStructureGeometryTrianglesDataKHR;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR:
