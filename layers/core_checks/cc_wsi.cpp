@@ -741,6 +741,27 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
         }
     }
 
+    if (IsExtEnabled(extensions.vk_ext_multisampled_render_to_swapchain)) {
+        VkSurfacePresentModeKHR surface_present_mode = vku::InitStructHelper();
+        surface_present_mode.presentMode = create_info.presentMode;
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
+        if (IsExtEnabled(extensions.vk_khr_surface_maintenance1) || IsExtEnabled(extensions.vk_ext_surface_maintenance1)) {
+            surface_info.pNext = &surface_present_mode;
+        }
+        surface_info.surface = create_info.surface;
+        VkSwapchainFlagsSurfaceCapabilitiesEXT swapchain_flags = vku::InitStructHelper();
+        VkSurfaceCapabilities2KHR surface_capabilities = vku::InitStructHelper(&swapchain_flags);
+        DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device, &surface_info, &surface_capabilities);
+
+        if ((create_info.flags & swapchain_flags.swapchainSupportedFlags) != create_info.flags) {
+            skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-12448", device, create_info_loc.dot(Field::flags),
+                             "(%s) contains flags that are not supported for this surface. Supported flags queries with "
+                             "vkGetPhysicalDeviceSurfaceCapabilities2KHR are: %s.",
+                             string_VkSwapchainCreateFlagsKHR(create_info.flags).c_str(),
+                             string_VkSwapchainCreateFlagsKHR(swapchain_flags.swapchainSupportedFlags).c_str());
+        }
+    }
+
     return skip;
 }
 
