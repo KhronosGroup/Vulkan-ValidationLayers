@@ -227,6 +227,7 @@ vvl_sources = [
   "layers/gpuav/shaders/validation_cmd/push_data.h",
   "layers/gpuav/shaders/validation_cmd/build_acceleration_structures.h",
   "layers/gpuav/shaders/validation_cmd/memcmp.h",
+  "layers/gpuav/shaders/setup/descriptor_encoding_update.h",
   "layers/gpuav/shaders/gpuav_error_codes.h",
   "layers/gpuav/shaders/gpuav_error_header.h",
   "layers/gpuav/shaders/gpuav_shaders_constants.h",

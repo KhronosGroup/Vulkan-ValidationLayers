@@ -878,6 +878,8 @@ class DescriptorSetSubState {
 
     virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
     virtual void NotifyUpdate() {}
+    virtual void PerformPushDescriptorsUpdate(vvl::CommandBuffer& cb, uint32_t write_count,
+                                              const VkWriteDescriptorSet* write_descs) {};
 
     const DescriptorSet &base;
 };
@@ -913,7 +915,8 @@ class DescriptorSet : public StateObject, public SubStateManager<DescriptorSetSu
 
     void NotifyUpdate();
     // Perform a push update whose contents were just validated using ValidatePushDescriptorsUpdate
-    virtual void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs);
+    virtual void PerformPushDescriptorsUpdate(vvl::CommandBuffer& cb, uint32_t write_count,
+                                              const VkWriteDescriptorSet* write_descs);
     // Perform a WriteUpdate whose contents were just validated using ValidateWriteUpdate
     virtual void PerformWriteUpdate(const VkWriteDescriptorSet &);
     // Perform a CopyUpdate whose contents were just validated using ValidateCopyUpdate

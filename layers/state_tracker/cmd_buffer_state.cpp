@@ -1512,7 +1512,7 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
     UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, set, 1, nullptr, push_descriptor_set, 0, nullptr, loc);
 
     // Now that we have either the new or extant push_descriptor set ... do the write updates against it
-    push_descriptor_set->PerformPushDescriptorsUpdate(descriptorWriteCount, pDescriptorWrites);
+    push_descriptor_set->PerformPushDescriptorsUpdate(*this, descriptorWriteCount, pDescriptorWrites);
 }
 
 // Generic function to handle state update for all CmdDraw* type functions

@@ -20,10 +20,13 @@
 #include <vulkan/vulkan_core.h>
 #include <mutex>
 
+#include "generated/gpuav_offline_spirv.h"
 #include "gpuav/core/gpuav.h"
+#include "gpuav/core/gpuav_validation_pipeline.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "gpuav/shaders/setup/descriptor_encoding_update.h"
 #include "state_tracker/descriptor_sets.h"
 #include "containers/limits.h"
 #include "utils/image_utils.h"
@@ -186,6 +189,140 @@ void GetBindingEncodings(const vvl::InlineUniformBinding& binding, glsl::Descrip
         glsl::DescriptorEncoding(DescriptorClass::InlineUniform, glsl::kNullDescriptor, vvl::kNoIndex32);
 }
 
+static void GetBindingEncodingsHelper(const vvl::DescriptorBinding* binding, glsl::DescriptorEncoding* descriptor_encodings,
+                                      uint32_t& index) {
+    switch (binding->descriptor_class) {
+        case DescriptorClass::InlineUniform:
+            GetBindingEncodings(static_cast<const vvl::InlineUniformBinding&>(*binding), descriptor_encodings, index);
+            break;
+        case DescriptorClass::GeneralBuffer:
+            GetBindingEncodings(static_cast<const vvl::BufferBinding&>(*binding), descriptor_encodings, index);
+            break;
+        case DescriptorClass::TexelBuffer:
+            GetBindingEncodings(static_cast<const vvl::TexelBinding&>(*binding), descriptor_encodings, index);
+            break;
+        case DescriptorClass::Mutable:
+            GetBindingEncodings(static_cast<const vvl::MutableBinding&>(*binding), descriptor_encodings, index);
+            break;
+        case DescriptorClass::PlainSampler:
+            GetBindingEncodings(static_cast<const vvl::SamplerBinding&>(*binding), descriptor_encodings, index);
+            break;
+        case DescriptorClass::ImageSampler:
+            GetBindingEncodings(static_cast<const vvl::ImageSamplerBinding&>(*binding), descriptor_encodings, index);
+            break;
+        case DescriptorClass::Image:
+            GetBindingEncodings(static_cast<const vvl::ImageBinding&>(*binding), descriptor_encodings, index);
+            break;
+        case DescriptorClass::AccelerationStructure:
+            GetBindingEncodings(static_cast<const vvl::AccelerationStructureBinding&>(*binding), descriptor_encodings, index);
+            break;
+        case DescriptorClass::Tensor:
+            GetBindingEncodings(static_cast<const vvl::TensorBinding&>(*binding), descriptor_encodings, index);
+            break;
+        case DescriptorClass::Invalid:
+            assert(false);
+            break;
+    }
+}
+
+static std::tuple<uint32_t, uint32_t, vko::BufferRange> GetWriteDescriptorSetEncodings(
+    gpuav::CommandBufferSubState& cb_sub_state, const vvl::DescriptorSet& set, const VkWriteDescriptorSet& write_desc,
+    const std::vector<spirv::BindingLayout>& binding_layouts) {
+    const auto* binding = set.GetBinding(write_desc.dstBinding);
+    if (!binding) {
+        return {0, 0, vko::BufferRange{}};
+    }
+
+    vko::BufferRange desc_set_encodings =
+        cb_sub_state.gpu_resources_manager.GetHostCoherentBufferRange(binding->count * sizeof(glsl::DescriptorEncoding));
+
+    auto desc_set_encodings_ptr = (glsl::DescriptorEncoding*)desc_set_encodings.offset_mapped_ptr;
+    uint32_t index = 0;
+    GetBindingEncodingsHelper(binding, desc_set_encodings_ptr, index);
+
+    return {binding_layouts[write_desc.dstBinding].start, binding->count, desc_set_encodings};
+}
+
+struct DescriptorEncodingUpdateShader {
+    static size_t GetSpirvSize() { return setup_descriptor_encoding_update_comp_size * sizeof(uint32_t); }
+    static const uint32_t* GetSpirv() { return setup_descriptor_encoding_update_comp; }
+
+    glsl::DescriptorEncodingUpdateShaderPushData push_constants{};
+
+    static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() { return {}; }
+
+    std::vector<VkWriteDescriptorSet> GetDescriptorWrites() const { return {}; }
+};
+
+void DescriptorSetSubState::PerformPushDescriptorsUpdate(vvl::CommandBuffer& cb, uint32_t write_count,
+                                                         const VkWriteDescriptorSet* write_descs) {
+    std::lock_guard guard(state_lock_);
+
+    gpuav::CommandBufferSubState& cb_sub_state = gpuav::SubState(cb);
+
+    valpipe::ComputePipeline<DescriptorEncodingUpdateShader>& descriptor_encoding_update_pipeline =
+        cb_sub_state.gpuav_.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<DescriptorEncodingUpdateShader>>(
+            cb_sub_state.gpuav_, Location(vvl::Func::Empty));
+
+    if (!descriptor_encoding_update_pipeline.valid) {
+        return;
+    }
+
+    valpipe::RestorablePipelineState restorable_state(cb_sub_state, VK_PIPELINE_BIND_POINT_COMPUTE);
+
+    DispatchCmdBindPipeline(cb.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, descriptor_encoding_update_pipeline.pipeline);
+
+    for (const VkWriteDescriptorSet& write_desc : vvl::make_span(write_descs, write_count)) {
+        const auto [start_binding, binding_count, desc_set_encodings] =
+            GetWriteDescriptorSetEncodings(cb_sub_state, base, write_desc, binding_layouts_);
+        if (binding_count == 0) {
+            continue;
+        }
+
+        DescriptorEncodingUpdateShader shader_resources;
+        // Create buffer just in time
+        if (descriptor_encodings_.IsDestroyed()) {
+            CreateDescriptorEncodingBuffer();
+        }
+        assert(descriptor_encodings_.Address());
+        shader_resources.push_constants.cb_desc_encodings_ptr = descriptor_encodings_.Address();
+        shader_resources.push_constants.staged_desc_encodings_ptr = desc_set_encodings.offset_address;
+        shader_resources.push_constants.start_binding = start_binding;
+
+        if (!descriptor_encoding_update_pipeline.BindShaderResources(cb_sub_state.gpuav_, cb_sub_state, shader_resources)) {
+            return;
+        }
+
+        {
+            VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
+            barrier_write_after_read.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            barrier_write_after_read.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+            barrier_write_after_read.buffer = descriptor_encodings_.VkHandle();
+            barrier_write_after_read.offset = 0;
+            barrier_write_after_read.size = VK_WHOLE_SIZE;
+
+            DispatchCmdPipelineBarrier(cb.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &barrier_write_after_read, 0,
+                                       nullptr);
+        }
+
+        DispatchCmdDispatch(cb.VkHandle(), binding_count, 1, 1);
+
+        {
+            VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
+            barrier_read_after_write.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+            barrier_read_after_write.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            barrier_read_after_write.buffer = descriptor_encodings_.VkHandle();
+            barrier_read_after_write.offset = 0;
+            barrier_read_after_write.size = VK_WHOLE_SIZE;
+
+            DispatchCmdPipelineBarrier(cb.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 1,
+                                       &barrier_read_after_write, 0, nullptr);
+        }
+    }
+}
+
 VkDeviceAddress DescriptorSetSubState::GetDescriptorEncodingsAddress(Validator& gpuav) {
     std::lock_guard guard(state_lock_);
     const uint32_t current_version = current_version_.load();
@@ -203,41 +340,11 @@ VkDeviceAddress DescriptorSetSubState::GetDescriptorEncodingsAddress(Validator& 
         return descriptor_encodings_.Address();
     }
 
-    auto descriptor_encodings = (glsl::DescriptorEncoding*)descriptor_encodings_.GetMappedPtr();
+    auto desc_set_encodings_ptr = (glsl::DescriptorEncoding*)descriptor_encodings_.GetMappedPtr();
 
     uint32_t index = 0;
     for (const auto& binding : base) {
-        switch (binding->descriptor_class) {
-            case DescriptorClass::InlineUniform:
-                GetBindingEncodings(static_cast<const vvl::InlineUniformBinding&>(*binding), descriptor_encodings, index);
-                break;
-            case DescriptorClass::GeneralBuffer:
-                GetBindingEncodings(static_cast<const vvl::BufferBinding&>(*binding), descriptor_encodings, index);
-                break;
-            case DescriptorClass::TexelBuffer:
-                GetBindingEncodings(static_cast<const vvl::TexelBinding&>(*binding), descriptor_encodings, index);
-                break;
-            case DescriptorClass::Mutable:
-                GetBindingEncodings(static_cast<const vvl::MutableBinding&>(*binding), descriptor_encodings, index);
-                break;
-            case DescriptorClass::PlainSampler:
-                GetBindingEncodings(static_cast<const vvl::SamplerBinding&>(*binding), descriptor_encodings, index);
-                break;
-            case DescriptorClass::ImageSampler:
-                GetBindingEncodings(static_cast<const vvl::ImageSamplerBinding&>(*binding), descriptor_encodings, index);
-                break;
-            case DescriptorClass::Image:
-                GetBindingEncodings(static_cast<const vvl::ImageBinding&>(*binding), descriptor_encodings, index);
-                break;
-            case DescriptorClass::AccelerationStructure:
-                GetBindingEncodings(static_cast<const vvl::AccelerationStructureBinding&>(*binding), descriptor_encodings, index);
-                break;
-            case DescriptorClass::Tensor:
-                GetBindingEncodings(static_cast<const vvl::TensorBinding&>(*binding), descriptor_encodings, index);
-                break;
-            case DescriptorClass::Invalid:
-                gpuav.InternalError(gpuav.device, Location(vvl::Func::Empty), "Unknown DescriptorClass");
-        }
+        GetBindingEncodingsHelper(binding.get(), desc_set_encodings_ptr, index);
     }
 
     // Flush the descriptor encodings before unmapping so that they are visible to the GPU

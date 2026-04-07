@@ -104,6 +104,9 @@ extern const uint32_t instrumentation_vertex_attribute_fetch_oob_vert[];
 // These offset match the function in the order they are declared in the GLSL source
 extern const uint32_t instrumentation_vertex_attribute_fetch_oob_vert_function_0_offset;
 
+extern const uint32_t setup_descriptor_encoding_update_comp_size;
+extern const uint32_t setup_descriptor_encoding_update_comp[];
+
 extern const uint32_t validation_cmd_blas_comp_size;
 extern const uint32_t validation_cmd_blas_comp[];
 

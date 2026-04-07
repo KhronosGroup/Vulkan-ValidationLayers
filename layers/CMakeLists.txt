@@ -354,6 +354,7 @@ target_sources(vvl PRIVATE
     gpuav/shaders/gpuav_error_codes.h
     gpuav/shaders/gpuav_error_header.h
     gpuav/shaders/gpuav_shaders_constants.h
+    gpuav/shaders/setup/descriptor_encoding_update.h
     gpuav/shaders/validation_cmd/push_data.h
     gpu_dump/gpu_dump.h
     gpu_dump/gpu_dump.cpp

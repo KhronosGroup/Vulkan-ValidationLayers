@@ -359,7 +359,6 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                 if (bound_ds->IsUpdateAfterBind()) {
                     continue;
                 }
-
                 desc_sets_ssbo->descriptor_encodings[bound_ds_i] = SubState(*bound_ds).GetDescriptorEncodingsAddress(gpuav);
             }
 
@@ -408,6 +407,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                 if (!bound_ds) {
                     continue;
                 }
+
                 DescriptorSetSubState& desc_set_state = SubState(*bound_ds);
                 desc_sets_ssbo_ptr->descriptor_encodings[bound_ds_i] = desc_set_state.GetDescriptorEncodingsAddress(gpuav);
             }

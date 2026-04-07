@@ -1721,3 +1721,102 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, SpecConstantOpVector) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, BloomDownsampleSlangPushDescriptor) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11738");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    AddRequiredFeature(vkt::Feature::shaderStorageImageReadWithoutFormat);
+    AddRequiredFeature(vkt::Feature::shaderStorageImageWriteWithoutFormat);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* shader_source_1 = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO0 { uint x[]; };
+        layout(set = 1, binding = 0) buffer SSBO1 { uint y[]; };
+        void main() {
+            x[3] = 0;
+            y[3] = 0; // need 16 bytes
+        }
+    )glsl";
+
+    const char* shader_source_2 = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO0 { uint x[]; };
+        layout(set = 1, binding = 0) buffer SSBO1 { uint y[]; };
+        void main() {
+            x[3] = 0;
+            y[0] = 0; // only need 4 bytes
+        }
+    )glsl";
+
+    vkt::Buffer ssbo_0(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    vkt::Buffer ssbo_1_full_bound(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    vkt::Buffer ssbo_1_partial_bound(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_BUFFER;
+    name_info.pObjectName = "ssbo_0";
+    name_info.objectHandle = uint64_t(ssbo_0.handle());
+    vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
+
+    name_info.pObjectName = "ssbo_1_full_bound";
+    name_info.objectHandle = uint64_t(ssbo_1_full_bound.handle());
+    vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
+
+    name_info.pObjectName = "ssbo_1_partial_bound";
+    name_info.objectHandle = uint64_t(ssbo_1_partial_bound.handle());
+    vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
+
+    OneOffDescriptorSet descriptor_set0(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet descriptor_set1(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}},
+                                        VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set0.layout_, &descriptor_set1.layout_});
+    descriptor_set0.WriteDescriptorBufferInfo(0, ssbo_0, 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set0.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe_1(*this);
+    pipe_1.cp_ci_.layout = pipeline_layout;
+    pipe_1.cs_ = VkShaderObj(*m_device, shader_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe_1.CreateComputePipeline();
+    CreateComputePipelineHelper pipe_2(*this);
+    pipe_2.cp_ci_.layout = pipeline_layout;
+    pipe_2.cs_ = VkShaderObj(*m_device, shader_source_2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe_2.CreateComputePipeline();
+
+    VkWriteDescriptorSet push_write = vku::InitStructHelper();
+    push_write.dstBinding = 0;
+    push_write.dstArrayElement = 0;
+    push_write.descriptorCount = 1;
+    push_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    VkDescriptorBufferInfo buffer_info = {ssbo_1_full_bound, 0, 32};
+    push_write.pBufferInfo = &buffer_info;
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set0.set_, 0,
+                              nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_1);
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 1, 1, &push_write);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    m_command_buffer.FullMemoryBarrier();
+
+    // Only bind the needed 4 bytes for "y[0]"
+    buffer_info = {ssbo_1_partial_bound, 0, 4};
+    push_write.pBufferInfo = &buffer_info;
+
+    // Binds set 0 the same
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set0.set_, 0,
+                              nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_2);
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 1, 1, &push_write);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}

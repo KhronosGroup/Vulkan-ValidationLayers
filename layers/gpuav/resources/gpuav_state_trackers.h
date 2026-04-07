@@ -162,12 +162,13 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     // Track which index we have bound our Descriptor Buffer in CmdBindDescriptorBuffersEXT
     uint32_t resource_descriptor_buffer_index_;
 
+    Validator& gpuav_;
+
   private:
     void AllocateResources(const Location &loc);
     void ResetCBState(bool should_destroy);
     bool NeedsPostProcess();
 
-    Validator &gpuav_;
     VkDescriptorSetLayout instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
     std::vector<CommandErrorLogger> command_error_loggers_;
 };
