@@ -54,8 +54,10 @@
 using vvl::DrawDispatchVuid;
 using vvl::GetDrawDispatchVuid;
 
-bool CoreChecks::ValidateGraphicsIndexedCmd(const vvl::CommandBuffer& cb_state, const DrawDispatchVuid& vuid) const {
+bool CoreChecks::ValidateGraphicsIndexedCmd(const LastBound& last_bound, const Location& loc) const {
     bool skip = false;
+    const vvl::CommandBuffer& cb_state = last_bound.cb_state;
+
     // maintenance6 allows null buffers to be bound
     if (!cb_state.index_buffer_binding.bound) {
         const char* extra =
@@ -64,8 +66,25 @@ bool CoreChecks::ValidateGraphicsIndexedCmd(const vvl::CommandBuffer& cb_state, 
                   "calling vkCmdBindIndexBuffer still has the buffer as undeclared."
                 : "With maintenance6, you are allowed to set the buffer in vkCmdBindIndexBuffer to be VK_NULL_HANDLE.";
         skip |= LogError(
-            vuid.index_binding_07312, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+            CreateActionVuid(loc.function, vvl::ActionVUID::INDEX_BINDING_07312),
+            cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
             "no vkCmdBindIndexBuffer call has bound an index buffer to this command buffer prior to this indexed draw. %s", extra);
+    }
+
+    // only used for GL emulation, so skip check otherwise
+    if (enabled_features.primitiveRestartIndex && last_bound.IsPrimitiveRestartEnable()) {
+        const uint32_t type_byte_size = IndexTypeByteSize(cb_state.index_buffer_binding.index_type);
+        const uint32_t max_index_value = uint32_t((uint64_t(1) << (type_byte_size * 8)) - 1);
+        const auto& cb_sub_state = core::SubState(cb_state);
+        if (cb_sub_state.custom_primitive_restart_index > max_index_value) {
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PRIMITIVE_RESTART_INDEX_12401),
+                             cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                             "The last vkCmdBindIndexBuffer call bound %s which max index is 0x%" PRIx32
+                             ", but the last call to vkCmdSetPrimitiveRestartIndexEXT set the primitiveRestartIndex 0x%" PRIx32
+                             " which is over the limit.",
+                             string_VkIndexType(cb_state.index_buffer_binding.index_type), max_index_value,
+                             cb_sub_state.custom_primitive_restart_index);
+        }
     }
 
     return skip;
@@ -317,7 +336,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
     skip |= ValidateCmdDrawInstance(last_bound_state, instanceCount, firstInstance, error_obj.location);
     skip |= ValidateVTGShaderStages(last_bound_state, error_obj.location);
 
-    skip |= ValidateGraphicsIndexedCmd(cb_state, vuid);
+    skip |= ValidateGraphicsIndexedCmd(last_bound_state, error_obj.location);
     if (cb_state.index_buffer_binding.HasNonNullBuffer()) {
         skip |= ValidateCmdDrawIndexedBufferSize(cb_state, indexCount, firstIndex, error_obj.location,
                                                  "VUID-vkCmdDrawIndexed-robustBufferAccess2-08798");
@@ -358,7 +377,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
     }
     skip |= invalid_stride;
 
-    skip |= ValidateGraphicsIndexedCmd(cb_state, vuid);
+    skip |= ValidateGraphicsIndexedCmd(last_bound_state, error_obj.location);
 
     // only index into pIndexInfo if we know parameters are sane
     if (drawCount != 0 && !pIndexInfo) {
@@ -463,7 +482,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
     skip |= ValidateActionState(last_bound_state, vuid);
     skip |= ValidateVTGShaderStages(last_bound_state, error_obj.location);
 
-    skip |= ValidateGraphicsIndexedCmd(cb_state, vuid);
+    skip |= ValidateGraphicsIndexedCmd(last_bound_state, error_obj.location);
 
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
@@ -519,7 +538,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect2KHR(VkCommandBuffer comma
     skip |= ValidateActionState(last_bound_state, vuid);
     skip |= ValidateVTGShaderStages(last_bound_state, error_obj.location);
 
-    skip |= ValidateGraphicsIndexedCmd(cb_state, vuid);
+    skip |= ValidateGraphicsIndexedCmd(last_bound_state, error_obj.location);
 
     const Location info_loc = error_obj.location.dot(Field::pInfo);
     skip |=
@@ -819,7 +838,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
         skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, vuid);
     }
 
-    skip |= ValidateGraphicsIndexedCmd(cb_state, vuid);
+    skip |= ValidateGraphicsIndexedCmd(last_bound_state, error_obj.location);
 
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
@@ -857,7 +876,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer 
     skip |= ValidateActionState(last_bound_state, vuid);
     skip |= ValidateVTGShaderStages(last_bound_state, error_obj.location);
 
-    skip |= ValidateGraphicsIndexedCmd(cb_state, vuid);
+    skip |= ValidateGraphicsIndexedCmd(last_bound_state, error_obj.location);
 
     const Location info_loc = error_obj.location.dot(Field::pInfo);
     skip |=

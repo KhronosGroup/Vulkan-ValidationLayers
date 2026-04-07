@@ -32,7 +32,6 @@ struct DrawDispatchVuid {
     Location loc() const { return Location(function); }
 
     const char* pipeline_bound_08606 = kVUIDUndefined;
-    const char* index_binding_07312 = kVUIDUndefined;
     const char* compatible_pipeline_08600 = kVUIDUndefined;
     const char* indirect_protected_cb_02711 = kVUIDUndefined;
     const char* indirect_contiguous_memory_02708 = kVUIDUndefined;
@@ -327,6 +326,10 @@ enum class ActionVUID {
     DYNAMIC_RENDERING_DITHERING_09642,
     DYNAMIC_RENDERING_DITHERING_09643,
     DYNAMIC_RENDERING_LOCAL_READ_11797,
+
+    // Indexed draws only
+    INDEX_BINDING_07312,
+    PRIMITIVE_RESTART_INDEX_12401,
 
     // Dispatch only
     COMPUTE_NOT_BOUND_10743,

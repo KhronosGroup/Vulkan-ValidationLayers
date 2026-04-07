@@ -1317,6 +1317,9 @@ class Device : public vvl::BaseDevice {
     bool ValidateAllocateMemoryExternal(VkDevice device, const VkMemoryAllocateInfo &allocate_info, VkMemoryAllocateFlags flags,
                                         const Location &allocate_info_loc) const;
 
+    bool manual_PreCallValidateCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
+                                                              const Context& context) const;
+
     bool ValidateVkConvertCooperativeVectorMatrixInfoNV(const LogObjectList &objlist,
                                                         const VkConvertCooperativeVectorMatrixInfoNV &info,
                                                         const Location &info_loc) const;

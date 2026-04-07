@@ -122,6 +122,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdSetExclusiveScissorNV',
             'vkCmdSetViewportShadingRatePaletteNV',
             'vkCmdSetCoarseSampleOrderNV',
+            'vkCmdSetPrimitiveRestartIndexEXT',
             'vkAllocateMemory',
             'vkCreateAccelerationStructureNV',
             'vkCreateAccelerationStructureKHR',

@@ -3336,42 +3336,44 @@ void DeviceState::PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuff
 void DeviceState::PostCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                    VkIndexType indexType, const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordBindIndexbuffer(record_obj.location);
+
     if (buffer == VK_NULL_HANDLE) {
         if (enabled_features.maintenance6) {
             cb_state->index_buffer_binding.bound = true;
         }
-        return;
-    }
+    } else {
+        auto buffer_state = Get<Buffer>(buffer);
+        // Being able to set the size was added in VK_KHR_maintenance5 via vkCmdBindIndexBuffer2KHR
+        // Using this function is the same as passing in VK_WHOLE_SIZE
+        VkDeviceSize buffer_size = Buffer::GetRegionSize(buffer_state, offset, VK_WHOLE_SIZE);
+        cb_state->index_buffer_binding = IndexBufferBinding(buffer, buffer_size, offset, indexType);
 
-    auto buffer_state = Get<Buffer>(buffer);
-    // Being able to set the size was added in VK_KHR_maintenance5 via vkCmdBindIndexBuffer2KHR
-    // Using this function is the same as passing in VK_WHOLE_SIZE
-    VkDeviceSize buffer_size = Buffer::GetRegionSize(buffer_state, offset, VK_WHOLE_SIZE);
-    cb_state->index_buffer_binding = IndexBufferBinding(buffer, buffer_size, offset, indexType);
-
-    // Add binding for this index buffer to this commandbuffer
-    if (!disabled[command_buffer_state] && buffer) {
-        cb_state->AddChild(buffer_state);
+        // Add binding for this index buffer to this commandbuffer
+        if (!disabled[command_buffer_state]) {
+            cb_state->AddChild(buffer_state);
+        }
     }
 }
 
 void DeviceState::PostCallRecordCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                     VkDeviceSize size, VkIndexType indexType, const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordBindIndexbuffer(record_obj.location);
+
     if (buffer == VK_NULL_HANDLE) {
         if (enabled_features.maintenance6) {
             cb_state->index_buffer_binding.bound = true;
         }
-        return;
-    }
+    } else {
+        auto buffer_state = Get<Buffer>(buffer);
+        VkDeviceSize buffer_size = Buffer::GetRegionSize(buffer_state, offset, size);
+        cb_state->index_buffer_binding = IndexBufferBinding(buffer, buffer_size, offset, indexType);
 
-    auto buffer_state = Get<Buffer>(buffer);
-    VkDeviceSize buffer_size = Buffer::GetRegionSize(buffer_state, offset, size);
-    cb_state->index_buffer_binding = IndexBufferBinding(buffer, buffer_size, offset, indexType);
-
-    // Add binding for this index buffer to this commandbuffer
-    if (!disabled[command_buffer_state] && buffer) {
-        cb_state->AddChild(buffer_state);
+        // Add binding for this index buffer to this commandbuffer
+        if (!disabled[command_buffer_state]) {
+            cb_state->AddChild(buffer_state);
+        }
     }
 }
 
@@ -3383,6 +3385,7 @@ void DeviceState::PostCallRecordCmdBindIndexBuffer2KHR(VkCommandBuffer commandBu
 void DeviceState::PostCallRecordCmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo,
                                                        const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordBindIndexbuffer(record_obj.location);
     cb_state->index_buffer_binding = IndexBufferBinding(pInfo->addressRange.address, pInfo->addressRange.size, pInfo->indexType);
     TrackDeviceAddressRange(*cb_state, pInfo->addressRange.address, pInfo->addressRange.size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 }
@@ -6550,6 +6553,12 @@ std::shared_ptr<DeviceMemory> DeviceState::CreateDeviceMemoryState(VkDeviceMemor
                                                                    uint32_t physical_device_count) {
     return std::make_shared<DeviceMemory>(handle, allocate_info, fake_address, memory_type, memory_heap,
                                           std::move(dedicated_binding), physical_device_count);
+}
+
+void DeviceState::PostCallRecordCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
+                                                               const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordSetPrimitiveRestartIndex(primitiveRestartIndex, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,

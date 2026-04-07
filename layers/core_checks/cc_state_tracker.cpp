@@ -238,6 +238,12 @@ void CommandBufferSubState::RecordSetScissorWithCount(uint32_t scissor_count) {
     scissor.trashed_count = false;
 }
 
+void CommandBufferSubState::RecordBindIndexbuffer() { custom_primitive_restart_index = 0; }
+
+void CommandBufferSubState::RecordSetPrimitiveRestartIndex(uint32_t primitive_restart_index) {
+    custom_primitive_restart_index = primitive_restart_index;
+}
+
 void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo&, const VkSubpassEndInfo*, const Location&) {
     ASSERT_AND_RETURN(base.active_render_pass);
     validator.TransitionSubpassLayouts(base, *base.active_render_pass, base.GetActiveSubpass());
@@ -1072,6 +1078,8 @@ void CommandBufferSubState::ResetCBState() {
     custom_resolve.color_formats.clear();
     custom_resolve.depth_format = VK_FORMAT_UNDEFINED;
     custom_resolve.stencil_format = VK_FORMAT_UNDEFINED;
+
+    custom_primitive_restart_index = 0;
 
     // Submit time validation
     queue_submit_functions.clear();

@@ -103,6 +103,9 @@
                 "VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT": {
                     "shaderUniformBufferUnsizedArray": true
                 },
+                "VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT": {
+                    "primitiveRestartIndex": true
+                },
                 "VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV": {
                     "deviceGeneratedCompute": true,
                     "deviceGeneratedComputePipelines": true,
@@ -2466,6 +2469,7 @@
                 "VK_EXT_present_timing": 1,
                 "VK_EXT_primitive_topology_list_restart": 1,
                 "VK_EXT_primitives_generated_query": 1,
+                "VK_EXT_primitive_restart_index": 1,
                 "VK_EXT_private_data": 1,
                 "VK_EXT_provoking_vertex": 1,
                 "VK_EXT_queue_family_foreign": 1,

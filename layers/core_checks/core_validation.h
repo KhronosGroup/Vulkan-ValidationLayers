@@ -468,7 +468,7 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateCmdDrawInstance(const LastBound& last_bound_state, uint32_t instanceCount, uint32_t firstInstance,
                                  const Location& loc) const;
-    bool ValidateGraphicsIndexedCmd(const vvl::CommandBuffer& cb_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateGraphicsIndexedCmd(const LastBound& last_bound, const Location& loc) const;
     bool ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const;
     bool ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle, const vvl::DeviceMemory& mem_info,
                                    VkDeviceSize memoryOffset, const Location& loc) const;

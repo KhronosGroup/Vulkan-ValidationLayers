@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include <thread>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
@@ -806,5 +807,58 @@ TEST_F(PositiveCommand, ResolveImageFormat) {
     resolve_region.extent = {1, 1, 1};
     vk::CmdResolveImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1,
                         &resolve_region);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCommand, SetPrimitiveRestartIndex) {
+    AddRequiredExtensions(VK_EXT_PRIMITIVE_RESTART_INDEX_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::primitiveRestartIndex);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Buffer index_buffer(*m_device, 64, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdSetPrimitiveRestartIndexEXT(m_command_buffer, 0);
+    vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 3, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCommand, SetPrimitiveRestartIndexLimits) {
+    AddRequiredExtensions(VK_EXT_PRIMITIVE_RESTART_INDEX_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::primitiveRestartIndex);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Buffer index_buffer(*m_device, 64, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer, VK_TRUE);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    // Over limit, but vkCmdBindIndexBuffer resets it
+    vk::CmdSetPrimitiveRestartIndexEXT(m_command_buffer, 0xFFFFFFFF);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 3, 0);
+
+    vk::CmdSetPrimitiveRestartIndexEXT(m_command_buffer, 0xFFFFFFFF);
+    // Turn off, so no error
+    vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer, VK_FALSE);
+    vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 3, 0);
+
+    m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
