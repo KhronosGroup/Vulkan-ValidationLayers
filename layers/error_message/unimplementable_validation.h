@@ -406,6 +406,7 @@ const char* unimplementable_validation[] = {
     "VUID-vkCmdBeginTransformFeedback2EXT-pCounterInfos-parameter",
     "VUID-vkCmdEndTransformFeedback2EXT-pCounterInfos-parameter",
     "VUID-vkCmdBindTransformFeedbackBuffers2EXT-pBindingInfos-parameter",
+    "VUID-vkGetDeviceFaultReportsKHR-pFaultInfo-parameter",
     "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04058",
     // These occur in stateless validation when a pointer member is optional and the length member is null
     "VUID-VkDeviceCreateInfo-pEnabledFeatures-parameter",

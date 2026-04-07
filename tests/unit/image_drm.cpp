@@ -611,3 +611,21 @@ TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
     vk::BindImageMemory2(device(), 3, bind_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeImageDrm, DisjointPlaneAspect) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitBasicImageDrm());
+
+    VkImageCreateInfo image_create_info =
+        vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+
+    VkDeviceImageMemoryRequirements image_mem_reqs = vku::InitStructHelper();
+    image_mem_reqs.pCreateInfo = &image_create_info;
+    image_mem_reqs.planeAspect = (VkImageAspectFlagBits)0x80000000;
+    VkMemoryRequirements2 mem_reqs_2 = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceImageMemoryRequirements-planeAspect-12399");
+    vk::GetDeviceImageMemoryRequirements(device(), &image_mem_reqs, &mem_reqs_2);
+    m_errorMonitor->VerifyFound();
+}

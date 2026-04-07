@@ -153,7 +153,7 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline& pipeline,
     auto pipeline_layout = pipeline.PipelineLayoutState();
     if (pipeline_layout && (pipeline_layout->create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT)) {
         skip |= LogError(
-            isKHR ? "VUID-VkRayTracingPipelineCreateInfoKHT-layout-12402" : "VUID-VkRayTracingPipelineCreateInfoNV-layout-12402",
+            isKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-12402" : "VUID-VkRayTracingPipelineCreateInfoNV-layout-12402",
             pipeline_layout->Handle(), create_info_loc.dot(Field::layout),
             "was created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT (which is only designed for graphics pipeline "
             "Libraries).");

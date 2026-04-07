@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include "generated/enum_flag_bits.h"
 #include "stateless/stateless_validation.h"
 #include <vulkan/utility/vk_format_utils.h>
 #include "utils/image_utils.h"
@@ -62,10 +63,11 @@ bool Device::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemor
 }
 
 bool Device::ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements& memory_requirements,
-                                                   const Location& loc) const {
+                                                   const Context& context) const {
     bool skip = false;
+    const Location loc = context.error_obj.location.dot(Field::pInfo);
 
-    const auto& create_info = *(memory_requirements.pCreateInfo);
+    const VkImageCreateInfo& create_info = *(memory_requirements.pCreateInfo);
     if (vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(create_info.pNext)) {
         skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06416", device,
                          loc.dot(Field::pCreateInfo).dot(Field::pNext), "chain contains VkImageSwapchainCreateInfoKHR.\n%s",
@@ -78,7 +80,8 @@ bool Device::ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDevi
                          PrintPNextChain(Struct::VkImageCreateInfo, create_info.pNext).c_str());
     }
 
-    if (vkuFormatIsMultiplane(create_info.format) && (create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) {
+    const bool has_disjoint = (create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0;
+    if (vkuFormatIsMultiplane(create_info.format) && has_disjoint) {
         if (memory_requirements.planeAspect == VK_IMAGE_ASPECT_NONE) {
             skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06417", device, loc.dot(Field::planeAspect),
                              "is VK_IMAGE_ASPECT_NONE with a multi-planar format and disjoint flag.");
@@ -95,6 +98,12 @@ bool Device::ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDevi
                          "pNext chain contains VkExternalFormatANDROID with externalFormat %" PRIu64 ".", external_format);
     }
 
+    if (create_info.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT || has_disjoint) {
+        skip |= context.ValidateFlags(loc.dot(Field::planeAspect), vvl::FlagBitmask::VkImageAspectFlagBits,
+                                      AllVkImageAspectFlagBits, memory_requirements.planeAspect, kOptionalSingleBit,
+                                      "VUID-VkDeviceImageMemoryRequirements-planeAspect-12399", nullptr, false);
+    }
+
     return skip;
 }
 
@@ -102,10 +111,7 @@ bool Device::manual_PreCallValidateGetDeviceImageMemoryRequirements(VkDevice dev
                                                                     VkMemoryRequirements2* pMemoryRequirements,
                                                                     const Context& context) const {
     bool skip = false;
-    const auto& error_obj = context.error_obj;
-
-    skip |= ValidateDeviceImageMemoryRequirements(device, *pInfo, error_obj.location.dot(Field::pInfo));
-
+    skip |= ValidateDeviceImageMemoryRequirements(device, *pInfo, context);
     return skip;
 }
 
@@ -113,10 +119,7 @@ bool Device::manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(
     VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, uint32_t* pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2* pSparseMemoryRequirements, const Context& context) const {
     bool skip = false;
-    const auto& error_obj = context.error_obj;
-
-    skip |= ValidateDeviceImageMemoryRequirements(device, *pInfo, error_obj.location.dot(Field::pInfo));
-
+    skip |= ValidateDeviceImageMemoryRequirements(device, *pInfo, context);
     return skip;
 }
 bool Device::manual_PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBuffer,

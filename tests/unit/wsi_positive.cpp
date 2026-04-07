@@ -3143,10 +3143,6 @@ TEST_F(PositiveWsi, PresentTimingsCalibrateableTimeDomains) {
             present_stages_to_test[i] ? VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT : non_present_stage_time_domain;
     }
 
-    // Disable this error for now; the spec incorrectly labelled this VUIDs as implicit, when in-fact it
-    // only applies when VkSwapchainCalibratedTimestampInfoEXT::presentStage is VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCalibratedTimestampInfoEXT-presentStage-requiredbitmask");
-
     std::vector<uint64_t> timestamps(present_stages_to_test.size());
     uint64_t max_deviation{};
     vk::GetCalibratedTimestampsKHR(device(), timestamp_infos.size(), timestamp_infos.data(), timestamps.data(), &max_deviation);
