@@ -43,7 +43,8 @@ class DescriptorSetSubState : public vvl::DescriptorSetSubState {
     virtual ~DescriptorSetSubState();
 
     void NotifyUpdate() override;
-
+    void PerformPushDescriptorsUpdate(vvl::CommandBuffer& cb, uint32_t write_count,
+                                      const VkWriteDescriptorSet* write_descs) override;
     VkDeviceAddress GetDescriptorEncodingsAddress(Validator& gpuav);
 
     const std::vector<gpuav::spirv::BindingLayout> &GetBindingLayouts() const { return binding_layouts_; }

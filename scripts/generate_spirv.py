@@ -248,8 +248,9 @@ def main():
         gpu_shaders_dir = common_ci.RepoRelative('layers/gpuav/shaders')
         validation_cmd_shaders_dir = common_ci.RepoRelative('layers/gpuav/shaders/validation_cmd')
         instrumentation_shaders_dir = common_ci.RepoRelative('layers/gpuav/shaders/instrumentation')
+        setup_shaders_dir = common_ci.RepoRelative('layers/gpuav/shaders/setup')
 
-        for dir_path in [validation_cmd_shaders_dir, instrumentation_shaders_dir]:
+        for dir_path in [validation_cmd_shaders_dir, instrumentation_shaders_dir, setup_shaders_dir]:
              if not os.path.isdir(dir_path):
                  print(f"Warning: Shader directory not found: {dir_path}", file=sys.stderr)
                  continue

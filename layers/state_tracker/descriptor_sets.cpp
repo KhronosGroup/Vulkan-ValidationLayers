@@ -781,7 +781,8 @@ void vvl::DescriptorSet::NotifyUpdate() {
 }
 
 // Loop through the write updates to do for a push descriptor set, ignoring dstSet
-void vvl::DescriptorSet::PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet* write_descs) {
+void vvl::DescriptorSet::PerformPushDescriptorsUpdate(vvl::CommandBuffer& cb, uint32_t write_count,
+                                                      const VkWriteDescriptorSet* write_descs) {
     assert(IsPushDescriptor());
     for (uint32_t i = 0; i < write_count; i++) {
         PerformWriteUpdate(write_descs[i]);
@@ -791,6 +792,10 @@ void vvl::DescriptorSet::PerformPushDescriptorsUpdate(uint32_t write_count, cons
     push_descriptor_set_writes.reserve(static_cast<std::size_t>(write_count));
     for (uint32_t i = 0; i < write_count; i++) {
         push_descriptor_set_writes.push_back(vku::safe_VkWriteDescriptorSet(&write_descs[i]));
+    }
+
+    for (auto& item : sub_states_) {
+        item.second->PerformPushDescriptorsUpdate(cb, write_count, write_descs);
     }
 
     NotifyUpdate();
