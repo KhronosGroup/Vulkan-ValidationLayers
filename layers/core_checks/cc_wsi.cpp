@@ -1040,9 +1040,8 @@ bool CoreChecks::ValidatePresentTimingsInfo(VkQueue queue, const vvl::Swapchain&
     }
     auto swapchain_time_domain = swapchain_state.time_domains.find(timing_info.timeDomainId);
     if (swapchain_time_domain == swapchain_state.time_domains.end()) {
-        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4623
         const LogObjectList objlist(queue, swapchain_state.Handle());
-        skip |= LogError("UNASSIGNED-VkPresentTimingInfoEXT-timeDomainId", objlist,
+        skip |= LogError("VUID-VkPresentTimingInfoEXT-timeDomainId-12400", objlist,
                          present_info_loc.dot(Field::pTimingInfos, index).dot(Field::timeDomainId),
                          "is %" PRIu64
                          ", which is not a valid time domain id that has been returned by vkGetSwapchainTimeDomainPropertiesEXT().",
