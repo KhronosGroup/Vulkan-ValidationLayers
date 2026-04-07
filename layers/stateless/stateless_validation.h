@@ -1199,8 +1199,8 @@ class Device : public vvl::BaseDevice {
                                                                const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin,
                                                                const Context &context) const;
 
-    bool ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements &memory_requirements,
-                                               const Location &loc) const;
+    bool ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements& memory_requirements,
+                                               const Context& context) const;
 
     bool manual_PreCallValidateCmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 discardRectangleEnable,
                                                                const Context &context) const;
