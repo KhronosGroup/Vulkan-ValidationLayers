@@ -43,7 +43,6 @@
 
 namespace vvl {
 struct AllocateDescriptorSetsData;
-struct SubmissionBatch;
 class Fence;
 class DescriptorPool;
 class DescriptorSet;
@@ -2352,14 +2351,21 @@ class DeviceProxy : public vvl::BaseDevice {
     virtual void Created(vvl::ShaderObject& state) {}
     virtual void Created(vvl::Pipeline& state){};
 
-    // Validate submission batch and update state if necessary.
-    // Called by SubmitTimeTracker and protected by the mutex. Only one batch is processed at a time.
+    // Validate a submission batch and update state if needed.
+    // This call is protected by the global submit-time mutex.
     //
-    // NOTE: Classic Validate/Record split made it a challenge to synchronize threaded queues,
-    // especialy when timeline signal resolves pending work on another queue.
-    // This became increasingly important after the spec allowed internally synchronized queues,
-    // meaning the same queue can be used from multiple threads.
-    virtual bool ProcessSubmissionBatch(SubmissionBatch& batch) { return false; }
+    // NOTE: The classic Validate/Record split made threaded queues difficult to synchronize,
+    // especially when a timeline signal resolves pending work on another queue.
+    // This became even more important after the spec allowed internally synchronized queues,
+    // which means the same queue can be used from multiple threads
+    virtual bool ProcessSubmissionBatch(const std::vector<std::shared_ptr<vvl::CommandBuffer>>& command_buffers,
+                                        const Location& submit_loc) {
+        return false;
+    }
+
+    // Validate a submission batch and update state if needed.
+    // This call is protected by the global submit-time mutex
+    virtual bool ProcessPresentBatch(const vvl::Image& swapchain_image, const Location& present_info_loc) { return false; }
 
     // callbacks for image layout validation, which is implemented in both core validation and gpu-av
     // TODO - It would be nice to have a way to not need a duplicate copy in both CoreChecks and GPU-AV code

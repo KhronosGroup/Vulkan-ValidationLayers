@@ -34,24 +34,6 @@ static Location GetSignaledSemaphoreLocation(const Location& submit_loc, uint32_
     return submit_loc.dot(field, index);
 }
 
-static bool FindLayouts(const vvl::Image& image_state, std::vector<VkImageLayout>& layouts) {
-    if (!image_state.layout_map) {
-        return false;
-    }
-    const auto& layout_map = *image_state.layout_map;
-    auto guard = image_state.LayoutMapReadLock();
-
-    // TODO: Make this robust for >1 aspect mask. Now it will just say ignore potential errors in this case.
-    if (layout_map.size() > image_state.GetArrayLayers() * image_state.GetMipLevels()) {
-        return false;
-    }
-
-    for (const auto& entry : layout_map) {
-        layouts.emplace_back(entry.second);
-    }
-    return true;
-}
-
 void QueueSubmissionValidator::Validate(const vvl::QueueSubmission& submission) const {
     // Ensure that timeline signals are monotonically increasing values
     for (uint32_t i = 0; i < (uint32_t)submission.signal_semaphores.size(); ++i) {
@@ -73,40 +55,5 @@ void QueueSubmissionValidator::Validate(const vvl::QueueSubmission& submission) 
                                  "(%s) signaled with value %" PRIu64 " which is smaller than the current value %" PRIu64,
                                  core_checks.FormatHandle(signal.semaphore->VkHandle()).c_str(), signal.payload, current_payload);
         }
-    }
-
-    // Validate image layouts on the command buffer boundaries
-    {
-        vvl::unordered_map<const vvl::Image*, ImageLayoutMap> local_image_layout_map;
-        for (const vvl::CommandBufferSubmission& cb_submission : submission.cb_submissions) {
-            auto cb_guard = cb_submission.cb->ReadLock();
-            core_checks.ValidateCmdBufImageLayouts(submission.loc.Get(), *cb_submission.cb, local_image_layout_map);
-        }
-    }
-
-    // Check that image being presented has correct layout
-    if (submission.swapchain) {
-        std::vector<VkImageLayout> layouts;
-        if (submission.swapchain_image && FindLayouts(*submission.swapchain_image, layouts)) {
-            for (auto layout : layouts) {
-                if (layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR && layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR) {
-                    core_checks.LogError(
-                        "VUID-VkPresentInfoKHR-pImageIndices-01430", submission.swapchain_image->Handle(), submission.loc.Get(),
-                        "images passed to present must be in layout VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or "
-                        "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR but %s is in %s.",
-                        core_checks.FormatHandle(submission.swapchain_image->Handle()).c_str(), string_VkImageLayout(layout));
-                }
-            }
-        }
-    }
-}
-
-void QueueSubmissionValidator::Update(vvl::QueueSubmission& submission) {
-    for (vvl::CommandBufferSubmission& cb_submission : submission.cb_submissions) {
-        auto cb_guard = cb_submission.cb->WriteLock();
-        for (const vvl::CommandBuffer* secondary : cb_submission.cb->linked_command_buffers) {
-            core_checks.UpdateCmdBufImageLayouts(*secondary);
-        }
-        core_checks.UpdateCmdBufImageLayouts(*cb_submission.cb);
     }
 }

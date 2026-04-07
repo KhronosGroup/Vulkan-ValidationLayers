@@ -1229,7 +1229,6 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
 
 void QueueSubState::Retire(vvl::QueueSubmission& submission) {
     queue_submission_validator_.Validate(submission);
-    queue_submission_validator_.Update(submission);
 
     auto is_query_updated_after = [this](const QueryObject& query_object) {
         auto guard = base.Lock();

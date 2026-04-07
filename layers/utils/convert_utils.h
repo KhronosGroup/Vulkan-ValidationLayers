@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,15 +25,29 @@ vku::safe_VkImageMemoryBarrier2 ConvertVkImageMemoryBarrierToV2(const VkImageMem
                                                                VkPipelineStageFlags2 srcStageMask,
                                                                VkPipelineStageFlags2 dstStageMask);
 
-// Converts array of VkSubmitInfo into array of VkSubmitInfo2.
-// Constructor performs the conversion. The result is stored into submit_infos2.
-struct SubmitInfoConverter {
-    SubmitInfoConverter(const VkSubmitInfo* submit_infos, uint32_t count);
+// Converts an array of VkSubmitInfo to an array of VkSubmitInfo2.
+// The constructor performs the conversion. The result is stored in submit_infos2.
+struct SubmitInfoArrayConverter {
+    SubmitInfoArrayConverter(const VkSubmitInfo* submit_infos, uint32_t count);
 
-    // That's the conversion result
+    // Conversion result
     std::vector<VkSubmitInfo2> submit_infos2;
 
-    // Helper structures referenced by VkSubmitInfo2 objects
+    // Objects referenced by VkSubmitInfo2 objects
+    std::vector<VkSemaphoreSubmitInfo> wait_infos;
+    std::vector<VkCommandBufferSubmitInfo> cb_infos;
+    std::vector<VkSemaphoreSubmitInfo> signal_infos;
+};
+
+// Converts a VkSubmitInfo to VkSubmitInfo2.
+// The constructor performs the conversion. The result is stored in submit_info2.
+struct SubmitInfoConverter {
+    SubmitInfoConverter(const VkSubmitInfo& submit_info);
+
+    // Conversion result
+    VkSubmitInfo2 submit_info2;
+
+    // Objects referenced by VkSubmitInfo2 object
     std::vector<VkSemaphoreSubmitInfo> wait_infos;
     std::vector<VkCommandBufferSubmitInfo> cb_infos;
     std::vector<VkSemaphoreSubmitInfo> signal_infos;

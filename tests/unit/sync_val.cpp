@@ -5043,21 +5043,65 @@ TEST_F(NegativeSyncVal, QSOBarrierHazard) {
                                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     cb1.End();
 
-    // We're going to do the copy first, then use the skip on fail, to test three different ways...
     queue0->Submit(cb0, vkt::Signal(semaphore));
-
-    // First asynchronously fail -- the pipeline barrier in B shouldn't work on queue 1
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-READ ");
-    queue1->Submit(cb1);
-    m_errorMonitor->VerifyFound();
-
-    // Next synchronously fail -- the pipeline barrier in B shouldn't work on queue 1
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
     queue1->Submit(cb1, vkt::Wait(semaphore, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT));
     m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}
 
-    // Then prove qso works (note that with the failure, the semaphore hasn't been waited, nor the layout changed)
-    queue0->Submit(cb1, vkt::Wait(semaphore, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT));
+TEST_F(NegativeSyncVal, QSOBarrierHazardAsync) {
+    all_queue_count_ = true;
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    auto [queue0, queue1] = GetTwoQueuesFromSameFamily(m_device->QueuesWithTransferCapability());
+    if (!queue0) {
+        GTEST_SKIP() << "Test requires two queues with transfer capabilities from the same queue family";
+    }
+
+    vkt::CommandPool cmd_pool(*m_device, queue0->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
+    vkt::CommandBuffer cb0(*m_device, cmd_pool);
+    vkt::CommandBuffer cb1(*m_device, cmd_pool);
+    vkt::CommandBuffer cb2(*m_device, cmd_pool);
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_c(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    vkt::Semaphore semaphore(*m_device);
+
+    VkImageUsageFlags usage =
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
+
+    vkt::Image image_a(*m_device, image_ci);
+    image_a.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    vkt::Image image_b(*m_device, image_ci);
+    image_b.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageSubresourceLayers all_layers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    VkOffset3D zero_offset{0, 0, 0};
+    VkExtent3D full_extent{128, 128, 1};  // <-- image type is 2D
+    VkImageCopy full_region = {all_layers, zero_offset, all_layers, zero_offset, full_extent};
+
+    cb0.Begin();
+    vk::CmdCopyImage(cb0, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    cb0.End();
+
+    cb1.Begin();
+    image_a.ImageMemoryBarrier(cb1, VK_ACCESS_NONE, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+                               VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    cb1.End();
+
+    queue0->Submit(cb0, vkt::Signal(semaphore));
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-READ ");
+    queue1->Submit(cb1);
+    m_errorMonitor->VerifyFound();
     m_device->Wait();
 }
 
