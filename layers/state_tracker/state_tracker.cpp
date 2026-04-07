@@ -1132,7 +1132,7 @@ void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const
 
         std::vector<VkQueueFamilyProperties2> props(queue_family_count, vku::InitStruct<VkQueueFamilyProperties2>());
 
-        if (extensions.vk_khr_video_queue) {
+        if (IsExtEnabled(extensions.vk_khr_video_queue)) {
             for (uint32_t i = 0; i < queue_family_count; ++i) {
                 ext_props[i].query_result_status_props = vku::InitStructHelper();
                 ext_props[i].video_props = vku::InitStructHelper(&ext_props[i].query_result_status_props);
