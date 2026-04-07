@@ -46,6 +46,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordSetScissor(uint32_t first_scissor, uint32_t scissor_count) final;
     void RecordSetScissorWithCount(uint32_t scissor_count) final;
 
+    void RecordBindIndexbuffer() final;
+    void RecordSetPrimitiveRestartIndex(uint32_t primitive_restart_index) final;
+
     void RecordBeginRendering(const VkRenderingInfo &rendering_info, const Location &loc) final;
     void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin, const VkSubpassBeginInfo &subpass_begin_info,
                                const Location &loc) final;
@@ -177,6 +180,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
         bool used_dynamic_count;  // true if any draw recorded used VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT
     } scissor;
+
+    // VK_EXT_primitive_restart_index
+    uint32_t custom_primitive_restart_index;
 
     uint32_t used_viewport_scissor_count;
 

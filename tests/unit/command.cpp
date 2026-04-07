@@ -5188,3 +5188,27 @@ TEST_F(NegativeCommand, ResolveImage2StencilResolveMode) {
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeCommand, SetPrimitiveRestartIndex) {
+    AddRequiredExtensions(VK_EXT_PRIMITIVE_RESTART_INDEX_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::primitiveRestartIndex);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Buffer index_buffer(*m_device, 64, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.ia_ci_.primitiveRestartEnable = VK_TRUE;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdSetPrimitiveRestartIndexEXT(m_command_buffer, 0xFFFFFFFF);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-primitiveRestartIndex-12401");
+    vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 3, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}

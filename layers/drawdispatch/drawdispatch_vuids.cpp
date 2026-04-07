@@ -20,6 +20,7 @@
 
 #include "drawdispatch_vuids.h"
 #include "error_message/logging.h"
+#include "generated/error_location_helper.h"
 
 namespace vvl {
 // clang-format off
@@ -56,7 +57,6 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexed() : DrawDispatchVuid(Func::vkCmdDrawIndexed) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndexed-None-08606";
-        index_binding_07312                      = "VUID-vkCmdDrawIndexed-None-07312";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndexed-None-08600";
         vertex_binding_attribute_02721           = "VUID-vkCmdDrawIndexed-None-02721";
         unprotected_command_buffer_02707         = "VUID-vkCmdDrawIndexed-commandBuffer-02707";
@@ -72,7 +72,6 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
     DispatchVuidsCmdDrawMultiIndexedEXT() : DrawDispatchVuid(Func::vkCmdDrawMultiIndexedEXT) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawMultiIndexedEXT-None-08606";
-        index_binding_07312                      = "VUID-vkCmdDrawMultiIndexedEXT-None-07312";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMultiIndexedEXT-None-08600";
         vertex_binding_attribute_02721           = "VUID-vkCmdDrawMultiIndexedEXT-None-02721";
         unprotected_command_buffer_02707         = "VUID-vkCmdDrawMultiIndexedEXT-commandBuffer-02707";
@@ -105,7 +104,6 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexedIndirect() : DrawDispatchVuid(Func::vkCmdDrawIndexedIndirect) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndexedIndirect-None-08606";
-        index_binding_07312                      = "VUID-vkCmdDrawIndexedIndirect-None-07312";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndexedIndirect-None-08600";
         indirect_protected_cb_02711              = "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02711";
         indirect_contiguous_memory_02708         = "VUID-vkCmdDrawIndexedIndirect-buffer-02708";
@@ -173,7 +171,6 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexedIndirectCount() : DrawDispatchVuid(Func::vkCmdDrawIndexedIndirectCount) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndexedIndirectCount-None-08606";
-        index_binding_07312                      = "VUID-vkCmdDrawIndexedIndirectCount-None-07312";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndexedIndirectCount-None-08600";
         indirect_protected_cb_02711              = "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02711";
         indirect_contiguous_memory_02708         = "VUID-vkCmdDrawIndexedIndirectCount-buffer-02708";
@@ -418,7 +415,6 @@ struct DispatchVuidsCmdDrawIndirect2KHR : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawIndexedIndirect2KHR : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexedIndirect2KHR() : DrawDispatchVuid(Func::vkCmdDrawIndexedIndirect2KHR) {
         pipeline_bound_08606                      = "VUID-vkCmdDrawIndexedIndirect2KHR-None-08606";
-        index_binding_07312                       = "VUID-vkCmdDrawIndexedIndirect2KHR-None-07312";
         compatible_pipeline_08600                 = "VUID-vkCmdDrawIndexedIndirect2KHR-None-08600";
         indirect_protected_cb_02711               = "VUID-vkCmdDrawIndexedIndirect2KHR-commandBuffer-13059";
         indirect_buffer_bit_02290                 = "VUID-VkDrawIndirect2InfoKHR-addressRange-13107";
@@ -454,7 +450,6 @@ struct DispatchVuidsCmdDrawIndirectCount2KHR : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawIndexedIndirectCount2KHR : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexedIndirectCount2KHR() : DrawDispatchVuid(Func::vkCmdDrawIndexedIndirectCount2KHR) {
         pipeline_bound_08606                      = "VUID-vkCmdDrawIndexedIndirectCount2KHR-None-08606";
-        index_binding_07312                       = "VUID-vkCmdDrawIndexedIndirectCount2KHR-None-07312";
         compatible_pipeline_08600                 = "VUID-vkCmdDrawIndexedIndirectCount2KHR-None-08600";
         indirect_protected_cb_02711               = "VUID-vkCmdDrawIndexedIndirectCount2KHR-commandBuffer-13060";
         indirect_buffer_bit_02290                 = "VUID-VkDrawIndirectCount2InfoKHR-addressRange-13107";
@@ -1164,6 +1159,11 @@ std::string CreateActionVuid(vvl::Func function, const ActionVUID id) {
         // ### VUID-vkCmdDraw-dynamicRenderingLocalRead-11797
         case ActionVUID::DYNAMIC_RENDERING_LOCAL_READ_11797: suffix = "dynamicRenderingLocalRead-11797"; break;
 
+        // ### VUID-vkCmdDrawIndexed-None-07312
+        case ActionVUID::INDEX_BINDING_07312: suffix = "None-07312"; break;
+        // ### VUID-vkCmdDrawIndexed-primitiveRestartIndex-12401
+        case ActionVUID::PRIMITIVE_RESTART_INDEX_12401: suffix = "primitiveRestartIndex-12401"; break;
+
         // ### VUID-vkCmdDispatch-None-10743
         case ActionVUID::COMPUTE_NOT_BOUND_10743: suffix = "None-10743"; break;
 
@@ -1207,6 +1207,16 @@ std::string CreateActionVuid(vvl::Func function, const ActionVUID id) {
     if (!suffix) {
         return kVUIDUndefined;
     }
+
+    // TODO - need a more practical way to do these
+    if (function == vvl::Func::vkCmdDrawIndexedIndirectCountKHR) {
+        function = vvl::Func::vkCmdDrawIndexedIndirectCount;
+    } else if (function == vvl::Func::vkCmdDrawIndirectCountKHR) {
+        function = vvl::Func::vkCmdDrawIndirectCount;
+    } else if (function == vvl::Func::vkCmdDispatchBaseKHR) {
+        function = vvl::Func::vkCmdDispatchBase;
+    }
+
     // When c++20 is added, turn to std::format
     return std::string("VUID-") + String(function) + "-" + suffix;
 }

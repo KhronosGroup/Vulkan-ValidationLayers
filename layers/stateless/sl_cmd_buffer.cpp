@@ -1245,6 +1245,16 @@ bool Device::manual_PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuf
     return skip;
 }
 
+bool Device::manual_PreCallValidateCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
+                                                                  const Context& context) const {
+    bool skip = false;
+    if (!enabled_features.primitiveRestartIndex) {
+        skip |= LogError("VUID-vkCmdSetPrimitiveRestartIndexEXT-primitiveRestartIndex-12395", commandBuffer,
+                         context.error_obj.location, "primitiveRestartIndex feature was not enabled.");
+    }
+    return skip;
+}
+
 static size_t ComponentTypeBytesPerElement(VkComponentTypeKHR component_type) {
     switch (component_type) {
         case VK_COMPONENT_TYPE_SINT8_KHR:

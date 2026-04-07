@@ -29309,9 +29309,11 @@ bool Instance::PreCallValidateGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysi
 bool Device::PreCallValidateCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
+    Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_ext_primitive_restart_index))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_primitive_restart_index});
+    if (!skip) skip |= manual_PreCallValidateCmdSetPrimitiveRestartIndexEXT(commandBuffer, primitiveRestartIndex, context);
     return skip;
 }
 

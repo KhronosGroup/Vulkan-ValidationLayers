@@ -1963,6 +1963,20 @@ void CommandBuffer::RecordCopyBuffer2(vvl::Buffer& src_buffer_state, vvl::Buffer
     }
 }
 
+void CommandBuffer::RecordBindIndexbuffer(const Location& loc) {
+    RecordCommand(loc);
+    for (auto& item : sub_states_) {
+        item.second->RecordBindIndexbuffer();
+    }
+}
+
+void CommandBuffer::RecordSetPrimitiveRestartIndex(uint32_t primitive_restart_index, const Location& loc) {
+    RecordCommand(loc);
+    for (auto& item : sub_states_) {
+        item.second->RecordSetPrimitiveRestartIndex(primitive_restart_index);
+    }
+}
+
 void CommandBuffer::RecordCopyImage(vvl::Image& src_image_state, vvl::Image& dst_image_state, VkImageLayout src_image_layout,
                                     VkImageLayout dst_image_layout, uint32_t region_count, const VkImageCopy* regions,
                                     const Location& loc) {
