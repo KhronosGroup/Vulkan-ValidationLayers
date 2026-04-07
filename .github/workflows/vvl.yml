@@ -479,7 +479,8 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     # List of all jobs required
-    needs: [android, chromium, linux, windows]
+    # Add 'chromium' back when google servers are working again
+    needs: [android, linux, windows]
     steps:
       - name: Check status of jobs
         run: |
