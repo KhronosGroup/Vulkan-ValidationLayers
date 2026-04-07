@@ -6627,7 +6627,7 @@ TEST_F(NegativeWsi, InvalidTimeDomainId) {
     VkPresentTimingsInfoEXT present_timings_info = vku::InitStructHelper(&present_id);
     present_timings_info.swapchainCount = 1u;
     present_timings_info.pTimingInfos = &present_timing_info;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkPresentTimingInfoEXT-timeDomainId");
+    m_errorMonitor->SetDesiredError("VUID-VkPresentTimingInfoEXT-timeDomainId-12400");
     m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_timings_info);
     m_errorMonitor->VerifyFound();
 }
