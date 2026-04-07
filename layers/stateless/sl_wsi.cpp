@@ -212,6 +212,14 @@ bool Device::ValidateSwapchainCreateInfo(const Context& context, const VkSwapcha
         }
     }
 
+    if (create_info.flags & VK_SWAPCHAIN_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT) {
+        if (!enabled_features.multisampledRenderToSwapchain) {
+            skip |= LogError("VUID-VkSwapchainCreateInfoKHR-multisampledRenderToSwapchain-12447", device, loc.dot(Field::flags),
+                             "is %s, but multisampledRenderToSwapchain is not enabled.",
+                             string_VkSwapchainCreateFlagsKHR(create_info.flags).c_str());
+        }
+    }
+
     skip |= ValidateSwapchainCreateInfoMaintenance1(create_info, loc);
 
     return skip;
@@ -400,6 +408,8 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(Vk
         vku::FindStructInPNextChain<VkSurfacePresentModeCompatibilityKHR>(pSurfaceCapabilities->pNext);
     const auto* surface_present_scaling_compatibilities =
         vku::FindStructInPNextChain<VkSurfacePresentScalingCapabilitiesKHR>(pSurfaceCapabilities->pNext);
+    const auto* swapchain_flags_surface_capabilities =
+        vku::FindStructInPNextChain<VkSwapchainFlagsSurfaceCapabilitiesEXT>(pSurfaceCapabilities->pNext);
 
     if (!(vku::FindStructInPNextChain<VkSurfacePresentModeKHR>(pSurfaceInfo->pNext))) {
         if (surface_present_mode_compatibility) {
@@ -433,6 +443,14 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(Vk
                 "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07779", physicalDevice,
                 error_obj.location.dot(Field::pSurfaceCapabilities).dot(Field::pNext),
                 "contains a VkSurfacePresentScalingCapabilitiesKHR structure, but pSurfaceInfo->surface is VK_NULL_HANDLE.\n%s",
+                PrintPNextChain(Struct::VkSurfaceCapabilities2KHR, pSurfaceCapabilities->pNext).c_str());
+        }
+
+        if (swapchain_flags_surface_capabilities) {
+            skip |= LogError(
+                "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-12446", physicalDevice,
+                error_obj.location.dot(Field::pSurfaceCapabilities).dot(Field::pNext),
+                "contains a VkSwapchainFlagsSurfaceCapabilitiesEXT structure, but pSurfaceInfo->surface is VK_NULL_HANDLE.\n%s",
                 PrintPNextChain(Struct::VkSurfaceCapabilities2KHR, pSurfaceCapabilities->pNext).c_str());
         }
     }
