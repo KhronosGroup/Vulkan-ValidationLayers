@@ -1030,8 +1030,10 @@ TEST_F(NegativeImageLayout, TimelineSemaphoreOrdering) {
     m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1));
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
     m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineSignal(semaphore, 1));
-    m_device->Wait();
     m_errorMonitor->VerifyFound();
+
+    semaphore.Signal(1);
+    m_device->Wait();
 }
 
 TEST_F(NegativeImageLayout, DynamicRenderingColorAttachmentLayout) {

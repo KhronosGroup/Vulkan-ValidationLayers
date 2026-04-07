@@ -719,6 +719,26 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
     return skip;
 }
 
+void CoreChecks::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore,
+                                               const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
+    auto semaphore_state = Get<vvl::Semaphore>(*pSemaphore);
+    if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+        submit_time_tracker.OnCreateTimelineSemaphore(*pSemaphore, semaphore_state->initial_value);
+    }
+}
+
+void CoreChecks::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator,
+                                               const RecordObject& record_obj) {
+    auto semaphore_state = Get<vvl::Semaphore>(semaphore);
+    if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+        submit_time_tracker.OnDestroyTimelineSemaphore(semaphore);
+    }
+}
+
 bool CoreChecks::PreCallValidateWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
                                                   const ErrorObject& error_obj) const {
     return PreCallValidateWaitSemaphores(device, pWaitInfo, timeout, error_obj);
@@ -1627,6 +1647,10 @@ bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemapho
                          "(%" PRIu64 ") exceeds limit regarding %s semaphore %s payload (%" PRIu64 ").", pSignalInfo->value,
                          FormatHandle(*semaphore_state).c_str(), payload_type, *far_away_payload);
     }
+
+    // Perform submit time validation at the end.
+    // If signal semaphore API is used incorrectly, we want those errors to be reported first
+    skip |= submit_time_tracker.ProcessSignalSemaphore(*pSignalInfo);
     return skip;
 }
 

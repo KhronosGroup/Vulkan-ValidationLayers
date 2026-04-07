@@ -2409,7 +2409,7 @@ bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
         return skip;
     }
 
-    SubmitInfoConverter submit_info(pSubmits, submitCount);
+    SubmitInfoArrayConverter submit_info(pSubmits, submitCount);
     const VkSubmitInfo2* submits = submit_info.submit_infos2.data();
 
     std::lock_guard lock_guard(queue_mutex_);

@@ -1257,6 +1257,10 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         skip |= ValidateSwapchainPresentFenceInfo(queue, *pPresentInfo, *swapchain_present_fence_info, present_info_loc);
     }
 
+    // Perform submit time validation at the end.
+    // If present API is used incorrectly, we want those errors to be reported first
+    skip |= submit_time_tracker.ProcessPresent(*pPresentInfo, present_info_loc);
+
     return skip;
 }
 
@@ -1537,6 +1541,41 @@ bool CoreChecks::PreCallValidateWaitForPresent2KHR(VkDevice device, VkSwapchainK
                              error_obj.location.dot(Field::pPresentWait2Info).dot(Field::presentId),
                              "is %" PRIu64 ", but this value was never associated with the VkPresentWait2InfoKHR::presentId on %s.",
                              pPresentWait2Info->presentId, FormatHandle(swapchain).c_str());
+        }
+    }
+    return skip;
+}
+
+static bool FindLayouts(const vvl::Image& image_state, std::vector<VkImageLayout>& layouts) {
+    if (!image_state.layout_map) {
+        return false;
+    }
+    const auto& layout_map = *image_state.layout_map;
+    auto guard = image_state.LayoutMapReadLock();
+
+    // TODO: Make this robust for >1 aspect mask. Now it will just say ignore potential errors in this case.
+    if (layout_map.size() > image_state.GetArrayLayers() * image_state.GetMipLevels()) {
+        return false;
+    }
+
+    for (const auto& entry : layout_map) {
+        layouts.emplace_back(entry.second);
+    }
+    return true;
+}
+
+bool CoreChecks::ProcessPresentBatch(const vvl::Image& swapchain_image, const Location& present_info_loc) {
+    bool skip = false;
+    // Check that image being presented has correct layout
+    std::vector<VkImageLayout> layouts;
+    if (FindLayouts(swapchain_image, layouts)) {
+        for (auto layout : layouts) {
+            if (layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR && layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR) {
+                skip |= LogError("VUID-VkPresentInfoKHR-pImageIndices-01430", swapchain_image.Handle(), present_info_loc,
+                                 "images passed to present must be in layout VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or "
+                                 "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR but %s is in %s.",
+                                 FormatHandle(swapchain_image.Handle()).c_str(), string_VkImageLayout(layout));
+            }
         }
     }
     return skip;

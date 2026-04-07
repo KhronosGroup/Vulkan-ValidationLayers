@@ -290,7 +290,9 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                                  chained_device_group_struct->commandBufferCount, submit.commandBufferCount);
             }
         }
-        skip |= submit_time_tracker.ProcessSubmissionBatch(submit);
+        // Perform submit time validation at the end.
+        // If submit API is used incorrectly, we want those errors to be reported first
+        skip |= submit_time_tracker.ProcessSubmitInfo(submit, queue, submit_loc);
     }
 
     return skip;
@@ -450,6 +452,9 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
             skip |= LogError("VUID-VkSubmitInfo2-commandBuffer-06010", queue, submit_loc,
                              "has a suspended render pass instance that was not resumed.");
         }
+        // Perform submit time validation at the end.
+        // If submit API is used incorrectly, we want those errors to be reported first
+        skip |= submit_time_tracker.ProcessSubmitInfo(submit, queue, submit_loc);
     }
 
     return skip;
@@ -773,6 +778,33 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                     const VkSparseImageMemoryBind& memory_bind = image_bind.pBinds[image_bind_idx];
                     skip |= ValidateSparseImageMemoryBind(image_state.get(), memory_bind, bind_loc, image_bind_loc);
                 }
+            }
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ProcessSubmissionBatch(const std::vector<std::shared_ptr<vvl::CommandBuffer>>& command_buffers,
+                                        const Location& submit_loc) {
+    bool skip = false;
+    // Validate image layouts on the command buffer boundaries
+    {
+        vvl::unordered_map<const vvl::Image*, ImageLayoutMap> local_image_layout_map;
+        for (const auto& cb : command_buffers) {
+            if (cb) {
+                auto cb_guard = cb->ReadLock();
+                skip |= ValidateCmdBufImageLayouts(submit_loc, *cb, local_image_layout_map);
+            }
+        }
+    }
+    if (!skip) {
+        for (const auto& cb : command_buffers) {
+            if (cb) {
+                auto cb_guard = cb->WriteLock();
+                for (const vvl::CommandBuffer* secondary : cb->linked_command_buffers) {
+                    UpdateCmdBufImageLayouts(*secondary);
+                }
+                UpdateCmdBufImageLayouts(*cb);
             }
         }
     }
