@@ -65,7 +65,7 @@ static inline const ErrorMsgBuffer kUsageErrorMsgBuffer = [](const vvl::Buffer& 
     return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage);
 };
 static inline const ErrorMsgBuffer kFlagErrorMsgBuffer = [](const vvl::Buffer& buffer_state) {
-    return "has flag " + string_VkBufferCreateFlags(buffer_state.create_info.flags);
+    return "has flag " + string_VkBufferCreateFlags(buffer_state.GetFlags());
 };
 
 template <size_t ChecksCount = 1>

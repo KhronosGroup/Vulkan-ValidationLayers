@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,14 @@ const AccessRange kFullRange(0, std::numeric_limits<VkDeviceSize>::max());
 AccessRange MakeRange(VkDeviceSize start, VkDeviceSize size) { return AccessRange(start, start + size); }
 
 AccessRange MakeRange(const vvl::Buffer& buffer, VkDeviceSize offset, VkDeviceSize size) {
-    if (offset >= buffer.create_info.size) {
+    if (offset >= buffer.GetSize()) {
         return {};
     }
     VkDeviceSize end;
     if (size == VK_WHOLE_SIZE) {
-        end = buffer.create_info.size;
+        end = buffer.GetSize();
     } else {
-        end = std::min(offset + size, buffer.create_info.size);
+        end = std::min(offset + size, buffer.GetSize());
     }
     return AccessRange(offset, end);
 }

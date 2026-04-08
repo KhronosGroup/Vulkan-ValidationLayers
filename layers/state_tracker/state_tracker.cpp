@@ -125,11 +125,11 @@ small_vector<vvl::Buffer*, 2> DeviceState::GetBuffersByAddressRange(const VkDevi
     for (vvl::Buffer* const buffer : buffers) {
         // address_range.address already belongs to buffer by definition,
         // just check that end address of address_range is inferior to buffer's end address
-        if (buffer->deviceAddress + buffer->safe_create_info.size < address_range.address + address_range.size) {
+        if (buffer->deviceAddress + buffer->GetSize() < address_range.address + address_range.size) {
             continue;
         }
 
-        if ((buffer->safe_create_info.usage & buffer_usage_flags) == buffer_usage_flags) {
+        if ((buffer->usage & buffer_usage_flags) == buffer_usage_flags) {
             filtered_buffers.emplace_back(buffer);
         }
     }
@@ -852,7 +852,7 @@ void DeviceState::RecordCreateDescriptorBuffer(const vvl::Buffer& buffer_state, 
 
 void DeviceState::RecordDestoryDescriptorBuffer(const vvl::Buffer& buffer_state) {
     if ((buffer_state.usage & kDescriptorBufferUsages) != 0) {
-        const VkDeviceSize size = buffer_state.create_info.size;
+        const VkDeviceSize size = buffer_state.GetSize();
         descriptor_buffer_address_space.all -= size;
 
         if (buffer_state.usage & VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
@@ -3322,6 +3322,20 @@ void DeviceState::PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuff
     PostCallRecordCmdPushConstants2(commandBuffer, pPushConstantsInfo, record_obj);
 }
 
+static VkDeviceSize GetBufferRegionSize(const std::shared_ptr<const Buffer>& buffer_state, VkDeviceSize offset, VkDeviceSize size) {
+    if (buffer_state) {
+        const auto buffer_size = buffer_state->GetSize();
+        if (offset < buffer_size) {
+            if (size == VK_WHOLE_SIZE) {
+                return buffer_size - offset;
+            } else if ((offset + size) <= buffer_size) {
+                return size;
+            }
+        }
+    }
+    return 0;
+}
+
 void DeviceState::PostCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                    VkIndexType indexType, const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -3335,7 +3349,7 @@ void DeviceState::PostCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer
         auto buffer_state = Get<Buffer>(buffer);
         // Being able to set the size was added in VK_KHR_maintenance5 via vkCmdBindIndexBuffer2KHR
         // Using this function is the same as passing in VK_WHOLE_SIZE
-        VkDeviceSize buffer_size = Buffer::GetRegionSize(buffer_state, offset, VK_WHOLE_SIZE);
+        VkDeviceSize buffer_size = GetBufferRegionSize(buffer_state, offset, VK_WHOLE_SIZE);
         cb_state->index_buffer_binding = IndexBufferBinding(buffer, buffer_size, offset, indexType);
 
         // Add binding for this index buffer to this commandbuffer
@@ -3356,7 +3370,7 @@ void DeviceState::PostCallRecordCmdBindIndexBuffer2(VkCommandBuffer commandBuffe
         }
     } else {
         auto buffer_state = Get<Buffer>(buffer);
-        VkDeviceSize buffer_size = Buffer::GetRegionSize(buffer_state, offset, size);
+        VkDeviceSize buffer_size = GetBufferRegionSize(buffer_state, offset, size);
         cb_state->index_buffer_binding = IndexBufferBinding(buffer, buffer_size, offset, indexType);
 
         // Add binding for this index buffer to this commandbuffer
@@ -3389,7 +3403,7 @@ void DeviceState::PostCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuff
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto buffer_state = Get<Buffer>(pBuffers[i]);
         // the stride is set from the pipeline or dynamic state
-        const VkDeviceSize effective_size = Buffer::GetRegionSize(buffer_state, pOffsets[i], VK_WHOLE_SIZE);
+        const VkDeviceSize effective_size = GetBufferRegionSize(buffer_state, pOffsets[i], VK_WHOLE_SIZE);
         cb_state->current_vertex_buffer_binding_info[i + firstBinding].Set(pBuffers[i], effective_size, pOffsets[i], nullptr);
 
         // Add binding for this vertex buffer to this commandbuffer
@@ -5892,7 +5906,7 @@ void DeviceState::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer commandBuf
         auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
 
         const VkDeviceSize* stride_ptr = pStrides ? &pStrides[i] : nullptr;
-        const VkDeviceSize effective_size = Buffer::GetRegionSize(buffer_state, pOffsets[i], pSizes ? pSizes[i] : VK_WHOLE_SIZE);
+        const VkDeviceSize effective_size = GetBufferRegionSize(buffer_state, pOffsets[i], pSizes ? pSizes[i] : VK_WHOLE_SIZE);
 
         cb_state->current_vertex_buffer_binding_info[i + firstBinding].Set(pBuffers[i], effective_size, pOffsets[i], stride_ptr);
 

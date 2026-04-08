@@ -2353,9 +2353,9 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList& objects, const Locat
         }
 
         skip |= ValidateBarrierQueueFamilies(objects, barrier_loc, buf_loc, mem_barrier, buffer_state->Handle(),
-                                             buffer_state->create_info.sharingMode, cb_state.command_pool->queueFamilyIndex);
+                                             buffer_state->GetSharingMode(), cb_state.command_pool->queueFamilyIndex);
 
-        auto buffer_size = buffer_state->create_info.size;
+        auto buffer_size = buffer_state->GetSize();
         if (mem_barrier.offset >= buffer_size) {
             auto offset_loc = barrier_loc.dot(Field::offset);
             const auto& vuid = GetBufferBarrierVUID(offset_loc, vvl::BufferError::kOffsetTooBig);

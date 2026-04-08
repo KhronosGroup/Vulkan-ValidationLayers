@@ -110,7 +110,7 @@ static glsl::DescriptorEncoding GetDescriptorEncoding(const vvl::MutableDescript
         case DescriptorClass::GeneralBuffer: {
             auto buffer_state = desc.GetSharedBufferState();
             return glsl::DescriptorEncoding(desc_class, GetId(buffer_state.get()),
-                                            buffer_state ? static_cast<uint32_t>(buffer_state->create_info.size) : vvl::kNoIndex32);
+                                            buffer_state ? static_cast<uint32_t>(buffer_state->GetSize()) : vvl::kNoIndex32);
         }
         case DescriptorClass::TexelBuffer: {
             auto buffer_view_state = desc.GetSharedBufferViewState();

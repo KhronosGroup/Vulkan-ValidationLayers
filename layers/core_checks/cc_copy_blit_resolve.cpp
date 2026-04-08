@@ -808,41 +808,41 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer commandBuffer, cons
 
         // src
         {
-            if (region.srcOffset >= src_buffer_state.create_info.size) {
+            if (region.srcOffset >= src_buffer_state.GetSize()) {
                 const char* vuid = is_2 ? "VUID-VkCopyBufferInfo2-srcOffset-00113" : "VUID-vkCmdCopyBuffer-srcOffset-00113";
                 const LogObjectList objlist(commandBuffer, src_buffer_state.Handle());
                 skip |= LogError(vuid, objlist, region_loc.dot(Field::srcOffset),
                                  "(%" PRIuLEAST64 ") is greater than size of srcBuffer (%" PRIuLEAST64 ").", region.srcOffset,
-                                 src_buffer_state.create_info.size);
+                                 src_buffer_state.GetSize());
             }
 
-            if (region.size > (src_buffer_state.create_info.size - region.srcOffset)) {
+            if (region.size > (src_buffer_state.GetSize() - region.srcOffset)) {
                 const char* vuid = is_2 ? "VUID-VkCopyBufferInfo2-size-00115" : "VUID-vkCmdCopyBuffer-size-00115";
                 const LogObjectList objlist(commandBuffer, src_buffer_state.Handle());
                 skip |= LogError(vuid, objlist, region_loc.dot(Field::size),
                                  "(%" PRIuLEAST64 ") is greater than the source buffer size (%" PRIuLEAST64
                                  ") minus srcOffset (%" PRIuLEAST64 ").",
-                                 region.size, src_buffer_state.create_info.size, region.srcOffset);
+                                 region.size, src_buffer_state.GetSize(), region.srcOffset);
             }
         }
 
         // dst
         {
-            if (region.dstOffset >= dst_buffer_state.create_info.size) {
+            if (region.dstOffset >= dst_buffer_state.GetSize()) {
                 const char* vuid = is_2 ? "VUID-VkCopyBufferInfo2-dstOffset-00114" : "VUID-vkCmdCopyBuffer-dstOffset-00114";
                 const LogObjectList objlist(commandBuffer, dst_buffer_state.Handle());
                 skip |= LogError(vuid, objlist, region_loc.dot(Field::dstOffset),
                                  "(%" PRIuLEAST64 ") is greater than size of dstBuffer (%" PRIuLEAST64 ").", region.dstOffset,
-                                 dst_buffer_state.create_info.size);
+                                 dst_buffer_state.GetSize());
             }
 
-            if (region.size > (dst_buffer_state.create_info.size - region.dstOffset)) {
+            if (region.size > (dst_buffer_state.GetSize() - region.dstOffset)) {
                 const char* vuid = is_2 ? "VUID-VkCopyBufferInfo2-size-00116" : "VUID-vkCmdCopyBuffer-size-00116";
                 const LogObjectList objlist(commandBuffer, dst_buffer_state.Handle());
                 skip |= LogError(vuid, objlist, region_loc.dot(Field::size),
                                  "(%" PRIuLEAST64 ") is greater than the destination buffer size (%" PRIuLEAST64
                                  ") minus dstOffset (%" PRIuLEAST64 ").",
-                                 region.size, dst_buffer_state.create_info.size, region.dstOffset);
+                                 region.size, dst_buffer_state.GetSize(), region.dstOffset);
             }
         }
 
@@ -2139,11 +2139,11 @@ bool CoreChecks::ValidateBufferBounds(const vvl::CommandBuffer& cb_state, const 
 
     const VkDeviceSize buffer_copy_size = region.bufferOffset + texel_offset + block_size;
 
-    if (buffer_state.create_info.size < buffer_copy_size) {
+    if (buffer_state.GetSize() < buffer_copy_size) {
         const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle(), image_state.Handle());
         std::ostringstream ss;
         ss << "is trying to copy " << buffer_copy_size << " bytes to/from the (" << FormatHandle(buffer_state).c_str()
-           << ") which exceeds the VkBuffer total size of " << buffer_state.create_info.size
+           << ") which exceeds the VkBuffer total size of " << buffer_state.GetSize()
            << " bytes.\nLast texel coordinate of the image is at {x = " << last_x << ", y = " << last_y << ", z = " << last_z
            << ", layer = " << last_layer << "}\nrowExtent = " << row_extent << ", sliceExtent = " << slice_extent
            << ", layerExtent = " << layer_extent << "\nThe final byte found is at bufferOffset (" << region.bufferOffset

@@ -274,7 +274,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                         const uint32_t byte_offset = error_record[kInst_LogError_ParameterOffset_1];
                         const uint32_t resource_size = error_record[kInst_LogError_ParameterOffset_2];
                         strm << " access out of bounds. The descriptor buffer (" << gpuav.FormatHandle(buffer_state->Handle())
-                             << ") size is " << buffer_state->create_info.size << " bytes, " << resource_size
+                             << ") size is " << buffer_state->GetSize() << " bytes, " << resource_size
                              << " bytes were bound, and the highest out of bounds access was at [" << byte_offset << "] bytes";
                     } else {
                         // This will only get called when using nullDescriptor without bindless

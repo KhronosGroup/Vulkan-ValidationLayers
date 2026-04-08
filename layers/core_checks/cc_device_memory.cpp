@@ -294,9 +294,9 @@ bool CoreChecks::IgnoreAllocationSize(const VkMemoryAllocateInfo& allocate_info)
 
 bool CoreChecks::HasExternalMemoryImportSupport(const vvl::Buffer& buffer, VkExternalMemoryHandleTypeFlagBits handle_type) const {
     VkPhysicalDeviceExternalBufferInfo info = vku::InitStructHelper();
-    info.flags = buffer.create_info.flags;
+    info.flags = buffer.GetFlags();
     // TODO - Add VkBufferUsageFlags2CreateInfo support
-    info.usage = buffer.create_info.usage;
+    info.usage = static_cast<VkBufferUsageFlags>(buffer.usage);
     info.handleType = handle_type;
     VkExternalBufferProperties properties = vku::InitStructHelper();
     DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(api_version, physical_device, &info, &properties);
@@ -545,7 +545,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                         pAllocateInfo->allocationSize, buffer_loc.Fields().c_str(), FormatHandle(dedicated_buffer).c_str(),
                         buffer_state->requirements.size);
                 }
-                if ((buffer_state->create_info.flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0) {
+                if ((buffer_state->GetFlags() & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0) {
                     skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01436", objlist, buffer_loc,
                                      "(%s) was created with VK_BUFFER_CREATE_SPARSE_BINDING_BIT.",
                                      FormatHandle(dedicated_buffer).c_str());
@@ -918,7 +918,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
         // because they require buffer information.
         if (mem_info->IsExport()) {
             VkPhysicalDeviceExternalBufferInfo external_info = vku::InitStructHelper();
-            external_info.flags = buffer_state->create_info.flags;
+            external_info.flags = buffer_state->GetFlags();
             // TODO: for now, there is no VkBufferUsageFlags2 flag that exceeds 32-bit but should be revisited later
             external_info.usage = VkBufferUsageFlags(buffer_state->usage);
             VkExternalBufferProperties external_properties = vku::InitStructHelper();
@@ -1034,7 +1034,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                              chained_flags_struct ? "" : " (Need to add VkMemoryAllocateFlagsInfo to VkMemoryAllocateInfo::pNext)");
         }
         const VkMemoryAllocateFlags memory_allocate_flags = chained_flags_struct ? chained_flags_struct->flags : 0;
-        if (buffer_state->create_info.flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) {
+        if (buffer_state->GetFlags() & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) {
             if (!(memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT)) {
                 const char* vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-descriptorBufferCaptureReplay-08112"
                                                      : "VUID-vkBindBufferMemory-descriptorBufferCaptureReplay-08112";
@@ -2761,7 +2761,7 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const Vk
 
     if (auto buffer_state = Get<vvl::Buffer>(pInfo->buffer)) {
         const Location info_loc = error_obj.location.dot(Field::pInfo);
-        if ((buffer_state->create_info.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) == 0) {
+        if ((buffer_state->GetFlags() & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) == 0) {
             skip |= ValidateMemoryIsBoundToBuffer(objlist, *buffer_state, info_loc.dot(Field::buffer),
                                                   "VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324");
         }
@@ -2804,7 +2804,7 @@ bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, c
 
     if (auto buffer_state = Get<vvl::Buffer>(pInfo->buffer)) {
         const Location info_loc = error_obj.location.dot(Field::pInfo);
-        if ((buffer_state->create_info.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) == 0) {
+        if ((buffer_state->GetFlags() & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) == 0) {
             skip |= LogError("VUID-vkGetBufferOpaqueCaptureAddress-pInfo-10725", objlist, info_loc.dot(Field::buffer),
                              "was not created with VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.");
         }
@@ -2902,7 +2902,7 @@ bool CoreChecks::ValidateDeviceAddressRange(VkDeviceAddress address, VkDeviceSiz
     BufferAddressValidation<2> buffer_address_validator = {
         {{{vuid,
            [address, size](const vvl::Buffer& buffer_state) {
-               const VkDeviceSize end = buffer_state.create_info.size - (address - buffer_state.deviceAddress);
+               const VkDeviceSize end = buffer_state.GetSize() - (address - buffer_state.deviceAddress);
                return size > end;
            },
            [strided, size]() {
@@ -3047,7 +3047,7 @@ bool CoreChecks::PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBu
                 {{{"VUID-VkDecompressMemoryRegionEXT-srcAddress-07686",
                    [start, size](const vvl::Buffer& buffer_state) {
                        const VkDeviceSize end =
-                           buffer_state.create_info.size - static_cast<VkDeviceSize>(start - buffer_state.deviceAddress);
+                           buffer_state.GetSize() - static_cast<VkDeviceSize>(start - buffer_state.deviceAddress);
                        return size > end;
                    },
                    [size]() { return "The compressedSize (" + std::to_string(size) + ") does not fit in any buffer"; },
@@ -3070,7 +3070,7 @@ bool CoreChecks::PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBu
                 {{{"VUID-VkDecompressMemoryRegionEXT-dstAddress-07688",
                    [start, size](const vvl::Buffer& buffer_state) {
                        const VkDeviceSize end =
-                           buffer_state.create_info.size - static_cast<VkDeviceSize>(start - buffer_state.deviceAddress);
+                           buffer_state.GetSize() - static_cast<VkDeviceSize>(start - buffer_state.deviceAddress);
                        return size > end;
                    },
                    [size]() { return "The decompressedSize (" + std::to_string(size) + ") does not fit in any buffer"; },

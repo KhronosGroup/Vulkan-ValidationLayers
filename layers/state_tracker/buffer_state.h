@@ -32,10 +32,14 @@ class DeviceState;
 class VideoProfileDesc;
 
 class Buffer : public Bindable, public SubStateManager<BufferSubState> {
-  public:
+    // We normally want to allow full access to the |create_info|
+    // but due to things, such as VkBufferUsageFlags2CreateInfo, it is really easy
+    // to not realize that |create_info.usage| is the wrong usage and you need to check the pNext.
+    // The answer is for these cases, to force a getter function for the entire |create_info| to prevent bugs
     const vku::safe_VkBufferCreateInfo safe_create_info;
     const VkBufferCreateInfo &create_info;
 
+  public:
     const VkMemoryRequirements requirements;
     VkDeviceAddress deviceAddress = 0;
     // VkBufferUsageFlags2CreateInfo can be used instead over the VkBufferCreateInfo::usage
@@ -60,20 +64,11 @@ class Buffer : public Bindable, public SubStateManager<BufferSubState> {
 
     VkBuffer VkHandle() const { return handle_.Cast<VkBuffer>(); }
 
-    VkDeviceSize GetRegionSize(VkDeviceSize offset, VkDeviceSize size) const {
-        if (offset < create_info.size) {
-            if (size == VK_WHOLE_SIZE) {
-                return create_info.size - offset;
-            } else if ((offset + size) <= create_info.size) {
-                return size;
-            }
-        }
-        return 0;
-    }
-
-    static VkDeviceSize GetRegionSize(const std::shared_ptr<const Buffer> &buffer_state, VkDeviceSize offset, VkDeviceSize size) {
-        return buffer_state ? buffer_state->GetRegionSize(offset, size) : 0;
-    }
+    VkBufferCreateFlags GetFlags() const { return create_info.flags; }
+    VkDeviceSize GetSize() const { return create_info.size; }
+    VkSharingMode GetSharingMode() const { return create_info.sharingMode; }
+    uint32_t GetQueueFamilyIndexCount() const { return create_info.queueFamilyIndexCount; }
+    const uint32_t* GetQueueFamilyIndices() const { return create_info.pQueueFamilyIndices; }
 
     vvl::range<VkDeviceAddress> DeviceAddressRange() const { return {deviceAddress, deviceAddress + create_info.size}; }
 
@@ -138,7 +133,7 @@ class BufferView : public StateObject, public SubStateManager<BufferViewSubState
     VkDeviceSize Size() const {
         VkDeviceSize size = create_info.range;
         if (size == VK_WHOLE_SIZE) {
-            size = buffer_state->create_info.size - create_info.offset;
+            size = buffer_state->GetSize() - create_info.offset;
         }
         return size;
     }

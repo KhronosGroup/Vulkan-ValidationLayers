@@ -849,11 +849,11 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                 // for validation purposes.
                 auto get_buffer_with_max_addr_range = [](vvl::span<vvl::Buffer* const> buffers, VkDeviceAddress addr) {
                     size_t max_buffer_addr_range_i = 0;
-                    VkDeviceSize max_buffer_addr_range = (buffers[0]->deviceAddress + buffers[0]->safe_create_info.size) - addr;
+                    VkDeviceSize max_buffer_addr_range = (buffers[0]->deviceAddress + buffers[0]->GetSize()) - addr;
                     {
                         for (const auto [buffer_i, buffer] : vvl::enumerate(buffers.data(), buffers.size())) {
                             const VkDeviceSize buffer_range =
-                                (buffers[buffer_i]->deviceAddress + buffers[buffer_i]->safe_create_info.size) - addr;
+                                (buffers[buffer_i]->deviceAddress + buffers[buffer_i]->GetSize()) - addr;
                             if (buffer_range > max_buffer_addr_range) {
                                 max_buffer_addr_range = buffer_range;
                                 max_buffer_addr_range_i = buffer_i;
