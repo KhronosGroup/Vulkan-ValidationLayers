@@ -834,6 +834,24 @@ TEST_F(NegativeShaderObject, LinkedVertexAndMeshStages) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeShaderObject, LinkedGeometryAndMeshStages) {
+    TEST_DESCRIPTION("Attempt to create linked geometry and mesh stages.");
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
+
+    const auto geom_spv = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
+    const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
+
+    VkShaderCreateInfoEXT createInfos[2];
+    createInfos[0] = ShaderCreateInfoLink(geom_spv, VK_SHADER_STAGE_GEOMETRY_BIT);
+    createInfos[1] = ShaderCreateInfoLink(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+
+    VkShaderEXT shaders[2];
+    m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08404");
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeShaderObject, LinkedTaskAndMeshNoTaskShaders) {
     TEST_DESCRIPTION("Attempt to create linked task shader and linked mesh shader with no task shader flag.");
 
