@@ -91,8 +91,8 @@ static bool GetMetalExport(const VkMemoryAllocateInfo& alloc_info) {
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
 DeviceMemory::DeviceMemory(VkDeviceMemory handle, const VkMemoryAllocateInfo* in_allocate_info, uint64_t fake_address,
-                           const VkMemoryType& memory_type, const VkMemoryHeap& memory_heap,
-                           std::optional<DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count)
+                           const VkMemoryType& memory_type, const VkMemoryHeap& memory_heap, VulkanTypedHandle dedicated_binding,
+                           uint32_t physical_device_count)
     : StateObject(handle, kVulkanObjectTypeDeviceMemory),
       safe_allocate_info(in_allocate_info),
       allocate_info(*safe_allocate_info.ptr()),
@@ -100,7 +100,7 @@ DeviceMemory::DeviceMemory(VkDeviceMemory handle, const VkMemoryAllocateInfo* in
       import_handle_type(GetImportHandleType(allocate_info)),
       unprotected((memory_type.propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) == 0),
       multi_instance(IsMultiInstance(allocate_info, memory_heap, physical_device_count)),
-      dedicated(std::move(dedicated_binding)),
+      dedicated(dedicated_binding),
       mapped_range{},
 #ifdef VK_USE_PLATFORM_METAL_EXT
       metal_buffer_export(GetMetalExport(allocate_info)),

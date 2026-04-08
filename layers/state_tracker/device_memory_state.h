@@ -32,29 +32,6 @@ struct MemRange {
     VkDeviceSize size = 0;
 };
 
-struct DedicatedBinding {
-    VulkanTypedHandle handle;
-    union CreateInfo {
-        CreateInfo(const VkBufferCreateInfo &b) : buffer(b) {}
-        CreateInfo(const VkImageCreateInfo &i) : image(i) {}
-        CreateInfo(const VkTensorCreateInfoARM &t) : tensor(t) {}
-        CreateInfo(const VkDataGraphPipelineSessionCreateInfoARM &s) : session(s) {}
-        VkBufferCreateInfo buffer;
-        VkImageCreateInfo image;
-        VkTensorCreateInfoARM tensor;
-        VkDataGraphPipelineSessionCreateInfoARM session;
-    } create_info;
-
-    DedicatedBinding(VkBuffer buffer, const VkBufferCreateInfo &buffer_create_info)
-        : handle(buffer, kVulkanObjectTypeBuffer), create_info(buffer_create_info) {}
-
-    DedicatedBinding(VkImage image, const VkImageCreateInfo &image_create_info)
-        : handle(image, kVulkanObjectTypeImage), create_info(image_create_info) {}
-
-    DedicatedBinding(VkTensorARM tensor, const VkTensorCreateInfoARM &tensor_create_info)
-        : handle(tensor, kVulkanObjectTypeTensorARM), create_info(tensor_create_info) {}
-};
-
 // Data struct for tracking memory object
 class DeviceMemory : public StateObject {
   public:
@@ -65,7 +42,7 @@ class DeviceMemory : public StateObject {
     const std::optional<VkExternalMemoryHandleTypeFlagBits> import_handle_type;
     const bool unprotected;     // can't be used for protected memory
     const bool multi_instance;  // Allocated from MULTI_INSTANCE heap or having more than one deviceMask bit set
-    const std::optional<DedicatedBinding> dedicated;
+    const VulkanTypedHandle dedicated;
 
     MemRange mapped_range;
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -75,9 +52,9 @@ class DeviceMemory : public StateObject {
     const VkDeviceSize fake_base_address;  // To allow a unified view of allocations, useful to Synchronization Validation
     std::optional<float> dynamic_priority;  // VK_EXT_pageable_device_local_memory priority
 
-    DeviceMemory(VkDeviceMemory memory, const VkMemoryAllocateInfo *allocate_info, uint64_t fake_address,
-                 const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
-                 std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count);
+    DeviceMemory(VkDeviceMemory memory, const VkMemoryAllocateInfo* allocate_info, uint64_t fake_address,
+                 const VkMemoryType& memory_type, const VkMemoryHeap& memory_heap, VulkanTypedHandle dedicated_binding,
+                 uint32_t physical_device_count);
 
     bool IsImport() const { return import_handle_type.has_value(); }
     bool IsImportAHB() const {
@@ -86,19 +63,17 @@ class DeviceMemory : public StateObject {
     bool IsExport() const { return export_handle_types != 0; }
 
     VkBuffer GetDedicatedBuffer() const {
-        return (dedicated && dedicated->handle.type == kVulkanObjectTypeBuffer) ? dedicated->handle.Cast<VkBuffer>()
-                                                                                : VK_NULL_HANDLE;
+        return (dedicated.type == kVulkanObjectTypeBuffer) ? dedicated.Cast<VkBuffer>() : VK_NULL_HANDLE;
     }
     bool IsDedicatedBuffer() const { return GetDedicatedBuffer() != VK_NULL_HANDLE; }
 
     VkImage GetDedicatedImage() const {
-        return (dedicated && dedicated->handle.type == kVulkanObjectTypeImage) ? dedicated->handle.Cast<VkImage>() : VK_NULL_HANDLE;
+        return (dedicated.type == kVulkanObjectTypeImage) ? dedicated.Cast<VkImage>() : VK_NULL_HANDLE;
     }
     bool IsDedicatedImage() const { return GetDedicatedImage() != VK_NULL_HANDLE; }
 
     VkTensorARM GetDedicatedTensor() const {
-        return (dedicated && dedicated->handle.type == kVulkanObjectTypeTensorARM) ? dedicated->handle.Cast<VkTensorARM>()
-                                                                                   : VK_NULL_HANDLE;
+        return (dedicated.type == kVulkanObjectTypeTensorARM) ? dedicated.Cast<VkTensorARM>() : VK_NULL_HANDLE;
     }
     bool IsDedicatedTensor() const { return GetDedicatedTensor() != VK_NULL_HANDLE; }
 

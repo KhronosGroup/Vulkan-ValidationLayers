@@ -1995,9 +1995,10 @@ bool CoreChecks::ValidateBindImageMemoryResource(const VkBindImageMemoryInfo& bi
     if (dedicated_image != VK_NULL_HANDLE) {
         if (enabled_features.dedicatedAllocationImageAliasing) {
             auto current_image_state = Get<vvl::Image>(bind_info.image);
+            auto dedicated_image_state = Get<vvl::Image>(dedicated_image);
             if ((bind_info.memoryOffset != 0) || !current_image_state ||
-                !current_image_state->IsCreateInfoDedicatedAllocationImageAliasingCompatible(
-                    memory_state.dedicated->create_info.image)) {
+                (dedicated_image_state && !current_image_state->IsCreateInfoDedicatedAllocationImageAliasingCompatible(
+                                              dedicated_image_state->create_info))) {
                 const char* vuid =
                     bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-memory-02629" : "VUID-vkBindImageMemory-memory-02629";
                 const LogObjectList objlist(bind_info.image, bind_info.memory, dedicated_image);
