@@ -1166,8 +1166,6 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice dev
     }
 
     vvl::unordered_map<uint32_t, uint32_t> unique_indexes;
-    const VkShaderEXT init_shader_handle = indirect_execution_set->safe_create_info.info.pShaderInfo->pInitialShaders[0];
-    const auto init_shader_object = Get<vvl::ShaderObject>(init_shader_handle);
 
     for (uint32_t i = 0; i < executionSetWriteCount; i++) {
         const VkWriteIndirectExecutionSetShaderEXT& set_shader = pExecutionSetWrites[i];
@@ -1293,20 +1291,20 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice dev
                 }
             }
         }
-        if (indirect_execution_set->safe_create_info.info.pShaderInfo->shaderCount > 0) {
-            if (init_shader_object && update_shader_object &&
-                init_shader_object->descriptor_heap_mode != update_shader_object->descriptor_heap_mode) {
-                const LogObjectList objlist(init_shader_object->Handle(), update_shader_object->Handle());
-                const char* vuid = init_shader_object->descriptor_heap_mode
-                                       ? "VUID-vkUpdateIndirectExecutionSetShaderEXT-pInitialShaders-11327"
-                                       : "VUID-vkUpdateIndirectExecutionSetShaderEXT-pInitialShaders-11326";
 
-                skip |= LogError(vuid, objlist, set_write_loc.dot(Field::shader),
-                                 "was %screated with VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT, but pInitialShaders[0] "
-                                 "was %screated with VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT.",
-                                 update_shader_object->descriptor_heap_mode ? "" : "not ",
-                                 init_shader_object->descriptor_heap_mode ? "" : "not ");
-            }
+        const auto init_shader_object = indirect_execution_set->initial_shader_object;
+        if (init_shader_object && update_shader_object &&
+            init_shader_object->descriptor_heap_mode != update_shader_object->descriptor_heap_mode) {
+            const LogObjectList objlist(init_shader_object->Handle(), update_shader_object->Handle());
+            const char* vuid = init_shader_object->descriptor_heap_mode
+                                   ? "VUID-vkUpdateIndirectExecutionSetShaderEXT-pInitialShaders-11327"
+                                   : "VUID-vkUpdateIndirectExecutionSetShaderEXT-pInitialShaders-11326";
+
+            skip |= LogError(vuid, objlist, set_write_loc.dot(Field::shader),
+                             "was %screated with VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT, but pInitialShaders[0] "
+                             "was %screated with VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT.",
+                             update_shader_object->descriptor_heap_mode ? "" : "not ",
+                             init_shader_object->descriptor_heap_mode ? "" : "not ");
         }
     }
 
