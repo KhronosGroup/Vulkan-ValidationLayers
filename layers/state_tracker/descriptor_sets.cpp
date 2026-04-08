@@ -1153,7 +1153,7 @@ VkDeviceSize vvl::BufferDescriptor::GetEffectiveRange() const {
     if (range_ == VK_WHOLE_SIZE && buffer_state_) {
         // When range is VK_WHOLE_SIZE the effective range is calculated at vkUpdateDescriptorSets is by taking the size of buffer
         // minus the offset.
-        return buffer_state_->create_info.size - offset_;
+        return buffer_state_->GetSize() - offset_;
     } else {
         return range_;
     }
@@ -1321,7 +1321,7 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet& set_state, const vvl::De
                 // can be null if using nullDescriptors
                 const auto buffer_state = dev_data.GetConstCastShared<vvl::Buffer>(update.pBufferInfo->buffer);
                 if (buffer_state) {
-                    buffer_size = buffer_state->create_info.size;
+                    buffer_size = buffer_state->GetSize();
                 }
                 ReplaceStatePtr(set_state, buffer_state_, buffer_state, is_bindless);
             }
@@ -1340,7 +1340,7 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet& set_state, const vvl::De
                 // can be null if using nullDescriptors
                 const auto buffer_view = dev_data.GetConstCastShared<vvl::BufferView>(update.pTexelBufferView[index]);
                 if (buffer_view) {
-                    buffer_size = buffer_view->buffer_state->create_info.size;
+                    buffer_size = buffer_view->buffer_state->GetSize();
                 }
                 ReplaceStatePtr(set_state, buffer_view_state_, buffer_view, is_bindless);
             }
@@ -1500,7 +1500,7 @@ VkDeviceSize vvl::MutableDescriptor::GetEffectiveRange() const {
     if (range_ == VK_WHOLE_SIZE && buffer_state_) {
         // When range is VK_WHOLE_SIZE the effective range is calculated at vkUpdateDescriptorSets is by taking the size of buffer
         // minus the offset.
-        return buffer_state_->create_info.size - offset_;
+        return buffer_state_->GetSize() - offset_;
     } else {
         return range_;
     }

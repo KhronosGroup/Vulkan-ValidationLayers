@@ -185,10 +185,10 @@ void FirstInstance(Validator& gpuav, CommandBufferSubState& cb_state, const Loca
             DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
 
             uint32_t max_held_draw_cmds = 0;
-            if (draw_buffer_state->create_info.size > api_offset) {
+            if (draw_buffer_state->GetSize() > api_offset) {
                 // If drawCount is less than or equal to one, stride is ignored
                 if (api_draw_count > 1) {
-                    max_held_draw_cmds = static_cast<uint32_t>((draw_buffer_state->create_info.size - api_offset) / api_stride);
+                    max_held_draw_cmds = static_cast<uint32_t>((draw_buffer_state->GetSize() - api_offset) / api_stride);
                 } else {
                     max_held_draw_cmds = 1;
                 }
@@ -366,7 +366,7 @@ void CountBuffer(Validator& gpuav, CommandBufferSubState& cb_state, const Locati
         return;
     }
 
-    ValidationCommandFunc validation_cmd = [draw_buffer_size = draw_buffer_state->create_info.size, api_offset,
+    ValidationCommandFunc validation_cmd = [draw_buffer_size = draw_buffer_state->GetSize(), api_offset,
                                             api_struct_size_byte, api_stride, api_count_buffer, api_count_buffer_offset,
                                             draw_i = cb_state.draw_index, error_logger_i = cb_state.GetErrorLoggerIndex(),
                                             loc](Validator& gpuav, CommandBufferSubState& cb_state) {
@@ -429,7 +429,7 @@ void CountBuffer(Validator& gpuav, CommandBufferSubState& cb_state, const Locati
 
     // Register error logger
     // ---
-    ErrorLoggerFunc error_logger = [&gpuav, api_buffer, draw_buffer_size = draw_buffer_state->create_info.size, api_offset,
+    ErrorLoggerFunc error_logger = [&gpuav, api_buffer, draw_buffer_size = draw_buffer_state->GetSize(), api_offset,
                                     api_struct_size_byte, api_stride, api_struct_name,
                                     vuid](const uint32_t* error_record, const Location& loc_with_debug_region,
                                           const LogObjectList& objlist) {
@@ -523,7 +523,7 @@ void DrawMeshIndirect(Validator& gpuav, CommandBufferSubState& cb_state, const L
     const VkShaderStageFlags stages = last_bound.GetAllActiveBoundStages();
     const bool is_task_shader = (stages & VK_SHADER_STAGE_TASK_BIT_EXT) == VK_SHADER_STAGE_TASK_BIT_EXT;
 
-    ValidationCommandFunc validation_cmd = [api_buffer, draw_buffer_full_size = draw_buffer_state->create_info.size, api_offset,
+    ValidationCommandFunc validation_cmd = [api_buffer, draw_buffer_full_size = draw_buffer_state->GetSize(), api_offset,
                                             api_stride, api_count_buffer, api_count_buffer_offset, api_draw_count, is_task_shader,
                                             draw_i = cb_state.draw_index, error_logger_i = cb_state.GetErrorLoggerIndex(),
                                             loc](Validator& gpuav, CommandBufferSubState& cb_state) {

@@ -341,7 +341,7 @@ void SyncValidator::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer,
                                                const RecordObject& record_obj) {
     if (const auto buffer_state = Get<vvl::Buffer>(buffer)) {
         const VkDeviceSize base_address = ResourceBaseAddress(*buffer_state);
-        const AccessRange buffer_range(base_address, base_address + buffer_state->create_info.size);
+        const AccessRange buffer_range(base_address, base_address + buffer_state->GetSize());
         for (const auto& batch : GetAllQueueBatchContexts()) {
             batch->OnResourceDestroyed(buffer_range);
             batch->Trim();

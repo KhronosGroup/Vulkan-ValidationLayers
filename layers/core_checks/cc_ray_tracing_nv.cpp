@@ -230,7 +230,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
             }
         }
         if (scratch_buffer_state && dst_as_state &&
-            dst_as_state->update_scratch_memory_requirements.size > (scratch_buffer_state->create_info.size - scratchOffset)) {
+            dst_as_state->update_scratch_memory_requirements.size > (scratch_buffer_state->GetSize() - scratchOffset)) {
             skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-update-02492", commandBuffer, error_obj.location,
                              "If update is VK_TRUE, The size member of the "
                              "VkMemoryRequirements structure returned from a call to "
@@ -242,7 +242,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
         }
     } else {
         if (scratch_buffer_state && dst_as_state &&
-            dst_as_state->build_scratch_memory_requirements.size > (scratch_buffer_state->create_info.size - scratchOffset)) {
+            dst_as_state->build_scratch_memory_requirements.size > (scratch_buffer_state->GetSize() - scratchOffset)) {
             skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-update-02491", commandBuffer, error_obj.location,
                              "If update is VK_FALSE, The size member of the "
                              "VkMemoryRequirements structure returned from a call to "
@@ -355,17 +355,17 @@ bool CoreChecks::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV& triang
     bool skip = false;
 
     auto vb_state = Get<vvl::Buffer>(triangles.vertexData);
-    if (vb_state && vb_state->create_info.size <= triangles.vertexOffset) {
+    if (vb_state && vb_state->GetSize() <= triangles.vertexOffset) {
         skip |= LogError("VUID-VkGeometryTrianglesNV-vertexOffset-02428", device, loc, "is invalid.");
     }
 
     auto ib_state = Get<vvl::Buffer>(triangles.indexData);
-    if (ib_state && ib_state->create_info.size <= triangles.indexOffset) {
+    if (ib_state && ib_state->GetSize() <= triangles.indexOffset) {
         skip |= LogError("VUID-VkGeometryTrianglesNV-indexOffset-02431", device, loc, "is invalid.");
     }
 
     auto td_state = Get<vvl::Buffer>(triangles.transformData);
-    if (td_state && td_state->create_info.size <= triangles.transformOffset) {
+    if (td_state && td_state->GetSize() <= triangles.transformOffset) {
         skip |= LogError("VUID-VkGeometryTrianglesNV-transformOffset-02437", device, loc, "is invalid.");
     }
 
@@ -376,7 +376,7 @@ bool CoreChecks::ValidateGeometryAABBNV(const VkGeometryAABBNV& aabbs, const Loc
     bool skip = false;
 
     auto aabb_state = Get<vvl::Buffer>(aabbs.aabbData);
-    if (aabb_state && aabb_state->create_info.size > 0 && aabb_state->create_info.size <= aabbs.offset) {
+    if (aabb_state && aabb_state->GetSize() > 0 && aabb_state->GetSize() <= aabbs.offset) {
         skip |= LogError("VUID-VkGeometryAABBNV-offset-02439", device, loc, "is invalid.");
     }
 
@@ -696,7 +696,7 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
         BufferAddressValidation<2> scratch_buffer_validator = {{{
             {"VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-scratchData-12300",
              [&accelerationStructure_size](const vvl::Buffer& buffer_state) {
-                 return buffer_state.create_info.size < accelerationStructure_size.buildScratchSize;
+                 return buffer_state.GetSize() < accelerationStructure_size.buildScratchSize;
              },
              [&accelerationStructure_size]() {
                  return "The buildScratchSize (" + std::to_string(accelerationStructure_size.buildScratchSize) +
@@ -948,7 +948,7 @@ bool CoreChecks::ValidateClusterAccelerationStructureCommandsInfoNV(
                 BufferAddressValidation<1> dst_implicit_size_validator = {{{
                     {"VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-12310",
                      [&accelerationStructure_size](const vvl::Buffer& buffer_state) {
-                         return buffer_state.create_info.size < accelerationStructure_size.accelerationStructureSize;
+                         return buffer_state.GetSize() < accelerationStructure_size.accelerationStructureSize;
                      },
                      [&accelerationStructure_size]() {
                          return "The accelerationStructureSize (" +

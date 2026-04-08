@@ -50,16 +50,16 @@ bool CoreChecks::PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
                          error_obj.location.dot(Field::pCreateInfo).dot(Field::buffer), "was created with %s.",
                          string_VkBufferUsageFlags2(buffer_state->usage).c_str());
     }
-    if (buffer_state->create_info.flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) {
+    if (buffer_state->GetFlags() & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) {
         skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-buffer-03615", buffer_state->Handle(),
                          error_obj.location.dot(Field::pCreateInfo).dot(Field::buffer), "was created with %s.",
-                         string_VkBufferCreateFlags(buffer_state->create_info.flags).c_str());
+                         string_VkBufferCreateFlags(buffer_state->GetFlags()).c_str());
     }
-    if (pCreateInfo->offset + pCreateInfo->size > buffer_state->create_info.size) {
+    if (pCreateInfo->offset + pCreateInfo->size > buffer_state->GetSize()) {
         skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-offset-03616", buffer_state->Handle(),
                          error_obj.location.dot(Field::pCreateInfo).dot(Field::offset),
                          "(%" PRIu64 ") + size (%" PRIu64 ") must be less than the size of buffer (%" PRIu64 ").",
-                         pCreateInfo->offset, pCreateInfo->size, buffer_state->create_info.size);
+                         pCreateInfo->offset, pCreateInfo->size, buffer_state->GetSize());
     }
 
     if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
@@ -90,16 +90,12 @@ bool CoreChecks::PreCallValidateCreateAccelerationStructure2KHR(VkDevice device,
 
     BufferAddressValidation<2> buffer_address_validator = {{{
         {"VUID-VkAccelerationStructureCreateInfo2KHR-addressRange-11604",
-         [](const vvl::Buffer& buffer_state) {
-             return (buffer_state.create_info.flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0;
-         },
+         [](const vvl::Buffer& buffer_state) { return (buffer_state.GetFlags() & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0; },
          []() { return "The following buffers were created with VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT"; }, kFlagErrorMsgBuffer},
         {capture_replay_vuid,
          [has_capture_replay](const vvl::Buffer& buffer_state) {
-             return (has_capture_replay &&
-                     (buffer_state.create_info.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) == 0) ||
-                    (!has_capture_replay &&
-                     ((buffer_state.create_info.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) != 0));
+             return (has_capture_replay && (buffer_state.GetFlags() & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) == 0) ||
+                    (!has_capture_replay && ((buffer_state.GetFlags() & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) != 0));
          },
          [&capture_replay_msg]() { return capture_replay_msg; }, kFlagErrorMsgBuffer},
     }}};
@@ -1905,7 +1901,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer& 
          kEmptyErrorMsgBuffer},
 
         {"VUID-VkStridedDeviceAddressRegionKHR-size-04632",
-         [&binding_table](const vvl::Buffer& buffer_state) { return binding_table.stride > buffer_state.create_info.size; },
+         [&binding_table](const vvl::Buffer& buffer_state) { return binding_table.stride > buffer_state.GetSize(); },
          [table_loc, &binding_table]() {
              return "The " + table_loc.Fields() + "->stride (" + std::to_string(binding_table.stride) +
                     ") does not fit in any buffer";

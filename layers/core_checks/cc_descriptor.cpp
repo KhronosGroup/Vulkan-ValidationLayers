@@ -370,17 +370,16 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer& cb_stat
                                                      offset, set_idx, binding_index, j);
 
                                 } else if (buffer_state && (bound_range != VK_WHOLE_SIZE) &&
-                                           ((offset + bound_range + bound_offset) > buffer_state->create_info.size)) {
+                                           ((offset + bound_range + bound_offset) > buffer_state->GetSize())) {
                                     const LogObjectList objlist(cb_state.Handle(), set_handle, buffer_descriptor->GetBuffer());
                                     const char* vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-01979"
                                                             : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979";
-                                    skip |=
-                                        LogError(vuid, objlist, loc.dot(Field::pDynamicOffsets, cur_dyn_offset),
-                                                 "is %" PRIu32 ", which when added to the buffer descriptor's range (%" PRIu64
-                                                 ") and offset (%" PRIu64 ") is greater than the size of the buffer (%" PRIu64
-                                                 ") in descriptorSet #%" PRIu32 " binding #%" PRIu32 " descriptor[%" PRIu32 "].",
-                                                 offset, bound_range, bound_offset, buffer_state->create_info.size, set_idx,
-                                                 binding_index, j);
+                                    skip |= LogError(
+                                        vuid, objlist, loc.dot(Field::pDynamicOffsets, cur_dyn_offset),
+                                        "is %" PRIu32 ", which when added to the buffer descriptor's range (%" PRIu64
+                                        ") and offset (%" PRIu64 ") is greater than the size of the buffer (%" PRIu64
+                                        ") in descriptorSet #%" PRIu32 " binding #%" PRIu32 " descriptor[%" PRIu32 "].",
+                                        offset, bound_range, bound_offset, buffer_state->GetSize(), set_idx, binding_index, j);
                                 }
                             }
                             cur_dyn_offset++;
@@ -1640,20 +1639,20 @@ bool CoreChecks::ValidateBufferUpdate(const vvl::Buffer& buffer_state, const VkD
     skip |= ValidateMemoryIsBoundToBuffer(device, buffer_state, buffer_info_loc.dot(Field::buffer),
                                           "VUID-VkWriteDescriptorSet-descriptorType-00329");
 
-    if (buffer_info.offset >= buffer_state.create_info.size) {
+    if (buffer_info.offset >= buffer_state.GetSize()) {
         skip |= LogError("VUID-VkDescriptorBufferInfo-offset-00340", buffer_info.buffer, buffer_info_loc.dot(Field::offset),
                          "(%" PRIu64 ") is greater than or equal to buffer size (%" PRIu64 ").", buffer_info.offset,
-                         buffer_state.create_info.size);
+                         buffer_state.GetSize());
     }
     if (buffer_info.range != VK_WHOLE_SIZE) {
         if (buffer_info.range == 0) {
             skip |= LogError("VUID-VkDescriptorBufferInfo-range-00341", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                              "is not VK_WHOLE_SIZE and is zero.");
         }
-        if (buffer_info.range > (buffer_state.create_info.size - buffer_info.offset)) {
+        if (buffer_info.range > (buffer_state.GetSize() - buffer_info.offset)) {
             skip |= LogError("VUID-VkDescriptorBufferInfo-range-00342", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                              "(%" PRIu64 ") is larger than buffer size (%" PRIu64 ") - offset (%" PRIu64 ").", buffer_info.range,
-                             buffer_state.create_info.size, buffer_info.offset);
+                             buffer_state.GetSize(), buffer_info.offset);
         }
     }
 
@@ -1664,12 +1663,12 @@ bool CoreChecks::ValidateBufferUpdate(const vvl::Buffer& buffer_state, const VkD
                 LogError("VUID-VkWriteDescriptorSet-descriptorType-00332", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                          "(%" PRIu64 ") is greater than maxUniformBufferRange (%" PRIu32 ") for descriptorType %s.",
                          buffer_info.range, max_ub_range, string_VkDescriptorType(type));
-        } else if (buffer_info.range == VK_WHOLE_SIZE && (buffer_state.create_info.size - buffer_info.offset) > max_ub_range) {
+        } else if (buffer_info.range == VK_WHOLE_SIZE && (buffer_state.GetSize() - buffer_info.offset) > max_ub_range) {
             skip |=
                 LogError("VUID-VkWriteDescriptorSet-descriptorType-00332", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                          "is VK_WHOLE_SIZE, but the effective range [size (%" PRIu64 ") - offset (%" PRIu64 ") = %" PRIu64
                          "] is greater than maxUniformBufferRange (%" PRIu32 ") for descriptorType %s.",
-                         buffer_state.create_info.size, buffer_info.offset, buffer_state.create_info.size - buffer_info.offset,
+                         buffer_state.GetSize(), buffer_info.offset, buffer_state.GetSize() - buffer_info.offset,
                          max_ub_range, string_VkDescriptorType(type));
         }
 
@@ -1686,13 +1685,13 @@ bool CoreChecks::ValidateBufferUpdate(const vvl::Buffer& buffer_state, const VkD
                                  buffer_info_loc.dot(Field::range),
                                  "(%" PRIu64 ") is greater than maxStorageBufferRange (%" PRIu32 ") for descriptorType %s.",
                                  buffer_info.range, max_sb_range, string_VkDescriptorType(type));
-            } else if (buffer_info.range == VK_WHOLE_SIZE && (buffer_state.create_info.size - buffer_info.offset) > max_sb_range) {
+            } else if (buffer_info.range == VK_WHOLE_SIZE && (buffer_state.GetSize() - buffer_info.offset) > max_sb_range) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00333", buffer_info.buffer,
                                  buffer_info_loc.dot(Field::range),
                                  "is VK_WHOLE_SIZE, but the effective range [size (%" PRIu64 ") - offset (%" PRIu64 ") = %" PRIu64
                                  "] is greater than maxStorageBufferRange (%" PRIu32 ") for descriptorType %s.",
-                                 buffer_state.create_info.size, buffer_info.offset,
-                                 buffer_state.create_info.size - buffer_info.offset, max_sb_range, string_VkDescriptorType(type));
+                                 buffer_state.GetSize(), buffer_info.offset, buffer_state.GetSize() - buffer_info.offset,
+                                 max_sb_range, string_VkDescriptorType(type));
             }
         }
 
@@ -2992,10 +2991,10 @@ bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice
     }
 
     if (auto buffer_state = Get<vvl::Buffer>(pInfo->buffer)) {
-        if (!(buffer_state->create_info.flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
+        if (!(buffer_state->GetFlags() & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
             skip |= LogError("VUID-VkBufferCaptureDescriptorDataInfoEXT-buffer-08075", pInfo->buffer,
                              error_obj.location.dot(Field::pInfo).dot(Field::buffer), "was created with %s.",
-                             string_VkBufferCreateFlags(buffer_state->create_info.flags).c_str());
+                             string_VkBufferCreateFlags(buffer_state->GetFlags()).c_str());
         }
     }
 
@@ -3220,7 +3219,7 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
     BufferAddressValidation<2> buffer_address_validator = {
         {{{"VUID-VkDescriptorAddressInfoEXT-range-08045",
            [&address_info](const vvl::Buffer& buffer_state) {
-               const VkDeviceSize end = buffer_state.create_info.size - (address_info.address - buffer_state.deviceAddress);
+               const VkDeviceSize end = buffer_state.GetSize() - (address_info.address - buffer_state.deviceAddress);
                return address_info.range > end;
            },
            [&address_info]() {

@@ -571,10 +571,10 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location& loc, const vvl::Comm
             }
             case kVulkanObjectTypeBuffer: {
                 auto buffer_state = static_cast<const vvl::Buffer*>(state_object.get());
-                if (buffer_state && buffer_state->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+                if (buffer_state && buffer_state->GetSharingMode() == VK_SHARING_MODE_CONCURRENT) {
                     skip |= ValidImageBufferQueue(cb_state, buffer_state->Handle(), queue_state.queue_family_index,
-                                                  buffer_state->create_info.queueFamilyIndexCount,
-                                                  buffer_state->create_info.pQueueFamilyIndices, loc);
+                                                  buffer_state->GetQueueFamilyIndexCount(),
+                                                  buffer_state->GetQueueFamilyIndices(), loc);
                 }
                 break;
             }
