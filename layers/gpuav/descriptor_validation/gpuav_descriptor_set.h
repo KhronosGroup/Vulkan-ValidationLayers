@@ -50,6 +50,7 @@ class DescriptorSetSubState : public vvl::DescriptorSetSubState {
 
   private:
     void BuildBindingLayouts();
+    void CreateDescriptorEncodingBuffer();
 
     std::vector<gpuav::spirv::BindingLayout> binding_layouts_;
 

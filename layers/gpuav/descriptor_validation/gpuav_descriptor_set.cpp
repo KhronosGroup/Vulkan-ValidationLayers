@@ -55,6 +55,21 @@ void DescriptorSetSubState::BuildBindingLayouts() {
     }
 }
 
+void DescriptorSetSubState::CreateDescriptorEncodingBuffer() {
+    VkBufferCreateInfo buffer_info = vku::InitStruct<VkBufferCreateInfo>();
+    buffer_info.size = base.GetNonInlineDescriptorCount() * sizeof(glsl::DescriptorEncoding);
+    buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    // The descriptor state buffer can be very large (4mb+ in some games). Allocating it as HOST_CACHED
+    // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
+    VmaAllocationCreateInfo alloc_info{};
+    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+    const VkResult result = descriptor_encodings_.Create(&buffer_info, &alloc_info);
+    if (result != VK_SUCCESS) {
+        return;
+    }
+}
+
 template <typename StateObject>
 DescriptorId GetId(const StateObject* obj, bool allow_null = true) {
     if (!obj) {
@@ -175,34 +190,17 @@ VkDeviceAddress DescriptorSetSubState::GetDescriptorEncodingsAddress(Validator& 
     std::lock_guard guard(state_lock_);
     const uint32_t current_version = current_version_.load();
 
-    // Will be empty on first time getting the state
-    if (descriptor_encodings_.Address() != 0) {
-        if (last_used_version_ == current_version) {
-            return descriptor_encodings_.Address();  // nothing has changed
-        } else {
-            // will replace (descriptor array size might have change, so need to resize buffer)
-            descriptor_encodings_.Destroy();
-        }
-    }
-
-    last_used_version_ = current_version;
-
     if (base.GetNonInlineDescriptorCount() == 0) {
-        // no descriptors case, return a dummy state object
-        return descriptor_encodings_.Address();
+        // no descriptors
+        return 0;
     }
 
-    VkBufferCreateInfo buffer_info = vku::InitStruct<VkBufferCreateInfo>();
-    buffer_info.size = base.GetNonInlineDescriptorCount() * sizeof(glsl::DescriptorEncoding);
-    buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-
-    // The descriptor state buffer can be very large (4mb+ in some games). Allocating it as HOST_CACHED
-    // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
-    VmaAllocationCreateInfo alloc_info{};
-    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-    const VkResult result = descriptor_encodings_.Create(&buffer_info, &alloc_info);
-    if (result != VK_SUCCESS) {
-        return 0;
+    // Create buffer just in time
+    if (descriptor_encodings_.IsDestroyed()) {
+        CreateDescriptorEncodingBuffer();
+    } else if (last_used_version_ == current_version) {
+        // nothing has changed
+        return descriptor_encodings_.Address();
     }
 
     auto descriptor_encodings = (glsl::DescriptorEncoding*)descriptor_encodings_.GetMappedPtr();
@@ -244,6 +242,8 @@ VkDeviceAddress DescriptorSetSubState::GetDescriptorEncodingsAddress(Validator& 
 
     // Flush the descriptor encodings before unmapping so that they are visible to the GPU
     descriptor_encodings_.FlushAllocation();
+
+    last_used_version_ = current_version;
 
     return descriptor_encodings_.Address();
 }
