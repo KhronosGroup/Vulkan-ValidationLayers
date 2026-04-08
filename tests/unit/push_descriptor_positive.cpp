@@ -528,3 +528,76 @@ TEST_F(PositivePushDescriptor, DISABLED_PushDescriptorSetInfoPerStage) {
     vk::CmdPushDescriptorSet2KHR(m_command_buffer, &push_descriptor_set_info);
     m_command_buffer.End();
 }
+
+TEST_F(PositivePushDescriptor, PushDescriptorWithTemplate2) {
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::pushDescriptor);
+    RETURN_IF_SKIP(Init());
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    OneOffDescriptorSet descriptor_set(m_device, bindings, 0, nullptr, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, nullptr);
+    const vkt::DescriptorSetLayout push_ds_layout(*m_device, bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+
+    const char* comp_src = R"glsl(
+        #version 450
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+        layout(set = 0, binding = 0, std140) uniform Input { uint data[16]; } ubo;
+        layout(set = 0, binding = 1, std430) buffer Output { uint data[16]; } ssbo;
+        void main() {
+            ssbo.data[gl_GlobalInvocationID.x] += ubo.data[gl_GlobalInvocationID.x];
+        }
+    )glsl";
+    VkShaderObj cs(*m_device, comp_src, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&push_ds_layout});
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer uniform_buffer(*m_device, sizeof(uint32_t) * 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    vkt::Buffer storage_buffer(*m_device, sizeof(uint32_t) * 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    VkDescriptorUpdateTemplateEntry template_entries[2];
+    template_entries[0].dstBinding = 0u;
+    template_entries[0].dstArrayElement = 0u;
+    template_entries[0].descriptorCount = 1u;
+    template_entries[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    template_entries[0].offset = 0;
+    template_entries[0].stride = sizeof(VkDescriptorBufferInfo);
+    template_entries[1].dstBinding = 1u;
+    template_entries[1].dstArrayElement = 0u;
+    template_entries[1].descriptorCount = 1u;
+    template_entries[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    template_entries[1].offset = sizeof(VkDescriptorBufferInfo);
+    template_entries[1].stride = sizeof(VkDescriptorBufferInfo);
+
+    VkDescriptorUpdateTemplateCreateInfo template_ci = vku::InitStructHelper();
+    template_ci.flags = 0u;
+    template_ci.descriptorUpdateEntryCount = 2u;
+    template_ci.pDescriptorUpdateEntries = template_entries;
+    template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
+    template_ci.descriptorSetLayout = push_ds_layout;
+    template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+    template_ci.pipelineLayout = pipe.pipeline_layout_;
+    template_ci.set = 0;
+    vkt::DescriptorUpdateTemplate update_template(*m_device, template_ci);
+
+    VkDescriptorBufferInfo data[2];
+    data[0] = {uniform_buffer, 0, VK_WHOLE_SIZE};
+    data[1] = {storage_buffer, 0, VK_WHOLE_SIZE};
+
+    VkPushDescriptorSetWithTemplateInfo template_info = vku::InitStructHelper();
+    template_info.descriptorUpdateTemplate = update_template;
+    template_info.layout = pipe.pipeline_layout_;
+    template_info.set = 0;
+    template_info.pData = data;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdPushDescriptorSetWithTemplate2(m_command_buffer, &template_info);
+    vk::CmdDispatch(m_command_buffer, 16, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
