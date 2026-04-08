@@ -26,10 +26,10 @@ class Pipeline;
 struct ShaderObject;
 
 class IndirectExecutionSet : public StateObject {
+    // Currently this |safe_VkIndirectExecutionSetCreateInfoEXT| is not safe as it doesn't properly copy the union
+    // (https://github.com/KhronosGroup/Vulkan-Utility-Libraries/issues/361)
+    // Fortunately it is simple to track the information such that we should never need the |create_info| actually
   public:
-    const vku::safe_VkIndirectExecutionSetCreateInfoEXT safe_create_info;
-    const VkIndirectExecutionSetCreateInfoEXT &create_info;
-
     IndirectExecutionSet(DeviceState &dev, VkIndirectExecutionSetEXT handle,
                          const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo);
     VkIndirectExecutionSetEXT VkHandle() const { return handle_.Cast<VkIndirectExecutionSetEXT>(); }

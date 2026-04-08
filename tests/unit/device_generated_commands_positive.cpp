@@ -290,6 +290,36 @@ TEST_F(PositiveDeviceGeneratedCommands, UpdateIndirectExecutionSetPipeline) {
     vk::UpdateIndirectExecutionSetPipelineEXT(device(), exe_set, 3, write_exe_sets);
 }
 
+TEST_F(PositiveDeviceGeneratedCommands, UpdateIndirectExecutionSetPipelineDestory) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12052");
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+    InitRenderTarget();
+
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
+    pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
+    CreatePipelineHelper pipe(*this, &pipe_flags2);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::IndirectExecutionSet exe_set;
+    {
+        VkIndirectExecutionSetPipelineInfoEXT exe_set_pipeline_info = vku::InitStructHelper();
+        exe_set_pipeline_info.initialPipeline = pipe;
+        exe_set_pipeline_info.maxPipelineCount = 2;
+
+        VkIndirectExecutionSetCreateInfoEXT exe_set_ci = vku::InitStructHelper();
+        exe_set_ci.type = VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT;
+        exe_set_ci.info.pPipelineInfo = &exe_set_pipeline_info;
+        exe_set.Init(*m_device, exe_set_ci);
+
+        exe_set_ci.info.pPipelineInfo = nullptr;
+    }
+
+    VkWriteIndirectExecutionSetPipelineEXT write_exe_sets = vku::InitStructHelper();
+    write_exe_sets.index = 1;
+    write_exe_sets.pipeline = pipe;
+    vk::UpdateIndirectExecutionSetPipelineEXT(device(), exe_set, 1, &write_exe_sets);
+}
+
 TEST_F(PositiveDeviceGeneratedCommands, UpdateIndirectExecutionSetShader) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
@@ -313,6 +343,52 @@ TEST_F(PositiveDeviceGeneratedCommands, UpdateIndirectExecutionSetShader) {
     exe_set_shader_info.maxShaderCount = 1;
     exe_set_shader_info.pushConstantRangeCount = 0;
     vkt::IndirectExecutionSet exe_set(*m_device, exe_set_shader_info);
+
+    VkWriteIndirectExecutionSetShaderEXT write_exe_set = vku::InitStructHelper();
+    write_exe_set.index = 0;
+    write_exe_set.shader = vertShader;
+    vk::UpdateIndirectExecutionSetShaderEXT(device(), exe_set, 1, &write_exe_set);
+}
+
+TEST_F(PositiveDeviceGeneratedCommands, UpdateIndirectExecutionSetShaderDestroye) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12052");
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+    InitRenderTarget();
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    VkShaderCreateInfoEXT vert_create_info =
+        ShaderCreateInfoFlag(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
+    const vkt::Shader vertShader(*m_device, vert_create_info);
+    const VkShaderEXT shaders[] = {vertShader};
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    vkt::IndirectExecutionSet exe_set;
+    {
+        VkIndirectExecutionSetShaderLayoutInfoEXT exe_set_layouts = vku::InitStructHelper();
+        exe_set_layouts.setLayoutCount = 1;
+        exe_set_layouts.pSetLayouts = &descriptor_set.layout_.handle();
+
+        VkIndirectExecutionSetShaderInfoEXT exe_set_shader_info = vku::InitStructHelper();
+        exe_set_shader_info.shaderCount = 1;
+        exe_set_shader_info.pInitialShaders = shaders;
+        exe_set_shader_info.pSetLayoutInfos = &exe_set_layouts;
+        exe_set_shader_info.maxShaderCount = 1;
+        exe_set_shader_info.pushConstantRangeCount = 0;
+
+        VkIndirectExecutionSetCreateInfoEXT exe_set_ci = vku::InitStructHelper();
+        exe_set_ci.type = VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT;
+        exe_set_ci.info.pShaderInfo = &exe_set_shader_info;
+        exe_set.Init(*m_device, exe_set_ci);
+
+        // Null out everything once we create a IES
+        // (unlike most unions, the values here are not required to be alive later)
+        exe_set_ci.info.pShaderInfo = nullptr;
+        exe_set_layouts.pSetLayouts = nullptr;
+        exe_set_shader_info.pInitialShaders = nullptr;
+        exe_set_shader_info.pSetLayoutInfos = nullptr;
+    }
 
     VkWriteIndirectExecutionSetShaderEXT write_exe_set = vku::InitStructHelper();
     write_exe_set.index = 0;

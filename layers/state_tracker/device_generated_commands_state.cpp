@@ -22,8 +22,6 @@
 vvl::IndirectExecutionSet::IndirectExecutionSet(vvl::DeviceState& dev, VkIndirectExecutionSetEXT handle,
                                                 const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeIndirectExecutionSetEXT),
-      safe_create_info(pCreateInfo),
-      create_info(*safe_create_info.ptr()),
       is_pipeline(pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT),
       is_shader_objects(pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT) {
     if (is_pipeline && pCreateInfo->info.pPipelineInfo) {
