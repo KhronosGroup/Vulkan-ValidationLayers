@@ -79,7 +79,7 @@ bool CoreChecks::ValidateCreateShadersLinking(uint32_t createInfoCount, const Vk
     uint32_t non_linked_graphics_stage = invalid;
     uint32_t non_linked_task_mesh_stage = invalid;
     uint32_t linked_task_mesh_stage = invalid;
-    uint32_t linked_vert_stage = invalid;
+    uint32_t linked_vert_tess_tesc_geom_stage = invalid;
     uint32_t linked_task_stage = invalid;
     uint32_t linked_mesh_no_task_stage = invalid;
     uint32_t linked_spirv_index = invalid;
@@ -131,8 +131,9 @@ bool CoreChecks::ValidateCreateShadersLinking(uint32_t createInfoCount, const Vk
             }
 
             linked_stage = i;
-            if ((create_info.stage & VK_SHADER_STAGE_VERTEX_BIT) != 0) {
-                linked_vert_stage = i;
+            if ((create_info.stage & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                                      VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) != 0) {
+                linked_vert_tess_tesc_geom_stage = i;
             } else if ((create_info.stage & VK_SHADER_STAGE_TASK_BIT_EXT) != 0) {
                 linked_task_mesh_stage = i;
                 linked_task_stage = i;
@@ -215,11 +216,11 @@ bool CoreChecks::ValidateCreateShadersLinking(uint32_t createInfoCount, const Vk
                          "] stage is %s and does not have VK_SHADER_CREATE_LINK_STAGE_BIT_EXT.",
                          non_linked_task_mesh_stage, string_VkShaderStageFlagBits(pCreateInfos[non_linked_task_mesh_stage].stage));
     }
-    if (linked_vert_stage != invalid && linked_task_mesh_stage != invalid) {
+    if (linked_task_mesh_stage != invalid && linked_vert_tess_tesc_geom_stage != invalid) {
         skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08404", device,
-                         loc.dot(Field::pCreateInfos, linked_vert_stage).dot(Field::stage),
+                         loc.dot(Field::pCreateInfos, linked_vert_tess_tesc_geom_stage).dot(Field::stage),
                          "is %s and pCreateInfos[%" PRIu32 "].stage is %s, but both contain VK_SHADER_CREATE_LINK_STAGE_BIT_EXT.",
-                         string_VkShaderStageFlagBits(pCreateInfos[linked_vert_stage].stage), linked_task_mesh_stage,
+                         string_VkShaderStageFlagBits(pCreateInfos[linked_vert_tess_tesc_geom_stage].stage), linked_task_mesh_stage,
                          string_VkShaderStageFlagBits(pCreateInfos[linked_task_mesh_stage].stage));
     }
     if (linked_task_stage != invalid && linked_mesh_no_task_stage != invalid) {
