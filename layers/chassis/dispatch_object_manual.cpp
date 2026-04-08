@@ -1737,19 +1737,19 @@ void DispatchDevice::CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer command
 void DispatchDevice::CmdPushDescriptorSetWithTemplate2(VkCommandBuffer commandBuffer,
                                                const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo) {
     if (!wrap_handles)
-        return device_dispatch_table.CmdPushDescriptorSetWithTemplate2KHR(commandBuffer, pPushDescriptorSetWithTemplateInfo);
+        return device_dispatch_table.CmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo);
     uint64_t template_handle = CastToUint64(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
+    VkPushDescriptorSetWithTemplateInfo local_push_descriptor_set_with_template_info = *pPushDescriptorSetWithTemplateInfo;
     void* unwrapped_buffer = nullptr;
     {
         ReadLockGuard lock(dispatch_lock);
-        const_cast<VkPushDescriptorSetWithTemplateInfo*>(pPushDescriptorSetWithTemplateInfo)->descriptorUpdateTemplate =
-            Unwrap(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
-        const_cast<VkPushDescriptorSetWithTemplateInfo*>(pPushDescriptorSetWithTemplateInfo)->layout =
-            Unwrap(pPushDescriptorSetWithTemplateInfo->layout);
+        local_push_descriptor_set_with_template_info.descriptorUpdateTemplate =
+            Unwrap(local_push_descriptor_set_with_template_info.descriptorUpdateTemplate);
+        local_push_descriptor_set_with_template_info.layout = Unwrap(local_push_descriptor_set_with_template_info.layout);
         unwrapped_buffer = BuildUnwrappedUpdateTemplateBuffer(this, template_handle, pPushDescriptorSetWithTemplateInfo->pData);
-        const_cast<VkPushDescriptorSetWithTemplateInfo*>(pPushDescriptorSetWithTemplateInfo)->pData = unwrapped_buffer;
+        local_push_descriptor_set_with_template_info.pData = unwrapped_buffer;
     }
-    device_dispatch_table.CmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo);
+    device_dispatch_table.CmdPushDescriptorSetWithTemplate2(commandBuffer, &local_push_descriptor_set_with_template_info);
     free(unwrapped_buffer);
 }
 
@@ -1758,17 +1758,17 @@ void DispatchDevice::CmdPushDescriptorSetWithTemplate2KHR(
     if (!wrap_handles)
         return device_dispatch_table.CmdPushDescriptorSetWithTemplate2KHR(commandBuffer, pPushDescriptorSetWithTemplateInfo);
     uint64_t template_handle = CastToUint64(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
+    VkPushDescriptorSetWithTemplateInfoKHR local_push_descriptor_set_with_template_info = *pPushDescriptorSetWithTemplateInfo;
     void* unwrapped_buffer = nullptr;
     {
         ReadLockGuard lock(dispatch_lock);
-        const_cast<VkPushDescriptorSetWithTemplateInfoKHR*>(pPushDescriptorSetWithTemplateInfo)->descriptorUpdateTemplate =
-            Unwrap(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
-        const_cast<VkPushDescriptorSetWithTemplateInfoKHR*>(pPushDescriptorSetWithTemplateInfo)->layout =
-            Unwrap(pPushDescriptorSetWithTemplateInfo->layout);
+        local_push_descriptor_set_with_template_info.descriptorUpdateTemplate =
+            Unwrap(local_push_descriptor_set_with_template_info.descriptorUpdateTemplate);
+        local_push_descriptor_set_with_template_info.layout = Unwrap(local_push_descriptor_set_with_template_info.layout);
         unwrapped_buffer = BuildUnwrappedUpdateTemplateBuffer(this, template_handle, pPushDescriptorSetWithTemplateInfo->pData);
-        const_cast<VkPushDescriptorSetWithTemplateInfoKHR*>(pPushDescriptorSetWithTemplateInfo)->pData = unwrapped_buffer;
+        local_push_descriptor_set_with_template_info.pData = unwrapped_buffer;
     }
-    device_dispatch_table.CmdPushDescriptorSetWithTemplate2KHR(commandBuffer, pPushDescriptorSetWithTemplateInfo);
+    device_dispatch_table.CmdPushDescriptorSetWithTemplate2KHR(commandBuffer, &local_push_descriptor_set_with_template_info);
     free(unwrapped_buffer);
 }
 
