@@ -1487,27 +1487,18 @@ void DeviceState::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAl
     const auto& memory_heap = phys_dev_mem_props.memoryHeaps[memory_type.heapIndex];
     auto fake_address = fake_memory.Alloc(pAllocateInfo->allocationSize);
 
-    std::optional<DedicatedBinding> dedicated_binding;
+    VulkanTypedHandle dedicated_binding = NullVulkanTypedHandle;
     if (const auto dedicated = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext)) {
         if (dedicated->buffer) {
-            auto buffer_state = Get<Buffer>(dedicated->buffer);
-            ASSERT_AND_RETURN(buffer_state);
-
-            dedicated_binding.emplace(dedicated->buffer, buffer_state->create_info);
+            dedicated_binding = {dedicated->buffer, kVulkanObjectTypeBuffer};
         } else if (dedicated->image) {
-            auto image_state = Get<Image>(dedicated->image);
-            ASSERT_AND_RETURN(image_state);
-
-            dedicated_binding.emplace(dedicated->image, image_state->create_info);
-        }
-        if (const auto dedicated_tensor =
-                vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfoTensorARM>(pAllocateInfo->pNext)) {
-            auto tensor_state = Get<vvl::Tensor>(dedicated_tensor->tensor);
-            ASSERT_AND_RETURN(tensor_state);
-            dedicated_binding.emplace(dedicated_tensor->tensor, tensor_state->create_info);
+            dedicated_binding = {dedicated->image, kVulkanObjectTypeImage};
+        } else if (const auto dedicated_tensor =
+                       vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfoTensorARM>(pAllocateInfo->pNext)) {
+            dedicated_binding = {dedicated_tensor->tensor, kVulkanObjectTypeTensorARM};
         }
     }
-    Add(CreateDeviceMemoryState(*pMemory, pAllocateInfo, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
+    Add(CreateDeviceMemoryState(*pMemory, pAllocateInfo, fake_address, memory_type, memory_heap, dedicated_binding,
                                 physical_device_count));
     return;
 }
@@ -6536,10 +6527,10 @@ std::shared_ptr<CommandBuffer> DeviceState::CreateCmdBufferState(VkCommandBuffer
 std::shared_ptr<DeviceMemory> DeviceState::CreateDeviceMemoryState(VkDeviceMemory handle, const VkMemoryAllocateInfo* allocate_info,
                                                                    uint64_t fake_address, const VkMemoryType& memory_type,
                                                                    const VkMemoryHeap& memory_heap,
-                                                                   std::optional<DedicatedBinding>&& dedicated_binding,
+                                                                   VulkanTypedHandle dedicated_binding,
                                                                    uint32_t physical_device_count) {
-    return std::make_shared<DeviceMemory>(handle, allocate_info, fake_address, memory_type, memory_heap,
-                                          std::move(dedicated_binding), physical_device_count);
+    return std::make_shared<DeviceMemory>(handle, allocate_info, fake_address, memory_type, memory_heap, dedicated_binding,
+                                          physical_device_count);
 }
 
 void DeviceState::PostCallRecordCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
