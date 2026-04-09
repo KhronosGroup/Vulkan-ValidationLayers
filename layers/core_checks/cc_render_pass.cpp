@@ -2952,24 +2952,24 @@ bool CoreChecks::ValidateRenderingInfoAttachmentDeviceGroup(const vvl::Image& im
     if (!device_group_render_pass_begin_info || device_group_render_pass_begin_info->deviceRenderAreaCount == 0) {
         // Upcasting to handle overflow
         const bool x_extent_valid =
-            static_cast<int64_t>(image_state.create_info.extent.width) >=
+            static_cast<int64_t>(image_state.GetExtent().width) >=
             static_cast<int64_t>(rendering_info.renderArea.offset.x) + static_cast<int64_t>(rendering_info.renderArea.extent.width);
         if (!x_extent_valid) {
-            skip |= LogError("VUID-VkRenderingInfo-pNext-06079", objlist, loc,
-                             "width (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.x (%" PRId32
-                             ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
-                             image_state.create_info.extent.width, rendering_info.renderArea.offset.x,
-                             rendering_info.renderArea.extent.width);
+            skip |=
+                LogError("VUID-VkRenderingInfo-pNext-06079", objlist, loc,
+                         "width (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.x (%" PRId32
+                         ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
+                         image_state.GetExtent().width, rendering_info.renderArea.offset.x, rendering_info.renderArea.extent.width);
         }
 
-        const bool y_extent_valid = static_cast<int64_t>(image_state.create_info.extent.height) >=
+        const bool y_extent_valid = static_cast<int64_t>(image_state.GetExtent().height) >=
                                     static_cast<int64_t>(rendering_info.renderArea.offset.y) +
                                         static_cast<int64_t>(rendering_info.renderArea.extent.height);
         if (!y_extent_valid) {
             skip |= LogError("VUID-VkRenderingInfo-pNext-06080", objlist, loc,
                              "height (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.y (%" PRId32
                              ") + pRenderingInfo->renderArea.extent.height (%" PRIu32 ").",
-                             image_state.create_info.extent.height, rendering_info.renderArea.offset.y,
+                             image_state.GetExtent().height, rendering_info.renderArea.offset.y,
                              rendering_info.renderArea.extent.height);
         }
     }
@@ -3363,7 +3363,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
             const int64_t y_adjusted_extent =
                 static_cast<int64_t>(render_area.offset.y) + static_cast<int64_t>(render_area.extent.height);
 
-            if (fdm_image_state->create_info.extent.width <
+            if (fdm_image_state->GetExtent().width <
                 vvl::GetQuotientCeil(
                     x_adjusted_extent,
                     static_cast<int64_t>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width))) {
@@ -3374,10 +3374,10 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
                     "width  (%" PRIu32 ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRId32
                     ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
                     ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.width (%" PRIu32 ").",
-                    fdm_image_state->create_info.extent.width, render_area.offset.x, render_area.extent.width,
+                    fdm_image_state->GetExtent().width, render_area.offset.x, render_area.extent.width,
                     phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
             }
-            if (fdm_image_state->create_info.extent.height <
+            if (fdm_image_state->GetExtent().height <
                 vvl::GetQuotientCeil(
                     y_adjusted_extent,
                     static_cast<int64_t>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height))) {
@@ -3388,7 +3388,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
                     "height (%" PRIu32 ") must not be less than (pRenderingInfo->renderArea.offset.y (%" PRId32
                     ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
                     ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.height (%" PRIu32 ").",
-                    fdm_image_state->create_info.extent.height, render_area.offset.y, render_area.extent.height,
+                    fdm_image_state->GetExtent().height, render_area.offset.y, render_area.extent.height,
                     phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
             }
         }
@@ -3475,7 +3475,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRateRenderArea(
         const int64_t y_adjusted_extent =
             static_cast<int64_t>(render_area.offset.y) + static_cast<int64_t>(render_area.extent.height);
 
-        if (static_cast<int64_t>(view_state.image_state->create_info.extent.width) <
+        if (static_cast<int64_t>(view_state.image_state->GetExtent().width) <
             vvl::GetQuotientCeil(x_adjusted_extent,
                                  static_cast<int64_t>(fsr_attachment_info.shadingRateAttachmentTexelSize.width))) {
             skip |= LogError("VUID-VkRenderingInfo-pNext-06119", objlist,
@@ -3483,11 +3483,11 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRateRenderArea(
                              "width (%" PRIu32 ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRId32
                              ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
                              ") ) / shadingRateAttachmentTexelSize.width (%" PRIu32 ").",
-                             view_state.image_state->create_info.extent.width, render_area.offset.x, render_area.extent.width,
+                             view_state.image_state->GetExtent().width, render_area.offset.x, render_area.extent.width,
                              fsr_attachment_info.shadingRateAttachmentTexelSize.width);
         }
 
-        if (static_cast<int64_t>(view_state.image_state->create_info.extent.height) <
+        if (static_cast<int64_t>(view_state.image_state->GetExtent().height) <
             vvl::GetQuotientCeil(y_adjusted_extent,
                                  static_cast<int64_t>(fsr_attachment_info.shadingRateAttachmentTexelSize.height))) {
             skip |= LogError("VUID-VkRenderingInfo-pNext-06121", objlist,
@@ -3495,7 +3495,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRateRenderArea(
                              "height (%" PRIu32 ") must not be less than (pRenderingInfo->renderArea.offset.y (%" PRId32
                              ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
                              ") ) / shadingRateAttachmentTexelSize.height (%" PRIu32 ").",
-                             view_state.image_state->create_info.extent.height, render_area.offset.y, render_area.extent.height,
+                             view_state.image_state->GetExtent().height, render_area.offset.y, render_area.extent.height,
                              fsr_attachment_info.shadingRateAttachmentTexelSize.height);
         }
     } else {
@@ -3508,7 +3508,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRateRenderArea(
                 const uint32_t height = device_group_begin_info->pDeviceRenderAreas[deviceRenderAreaIndex].extent.height;
 
                 vvl::Image* image_state = view_state.image_state.get();
-                if (image_state->create_info.extent.width <
+                if (image_state->GetExtent().width <
                     vvl::GetQuotientCeil(offset_x + width, fsr_attachment_info.shadingRateAttachmentTexelSize.width)) {
                     skip |= LogError(
                         "VUID-VkRenderingInfo-pNext-06120", objlist,
@@ -3516,10 +3516,10 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRateRenderArea(
                         "width (%" PRIu32 ") must not be less than (VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
                         "].offset.x (%" PRId32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
                         "].extent.width (%" PRIu32 ") ) / shadingRateAttachmentTexelSize.width (%" PRIu32 ").",
-                        image_state->create_info.extent.width, deviceRenderAreaIndex, offset_x, deviceRenderAreaIndex, width,
+                        image_state->GetExtent().width, deviceRenderAreaIndex, offset_x, deviceRenderAreaIndex, width,
                         fsr_attachment_info.shadingRateAttachmentTexelSize.width);
                 }
-                if (image_state->create_info.extent.height <
+                if (image_state->GetExtent().height <
                     vvl::GetQuotientCeil(offset_y + height, fsr_attachment_info.shadingRateAttachmentTexelSize.height)) {
                     skip |= LogError(
                         "VUID-VkRenderingInfo-pNext-06122", objlist,
@@ -3529,7 +3529,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRateRenderArea(
                         "].extent.height (%" PRIu32
                         ") ) / shadingRateAttachmentTexelSize.height "
                         "(%" PRIu32 ").",
-                        image_state->create_info.extent.height, deviceRenderAreaIndex, offset_y, deviceRenderAreaIndex, height,
+                        image_state->GetExtent().height, deviceRenderAreaIndex, offset_y, deviceRenderAreaIndex, height,
                         fsr_attachment_info.shadingRateAttachmentTexelSize.height);
                 }
             }
@@ -3725,23 +3725,23 @@ bool CoreChecks::ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer
             auto image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[j].imageView);
             ASSERT_AND_CONTINUE(image_view_state);
             vvl::Image* image_state = image_view_state->image_state.get();
-            if (image_state->create_info.extent.width < offset_x + width) {
+            if (image_state->GetExtent().width < offset_x + width) {
                 const LogObjectList objlist(commandBuffer, image_view_state->Handle(), image_state->Handle());
                 skip |= LogError("VUID-VkRenderingInfo-pNext-06083", objlist,
                                  rendering_info_loc.dot(Field::pColorAttachments, j).dot(Field::imageView),
                                  "width (%" PRIu32
                                  ") must be greater than or equal to"
                                  "renderArea.offset.x (%" PRId32 ") + renderArea.extent.width (%" PRIu32 ").",
-                                 image_state->create_info.extent.width, offset_x, width);
+                                 image_state->GetExtent().width, offset_x, width);
             }
-            if (image_state->create_info.extent.height < offset_y + height) {
+            if (image_state->GetExtent().height < offset_y + height) {
                 const LogObjectList objlist(commandBuffer, image_view_state->Handle(), image_state->Handle());
                 skip |= LogError("VUID-VkRenderingInfo-pNext-06084", objlist,
                                  rendering_info_loc.dot(Field::pColorAttachments, j).dot(Field::imageView),
                                  "height (%" PRIu32
                                  ") must be greater than or equal to"
                                  "renderArea.offset.y (%" PRId32 ") + renderArea.extent.height (%" PRIu32 ").",
-                                 image_state->create_info.extent.height, offset_y, height);
+                                 image_state->GetExtent().height, offset_y, height);
             }
         }
 
@@ -3749,23 +3749,23 @@ bool CoreChecks::ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer
             auto depth_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
             ASSERT_AND_RETURN_SKIP(depth_view_state);
             vvl::Image* image_state = depth_view_state->image_state.get();
-            if (image_state->create_info.extent.width < offset_x + width) {
+            if (image_state->GetExtent().width < offset_x + width) {
                 const LogObjectList objlist(commandBuffer, depth_view_state->Handle(), image_state->Handle());
                 skip |= LogError("VUID-VkRenderingInfo-pNext-06083", objlist,
                                  rendering_info_loc.dot(Field::pDepthAttachment).dot(Field::imageView),
                                  "width (%" PRIu32
                                  ") must be greater than or equal to"
                                  "renderArea.offset.x (%" PRId32 ") + renderArea.extent.width (%" PRIu32 ").",
-                                 image_state->create_info.extent.width, offset_x, width);
+                                 image_state->GetExtent().width, offset_x, width);
             }
-            if (image_state->create_info.extent.height < offset_y + height) {
+            if (image_state->GetExtent().height < offset_y + height) {
                 const LogObjectList objlist(commandBuffer, depth_view_state->Handle(), image_state->Handle());
                 skip |= LogError("VUID-VkRenderingInfo-pNext-06084", objlist,
                                  rendering_info_loc.dot(Field::pDepthAttachment).dot(Field::imageView),
                                  "height (%" PRIu32
                                  ") must be greater than or equal to"
                                  "renderArea.offset.y (%" PRId32 ") + renderArea.extent.height (%" PRIu32 ").",
-                                 image_state->create_info.extent.height, offset_y, height);
+                                 image_state->GetExtent().height, offset_y, height);
             }
         }
 
@@ -3773,23 +3773,23 @@ bool CoreChecks::ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer
             auto stencil_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
             ASSERT_AND_RETURN_SKIP(stencil_view_state);
             vvl::Image* image_state = stencil_view_state->image_state.get();
-            if (image_state->create_info.extent.width < offset_x + width) {
+            if (image_state->GetExtent().width < offset_x + width) {
                 const LogObjectList objlist(commandBuffer, stencil_view_state->Handle(), image_state->Handle());
                 skip |= LogError("VUID-VkRenderingInfo-pNext-06083", objlist,
                                  rendering_info_loc.dot(Field::pStencilAttachment).dot(Field::imageView),
                                  "width (%" PRIu32
                                  ") must be greater than or equal to"
                                  "renderArea.offset.x (%" PRId32 ") + renderArea.extent.width (%" PRIu32 ").",
-                                 image_state->create_info.extent.width, offset_x, width);
+                                 image_state->GetExtent().width, offset_x, width);
             }
-            if (image_state->create_info.extent.height < offset_y + height) {
+            if (image_state->GetExtent().height < offset_y + height) {
                 const LogObjectList objlist(commandBuffer, stencil_view_state->Handle(), image_state->Handle());
                 skip |= LogError("VUID-VkRenderingInfo-pNext-06084", objlist,
                                  rendering_info_loc.dot(Field::pStencilAttachment).dot(Field::imageView),
                                  "height (%" PRIu32
                                  ") must be greater than or equal to"
                                  "renderArea.offset.y (%" PRId32 ") + renderArea.extent.height(%" PRIu32 ").",
-                                 image_state->create_info.extent.height, offset_y, height);
+                                 image_state->GetExtent().height, offset_y, height);
             }
         }
 
@@ -3800,7 +3800,7 @@ bool CoreChecks::ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer
             ASSERT_AND_RETURN_SKIP(view_state);
             vvl::Image* image_state = view_state->image_state.get();
             ASSERT_AND_RETURN_SKIP(image_state);
-            if (image_state->create_info.extent.width <
+            if (image_state->GetExtent().width <
                 vvl::GetQuotientCeil(offset_x + width,
                                      phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width)) {
                 const LogObjectList objlist(commandBuffer, view_state->Handle(), image_state->Handle());
@@ -3811,10 +3811,10 @@ bool CoreChecks::ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer
                     "].offset.x (%" PRId32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
                     "].extent.width (%" PRIu32
                     ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.width (%" PRIu32 ").",
-                    image_state->create_info.extent.width, dra_i, offset_x, dra_i, width,
+                    image_state->GetExtent().width, dra_i, offset_x, dra_i, width,
                     phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
             }
-            if (image_state->create_info.extent.height <
+            if (image_state->GetExtent().height <
                 vvl::GetQuotientCeil(offset_y + height,
                                      phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height)) {
                 const LogObjectList objlist(commandBuffer, view_state->Handle(), image_state->Handle());
@@ -3825,7 +3825,7 @@ bool CoreChecks::ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer
                     "].offset.y (%" PRId32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
                     "].extent.height (%" PRIu32
                     ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.height (%" PRIu32 ").",
-                    image_state->create_info.extent.height, dra_i, offset_y, dra_i, height,
+                    image_state->GetExtent().height, dra_i, offset_y, dra_i, height,
                     phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
             }
         }
@@ -4174,11 +4174,11 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer&
                                  FormatHandle(color_attachment.resolveImageView).c_str());
             } else {
                 if (device_state->android_external_format_resolve_null_color_attachment_prop &&
-                    resolve_view_state->image_state->create_info.samples != VK_SAMPLE_COUNT_1_BIT) {
+                    resolve_view_state->image_state->GetSamples() != VK_SAMPLE_COUNT_1_BIT) {
                     const LogObjectList objlist(commandBuffer, color_attachment.resolveImageView);
                     skip |= LogError("VUID-VkRenderingAttachmentInfo-nullColorAttachmentWithExternalFormatResolve-09325",
                                      commandBuffer, color_attachment_loc.dot(Field::resolveImageView), "image was created with %s.",
-                                     string_VkSampleCountFlagBits(resolve_view_state->image_state->create_info.samples));
+                                     string_VkSampleCountFlagBits(resolve_view_state->image_state->GetSamples()));
                 }
                 if (!resolve_view_state->image_state->HasAHBFormat()) {
                     const LogObjectList objlist(commandBuffer, color_attachment.resolveImageView);
@@ -4678,16 +4678,16 @@ bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer co
     }
     if (!(image_state->image_format_properties.sampleCounts & msrtss_info.rasterizationSamples)) {
         const LogObjectList objlist(commandBuffer, image_view_state.Handle());
-        skip |= LogError(
-            "VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880", objlist,
-            rendering_info_loc.pNext(Struct::VkMultisampledRenderToSingleSampledInfoEXT, Field::rasterizationSamples),
-            "is %s, but %s format %s does not support sample count %s from an image with imageType: %s, tiling: "
-            "%s, usage: %s, flags: %s.",
-            string_VkSampleCountFlagBits(msrtss_info.rasterizationSamples), attachment_loc.Fields().c_str(),
-            string_VkFormat(image_view_state.create_info.format), string_VkSampleCountFlagBits(msrtss_info.rasterizationSamples),
-            string_VkImageType(image_state->create_info.imageType), string_VkImageTiling(image_state->create_info.tiling),
-            string_VkImageUsageFlags(image_state->create_info.usage).c_str(),
-            string_VkImageCreateFlags(image_state->create_info.flags).c_str());
+        skip |= LogError("VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880", objlist,
+                         rendering_info_loc.pNext(Struct::VkMultisampledRenderToSingleSampledInfoEXT, Field::rasterizationSamples),
+                         "is %s, but %s format %s does not support sample count %s from an image with imageType: %s, tiling: "
+                         "%s, usage: %s, flags: %s.",
+                         string_VkSampleCountFlagBits(msrtss_info.rasterizationSamples), attachment_loc.Fields().c_str(),
+                         string_VkFormat(image_view_state.create_info.format),
+                         string_VkSampleCountFlagBits(msrtss_info.rasterizationSamples),
+                         string_VkImageType(image_state->GetImageType()), string_VkImageTiling(image_state->GetTiling()),
+                         string_VkImageUsageFlags(image_state->create_info.usage).c_str(),
+                         string_VkImageCreateFlags(image_state->create_info.flags).c_str());
     }
     return skip;
 }
@@ -5216,7 +5216,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& c
         }
         if ((ivci.viewType == VK_IMAGE_VIEW_TYPE_2D) || (ivci.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
             auto image_state = Get<vvl::Image>(ivci.image);
-            if (image_state && image_state->create_info.imageType == VK_IMAGE_TYPE_3D) {
+            if (image_state && image_state->GetImageType() == VK_IMAGE_TYPE_3D) {
                 if (vkuFormatIsDepthOrStencil(ivci.format)) {
                     LogObjectList objlist(create_info.renderPass, image_views[i], ivci.image);
                     skip |= LogError("VUID-VkFramebufferCreateInfo-pAttachments-00891", objlist, attachment_loc,

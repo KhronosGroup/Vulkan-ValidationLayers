@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -150,12 +150,12 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const Location& lo
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceRange& subresource_range) {
     // If we're viewing a 3D slice, ignore base array layer.
     // The entire 3D subresource is accessed as one atomic unit.
-    const uint32_t base_array_layer = image_state.create_info.imageType == VK_IMAGE_TYPE_3D ? 0 : subresource_range.baseArrayLayer;
+    const uint32_t base_array_layer = image_state.GetImageType() == VK_IMAGE_TYPE_3D ? 0 : subresource_range.baseArrayLayer;
 
-    const uint32_t max_layers = image_state.create_info.arrayLayers - base_array_layer;
+    const uint32_t max_layers = image_state.GetArrayLayers() - base_array_layer;
     const uint32_t array_layers = std::min(subresource_range.layerCount, max_layers);
-    const uint32_t max_levels = image_state.create_info.mipLevels - subresource_range.baseMipLevel;
-    const uint32_t mip_levels = std::min(image_state.create_info.mipLevels, max_levels);
+    const uint32_t max_levels = image_state.GetMipLevels() - subresource_range.baseMipLevel;
+    const uint32_t mip_levels = std::min(image_state.GetMipLevels(), max_levels);
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
         for (uint32_t level = 0; level < mip_levels; level++) {
@@ -166,7 +166,7 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const Location& lo
 
 void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const Location& loc, vvl::Image& image_state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceLayers& subresource_layers) {
-    const uint32_t max_layers = image_state.create_info.arrayLayers - subresource_layers.baseArrayLayer;
+    const uint32_t max_layers = image_state.GetArrayLayers() - subresource_layers.baseArrayLayer;
     const uint32_t array_layers = std::min(subresource_layers.layerCount, max_layers);
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
@@ -265,7 +265,7 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
     auto last_usage = sub_state.UpdateUsage(array_layer, mip_level, usage, queue_family);
 
     // Concurrent sharing usage of image with exclusive sharing mode
-    if (image_state.create_info.sharingMode == VK_SHARING_MODE_EXCLUSIVE && last_usage.queue_family_index != queue_family) {
+    if (image_state.GetSharingMode() == VK_SHARING_MODE_EXCLUSIVE && last_usage.queue_family_index != queue_family) {
         // if UNDEFINED then first use/acquisition of subresource
         if (last_usage.type != IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED) {
             // If usage might read from the subresource, as contents are undefined

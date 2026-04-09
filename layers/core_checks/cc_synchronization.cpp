@@ -1956,17 +1956,17 @@ bool CoreChecks::ValidateImageBarrierZeroInitializedSubresourceRange(const VkIma
                          "(%" PRIu32 ") is not zero, but you need to zero initialize the entire image resource at once.",
                          subresource_range.baseMipLevel);
     } else if (subresource_range.layerCount != VK_REMAINING_ARRAY_LAYERS &&
-               subresource_range.layerCount != image_state.create_info.arrayLayers) {
+               subresource_range.layerCount != image_state.GetArrayLayers()) {
         skip |= LogError(vuid, objlist, subresource_range_loc.dot(Field::layerCount),
                          "(%" PRIu32 ") is not the same as VkImageCreateInfo::arrayLayers (%" PRIu32
                          "), but you need to zero initialize the entire image resource at once.",
-                         subresource_range.layerCount, image_state.create_info.arrayLayers);
+                         subresource_range.layerCount, image_state.GetArrayLayers());
     } else if (subresource_range.levelCount != VK_REMAINING_MIP_LEVELS &&
-               subresource_range.levelCount != image_state.create_info.mipLevels) {
+               subresource_range.levelCount != image_state.GetMipLevels()) {
         skip |= LogError(vuid, objlist, subresource_range_loc.dot(Field::levelCount),
                          "(%" PRIu32 ") is not the same as VkImageCreateInfo::mipLevels (%" PRIu32
                          "), but you need to zero initialize the entire image resource at once.",
-                         subresource_range.levelCount, image_state.create_info.mipLevels);
+                         subresource_range.levelCount, image_state.GetMipLevels());
     }
 
     return skip;

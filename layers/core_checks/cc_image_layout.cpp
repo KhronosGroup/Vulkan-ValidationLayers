@@ -408,7 +408,7 @@ bool CoreChecks::ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuff
                          "usage: %s\n"
                          "flags: %s\n",
                          string_VkSampleCountFlagBits(msrtss_samples), FormatHandle(image_state).c_str(),
-                         string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
+                         string_VkFormat(image_create_info.format), string_VkImageType(image_state.GetImageType()),
                          string_VkImageTiling(image_create_info.tiling), string_VkImageUsageFlags(image_create_info.usage).c_str(),
                          string_VkImageCreateFlags(image_create_info.flags).c_str());
     }
@@ -1154,8 +1154,7 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer& cb_state, const
     // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
     if (mem_barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
         CanTransitionDepthSlices(extensions, image_state.create_info)) {
-        normalized_subresource_range.layerCount =
-            image_state.create_info.extent.depth - normalized_subresource_range.baseArrayLayer;
+        normalized_subresource_range.layerCount = image_state.GetExtent().depth - normalized_subresource_range.baseArrayLayer;
     }
 
     VkImageLayout old_layout = mem_barrier.oldLayout;
@@ -1182,8 +1181,8 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer& cb_state, const
 
 bool CoreChecks::IsCompliantSubresourceRange(const VkImageSubresourceRange& subres_range, const vvl::Image& image_state) const {
     if (!(subres_range.layerCount) || !(subres_range.levelCount)) return false;
-    if (subres_range.baseMipLevel + subres_range.levelCount > image_state.create_info.mipLevels) return false;
-    if ((subres_range.baseArrayLayer + subres_range.layerCount) > image_state.create_info.arrayLayers) {
+    if (subres_range.baseMipLevel + subres_range.levelCount > image_state.GetMipLevels()) return false;
+    if ((subres_range.baseArrayLayer + subres_range.layerCount) > image_state.GetArrayLayers()) {
         return false;
     }
     if (!IsValidAspectMaskForFormat(subres_range.aspectMask, image_state.create_info.format)) return false;

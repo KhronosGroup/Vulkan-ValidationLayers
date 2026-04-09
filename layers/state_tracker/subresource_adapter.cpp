@@ -298,12 +298,12 @@ ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image)
 
 ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParameters* param)
     : RangeEncoder(image.full_range, param), total_size_(0U) {
-    if (image.create_info.extent.depth > 1) {
-        limits_.arrayLayer = image.create_info.extent.depth;
+    if (image.GetExtent().depth > 1) {
+        limits_.arrayLayer = image.GetExtent().depth;
     }
 
     linear_image_ = false;
-    if (image.create_info.tiling == VK_IMAGE_TILING_LINEAR) {
+    if (image.GetTiling() == VK_IMAGE_TILING_LINEAR) {
         linear_image_ = true;
 
         // WORKAROUND for profile and mock_icd not containing valid VkSubresourceLayout yet. Treat it as optimal image.
@@ -331,7 +331,7 @@ ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParame
     is_compressed_ = vkuFormatIsCompressed(image.create_info.format);
     texel_block_extent_ = vkuFormatTexelBlockExtent(image.create_info.format);
 
-    is_3_d_ = image.create_info.imageType == VK_IMAGE_TYPE_3D;
+    is_3_d_ = image.GetImageType() == VK_IMAGE_TYPE_3D;
     y_interleave_ = false;
 
     VkSubresourceLayout layout = {};

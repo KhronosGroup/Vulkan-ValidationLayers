@@ -227,7 +227,7 @@ bool BestPractices::ValidateImageMemoryBarrier(const Location& loc, VkCommandBuf
         const char* warning = enabled_features.maintenance9
                                   ? "is not required, because maintenance9 is enabled"
                                   : "could be omitted, if maintenance9 (which is supported by the physical device) were enabled";
-        if (image_state->create_info.tiling == VK_IMAGE_TILING_LINEAR) {
+        if (image_state->GetTiling() == VK_IMAGE_TILING_LINEAR) {
             skip |= LogPerformanceWarning("BestPractices-PipelineBarrier-unneeded-QFOT", image, loc,
                                           "A queue family ownership transfer is being performed on %s, but this %s. Image was "
                                           "created with VK_IMAGE_TILING_LINEAR.",

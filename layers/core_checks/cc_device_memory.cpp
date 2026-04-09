@@ -306,12 +306,7 @@ bool CoreChecks::HasExternalMemoryImportSupport(const vvl::Buffer& buffer, VkExt
 bool CoreChecks::HasExternalMemoryImportSupport(const vvl::Image& image, VkExternalMemoryHandleTypeFlagBits handle_type) const {
     VkPhysicalDeviceExternalImageFormatInfo external_info = vku::InitStructHelper();
     external_info.handleType = handle_type;
-    VkPhysicalDeviceImageFormatInfo2 info = vku::InitStructHelper(&external_info);
-    info.format = image.create_info.format;
-    info.type = image.create_info.imageType;
-    info.tiling = image.create_info.tiling;
-    info.usage = image.create_info.usage;
-    info.flags = image.create_info.flags;
+    VkPhysicalDeviceImageFormatInfo2 info = image.GetImageFormatInfo2(&external_info);
 
     // TODO - Want to use vvl::PnextChainExtract, but would need to cleanup (and test) rest of how we add the other pNext here
     // Note - some pNext structs that can be found in VkImageCreateInfo::pNext are not allowed in VkPhysicalDeviceImageFormatInfo2
@@ -335,16 +330,16 @@ bool CoreChecks::HasExternalMemoryImportSupport(const vvl::Image& image, VkExter
 
     VkExternalImageFormatProperties external_properties = vku::InitStructHelper();
     VkImageFormatProperties2 properties = vku::InitStructHelper(&external_properties);
-    if (image.create_info.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+    if (image.GetTiling() != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         // Can't get into function with using external memory extensions which require GPDP2
         if (DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &info, &properties) != VK_SUCCESS) {
             return false;
         }
     } else {
         VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
-        drm_format_modifier.sharingMode = image.create_info.sharingMode;
-        drm_format_modifier.queueFamilyIndexCount = image.create_info.queueFamilyIndexCount;
-        drm_format_modifier.pQueueFamilyIndices = image.create_info.pQueueFamilyIndices;
+        drm_format_modifier.sharingMode = image.GetSharingMode();
+        drm_format_modifier.queueFamilyIndexCount = image.GetQueueFamilyIndexCount();
+        drm_format_modifier.pQueueFamilyIndices = image.GetQueueFamilyIndices();
         vvl::PnextChainScopedAdd scoped_add_drm_fmt_mod(&info, &drm_format_modifier);
 
         VkImageDrmFormatModifierPropertiesEXT drm_format_properties = vku::InitStructHelper();
@@ -1193,7 +1188,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
     auto image_state = Get<vvl::Image>(pInfo->image);
     ASSERT_AND_RETURN_SKIP(image_state);
     const VkFormat image_format = image_state->create_info.format;
-    const VkImageTiling image_tiling = image_state->create_info.tiling;
+    const VkImageTiling image_tiling = image_state->GetTiling();
     const auto* image_plane_info = vku::FindStructInPNextChain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
     if (!image_plane_info && image_state->disjoint) {
         if (vkuFormatIsMultiplane(image_format)) {
@@ -1203,7 +1198,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
                              "VkImagePlaneMemoryRequirementsInfo struct",
                              FormatHandle(pInfo->image).c_str(), string_VkFormat(image_format));
         }
-        if (image_state->create_info.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+        if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
             skip |= LogError("VUID-VkImageMemoryRequirementsInfo2-image-02279", pInfo->image, image_loc,
                              "(%s) was created with VK_IMAGE_CREATE_DISJOINT_BIT and has tiling of "
                              "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT, "
@@ -2081,17 +2076,12 @@ bool CoreChecks::ValidateBindImageMemoryResource(const VkBindImageMemoryInfo& bi
     // Validate export memory handles
     if (memory_state.IsExport()) {
         VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
-        drm_format_modifier.sharingMode = image_state.create_info.sharingMode;
-        drm_format_modifier.queueFamilyIndexCount = image_state.create_info.queueFamilyIndexCount;
-        drm_format_modifier.pQueueFamilyIndices = image_state.create_info.pQueueFamilyIndices;
+        drm_format_modifier.sharingMode = image_state.GetSharingMode();
+        drm_format_modifier.queueFamilyIndexCount = image_state.GetQueueFamilyIndexCount();
+        drm_format_modifier.pQueueFamilyIndices = image_state.GetQueueFamilyIndices();
         VkPhysicalDeviceExternalImageFormatInfo external_info = vku::InitStructHelper();
 
-        VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
-        image_format_info.format = image_state.create_info.format;
-        image_format_info.type = image_state.create_info.imageType;
-        image_format_info.tiling = image_state.create_info.tiling;
-        image_format_info.usage = image_state.create_info.usage;
-        image_format_info.flags = image_state.create_info.flags;
+        VkPhysicalDeviceImageFormatInfo2 image_format_info = image_state.GetImageFormatInfo2();
 
         // TODO - Want to use vvl::PnextChainExtract, but would need to cleanup (and test) rest of how we add the other
         // pNext here
@@ -2124,7 +2114,7 @@ bool CoreChecks::ValidateBindImageMemoryResource(const VkBindImageMemoryInfo& bi
         auto validate_export_handle_types = [&](VkExternalMemoryHandleTypeFlagBits flag) {
             external_info.handleType = flag;
             external_info.pNext = NULL;
-            if (image_state.create_info.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+            if (image_state.GetTiling() == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
                 VkImageDrmFormatModifierPropertiesEXT drm_modifier_properties = vku::InitStructHelper();
                 auto result = DispatchGetImageDrmFormatModifierPropertiesEXT(device, bind_info.image, &drm_modifier_properties);
                 if (result == VK_SUCCESS) {
@@ -2257,9 +2247,9 @@ bool CoreChecks::ValidateBindImagePlaneMemoryInfo(const VkBindImageMemoryInfo& b
     }
 
     // Make sure planeAspect is only a single, valid plane
-    const VkFormat image_format = image_state.create_info.format;
+    const VkFormat image_format = image_state.GetFormat();
     const VkImageAspectFlags aspect = plane_info.planeAspect;
-    const VkImageTiling image_tiling = image_state.create_info.tiling;
+    const VkImageTiling image_tiling = image_state.GetTiling();
 
     if ((image_tiling == VK_IMAGE_TILING_LINEAR) || (image_tiling == VK_IMAGE_TILING_OPTIMAL)) {
         if (vkuFormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect)) {
@@ -2605,18 +2595,18 @@ bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(vvl::Image const&
     skip |= ValidateImageAspectMask(image_state.VkHandle(), image_state.create_info.format, subresource.aspectMask,
                                     image_state.disjoint, bind_loc, "VUID-VkSparseImageMemoryBindInfo-subresource-01106");
 
-    if (subresource.mipLevel >= image_state.create_info.mipLevels) {
+    if (subresource.mipLevel >= image_state.GetMipLevels()) {
         skip |=
             LogError("VUID-VkSparseImageMemoryBindInfo-subresource-01722", image_state.Handle(),
                      subresource_loc.dot(Field::mipLevel), "(%" PRIu32 ") is not less than mipLevels (%" PRIu32 ") of %s.image.",
-                     subresource.mipLevel, image_state.create_info.mipLevels, bind_loc.Fields().c_str());
+                     subresource.mipLevel, image_state.GetMipLevels(), bind_loc.Fields().c_str());
     }
 
-    if (subresource.arrayLayer >= image_state.create_info.arrayLayers) {
+    if (subresource.arrayLayer >= image_state.GetArrayLayers()) {
         skip |= LogError("VUID-VkSparseImageMemoryBindInfo-subresource-01723", image_state.Handle(),
                          subresource_loc.dot(Field::arrayLayer),
                          "(%" PRIu32 ") is not less than arrayLayers (%" PRIu32 ") of %s.image.", subresource.arrayLayer,
-                         image_state.create_info.arrayLayers, bind_loc.Fields().c_str());
+                         image_state.GetArrayLayers(), bind_loc.Fields().c_str());
     }
 
     return skip;

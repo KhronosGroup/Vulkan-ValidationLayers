@@ -400,8 +400,8 @@ VkExtent3D VideoPictureResource::GetEffectiveImageExtent(const vvl::VideoSession
     extent.height = ((extent.height + gran.height - 1) / gran.height) * gran.height;
 
     // Clamp to mip level dimensions
-    extent.width = std::min(extent.width, image_state->create_info.extent.width >> range.baseMipLevel);
-    extent.height = std::min(extent.height, image_state->create_info.extent.height >> range.baseMipLevel);
+    extent.width = std::min(extent.width, image_state->GetExtent().width >> range.baseMipLevel);
+    extent.height = std::min(extent.height, image_state->GetExtent().height >> range.baseMipLevel);
 
     return extent;
 }

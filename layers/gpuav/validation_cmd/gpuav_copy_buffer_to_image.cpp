@@ -139,6 +139,7 @@ void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubSt
         auto gpu_regions_u32_ptr = (uint32_t*)copy_src_regions_mem_buffer_range.offset_mapped_ptr;
 
         const uint32_t block_size = image_state->create_info.format == VK_FORMAT_D32_SFLOAT ? 4 : 5;
+        const VkExtent3D image_extent = image_state->GetExtent();
         uint32_t gpu_regions_count = 0;
         BufferImageCopy* gpu_regions_ptr =
             reinterpret_cast<BufferImageCopy*>(&gpu_regions_u32_ptr[uniform_buffer_constants_byte_size / sizeof(uint32_t)]);
@@ -159,10 +160,9 @@ void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubSt
             gpu_region.src_buffer_byte_offset = static_cast<uint32_t>(cpu_region.bufferOffset);
             gpu_region.start_layer = cpu_region.imageSubresource.baseArrayLayer;
             gpu_region.layer_count = cpu_region.imageSubresource.layerCount;
-            gpu_region.row_extent = std::max(cpu_region.bufferRowLength, image_state->create_info.extent.width * block_size);
-            gpu_region.slice_extent =
-                std::max(cpu_region.bufferImageHeight, image_state->create_info.extent.height * gpu_region.row_extent);
-            gpu_region.layer_extent = image_state->create_info.extent.depth * gpu_region.slice_extent;
+            gpu_region.row_extent = std::max(cpu_region.bufferRowLength, image_extent.width * block_size);
+            gpu_region.slice_extent = std::max(cpu_region.bufferImageHeight, image_extent.height * gpu_region.row_extent);
+            gpu_region.layer_extent = image_extent.depth * gpu_region.slice_extent;
             gpu_region.image_offset[0] = cpu_region.imageOffset.x;
             gpu_region.image_offset[1] = cpu_region.imageOffset.y;
             gpu_region.image_offset[2] = cpu_region.imageOffset.z;
@@ -184,9 +184,9 @@ void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubSt
             }
         }
 
-        gpu_regions_u32_ptr[0] = image_state->create_info.extent.width;
-        gpu_regions_u32_ptr[1] = image_state->create_info.extent.height;
-        gpu_regions_u32_ptr[2] = image_state->create_info.extent.depth;
+        gpu_regions_u32_ptr[0] = image_extent.width;
+        gpu_regions_u32_ptr[1] = image_extent.height;
+        gpu_regions_u32_ptr[2] = image_extent.depth;
         gpu_regions_u32_ptr[3] = 0;
         gpu_regions_u32_ptr[4] = block_size;
         gpu_regions_u32_ptr[5] = gpu_regions_count;
