@@ -346,6 +346,16 @@ bool Image::IsCompatibleAliasing(const Image* other_image_state) const {
     return false;
 }
 
+VkPhysicalDeviceImageFormatInfo2 Image::GetImageFormatInfo2(void* pNext) const {
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper(pNext);
+    image_format_info.type = GetImageType();
+    image_format_info.format = GetFormat();
+    image_format_info.tiling = GetTiling();
+    image_format_info.usage = create_info.usage;
+    image_format_info.flags = create_info.flags;
+    return image_format_info;
+}
+
 VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceLayers& sub) const {
     return GetEffectiveExtent(create_info, sub.aspectMask, sub.mipLevel);
 }
@@ -564,7 +574,7 @@ ImageView::ImageView(const DeviceState& device_state, const std::shared_ptr<vvl:
       is_depth_sliced(IsDepthSliceView(image_state->create_info, create_info.viewType)),
       normalized_subresource_range(ImageView::NormalizeImageViewSubresourceRange(*image_state, create_info)),
       range_generator(image_state->subresource_encoder, GetRangeGeneratorRange(device_state.extensions)),
-      samples(image_state->create_info.samples),
+      samples(image_state->GetSamples()),
       sampler_conversion(GetSamplerConversion(create_info)),
       filter_cubic_props(cubic_props),
       min_lod(GetImageViewMinLod(create_info)),

@@ -1216,7 +1216,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView& view_state, VkImageLa
 
     // KHR_maintenance1 allows rendering into 2D or 2DArray views which slice a 3D image,
     // but not binding them to descriptor sets.
-    if (view_state.is_depth_sliced && image_state->create_info.imageType == VK_IMAGE_TYPE_3D) {
+    if (view_state.is_depth_sliced && image_state->GetImageType() == VK_IMAGE_TYPE_3D) {
         // VK_EXT_image_2d_view_of_3d allows use of VIEW_TYPE_2D in descriptor
         if (view_state.create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
             skip |= LogError("VUID-VkDescriptorImageInfo-imageView-06712", objlist, image_info_loc.dot(Field::imageView),
@@ -3394,13 +3394,9 @@ bool CoreChecks::ValidateGetDescriptorDataSize(const VkDescriptorGetInfoEXT& des
         } else {
             const auto image_view_state = Get<vvl::ImageView>(combined_image_sampler->imageView);
             if (image_view_state && image_view_state->sampler_conversion != VK_NULL_HANDLE) {
-                auto image_info = image_view_state->image_state->create_info;
-                VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
-                image_format_info.type = image_info.imageType;
-                image_format_info.format = image_info.format;
-                image_format_info.tiling = image_info.tiling;
+                VkPhysicalDeviceImageFormatInfo2 image_format_info = image_view_state->image_state->GetImageFormatInfo2();
                 image_format_info.usage = image_view_state->inherited_usage;
-                image_format_info.flags = image_info.flags;
+
                 VkSamplerYcbcrConversionImageFormatProperties sampler_ycbcr_image_format_info = vku::InitStructHelper();
                 VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&sampler_ycbcr_image_format_info);
                 DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &image_format_info,
@@ -5319,12 +5315,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
             const auto image_state = Get<vvl::Image>(image_view_ci.image);
             ASSERT_AND_CONTINUE(image_state);
             if ((image_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) != 0) {
-                VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
-                image_format_info.type = image_state->create_info.imageType;
-                image_format_info.format = image_state->create_info.format;
-                image_format_info.tiling = image_state->create_info.tiling;
-                image_format_info.usage = image_state->create_info.usage;
-                image_format_info.flags = image_state->create_info.flags;
+                VkPhysicalDeviceImageFormatInfo2 image_format_info = image_state->GetImageFormatInfo2();
                 VkSubsampledImageFormatPropertiesEXT subsampled_image_format_info = vku::InitStructHelper();
                 VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&subsampled_image_format_info);
 
@@ -5347,12 +5338,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
             }
 
             if (vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(image_view_ci.pNext)) {
-                VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
-                image_format_info.type = image_state->create_info.imageType;
-                image_format_info.format = image_state->create_info.format;
-                image_format_info.tiling = image_state->create_info.tiling;
-                image_format_info.usage = image_state->create_info.usage;
-                image_format_info.flags = image_state->create_info.flags;
+                VkPhysicalDeviceImageFormatInfo2 image_format_info = image_state->GetImageFormatInfo2();
                 VkSamplerYcbcrConversionImageFormatProperties sampler_ycbcr_image_format_info = vku::InitStructHelper();
                 VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&sampler_ycbcr_image_format_info);
                 DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &image_format_info,
@@ -5371,7 +5357,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                                      i, string_VkDescriptorType(resource.type));
                 }
             }
-            if (image_state->create_info.imageType == VK_IMAGE_TYPE_3D) {
+            if (image_state->GetImageType() == VK_IMAGE_TYPE_3D) {
                 if (IsValueIn(resource.type, {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM,
                                               VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM})) {
                     skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11422", image_view_ci.image,

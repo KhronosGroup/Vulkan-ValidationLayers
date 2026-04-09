@@ -95,16 +95,11 @@ bool CoreChecks::GetPhysicalDeviceImageFormatProperties(vvl::Image& image_state,
     Func command = Func::vkGetPhysicalDeviceImageFormatProperties;
     if (image_create_info.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
-            physical_device, image_create_info.format, image_create_info.imageType, image_create_info.tiling,
+            physical_device, image_create_info.format, image_state.GetImageType(), image_create_info.tiling,
             image_create_info.usage, image_create_info.flags, &image_state.image_format_properties);
     } else {
         command = Func::vkGetPhysicalDeviceImageFormatProperties2;
-        VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
-        image_format_info.type = image_create_info.imageType;
-        image_format_info.format = image_create_info.format;
-        image_format_info.tiling = image_create_info.tiling;
-        image_format_info.usage = image_create_info.usage;
-        image_format_info.flags = image_create_info.flags;
+        VkPhysicalDeviceImageFormatInfo2 image_format_info = image_state.GetImageFormatInfo2();
         VkImageFormatProperties2 image_format_properties = vku::InitStructHelper();
         image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(
             api_version, physical_device, &image_format_info, &image_format_properties);

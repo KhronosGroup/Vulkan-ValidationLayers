@@ -124,6 +124,20 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
 
     VkImage VkHandle() const { return handle_.Cast<VkImage>(); }
 
+    VkImageType GetImageType() const { return create_info.imageType; }
+    VkFormat GetFormat() const { return create_info.format; }
+    VkExtent3D GetExtent() const { return create_info.extent; }
+    uint32_t GetMipLevels() const { return create_info.mipLevels; }
+    uint32_t GetArrayLayers() const { return create_info.arrayLayers; }
+    VkSampleCountFlagBits GetSamples() const { return create_info.samples; }
+    VkImageTiling GetTiling() const { return create_info.tiling; }
+    VkSharingMode GetSharingMode() const { return create_info.sharingMode; }
+    uint32_t GetQueueFamilyIndexCount() const { return create_info.queueFamilyIndexCount; }
+    const uint32_t* GetQueueFamilyIndices() const { return create_info.pQueueFamilyIndices; }
+    VkImageLayout GetInitialLayout() const { return create_info.initialLayout; }
+
+    VkPhysicalDeviceImageFormatInfo2 GetImageFormatInfo2(void* pNext = nullptr) const;
+
     bool HasAHBFormat() const { return ahb_format != 0; }
     bool IsCompatibleAliasing(const Image *other_image_state) const;
 

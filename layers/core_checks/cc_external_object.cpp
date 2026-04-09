@@ -626,11 +626,7 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo& allocat
         VkFormat image_format = image_state_ptr->create_info.format;
         VkPhysicalDeviceExternalImageFormatInfo external_info = vku::InitStructHelper();
         external_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT;
-        VkPhysicalDeviceImageFormatInfo2 format_info = vku::InitStructHelper(&external_info);
-        format_info.format = image_state_ptr->safe_create_info.format;
-        format_info.tiling = image_state_ptr->safe_create_info.tiling;
-        format_info.type = image_state_ptr->safe_create_info.imageType;
-        format_info.usage = image_state_ptr->safe_create_info.usage;
+        VkPhysicalDeviceImageFormatInfo2 format_info = image_state_ptr->GetImageFormatInfo2(&external_info);
         VkExternalImageFormatProperties external_image_format_properties = vku::InitStructHelper();
         VkImageFormatProperties2 format_properties = vku::InitStructHelper(&external_image_format_properties);
         DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &format_info, &format_properties);

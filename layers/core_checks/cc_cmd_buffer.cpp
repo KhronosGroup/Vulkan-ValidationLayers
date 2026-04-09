@@ -2007,7 +2007,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
             if (resolve_image_view != VK_NULL_HANDLE) {
                 auto resolve_image_view_state = Get<vvl::ImageView>(resolve_image_view);
                 ASSERT_AND_RETURN_SKIP(resolve_image_view_state);
-                if (inheritance_rendering_info.rasterizationSamples != resolve_image_view_state->image_state->create_info.samples) {
+                if (inheritance_rendering_info.rasterizationSamples != resolve_image_view_state->image_state->GetSamples()) {
                     const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
                     skip |= LogError("VUID-vkCmdExecuteCommands-resolveImageView-11526", objlist, secondary_cb_loc,
                                      "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::rasterizationSamples (%s) "
@@ -2017,7 +2017,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
                                      string_VkSampleCountFlagBits(inheritance_rendering_info.rasterizationSamples), i,
                                      FormatHandle(resolve_image_view).c_str(),
                                      FormatHandle(resolve_image_view_state->image_state->Handle()).c_str(),
-                                     string_VkSampleCountFlagBits(resolve_image_view_state->image_state->create_info.samples));
+                                     string_VkSampleCountFlagBits(resolve_image_view_state->image_state->GetSamples()));
                 }
             }
         }
@@ -2026,7 +2026,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
             if (resolve_image_view != VK_NULL_HANDLE) {
                 auto resolve_image_view_state = Get<vvl::ImageView>(resolve_image_view);
                 ASSERT_AND_RETURN_SKIP(resolve_image_view_state);
-                if (inheritance_rendering_info.rasterizationSamples != resolve_image_view_state->image_state->create_info.samples) {
+                if (inheritance_rendering_info.rasterizationSamples != resolve_image_view_state->image_state->GetSamples()) {
                     const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
                     skip |= LogError(
                         "VUID-vkCmdExecuteCommands-pDepthAttachment-11527", objlist, secondary_cb_loc,
@@ -2036,7 +2036,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
                         string_VkSampleCountFlagBits(inheritance_rendering_info.rasterizationSamples),
                         FormatHandle(resolve_image_view).c_str(),
                         FormatHandle(resolve_image_view_state->image_state->Handle()).c_str(),
-                        string_VkSampleCountFlagBits(resolve_image_view_state->image_state->create_info.samples));
+                        string_VkSampleCountFlagBits(resolve_image_view_state->image_state->GetSamples()));
                 }
             }
         }
@@ -2045,7 +2045,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
             if (resolve_image_view != VK_NULL_HANDLE) {
                 auto resolve_image_view_state = Get<vvl::ImageView>(resolve_image_view);
                 ASSERT_AND_RETURN_SKIP(resolve_image_view_state);
-                if (inheritance_rendering_info.rasterizationSamples != resolve_image_view_state->image_state->create_info.samples) {
+                if (inheritance_rendering_info.rasterizationSamples != resolve_image_view_state->image_state->GetSamples()) {
                     const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
                     skip |= LogError(
                         "VUID-vkCmdExecuteCommands-pStencilAttachment-11528", objlist, secondary_cb_loc,
@@ -2055,7 +2055,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
                         string_VkSampleCountFlagBits(inheritance_rendering_info.rasterizationSamples),
                         FormatHandle(resolve_image_view).c_str(),
                         FormatHandle(resolve_image_view_state->image_state->Handle()).c_str(),
-                        string_VkSampleCountFlagBits(resolve_image_view_state->image_state->create_info.samples));
+                        string_VkSampleCountFlagBits(resolve_image_view_state->image_state->GetSamples()));
                 }
             }
         }

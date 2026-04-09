@@ -253,7 +253,7 @@ bool CoreChecks::ValidateTransferGranularityExtent(const LogObjectList& objlist,
         bool x_ok = true;
         bool y_ok = true;
         bool z_ok = true;
-        switch (image_state.create_info.imageType) {
+        switch (image_state.GetImageType()) {
             case VK_IMAGE_TYPE_3D:
                 z_ok = IsIntegerMultipleOf(effective_region_extent.depth, granularity.depth) ||
                        (subresource_extent.depth == offset_extent_sum.depth);
@@ -384,10 +384,10 @@ struct ImageCopyRegion {
             dst_adjusted_extent = {extent.width * dst_block_extent.width, extent.height * dst_block_extent.height,
                                    extent.depth * dst_block_extent.depth};
             // One final edge case, if the compressed image is in 1D, the height is only actually 1 texel
-            if (dst_state.create_info.imageType == VK_IMAGE_TYPE_1D) {
+            if (dst_state.GetImageType() == VK_IMAGE_TYPE_1D) {
                 dst_adjusted_extent.height = 1;
                 dst_adjusted_extent.depth = 1;
-            } else if (dst_state.create_info.imageType == VK_IMAGE_TYPE_2D) {
+            } else if (dst_state.GetImageType() == VK_IMAGE_TYPE_2D) {
                 dst_adjusted_extent.depth = 1;
             }
             is_adjusted_extent = true;
@@ -490,7 +490,8 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const RegionType& region, const v
                                                            Func::vkCopyImageToMemory, Func::vkCopyImageToMemoryEXT});
     skip |= ValidateHeterogeneousCopyImageless(region, objlist, region_loc, is_memory);
 
-    if (image_state.create_info.imageType == VK_IMAGE_TYPE_1D) {
+    const VkImageType image_type = image_state.GetImageType();
+    if (image_type == VK_IMAGE_TYPE_1D) {
         if (region.imageOffset.y != 0 || region.imageExtent.height != 1) {
             skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::Image1D_07979), objlist,
                              region_loc.dot(Field::imageOffset).dot(Field::y),
@@ -500,18 +501,18 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const RegionType& region, const v
         }
     }
 
-    if ((image_state.create_info.imageType == VK_IMAGE_TYPE_1D) || (image_state.create_info.imageType == VK_IMAGE_TYPE_2D)) {
+    if (image_type == VK_IMAGE_TYPE_1D || image_type == VK_IMAGE_TYPE_2D) {
         if (region.imageOffset.z != 0 || region.imageExtent.depth != 1) {
             skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::Image1D_07980), objlist,
                              region_loc.dot(Field::imageOffset).dot(Field::z),
                              "is %" PRId32 " and imageExtent.depth is %" PRIu32
                              ". For %s images imageOffset.z must be 0 and imageExtent.depth must be 1.",
-                             region.imageOffset.z, region.imageExtent.depth, string_VkImageType(image_state.create_info.imageType));
+                             region.imageOffset.z, region.imageExtent.depth, string_VkImageType(image_type));
         }
     }
 
     const uint32_t normalized_layer_count = image_state.NormalizeLayerCount(region.imageSubresource);
-    if (image_state.create_info.imageType == VK_IMAGE_TYPE_3D) {
+    if (image_type == VK_IMAGE_TYPE_3D) {
         if (region.imageSubresource.baseArrayLayer != 0 || normalized_layer_count != 1) {
             skip |=
                 LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::Image3D_07983), objlist,
@@ -1017,25 +1018,25 @@ bool CoreChecks::ValidateImageSubresourceLayers(HandleT handle, const vvl::Image
                          string_VkImageAspectFlags(aspect_mask).c_str());
     }
 
-    if (subresource_layers.mipLevel >= image_state.create_info.mipLevels) {
+    if (subresource_layers.mipLevel >= image_state.GetMipLevels()) {
         const LogObjectList objlist(handle, image_state.Handle());
         skip |= LogError(vvl::GetImageMipLevelVUID(subresource_loc), objlist, subresource_loc.dot(Field::mipLevel),
                          "is %" PRIu32 ", but provided %s has only %" PRIu32 " mip levels.%s", subresource_layers.mipLevel,
-                         FormatHandle(image_state).c_str(), image_state.create_info.mipLevels,
-                         subresource_layers.mipLevel == image_state.create_info.mipLevels ? " (mip level are 0 indexed)" : "");
+                         FormatHandle(image_state).c_str(), image_state.GetMipLevels(),
+                         subresource_layers.mipLevel == image_state.GetMipLevels() ? " (mip level are 0 indexed)" : "");
     }
 
     const uint32_t base_layer = subresource_layers.baseArrayLayer;
     const uint32_t layer_count = subresource_layers.layerCount;
-    if (base_layer >= image_state.create_info.arrayLayers || layer_count > image_state.create_info.arrayLayers ||
-        (base_layer + layer_count) > image_state.create_info.arrayLayers) {
+    const uint32_t image_array_layers = image_state.GetArrayLayers();
+    if (base_layer >= image_array_layers || layer_count > image_array_layers || (base_layer + layer_count) > image_array_layers) {
         if (layer_count != VK_REMAINING_ARRAY_LAYERS) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(vvl::GetImageArrayLayerRangeVUID(subresource_loc), objlist, subresource_loc.dot(Field::baseArrayLayer),
-                             "is %" PRIu32 " and layerCount is %" PRIu32 ", but provided %s has %" PRIu32
-                             " array layers (and %" PRIu32 " layers are being requested).",
-                             base_layer, layer_count, FormatHandle(image_state).c_str(), image_state.create_info.arrayLayers,
-                             base_layer + layer_count);
+            skip |=
+                LogError(vvl::GetImageArrayLayerRangeVUID(subresource_loc), objlist, subresource_loc.dot(Field::baseArrayLayer),
+                         "is %" PRIu32 " and layerCount is %" PRIu32 ", but provided %s has %" PRIu32 " array layers (and %" PRIu32
+                         " layers are being requested).",
+                         base_layer, layer_count, FormatHandle(image_state).c_str(), image_array_layers, base_layer + layer_count);
         }
     }
 
@@ -1100,9 +1101,9 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRe
                          "is zero. (empty copies are not allowed).");
     }
 
-    const VkImageType src_image_type = region.src_state.create_info.imageType;
+    const VkImageType src_image_type = region.src_state.GetImageType();
     const VkFormat src_format = region.src_state.create_info.format;
-    const VkImageType dst_image_type = region.dst_state.create_info.imageType;
+    const VkImageType dst_image_type = region.dst_state.GetImageType();
     const VkFormat dst_format = region.dst_state.create_info.format;
 
     // comparing src vs dst subresource
@@ -1415,7 +1416,7 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRe
             }
         }
 
-        if (region.dst_state.create_info.imageType == VK_IMAGE_TYPE_1D) {
+        if (dst_image_type == VK_IMAGE_TYPE_1D) {
             if (region.dst_offset.y != 0) {
                 skip |=
                     LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstImage1D_00152), dst_objlist,
@@ -1431,8 +1432,7 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRe
             }
         }
 
-        if (region.dst_state.create_info.imageType == VK_IMAGE_TYPE_1D ||
-            (region.dst_state.create_info.imageType == VK_IMAGE_TYPE_2D && is_host)) {
+        if (dst_image_type == VK_IMAGE_TYPE_1D || (dst_image_type == VK_IMAGE_TYPE_2D && is_host)) {
             if (region.dst_offset.z != 0) {
                 const char* image_type = is_host ? "1D or 2D" : "1D";
                 skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstImage1D_01786), dst_objlist,
@@ -1449,7 +1449,7 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRe
             }
         }
 
-        if ((region.dst_state.create_info.imageType == VK_IMAGE_TYPE_2D) && (region.dst_offset.z != 0) && !is_host) {
+        if ((dst_image_type == VK_IMAGE_TYPE_2D) && (region.dst_offset.z != 0) && !is_host) {
             const char* vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-01788" : "VUID-vkCmdCopyImage-dstImage-01788";
             skip |= LogError(vuid, dst_objlist, region_loc.dot(Field::dstOffset).dot(Field::z),
                              "is %" PRId32 ", but for VK_IMAGE_TYPE_2D images this must be 0.\n%s", region.dst_offset.z,
@@ -1505,8 +1505,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     const vvl::CommandBuffer& cb_state = *cb_state_ptr;
     const VkFormat src_format = src_image_state->create_info.format;
     const VkFormat dst_format = dst_image_state->create_info.format;
-    const VkImageType src_image_type = src_image_state->create_info.imageType;
-    const VkImageType dst_image_type = dst_image_state->create_info.imageType;
+    const VkImageType src_image_type = src_image_state->GetImageType();
+    const VkImageType dst_image_type = dst_image_state->GetImageType();
     const bool src_is_2d = (VK_IMAGE_TYPE_2D == src_image_type);
     const bool src_is_3d = (VK_IMAGE_TYPE_3D == src_image_type);
     const bool dst_is_2d = (VK_IMAGE_TYPE_2D == dst_image_type);
@@ -2001,11 +2001,11 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     }
 
     // Source and dest image sample counts must match
-    if (src_image_state->create_info.samples != dst_image_state->create_info.samples) {
+    if (src_image_state->GetSamples() != dst_image_state->GetSamples()) {
         vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-00136" : "VUID-vkCmdCopyImage-srcImage-00136";
         skip |= LogError(vuid, all_objlist, src_image_loc, "was created with (%s) but the dstImage was created with (%s).",
-                         string_VkSampleCountFlagBits(src_image_state->create_info.samples),
-                         string_VkSampleCountFlagBits(dst_image_state->create_info.samples));
+                         string_VkSampleCountFlagBits(src_image_state->GetSamples()),
+                         string_VkSampleCountFlagBits(dst_image_state->GetSamples()));
     }
 
     vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-01825" : "VUID-vkCmdCopyImage-commandBuffer-01825";
@@ -2236,10 +2236,10 @@ template <typename HandleT>
 bool CoreChecks::ValidateImageSampleCount(const HandleT handle, const vvl::Image& image_state, VkSampleCountFlagBits sample_count,
                                           const Location& loc, const std::string& vuid) const {
     bool skip = false;
-    if (image_state.create_info.samples != sample_count) {
+    if (image_state.GetSamples() != sample_count) {
         const LogObjectList objlist(handle, image_state.Handle());
         skip |= LogError(vuid, objlist, loc, "%s was created with a sample count of %s but must be %s.",
-                         FormatHandle(image_state).c_str(), string_VkSampleCountFlagBits(image_state.create_info.samples),
+                         FormatHandle(image_state).c_str(), string_VkSampleCountFlagBits(image_state.GetSamples()),
                          string_VkSampleCountFlagBits(sample_count));
     }
     return skip;
@@ -2881,24 +2881,24 @@ bool CoreChecks::ValidateMemcpyExtents(const ImageCopyRegion& region, const Loca
         skip |= LogError("VUID-VkCopyImageToImageInfo-srcOffset-09114", device, region_loc.dot(Field::srcOffset),
                          "is (%s) but flags contains VK_HOST_IMAGE_COPY_MEMCPY.", string_VkOffset3D(region.src_offset).c_str());
     }
-    if (!IsExtentEqual(region.extent, region.src_state.create_info.extent)) {
+    if (!IsExtentEqual(region.extent, region.src_state.GetExtent())) {
         skip |=
             LogError("VUID-VkCopyImageToImageInfo-srcImage-09115", region.src_state.Handle(), region_loc.dot(Field::imageExtent),
                      "(%s) must match the image's subresource "
                      "extents (%s) when VkCopyImageToImageInfo->flags contains VK_HOST_IMAGE_COPY_MEMCPY",
-                     string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(region.src_state.create_info.extent).c_str());
+                     string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(region.src_state.GetExtent()).c_str());
     }
 
     if (region.dst_offset.x != 0 || region.dst_offset.y != 0 || region.dst_offset.z != 0) {
         skip |= LogError("VUID-VkCopyImageToImageInfo-dstOffset-09114", device, region_loc.dot(Field::dstOffset),
                          "is (%s) but flags contains VK_HOST_IMAGE_COPY_MEMCPY.", string_VkOffset3D(region.dst_offset).c_str());
     }
-    if (!IsExtentEqual(region.extent, region.dst_state.create_info.extent)) {
+    if (!IsExtentEqual(region.extent, region.dst_state.GetExtent())) {
         skip |=
             LogError("VUID-VkCopyImageToImageInfo-dstImage-09115", region.dst_state.Handle(), region_loc.dot(Field::imageExtent),
                      "(%s) must match the image's subresource "
                      "extents (%s) when VkCopyImageToImageInfo->flags contains VK_HOST_IMAGE_COPY_MEMCPY",
-                     string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(region.dst_state.create_info.extent).c_str());
+                     string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(region.dst_state.GetExtent()).c_str());
     }
     return skip;
 }
@@ -3036,7 +3036,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
 
     // src image
     const VkFormat src_format = src_image_state->create_info.format;
-    const VkImageType src_type = src_image_state->create_info.imageType;
+    const VkImageType src_type = src_image_state->GetImageType();
     {
         vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00233" : "VUID-vkCmdBlitImage-srcImage-00233";
         skip |= ValidateImageSampleCount(commandBuffer, *src_image_state, VK_SAMPLE_COUNT_1_BIT, src_image_loc, vuid);
@@ -3101,7 +3101,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
 
     // dst image
     const VkFormat dst_format = dst_image_state->create_info.format;
-    const VkImageType dst_type = dst_image_state->create_info.imageType;
+    const VkImageType dst_type = dst_image_state->GetImageType();
     {
         vuid = is_2 ? "VUID-VkBlitImageInfo2-dstImage-00234" : "VUID-vkCmdBlitImage-dstImage-00234";
         skip |= ValidateImageSampleCount(commandBuffer, *dst_image_state, VK_SAMPLE_COUNT_1_BIT, dst_image_loc, vuid);
@@ -3455,7 +3455,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         // must not overlap in memory
         if (srcImage == dstImage) {
             for (uint32_t j = 0; j < regionCount; j++) {
-                if (RegionIntersectsBlit(&region, &pRegions[j], src_image_state->create_info.imageType,
+                if (RegionIntersectsBlit(&region, &pRegions[j], src_image_state->GetImageType(),
                                          vkuFormatIsMultiplane(src_format))) {
                     vuid = is_2 ? "VUID-VkBlitImageInfo2-pRegions-00217" : "VUID-vkCmdBlitImage-pRegions-00217";
                     skip |=
@@ -3538,7 +3538,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             skip |= LogError(vuid, objlist, loc.dot(Field::srcImageLayout), "is %s.", string_VkImageLayout(srcImageLayout));
         }
 
-        if (src_image_state->create_info.samples == VK_SAMPLE_COUNT_1_BIT) {
+        if (src_image_state->GetSamples() == VK_SAMPLE_COUNT_1_BIT) {
             vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-00257" : "VUID-vkCmdResolveImage-srcImage-00257";
             skip |= LogError(vuid, src_objlist, src_image_loc, "was created with sample count VK_SAMPLE_COUNT_1_BIT.");
         }
@@ -3588,10 +3588,10 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             skip |= LogError(vuid, objlist, loc.dot(Field::dstImageLayout), "is %s.", string_VkImageLayout(dstImageLayout));
         }
 
-        if (dst_image_state->create_info.samples != VK_SAMPLE_COUNT_1_BIT) {
+        if (dst_image_state->GetSamples() != VK_SAMPLE_COUNT_1_BIT) {
             vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImage-00259" : "VUID-vkCmdResolveImage-dstImage-00259";
             skip |= LogError(vuid, dst_objlist, dst_image_loc, "was created with %s (not VK_SAMPLE_COUNT_1_BIT).",
-                             string_VkSampleCountFlagBits(dst_image_state->create_info.samples));
+                             string_VkSampleCountFlagBits(dst_image_state->GetSamples()));
         }
     }
 
@@ -3640,8 +3640,8 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                              "(%" PRIu32 ") does not match %s (%" PRIu32 ").", region.srcSubresource.layerCount,
                              dst_subresource_loc.dot(Field::layerCount).Fields().c_str(), region.dstSubresource.layerCount);
         }
-        const VkImageType src_image_type = src_image_state->create_info.imageType;
-        const VkImageType dst_image_type = dst_image_state->create_info.imageType;
+        const VkImageType src_image_type = src_image_state->GetImageType();
+        const VkImageType dst_image_type = dst_image_state->GetImageType();
 
         if (!IsValidAspectMaskForFormat(src_subresource.aspectMask, src_image_state->create_info.format)) {
             skip |=
@@ -3699,7 +3699,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             VkExtent3D subresource_extent = src_image_state->GetEffectiveSubresourceExtent(src_subresource);
             // MipLevel bound is checked already and adding extra errors with a "subresource extent of zero" is confusing to
             // developer
-            if (src_subresource.mipLevel < src_image_state->create_info.mipLevels) {
+            if (src_subresource.mipLevel < src_image_state->GetMipLevels()) {
                 if (region.srcOffset.x < 0) {
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-srcOffset-00269" : "VUID-vkCmdResolveImage-srcOffset-00269";
                     skip |= LogError(vuid, src_objlist, region_loc.dot(Field::srcOffset).dot(Field::x),
@@ -3759,7 +3759,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             // Each dstImage dimension offset + extent limits must fall with image subresource extent
             VkExtent3D subresource_extent = dst_image_state->GetEffectiveSubresourceExtent(dst_subresource);
             // MipLevel bound is checked already and adding extra errors with a "subresource extent of zero" is confusing
-            if (dst_subresource.mipLevel < dst_image_state->create_info.mipLevels) {
+            if (dst_subresource.mipLevel < dst_image_state->GetMipLevels()) {
                 if (region.dstOffset.x < 0) {
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-dstOffset-00274" : "VUID-vkCmdResolveImage-dstOffset-00274";
                     skip |= LogError(vuid, dst_objlist, region_loc.dot(Field::dstOffset).dot(Field::x),
@@ -4137,10 +4137,10 @@ bool CoreChecks::ValidateCopyMemoryToImageIndirectInfo(const vvl::CommandBuffer&
                              string_VkImageCreateFlags(dst_image->create_info.flags).c_str());
         }
 
-        if (dst_image->create_info.samples != VK_SAMPLE_COUNT_1_BIT) {
+        if (dst_image->GetSamples() != VK_SAMPLE_COUNT_1_BIT) {
             skip |= LogError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-07973", dst_objlist, dst_image_loc,
                              "was created with %s (must be VK_SAMPLE_COUNT_1_BIT).",
-                             string_VkSampleCountFlagBits(dst_image->create_info.samples));
+                             string_VkSampleCountFlagBits(dst_image->GetSamples()));
         }
 
         skip |= ValidateImageFormatFeatureFlags(cb_state.VkHandle(), *dst_image, VK_FORMAT_FEATURE_TRANSFER_DST_BIT, dst_image_loc,
@@ -4151,7 +4151,7 @@ bool CoreChecks::ValidateCopyMemoryToImageIndirectInfo(const vvl::CommandBuffer&
 
         // TODO - how do the whole maintenance9 depth transition work here?
         skip |= ValidateSubresourceImageLayout(cb_state, *dst_image, *indirect_info.pImageSubresources, 0,
-                                               dst_image->create_info.extent.depth, indirect_info.dstImageLayout, info_loc,
+                                               dst_image->GetExtent().depth, indirect_info.dstImageLayout, info_loc,
                                                "VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImageLayout-07667");
     }
 
@@ -4179,23 +4179,23 @@ bool CoreChecks::ValidateCopyMemoryToImageIndirectInfo(const vvl::CommandBuffer&
         }
 
         const uint32_t mip_level = subresource_layers.mipLevel;
-        if (mip_level >= dst_image->create_info.mipLevels) {
+        if (mip_level >= dst_image->GetMipLevels()) {
             skip |= LogError(
                 "VUID-VkCopyMemoryToImageIndirectInfoKHR-mipLevel-07670", dst_objlist, subresource_loc.dot(Field::mipLevel),
                 "(%" PRIu32 ") must be less than the VkImageCreateInfo::mipLevels (%" PRIu32 ") when dstImage was created.",
-                mip_level, dst_image->create_info.mipLevels);
+                mip_level, dst_image->GetMipLevels());
         }
 
-        if (dst_image->create_info.imageType == VK_IMAGE_TYPE_3D) {
+        if (dst_image->GetImageType() == VK_IMAGE_TYPE_3D) {
             // TODO - Add https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11332
         } else if (subresource_layers.layerCount != VK_REMAINING_ARRAY_LAYERS &&
-                   subresource_layers.baseArrayLayer + subresource_layers.layerCount > dst_image->create_info.arrayLayers) {
+                   subresource_layers.baseArrayLayer + subresource_layers.layerCount > dst_image->GetArrayLayers()) {
             skip |= LogError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-12288", dst_objlist,
                              subresource_loc.dot(Field::layerCount),
                              "(%" PRIu32 ") + baseArrayLayer (%" PRIu32
                              ") must be less than or equal to "
                              "the VkImageCreateInfo::arrayLayers (%" PRIu32 ") when dstImage was created.",
-                             subresource_layers.layerCount, subresource_layers.baseArrayLayer, dst_image->create_info.arrayLayers);
+                             subresource_layers.layerCount, subresource_layers.baseArrayLayer, dst_image->GetArrayLayers());
         }
     }
 

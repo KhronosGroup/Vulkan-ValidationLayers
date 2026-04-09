@@ -297,7 +297,7 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, const 
             // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
             if (barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
                 CanTransitionDepthSlices(extensions, image->create_info)) {
-                subresource_range.layerCount = image->create_info.extent.depth - subresource_range.baseArrayLayer;
+                subresource_range.layerCount = image->GetExtent().depth - subresource_range.baseArrayLayer;
             }
 
             const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
@@ -320,7 +320,7 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, VkQueu
             // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
             if (barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
                 CanTransitionDepthSlices(extensions, image->create_info)) {
-                subresource_range.layerCount = image->create_info.extent.depth - subresource_range.baseArrayLayer;
+                subresource_range.layerCount = image->GetExtent().depth - subresource_range.baseArrayLayer;
             }
 
             const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);

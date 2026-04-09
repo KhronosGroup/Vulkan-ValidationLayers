@@ -1377,13 +1377,13 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer commandBuffer, 
                 FormatHandle(image_state).c_str(), string_VkFormatFeatureFlags2(image_format_features).c_str(),
                 string_VkFormatFeatureFlags2(desired).c_str());
         } else {
-            skip |= LogError(vuid, objlist, image_loc,
-                             "(%s) was created with format %s and tiling %s which have VkFormatFeatureFlags2 (%s) which in turn is "
-                             "missing the required feature %s.",
-                             FormatHandle(image_state).c_str(), string_VkFormat(image_state.create_info.format),
-                             string_VkImageTiling(image_state.create_info.tiling),
-                             string_VkFormatFeatureFlags2(image_format_features).c_str(),
-                             string_VkFormatFeatureFlags2(desired).c_str());
+            skip |=
+                LogError(vuid, objlist, image_loc,
+                         "(%s) was created with format %s and tiling %s which have VkFormatFeatureFlags2 (%s) which in turn is "
+                         "missing the required feature %s.",
+                         FormatHandle(image_state).c_str(), string_VkFormat(image_state.create_info.format),
+                         string_VkImageTiling(image_state.GetTiling()), string_VkFormatFeatureFlags2(image_format_features).c_str(),
+                         string_VkFormatFeatureFlags2(desired).c_str());
         }
     }
     return skip;
@@ -1564,13 +1564,13 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const vvl::Image& image
         const VkExtent3D extent = image_state.GetEffectiveSubresourceExtent(subresourceRange);
         image_layer_count = extent.depth;
     } else {
-        image_layer_count = image_state.create_info.arrayLayers;
+        image_layer_count = image_state.GetArrayLayers();
     }
 
     const auto image_layer_count_var = is_depth_slice_view ? Field::depth : Field::arrayLayers;
 
-    return ValidateImageSubresourceRange(image_state.create_info.mipLevels, image_layer_count, subresourceRange,
-                                         image_layer_count_var, image_state.VkHandle(), loc.dot(Field::subresourceRange));
+    return ValidateImageSubresourceRange(image_state.GetMipLevels(), image_layer_count, subresourceRange, image_layer_count_var,
+                                         image_state.VkHandle(), loc.dot(Field::subresourceRange));
 }
 
 bool CoreChecks::ValidateCmdClearColorSubresourceRange(const VkImageCreateInfo& create_info,
@@ -1642,7 +1642,7 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image& image_state, 
     bool skip = false;
 
     VkFormatFeatureFlags2 tiling_features = 0;
-    const VkImageTiling image_tiling = image_state.create_info.tiling;
+    const VkImageTiling image_tiling = image_state.GetTiling();
 
     if (image_state.HasAHBFormat()) {
         // AHB image view and image share same feature sets
@@ -1849,10 +1849,10 @@ bool CoreChecks::ValidateImageViewSlicedCreateInfo(const VkImageViewCreateInfo& 
                          "imageSlicedViewOf3D is not enabled.");
     }
 
-    if (image_state.create_info.imageType != VK_IMAGE_TYPE_3D) {
+    if (image_state.GetImageType() != VK_IMAGE_TYPE_3D) {
         skip |= LogError("VUID-VkImageViewSlicedCreateInfoEXT-image-07869", create_info.image, create_info_loc.dot(Field::image),
                          "(%s) must be VK_IMAGE_TYPE_3D (since pNext includes a VkImageViewSlicedCreateInfoEXT structure).\n%s",
-                         string_VkImageType(image_state.create_info.imageType),
+                         string_VkImageType(image_state.GetImageType()),
                          PrintPNextChain(Struct::VkImageViewCreateInfo, create_info.pNext).c_str());
     }
 
@@ -1931,7 +1931,7 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
     const VkFormat image_format = image_state.create_info.format;
     const VkFormat view_format = create_info.format;
     const VkImageAspectFlags aspect_mask = create_info.subresourceRange.aspectMask;
-    const VkImageType image_type = image_state.create_info.imageType;
+    const VkImageType image_type = image_state.GetImageType();
     const VkImageViewType view_type = create_info.viewType;
 
     // If there's a chained VkImageViewUsageCreateInfo struct, modify |image_usage| to match.
@@ -2052,11 +2052,11 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
                          string_VkFormat(view_format), FormatHandle(create_info.image).c_str(), string_VkFormat(image_format));
     }
 
-    if (image_state.create_info.samples != VK_SAMPLE_COUNT_1_BIT && view_type != VK_IMAGE_VIEW_TYPE_2D &&
+    if (image_state.GetSamples() != VK_SAMPLE_COUNT_1_BIT && view_type != VK_IMAGE_VIEW_TYPE_2D &&
         view_type != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
         skip |= LogError("VUID-VkImageViewCreateInfo-image-04972", create_info.image, create_info_loc.dot(Field::image),
                          "was created with sample count %s, but create_info.viewType is %s.",
-                         string_VkSampleCountFlagBits(image_state.create_info.samples), string_VkImageViewType(view_type));
+                         string_VkSampleCountFlagBits(image_state.GetSamples()), string_VkImageViewType(view_type));
     }
 
     // Validate correct image aspect bits for desired formats and format consistency
@@ -2177,7 +2177,7 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
     }
 
     if (create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        const uint32_t remaining_layers = image_state.create_info.arrayLayers - create_info.subresourceRange.baseArrayLayer;
+        const uint32_t remaining_layers = image_state.GetArrayLayers() - create_info.subresourceRange.baseArrayLayer;
         if (view_type == VK_IMAGE_VIEW_TYPE_CUBE && remaining_layers != 6) {
             skip |= LogError("VUID-VkImageViewCreateInfo-viewType-02962", create_info.image,
                              create_info_loc.dot(Field::subresourceRange).dot(Field::layerCount),
@@ -2407,16 +2407,16 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
     skip |= ValidateImageViewSampleWeightQCOM(create_info, image_state, create_info_loc);
 
     // If Chroma subsampled format ( _420_ or _422_ )
-    if (vkuFormatIsXChromaSubsampled(view_format) && !IsIntegerMultipleOf(image_state.create_info.extent.width, 2)) {
+    if (vkuFormatIsXChromaSubsampled(view_format) && !IsIntegerMultipleOf(image_state.GetExtent().width, 2)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-format-04714", device, create_info_loc.dot(Field::format),
                          "(%s) is X Chroma Subsampled (has _422 or _420 suffix) so the image width (%" PRIu32
                          ") must be a multiple of 2.",
-                         string_VkFormat(view_format), image_state.create_info.extent.width);
+                         string_VkFormat(view_format), image_state.GetExtent().width);
     }
-    if (vkuFormatIsYChromaSubsampled(view_format) && !IsIntegerMultipleOf(image_state.create_info.extent.height, 2)) {
+    if (vkuFormatIsYChromaSubsampled(view_format) && !IsIntegerMultipleOf(image_state.GetExtent().height, 2)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-format-04715", device, create_info_loc.dot(Field::format),
                          "(%s) is Y Chroma Subsampled (has _420 suffix) so the image height (%" PRIu32 ") must be a multiple of 2.",
-                         string_VkFormat(view_format), image_state.create_info.extent.height);
+                         string_VkFormat(view_format), image_state.GetExtent().height);
     }
 
     return skip;
@@ -2458,26 +2458,26 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const vvl::Image& image_state
     }
 
     // mipLevel must be less than the mipLevels specified in VkImageCreateInfo when the image was created
-    if (subresource.mipLevel >= image_state.create_info.mipLevels) {
+    if (subresource.mipLevel >= image_state.GetMipLevels()) {
         const char* vuid =
             is_2 ? "VUID-vkGetImageSubresourceLayout2-mipLevel-01716" : "VUID-vkGetImageSubresourceLayout-mipLevel-01716";
         skip |= LogError(vuid, image_state.Handle(), subresource_loc.dot(Field::mipLevel),
                          "(%" PRIu32 ") must be less than the mipLevel used to create the image (%" PRIu32 ").",
-                         subresource.mipLevel, image_state.create_info.mipLevels);
+                         subresource.mipLevel, image_state.GetMipLevels());
     }
 
     // arrayLayer must be less than the arrayLayers specified in VkImageCreateInfo when the image was created
-    if (subresource.arrayLayer >= image_state.create_info.arrayLayers) {
+    if (subresource.arrayLayer >= image_state.GetArrayLayers()) {
         const char* vuid =
             is_2 ? "VUID-vkGetImageSubresourceLayout2-arrayLayer-01717" : "VUID-vkGetImageSubresourceLayout-arrayLayer-01717";
         skip |= LogError(vuid, image_state.Handle(), subresource_loc.dot(Field::arrayLayer),
                          "(%" PRIu32 ") must be less than the arrayLayer used to create the image (%" PRIu32 ").",
-                         subresource.arrayLayer, image_state.create_info.arrayLayers);
+                         subresource.arrayLayer, image_state.GetArrayLayers());
     }
 
     const VkFormat image_format = image_state.create_info.format;
     const bool tiling_linear_optimal =
-        image_state.create_info.tiling == VK_IMAGE_TILING_LINEAR || image_state.create_info.tiling == VK_IMAGE_TILING_OPTIMAL;
+        image_state.GetTiling() == VK_IMAGE_TILING_LINEAR || image_state.GetTiling() == VK_IMAGE_TILING_OPTIMAL;
     if (vkuFormatIsColor(image_format) && !vkuFormatIsMultiplane(image_format) && (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) &&
         tiling_linear_optimal) {
         const char* vuid =
@@ -2514,14 +2514,14 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const vvl::Image& image_state
     }
 
     // subresource's aspect must be compatible with image's format.
-    if (image_state.create_info.tiling == VK_IMAGE_TILING_LINEAR) {
+    if (image_state.GetTiling() == VK_IMAGE_TILING_LINEAR) {
         if (vkuFormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect_mask)) {
             const char* vuid =
                 is_2 ? "VUID-vkGetImageSubresourceLayout2-tiling-08717" : "VUID-vkGetImageSubresourceLayout-tiling-08717";
             skip |= LogError(vuid, image_state.Handle(), subresource_loc.dot(Field::aspectMask), "(%s) is invalid for format %s.",
                              string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_format));
         }
-    } else if (image_state.create_info.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+    } else if (image_state.GetTiling() == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         if ((aspect_mask != VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT) && (aspect_mask != VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT) &&
             (aspect_mask != VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT) && (aspect_mask != VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
             const char* vuid =
@@ -2593,10 +2593,10 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
     auto image_state = Get<vvl::Image>(image);
     if (pSubresource && pLayout && image_state) {
         skip |= ValidateGetImageSubresourceLayout(*image_state, *pSubresource, error_obj.location.dot(Field::pSubresource));
-        if ((image_state->create_info.tiling != VK_IMAGE_TILING_LINEAR) &&
-            (image_state->create_info.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)) {
+        const VkImageTiling image_tiling = image_state->GetTiling();
+        if (image_tiling != VK_IMAGE_TILING_LINEAR && image_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
             skip |= LogError("VUID-vkGetImageSubresourceLayout-image-07790", image, error_obj.location,
-                             "image was created with tiling %s.", string_VkImageTiling(image_state->create_info.tiling));
+                             "image was created with tiling %s.", string_VkImageTiling(image_tiling));
         }
     }
     return skip;
@@ -2632,10 +2632,10 @@ bool CoreChecks::PreCallValidateGetImageDrmFormatModifierPropertiesEXT(VkDevice 
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
     if (auto image_state = Get<vvl::Image>(image)) {
-        if (image_state->create_info.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+        if (image_state->GetTiling() != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
             skip |=
                 LogError("VUID-vkGetImageDrmFormatModifierPropertiesEXT-image-02272", image, error_obj.location.dot(Field::image),
-                         "was created with tiling %s.", string_VkImageTiling(image_state->create_info.tiling));
+                         "was created with tiling %s.", string_VkImageTiling(image_state->GetTiling()));
         }
     }
     return skip;
@@ -2723,14 +2723,14 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
                                                      image_state->create_info.usage);
 
         auto image_layer_count_var = Field::arrayLayers;
-        uint32_t image_layer_count = image_state->create_info.arrayLayers;
+        uint32_t image_layer_count = image_state->GetArrayLayers();
         if (enabled_features.maintenance9 && (image_state->create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0) {
             image_layer_count_var = Field::depth;
             const auto layers = LayersFromRange(transition.subresourceRange);
             const auto extent = GetEffectiveExtent(image_state->create_info, layers.aspectMask, layers.mipLevel);
             image_layer_count = extent.depth;
         }
-        skip |= ValidateImageSubresourceRange(image_state->create_info.mipLevels, image_layer_count, transition.subresourceRange,
+        skip |= ValidateImageSubresourceRange(image_state->GetMipLevels(), image_layer_count, transition.subresourceRange,
                                               image_layer_count_var, image_state->VkHandle(),
                                               transition_loc.dot(Field::subresourceRange));
         skip |= ValidateMemoryIsBoundToImage(LogObjectList(device, transition.image), *image_state,
@@ -2907,9 +2907,9 @@ bool CoreChecks::ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo& 
 
     const auto normalized_subresource_range = image_state.NormalizeSubresourceRange(create_info.subresourceRange);
     const VkImageAspectFlags aspect_mask = create_info.subresourceRange.aspectMask;
-    const VkImageType image_type = image_state.create_info.imageType;
+    const VkImageType image_type = image_state.GetImageType();
     const VkImageUsageFlags image_usage = image_state.create_info.usage;
-    const VkExtent3D image_extent = image_state.create_info.extent;
+    const VkExtent3D image_extent = image_state.GetExtent();
 
     if ((enabled_features.textureSampleWeighted == VK_FALSE)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-pNext-06944", create_info.image, create_info_loc.dot(Field::pNext),

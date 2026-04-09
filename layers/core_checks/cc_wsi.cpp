@@ -1113,7 +1113,7 @@ bool CoreChecks::ValidateDisplayPresentInfo(VkQueue queue, VkSwapchainKHR swapch
     bool skip = false;
     ASSERT_AND_RETURN_SKIP(swapchain_image.image_state);
 
-    const VkExtent3D& image_extent = swapchain_image.image_state->create_info.extent;
+    const VkExtent3D& image_extent = swapchain_image.image_state->GetExtent();
     const VkOffset2D& src_offset = display_present_info.srcRect.offset;
     const VkExtent2D& src_extent = display_present_info.srcRect.extent;
 

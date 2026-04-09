@@ -42,7 +42,7 @@ static bool FindLayouts(const vvl::Image& image_state, std::vector<VkImageLayout
     auto guard = image_state.LayoutMapReadLock();
 
     // TODO: Make this robust for >1 aspect mask. Now it will just say ignore potential errors in this case.
-    if (layout_map.size() > image_state.create_info.arrayLayers * image_state.create_info.mipLevels) {
+    if (layout_map.size() > image_state.GetArrayLayers() * image_state.GetMipLevels()) {
         return false;
     }
 
