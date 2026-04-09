@@ -559,6 +559,9 @@ TEST_F(NegativeVideoEncodeIntraRefresh, PerPicturePartitionNonRectTooManySlicesH
 
     const uint32_t slice_count = config.MaxEncodeH264MBRowCount() + 1;
 
+    if ((config.EncodeCapsH264()->flags & VK_VIDEO_ENCODE_H264_CAPABILITY_ROW_UNALIGNED_SLICE_BIT_KHR) == 0) {
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdEncodeVideoKHR-naluSliceEntryCount-08312");
+    }
     if (slice_count > config.EncodeCapsH264()->maxSliceCount) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkVideoEncodeH264PictureInfoKHR-naluSliceEntryCount-08301");
     }
@@ -774,6 +777,9 @@ TEST_F(NegativeVideoEncodeIntraRefresh, PerPicturePartitionNonRectTooManySliceSe
 
     const uint32_t slice_segment_count = config.MaxEncodeH265CTBRowCount() + 1;
 
+    if ((config.EncodeCapsH265()->flags & VK_VIDEO_ENCODE_H265_CAPABILITY_ROW_UNALIGNED_SLICE_SEGMENT_BIT_KHR) == 0) {
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdEncodeVideoKHR-naluSliceSegmentEntryCount-08313");
+    }
     if (slice_segment_count > config.EncodeCapsH265()->maxSliceSegmentCount) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkVideoEncodeH265PictureInfoKHR-naluSliceSegmentEntryCount-08306");
     }
