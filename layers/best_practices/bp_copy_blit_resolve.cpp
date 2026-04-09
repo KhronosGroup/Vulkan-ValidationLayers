@@ -339,7 +339,7 @@ bool BestPractices::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
                                       VendorSpecificTag(kBPVendorAMD));
     }
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        skip |= ValidateClearColor(commandBuffer, dst_image->create_info.format, *pColor, error_obj.location);
+        skip |= ValidateClearColor(commandBuffer, dst_image->GetFormat(), *pColor, error_obj.location);
     }
 
     return skip;

@@ -1185,9 +1185,10 @@ bool CoreChecks::IsCompliantSubresourceRange(const VkImageSubresourceRange& subr
     if ((subres_range.baseArrayLayer + subres_range.layerCount) > image_state.GetArrayLayers()) {
         return false;
     }
-    if (!IsValidAspectMaskForFormat(subres_range.aspectMask, image_state.create_info.format)) return false;
-    if (((vkuFormatPlaneCount(image_state.create_info.format) < 3) && (subres_range.aspectMask & VK_IMAGE_ASPECT_PLANE_2_BIT)) ||
-        ((vkuFormatPlaneCount(image_state.create_info.format) < 2) && (subres_range.aspectMask & VK_IMAGE_ASPECT_PLANE_1_BIT))) {
+    const VkFormat image_format = image_state.GetFormat();
+    if (!IsValidAspectMaskForFormat(subres_range.aspectMask, image_format)) return false;
+    if (((vkuFormatPlaneCount(image_format) < 3) && (subres_range.aspectMask & VK_IMAGE_ASPECT_PLANE_2_BIT)) ||
+        ((vkuFormatPlaneCount(image_format) < 2) && (subres_range.aspectMask & VK_IMAGE_ASPECT_PLANE_1_BIT))) {
         return false;
     }
     if (subres_range.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT ||

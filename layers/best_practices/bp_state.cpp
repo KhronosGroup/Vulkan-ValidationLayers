@@ -501,7 +501,7 @@ void CommandBufferSubState::RecordClearColorImage(vvl::Image& image_state, VkIma
     }
 
     if (validator.VendorCheckEnabled(kBPVendorNVIDIA)) {
-        validator.RecordClearColor(image_state.create_info.format, *color_values);
+        validator.RecordClearColor(image_state.GetFormat(), *color_values);
     }
 }
 

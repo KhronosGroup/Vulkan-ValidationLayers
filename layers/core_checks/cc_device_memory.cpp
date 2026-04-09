@@ -311,19 +311,19 @@ bool CoreChecks::HasExternalMemoryImportSupport(const vvl::Image& image, VkExter
     // TODO - Want to use vvl::PnextChainExtract, but would need to cleanup (and test) rest of how we add the other pNext here
     // Note - some pNext structs that can be found in VkImageCreateInfo::pNext are not allowed in VkPhysicalDeviceImageFormatInfo2
     VkImageFormatListCreateInfo format_list = vku::InitStructHelper();
-    if (auto original_format_list = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(image.create_info.pNext)) {
+    if (auto original_format_list = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(image.GetPNext())) {
         format_list.pViewFormats = original_format_list->pViewFormats;
         format_list.viewFormatCount = original_format_list->viewFormatCount;
         vvl::PnextChainAdd(&external_info, &format_list);
     }
     VkImageStencilUsageCreateInfo stencil_usage = vku::InitStructHelper();
-    if (auto original_stencil_usage = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image.create_info.pNext)) {
+    if (auto original_stencil_usage = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image.GetPNext())) {
         stencil_usage.stencilUsage = original_stencil_usage->stencilUsage;
         vvl::PnextChainAdd(&external_info, &stencil_usage);
     }
     VkPhysicalDeviceImageViewImageFormatInfoEXT image_view_format = vku::InitStructHelper();
     if (auto original_image_view_format =
-            vku::FindStructInPNextChain<VkPhysicalDeviceImageViewImageFormatInfoEXT>(image.create_info.pNext)) {
+            vku::FindStructInPNextChain<VkPhysicalDeviceImageViewImageFormatInfoEXT>(image.GetPNext())) {
         image_view_format.imageViewType = original_image_view_format->imageViewType;
         vvl::PnextChainAdd(&external_info, &image_view_format);
     }
@@ -1187,7 +1187,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
 
     auto image_state = Get<vvl::Image>(pInfo->image);
     ASSERT_AND_RETURN_SKIP(image_state);
-    const VkFormat image_format = image_state->create_info.format;
+    const VkFormat image_format = image_state->GetFormat();
     const VkImageTiling image_tiling = image_state->GetTiling();
     const auto* image_plane_info = vku::FindStructInPNextChain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
     if (!image_plane_info && image_state->disjoint) {
@@ -1956,7 +1956,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             if (!image_state || !image_state->disjoint) {
                 continue;
             }
-            const uint32_t total_planes = vkuFormatPlaneCount(image_state->create_info.format);
+            const uint32_t total_planes = vkuFormatPlaneCount(image_state->GetFormat());
             for (uint32_t i = 0; i < total_planes; i++) {
                 if (resource.second[i] == vvl::kNoIndex32) {
                     skip |= LogError("VUID-vkBindImageMemory2-pBindInfos-02858", resource.first, error_obj.location,
@@ -2086,20 +2086,19 @@ bool CoreChecks::ValidateBindImageMemoryResource(const VkBindImageMemoryInfo& bi
         // TODO - Want to use vvl::PnextChainExtract, but would need to cleanup (and test) rest of how we add the other
         // pNext here
         VkImageFormatListCreateInfo format_list = vku::InitStructHelper();
-        if (auto original_format_list = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(image_state.create_info.pNext)) {
+        if (auto original_format_list = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(image_state.GetPNext())) {
             format_list.pViewFormats = original_format_list->pViewFormats;
             format_list.viewFormatCount = original_format_list->viewFormatCount;
             vvl::PnextChainAdd(&image_format_info, &format_list);
         }
         VkImageStencilUsageCreateInfo stencil_usage = vku::InitStructHelper();
-        if (auto original_stencil_usage =
-                vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.create_info.pNext)) {
+        if (auto original_stencil_usage = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.GetPNext())) {
             stencil_usage.stencilUsage = original_stencil_usage->stencilUsage;
             vvl::PnextChainAdd(&image_format_info, &stencil_usage);
         }
         VkPhysicalDeviceImageViewImageFormatInfoEXT image_view_format = vku::InitStructHelper();
         if (auto original_image_view_format =
-                vku::FindStructInPNextChain<VkPhysicalDeviceImageViewImageFormatInfoEXT>(image_state.create_info.pNext)) {
+                vku::FindStructInPNextChain<VkPhysicalDeviceImageViewImageFormatInfoEXT>(image_state.GetPNext())) {
             image_view_format.imageViewType = original_image_view_format->imageViewType;
             vvl::PnextChainAdd(&image_format_info, &image_view_format);
         }
@@ -2592,8 +2591,8 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind& bind, const 
 bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(vvl::Image const& image_state, VkImageSubresource const& subresource,
                                                                const Location& bind_loc, const Location& subresource_loc) const {
     bool skip = false;
-    skip |= ValidateImageAspectMask(image_state.VkHandle(), image_state.create_info.format, subresource.aspectMask,
-                                    image_state.disjoint, bind_loc, "VUID-VkSparseImageMemoryBindInfo-subresource-01106");
+    skip |= ValidateImageAspectMask(image_state.VkHandle(), image_state.GetFormat(), subresource.aspectMask, image_state.disjoint,
+                                    bind_loc, "VUID-VkSparseImageMemoryBindInfo-subresource-01106");
 
     if (subresource.mipLevel >= image_state.GetMipLevels()) {
         skip |=

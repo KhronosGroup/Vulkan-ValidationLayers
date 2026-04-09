@@ -1274,19 +1274,19 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView& view_state, VkImageLa
         }
     }
 
-    if (vkuFormatIsDepthOrStencil(image_state->create_info.format)) {
+    if (vkuFormatIsDepthOrStencil(image_state->GetFormat())) {
         if (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) {
             if (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) {
                 skip |= LogError(
                     "VUID-VkDescriptorImageInfo-imageView-01976", objlist, image_info_loc.dot(Field::imageView),
                     "was created with an image format %s, but the image aspectMask (%s) has both STENCIL and DEPTH aspects set ",
-                    string_VkFormat(image_state->create_info.format), string_VkImageAspectFlags(aspect_mask).c_str());
+                    string_VkFormat(image_state->GetFormat()), string_VkImageAspectFlags(aspect_mask).c_str());
             }
         } else if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) == 0) {
             skip |=
                 LogError("VUID-VkDescriptorImageInfo-imageView-01976", objlist, image_info_loc.dot(Field::imageView),
                          "was created with an image format %s, but the image aspectMask (%s) is missing a STENCIL or DEPTH aspects",
-                         string_VkFormat(image_state->create_info.format), string_VkImageAspectFlags(aspect_mask).c_str());
+                         string_VkFormat(image_state->GetFormat()), string_VkImageAspectFlags(aspect_mask).c_str());
         }
     }
 
@@ -2196,9 +2196,9 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, co
 
                     if (auto sampler_state = Get<vvl::Sampler>(sampler)) {
                         // If there is an immutable sampler then |sampler| isn't used, so the following VU does not apply.
-                        if (vkuFormatIsMultiplane(image_state->create_info.format)) {
+                        if (vkuFormatIsMultiplane(image_state->GetFormat())) {
                             // multiplane formats must be created with mutable format bit
-                            const VkFormat image_format = image_state->create_info.format;
+                            const VkFormat image_format = image_state->GetFormat();
                             if (0 == (image_state->create_info.flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
                                 const LogObjectList objlist(update.dstSet, image_state->Handle());
                                 skip |= LogError("VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
@@ -5407,7 +5407,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                 }
             }
 
-            if (vkuFormatIsDepthOrStencil(image_state->create_info.format)) {
+            if (vkuFormatIsDepthOrStencil(image_state->GetFormat())) {
                 const VkImageAspectFlags aspect_mask = image_view_ci.subresourceRange.aspectMask;
                 if (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) {
                     if (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) {
@@ -5415,7 +5415,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                                          data_loc.dot(Field::pImage).dot(Field::pView).dot(Field::image),
                                          "is a depth/stencil image (%s), but aspectMask (%s) has both STENCIL and DEPTH aspect "
                                          "set\npResources[%" PRIu32 "].type = %s",
-                                         string_VkFormat(image_state->create_info.format),
+                                         string_VkFormat(image_state->GetFormat()),
                                          string_VkImageAspectFlags(image_view_ci.subresourceRange.aspectMask).c_str(), i,
                                          string_VkDescriptorType(resource.type));
                     }
@@ -5424,7 +5424,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                                      data_loc.dot(Field::pImage).dot(Field::pView).dot(Field::image),
                                      "is a depth/stencil image (%s), but aspectMask (%s) is missing a STENCIL or DEPTH "
                                      "aspects\npResources[%" PRIu32 "].type = %s",
-                                     string_VkFormat(image_state->create_info.format),
+                                     string_VkFormat(image_state->GetFormat()),
                                      string_VkImageAspectFlags(image_view_ci.subresourceRange.aspectMask).c_str(), i,
                                      string_VkDescriptorType(resource.type));
                 }
