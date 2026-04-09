@@ -3357,7 +3357,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
 
                     std::stringstream ss;
                     ss << "(" << string_VkDescriptorMappingSourceEXT(mapping.source) << ") is used to map descriptor "
-                       << resource_variable.DescribeDescriptor() << " in %s " << entrypoint.Describe() << " but it is unaligned.\n"
+                       << resource_variable.DescribeDescriptor() << " in " << entrypoint.Describe() << " but it is unaligned.\n"
                        << String(source_field) << "." << String(offset_field) << " (" << info.offset << ") ";
                     if (mapping.source != VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
                         ss << "and " << String(source_field) << "." << String(stride_field) << " (" << info.array_stride

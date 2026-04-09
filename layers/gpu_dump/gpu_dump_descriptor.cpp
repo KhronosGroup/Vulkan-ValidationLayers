@@ -370,6 +370,20 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
             const bool is_sampler =
                 (resource_variable->base_type.Opcode() == spv::OpTypeSampledImage) || resource_variable->is_type_sampled_image;
             const bool is_array = resource_variable->IsArray();
+            uint32_t array_length = 0;
+            if (is_array && !resource_variable->IsRuntimeArray() && resource_variable->array_length != spirv::kSpecConstant) {
+                array_length = resource_variable->array_length;
+            }
+
+            const VkDescriptorType descriptor_type = GetResourceInterfaceVariableType(*resource_variable);
+            // TODO - Cache these once on device creation
+            VkDeviceSize descriptor_size = descriptor_type == VK_DESCRIPTOR_TYPE_MAX_ENUM
+                                               ? 0
+                                               : DispatchGetPhysicalDeviceDescriptorSizeEXT(physical_device, descriptor_type);
+
+            // attempts to catch obvious OOB offsets in mappings
+            bool warn_oob = false;
+            bool warn_index_oob = false;
 
             map_ss << "      - ";
             if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
@@ -380,14 +394,24 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
                     map_ss << "\n        Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset;
                     if (is_array) {
                         map_ss << " + (descriptor_index * 0x" << map_data.samplerHeapArrayStride << ")";
+                        if (array_length != 0) {
+                            warn_index_oob = ((map_data.samplerHeapOffset + ((array_length - 1) * map_data.samplerHeapArrayStride) +
+                                               descriptor_size) > heap.sampler_range.size());
+                        }
                     }
+                    warn_oob = (map_data.samplerHeapOffset + descriptor_size > heap.sampler_range.size());
                 } else {
                     map_ss << "heapOffset: 0x" << std::hex << map_data.heapOffset << ", heapArrayStride: 0x"
                            << map_data.heapArrayStride;
                     map_ss << "\n        Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset;
                     if (is_array) {
                         map_ss << " + (descriptor_index * 0x" << map_data.heapArrayStride << ")";
+                        if (array_length != 0) {
+                            warn_index_oob = ((map_data.heapOffset + ((array_length - 1) * map_data.heapArrayStride) +
+                                               descriptor_size) > heap.resource_range.size());
+                        }
                     }
+                    warn_oob = (map_data.heapOffset + descriptor_size > heap.resource_range.size());
                 }
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
                 const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping->sourceData.pushIndex;
@@ -397,14 +421,28 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
                            << ", samplerHeapArrayStride: 0x" << map_data.samplerHeapArrayStride;
                     map_ss << "\n        Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset
                            << " + (pushIndex * 0x" << map_data.samplerHeapIndexStride << ")";
-                    if (is_array) map_ss << " + (descriptor_index * 0x" << map_data.samplerHeapArrayStride << ")";
+                    if (is_array) {
+                        map_ss << " + (descriptor_index * 0x" << map_data.samplerHeapArrayStride << ")";
+                        if (array_length != 0) {
+                            warn_index_oob = ((map_data.samplerHeapOffset + ((array_length - 1) * map_data.samplerHeapArrayStride) +
+                                               descriptor_size) > heap.sampler_range.size());
+                        }
+                    }
+                    warn_oob = (map_data.samplerHeapOffset + descriptor_size > heap.sampler_range.size());
                 } else {
                     map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", heapOffset: 0x" << map_data.heapOffset
                            << ", heapIndexStride: 0x" << map_data.heapIndexStride << ", heapArrayStride: 0x"
                            << map_data.heapArrayStride;
                     map_ss << "\n        Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset
                            << " + (pushIndex * 0x" << map_data.heapIndexStride << ")";
-                    if (is_array) map_ss << " + (descriptor_index * 0x" << map_data.heapArrayStride << ")";
+                    if (is_array) {
+                        map_ss << " + (descriptor_index * 0x" << map_data.heapArrayStride << ")";
+                        if (array_length != 0) {
+                            warn_index_oob = ((map_data.heapOffset + ((array_length - 1) * map_data.heapArrayStride) +
+                                               descriptor_size) > heap.resource_range.size());
+                        }
+                    }
+                    warn_oob = (map_data.heapOffset + descriptor_size > heap.resource_range.size());
                 }
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
                 const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping->sourceData.indirectIndex;
@@ -414,14 +452,28 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
                            << map_data.samplerHeapIndexStride << ", samplerHeapArrayStride: 0x" << map_data.samplerHeapArrayStride;
                     map_ss << "\n        Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset
                            << " + (indirectIndex * 0x" << map_data.samplerHeapIndexStride << ")";
-                    if (is_array) map_ss << " + (descriptor_index * 0x" << map_data.samplerHeapArrayStride << ")";
+                    if (is_array) {
+                        map_ss << " + (descriptor_index * 0x" << map_data.samplerHeapArrayStride << ")";
+                        if (array_length != 0) {
+                            warn_index_oob = ((map_data.samplerHeapOffset + ((array_length - 1) * map_data.samplerHeapArrayStride) +
+                                               descriptor_size) > heap.sampler_range.size());
+                        }
+                    }
+                    warn_oob = (map_data.samplerHeapOffset + descriptor_size > heap.sampler_range.size());
                 } else {
                     map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset
                            << ", heapOffset: 0x" << map_data.heapOffset << ", heapIndexStride: 0x" << map_data.heapIndexStride
                            << ", heapArrayStride: 0x" << map_data.heapArrayStride;
                     map_ss << "\n        Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset
                            << " + (indirectIndex * 0x" << map_data.heapIndexStride << ")";
-                    if (is_array) map_ss << " + (descriptor_index * 0x" << map_data.heapArrayStride << ")";
+                    if (is_array) {
+                        map_ss << " + (descriptor_index * 0x" << map_data.heapArrayStride << ")";
+                        if (array_length != 0) {
+                            warn_index_oob = ((map_data.heapOffset + ((array_length - 1) * map_data.heapArrayStride) +
+                                               descriptor_size) > heap.resource_range.size());
+                        }
+                    }
+                    warn_oob = (map_data.heapOffset + descriptor_size > heap.resource_range.size());
                 }
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
                 const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data = mapping->sourceData.indirectIndexArray;
@@ -431,11 +483,13 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
                            << map_data.samplerHeapIndexStride;
                     map_ss << "\n        Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset
                            << " + (indirectIndex * 0x" << map_data.samplerHeapIndexStride << ")";
+                    warn_oob = (map_data.samplerHeapOffset + descriptor_size > heap.sampler_range.size());
                 } else {
                     map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset
                            << ", heapOffset: 0x" << map_data.heapOffset << ", heapIndexStride: 0x" << map_data.heapIndexStride;
                     map_ss << "\n        Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset
                            << " + (indirectIndex * 0x" << map_data.heapIndexStride << ")";
+                    warn_oob = (map_data.heapOffset + descriptor_size > heap.resource_range.size());
                 }
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
                 const VkDescriptorMappingSourceHeapDataEXT& map_data = mapping->sourceData.heapData;
@@ -469,15 +523,18 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
                 map_ss << "shaderRecordAddressOffset: " << std::hex << mapping->sourceData.shaderRecordAddressOffset;
             }
 
-            const VkDescriptorType descriptor_type = GetResourceInterfaceVariableType(*resource_variable);
-            // TODO - Cache these once on device creation
-            VkDeviceSize descriptor_size = descriptor_type == VK_DESCRIPTOR_TYPE_MAX_ENUM
-                                               ? 0
-                                               : DispatchGetPhysicalDeviceDescriptorSizeEXT(physical_device, descriptor_type);
             if (descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM) {
                 map_ss << "\n        Descriptor size: 0x" << descriptor_size << " (" << string_VkDescriptorType(descriptor_type)
                        << ")";
             }
+
+            if (warn_oob) {
+                map_ss << "\n        [WARNING] OUT OF BOUNDS - any access will be invalid";
+            } else if (warn_index_oob) {
+                map_ss << "\n        [WARNING] OUT OF BOUNDS - descriptor has an array length of " << array_length
+                       << " and some elements will be invalid if accessed";
+            }
+
             map_ss << '\n';
         }
     };

@@ -2509,7 +2509,7 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer&
             const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
             skip |=
                 LogError(vuid, objlist, loc.dot(Field::pBufferIndices, i),
-                         "(%" PRIu32 ") points to descriptor buffer at VkDescriptorBufferBindingInfoEXT::address (0x%" PRIxLEAST64
+                         "(%" PRIu32 ") points to the descriptor buffer at VkDescriptorBufferBindingInfoEXT::address (0x%" PRIx64
                          ") but no VkBuffer was found in this address",
                          buffer_index, start);
             continue;  // the buffer is not valid
@@ -2526,7 +2526,7 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer&
                 const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
                 skip |= LogError(vuid, objlist, loc.dot(Field::pOffset, i),
                                  "(%" PRIu64 ") is greater than maxResourceDescriptorBufferRange (%" PRIu64
-                                 ").\nThis can be fixed by updating VkDescriptorBufferBindingInfoEXT::address (0x%" PRIxLEAST64
+                                 ").\nThis can be fixed by updating VkDescriptorBufferBindingInfoEXT::address (0x%" PRIx64
                                  ") such that the offset can be lowered.",
                                  offset, phys_dev_ext_props.descriptor_buffer_props.maxResourceDescriptorBufferRange, start);
             }
@@ -2538,18 +2538,27 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer&
                 const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
                 skip |= LogError(vuid, objlist, loc.dot(Field::pOffset, i),
                                  "(%" PRIu64 ") is greater than maxSamplerDescriptorBufferRange (%" PRIu64
-                                 ").\nThis can be fixed by updating VkDescriptorBufferBindingInfoEXT::address (0x%" PRIxLEAST64
+                                 ").\nThis can be fixed by updating VkDescriptorBufferBindingInfoEXT::address (0x%" PRIx64
                                  ") such that the offset can be lowered.",
                                  offset, phys_dev_ext_props.descriptor_buffer_props.maxSamplerDescriptorBufferRange, start);
             }
         }
 
-        bool valid_binding = false;
-        VkDeviceSize set_layout_size = set_layout->GetLayoutSizeInBytes();
         const auto buffer_state_starts = GetBuffersByAddress(start + offset);
-        if (!buffer_state_starts.empty()) {
-            const auto bindings = set_layout->GetBindings();
-
+        if (buffer_state_starts.empty()) {
+            // This case when the offset is applied, we are beyond any known buffer now
+            const char* vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08063"
+                                    : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08063";
+            const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
+            skip |=
+                LogError(vuid, objlist, loc.dot(Field::pBufferIndices, i),
+                         "(%" PRIu32 ") points to the descriptor buffer at VkDescriptorBufferBindingInfoEXT::address (0x%" PRIx64
+                         ") which has the following buffers:\n%sWhen the pOffsets[%" PRIu32 "] (0x%" PRIx64
+                         ") is applied to the address, there are no VkBuffer found at 0x%" PRIx64
+                         " and you are out-of-bounds of any valid descriptor buffer.",
+                         buffer_index, start, PrintBufferRanges(*this, buffer_states).c_str(), i, offset, start + offset);
+        } else {
+            VkDeviceSize set_layout_size = set_layout->GetLayoutSizeInBytes();
             if (set_layout_size > 0) {
                 // Variable Descriptor Count can only be in the highest binding (the last binding)
                 const uint32_t last_index = set_layout->GetLastIndex();
@@ -2568,27 +2577,24 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer&
                 }
             }
 
-            if (set_layout_size > 0) {
-                const auto buffer_state_ends = GetBuffersByAddress(start + offset + set_layout_size - 1);
-                if (!buffer_state_ends.empty()) {
-                    valid_binding = true;
-                }
-            }
-        }
+            // No idea what error we should have if this is zero
+            ASSERT_AND_RETURN_SKIP(set_layout_size > 0);
 
-        if (!valid_binding) {
-            const vvl::range<VkDeviceAddress> access_range = {start + offset, start + offset + set_layout_size};
-            const char* vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08063"
-                                    : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08063";
-            const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
-            skip |=
-                LogError(vuid, objlist, loc.dot(Field::pBufferIndices, i),
-                         "(%" PRIu32 ") points to descriptor buffer at VkDescriptorBufferBindingInfoEXT::address (0x%" PRIxLEAST64
-                         ") and the pOffsets[%" PRIu32 "] (%" PRIu64 ") with a VkDescriptorSetLayout size %" PRIu64
-                         " is not within any VkBuffer range.\nThe invalid access is at %s\nThe following are the possible buffer "
-                         "ranges it could be at:\n%s",
-                         buffer_index, start, i, offset, set_layout_size, vvl::string_range_hex(access_range).c_str(),
-                         PrintBufferRanges(*this, buffer_states).c_str());
+            const auto buffer_state_ends = GetBuffersByAddress(start + offset + set_layout_size - 1);
+            if (buffer_state_ends.empty()) {
+                const vvl::range<VkDeviceAddress> access_range = {start + offset, start + offset + set_layout_size};
+                const char* vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08063"
+                                        : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08063";
+                const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
+                skip |= LogError(vuid, objlist, loc.dot(Field::pBufferIndices, i),
+                                 "(%" PRIu32
+                                 ") points to the descriptor buffer at VkDescriptorBufferBindingInfoEXT::address (0x%" PRIx64
+                                 ") which has the following buffers:\n%sWhen the pOffsets[%" PRIu32 "] (0x%" PRIx64
+                                 ") and VkDescriptorSetLayout size (0x%" PRIx64
+                                 ") is applied to the address, the new range %s is out-of-bounds of any valid descriptor buffer.",
+                                 buffer_index, start, PrintBufferRanges(*this, buffer_states).c_str(), i, offset, set_layout_size,
+                                 vvl::string_range_hex(access_range).c_str());
+            }
         }
     }
 
