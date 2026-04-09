@@ -85,7 +85,7 @@ void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubSt
 
     // Only need to perform validation for depth image having a depth format that is not unsigned normalized.
     // For unsigned normalized formats, depth is by definition in range [0, 1]
-    if (!IsValueIn(image_state->create_info.format, {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT})) {
+    if (!IsValueIn(image_state->GetFormat(), {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT})) {
         return;
     }
 
@@ -138,7 +138,7 @@ void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubSt
 
         auto gpu_regions_u32_ptr = (uint32_t*)copy_src_regions_mem_buffer_range.offset_mapped_ptr;
 
-        const uint32_t block_size = image_state->create_info.format == VK_FORMAT_D32_SFLOAT ? 4 : 5;
+        const uint32_t block_size = image_state->GetFormat() == VK_FORMAT_D32_SFLOAT ? 4 : 5;
         const VkExtent3D image_extent = image_state->GetExtent();
         uint32_t gpu_regions_count = 0;
         BufferImageCopy* gpu_regions_ptr =

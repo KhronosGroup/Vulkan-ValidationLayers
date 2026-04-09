@@ -124,6 +124,7 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
 
     VkImage VkHandle() const { return handle_.Cast<VkImage>(); }
 
+    const void* GetPNext() const { return create_info.pNext; }
     VkImageType GetImageType() const { return create_info.imageType; }
     VkFormat GetFormat() const { return create_info.format; }
     VkExtent3D GetExtent() const { return create_info.extent; }

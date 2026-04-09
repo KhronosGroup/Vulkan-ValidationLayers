@@ -527,7 +527,7 @@ static VkImageUsageFlags GetInheritedUsage(const VkImageViewCreateInfo& ci, cons
     VkImageUsageFlags usage = image_state.create_info.usage;
 
     // We can't apply the stencil usage until we get the aspectMask to know how to appply it
-    if (const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.create_info.pNext)) {
+    if (const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.GetPNext())) {
         const bool stencil_aspect = (ci.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
         const bool depth_aspect = (ci.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
         if (stencil_aspect && !depth_aspect) {

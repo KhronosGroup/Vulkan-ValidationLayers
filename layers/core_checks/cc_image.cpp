@@ -956,7 +956,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
         skip |= ValidateClearImageLayout(cb_state, image_state, pRanges[i], imageLayout, range_loc);
     }
 
-    const VkFormat format = image_state.create_info.format;
+    const VkFormat format = image_state.GetFormat();
     if (vkuFormatIsDepthOrStencil(format)) {
         skip |=
             LogError("VUID-vkCmdClearColorImage-image-00007", objlist, image_loc,
@@ -1018,7 +1018,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     const auto& image_state = *image_state_ptr;
     const Location image_loc = error_obj.location.dot(Field::image);
 
-    const VkFormat image_format = image_state.create_info.format;
+    const VkFormat image_format = image_state.GetFormat();
     const LogObjectList objlist(commandBuffer, image);
     skip |= ValidateMemoryIsBoundToImage(objlist, image_state, image_loc, "VUID-vkCmdClearDepthStencilImage-image-00010");
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -1030,7 +1030,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     skip |= ValidateProtectedImage(cb_state, image_state, image_loc, "VUID-vkCmdClearDepthStencilImage-commandBuffer-01807");
     skip |= ValidateUnprotectedImage(cb_state, image_state, image_loc, "VUID-vkCmdClearDepthStencilImage-commandBuffer-01808");
 
-    const auto image_stencil_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.create_info.pNext);
+    const auto image_stencil_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.GetPNext());
     for (uint32_t i = 0; i < rangeCount; ++i) {
         const Location range_loc = error_obj.location.dot(Field::pRanges, i);
         skip |= ValidateCmdClearDepthSubresourceRange(image_state.create_info, pRanges[i], objlist, range_loc);
@@ -1381,7 +1381,7 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer commandBuffer, 
                 LogError(vuid, objlist, image_loc,
                          "(%s) was created with format %s and tiling %s which have VkFormatFeatureFlags2 (%s) which in turn is "
                          "missing the required feature %s.",
-                         FormatHandle(image_state).c_str(), string_VkFormat(image_state.create_info.format),
+                         FormatHandle(image_state).c_str(), string_VkFormat(image_state.GetFormat()),
                          string_VkImageTiling(image_state.GetTiling()), string_VkFormatFeatureFlags2(image_format_features).c_str(),
                          string_VkFormatFeatureFlags2(desired).c_str());
         }
@@ -1928,7 +1928,7 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
     auto normalized_subresource_range = vvl::ImageView::NormalizeImageViewSubresourceRange(image_state, create_info);
 
     const VkImageCreateFlags image_flags = image_state.create_info.flags;
-    const VkFormat image_format = image_state.create_info.format;
+    const VkFormat image_format = image_state.GetFormat();
     const VkFormat view_format = create_info.format;
     const VkImageAspectFlags aspect_mask = create_info.subresourceRange.aspectMask;
     const VkImageType image_type = image_state.GetImageType();
@@ -1940,8 +1940,7 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
 
     if (const auto chained_ivuci_struct = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(create_info.pNext)) {
         if (IsExtEnabled(extensions.vk_khr_maintenance2)) {
-            const auto image_stencil_struct =
-                vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.create_info.pNext);
+            const auto image_stencil_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.GetPNext());
             if (image_stencil_struct == nullptr) {
                 if ((image_usage | chained_ivuci_struct->usage) != image_usage) {
                     skip |=
@@ -1981,7 +1980,7 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
     skip |= ValidateImageViewSlicedCreateInfo(create_info, image_state, normalized_subresource_range, create_info_loc);
 
     // If image used VkImageFormatListCreateInfo need to make sure a format from list is used
-    if (const auto format_list_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(image_state.create_info.pNext);
+    if (const auto format_list_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(image_state.GetPNext());
         format_list_info && (format_list_info->viewFormatCount > 0)) {
         bool found_format = false;
         for (uint32_t i = 0; i < format_list_info->viewFormatCount; i++) {
@@ -2322,7 +2321,7 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
         // Ensure ImageView's format has the same number of bits and components as Image's format if format reinterpretation is
         // disabled
         if (!enabled_features.imageViewFormatReinterpretation &&
-            !FormatsEqualComponentBits(create_info.format, image_state.create_info.format)) {
+            !FormatsEqualComponentBits(create_info.format, image_state.GetFormat())) {
             skip |= LogError("VUID-VkImageViewCreateInfo-imageViewFormatReinterpretation-04466", create_info.image, create_info_loc,
                              "(portability error): ImageView format must have"
                              " the same number of components and bits per component as the Image's format");
@@ -2475,7 +2474,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const vvl::Image& image_state
                          subresource.arrayLayer, image_state.GetArrayLayers());
     }
 
-    const VkFormat image_format = image_state.create_info.format;
+    const VkFormat image_format = image_state.GetFormat();
     const bool tiling_linear_optimal =
         image_state.GetTiling() == VK_IMAGE_TILING_LINEAR || image_state.GetTiling() == VK_IMAGE_TILING_OPTIMAL;
     if (vkuFormatIsColor(image_format) && !vkuFormatIsMultiplane(image_format) && (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) &&
@@ -2535,12 +2534,10 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const vvl::Image& image_state
 
             VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
             VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
-            DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, image_state.create_info.format,
-                                                             &fmt_props_2);
+            DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, image_state.GetFormat(), &fmt_props_2);
             std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties{fmt_drm_props.drmFormatModifierCount};
             fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
-            DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, image_state.create_info.format,
-                                                             &fmt_props_2);
+            DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, image_state.GetFormat(), &fmt_props_2);
 
             uint32_t max_plane_count = 0u;
 
@@ -2570,7 +2567,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const vvl::Image& image_state
                 skip |= LogError(vuid, image_state.Handle(), subresource_loc.dot(Field::aspectMask),
                                  "is %s for image format %s, but drmFormatModifierPlaneCount is %" PRIu32
                                  " (drmFormatModifier = %" PRIu64 ").",
-                                 string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_state.create_info.format),
+                                 string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_state.GetFormat()),
                                  max_plane_count, drm_format_properties.drmFormatModifier);
             }
         }
@@ -2651,7 +2648,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
         const auto& transition = pTransitions[i];
         const auto image_state = Get<vvl::Image>(transition.image);
         if (!image_state) continue;
-        const auto image_format = image_state->create_info.format;
+        const VkFormat image_format = image_state->GetFormat();
         const auto aspect_mask = transition.subresourceRange.aspectMask;
         const bool has_depth_mask = (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
         const bool has_stencil_mask = (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;

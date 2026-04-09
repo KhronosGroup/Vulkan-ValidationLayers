@@ -396,7 +396,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                                 "VkImageCreateInfo structure",
                                 FormatHandle(metal_texture_ptr->image).c_str());
                         }
-                        auto format_plane_count = vkuFormatPlaneCount(image_info->create_info.format);
+                        auto format_plane_count = vkuFormatPlaneCount(image_info->GetFormat());
                         auto image_plane = metal_texture_ptr->plane;
                         if (!(format_plane_count > 1) && (image_plane != VK_IMAGE_ASPECT_PLANE_0_BIT)) {
                             skip |= LogError(
@@ -405,7 +405,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                                 "%s, and plane = %s, but image was created with format %s, which is not multiplaner and plane is "
                                 "required to be VK_IMAGE_ASPECT_PLANE_0_BIT",
                                 FormatHandle(metal_texture_ptr->image).c_str(), string_VkImageAspectFlags(image_plane).c_str(),
-                                string_VkFormat(image_info->create_info.format));
+                                string_VkFormat(image_info->GetFormat()));
                         }
                         if ((format_plane_count == 2) && (image_plane == VK_IMAGE_ASPECT_PLANE_2_BIT)) {
                             skip |= LogError(
@@ -415,7 +415,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                                 "cannot"
                                 "be VK_IMAGE_ASPECT_PLANE_2_BIT",
                                 FormatHandle(metal_texture_ptr->image).c_str(), string_VkImageAspectFlags(image_plane).c_str(),
-                                string_VkFormat(image_info->create_info.format));
+                                string_VkFormat(image_info->GetFormat()));
                         }
                     }
                 }
@@ -623,7 +623,7 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo& allocat
 
         // We can only validate images since we lack information to do the buffer call for the properties
         auto image_state_ptr = Get<vvl::Image>(dedicated_allocation_info->image);
-        VkFormat image_format = image_state_ptr->create_info.format;
+        VkFormat image_format = image_state_ptr->GetFormat();
         VkPhysicalDeviceExternalImageFormatInfo external_info = vku::InitStructHelper();
         external_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT;
         VkPhysicalDeviceImageFormatInfo2 format_info = image_state_ptr->GetImageFormatInfo2(&external_info);
