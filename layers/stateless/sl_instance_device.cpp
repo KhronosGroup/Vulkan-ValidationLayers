@@ -825,19 +825,6 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
         }
     }
 
-    if (const auto* device_address_commands_features =
-            vku::FindStructInPNextChain<VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR>(pCreateInfo->pNext)) {
-        if (const auto* acceleration_structure_features =
-                vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(pCreateInfo->pNext)) {
-            if (device_address_commands_features->deviceAddressCommands &&
-                acceleration_structure_features->accelerationStructureHostCommands) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-deviceAddressCommands-13048", physicalDevice, error_obj.location,
-                                 "Cannot enable deviceAddressCommands and accelerationStructureHostCommands features "
-                                 "simultaneously.");
-            }
-        }
-    }
-
     if (const auto* shader_image_atomic_int64_features =
             vku::FindStructInPNextChain<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(pCreateInfo->pNext)) {
         if (shader_image_atomic_int64_features->sparseImageInt64Atomics &&

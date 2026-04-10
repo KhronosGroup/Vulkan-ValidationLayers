@@ -165,11 +165,13 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
         const auto* dg_pipeline_identifier_ci =
             vku::FindStructInPNextChain<VkDataGraphPipelineIdentifierCreateInfoARM>(create_info.pNext);
         const auto* qcom_model_ci = vku::FindStructInPNextChain<VkDataGraphPipelineBuiltinModelCreateInfoQCOM>(create_info.pNext);
+        const auto* single_node_ci = vku::FindStructInPNextChain<VkDataGraphPipelineSingleNodeCreateInfoARM>(create_info.pNext);
 
         // 1 and ONLY 1 of them MUST be present
-        uint32_t defined_structs = (qcom_model_ci ? 1 : 0) + (dg_pipeline_identifier_ci ? 1 : 0) + (dg_shader_ci ? 1 : 0);
+        uint32_t defined_structs =
+            (qcom_model_ci ? 1 : 0) + (dg_pipeline_identifier_ci ? 1 : 0) + (dg_shader_ci ? 1 : 0) + (single_node_ci ? 1 : 0);
         if (defined_structs != 1) {
-            skip |= LogError("VUID-VkDataGraphPipelineCreateInfoARM-pNext-09763", device, create_info_loc,
+            skip |= LogError("VUID-VkDataGraphPipelineCreateInfoARM-pNext-09977", device, create_info_loc,
                              "%" PRIu32 " of the possible required structures are included in the pNext chain%s.\n%s",
                              defined_structs, (defined_structs > 1) ? " (only 1 is allowed)" : "",
                              PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
