@@ -3231,11 +3231,8 @@ TEST_F(NegativeWsi, PresentImageWithWrongLayout2) {
 
     m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430");
     m_default_queue->Present(m_swapchain, image_index, acquire_semaphore);
-    m_default_queue->Wait();
-    // NOTE: in the current implementation submit time validation is run by the queue thread
-    // (so all dependencies are resolved), that's why we check vuid after Wait(). There's an idea
-    // to move this validation to actual submit/present call, then we can put Verify after Present.
     m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeWsi, CreatingSwapchainWithExtent) {

@@ -4407,11 +4407,10 @@ TEST_F(NegativeSyncObject, DecreasingTimelineSignals) {
 
     m_default_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 2));
 
-    // NOTE: VerifyFound goes after Wait because validation is performed by the Queue thread
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pSignalSemaphores-03242");
     m_default_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
-    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeSyncObject, TimelineHostSignalLargerThanPendingSignal) {
@@ -4467,11 +4466,10 @@ TEST_F(NegativeSyncObject, DifferentSignalingOrderThanSubmitOrder) {
     m_default_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 2));
 
     // Signal 3 resolves wait 1 then value 2 is signaled
-    // NOTE: VerifyFound goes after Wait because validation is performed by the Queue thread
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pSignalSemaphores-03242");
     m_second_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 3));
-    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeSyncObject, DifferentSignalingOrderThanSubmitOrder2) {
@@ -4491,11 +4489,10 @@ TEST_F(NegativeSyncObject, DifferentSignalingOrderThanSubmitOrder2) {
     m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
 
     // Signal 3 resolves wait 1 then value 1 is signaled
-    // NOTE: VerifyFound goes after Wait because validation is performed by the Queue thread
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo2-semaphore-03882");
     m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 3));
-    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeSyncObject, BinarySyncDependsOnTimelineWait) {
