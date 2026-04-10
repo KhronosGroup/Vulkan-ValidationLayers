@@ -1876,7 +1876,7 @@ TEST_F(NegativeDataGraph, DataGraphWrongCreateInfoStructs) {
     {
         vkt::dg::DataGraphPipelineHelper pipeline(*this);
         pipeline.pipeline_ci_.pNext = nullptr;
-        m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-pNext-09763");
+        m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-pNext-09977");
         pipeline.CreateDataGraphPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -1901,7 +1901,7 @@ TEST_F(NegativeDataGraph, DataGraphWrongCreateInfoStructs) {
         VkResult err = vk::CreatePipelineCache(device(), &cache_create_info, nullptr, &pipeline_cache);
         ASSERT_EQ(VK_SUCCESS, err);
 
-        m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-pNext-09763");
+        m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-pNext-09977");
         pipeline.CreateDataGraphPipeline(pipeline_cache);
         m_errorMonitor->VerifyFound();
         vk::DestroyPipelineCache(device(), pipeline_cache, nullptr);

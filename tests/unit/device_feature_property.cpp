@@ -558,22 +558,3 @@ TEST_F(NegativeDeviceFeatureProperty, Create14DeviceDuplicatedFeatures) {
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
-
-TEST_F(NegativeDeviceFeatureProperty, DeviceAddressCommandsHostAccelerationStructure) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitDeviceFeatureProperty());
-
-    VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR dac_features = vku::InitStructHelper();
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR as_features = vku::InitStructHelper(&dac_features);
-    GetPhysicalDeviceFeatures2(as_features);
-    if (!dac_features.deviceAddressCommands || !as_features.accelerationStructureHostCommands) {
-        GTEST_SKIP() << "Features not supported";
-    }
-    m_second_device_ci.pNext = &as_features;
-
-    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-deviceAddressCommands-13048");
-    vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
-    m_errorMonitor->VerifyFound();
-}
