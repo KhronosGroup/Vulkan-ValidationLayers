@@ -695,6 +695,7 @@ const char* String(Func func) {
     {"vkGetPhysicalDeviceProperties2", 31},
     {"vkGetPhysicalDeviceProperties2KHR", 34},
     {"vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM", 68},
+    {"vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM", 66},
     {"vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM", 69},
     {"vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM", 53},
     {"vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR", 56},
@@ -1040,6 +1041,8 @@ const char* String(Struct structure) {
     {"VkCudaModuleCreateInfoNV", 25},
     {"VkCustomResolveCreateInfoEXT", 29},
     {"VkD3D12FenceSubmitInfoKHR", 26},
+    {"VkDataGraphOpticalFlowImageFormatInfoARM", 41},
+    {"VkDataGraphOpticalFlowImageFormatPropertiesARM", 47},
     {"VkDataGraphPipelineBuiltinModelCreateInfoQCOM", 46},
     {"VkDataGraphPipelineCompilerControlCreateInfoARM", 48},
     {"VkDataGraphPipelineConstantARM", 31},
@@ -1048,13 +1051,18 @@ const char* String(Struct structure) {
     {"VkDataGraphPipelineDispatchInfoARM", 35},
     {"VkDataGraphPipelineIdentifierCreateInfoARM", 43},
     {"VkDataGraphPipelineInfoARM", 27},
+    {"VkDataGraphPipelineOpticalFlowCreateInfoARM", 44},
+    {"VkDataGraphPipelineOpticalFlowDispatchInfoARM", 46},
     {"VkDataGraphPipelinePropertyQueryResultARM", 42},
     {"VkDataGraphPipelineResourceInfoARM", 35},
+    {"VkDataGraphPipelineResourceInfoImageLayoutARM", 46},
     {"VkDataGraphPipelineSessionBindPointRequirementARM", 50},
     {"VkDataGraphPipelineSessionBindPointRequirementsInfoARM", 55},
     {"VkDataGraphPipelineSessionCreateInfoARM", 40},
     {"VkDataGraphPipelineSessionMemoryRequirementsInfoARM", 52},
     {"VkDataGraphPipelineShaderModuleCreateInfoARM", 45},
+    {"VkDataGraphPipelineSingleNodeConnectionARM", 43},
+    {"VkDataGraphPipelineSingleNodeCreateInfoARM", 43},
     {"VkDataGraphProcessingEngineCreateInfoARM", 41},
     {"VkDataGraphTOSANameQualityARM", 30},
     {"VkDebugMarkerMarkerInfoEXT", 27},
@@ -1490,6 +1498,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceDataGraphFeaturesARM", 37},
     {"VkPhysicalDeviceDataGraphModelFeaturesQCOM", 43},
     {"VkPhysicalDeviceDataGraphOperationSupportARM", 45},
+    {"VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM", 48},
     {"VkPhysicalDeviceDataGraphProcessingEngineARM", 45},
     {"VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV", 59},
     {"VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX", 48},
@@ -1940,6 +1949,7 @@ const char* String(Struct structure) {
     {"VkQueryPoolVideoEncodeFeedbackCreateInfoKHR", 44},
     {"VkQueueFamilyCheckpointProperties2NV", 37},
     {"VkQueueFamilyCheckpointPropertiesNV", 36},
+    {"VkQueueFamilyDataGraphOpticalFlowPropertiesARM", 47},
     {"VkQueueFamilyDataGraphProcessingEnginePropertiesARM", 52},
     {"VkQueueFamilyDataGraphPropertiesARM", 36},
     {"VkQueueFamilyDataGraphTOSAPropertiesARM", 40},
@@ -2502,6 +2512,7 @@ const char* String(Field field) {
     {"configuration", 14},
     {"conformanceVersion", 19},
     {"connection", 11},
+    {"connectionCount", 16},
     {"connectorId", 12},
     {"consecutiveBFrameCount", 23},
     {"consecutiveBipredictiveFrameCount", 34},
@@ -2590,6 +2601,7 @@ const char* String(Field field) {
     {"dataGraph", 10},
     {"dataGraphDescriptorBuffer", 26},
     {"dataGraphModel", 15},
+    {"dataGraphOpticalFlow", 21},
     {"dataGraphPipeline", 18},
     {"dataGraphShaderModule", 22},
     {"dataGraphSpecializationConstants", 33},
@@ -3650,6 +3662,7 @@ const char* String(Field field) {
     {"maxY", 5},
     {"maxZ", 5},
     {"maximumRequestedAlignment", 26},
+    {"meanFlowL1NormHint", 19},
     {"memory", 7},
     {"memoryBarrierCount", 19},
     {"memoryBindIndex", 16},
@@ -3797,6 +3810,7 @@ const char* String(Field field) {
     {"noInvocationFragmentShadingRates", 33},
     {"noMoveOverlap", 14},
     {"nodeIndex", 10},
+    {"nodeType", 9},
     {"nonCoherentAtomSize", 20},
     {"nonRectangularIntraRefreshRegions", 34},
     {"nonSeamlessCubeMap", 19},
@@ -3941,6 +3955,7 @@ const char* String(Field field) {
     {"pCompatibility", 15},
     {"pConditionalRenderingBegin", 27},
     {"pConfiguration", 15},
+    {"pConnections", 13},
     {"pConstantData", 14},
     {"pConstants", 11},
     {"pCopyBufferInfo", 16},
@@ -5604,6 +5619,9 @@ const char* String(Enum value) {
     {"VkCoverageReductionModeNV", 26},
     {"VkCubicFilterWeightsQCOM", 25},
     {"VkDataGraphModelCacheTypeQCOM", 30},
+    {"VkDataGraphOpticalFlowPerformanceLevelARM", 42},
+    {"VkDataGraphPipelineNodeConnectionTypeARM", 41},
+    {"VkDataGraphPipelineNodeTypeARM", 31},
     {"VkDataGraphPipelinePropertyARM", 31},
     {"VkDataGraphPipelineSessionBindPointARM", 39},
     {"VkDataGraphPipelineSessionBindPointTypeARM", 43},
@@ -5754,6 +5772,10 @@ const char* String(FlagBitmask value) {
     {"VkCompositeAlphaFlagBitsKHR", 28},
     {"VkConditionalRenderingFlagBitsEXT", 34},
     {"VkCullModeFlagBits", 19},
+    {"VkDataGraphOpticalFlowCreateFlagBitsARM", 40},
+    {"VkDataGraphOpticalFlowExecuteFlagBitsARM", 41},
+    {"VkDataGraphOpticalFlowGridSizeFlagBitsARM", 42},
+    {"VkDataGraphOpticalFlowImageUsageFlagBitsARM", 44},
     {"VkDataGraphPipelineDispatchFlagBitsARM", 39},
     {"VkDataGraphPipelineSessionCreateFlagBitsARM", 44},
     {"VkDataGraphTOSAQualityFlagBitsARM", 34},
@@ -5933,6 +5955,7 @@ const char* String(Extension extension) {
     {"VK_ANDROID_external_memory_android_hardware_buffer", 51},
     {"VK_ARM_data_graph", 18},
     {"VK_ARM_data_graph_instruction_set_tosa", 39},
+    {"VK_ARM_data_graph_optical_flow", 31},
     {"VK_ARM_format_pack", 19},
     {"VK_ARM_performance_counters_by_region", 38},
     {"VK_ARM_pipeline_opacity_micromap", 33},
@@ -6459,6 +6482,7 @@ bool IsFieldPointer(Field field) {
     case Field::pCompatibility:
     case Field::pConditionalRenderingBegin:
     case Field::pConfiguration:
+    case Field::pConnections:
     case Field::pConstantData:
     case Field::pConstants:
     case Field::pCopyBufferInfo:
@@ -9342,6 +9366,24 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkDataGraphPipelineBuiltinModelCreateInfoQCOM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM:
        return Struct::VkPhysicalDeviceDataGraphModelFeaturesQCOM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_OPTICAL_FLOW_FEATURES_ARM:
+       return Struct::VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM;
+    case VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_OPTICAL_FLOW_PROPERTIES_ARM:
+       return Struct::VkQueueFamilyDataGraphOpticalFlowPropertiesARM;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_CREATE_INFO_ARM:
+       return Struct::VkDataGraphPipelineOpticalFlowCreateInfoARM;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM:
+       return Struct::VkDataGraphOpticalFlowImageFormatPropertiesARM;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM:
+       return Struct::VkDataGraphOpticalFlowImageFormatInfoARM;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_DISPATCH_INFO_ARM:
+       return Struct::VkDataGraphPipelineOpticalFlowDispatchInfoARM;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_IMAGE_LAYOUT_ARM:
+       return Struct::VkDataGraphPipelineResourceInfoImageLayoutARM;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CONNECTION_ARM:
+       return Struct::VkDataGraphPipelineSingleNodeConnectionARM;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CREATE_INFO_ARM:
+       return Struct::VkDataGraphPipelineSingleNodeCreateInfoARM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT:
        return Struct::VkPhysicalDeviceShaderLongVectorFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_PROPERTIES_EXT:

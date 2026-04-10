@@ -438,6 +438,8 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo>& GetSpirvExte
         {"SPV_EXT_long_vector", {0, nullptr, &DeviceExtensions::vk_ext_shader_long_vector, ""}},
         {"SPV_EXT_descriptor_heap", {0, nullptr, &DeviceExtensions::vk_ext_descriptor_heap, ""}},
         {"SPV_VALVE_mixed_float_dot_product", {0, nullptr, &DeviceExtensions::vk_valve_shader_mixed_float_dot_product, ""}},
+        {"SPV_KHR_abort", {0, nullptr, &DeviceExtensions::vk_khr_shader_abort, ""}},
+        {"SPV_KHR_constant_data", {0, nullptr, &DeviceExtensions::vk_khr_shader_constant_data, ""}},
     };
     // clang-format on
     return spirv_extensions;
@@ -1396,6 +1398,8 @@ static inline std::string SpvExtensionRequirements(std::string_view extension) {
     {"SPV_EXT_long_vector", {{vvl::Extension::_VK_EXT_shader_long_vector}}},
     {"SPV_EXT_descriptor_heap", {{vvl::Extension::_VK_EXT_descriptor_heap}}},
     {"SPV_VALVE_mixed_float_dot_product", {{vvl::Extension::_VK_VALVE_shader_mixed_float_dot_product}}},
+    {"SPV_KHR_abort", {{vvl::Extension::_VK_KHR_shader_abort}}},
+    {"SPV_KHR_constant_data", {{vvl::Extension::_VK_KHR_shader_constant_data}}},
     };
 
     // VUs before catch unknown extensions

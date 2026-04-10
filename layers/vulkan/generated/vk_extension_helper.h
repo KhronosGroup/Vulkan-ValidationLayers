@@ -557,6 +557,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_shader_64bit_indexing{kNotSupported};
     ExtEnabled vk_ext_custom_resolve{kNotSupported};
     ExtEnabled vk_qcom_data_graph_model{kNotSupported};
+    ExtEnabled vk_arm_data_graph_optical_flow{kNotSupported};
     ExtEnabled vk_ext_shader_long_vector{kNotSupported};
     ExtEnabled vk_sec_pipeline_cache_incremental_mode{kNotSupported};
     ExtEnabled vk_ext_shader_uniform_buffer_unsized_array{kNotSupported};
@@ -1048,6 +1049,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_shader_64bit_indexing:
         case vvl::Extension::_VK_EXT_custom_resolve:
         case vvl::Extension::_VK_QCOM_data_graph_model:
+        case vvl::Extension::_VK_ARM_data_graph_optical_flow:
         case vvl::Extension::_VK_EXT_shader_long_vector:
         case vvl::Extension::_VK_SEC_pipeline_cache_incremental_mode:
         case vvl::Extension::_VK_EXT_shader_uniform_buffer_unsized_array:

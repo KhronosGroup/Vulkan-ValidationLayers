@@ -1964,6 +1964,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->dataGraphModel |= enabled->dataGraphModel == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_OPTICAL_FLOW_FEATURES_ARM: {
+                const VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM*>(pNext);
+                features->dataGraphOpticalFlow |= enabled->dataGraphOpticalFlow == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT: {
                 const VkPhysicalDeviceShaderLongVectorFeaturesEXT* enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderLongVectorFeaturesEXT*>(pNext);

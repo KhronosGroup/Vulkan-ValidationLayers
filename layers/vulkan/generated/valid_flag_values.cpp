@@ -1523,6 +1523,13 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
                 }
             }
             return {};
+        case vvl::FlagBitmask::VkDataGraphPipelineSessionCreateFlagBitsARM:
+            if (value & (VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_OPTICAL_FLOW_CACHE_BIT_ARM)) {
+                if (!IsExtEnabled(extensions.vk_arm_data_graph_optical_flow)) {
+                    return {vvl::Extension::_VK_ARM_data_graph_optical_flow};
+                }
+            }
+            return {};
         default:
             return {};
     }
@@ -1778,6 +1785,14 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkIndirectCommandsInputModeFlagsEXT(value);
         case vvl::FlagBitmask::VkIndirectCommandsLayoutUsageFlagBitsEXT:
             return string_VkIndirectCommandsLayoutUsageFlagsEXT(value);
+        case vvl::FlagBitmask::VkDataGraphOpticalFlowGridSizeFlagBitsARM:
+            return string_VkDataGraphOpticalFlowGridSizeFlagsARM(value);
+        case vvl::FlagBitmask::VkDataGraphOpticalFlowCreateFlagBitsARM:
+            return string_VkDataGraphOpticalFlowCreateFlagsARM(value);
+        case vvl::FlagBitmask::VkDataGraphOpticalFlowImageUsageFlagBitsARM:
+            return string_VkDataGraphOpticalFlowImageUsageFlagsARM(value);
+        case vvl::FlagBitmask::VkDataGraphOpticalFlowExecuteFlagBitsARM:
+            return string_VkDataGraphOpticalFlowExecuteFlagsARM(value);
 
         default:
             std::ostringstream ss;

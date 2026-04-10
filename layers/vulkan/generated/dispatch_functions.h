@@ -4841,6 +4841,17 @@ static inline void DispatchCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffe
     dispatch->CmdBeginCustomResolveEXT(commandBuffer, pBeginCustomResolveInfo);
 }
 
+static inline VkResult DispatchGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+    const VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties,
+    const VkDataGraphOpticalFlowImageFormatInfoARM* pOpticalFlowImageFormatInfo, uint32_t* pFormatCount,
+    VkDataGraphOpticalFlowImageFormatPropertiesARM* pImageFormatProperties) {
+    auto dispatch = vvl::GetDispatchInstance(physicalDevice);
+    return dispatch->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
+        physicalDevice, queueFamilyIndex, pQueueFamilyDataGraphProperties, pOpticalFlowImageFormatInfo, pFormatCount,
+        pImageFormatProperties);
+}
+
 static inline void DispatchCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
                                                             const VkComputeOccupancyPriorityParametersNV* pParameters) {
     auto dispatch = vvl::GetDispatchDevice(commandBuffer);

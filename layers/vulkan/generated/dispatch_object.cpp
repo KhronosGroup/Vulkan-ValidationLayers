@@ -9768,6 +9768,18 @@ void DispatchDevice::CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
     device_dispatch_table.CmdBeginCustomResolveEXT(commandBuffer, pBeginCustomResolveInfo);
 }
 
+VkResult DispatchInstance::GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+    const VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties,
+    const VkDataGraphOpticalFlowImageFormatInfoARM* pOpticalFlowImageFormatInfo, uint32_t* pFormatCount,
+    VkDataGraphOpticalFlowImageFormatPropertiesARM* pImageFormatProperties) {
+    VkResult result = instance_dispatch_table.GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
+        physicalDevice, queueFamilyIndex, pQueueFamilyDataGraphProperties, pOpticalFlowImageFormatInfo, pFormatCount,
+        pImageFormatProperties);
+
+    return result;
+}
+
 void DispatchDevice::CmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
                                                       const VkComputeOccupancyPriorityParametersNV* pParameters) {
     device_dispatch_table.CmdSetComputeOccupancyPriorityNV(commandBuffer, pParameters);

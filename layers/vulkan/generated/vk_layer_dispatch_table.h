@@ -188,6 +188,8 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM
         EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM;
     PFN_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM EnumeratePhysicalDeviceShaderInstrumentationMetricsARM;
+    PFN_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM
+        GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM;
 #ifdef VK_USE_PLATFORM_UBM_SEC
     PFN_vkCreateUbmSurfaceSEC CreateUbmSurfaceSEC;
     PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC GetPhysicalDeviceUbmPresentationSupportSEC;

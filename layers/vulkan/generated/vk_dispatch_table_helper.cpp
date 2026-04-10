@@ -1569,6 +1569,11 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetShaderInstrumentationValuesARM(VkDe
 static VKAPI_ATTR void VKAPI_CALL StubClearShaderInstrumentationMetricsARM(VkDevice, VkShaderInstrumentationARM) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdEndRendering2EXT(VkCommandBuffer, const VkRenderingEndInfoKHR*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdBeginCustomResolveEXT(VkCommandBuffer, const VkBeginCustomResolveInfoEXT*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
+    VkPhysicalDevice, uint32_t, const VkQueueFamilyDataGraphPropertiesARM*, const VkDataGraphOpticalFlowImageFormatInfoARM*,
+    uint32_t*, VkDataGraphOpticalFlowImageFormatPropertiesARM*) {
+    return VK_SUCCESS;
+}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetComputeOccupancyPriorityNV(VkCommandBuffer,
                                                                        const VkComputeOccupancyPriorityParametersNV*) {}
 #ifdef VK_USE_PLATFORM_UBM_SEC
@@ -5670,6 +5675,14 @@ void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDisp
         table->EnumeratePhysicalDeviceShaderInstrumentationMetricsARM =
             (PFN_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM)
                 StubEnumeratePhysicalDeviceShaderInstrumentationMetricsARM;
+    }
+    table->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM =
+        (PFN_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM)gpa(
+            instance, "vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM");
+    if (table->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM == nullptr) {
+        table->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM =
+            (PFN_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM)
+                StubGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM;
     }
 #ifdef VK_USE_PLATFORM_UBM_SEC
     table->CreateUbmSurfaceSEC = (PFN_vkCreateUbmSurfaceSEC)gpa(instance, "vkCreateUbmSurfaceSEC");

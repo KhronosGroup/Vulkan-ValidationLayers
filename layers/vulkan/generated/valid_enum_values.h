@@ -270,6 +270,12 @@ ValidValue stateless::Context::IsValidEnumValue(VkIndirectCommandsTokenTypeEXT v
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDataGraphModelCacheTypeQCOM value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDataGraphOpticalFlowPerformanceLevelARM value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDataGraphPipelineNodeTypeARM value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDataGraphPipelineNodeConnectionTypeARM value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkBuildAccelerationStructureModeKHR value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkShaderGroupShaderKHR value) const;

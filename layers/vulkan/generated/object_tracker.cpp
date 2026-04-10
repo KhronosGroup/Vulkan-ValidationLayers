@@ -8824,6 +8824,10 @@ bool Device::PreCallValidateClearShaderInstrumentationMetricsARM(VkDevice device
 // vkCmdBeginCustomResolveEXT:
 // Checked by chassis: commandBuffer: "VUID-vkCmdBeginCustomResolveEXT-commandBuffer-parameter"
 
+// vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM:
+// Checked by chassis: physicalDevice:
+// "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM-physicalDevice-parameter"
+
 // vkCmdSetComputeOccupancyPriorityNV:
 // Checked by chassis: commandBuffer: "VUID-vkCmdSetComputeOccupancyPriorityNV-commandBuffer-parameter"
 

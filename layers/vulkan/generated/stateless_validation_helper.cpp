@@ -3430,6 +3430,17 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_OPTICAL_FLOW_FEATURES_ARM: {  // Covers
+                                                                                        // VUID-VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM);
+                VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* structure =
+                    (VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::dataGraphOpticalFlow), structure->dataGraphOpticalFlow);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceShaderLongVectorFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceShaderLongVectorFeaturesEXT-sType-sType
@@ -8585,6 +8596,101 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // Validation code for VkDataGraphPipelineOpticalFlowCreateInfoARM structure members
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_CREATE_INFO_ARM: {  // Covers
+                                                                                    // VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkDataGraphPipelineOpticalFlowCreateInfoARM);
+                VkDataGraphPipelineOpticalFlowCreateInfoARM* structure = (VkDataGraphPipelineOpticalFlowCreateInfoARM*)header;
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::imageFormat), vvl::Enum::VkFormat, structure->imageFormat,
+                                           "VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-imageFormat-parameter");
+
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::flowVectorFormat), vvl::Enum::VkFormat, structure->flowVectorFormat,
+                                           "VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-flowVectorFormat-parameter");
+
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::costFormat), vvl::Enum::VkFormat, structure->costFormat,
+                                           "VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-costFormat-parameter");
+
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::performanceLevel),
+                                           vvl::Enum::VkDataGraphOpticalFlowPerformanceLevelARM, structure->performanceLevel,
+                                           "VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-performanceLevel-parameter");
+
+                skip |= ValidateFlags(pNext_loc.dot(Field::flags), vvl::FlagBitmask::VkDataGraphOpticalFlowCreateFlagBitsARM,
+                                      AllVkDataGraphOpticalFlowCreateFlagBitsARM, structure->flags, kOptionalFlags,
+                                      "VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-flags-parameter", nullptr, false);
+            }
+        } break;
+
+        // Validation code for VkDataGraphOpticalFlowImageFormatInfoARM structure members
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM: {  // Covers
+                                                                                 // VUID-VkDataGraphOpticalFlowImageFormatInfoARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkDataGraphOpticalFlowImageFormatInfoARM);
+                VkDataGraphOpticalFlowImageFormatInfoARM* structure = (VkDataGraphOpticalFlowImageFormatInfoARM*)header;
+                skip |= ValidateFlags(pNext_loc.dot(Field::usage), vvl::FlagBitmask::VkDataGraphOpticalFlowImageUsageFlagBitsARM,
+                                      AllVkDataGraphOpticalFlowImageUsageFlagBitsARM, structure->usage, kRequiredFlags,
+                                      "VUID-VkDataGraphOpticalFlowImageFormatInfoARM-usage-parameter",
+                                      "VUID-VkDataGraphOpticalFlowImageFormatInfoARM-usage-requiredbitmask", false);
+            }
+        } break;
+
+        // Validation code for VkDataGraphPipelineOpticalFlowDispatchInfoARM structure members
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_DISPATCH_INFO_ARM: {  // Covers
+                                                                                      // VUID-VkDataGraphPipelineOpticalFlowDispatchInfoARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkDataGraphPipelineOpticalFlowDispatchInfoARM);
+                VkDataGraphPipelineOpticalFlowDispatchInfoARM* structure = (VkDataGraphPipelineOpticalFlowDispatchInfoARM*)header;
+                skip |= ValidateFlags(pNext_loc.dot(Field::flags), vvl::FlagBitmask::VkDataGraphOpticalFlowExecuteFlagBitsARM,
+                                      AllVkDataGraphOpticalFlowExecuteFlagBitsARM, structure->flags, kOptionalFlags,
+                                      "VUID-VkDataGraphPipelineOpticalFlowDispatchInfoARM-flags-parameter", nullptr, false);
+            }
+        } break;
+
+        // Validation code for VkDataGraphPipelineResourceInfoImageLayoutARM structure members
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_IMAGE_LAYOUT_ARM: {  // Covers
+                                                                                      // VUID-VkDataGraphPipelineResourceInfoImageLayoutARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkDataGraphPipelineResourceInfoImageLayoutARM);
+                VkDataGraphPipelineResourceInfoImageLayoutARM* structure = (VkDataGraphPipelineResourceInfoImageLayoutARM*)header;
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::layout), vvl::Enum::VkImageLayout, structure->layout,
+                                           "VUID-VkDataGraphPipelineResourceInfoImageLayoutARM-layout-parameter");
+            }
+        } break;
+
+        // Validation code for VkDataGraphPipelineSingleNodeCreateInfoARM structure members
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CREATE_INFO_ARM: {  // Covers
+                                                                                   // VUID-VkDataGraphPipelineSingleNodeCreateInfoARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkDataGraphPipelineSingleNodeCreateInfoARM);
+                VkDataGraphPipelineSingleNodeCreateInfoARM* structure = (VkDataGraphPipelineSingleNodeCreateInfoARM*)header;
+                skip |=
+                    ValidateRangedEnum(pNext_loc.dot(Field::nodeType), vvl::Enum::VkDataGraphPipelineNodeTypeARM,
+                                       structure->nodeType, "VUID-VkDataGraphPipelineSingleNodeCreateInfoARM-nodeType-parameter");
+
+                skip |= ValidateStructTypeArray(pNext_loc.dot(Field::connectionCount), pNext_loc.dot(Field::pConnections),
+                                                structure->connectionCount, structure->pConnections,
+                                                VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CONNECTION_ARM, true, true,
+                                                "VUID-VkDataGraphPipelineSingleNodeConnectionARM-sType-sType",
+                                                "VUID-VkDataGraphPipelineSingleNodeCreateInfoARM-pConnections-parameter",
+                                                "VUID-VkDataGraphPipelineSingleNodeCreateInfoARM-connectionCount-arraylength");
+
+                if (structure->pConnections != nullptr) {
+                    for (uint32_t connectionIndex = 0; connectionIndex < structure->connectionCount; ++connectionIndex) {
+                        [[maybe_unused]] const Location pConnections_loc = pNext_loc.dot(Field::pConnections, connectionIndex);
+                        skip |= ValidateStructPnext(pConnections_loc, structure->pConnections[connectionIndex].pNext, 0, nullptr,
+                                                    GeneratedVulkanHeaderVersion,
+                                                    "VUID-VkDataGraphPipelineSingleNodeConnectionARM-pNext-pNext", kVUIDUndefined,
+                                                    true);
+
+                        skip |= ValidateRangedEnum(pConnections_loc.dot(Field::connection),
+                                                   vvl::Enum::VkDataGraphPipelineNodeConnectionTypeARM,
+                                                   structure->pConnections[connectionIndex].connection,
+                                                   "VUID-VkDataGraphPipelineSingleNodeConnectionARM-connection-parameter");
+                    }
+                }
+            }
+        } break;
+
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {  // Covers
                                                                                    // VUID-VkWriteDescriptorSetAccelerationStructureKHR-sType-sType
@@ -8738,7 +8844,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 267> allowed_structs_VkDeviceCreateInfo = {
+        constexpr std::array<VkStructureType, 268> allowed_structs_VkDeviceCreateInfo = {
             VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
@@ -8785,6 +8891,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_RESOLVE_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_OPTICAL_FLOW_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DENSE_GEOMETRY_FORMAT_FEATURES_AMDX,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT,
@@ -9786,8 +9893,9 @@ bool Device::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo
                                        "VUID-vkCreateImage-pCreateInfo-parameter", "VUID-VkImageCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 21> allowed_structs_VkImageCreateInfo = {
+        constexpr std::array<VkStructureType, 22> allowed_structs_VkImageCreateInfo = {
             VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA,
+            VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM,
             VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
@@ -12382,7 +12490,8 @@ bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysical
                                        "VUID-VkPhysicalDeviceImageFormatInfo2-sType-sType");
     if (pImageFormatInfo != nullptr) {
         [[maybe_unused]] const Location pImageFormatInfo_loc = loc.dot(Field::pImageFormatInfo);
-        constexpr std::array<VkStructureType, 8> allowed_structs_VkPhysicalDeviceImageFormatInfo2 = {
+        constexpr std::array<VkStructureType, 9> allowed_structs_VkPhysicalDeviceImageFormatInfo2 = {
+            VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM,
             VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_CONTROL_EXT,
             VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO,
             VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO,
@@ -14127,8 +14236,9 @@ bool Device::PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, co
 
         if (pInfo->pCreateInfo != nullptr) {
             [[maybe_unused]] const Location pCreateInfo_loc = pInfo_loc.dot(Field::pCreateInfo);
-            constexpr std::array<VkStructureType, 21> allowed_structs_VkImageCreateInfo = {
+            constexpr std::array<VkStructureType, 22> allowed_structs_VkImageCreateInfo = {
                 VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA,
+                VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM,
                 VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
                 VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
@@ -14223,8 +14333,9 @@ bool Device::PreCallValidateGetDeviceImageSparseMemoryRequirements(VkDevice devi
 
         if (pInfo->pCreateInfo != nullptr) {
             [[maybe_unused]] const Location pCreateInfo_loc = pInfo_loc.dot(Field::pCreateInfo);
-            constexpr std::array<VkStructureType, 21> allowed_structs_VkImageCreateInfo = {
+            constexpr std::array<VkStructureType, 22> allowed_structs_VkImageCreateInfo = {
                 VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA,
+                VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM,
                 VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
                 VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
@@ -15168,8 +15279,9 @@ bool Device::PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, con
 
         if (pInfo->pCreateInfo != nullptr) {
             [[maybe_unused]] const Location pCreateInfo_loc = pInfo_loc.dot(Field::pCreateInfo);
-            constexpr std::array<VkStructureType, 21> allowed_structs_VkImageCreateInfo = {
+            constexpr std::array<VkStructureType, 22> allowed_structs_VkImageCreateInfo = {
                 VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA,
+                VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM,
                 VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
                 VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
@@ -25031,8 +25143,9 @@ bool Device::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(VkDevice 
                     VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO, false, kVUIDUndefined, "VUID-VkImageCreateInfo-sType-sType");
 
                 [[maybe_unused]] const Location imageCreateInfo_loc = pFormatConstraints_loc.dot(Field::imageCreateInfo);
-                constexpr std::array<VkStructureType, 21> allowed_structs_VkImageCreateInfo = {
+                constexpr std::array<VkStructureType, 22> allowed_structs_VkImageCreateInfo = {
                     VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA,
+                    VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM,
                     VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
                     VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT,
                     VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
@@ -27879,11 +27992,13 @@ bool Device::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDefer
     if (pCreateInfos != nullptr) {
         for (uint32_t createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
-            constexpr std::array<VkStructureType, 7> allowed_structs_VkDataGraphPipelineCreateInfoARM = {
+            constexpr std::array<VkStructureType, 9> allowed_structs_VkDataGraphPipelineCreateInfoARM = {
                 VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_BUILTIN_MODEL_CREATE_INFO_QCOM,
                 VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_COMPILER_CONTROL_CREATE_INFO_ARM,
                 VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_IDENTIFIER_CREATE_INFO_ARM,
+                VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_CREATE_INFO_ARM,
                 VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SHADER_MODULE_CREATE_INFO_ARM,
+                VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CREATE_INFO_ARM,
                 VK_STRUCTURE_TYPE_DATA_GRAPH_PROCESSING_ENGINE_CREATE_INFO_ARM,
                 VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO,
                 VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
@@ -27911,7 +28026,8 @@ bool Device::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDefer
                      ++resourceInfoIndex) {
                     [[maybe_unused]] const Location pResourceInfos_loc =
                         pCreateInfos_loc.dot(Field::pResourceInfos, resourceInfoIndex);
-                    constexpr std::array<VkStructureType, 1> allowed_structs_VkDataGraphPipelineResourceInfoARM = {
+                    constexpr std::array<VkStructureType, 2> allowed_structs_VkDataGraphPipelineResourceInfoARM = {
+                        VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_IMAGE_LAYOUT_ARM,
                         VK_STRUCTURE_TYPE_TENSOR_DESCRIPTION_ARM};
 
                     skip |= context.ValidateStructPnext(
@@ -28113,8 +28229,13 @@ bool Device::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandBuffe
                                        "VUID-VkDataGraphPipelineDispatchInfoARM-sType-sType");
     if (pInfo != nullptr) {
         [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
-        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                            "VUID-VkDataGraphPipelineDispatchInfoARM-pNext-pNext", kVUIDUndefined, true);
+        constexpr std::array<VkStructureType, 1> allowed_structs_VkDataGraphPipelineDispatchInfoARM = {
+            VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_DISPATCH_INFO_ARM};
+
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, allowed_structs_VkDataGraphPipelineDispatchInfoARM.size(),
+                                            allowed_structs_VkDataGraphPipelineDispatchInfoARM.data(), GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDataGraphPipelineDispatchInfoARM-pNext-pNext",
+                                            "VUID-VkDataGraphPipelineDispatchInfoARM-sType-unique", true);
 
         skip |= context.ValidateReservedFlags(pInfo_loc.dot(Field::flags), pInfo->flags,
                                               "VUID-VkDataGraphPipelineDispatchInfoARM-flags-zerobitmask");
@@ -29242,6 +29363,56 @@ bool Device::PreCallValidateCmdBeginCustomResolveEXT(VkCommandBuffer commandBuff
     skip |= context.ValidateStructType(
         loc.dot(Field::pBeginCustomResolveInfo), pBeginCustomResolveInfo, VK_STRUCTURE_TYPE_BEGIN_CUSTOM_RESOLVE_INFO_EXT, false,
         "VUID-vkCmdBeginCustomResolveEXT-pBeginCustomResolveInfo-parameter", "VUID-VkBeginCustomResolveInfoEXT-sType-sType");
+    return skip;
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+    const VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties,
+    const VkDataGraphOpticalFlowImageFormatInfoARM* pOpticalFlowImageFormatInfo, uint32_t* pFormatCount,
+    VkDataGraphOpticalFlowImageFormatPropertiesARM* pImageFormatProperties, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
+    Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
+    [[maybe_unused]] const Location loc = error_obj.location;
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pQueueFamilyDataGraphProperties), pQueueFamilyDataGraphProperties,
+        VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM, true,
+        "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM-pQueueFamilyDataGraphProperties-parameter",
+        "VUID-VkQueueFamilyDataGraphPropertiesARM-sType-sType");
+    if (pQueueFamilyDataGraphProperties != nullptr) {
+        [[maybe_unused]] const Location pQueueFamilyDataGraphProperties_loc = loc.dot(Field::pQueueFamilyDataGraphProperties);
+        skip |= context.ValidateStructPnext(pQueueFamilyDataGraphProperties_loc, pQueueFamilyDataGraphProperties->pNext, 0, nullptr,
+                                            GeneratedVulkanHeaderVersion, "VUID-VkQueueFamilyDataGraphPropertiesARM-pNext-pNext",
+                                            kVUIDUndefined, true);
+    }
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pOpticalFlowImageFormatInfo), pOpticalFlowImageFormatInfo,
+        VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM, true,
+        "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM-pOpticalFlowImageFormatInfo-parameter",
+        "VUID-VkDataGraphOpticalFlowImageFormatInfoARM-sType-sType");
+    if (pOpticalFlowImageFormatInfo != nullptr) {
+        [[maybe_unused]] const Location pOpticalFlowImageFormatInfo_loc = loc.dot(Field::pOpticalFlowImageFormatInfo);
+        skip |= context.ValidateFlags(pOpticalFlowImageFormatInfo_loc.dot(Field::usage),
+                                      vvl::FlagBitmask::VkDataGraphOpticalFlowImageUsageFlagBitsARM,
+                                      AllVkDataGraphOpticalFlowImageUsageFlagBitsARM, pOpticalFlowImageFormatInfo->usage,
+                                      kRequiredFlags, "VUID-VkDataGraphOpticalFlowImageFormatInfoARM-usage-parameter",
+                                      "VUID-VkDataGraphOpticalFlowImageFormatInfoARM-usage-requiredbitmask", false);
+    }
+    skip |= context.ValidateStructTypeArray(
+        loc.dot(Field::pFormatCount), loc.dot(Field::pImageFormatProperties), pFormatCount, pImageFormatProperties,
+        VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM, true, false, false,
+        "VUID-VkDataGraphOpticalFlowImageFormatPropertiesARM-sType-sType", kVUIDUndefined,
+        "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM-pFormatCount-parameter", kVUIDUndefined);
+    if (pImageFormatProperties != nullptr) {
+        for (uint32_t pFormatIndex = 0; pFormatIndex < *pFormatCount; ++pFormatIndex) {
+            [[maybe_unused]] const Location pImageFormatProperties_loc = loc.dot(Field::pImageFormatProperties, pFormatIndex);
+            skip |= context.ValidateStructPnext(
+                pImageFormatProperties_loc, pImageFormatProperties[pFormatIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                "VUID-VkDataGraphOpticalFlowImageFormatPropertiesARM-pNext-pNext", kVUIDUndefined, false);
+        }
+    }
     return skip;
 }
 
