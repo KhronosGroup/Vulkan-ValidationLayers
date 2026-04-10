@@ -22,6 +22,7 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <vector>
 
 namespace vvl {
@@ -64,7 +65,7 @@ class SubmitTimeTracker {
     bool ProcessPresent(const VkPresentInfoKHR& present_info, const Location& present_info_loc) const;
 
   private:
-    bool ProcessBatch(std::vector<std::shared_ptr<vvl::CommandBuffer>>&& command_buffers,
+    bool ProcessBatch(std::vector<std::shared_ptr<CommandBuffer>>&& command_buffers,
                       vvl::span<const VkSemaphoreSubmitInfo> wait_semaphores,
                       vvl::span<const VkSemaphoreSubmitInfo> signal_semaphores, VkQueue queue, const Location& submit_loc);
     bool ProcessSignal(VkSemaphore timeline, uint64_t signal_value);
@@ -73,7 +74,7 @@ class SubmitTimeTracker {
     bool RegisterTimelineSignals(vvl::span<const VkSemaphoreSubmitInfo> signal_semaphores);
     bool PropagateTimelineSignals();
     bool CanBeResolved(const UnresolvedBatch& batch) const;
-    uint64_t GetTimelineValue(VkSemaphore timeline) const;
+    std::optional<uint64_t> GetTimelineValue(VkSemaphore timeline) const;
     bool UpdateTimelineValue(VkSemaphore timeline, uint64_t signal_value);
 
   private:
