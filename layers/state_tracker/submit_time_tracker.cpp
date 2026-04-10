@@ -111,10 +111,6 @@ bool SubmitTimeTracker::ProcessBatch(std::vector<std::shared_ptr<CommandBuffer>>
 
 bool SubmitTimeTracker::ProcessSignal(VkSemaphore timeline, uint64_t signal_value) {
     bool skip = false;
-    auto semaphore = validator_.Get<Semaphore>(timeline);
-    if (!semaphore || semaphore->type != VK_SEMAPHORE_TYPE_TIMELINE) {
-        return skip;
-    }
     const bool new_timeline_signal = UpdateTimelineValue(timeline, signal_value);
     if (new_timeline_signal) {
         skip |= PropagateTimelineSignals();
@@ -126,14 +122,12 @@ std::vector<VkSemaphoreSubmitInfo> SubmitTimeTracker::GetUnresolvedTimelineWaits
     vvl::span<const VkSemaphoreSubmitInfo> wait_semaphores) {
     std::vector<VkSemaphoreSubmitInfo> unresolved;
     for (const auto& wait : wait_semaphores) {
-        auto semaphore = validator_.Get<Semaphore>(wait.semaphore);
-        if (!semaphore || semaphore->type != VK_SEMAPHORE_TYPE_TIMELINE || semaphore->Scope() != Semaphore::kInternal) {
-            // Only timeline semaphores can introduce pending waits.
-            // For external semaphores we cannot reliably track signals
+        const std::optional<uint64_t> current_value = GetTimelineValue(wait.semaphore);
+        if (!current_value.has_value()) {
+            // Invalid or external semaphores should not block this batch
             continue;
         }
-        const uint64_t current_value = GetTimelineValue(wait.semaphore);
-        if (wait.value > current_value) {
+        if (wait.value > *current_value) {
             unresolved.emplace_back(wait);
         }
     }
@@ -143,10 +137,6 @@ std::vector<VkSemaphoreSubmitInfo> SubmitTimeTracker::GetUnresolvedTimelineWaits
 bool SubmitTimeTracker::RegisterTimelineSignals(vvl::span<const VkSemaphoreSubmitInfo> signal_semaphores) {
     bool new_timeline_signals = false;
     for (const VkSemaphoreSubmitInfo& signal : signal_semaphores) {
-        auto semaphore = validator_.Get<Semaphore>(signal.semaphore);
-        if (!semaphore || semaphore->type != VK_SEMAPHORE_TYPE_TIMELINE) {
-            continue;
-        }
         new_timeline_signals |= UpdateTimelineValue(signal.semaphore, signal.value);
     }
     return new_timeline_signals;
@@ -180,7 +170,11 @@ bool SubmitTimeTracker::PropagateTimelineSignals() {
 
 bool SubmitTimeTracker::CanBeResolved(const UnresolvedBatch& batch) const {
     for (const VkSemaphoreSubmitInfo& wait : batch.unresolved_timeline_waits) {
-        const uint64_t current_value = GetTimelineValue(wait.semaphore);
+        const std::optional<uint64_t> current_value = GetTimelineValue(wait.semaphore);
+        if (!current_value.has_value()) {
+            // Invalid or external semaphores should not block this batch
+            continue;
+        }
         if (wait.value > current_value) {
             return false;
         }
@@ -188,12 +182,22 @@ bool SubmitTimeTracker::CanBeResolved(const UnresolvedBatch& batch) const {
     return true;
 }
 
-uint64_t SubmitTimeTracker::GetTimelineValue(VkSemaphore timeline) const {
+std::optional<uint64_t> SubmitTimeTracker::GetTimelineValue(VkSemaphore timeline) const {
+    auto semaphore_state = validator_.Get<Semaphore>(timeline);
+    if (!semaphore_state || semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE ||
+        semaphore_state->Scope() != Semaphore::kInternal) {
+        // Used by the caller to detect invalid/non-timeline/external semaphores
+        return {};
+    }
     const uint64_t current_value = vvl::FindExisting(timeline_signals_, timeline);
     return current_value;
 }
 
 bool SubmitTimeTracker::UpdateTimelineValue(VkSemaphore timeline, uint64_t signal_value) {
+    auto semaphore_state = validator_.Get<Semaphore>(timeline);
+    if (!semaphore_state || semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE) {
+        return false;
+    }
     uint64_t& current_value = vvl::FindExisting(timeline_signals_, timeline);
     if (signal_value <= current_value) {
         return false;  // non-increasing signal, the error should be reported elsewhere
