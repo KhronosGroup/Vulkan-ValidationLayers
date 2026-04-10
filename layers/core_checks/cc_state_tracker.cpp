@@ -41,7 +41,7 @@ void CoreChecks::Created(vvl::CommandBuffer& cb) {
 }
 
 void CoreChecks::Created(vvl::Queue& queue) {
-    queue.SetSubState(container_type, std::make_unique<core::QueueSubState>(*this, queue));
+    queue.SetSubState(container_type, std::make_unique<core::QueueSubState>(queue));
 }
 
 namespace core {
@@ -1214,9 +1214,6 @@ void CommandBufferSubState::SubmitTimeValidate() {
     }
 }
 
-QueueSubState::QueueSubState(CoreChecks& core_checks, vvl::Queue& q)
-    : vvl::QueueSubState(q), queue_submission_validator_(core_checks) {}
-
 void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
     for (const auto& submission : submissions) {
         for (auto& cb : submission.cb_submissions) {
@@ -1228,8 +1225,6 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
 }
 
 void QueueSubState::Retire(vvl::QueueSubmission& submission) {
-    queue_submission_validator_.Validate(submission);
-
     auto is_query_updated_after = [this](const QueryObject& query_object) {
         auto guard = base.Lock();
         bool first_queue_submission = true;

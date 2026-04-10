@@ -100,7 +100,7 @@ bool SubmitTimeTracker::ProcessBatch(std::vector<std::shared_ptr<CommandBuffer>>
         return skip;
     }
 
-    skip |= validator_.ProcessSubmissionBatch(command_buffers, submit_loc);
+    skip |= validator_.ProcessSubmissionBatch(*this, command_buffers, signal_semaphores, submit_loc);
 
     const bool new_timeline_signals = RegisterTimelineSignals(signal_semaphores);
     if (new_timeline_signals) {
@@ -159,7 +159,8 @@ bool SubmitTimeTracker::PropagateTimelineSignals() {
                 if (!CanBeResolved(batch)) {
                     break;
                 }
-                skip |= validator_.ProcessSubmissionBatch(batch.command_buffers, batch.submit_loc_capture.Get());
+                const auto signals = vvl::span<const VkSemaphoreSubmitInfo>(batch.signals.data(), batch.signals.size());
+                skip |= validator_.ProcessSubmissionBatch(*this, batch.command_buffers, signals, batch.submit_loc_capture.Get());
                 new_timeline_signals |= RegisterTimelineSignals(batch.signals);
                 batches.erase(batches.begin());
             }

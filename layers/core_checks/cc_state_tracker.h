@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 #pragma once
-#include "cc_submit.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/queue_state.h"
@@ -245,15 +244,12 @@ static inline const CommandBufferSubState &SubState(const vvl::CommandBuffer &cb
 
 class QueueSubState : public vvl::QueueSubState {
   public:
-    QueueSubState(CoreChecks &core_checks, vvl::Queue& q);
+    QueueSubState(vvl::Queue& q) : vvl::QueueSubState(q) {}
 
     void PreSubmit(std::vector<vvl::QueueSubmission> &submissions) override;
 
     // Override Retire to validate submissions in the order defined by synchronization
     void Retire(vvl::QueueSubmission&) override;
-
-  private:
-    QueueSubmissionValidator queue_submission_validator_;
 };
 
 }  // namespace core

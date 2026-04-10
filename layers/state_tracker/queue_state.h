@@ -20,22 +20,20 @@
 #include "state_tracker/state_object.h"
 #include "state_tracker/fence_state.h"
 #include "state_tracker/semaphore_state.h"
-#include <condition_variable>
-#include <deque>
-#include <future>
-#include <thread>
-#include <vector>
-#include <string>
 #include "error_message/error_location.h"
 #include "chassis/dispatch_object.h"
 #include "vk_layer_config.h"
+#include <condition_variable>
+#include <deque>
+#include <future>
+#include <string>
+#include <thread>
+#include <vector>
 
 namespace vvl {
 
 class CommandBuffer;
 class DeviceState;
-class Image;
-class Queue;
 class QueueSubState;
 
 struct CommandBufferSubmission {
@@ -72,7 +70,6 @@ struct QueueSubmission {
 
     // Swapchain is not null if this submission represents QueuePresent request
     std::shared_ptr<Swapchain> swapchain;
-    std::shared_ptr<const vvl::Image> swapchain_image;
 
     LocationCapture loc;
     uint64_t seq{0};

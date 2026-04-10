@@ -1153,7 +1153,7 @@ TEST_F(NegativeWsi, SwapchainPresentShared) {
     uint32_t image_index = 0;
 
     // Try to Present without Acquire...
-    m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430", 2);  // no acquire + wrong image layout
+    m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430");  // not acquired
     m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
     m_errorMonitor->VerifyFound();
 }
@@ -1962,10 +1962,7 @@ TEST_F(NegativeWsi, GetSwapchainImagesCountButNotImages) {
     // This test initiates image count query, but don't need resulting value
     m_swapchain.GetImageCount();
 
-    // VUID is signaled two times:
-    // 1) Image was not acquired
-    // 2) Image was not transition to present layout
-    m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430", 2);
+    m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430");  // not acquired
 
     m_default_queue->Present(m_swapchain, 0, vkt::no_semaphore);
     m_errorMonitor->VerifyFound();
@@ -4829,7 +4826,7 @@ TEST_F(NegativeWsi, SwapchainUseAfterDestroy) {
         m_errorMonitor->VerifyFound();
 
         present.pSwapchains = &swapchain2.handle();
-        m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430", 2);  // not acquired + wrong layout
+        m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430");  // not acquired
         vk::QueuePresentKHR(*m_default_queue, &present);
         m_errorMonitor->VerifyFound();
 

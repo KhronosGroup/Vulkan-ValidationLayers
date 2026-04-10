@@ -244,8 +244,6 @@ target_sources(vvl PRIVATE
     core_checks/cc_shader_object.cpp
     core_checks/cc_state_tracker.h
     core_checks/cc_state_tracker.cpp
-    core_checks/cc_submit.h
-    core_checks/cc_submit.cpp
     core_checks/cc_sync_vuid_maps.h
     core_checks/cc_sync_vuid_maps.cpp
     core_checks/cc_synchronization.h
