@@ -438,6 +438,17 @@ struct RayTracingBuffersConsistency : public Setting {
                "gpuav_ray_tracing_buffers_consistency]\n";
     }
 };
+
+struct DebugDescriptor : public Setting {
+    bool IsEnabled(const GpuAVSettings& settings) { return settings.debug_descriptor_enabled; }
+    bool HasRequiredFeatures(const DeviceFeatures& features) { return features.shaderInt64; }
+    void Disable(GpuAVSettings& settings) { settings.debug_descriptor_enabled = false; }
+    std::string DisableMessage() {
+        return "\tDebug Descriptor option was enabled, but the shaderInt64 feature is not supported. [Disabling "
+               "debug_descriptor]\n";
+    }
+};
+
 }  // namespace setting
 
 // At this point extensions/features may have been turned on by us in PreCallRecord.
@@ -451,8 +462,10 @@ void Validator::InitSettings(const Location& loc) {
     setting::BufferContent buffer_content;
     setting::AccelerationStructuresBuild as_builds;
     setting::RayTracingBuffersConsistency rt_buffers_consistency;
-    std::array<setting::Setting*, 8> all_settings = {&buffer_device_address, &ray_query,      &trace_ray, &mesh_shading,
-                                                     &buffer_copies,         &buffer_content, &as_builds, &rt_buffers_consistency};
+    setting::DebugDescriptor debug_descriptor;
+    std::array<setting::Setting*, 9> all_settings = {&buffer_device_address, &ray_query,      &trace_ray, &mesh_shading,
+                                                     &buffer_copies,         &buffer_content, &as_builds, &rt_buffers_consistency,
+                                                     &debug_descriptor};
 
     std::string adjustment_warnings;
     for (auto& setting_object : all_settings) {

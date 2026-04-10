@@ -21,6 +21,7 @@
 
 // This file should not need to include anything else, the goal of this file is utils that "could" be in the Vulkan-Headers
 #include <vulkan/vulkan_core.h>
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 // It is very rare to have more than 3 stages (really only geo/tess) and better to save memory/time for the 99% use cases
 static const uint32_t kCommonMaxGraphicsShaderStages = 3;
@@ -208,4 +209,61 @@ static constexpr bool IsDescriptorHeapImage(const VkDescriptorType type) {
 
 static constexpr bool IsDescriptorHeapTensor(const VkDescriptorType type) {
     return (type == VK_DESCRIPTOR_TYPE_TENSOR_ARM);
+}
+
+static inline size_t GetDescriptorBufferSize(const VkPhysicalDeviceDescriptorBufferPropertiesEXT& props, bool robust,
+                                             VkDescriptorType type) {
+    switch (type) {
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            return props.samplerDescriptorSize;
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+            return props.combinedImageSamplerDescriptorSize;
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            return props.sampledImageDescriptorSize;
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            return props.storageImageDescriptorSize;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+            return robust ? props.robustUniformTexelBufferDescriptorSize : props.uniformTexelBufferDescriptorSize;
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+            return robust ? props.robustStorageTexelBufferDescriptorSize : props.storageTexelBufferDescriptorSize;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            return robust ? props.robustUniformBufferDescriptorSize : props.uniformBufferDescriptorSize;
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            return robust ? props.robustStorageBufferDescriptorSize : props.storageBufferDescriptorSize;
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+            return props.inputAttachmentDescriptorSize;
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+            return props.accelerationStructureDescriptorSize;
+        default:
+            break;
+    }
+    return 0;
+}
+
+static inline const char* DescribeDescriptorBufferSize(bool robust, VkDescriptorType type) {
+    switch (type) {
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            return "samplerDescriptorSize";
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+            return "combinedImageSamplerDescriptorSize";
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            return "sampledImageDescriptorSize";
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            return "storageImageDescriptorSize";
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+            return robust ? "robustUniformTexelBufferDescriptorSize" : "uniformTexelBufferDescriptorSize";
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+            return robust ? "robustStorageTexelBufferDescriptorSize" : "storageTexelBufferDescriptorSize";
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            return robust ? "robustUniformBufferDescriptorSize" : "uniformBufferDescriptorSize";
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            return robust ? "robustStorageBufferDescriptorSize" : "storageBufferDescriptorSize";
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+            return "inputAttachmentDescriptorSize";
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+            return "accelerationStructureDescriptorSize";
+        default:
+            break;
+    }
+    return "[Unknown]";
 }

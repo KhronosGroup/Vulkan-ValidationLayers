@@ -50,6 +50,11 @@ void DebugDescriptorPass::CreateFunctionCall(BasicBlock& block, InstructionIt* i
 }
 
 bool DebugDescriptorPass::Instrument() {
+    if (module_.interface_.descriptor_mode != vvl::DescriptorModeBuffer &&
+        module_.interface_.descriptor_mode != vvl::DescriptorModeHeap) {
+        return false;
+    }
+
     for (const auto& inst : module_.ext_inst_imports_) {
         const char* import_string = inst->GetAsString(2);
         if (strcmp(import_string, "NonSemantic.DebugDescriptor") == 0) {
