@@ -1105,7 +1105,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
 
         if (fb_att_image_create_flags != image_state->create_flags) {
             skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03209", objlist,
-                             GetFramebufferAttachmentImageInfoFlagsLocation(image_state->GetPNext(), attachment_loc),
+                             GetFlagsLocation(*framebuffer_attachment_image_info, attachment_loc),
                              "is %s, but the VkFramebuffer was created with "
                              "VkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32 "].flags = %s",
                              string_VkImageCreateFlags(image_state->create_flags).c_str(), i,
@@ -1114,7 +1114,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
 
         if (fb_att_image_usage_flags != image_view_state->inherited_usage) {
             skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-04627", objlist,
-                             GetFramebufferAttachmentImageInfoUsageLocation(image_state->GetPNext(), attachment_loc),
+                             GetUsageLocation(*framebuffer_attachment_image_info, attachment_loc),
                              "is (%s), but the VkFramebuffer was created with "
                              "vkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32 "].usage = %s.\n%s",
                              string_VkImageUsageFlags(image_state->usage).c_str(), i,

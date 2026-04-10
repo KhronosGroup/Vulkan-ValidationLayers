@@ -86,10 +86,10 @@ bool CoreChecks::IsSupportedVideoFormat(VkImageCreateFlags flags, VkImageUsageFl
 
     for (auto& format_props : format_props_list) {
         const VkImageCreateFlags allowed_flags = format_props.imageCreateFlags | VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR;
-        const bool compatible_usage = (flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) ||
-                                      ((usage & format_props.imageUsageFlags) == usage);
-        if (format == format_props.format && (flags & allowed_flags) == flags &&
-            imageType == format_props.imageType && tiling == format_props.imageTiling && compatible_usage) {
+        const bool compatible_usage =
+            (flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) || ((usage & format_props.imageUsageFlags) == usage);
+        if (format == format_props.format && (flags & allowed_flags) == flags && imageType == format_props.imageType &&
+            tiling == format_props.imageTiling && compatible_usage) {
             return true;
         }
     }

@@ -335,7 +335,6 @@ bool Image::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const Image& 
             IsQueueFamilyIndicesEqual(other_image_state.GetQueueFamilyIndexCount(), other_image_state.GetQueueFamilyIndices());
     }
     is_compatible &= GetTiling() == other_image_state.GetTiling();
-
     is_compatible = is_compatible && GetExtent().width <= other_image_state.GetExtent().width &&
                     GetExtent().height <= other_image_state.GetExtent().height &&
                     GetExtent().depth <= other_image_state.GetExtent().depth &&

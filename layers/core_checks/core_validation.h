@@ -1043,8 +1043,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                      const Location& loc) const;
     bool ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo& create_info, const Location& create_info_loc) const;
     bool ValidateImageVideo(const VkImageCreateInfo& create_info, const Location& create_info_loc,
-                            const VkImageCreateFlags create_flags, const VkImageUsageFlags usage,
-                            const ErrorObject& error_obj) const;
+                            const VkImageCreateFlags create_flags, const Location& flags_loc, const VkImageUsageFlags usage,
+                            const Location& usage_loc, const ErrorObject& error_obj) const;
     bool ValidateImageSwapchain(const VkImageCreateInfo& create_info, const Location& create_info_loc,
                                 const VkImageCreateFlags create_flags, const VkImageUsageFlags usage) const;
     bool ValidateImageExternalMemory(const VkImageCreateInfo& create_info, const Location& create_info_loc,
