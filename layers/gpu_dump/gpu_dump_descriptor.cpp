@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include "containers/custom_containers.h"
 #include "containers/limits.h"
 #include "gpu_dump_state.h"
 #include "gpu_dump.h"
@@ -36,65 +35,9 @@
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/state_tracker.h"
+#include "utils/vk_api_utils.h"
 
 namespace gpudump {
-
-static size_t GetDescriptorBufferSize(const VkPhysicalDeviceDescriptorBufferPropertiesEXT& props, bool robust,
-                                      VkDescriptorType type) {
-    switch (type) {
-        case VK_DESCRIPTOR_TYPE_SAMPLER:
-            return props.samplerDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            return props.combinedImageSamplerDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            return props.sampledImageDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-            return props.storageImageDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-            return robust ? props.robustUniformTexelBufferDescriptorSize : props.uniformTexelBufferDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-            return robust ? props.robustStorageTexelBufferDescriptorSize : props.storageTexelBufferDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-            return robust ? props.robustUniformBufferDescriptorSize : props.uniformBufferDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-            return robust ? props.robustStorageBufferDescriptorSize : props.storageBufferDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-            return props.inputAttachmentDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            return props.accelerationStructureDescriptorSize;
-        default:
-            break;
-    }
-    return 0;
-}
-
-static const char* DescribeDescriptorBufferSize(bool robust, VkDescriptorType type) {
-    switch (type) {
-        case VK_DESCRIPTOR_TYPE_SAMPLER:
-            return "samplerDescriptorSize";
-        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            return "combinedImageSamplerDescriptorSize";
-        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            return "sampledImageDescriptorSize";
-        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-            return "storageImageDescriptorSize";
-        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-            return robust ? "robustUniformTexelBufferDescriptorSize" : "uniformTexelBufferDescriptorSize";
-        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-            return robust ? "robustStorageTexelBufferDescriptorSize" : "storageTexelBufferDescriptorSize";
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-            return robust ? "robustUniformBufferDescriptorSize" : "uniformBufferDescriptorSize";
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-            return robust ? "robustStorageBufferDescriptorSize" : "storageBufferDescriptorSize";
-        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-            return "inputAttachmentDescriptorSize";
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            return "accelerationStructureDescriptorSize";
-        default:
-            break;
-    }
-    return "[Unknown]";
-}
 
 void CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const LastBound& last_bound) const {
     const vvl::CommandBuffer& cb_state = last_bound.cb_state;
