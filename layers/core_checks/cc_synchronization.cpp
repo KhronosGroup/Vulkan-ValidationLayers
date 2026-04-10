@@ -1648,9 +1648,11 @@ bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemapho
                          FormatHandle(*semaphore_state).c_str(), payload_type, *far_away_payload);
     }
 
-    // Perform submit time validation at the end.
-    // If signal semaphore API is used incorrectly, we want those errors to be reported first
-    skip |= submit_time_tracker.ProcessSignalSemaphore(*pSignalInfo);
+    // Run submit time validation only if skip is not set. This is mostly for vvl testing,
+    // some tests expect that submit state is not updated if regular validation fails
+    if (!skip) {
+        skip |= submit_time_tracker.ProcessSignalSemaphore(*pSignalInfo);
+    }
     return skip;
 }
 

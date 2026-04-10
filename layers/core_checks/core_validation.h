@@ -1587,8 +1587,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                        const RecordObject& record_obj) override;
     void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                     const RecordObject& record_obj) override;
-    bool ProcessSubmissionBatch(const std::vector<std::shared_ptr<vvl::CommandBuffer>>& command_buffers,
-                                const Location& submit_loc) override;
+    bool ProcessSubmissionBatch(const vvl::SubmitTimeTracker& tracker,
+                                const std::vector<std::shared_ptr<vvl::CommandBuffer>>& command_buffers,
+                                vvl::span<const VkSemaphoreSubmitInfo> signal_semaphores, const Location& submit_loc) override;
     bool ProcessPresentBatch(const vvl::Image& swapchain_image, const Location& present_info_loc) override;
     bool IgnoreAllocationSize(const VkMemoryAllocateInfo& allocate_info) const;
     bool HasExternalMemoryImportSupport(const vvl::Buffer& buffer, VkExternalMemoryHandleTypeFlagBits handle_type) const;

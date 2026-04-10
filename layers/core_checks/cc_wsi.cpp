@@ -1263,9 +1263,11 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         skip |= ValidateSwapchainPresentFenceInfo(queue, *pPresentInfo, *swapchain_present_fence_info, present_info_loc);
     }
 
-    // Perform submit time validation at the end.
-    // If present API is used incorrectly, we want those errors to be reported first
-    skip |= submit_time_tracker.ProcessPresent(*pPresentInfo, present_info_loc);
+    // Run submit time validation only if skip is not set. This is mostly for vvl testing,
+    // some tests expect that submit state is not updated if regular validation fails
+    if (!skip) {
+        skip |= submit_time_tracker.ProcessPresent(*pPresentInfo, present_info_loc);
+    }
 
     return skip;
 }

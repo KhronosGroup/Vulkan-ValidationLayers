@@ -407,7 +407,7 @@ bool vvl::Semaphore::CanRetireTimelineWait(const vvl::Queue* current_queue, uint
             continue;
         }
         // If the next signal is on the waiting (current) queue, it can't be a resolving signal (blocked by wait).
-        // QueueSubmissionValidator will also report an error about non-increasing signal values
+        // Submit time validation will also report an error about non-increasing signal values
         if (t.signal_submit->queue != nullptr && t.signal_submit->queue == current_queue) {
             continue;
         }

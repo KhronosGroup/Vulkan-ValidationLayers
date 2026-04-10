@@ -290,9 +290,11 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                                  chained_device_group_struct->commandBufferCount, submit.commandBufferCount);
             }
         }
-        // Perform submit time validation at the end.
-        // If submit API is used incorrectly, we want those errors to be reported first
-        skip |= submit_time_tracker.ProcessSubmitInfo(submit, queue, submit_loc);
+        // Run submit time validation only if skip is not set. This is mostly for vvl testing,
+        // some tests expect that submit state is not updated if regular validation fails
+        if (!skip) {
+            skip |= submit_time_tracker.ProcessSubmitInfo(submit, queue, submit_loc);
+        }
     }
 
     return skip;
@@ -452,9 +454,11 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
             skip |= LogError("VUID-VkSubmitInfo2-commandBuffer-06010", queue, submit_loc,
                              "has a suspended render pass instance that was not resumed.");
         }
-        // Perform submit time validation at the end.
-        // If submit API is used incorrectly, we want those errors to be reported first
-        skip |= submit_time_tracker.ProcessSubmitInfo(submit, queue, submit_loc);
+        // Run submit time validation only if skip is not set. This is mostly for vvl testing,
+        // some tests expect that submit state is not updated if regular validation fails
+        if (!skip) {
+            skip |= submit_time_tracker.ProcessSubmitInfo(submit, queue, submit_loc);
+        }
     }
 
     return skip;
@@ -783,8 +787,21 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
     return skip;
 }
 
-bool CoreChecks::ProcessSubmissionBatch(const std::vector<std::shared_ptr<vvl::CommandBuffer>>& command_buffers,
-                                        const Location& submit_loc) {
+static Location GetSignaledSemaphoreLocation(const Location& submit_loc, uint32_t index) {
+    vvl::Field field = vvl::Field::Empty;
+    if (submit_loc.function == vvl::Func::vkQueueSubmit || submit_loc.function == vvl::Func::vkQueueBindSparse) {
+        field = vvl::Field::pSignalSemaphores;
+    } else if (submit_loc.function == vvl::Func::vkQueueSubmit2 || submit_loc.function == vvl::Func::vkQueueSubmit2KHR) {
+        field = vvl::Field::pSignalSemaphoreInfos;
+    } else {
+        assert(false && "Unhandled signaling function");
+    }
+    return submit_loc.dot(field, index);
+}
+
+bool CoreChecks::ProcessSubmissionBatch(const vvl::SubmitTimeTracker& tracker,
+                                        const std::vector<std::shared_ptr<vvl::CommandBuffer>>& command_buffers,
+                                        vvl::span<const VkSemaphoreSubmitInfo> signal_semaphores, const Location& submit_loc) {
     bool skip = false;
     // Validate image layouts on the command buffer boundaries
     {
@@ -794,6 +811,27 @@ bool CoreChecks::ProcessSubmissionBatch(const std::vector<std::shared_ptr<vvl::C
                 auto cb_guard = cb->ReadLock();
                 skip |= ValidateCmdBufImageLayouts(submit_loc, *cb, local_image_layout_map);
             }
+        }
+    }
+    // Ensure that timeline signals are monotonically increasing values
+    for (uint32_t i = 0; i < (uint32_t)signal_semaphores.size(); ++i) {
+        const VkSemaphore semaphore = signal_semaphores[i].semaphore;
+        const std::optional<uint64_t> current_value = tracker.GetTimelineValue(semaphore);
+        if (!current_value.has_value()) {
+            continue;
+        }
+        // Validate the case where the signal value is less than the current payload.
+        // Equality, which is also invalid, is handled earlier by SemaphoreSubmitState::ValidateTimelineSignal.
+        // Equality can be checked early because it is invalid regardless submit order.
+        // For not equal values, the comparison depends on submit ordering and is handled here
+        const uint64_t signal_value = signal_semaphores[i].value;
+        const bool invlid_signal_value = signal_value < *current_value;
+        if (invlid_signal_value) {
+            const Location signal_semaphore_loc = GetSignaledSemaphoreLocation(submit_loc, i);
+            const auto& vuid = GetQueueSubmitVUID(signal_semaphore_loc, vvl::SubmitError::kTimelineSemSmallValue);
+            LogError(vuid, semaphore, signal_semaphore_loc,
+                     "(%s) signaled with value %" PRIu64 " which is smaller than the current value %" PRIu64,
+                     FormatHandle(semaphore).c_str(), signal_value, *current_value);
         }
     }
     if (!skip) {

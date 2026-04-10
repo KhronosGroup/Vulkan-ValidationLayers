@@ -4398,9 +4398,7 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         if (present_fence_info) {
             present_submission.AddFence(Get<Fence>(present_fence_info->pFences[i]));
         }
-        auto swapchain = Get<Swapchain>(pPresentInfo->pSwapchains[i]);
-        present_submission.swapchain = swapchain;
-        present_submission.swapchain_image = swapchain->GetSwapChainImageShared(pPresentInfo->pImageIndices[i]);
+        present_submission.swapchain = Get<Swapchain>(pPresentInfo->pSwapchains[i]);
     }
 
     vvl::Semaphore::SwapchainWaitInfo semaphore_swapchain_info;

@@ -64,6 +64,8 @@ class SubmitTimeTracker {
     bool ProcessSignalSemaphore(const VkSemaphoreSignalInfo& signal_info) const;
     bool ProcessPresent(const VkPresentInfoKHR& present_info, const Location& present_info_loc) const;
 
+    std::optional<uint64_t> GetTimelineValue(VkSemaphore timeline) const;
+
   private:
     bool ProcessBatch(std::vector<std::shared_ptr<CommandBuffer>>&& command_buffers,
                       vvl::span<const VkSemaphoreSubmitInfo> wait_semaphores,
@@ -74,7 +76,6 @@ class SubmitTimeTracker {
     bool RegisterTimelineSignals(vvl::span<const VkSemaphoreSubmitInfo> signal_semaphores);
     bool PropagateTimelineSignals();
     bool CanBeResolved(const UnresolvedBatch& batch) const;
-    std::optional<uint64_t> GetTimelineValue(VkSemaphore timeline) const;
     bool UpdateTimelineValue(VkSemaphore timeline, uint64_t signal_value);
 
   private:
