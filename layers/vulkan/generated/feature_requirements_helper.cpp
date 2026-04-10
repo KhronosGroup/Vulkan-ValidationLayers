@@ -1189,6 +1189,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
             return {&vk_struct->dataGraphModel, "VkPhysicalDeviceDataGraphModelFeaturesQCOM::dataGraphModel"};
         }
 
+        case Feature::dataGraphOpticalFlow: {
+            auto vk_struct = const_cast<VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->dataGraphOpticalFlow, "VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM::dataGraphOpticalFlow"};
+        }
+
         case Feature::dedicatedAllocationImageAliasing: {
             auto vk_struct = const_cast<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV*>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV>(*inout_pnext_chain));

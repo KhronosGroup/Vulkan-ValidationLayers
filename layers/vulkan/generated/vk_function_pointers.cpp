@@ -926,6 +926,7 @@ PFN_vkGetShaderInstrumentationValuesARM GetShaderInstrumentationValuesARM;
 PFN_vkClearShaderInstrumentationMetricsARM ClearShaderInstrumentationMetricsARM;
 PFN_vkCmdEndRendering2EXT CmdEndRendering2EXT;
 PFN_vkCmdBeginCustomResolveEXT CmdBeginCustomResolveEXT;
+PFN_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM;
 PFN_vkCmdSetComputeOccupancyPriorityNV CmdSetComputeOccupancyPriorityNV;
 #ifdef VK_USE_PLATFORM_UBM_SEC
 PFN_vkCreateUbmSurfaceSEC CreateUbmSurfaceSEC;
@@ -2883,6 +2884,12 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_ARM_data_graph_optical_flow", [](VkInstance instance, VkDevice ) {
+                GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM"));
+                GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM"));
+            }
+        },
+        {
             "VK_NV_compute_occupancy_priority", [](VkInstance , VkDevice device) {
                 CmdSetComputeOccupancyPriorityNV = reinterpret_cast<PFN_vkCmdSetComputeOccupancyPriorityNV>(GetDeviceProcAddr(device, "vkCmdSetComputeOccupancyPriorityNV"));
             }
@@ -3553,6 +3560,7 @@ void ResetAllExtensions() {
     ClearShaderInstrumentationMetricsARM = nullptr;
     CmdEndRendering2EXT = nullptr;
     CmdBeginCustomResolveEXT = nullptr;
+    GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM = nullptr;
     CmdSetComputeOccupancyPriorityNV = nullptr;
 #ifdef VK_USE_PLATFORM_UBM_SEC
     CreateUbmSurfaceSEC = nullptr;

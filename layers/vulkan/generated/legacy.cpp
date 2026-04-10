@@ -1487,6 +1487,7 @@ ExtensionData GetExtensionData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_pipeline_protected_access, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
         {vvl::Extension::_VK_NV_ray_tracing_invocation_reorder,
          {Reason::Promoted, {vvl::Extension::_VK_EXT_ray_tracing_invocation_reorder}}},
+        {vvl::Extension::_VK_NV_per_stage_descriptor_set, {Reason::Superseded, {vvl::Extension::_VK_EXT_descriptor_heap}}},
         {vvl::Extension::_VK_EXT_vertex_attribute_robustness, {Reason::Promoted, {vvl::Extension::_VK_KHR_maintenance9}}},
     };
 

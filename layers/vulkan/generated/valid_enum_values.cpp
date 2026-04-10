@@ -2203,6 +2203,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkDataGraphPipelineSessionBindPo
     switch (value) {
         case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TRANSIENT_ARM:
             return ValidValue::Valid;
+        case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_OPTICAL_FLOW_CACHE_ARM:
+            return IsExtEnabled(extensions.vk_arm_data_graph_optical_flow) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2240,6 +2242,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkPhysicalDeviceDataGraphOperati
         case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_NEURAL_MODEL_QCOM:
         case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_BUILTIN_MODEL_QCOM:
             return IsExtEnabled(extensions.vk_qcom_data_graph_model) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM:
+            return IsExtEnabled(extensions.vk_arm_data_graph_optical_flow) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2378,6 +2382,43 @@ template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDataGraphModelCacheTypeQCOM value) const {
     switch (value) {
         case VK_DATA_GRAPH_MODEL_CACHE_TYPE_GENERIC_BINARY_QCOM:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDataGraphOpticalFlowPerformanceLevelARM value) const {
+    switch (value) {
+        case VK_DATA_GRAPH_OPTICAL_FLOW_PERFORMANCE_LEVEL_UNKNOWN_ARM:
+        case VK_DATA_GRAPH_OPTICAL_FLOW_PERFORMANCE_LEVEL_SLOW_ARM:
+        case VK_DATA_GRAPH_OPTICAL_FLOW_PERFORMANCE_LEVEL_MEDIUM_ARM:
+        case VK_DATA_GRAPH_OPTICAL_FLOW_PERFORMANCE_LEVEL_FAST_ARM:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDataGraphPipelineNodeTypeARM value) const {
+    switch (value) {
+        case VK_DATA_GRAPH_PIPELINE_NODE_TYPE_OPTICAL_FLOW_ARM:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDataGraphPipelineNodeConnectionTypeARM value) const {
+    switch (value) {
+        case VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_INPUT_ARM:
+        case VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_REFERENCE_ARM:
+        case VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_HINT_ARM:
+        case VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_FLOW_VECTOR_ARM:
+        case VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_COST_ARM:
             return ValidValue::Valid;
         default:
             return ValidValue::NotFound;
@@ -3952,11 +3993,16 @@ const char* stateless::Context::DescribeEnum(VkOutOfBandQueueTypeNV value) const
 
 template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkDataGraphPipelineSessionBindPointARM value) const {
-    return {};
+    switch (value) {
+        case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_OPTICAL_FLOW_CACHE_ARM:
+            return {vvl::Extension::_VK_ARM_data_graph_optical_flow};
+        default:
+            return {};
+    };
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkDataGraphPipelineSessionBindPointARM value) const {
-    return nullptr;
+    return string_VkDataGraphPipelineSessionBindPointARM(value);
 }
 
 template <>
@@ -3989,6 +4035,8 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkPhysicalDeviceDataGraphO
         case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_NEURAL_MODEL_QCOM:
         case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_BUILTIN_MODEL_QCOM:
             return {vvl::Extension::_VK_QCOM_data_graph_model};
+        case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM:
+            return {vvl::Extension::_VK_ARM_data_graph_optical_flow};
         default:
             return {};
     };
@@ -4099,6 +4147,33 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkDataGraphModelCacheTypeQ
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkDataGraphModelCacheTypeQCOM value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkDataGraphOpticalFlowPerformanceLevelARM value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkDataGraphOpticalFlowPerformanceLevelARM value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkDataGraphPipelineNodeTypeARM value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkDataGraphPipelineNodeTypeARM value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkDataGraphPipelineNodeConnectionTypeARM value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkDataGraphPipelineNodeConnectionTypeARM value) const {
     return nullptr;
 }
 

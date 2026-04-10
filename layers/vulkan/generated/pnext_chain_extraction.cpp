@@ -3886,6 +3886,36 @@ void PnextChainFree(void* chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDeviceDataGraphModelFeaturesQCOM*>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_OPTICAL_FLOW_FEATURES_ARM:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_CREATE_INFO_ARM:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkDataGraphPipelineOpticalFlowCreateInfoARM*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkDataGraphOpticalFlowImageFormatInfoARM*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_OPTICAL_FLOW_DISPATCH_INFO_ARM:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkDataGraphPipelineOpticalFlowDispatchInfoARM*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_IMAGE_LAYOUT_ARM:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkDataGraphPipelineResourceInfoImageLayoutARM*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SINGLE_NODE_CREATE_INFO_ARM:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkDataGraphPipelineSingleNodeCreateInfoARM*>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
@@ -3976,6 +4006,18 @@ template <>
 void* PnextChainExtract(const void* in_pnext_chain, PnextChainVkPhysicalDeviceImageFormatInfo2& out) {
     void* chain_begin = nullptr;
     void* chain_end = nullptr;
+
+    if (auto* chain_struct = vku::FindStructInPNextChain<VkDataGraphOpticalFlowImageFormatInfoARM>(in_pnext_chain)) {
+        auto& out_chain_struct = std::get<VkDataGraphOpticalFlowImageFormatInfoARM>(out);
+        out_chain_struct = *chain_struct;
+        out_chain_struct.pNext = nullptr;
+        if (!chain_begin) {
+            chain_begin = &out_chain_struct;
+            chain_end = chain_begin;
+        } else {
+            chain_end = PnextChainAdd(chain_end, &out_chain_struct);
+        }
+    }
 
     if (auto* chain_struct = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(in_pnext_chain)) {
         auto& out_chain_struct = std::get<VkImageCompressionControlEXT>(out);

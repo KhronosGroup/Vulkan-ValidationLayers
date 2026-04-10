@@ -730,6 +730,17 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_OPTICAL_FLOW_FEATURES_ARM: {
+                VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM*>(current);
+                if (enabling->dataGraphOpticalFlow && !supported.dataGraphOpticalFlow) {
+                    ss << "VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM::dataGraphOpticalFlow is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV: {
                 VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
