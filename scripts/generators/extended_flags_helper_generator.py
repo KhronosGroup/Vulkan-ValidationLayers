@@ -89,7 +89,7 @@ class ExtendedFlagsHelperOutputGenerator(BaseGenerator):
                 member_type_name = member.type[2:]
                 location_name = member.name[0].upper() + member.name[1:]
                 out.append(f'{member.type} Get{member_type_name}(const {struct.name}& create_info);\n')
-                out.append(f'Location Get{struct_name}{location_name}Location(const void* pNext, const Location& loc);\n\n')
+                out.append(f'Location Get{location_name}Location(const {struct.name}& create_info, const Location& loc);\n\n')
 
         return "".join(out)
 
@@ -108,7 +108,7 @@ class ExtendedFlagsHelperOutputGenerator(BaseGenerator):
                 out.append(f'{member.type} Get{member_type_name}(const {struct.name}& create_info) {{')
                 out.append(f'    return static_cast<{member.type}>(create_info.{member.name});')
                 out.append(f'}}\n\n')
-                out.append(f'Location Get{struct_name}{location_name}Location(const void* pNext, const Location& loc) {{')
+                out.append(f'Location Get{location_name}Location(const {struct.name}& create_info, const Location& loc) {{')
                 out.append(f'    return loc.dot(vvl::Field::{member.name});')
                 out.append(f'}}\n\n')
 

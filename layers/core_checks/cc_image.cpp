@@ -186,8 +186,8 @@ bool CoreChecks::ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo
 }
 
 bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo& create_info, const Location& create_info_loc,
-                                    const VkImageCreateFlags create_flags, const VkImageUsageFlags usage,
-                                    const ErrorObject& error_obj) const {
+                                    const VkImageCreateFlags create_flags, const Location& flags_loc, const VkImageUsageFlags usage,
+                                    const Location& usage_loc, const ErrorObject& error_obj) const {
     bool skip = false;
 
     const bool has_decode_usage = usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR |
@@ -199,22 +199,22 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo& create_info, const 
     const bool video_profile_independent = create_flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR;
 
     if (video_profile_independent && !enabled_features.videoMaintenance1) {
-        skip |= LogError("VUID-VkImageCreateInfo-flags-08328", device, create_info_loc.dot(Field::flags),
+        skip |= LogError("VUID-VkImageCreateInfo-flags-08328", device, flags_loc,
                          "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR is set but the videoMaintenance1 "
                          "device feature is not enabled.");
     }
 
-    if (video_profile_independent && (usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR) &&
-        (usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR) == 0) {
-        skip |= LogError("VUID-VkImageCreateInfo-flags-08329", device, create_info_loc.dot(Field::flags),
+    if (video_profile_independent && (create_info.usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR) &&
+        (create_info.usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR) == 0) {
+        skip |= LogError("VUID-VkImageCreateInfo-flags-08329", device, flags_loc,
                          "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR set but usage (%s) contains "
                          "VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR without also containing "
                          "VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR.",
                          string_VkImageUsageFlags(usage).c_str());
     }
 
-    if (video_profile_independent && (usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) {
-        skip |= LogError("VUID-VkImageCreateInfo-flags-08331", device, create_info_loc.dot(Field::flags),
+    if (video_profile_independent && (create_info.usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) {
+        skip |= LogError("VUID-VkImageCreateInfo-flags-08331", device, flags_loc,
                          "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR set but usage (%s) contains "
                          "VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR.",
                          string_VkImageUsageFlags(usage).c_str());
@@ -225,7 +225,7 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo& create_info, const 
     bool valid_quantization_map_format = has_quantization_map_usage;
     if (has_quantization_map_usage) {
         if (!enabled_features.videoEncodeQuantizationMap) {
-            skip |= LogError("VUID-VkImageCreateInfo-usage-10251", device, create_info_loc.dot(Field::usage),
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10251", device, usage_loc,
                              "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
                              "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but the "
                              "videoEncodeQuantizationMap device feature is not enabled.");
@@ -233,7 +233,7 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo& create_info, const 
         }
 
         if (video_profile_independent) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-08331", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkImageCreateInfo-flags-08331", device, flags_loc,
                              "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR set but usage (%s) contains "
                              "VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
                              "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR.",
@@ -242,7 +242,7 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo& create_info, const 
         }
 
         if (create_info.imageType != VK_IMAGE_TYPE_2D) {
-            skip |= LogError("VUID-VkImageCreateInfo-usage-10252", device, create_info_loc.dot(Field::usage),
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10252", device, usage_loc,
                              "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
                              "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but imageType (%s) "
                              "is not VK_IMAGE_TYPE_2D.",
@@ -251,7 +251,7 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo& create_info, const 
         }
 
         if (create_info.samples != VK_SAMPLE_COUNT_1_BIT) {
-            skip |= LogError("VUID-VkImageCreateInfo-usage-10253", device, create_info_loc.dot(Field::usage),
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10253", device, usage_loc,
                              "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
                              "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but samples (%s) "
                              "is not VK_SAMPLE_COUNT_1_BIT_KHR.",
@@ -261,13 +261,13 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo& create_info, const 
 
         const auto* video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(create_info.pNext);
         if (video_profiles == nullptr) {
-            skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, create_info_loc.dot(Field::usage),
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, usage_loc,
                              "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
                              "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but the pNext chain does not "
                              "contain a VkVideoProfileListInfoKHR structure.");
             valid_quantization_map_format = false;
         } else if (video_profiles->profileCount != 1) {
-            skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, create_info_loc.dot(Field::usage),
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, usage_loc,
                              "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
                              "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but %s (%" PRIu32 ") does not equal 1.",
                              create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR, Field::profileCount).Fields().c_str(),
@@ -284,7 +284,7 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo& create_info, const 
             if (profile_desc.IsEncode()) {
                 if ((usage & VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR) != 0 &&
                     (profile_caps.encode.flags & VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR) == 0) {
-                    skip |= LogError("VUID-VkImageCreateInfo-usage-10255", device, create_info_loc.dot(Field::usage),
+                    skip |= LogError("VUID-VkImageCreateInfo-usage-10255", device, usage_loc,
                                      "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR set but "
                                      "the encode profile specified in %s does not support "
                                      "VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR.",
@@ -294,7 +294,7 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo& create_info, const 
 
                 if ((usage & VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR) != 0 &&
                     (profile_caps.encode.flags & VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR) == 0) {
-                    skip |= LogError("VUID-VkImageCreateInfo-usage-10256", device, create_info_loc.dot(Field::usage),
+                    skip |= LogError("VUID-VkImageCreateInfo-usage-10256", device, usage_loc,
                                      "has VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but "
                                      "the encode profile specified in %s does not support "
                                      "VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR.",
@@ -305,7 +305,7 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo& create_info, const 
                 if (valid_quantization_map_format &&
                     create_info.extent.width > profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.width) {
                     skip |=
-                        LogError("VUID-VkImageCreateInfo-usage-10257", device, create_info_loc.dot(Field::usage),
+                        LogError("VUID-VkImageCreateInfo-usage-10257", device, usage_loc,
                                  "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
                                  "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but has extent.width (%" PRIu32
                                  ") "
@@ -318,7 +318,7 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo& create_info, const 
 
                 if (valid_quantization_map_format &&
                     create_info.extent.height > profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.height) {
-                    skip |= LogError("VUID-VkImageCreateInfo-usage-10258", device, create_info_loc.dot(Field::usage),
+                    skip |= LogError("VUID-VkImageCreateInfo-usage-10258", device, usage_loc,
                                      "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
                                      "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but has extent.height (%" PRIu32
                                      ") "
@@ -330,7 +330,7 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo& create_info, const 
                                      profile_info_loc.Fields().c_str());
                 }
             } else {
-                skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, create_info_loc.dot(Field::usage),
+                skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, usage_loc,
                                  "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
                                  "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but %s does not specify a "
                                  "video encode operation (videoCodecOperation is %s).",
@@ -590,6 +590,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     bool skip = false;
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    const Location create_flags_loc = GetFlagsLocation(*pCreateInfo, create_info_loc);
+    const Location usage_loc = GetUsageLocation(*pCreateInfo, create_info_loc);
     const VkImageUsageFlags usage = GetImageUsageFlags(*pCreateInfo);
     const VkImageCreateFlags create_flags = GetImageCreateFlags(*pCreateInfo);
     if (IsExtEnabled(extensions.vk_android_external_memory_android_hardware_buffer)) {
@@ -605,14 +607,14 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
     if (usage & attach_flags) {
         if (pCreateInfo->extent.width > phys_dev_props.limits.maxFramebufferWidth) {
-            skip |= LogError("VUID-VkImageCreateInfo-usage-00964", device, create_info_loc.dot(Field::usage),
+            skip |= LogError("VUID-VkImageCreateInfo-usage-00964", device, usage_loc,
                              "(%s) includes a frame buffer attachment bit and image width (%" PRIu32
                              ") is greater than maxFramebufferWidth (%" PRIu32 ").",
                              string_VkImageUsageFlags(usage).c_str(), pCreateInfo->extent.width,
                              phys_dev_props.limits.maxFramebufferWidth);
         }
         if (pCreateInfo->extent.height > phys_dev_props.limits.maxFramebufferHeight) {
-            skip |= LogError("VUID-VkImageCreateInfo-usage-00965", device, create_info_loc.dot(Field::usage),
+            skip |= LogError("VUID-VkImageCreateInfo-usage-00965", device, usage_loc,
                              "(%s) includes a frame buffer attachment bit and image height (%" PRIu32
                              ") is greater than maxFramebufferHeight (%" PRIu32 ").",
                              string_VkImageUsageFlags(usage).c_str(), pCreateInfo->extent.height,
@@ -626,7 +628,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             std::max(static_cast<float>(phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width), 1.0f)));
         if (pCreateInfo->extent.width > ceiling_width) {
             skip |= LogError(
-                "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06514", device, create_info_loc.dot(Field::usage),
+                "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06514", device, usage_loc,
                 "includes VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT and image width (%" PRIu32 ") is greater than %" PRIu32
                 ".\n"
                 "This is ceiling value of maxFramebufferWidth (%" PRIu32 ") / minFragmentDensityTexelSize.width (%" PRIu32 ").",
@@ -639,7 +641,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             std::max(static_cast<float>(phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height), 1.0f)));
         if (pCreateInfo->extent.height > ceiling_height) {
             skip |= LogError(
-                "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06515", device, create_info_loc.dot(Field::usage),
+                "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06515", device, usage_loc,
                 "includes VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT and image height (%" PRIu32 ") is greater than %" PRIu32
                 ".\n"
                 "This is ceiling value of maxFramebufferHeight (%" PRIu32 ") / minFragmentDensityTexelSize.height (%" PRIu32 ").",
@@ -851,13 +853,13 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
     skip |= ValidateImageFormatFeatures(*pCreateInfo, create_flags, create_info_loc);
     skip |= ValidateImageAlignmentControlCreateInfo(*pCreateInfo, create_info_loc);
-    skip |= ValidateImageVideo(*pCreateInfo, create_info_loc, create_flags, usage, error_obj);
+    skip |= ValidateImageVideo(*pCreateInfo, create_info_loc, create_flags, create_flags_loc, usage, usage_loc, error_obj);
     skip |= ValidateImageSwapchain(*pCreateInfo, create_info_loc, create_flags, usage);
     skip |= ValidateImageExternalMemory(*pCreateInfo, create_info_loc, image_format_info);
 
     if (device_state->device_group_create_info.physicalDeviceCount == 1) {
         if (create_flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT) {
-            skip |= LogError("VUID-VkImageCreateInfo-physicalDeviceCount-01421", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkImageCreateInfo-physicalDeviceCount-01421", device, create_flags_loc,
                              "contains VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT, but the device was created with "
                              "VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to 1. Device creation with "
                              "VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to 1 may have been implicit.");

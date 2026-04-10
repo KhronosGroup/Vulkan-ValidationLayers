@@ -483,8 +483,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
     // Validate pCreateInfo->imageUsage against VkSurfaceCapabilitiesKHR::supportedUsageFlags:
     // Shared Present Mode uses different set of capabilities to check imageUsage support
     if ((image_usage != (image_usage & surface_caps.supportedUsageFlags)) && !shared_present_mode) {
-        if (LogError("VUID-VkSwapchainCreateInfoKHR-presentMode-01427", device,
-                     GetSwapchainCreateInfoKHRImageUsageLocation(create_info.pNext, create_info_loc),
+        if (LogError("VUID-VkSwapchainCreateInfoKHR-presentMode-01427", device, GetImageUsageLocation(create_info, create_info_loc),
                      "(%s) are not in supportedUsageFlags (%s).", string_VkImageUsageFlags(image_usage).c_str(),
                      string_VkImageUsageFlags(surface_caps.supportedUsageFlags).c_str())) {
             return true;
@@ -577,11 +576,10 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
 
         const VkImageUsageFlags usage = shared_present_capabilities.sharedPresentSupportedUsageFlags;
         if (image_usage != (image_usage & shared_present_capabilities.sharedPresentSupportedUsageFlags)) {
-            if (LogError("VUID-VkSwapchainCreateInfoKHR-imageUsage-01384", device,
-                         GetSwapchainCreateInfoKHRImageUsageLocation(create_info.pNext, create_info_loc),
-                         "(%s), but the supported flag bits for %s present mode are %s.",
-                         string_VkImageUsageFlags(image_usage).c_str(), string_VkPresentModeKHR(create_info.presentMode),
-                         string_VkImageUsageFlags(usage).c_str())) {
+            if (LogError(
+                    "VUID-VkSwapchainCreateInfoKHR-imageUsage-01384", device, GetImageUsageLocation(create_info, create_info_loc),
+                    "(%s), but the supported flag bits for %s present mode are %s.", string_VkImageUsageFlags(image_usage).c_str(),
+                    string_VkPresentModeKHR(create_info.presentMode), string_VkImageUsageFlags(usage).c_str())) {
                 return true;
             }
         }

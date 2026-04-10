@@ -30,37 +30,41 @@ VkBufferUsageFlags GetBufferUsageFlags(const VkBufferCreateInfo& create_info) {
     return static_cast<VkBufferUsageFlags>(create_info.usage);
 }
 
-Location GetBufferCreateInfoUsageLocation(const void* pNext, const Location& loc) { return loc.dot(vvl::Field::usage); }
+Location GetUsageLocation(const VkBufferCreateInfo& create_info, const Location& loc) { return loc.dot(vvl::Field::usage); }
 
 VkImageCreateFlags GetImageCreateFlags(const VkImageCreateInfo& create_info) {
     return static_cast<VkImageCreateFlags>(create_info.flags);
 }
 
-Location GetImageCreateInfoFlagsLocation(const void* pNext, const Location& loc) { return loc.dot(vvl::Field::flags); }
+Location GetFlagsLocation(const VkImageCreateInfo& create_info, const Location& loc) { return loc.dot(vvl::Field::flags); }
 
 VkImageUsageFlags GetImageUsageFlags(const VkImageCreateInfo& create_info) {
     return static_cast<VkImageUsageFlags>(create_info.usage);
 }
 
-Location GetImageCreateInfoUsageLocation(const void* pNext, const Location& loc) { return loc.dot(vvl::Field::usage); }
+Location GetUsageLocation(const VkImageCreateInfo& create_info, const Location& loc) { return loc.dot(vvl::Field::usage); }
 
 VkPipelineCreateFlags GetPipelineCreateFlags(const VkComputePipelineCreateInfo& create_info) {
     return static_cast<VkPipelineCreateFlags>(create_info.flags);
 }
 
-Location GetComputePipelineCreateInfoFlagsLocation(const void* pNext, const Location& loc) { return loc.dot(vvl::Field::flags); }
+Location GetFlagsLocation(const VkComputePipelineCreateInfo& create_info, const Location& loc) {
+    return loc.dot(vvl::Field::flags);
+}
 
 VkPipelineCreateFlags GetPipelineCreateFlags(const VkGraphicsPipelineCreateInfo& create_info) {
     return static_cast<VkPipelineCreateFlags>(create_info.flags);
 }
 
-Location GetGraphicsPipelineCreateInfoFlagsLocation(const void* pNext, const Location& loc) { return loc.dot(vvl::Field::flags); }
+Location GetFlagsLocation(const VkGraphicsPipelineCreateInfo& create_info, const Location& loc) {
+    return loc.dot(vvl::Field::flags);
+}
 
 VkImageUsageFlags GetImageUsageFlags(const VkPhysicalDeviceImageFormatInfo2& create_info) {
     return static_cast<VkImageUsageFlags>(create_info.usage);
 }
 
-Location GetPhysicalDeviceImageFormatInfo2UsageLocation(const void* pNext, const Location& loc) {
+Location GetUsageLocation(const VkPhysicalDeviceImageFormatInfo2& create_info, const Location& loc) {
     return loc.dot(vvl::Field::usage);
 }
 
@@ -68,7 +72,7 @@ VkImageCreateFlags GetImageCreateFlags(const VkPhysicalDeviceImageFormatInfo2& c
     return static_cast<VkImageCreateFlags>(create_info.flags);
 }
 
-Location GetPhysicalDeviceImageFormatInfo2FlagsLocation(const void* pNext, const Location& loc) {
+Location GetFlagsLocation(const VkPhysicalDeviceImageFormatInfo2& create_info, const Location& loc) {
     return loc.dot(vvl::Field::flags);
 }
 
@@ -76,7 +80,7 @@ VkImageUsageFlags GetImageUsageFlags(const VkPhysicalDeviceSparseImageFormatInfo
     return static_cast<VkImageUsageFlags>(create_info.usage);
 }
 
-Location GetPhysicalDeviceSparseImageFormatInfo2UsageLocation(const void* pNext, const Location& loc) {
+Location GetUsageLocation(const VkPhysicalDeviceSparseImageFormatInfo2& create_info, const Location& loc) {
     return loc.dot(vvl::Field::usage);
 }
 
@@ -84,7 +88,7 @@ VkBufferUsageFlags GetBufferUsageFlags(const VkPhysicalDeviceExternalBufferInfo&
     return static_cast<VkBufferUsageFlags>(create_info.usage);
 }
 
-Location GetPhysicalDeviceExternalBufferInfoUsageLocation(const void* pNext, const Location& loc) {
+Location GetUsageLocation(const VkPhysicalDeviceExternalBufferInfo& create_info, const Location& loc) {
     return loc.dot(vvl::Field::usage);
 }
 
@@ -92,7 +96,7 @@ VkImageCreateFlags GetImageCreateFlags(const VkFramebufferAttachmentImageInfo& c
     return static_cast<VkImageCreateFlags>(create_info.flags);
 }
 
-Location GetFramebufferAttachmentImageInfoFlagsLocation(const void* pNext, const Location& loc) {
+Location GetFlagsLocation(const VkFramebufferAttachmentImageInfo& create_info, const Location& loc) {
     return loc.dot(vvl::Field::flags);
 }
 
@@ -100,7 +104,7 @@ VkImageUsageFlags GetImageUsageFlags(const VkFramebufferAttachmentImageInfo& cre
     return static_cast<VkImageUsageFlags>(create_info.usage);
 }
 
-Location GetFramebufferAttachmentImageInfoUsageLocation(const void* pNext, const Location& loc) {
+Location GetUsageLocation(const VkFramebufferAttachmentImageInfo& create_info, const Location& loc) {
     return loc.dot(vvl::Field::usage);
 }
 
@@ -108,7 +112,7 @@ VkImageUsageFlags GetImageUsageFlags(const VkSwapchainCreateInfoKHR& create_info
     return static_cast<VkImageUsageFlags>(create_info.imageUsage);
 }
 
-Location GetSwapchainCreateInfoKHRImageUsageLocation(const void* pNext, const Location& loc) {
+Location GetImageUsageLocation(const VkSwapchainCreateInfoKHR& create_info, const Location& loc) {
     return loc.dot(vvl::Field::imageUsage);
 }
 
@@ -116,7 +120,7 @@ VkImageUsageFlags GetImageUsageFlags(const VkPhysicalDeviceVideoFormatInfoKHR& c
     return static_cast<VkImageUsageFlags>(create_info.imageUsage);
 }
 
-Location GetPhysicalDeviceVideoFormatInfoKHRImageUsageLocation(const void* pNext, const Location& loc) {
+Location GetImageUsageLocation(const VkPhysicalDeviceVideoFormatInfoKHR& create_info, const Location& loc) {
     return loc.dot(vvl::Field::imageUsage);
 }
 
@@ -124,7 +128,7 @@ VkPipelineCreateFlags GetPipelineCreateFlags(const VkRayTracingPipelineCreateInf
     return static_cast<VkPipelineCreateFlags>(create_info.flags);
 }
 
-Location GetRayTracingPipelineCreateInfoNVFlagsLocation(const void* pNext, const Location& loc) {
+Location GetFlagsLocation(const VkRayTracingPipelineCreateInfoNV& create_info, const Location& loc) {
     return loc.dot(vvl::Field::flags);
 }
 
@@ -132,7 +136,7 @@ VkDeviceAddress GetDeviceAddress(const VkDescriptorBufferBindingInfoEXT& create_
     return static_cast<VkDeviceAddress>(create_info.address);
 }
 
-Location GetDescriptorBufferBindingInfoEXTAddressLocation(const void* pNext, const Location& loc) {
+Location GetAddressLocation(const VkDescriptorBufferBindingInfoEXT& create_info, const Location& loc) {
     return loc.dot(vvl::Field::address);
 }
 
@@ -140,7 +144,7 @@ VkPipelineCreateFlags GetPipelineCreateFlags(const VkRayTracingPipelineCreateInf
     return static_cast<VkPipelineCreateFlags>(create_info.flags);
 }
 
-Location GetRayTracingPipelineCreateInfoKHRFlagsLocation(const void* pNext, const Location& loc) {
+Location GetFlagsLocation(const VkRayTracingPipelineCreateInfoKHR& create_info, const Location& loc) {
     return loc.dot(vvl::Field::flags);
 }
 
