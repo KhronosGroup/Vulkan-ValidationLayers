@@ -4497,9 +4497,9 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
             present_id = present_id_info->pPresentIds[i];
         }
 
-        if (present_timings_info && present_timings_info->pTimingInfos->presentStageQueries) {
+        if (present_timings_info && present_timings_info->pTimingInfos[i].presentStageQueries) {
             const Swapchain::PresentTimingInfo presentTimingInfo{
-                CountSetBits(present_timings_info->pTimingInfos->presentStageQueries), present_submission_ref};
+                CountSetBits(present_timings_info->pTimingInfos[i].presentStageQueries), present_submission_ref};
             swapchain_data->present_timing_stage_queries.push_back({present_id, presentTimingInfo});
         }
 
@@ -4559,7 +4559,7 @@ void DeviceState::PostCallRecordGetPastPresentationTimingEXT(
     if (pPastPresentationTimingProperties->pPresentationTimings != nullptr) {
         auto swapchain = Get<Swapchain>(pPastPresentationTimingInfo->swapchain);
         for (uint32_t i = 0; i < pPastPresentationTimingProperties->presentationTimingCount; ++i) {
-            for (uint32_t j = 0; j < pPastPresentationTimingProperties->pPresentationTimings->reportComplete; ++j) {
+            if (pPastPresentationTimingProperties->pPresentationTimings[i].reportComplete) {
                 const SubmissionReference present_submission_ref =
                     swapchain->present_timing_stage_queries.front().second.present_submission_ref;
                 present_submission_ref.queue->NotifyAndWait(record_obj.location, present_submission_ref.seq);
