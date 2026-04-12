@@ -4356,3 +4356,30 @@ TEST_F(NegativeDeviceAddressCommands, BindVertexBuffers3Stride) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDeviceAddressCommands, DrawIndirectByteCount2VertexStride) {
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 2048u, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    VkBindTransformFeedbackBuffer2InfoEXT counter_info = vku::InitStructHelper();
+    counter_info.addressRange = buffer.AddressRange();
+    counter_info.addressFlags = 0u;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectByteCount2EXT-vertexStride-02289");
+    vk::CmdDrawIndirectByteCount2EXT(m_command_buffer, 3u, 0u, &counter_info, 0u, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
