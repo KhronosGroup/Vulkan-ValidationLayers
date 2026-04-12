@@ -842,7 +842,7 @@ bool Device::manual_PreCallValidateCmdDrawIndirectByteCount2EXT(VkCommandBuffer 
     }
     if (!IsPointerAligned(pCounterInfo->addressRange.address, 4)) {
         skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-pInfo-13062", commandBuffer,
-                         error_obj.location.dot(Field::pConditionalRenderingBegin).dot(Field::addressRange).dot(Field::address),
+                         error_obj.location.dot(Field::pCounterInfo).dot(Field::addressRange).dot(Field::address),
                          "(0x%" PRIx64 ") must be aligned to 4 bytes.", pCounterInfo->addressRange.address);
     }
     if (!IsIntegerMultipleOf(counterOffset, 4)) {
