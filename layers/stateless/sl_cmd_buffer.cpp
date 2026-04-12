@@ -834,11 +834,11 @@ bool Device::manual_PreCallValidateCmdDrawIndirectByteCount2EXT(VkCommandBuffer 
         skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-transformFeedbackDraw-02288", commandBuffer, error_obj.location,
                          "VkPhysicalDeviceTransformFeedbackPropertiesEXT::transformFeedbackDraw is not supported");
     }
-    if (vertexStride > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride) {
+    if (vertexStride == 0 || vertexStride > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride) {
         skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-vertexStride-02289", commandBuffer,
                          error_obj.location.dot(Field::vertexStride),
-                         "(%" PRIu32 ") is larger than maxTransformFeedbackBufferDataStride (%" PRIu32 ").", vertexStride,
-                         phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
+                         "(%" PRIu32 ") must not be 0 or larger than maxTransformFeedbackBufferDataStride (%" PRIu32 ").",
+                         vertexStride, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
     }
     if (!IsPointerAligned(pCounterInfo->addressRange.address, 4)) {
         skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-pInfo-13062", commandBuffer,
