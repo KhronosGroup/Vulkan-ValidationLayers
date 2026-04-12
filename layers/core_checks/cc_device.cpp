@@ -64,13 +64,15 @@ bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count
                                                      const Location& loc, const char* vuid) const {
     bool skip = false;
     if (queue_families) {
-        vvl::unordered_set<uint32_t> set;
+        vvl::unordered_map<uint32_t, uint32_t> first_queue_family_index;
         for (uint32_t i = 0; i < queue_family_count; ++i) {
-            if (set.count(queue_families[i])) {
-                skip |= LogError(vuid, device, loc.dot(Field::pQueueFamilyIndices, i),
-                                 "(%" PRIu32 ") is also in pQueueFamilyIndices[0].", queue_families[i]);
+            if (const auto duplicate = first_queue_family_index.find(queue_families[i]);
+                duplicate != first_queue_family_index.end()) {
+                skip |=
+                    LogError(vuid, device, loc.dot(Field::pQueueFamilyIndices, i),
+                             "(%" PRIu32 ") is also in pQueueFamilyIndices[%" PRIu32 "].", queue_families[i], duplicate->second);
             } else {
-                set.insert(queue_families[i]);
+                first_queue_family_index.emplace(queue_families[i], i);
                 if (queue_families[i] == VK_QUEUE_FAMILY_IGNORED) {
                     skip |= LogError(vuid, device, loc.dot(Field::pQueueFamilyIndices, i),
                                      "is VK_QUEUE_FAMILY_IGNORED, but it is required to provide a valid queue family index value.");
