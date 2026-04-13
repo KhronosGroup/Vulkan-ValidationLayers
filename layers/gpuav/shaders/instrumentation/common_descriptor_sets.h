@@ -18,11 +18,7 @@
 #extension GL_EXT_buffer_reference2 : require
 #extension GL_EXT_buffer_reference_uvec2 : require
 #extension GL_EXT_scalar_block_layout : require
-#if defined(GL_ARB_gpu_shader_int64)
 #extension GL_ARB_gpu_shader_int64 : require
-#else
-#error No extension available for 64-bit integers.
-#endif
 
 #include "gpuav_error_header.h"
 #include "gpuav_shaders_constants.h"
