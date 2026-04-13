@@ -1,6 +1,6 @@
-// Copyright (c) 2021-2025 The Khronos Group Inc.
-// Copyright (c) 2021-2025 Valve Corporation
-// Copyright (c) 2021-2025 LunarG, Inc.
+// Copyright (c) 2021-2026 The Khronos Group Inc.
+// Copyright (c) 2021-2026 Valve Corporation
+// Copyright (c) 2021-2026 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,11 +27,7 @@ namespace gpuav {
 namespace glsl {
 using uint = uint32_t;
 #else
-#if defined(GL_ARB_gpu_shader_int64)
 #extension GL_ARB_gpu_shader_int64 : require
-#else
-#error No extension available for 64-bit integers.
-#endif
 #extension GL_EXT_buffer_reference : require
 #endif
 

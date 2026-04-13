@@ -27,11 +27,7 @@ namespace gpuav {
 namespace glsl {
 using uint = uint32_t;
 #else
-#if defined(GL_ARB_gpu_shader_int64)
 #extension GL_ARB_gpu_shader_int64 : require
-#else
-#error No extension available for 64-bit integers.
-#endif
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_buffer_reference2 : require
 #extension GL_EXT_buffer_reference_uvec2 : require
