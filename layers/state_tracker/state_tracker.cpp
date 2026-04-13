@@ -5657,6 +5657,18 @@ void DeviceState::PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
                                                                const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordExecuteGeneratedCommands(*pGeneratedCommandsInfo, record_obj.location);
+
+    // Spec says to check preprocessSize, not preprocessAddress
+    if (pGeneratedCommandsInfo->preprocessSize != 0) {
+        TrackDeviceAddressRange(*cb_state, pGeneratedCommandsInfo->preprocessAddress, pGeneratedCommandsInfo->preprocessSize,
+                                VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT);
+    }
+    if (pGeneratedCommandsInfo->sequenceCountAddress != 0) {
+        TrackDeviceAddressRange(*cb_state, pGeneratedCommandsInfo->sequenceCountAddress, sizeof(uint32_t),
+                                VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT_KHR);
+    }
+    // TODO - Track indirectAddress as well, need usage flag
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4780
 }
 
 void DeviceState::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
