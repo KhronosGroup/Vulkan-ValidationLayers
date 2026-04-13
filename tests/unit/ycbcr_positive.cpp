@@ -99,8 +99,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
 
     m_command_buffer.Reset();
     m_command_buffer.Begin();
-    image.ImageMemoryBarrier(m_command_buffer, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
-                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     std::array<VkImageAspectFlagBits, 3> aspects = {
         {VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, VK_IMAGE_ASPECT_PLANE_2_BIT}};
@@ -162,7 +161,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
     copyRegion.extent = {128, 128, 1};
 
     m_command_buffer.Begin();
-    image.ImageMemoryBarrier(m_command_buffer, 0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
     vk::CmdCopyImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
     m_command_buffer.End();
 
@@ -297,7 +296,7 @@ TEST_F(PositiveYcbcr, ImageLayout) {
 
     vk::ResetCommandBuffer(m_command_buffer, 0);
     m_command_buffer.Begin();
-    image.ImageMemoryBarrier(m_command_buffer, 0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -339,7 +338,7 @@ TEST_F(PositiveYcbcr, ImageLayoutUpdate) {
 
     vk::ResetCommandBuffer(m_command_buffer, 0);
     m_command_buffer.Begin();
-    image.ImageMemoryBarrier(m_command_buffer, 0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);

@@ -1336,9 +1336,8 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
         for (TestType test_type : test_list) {
             cmd_buf.Begin();
             // record layout different than actual descriptor layout.
-            const VkFlags read_write = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
             const VkImageSubresourceRange range = image->SubresourceRange(aspect_mask);
-            auto image_barrier = image->ImageMemoryBarrier(read_write, read_write, VK_IMAGE_LAYOUT_UNDEFINED, image_layout, range);
+            auto image_barrier = image->LayoutTransitionBarrier(VK_IMAGE_LAYOUT_UNDEFINED, image_layout, range);
             vk::CmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr,
                                    0, nullptr, 1, &image_barrier);
 

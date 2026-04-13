@@ -371,8 +371,7 @@ TEST_F(PositiveCommand, ClearColorImageWithValidRange) {
         vk::CmdClearColorImage(m_command_buffer, image, image_layout, &clear_color, 1, &range);
     }
 
-    image.ImageMemoryBarrier(m_command_buffer, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, image_layout,
-                             image_layout);
+    m_command_buffer.ImageBarrier(image, image_layout);
 
     // Try good case with VK_REMAINING
     {
@@ -402,8 +401,7 @@ TEST_F(PositiveCommand, ClearDepthStencilWithValidRange) {
         vk::CmdClearDepthStencilImage(m_command_buffer, image, image_layout, &clear_value, 1, &range);
     }
 
-    image.ImageMemoryBarrier(m_command_buffer, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, image_layout,
-                             image_layout);
+    m_command_buffer.ImageBarrier(image, image_layout);
 
     // Try good case with VK_REMAINING
     {

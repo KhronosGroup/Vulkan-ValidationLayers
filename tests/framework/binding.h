@@ -743,27 +743,12 @@ class Image : public internal::NonDispHandle<VkImage> {
     VkFormat Format() const { return create_info_.format; }
     VkImageUsageFlags Usage() const { return create_info_.usage; }
 
-    VkImageMemoryBarrier ImageMemoryBarrier(VkAccessFlags src_access, VkAccessFlags dst_access, VkImageLayout old_layout,
-                                            VkImageLayout new_layout, const VkImageSubresourceRange &range) const {
-        VkImageMemoryBarrier barrier = vku::InitStructHelper();
-        barrier.srcAccessMask = src_access;
-        barrier.dstAccessMask = dst_access;
-        barrier.oldLayout = old_layout;
-        barrier.newLayout = new_layout;
-        barrier.image = handle();
-        barrier.subresourceRange = range;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        return barrier;
-    }
-
-    void ImageMemoryBarrier(CommandBuffer &cmd, VkAccessFlags src_access, VkAccessFlags dst_access, VkImageLayout old_layout,
-                            VkImageLayout new_layout, VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                            VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    VkImageMemoryBarrier LayoutTransitionBarrier(VkImageLayout old_layout, VkImageLayout new_layout,
+                                                 const VkImageSubresourceRange& range) const;
 
     const VkImageCreateInfo &CreateInfo() const { return create_info_; }
 
-    VkImageSubresourceRange SubresourceRange(VkImageAspectFlags aspect_mask) {
+    VkImageSubresourceRange SubresourceRange(VkImageAspectFlags aspect_mask) const {
         return VkImageSubresourceRange{aspect_mask, 0, create_info_.mipLevels, 0, create_info_.arrayLayers};
     }
 
@@ -776,8 +761,6 @@ class Image : public internal::NonDispHandle<VkImage> {
     // This overload does queue submit and waits for layout transition to finish.
     void SetLayout(VkImageLayout image_layout);
 
-    // Performs layout transition from old to new layout.
-    void TransitionLayout(CommandBuffer &cmd_buf, VkImageLayout old_layout, VkImageLayout new_layout);
     // This overload does queue submit and waits for layout transition to finish.
     void TransitionLayout(VkImageLayout old_layout, VkImageLayout new_layout);
 
@@ -1175,6 +1158,13 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void BarrierKHR(const VkImageMemoryBarrier2 &image_barrier, VkDependencyFlags dependency_flags = 0);
     void BarrierKHR(const VkDependencyInfo &dep_info);
 
+    void Barrier(const VkImageMemoryBarrier& image_barrier, VkPipelineStageFlags src_stage_mask,
+                 VkPipelineStageFlags dst_stage_mask, VkDependencyFlags dependency_flags = 0);
+
+    // Synchronize image accesses. Do not transition image layout
+    void ImageBarrier(const vkt::Image& image, VkImageLayout current_layout);
+
+    void TransitionLayout(const vkt::Image& image, VkImageLayout old_layout, VkImageLayout new_layout);
     void FullMemoryBarrier();
 
   private:
