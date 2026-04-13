@@ -47,8 +47,8 @@ bool CoreChecks::IsMixSamplingSupported() const {
            enabled_features.multisampledRenderToSingleSampled;
 }
 
-bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo& create_info, const VkImageCreateFlags create_flags,
-                                             const Location& loc) const {
+bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo& create_info, const Location& loc,
+                                             const VkImageCreateFlags create_flags, const VkImageUsageFlags usage) const {
     bool skip = false;
 
     // validates based on imageCreateFormatFeatures from vkspec.html#resources-image-creation-limits
@@ -129,8 +129,7 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo& create_inf
                          string_VkFormat(create_info.format), string_VkFormatFeatureFlags2(tiling_features).c_str());
     }
 
-    if (((tiling_features & VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT) == 0) &&
-        (create_info.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT)) {
+    if (((tiling_features & VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT) == 0) && (usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT)) {
         skip |= LogError("VUID-VkImageCreateInfo-imageCreateFormatFeatures-09048", device, loc.dot(Field::usage),
                          "includes VK_IMAGE_USAGE_HOST_TRANSFER_BIT, but %s doesn't support "
                          "VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT.\n"
@@ -204,8 +203,8 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo& create_info, const 
                          "device feature is not enabled.");
     }
 
-    if (video_profile_independent && (create_info.usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR) &&
-        (create_info.usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR) == 0) {
+    if (video_profile_independent && (usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR) &&
+        (usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR) == 0) {
         skip |= LogError("VUID-VkImageCreateInfo-flags-08329", device, flags_loc,
                          "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR set but usage (%s) contains "
                          "VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR without also containing "
@@ -213,7 +212,7 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo& create_info, const 
                          string_VkImageUsageFlags(usage).c_str());
     }
 
-    if (video_profile_independent && (create_info.usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) {
+    if (video_profile_independent && (usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) {
         skip |= LogError("VUID-VkImageCreateInfo-flags-08331", device, flags_loc,
                          "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR set but usage (%s) contains "
                          "VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR.",
@@ -851,7 +850,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                          string_VkFormat(pCreateInfo->format), string_VkImageCreateFlags(create_flags).c_str());
     }
 
-    skip |= ValidateImageFormatFeatures(*pCreateInfo, create_flags, create_info_loc);
+    skip |= ValidateImageFormatFeatures(*pCreateInfo, create_info_loc, create_flags, usage);
     skip |= ValidateImageAlignmentControlCreateInfo(*pCreateInfo, create_info_loc);
     skip |= ValidateImageVideo(*pCreateInfo, create_info_loc, create_flags, create_flags_loc, usage, usage_loc, error_obj);
     skip |= ValidateImageSwapchain(*pCreateInfo, create_info_loc, create_flags, usage);

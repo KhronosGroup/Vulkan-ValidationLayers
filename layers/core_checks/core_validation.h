@@ -1039,8 +1039,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateBufferViewRange(const vvl::Buffer& buffer_state, const VkBufferViewCreateInfo& create_info,
                                  const Location& loc) const;
 
-    bool ValidateImageFormatFeatures(const VkImageCreateInfo& create_info, const VkImageCreateFlags create_flags,
-                                     const Location& loc) const;
+    bool ValidateImageFormatFeatures(const VkImageCreateInfo& create_info, const Location& loc,
+                                     const VkImageCreateFlags create_flags, const VkImageUsageFlags usage) const;
     bool ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo& create_info, const Location& create_info_loc) const;
     bool ValidateImageVideo(const VkImageCreateInfo& create_info, const Location& create_info_loc,
                             const VkImageCreateFlags create_flags, const Location& flags_loc, const VkImageUsageFlags usage,
