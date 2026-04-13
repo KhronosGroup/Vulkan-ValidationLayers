@@ -4461,7 +4461,7 @@ TEST_F(PositiveSyncVal, Multiview2) {
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
     rendering_info.renderArea.extent = {128, 128};
-    rendering_info.layerCount = 1;
+    rendering_info.layerCount = 2;
     rendering_info.viewMask = 0x5;  // view 0 + view 2
     rendering_info.colorAttachmentCount = 1;
     rendering_info.pColorAttachments = &color_attachment;
