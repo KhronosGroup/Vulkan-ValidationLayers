@@ -1559,8 +1559,7 @@ TEST_F(NegativeMultiview, MultiviewPerViewViewportsDraw) {
     m_command_buffer.End();
 }
 
-// Being decided in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8173
-TEST_F(NegativeMultiview, DISABLED_DynamicRenderingResolveArrayLayer) {
+TEST_F(NegativeMultiview, DynamicRenderingResolveArrayLayer) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12015");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -1594,12 +1593,12 @@ TEST_F(NegativeMultiview, DISABLED_DynamicRenderingResolveArrayLayer) {
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;  // Ignored when viewMask != 0
-    begin_rendering_info.viewMask = 0x1;
+    begin_rendering_info.layerCount = 0;
+    begin_rendering_info.viewMask = 0x3;
     begin_rendering_info.renderArea = {{0, 0}, {32, 32}};
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkRenderingAttachmentInfo-layerCount");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-viewMask-12403");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
