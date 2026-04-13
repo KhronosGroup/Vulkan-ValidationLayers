@@ -3944,9 +3944,9 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
     };
 
     auto set_layouts = [this, &image_a, &image_b, &image_c]() {
-        image_c.TransitionLayout(m_command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-        image_b.TransitionLayout(m_command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-        image_a.TransitionLayout(m_command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+        m_command_buffer.TransitionLayout(image_c, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+        m_command_buffer.TransitionLayout(image_b, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+        m_command_buffer.TransitionLayout(image_a, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
     };
 
     // Scope check.  One access in, one access not
@@ -5039,8 +5039,14 @@ TEST_F(NegativeSyncVal, QSOBarrierHazard) {
     cb0.End();
 
     cb1.Begin();
-    image_a.ImageMemoryBarrier(cb1, VK_ACCESS_NONE, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-                               VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image_a;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    cb1.Barrier(barrier, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     cb1.End();
 
     queue0->Submit(cb0, vkt::Signal(semaphore));
@@ -5094,8 +5100,14 @@ TEST_F(NegativeSyncVal, QSOBarrierHazardAsync) {
     cb0.End();
 
     cb1.Begin();
-    image_a.ImageMemoryBarrier(cb1, VK_ACCESS_NONE, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-                               VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image_a;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    cb1.Barrier(barrier, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     cb1.End();
 
     queue0->Submit(cb0, vkt::Signal(semaphore));

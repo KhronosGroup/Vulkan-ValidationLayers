@@ -1196,7 +1196,7 @@ TEST_F(NegativeCommand, ResolveImageLayoutMismatch) {
     subresource.levelCount = 1;
     src_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     vk::CmdClearColorImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &subresource);
-    src_image.TransitionLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    m_command_buffer.TransitionLayout(src_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     dst_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageResolve resolve_region;
@@ -1257,7 +1257,7 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
     subresource.levelCount = 1;
     src_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     vk::CmdClearColorImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &subresource);
-    src_image.TransitionLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    m_command_buffer.TransitionLayout(src_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     dstImage.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageResolve resolve_region;
@@ -4024,8 +4024,8 @@ TEST_F(NegativeCommand, CommandBufferRecording) {
         vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
         m_errorMonitor->VerifyFound();
 
-        VkImageMemoryBarrier image_barrier = image.ImageMemoryBarrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
-                                                                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range);
+        VkImageMemoryBarrier image_barrier =
+            image.LayoutTransitionBarrier(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range);
         m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-commandBuffer-recording");
         vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                                nullptr, 0, nullptr, 1, &image_barrier);

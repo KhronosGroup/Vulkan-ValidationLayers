@@ -53,9 +53,14 @@ TEST_F(PositiveImage, OwnershipTranfers) {
     VkFlags image_use = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, image_use);
     auto image_subres = VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    auto image_barrier = image.ImageMemoryBarrier(0, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL, image_subres);
+
+    VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     image_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
     image_barrier.dstQueueFamilyIndex = no_gfx_queue->family_index;
+    image_barrier.image = image;
+    image_barrier.subresourceRange = image_subres;
 
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 

@@ -89,8 +89,15 @@ void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t>* families, bool im
         image_.InitNoMemory(*device_obj, image_ci);
     }
 
-    image_barrier_ = image_.ImageMemoryBarrier(VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT, image_layout, image_layout,
-                                               VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
+    image_barrier_ = vku::InitStructHelper();
+    image_barrier_.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    image_barrier_.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    image_barrier_.oldLayout = image_layout;
+    image_barrier_.newLayout = image_layout;
+    image_barrier_.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    image_barrier_.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    image_barrier_.image = image_;
+    image_barrier_.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     auto buffer_ci = vkt::Buffer::CreateInfo(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,

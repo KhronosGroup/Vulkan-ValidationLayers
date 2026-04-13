@@ -137,10 +137,8 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     ASSERT_EQ(VK_SUCCESS, result);
     VkImageSubresourceRange image_sub_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     VkImageMemoryBarrier image_barrier =
-        image2.ImageMemoryBarrier(0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, image_sub_range);
+        image2.LayoutTransitionBarrier(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, image_sub_range);
 
-    image_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     m_command_buffer.Begin();
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
                            0, nullptr, 1, &image_barrier);
@@ -277,10 +275,8 @@ TEST_F(PositiveHostImageCopy, BasicUsage14) {
     ASSERT_EQ(VK_SUCCESS, result);
     VkImageSubresourceRange image_sub_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     VkImageMemoryBarrier image_barrier =
-        image2.ImageMemoryBarrier(0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, image_sub_range);
+        image2.LayoutTransitionBarrier(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, image_sub_range);
 
-    image_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     m_command_buffer.Begin();
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
                            0, nullptr, 1, &image_barrier);

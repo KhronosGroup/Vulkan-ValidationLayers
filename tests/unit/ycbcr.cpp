@@ -544,8 +544,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageCopyBufferToImage) {
 
     m_command_buffer.Reset();
     m_command_buffer.Begin();
-    image.ImageMemoryBarrier(m_command_buffer, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
-                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     std::array<VkImageAspectFlagBits, 3> aspects = {
         {VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, VK_IMAGE_ASPECT_PLANE_2_BIT}};
@@ -2063,7 +2062,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageCopyAspectMask) {
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstImage-08714");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-aspectMask-00143");
-    image.ImageMemoryBarrier(m_command_buffer, 0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
     vk::CmdCopyImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &image_copy);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

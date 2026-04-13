@@ -1527,94 +1527,36 @@ VkImageAspectFlags Image::AspectMask(VkFormat format) {
     return image_aspect;
 }
 
-void Image::ImageMemoryBarrier(CommandBuffer& cmd_buf, VkAccessFlags src_access, VkAccessFlags dst_access, VkImageLayout old_layout,
-                               VkImageLayout new_layout, VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages) {
-    VkImageSubresourceRange subresource_range = SubresourceRange(AspectMask(Format()));
-    VkImageMemoryBarrier barrier = ImageMemoryBarrier(src_access, dst_access, old_layout, new_layout, subresource_range);
-    vk::CmdPipelineBarrier(cmd_buf, src_stages, dst_stages, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
+VkImageMemoryBarrier Image::LayoutTransitionBarrier(VkImageLayout old_layout, VkImageLayout new_layout,
+                                                    const VkImageSubresourceRange& range) const {
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    barrier.oldLayout = old_layout;
+    barrier.newLayout = new_layout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = handle();
+    barrier.subresourceRange = range;
+    return barrier;
 }
 
 void Image::SetLayout(CommandBuffer& cmd_buf, VkImageLayout image_layout) {
-    TransitionLayout(cmd_buf, create_info_.initialLayout, image_layout);
+    cmd_buf.TransitionLayout(*this, create_info_.initialLayout, image_layout);
 }
 
 void Image::SetLayout(VkImageLayout image_layout) { TransitionLayout(create_info_.initialLayout, image_layout); }
-
-void Image::TransitionLayout(CommandBuffer& cmd_buf, VkImageLayout old_layout, VkImageLayout new_layout) {
-    VkFlags src_mask, dst_mask;
-    const VkFlags all_cache_outputs = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-                                      VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
-    const VkFlags all_cache_inputs = VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_INDEX_READ_BIT |
-                                     VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
-                                     VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                     VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT;
-
-    const VkFlags shader_read_inputs = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT;
-
-    // Attempt to narrow the src_mask, by what the image could have validly been used for in it's current layout
-    switch (old_layout) {
-        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-            src_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            break;
-        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-            src_mask = shader_read_inputs;
-            break;
-        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-            src_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            break;
-        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-            src_mask = VK_ACCESS_TRANSFER_READ_BIT;
-            break;
-        case VK_IMAGE_LAYOUT_UNDEFINED:
-            src_mask = 0;
-            break;
-        default:
-            src_mask = all_cache_outputs;  // Only need to worry about writes, as the stage mask will protect reads
-    }
-
-    // Narrow the dst mask by the valid accesss for the new layout
-    switch (new_layout) {
-        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-            // NOTE: not sure why shader read is here...
-            dst_mask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
-            break;
-
-        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-            dst_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            break;
-
-        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-            dst_mask = shader_read_inputs;
-            break;
-
-        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-            dst_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            break;
-
-        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-            dst_mask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-            break;
-
-        default:
-            // Must wait all read and write operations for the completion of the layout tranisition
-            dst_mask = all_cache_inputs | all_cache_outputs;
-            break;
-    }
-
-    ImageMemoryBarrier(cmd_buf, src_mask, dst_mask, old_layout, new_layout);
-}
 
 void Image::TransitionLayout(VkImageLayout old_layout, VkImageLayout new_layout) {
     CommandPool pool(*device_, device_->graphics_queue_node_index_);
     CommandBuffer cmd_buf(*device_, pool);
 
     cmd_buf.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    TransitionLayout(cmd_buf, old_layout, new_layout);
+    cmd_buf.TransitionLayout(*this, old_layout, new_layout);
     cmd_buf.End();
 
     auto graphics_queue = device_->QueuesWithGraphicsCapability()[0];
-    graphics_queue->Submit(cmd_buf);
-    graphics_queue->Wait();
+    graphics_queue->SubmitAndWait(cmd_buf);
 }
 
 VkImageViewCreateInfo Image::BasicViewCreatInfo(VkImageAspectFlags aspect_mask) const {
@@ -2243,6 +2185,39 @@ void CommandBuffer::BarrierKHR(const VkImageMemoryBarrier2& image_barrier, VkDep
 }
 
 void CommandBuffer::BarrierKHR(const VkDependencyInfo& dep_info) { vk::CmdPipelineBarrier2KHR(handle(), &dep_info); }
+
+void CommandBuffer::Barrier(const VkImageMemoryBarrier& image_barrier, VkPipelineStageFlags src_stage_mask,
+                            VkPipelineStageFlags dst_stage_mask, VkDependencyFlags dependency_flags) {
+    vk::CmdPipelineBarrier(handle(), src_stage_mask, dst_stage_mask, dependency_flags, 0, nullptr, 0, nullptr, 1, &image_barrier);
+}
+
+void CommandBuffer::ImageBarrier(const vkt::Image& image, VkImageLayout current_layout) {
+    const VkImageSubresourceRange subresource_range = image.SubresourceRange(image.AspectMask(image.Format()));
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    barrier.oldLayout = current_layout;
+    barrier.newLayout = current_layout;
+    barrier.image = image;
+    barrier.subresourceRange = subresource_range;
+    vk::CmdPipelineBarrier(handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
+}
+
+void CommandBuffer::TransitionLayout(const vkt::Image& image, VkImageLayout old_layout, VkImageLayout new_layout) {
+    const VkImageSubresourceRange subresource_range = image.SubresourceRange(image.AspectMask(image.Format()));
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    barrier.oldLayout = old_layout;
+    barrier.newLayout = new_layout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image;
+    barrier.subresourceRange = subresource_range;
+    vk::CmdPipelineBarrier(handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
+}
 
 // For positive tests, if you run with sync val, ideally want no errors.
 // Many tests need a simple quick way to sync multiple commands

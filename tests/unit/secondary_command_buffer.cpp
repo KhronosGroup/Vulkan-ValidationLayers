@@ -337,7 +337,7 @@ TEST_F(NegativeSecondaryCommandBuffer, ExecuteWithLayoutMismatch) {
     VkImageSubresourceRange image_sub_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     VkImageMemoryBarrier image_barrier =
-        image.ImageMemoryBarrier(0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, image_sub_range);
+        image.LayoutTransitionBarrier(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, image_sub_range);
 
     auto pipeline = [&image_barrier](const vkt::CommandBuffer& cb, VkImageLayout old_layout, VkImageLayout new_layout) {
         image_barrier.oldLayout = old_layout;
