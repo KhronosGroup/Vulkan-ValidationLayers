@@ -4338,34 +4338,26 @@ TEST_F(NegativeWsi, InitSwapchainUnsupportedCompositeAlpha) {
 
 TEST_F(NegativeWsi, InitSwapchainUnsupportedImageArrayLayers) {
     TEST_DESCRIPTION("Initialize swapchain with too large image array layers");
-
     AddSurfaceExtension();
-
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
 
+    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, surface_info);
+
     VkSurfaceCapabilitiesKHR surface_capabilities;
     vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu_, m_surface, &surface_capabilities);
-
-    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
-    swapchain_ci.surface = m_surface;
-    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
-    swapchain_ci.imageFormat = m_surface_formats[0].format;
-    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
     swapchain_ci.imageArrayLayers = surface_capabilities.maxImageArrayLayers + 1u;
-    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
-    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
-    swapchain_ci.clipped = VK_FALSE;
-    swapchain_ci.oldSwapchain = 0u;
-
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275");
     vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    m_errorMonitor->VerifyFound();
+
+    // Caught in stateless
+    swapchain_ci.imageArrayLayers = 0;
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275");
+    vkt::Swapchain swapchain2(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
 }
 
