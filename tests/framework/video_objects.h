@@ -27,6 +27,7 @@
 
 #include <vector>
 #include <unordered_set>
+#include <algorithm>
 #include <cmath>
 
 class VideoConfig {
