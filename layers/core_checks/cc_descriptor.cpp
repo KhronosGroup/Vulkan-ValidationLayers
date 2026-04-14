@@ -776,10 +776,11 @@ bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayo
 
         if (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) {
             if (binding_info.descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER) {
-                skip |= LogError(
-                    "VUID-VkDescriptorSetLayoutBinding-flags-08005", device, binding_loc.dot(Field::descriptorType),
-                    "is %s but pCreateInfo->flags includes VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT.",
-                    string_VkDescriptorType(binding_info.descriptorType));
+                skip |= LogError("VUID-VkDescriptorSetLayoutBinding-flags-08005", device, binding_loc.dot(Field::descriptorType),
+                                 "is %s but pCreateInfo->flags includes "
+                                 "VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT.\nHint: Try moving your "
+                                 "immutable samplers to a seperate Descriptor Set.",
+                                 string_VkDescriptorType(binding_info.descriptorType));
             }
 
             if (binding_info.descriptorCount > 1) {
