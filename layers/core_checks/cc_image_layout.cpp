@@ -34,6 +34,7 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/wsi_state.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 
 bool IsValidAspectMaskForFormat(VkImageAspectFlags aspect_mask, VkFormat format);
@@ -307,6 +308,22 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::Comm
                     }
                 }
             }
+
+            // Check if we transitioned swapchain image outside of acquire-present interval
+            const bool has_layout_transition = cb_layout_state.current_layout != kInvalidLayout;
+            if (has_layout_transition) {
+                if (image_state->IsSwapchainImage()) {
+                    if (!image_state->bind_swapchain->images[image_state->swapchain_image_index].acquired) {
+                        const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
+                        // VUID request: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4784
+                        skip |= LogError("UNASSIGNED-non-acquired-swapchain-image-used", objlist, loc,
+                                         "performs a layout transition on presentable %s, but the image has not been acquired from "
+                                         "%s (either never or since the last present operation)",
+                                         FormatHandle(*image_state).c_str(), FormatHandle(*image_state->bind_swapchain).c_str());
+                    }
+                }
+            }
+
             if (pos->first.includes(intersected_range.end)) {
                 current_layout.seek(intersected_range.end);
             } else {

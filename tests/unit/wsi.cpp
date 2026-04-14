@@ -6834,3 +6834,42 @@ TEST_F(NegativeWsi, DestroySwapchainInUse2) {
 
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeWsi, TransitionImageBeforeFirstAcquire) {
+    TEST_DESCRIPTION("Transition image before first acquire call");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(swapchain_images[0], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-non-acquired-swapchain-image-used");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, TransitionImageAfterPresent) {
+    TEST_DESCRIPTION("Transition image after present");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+
+    vkt::Semaphore acquire_semaphore(*m_device);
+    uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    m_command_buffer.TransitionLayout(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    m_command_buffer.End();
+
+    vkt::Semaphore submit_semaphore(*m_device);
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore), vkt::Signal(submit_semaphore));
+    m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-non-acquired-swapchain-image-used");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
+}
