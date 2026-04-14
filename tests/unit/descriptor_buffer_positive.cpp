@@ -2158,3 +2158,90 @@ TEST_F(PositiveDescriptorBuffer, SharedSet) {
         }
     }
 }
+
+TEST_F(PositiveDescriptorBuffer, ImmutableSamplerIdenticallyDefinedMaintenance4) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10560");
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    vkt::Buffer storage_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Image image(*m_device, 16, 16, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    vkt::Sampler sampler1(*m_device, sampler_ci);
+    vkt::Sampler sampler2(*m_device, sampler_ci);
+
+    std::vector<VkDescriptorSetLayoutBinding> resource_bindings = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+    };
+    vkt::DescriptorSetLayout resource_dsl(*m_device, resource_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+
+    // Embedded Sampler must be its own layout to use EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT
+    VkDescriptorSetLayoutBinding sampler_binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler1.handle()};
+    VkDescriptorSetLayoutCreateInfo sampler_ds_layout_ci = vku::InitStructHelper();
+    sampler_ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT |
+                                 VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT;
+    sampler_ds_layout_ci.bindingCount = 1;
+    sampler_ds_layout_ci.pBindings = &sampler_binding;
+    vkt::DescriptorSetLayout pipeline_sampler_dsl(*m_device, sampler_ds_layout_ci);
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {&resource_dsl, &pipeline_sampler_dsl});
+
+    sampler_binding.pImmutableSamplers = &sampler2.handle();
+    vkt::DescriptorSetLayout binding_sampler_dsl(*m_device, sampler_ds_layout_ci);
+    vkt::PipelineLayout binding_layout(*m_device, {&resource_dsl, &binding_sampler_dsl});
+
+    VkDeviceSize resource_size = resource_dsl.GetDescriptorBufferSize();
+    vkt::Buffer descriptor_buffer(*m_device, resource_size, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
+                                  vkt::device_address);
+
+    uint8_t* mapped_data = (uint8_t*)descriptor_buffer.Memory().Map();
+    vkt::DescriptorGetInfo buffer_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, storage_buffer, 16);
+    vk::GetDescriptorEXT(device(), buffer_info, descriptor_buffer_properties.storageBufferDescriptorSize,
+                         mapped_data + resource_dsl.GetDescriptorBufferBindingOffset(0));
+
+    vkt::DescriptorGetInfo image_info(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_NULL_HANDLE, image_view,
+                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vk::GetDescriptorEXT(device(), image_info, descriptor_buffer_properties.sampledImageDescriptorSize,
+                         mapped_data + resource_dsl.GetDescriptorBufferBindingOffset(1));
+
+    const char* csSource = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer StorageBuffer { vec4 dummy; };
+        layout(set = 0, binding = 1) uniform texture2D t;
+        layout(set = 1, binding = 0) uniform sampler s;
+        void main() {
+            dummy = texture(sampler2D(t, s), vec2(0));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    // Maintenance4: Destroy layout and sampler1 immediately after pipeline creation
+    pipeline_layout.Destroy();
+    pipeline_sampler_dsl.Destroy();
+    sampler1.Destroy();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+    VkDescriptorBufferBindingInfoEXT binding_info = vku::InitStructHelper();
+    binding_info.address = descriptor_buffer.Address();
+    binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &binding_info);
+
+    uint32_t index = 0;
+    VkDeviceSize offset = 0;
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, binding_layout, 0, 1, &index, &offset);
+    vk::CmdBindDescriptorBufferEmbeddedSamplersEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, binding_layout, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+}
