@@ -101,27 +101,33 @@ const int kErrorSubCode_RayQuery_DirectionFinite = 12;
 
 // Trace Ray
 //
-const int kErrorSubCode_TraceRay_TrianglesFlags = 1;
-const int kErrorSubCode_TraceRay_OpaqueFlags = 2;
 // Ray Hit Object (VK_EXT_ray_tracing_invocation_reorder)
 // OpHitObjectTraceRayEXT, OpHitObjectTraceReorderExecuteEXT, OpHitObjectTraceRayMotionEXT,
 // OpHitObjectTraceMotionReorderExecuteEXT, OpHitObjectSetShaderBindingTableRecordIndexEXT
-const int kErrorSubCode_RayHitObject_NegativeMin = 3;
-const int kErrorSubCode_RayHitObject_NegativeMax = 4;
-const int kErrorSubCode_RayHitObject_BothSkip = 5;
-const int kErrorSubCode_RayHitObject_SkipCull = 6;
-const int kErrorSubCode_RayHitObject_Opaque = 7;
-const int kErrorSubCode_RayHitObject_MinMax = 8;
-const int kErrorSubCode_RayHitObject_MinNaN = 9;
-const int kErrorSubCode_RayHitObject_MaxNaN = 10;
-const int kErrorSubCode_RayHitObject_OriginNaN = 11;
-const int kErrorSubCode_RayHitObject_DirectionNaN = 12;
-const int kErrorSubCode_RayHitObject_OriginFinite = 13;
-const int kErrorSubCode_RayHitObject_DirectionFinite = 14;
-const int kErrorSubCode_RayHitObject_SkipTrianglesWithPipelineSkipAABBs = 15;
-const int kErrorSubCode_RayHitObject_SkipAABBsWithPipelineSkipTriangles = 16;
-const int kErrorSubCode_RayHitObject_TimeOutOfRange = 17;
-const int kErrorSubCode_RayHitObject_SBTIndexExceedsLimit = 18;
+const int kErrorSubCode_RayHitObject_NegativeMin = 1;
+const int kErrorSubCode_RayHitObject_NegativeMax = 2;
+const int kErrorSubCode_RayHitObject_BothSkip = 3;
+const int kErrorSubCode_RayHitObject_SkipCull = 4;
+const int kErrorSubCode_RayHitObject_Opaque = 5;
+const int kErrorSubCode_RayHitObject_MinMax = 6;
+const int kErrorSubCode_RayHitObject_MinNaN = 7;
+const int kErrorSubCode_RayHitObject_MaxNaN = 8;
+const int kErrorSubCode_RayHitObject_OriginNaN = 9;
+const int kErrorSubCode_RayHitObject_DirectionNaN = 10;
+const int kErrorSubCode_RayHitObject_OriginFinite = 11;
+const int kErrorSubCode_RayHitObject_DirectionFinite = 12;
+const int kErrorSubCode_RayHitObject_SkipTrianglesWithPipelineSkipAABBs = 13;
+const int kErrorSubCode_RayHitObject_SkipAABBsWithPipelineSkipTriangles = 14;
+const int kErrorSubCode_RayHitObject_TimeOutOfRange = 15;
+const int kErrorSubCode_RayHitObject_SBTIndexExceedsLimit = 16;
+const int kErrorSubCode_TraceRay_TrianglesFlags = 17;
+const int kErrorSubCode_TraceRay_OpaqueFlags = 18;
+const int kErrorSubCode_TraceRay_BothSkip = 19;
+const int kErrorSubCode_TraceRay_OriginNaNOrInf = 20;
+const int kErrorSubCode_TraceRay_DirectionNaNOrInf = 21;
+const int kErrorSubCode_TraceRay_TNegative = 22;
+const int kErrorSubCode_TraceRay_TMaxLessThanTMin = 23;
+const int kErrorSubCode_TraceRay_RayParametersNans = 24;
 
 // Shared Memory Data Race
 const int kErrorSubCode_SharedMemoryDataRace_RaceOnStore = 1;

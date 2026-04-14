@@ -36,24 +36,60 @@ const uint SpvRayFlags_SkipAABBsKHR = 0x00000200;
 const uint SpvRayFlags_ForceOpacityMicromap2StateEXTMask = 0x00000400;
 
 #define has_multiple_flags(masked_flags) (((masked_flags) & ((masked_flags) - 1)) != 0)
+#define is_nan_or_inf(x) (isnan(x) || isinf(x))
 
 
 bool inst_trace_ray(const uint inst_offset,
-                         const uint rayFlags)
+                    const uint ray_flags,
+                    const uint cull_mask,
+                    const uint sbt_record_offset,
+                    const uint sbt_record_stride,
+                    const uint miss_index,
+                    const vec3 origin,
+                    const float t_min,
+                    const vec3 direction,
+                    const float t_max)
 {
     uint error = 0u;
     uint param_0 = 0u;
     uint param_1 = 0u;
+    uint param_2 = 0u;
 
     const uint triangles_flags_mask = SpvRayFlags_SkipTrianglesKHR | SpvRayFlags_CullBackFacingTrianglesKHR | SpvRayFlags_CullFrontFacingTrianglesKHR;
     const uint opaque_flags_mask = SpvRayFlags_OpaqueKHR | SpvRayFlags_NoOpaqueKHR | SpvRayFlags_CullOpaqueKHR | SpvRayFlags_CullNoOpaqueKHR;
+    const uint both_skip = SpvRayFlags_SkipTrianglesKHR | SpvRayFlags_SkipAABBsKHR;
 
-    if (has_multiple_flags(rayFlags & triangles_flags_mask)) {
+    if (has_multiple_flags(ray_flags & triangles_flags_mask)) {
         error = kErrorSubCode_TraceRay_TrianglesFlags;
-        param_0 = rayFlags;
-    } else if (has_multiple_flags(rayFlags & opaque_flags_mask)) {
+        param_0 = ray_flags;
+    } else if (has_multiple_flags(ray_flags & opaque_flags_mask)) {
         error = kErrorSubCode_TraceRay_OpaqueFlags;
-        param_0 = rayFlags;
+        param_0 = ray_flags;
+    } else if (has_multiple_flags(ray_flags & both_skip)) {
+        error = kErrorSubCode_TraceRay_BothSkip;
+        param_0 = ray_flags;
+    } else if (is_nan_or_inf(origin.x) || is_nan_or_inf(origin.y) || is_nan_or_inf(origin.z)) {
+        error = kErrorSubCode_TraceRay_OriginNaNOrInf;
+        param_0 = floatBitsToUint(origin.x);
+        param_1 = floatBitsToUint(origin.y);
+        param_2 = floatBitsToUint(origin.z);
+    } else if (is_nan_or_inf(direction.x) || is_nan_or_inf(direction.y) || is_nan_or_inf(direction.z)) {
+        error = kErrorSubCode_TraceRay_DirectionNaNOrInf;
+        param_0 = floatBitsToUint(direction.x);
+        param_1 = floatBitsToUint(direction.y);
+        param_2 = floatBitsToUint(direction.z);
+    } else if (isnan(t_min) || isnan(t_max)) {
+        error = kErrorSubCode_TraceRay_RayParametersNans;
+        param_0 = floatBitsToUint(t_min);
+        param_1 = floatBitsToUint(t_max);
+    } else if (t_min < 0.0 || t_max < 0.0) {
+        error = kErrorSubCode_TraceRay_TNegative;
+        param_0 = floatBitsToUint(t_min);
+        param_1 = floatBitsToUint(t_max);
+    } else if (t_max < t_min) {
+        error = kErrorSubCode_TraceRay_TMaxLessThanTMin;
+        param_0 = floatBitsToUint(t_min);
+        param_1 = floatBitsToUint(t_max);
     }
 
     if (0u != error) {
@@ -62,7 +98,7 @@ bool inst_trace_ray(const uint inst_offset,
                             SpecConstantLinkShaderId | (kErrorGroup_TraceRay << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
                             param_0,
                             param_1,
-                            0
+                            param_2
                         );
         return false;
     }
@@ -88,7 +124,15 @@ const uint kPipelineHasSkipTriangles = 0x2;
 //      bit 1 = pipeline has SKIP_TRIANGLES
 // time:
 //    motion time parameter (only valid for opcode_type "Motion" opcodes, pass 0.0 for others)
-bool inst_ray_hit_object(const uint inst_offset, const uint opcode_type, const uint ray_flags, const vec3 ray_origin, const float ray_tmin, const vec3 ray_direction, const float ray_tmax, const uint pipeline_flags, const float time)
+bool inst_ray_hit_object(const uint inst_offset,
+                         const uint opcode_type,
+                         const uint ray_flags,
+                         const vec3 ray_origin,
+                         const float ray_tmin,
+                         const vec3 ray_direction,
+                         const float ray_tmax,
+                         const uint pipeline_flags,
+                         const float time)
 {
     uint error = 0u;
     uint param_0 = 0u;
@@ -125,7 +169,7 @@ bool inst_ray_hit_object(const uint inst_offset, const uint opcode_type, const u
         uint skip_cull_mask = ray_flags & (SpvRayFlags_SkipTrianglesKHR | SpvRayFlags_CullBackFacingTrianglesKHR | SpvRayFlags_CullFrontFacingTrianglesKHR);
         uint opaque_mask = ray_flags & (SpvRayFlags_OpaqueKHR | SpvRayFlags_NoOpaqueKHR | SpvRayFlags_CullOpaqueKHR | SpvRayFlags_CullNoOpaqueKHR);
 
-        if ((ray_flags & both_skip) == both_skip) {
+        if (has_multiple_flags(ray_flags & both_skip)) {
             error = kErrorSubCode_RayHitObject_BothSkip;
             param_0 = ray_flags;
         } else if (skip_cull_mask != 0 && ((skip_cull_mask & (skip_cull_mask - 1)) != 0)) {
@@ -159,7 +203,9 @@ bool inst_ray_hit_object(const uint inst_offset, const uint opcode_type, const u
     return true;
 }
 
-bool inst_ray_hit_object_sbt_index_check(const uint inst_offset, const uint sbt_index, const uint max_sbt_index)
+bool inst_ray_hit_object_sbt_index_check(const uint inst_offset,
+                                         const uint sbt_index,
+                                         const uint max_sbt_index)
 {
     if (sbt_index > max_sbt_index) {
         error_payload = ErrorPayload(

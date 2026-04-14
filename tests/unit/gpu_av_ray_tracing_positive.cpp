@@ -678,7 +678,7 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultiEntryPoint) {
         float2 uv = float2(0.5, 0.5);
 
         RayDesc ray;
-        ray.Origin = ray.Origin;
+        ray.Origin = float3(0, 0, 0);
         ray.TMin = 0;
         ray.Direction = float3(0.5, 0.5, 0.5);
         ray.TMax = 1e6;
@@ -766,7 +766,7 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultiEntryPoint) {
     %payload = OpVariable %_ptr_IncomingRayPayloadNV_ColorPayload IncomingRayPayloadNV
   %payload_0 = OpVariable %_ptr_IncomingRayPayloadNV_ColorPayload IncomingRayPayloadNV
   %payload_1 = OpVariable %_ptr_RayPayloadNV_ColorPayload RayPayloadNV
-         %42 = OpUndef %v3float
+         %42 = OpConstantComposite %v3float %float_0 %float_0 %float_0
          %43 = OpUndef %uint
          %44 = OpConstantComposite %ColorPayload %uint_0
          %45 = OpConstantComposite %ColorPayload %uint_1

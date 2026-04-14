@@ -42,11 +42,31 @@ std::vector<uint32_t> TraceRayPass::GetTraceRayValidationFunctionCallInstruction
     const uint32_t bool_type = type_manager_.GetTypeBool().Id();
 
     const uint32_t ray_flags_id = (*trace_ray_inst_it)->get()->Operand(1);
+    const uint32_t cull_mask_id = (*trace_ray_inst_it)->get()->Operand(2);
+    const uint32_t sbt_record_offset_id = (*trace_ray_inst_it)->get()->Operand(3);
+    const uint32_t sbt_record_stride_id = (*trace_ray_inst_it)->get()->Operand(4);
+    const uint32_t miss_index_id = (*trace_ray_inst_it)->get()->Operand(5);
+    const uint32_t origin_id = (*trace_ray_inst_it)->get()->Operand(6);
+    const uint32_t t_min_id = (*trace_ray_inst_it)->get()->Operand(7);
+    const uint32_t direction_id = (*trace_ray_inst_it)->get()->Operand(8);
+    const uint32_t t_max_id = (*trace_ray_inst_it)->get()->Operand(9);
 
     const uint32_t inst_position = (*trace_ray_inst_it)->get()->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
-    return {bool_type, function_result, function_def, inst_position_id, ray_flags_id};
+    return {bool_type,
+            function_result,
+            function_def,
+            inst_position_id,
+            ray_flags_id,
+            cull_mask_id,
+            sbt_record_offset_id,
+            sbt_record_stride_id,
+            miss_index_id,
+            origin_id,
+            t_min_id,
+            direction_id,
+            t_max_id};
 }
 
 std::vector<uint32_t> TraceRayPass::GetRayHitObjectValidationFunctionCallInstructions(InstructionIt* ray_hit_object_inst_it) {
@@ -155,7 +175,6 @@ bool TraceRayPass::Instrument() {
 
                 if (!module_.settings_.safe_mode) {
                     AddFunctionCall(current_block, std::move(instrumentation_instructions), &inst_it);
-
                 } else {
                     InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);
                     ic_data.function_result_id = AddFunctionCall(current_block, std::move(instrumentation_instructions), nullptr);
