@@ -54,6 +54,12 @@ void main() {
         blas_addr = pc.blas_ptr_array_start_addr.blas_ptr_array[as_instance_i].as_instance.accelerationStructureReference;
     }
 
+    // At least mentioned in VUID 12281:
+    // A BLAS address of 0 is valid
+    if (blas_addr == 0) {
+        return;
+    }
+
     uint error_subcode = 0;
 
     if ((blas_addr % 16u ) != 0) {
