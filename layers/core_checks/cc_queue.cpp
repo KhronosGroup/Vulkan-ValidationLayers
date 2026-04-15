@@ -290,11 +290,6 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                                  chained_device_group_struct->commandBufferCount, submit.commandBufferCount);
             }
         }
-        // Run submit time validation only if skip is not set. This is mostly for vvl testing,
-        // some tests expect that submit state is not updated if regular validation fails
-        if (!skip) {
-            skip |= submit_time_tracker.ProcessSubmitInfo(submit, queue, submit_loc);
-        }
     }
 
     return skip;
@@ -453,11 +448,6 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
         if (suspended_render_pass_instance) {
             skip |= LogError("VUID-VkSubmitInfo2-commandBuffer-06010", queue, submit_loc,
                              "has a suspended render pass instance that was not resumed.");
-        }
-        // Run submit time validation only if skip is not set. This is mostly for vvl testing,
-        // some tests expect that submit state is not updated if regular validation fails
-        if (!skip) {
-            skip |= submit_time_tracker.ProcessSubmitInfo(submit, queue, submit_loc);
         }
     }
 

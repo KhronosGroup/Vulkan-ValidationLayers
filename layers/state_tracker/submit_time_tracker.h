@@ -29,6 +29,7 @@ namespace vvl {
 
 class DeviceProxy;
 class CommandBuffer;
+struct QueueSubmission;
 
 // Batch blocked by a wait-before-signal dependency
 struct UnresolvedBatch {
@@ -59,8 +60,7 @@ class SubmitTimeTracker {
     void OnCreateTimelineSemaphore(VkSemaphore timeline, uint64_t initial_value);
     void OnDestroyTimelineSemaphore(VkSemaphore timeline);
 
-    bool ProcessSubmitInfo(const VkSubmitInfo& submit_info, VkQueue queue, const Location& submit_loc) const;
-    bool ProcessSubmitInfo(const VkSubmitInfo2& submit_info, VkQueue queue, const Location& submit_loc) const;
+    bool ProcessQueueSubmission(VkQueue queue, const QueueSubmission& submission) const;
     bool ProcessSignalSemaphore(const VkSemaphoreSignalInfo& signal_info) const;
     bool ProcessPresent(const VkPresentInfoKHR& present_info, const Location& present_info_loc) const;
 

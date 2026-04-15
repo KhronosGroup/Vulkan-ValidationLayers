@@ -244,12 +244,15 @@ static inline const CommandBufferSubState &SubState(const vvl::CommandBuffer &cb
 
 class QueueSubState : public vvl::QueueSubState {
   public:
-    QueueSubState(vvl::Queue& q) : vvl::QueueSubState(q) {}
+    QueueSubState(vvl::Queue& q, vvl::SubmitTimeTracker& submit_time_tracker)
+        : vvl::QueueSubState(q), submit_time_tracker(&submit_time_tracker) {}
 
-    void PreSubmit(std::vector<vvl::QueueSubmission> &submissions) override;
+    void PreSubmit(std::vector<vvl::QueueSubmission>& submissions) override;
 
     // Override Retire to validate submissions in the order defined by synchronization
     void Retire(vvl::QueueSubmission&) override;
+
+    vvl::SubmitTimeTracker* submit_time_tracker = nullptr;
 };
 
 }  // namespace core

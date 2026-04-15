@@ -16,6 +16,7 @@
  */
 
 #include "state_tracker/submit_time_tracker.h"
+#include "state_tracker/queue_state.h"
 #include "state_tracker/semaphore_state.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/wsi_state.h"
@@ -34,27 +35,32 @@ void SubmitTimeTracker::OnDestroyTimelineSemaphore(VkSemaphore timeline) {
     timeline_signals_.erase(timeline);
 }
 
-bool SubmitTimeTracker::ProcessSubmitInfo(const VkSubmitInfo& submit_info, VkQueue queue, const Location& submit_loc) const {
-    SubmitInfoConverter converter(submit_info);
-    return ProcessSubmitInfo(converter.submit_info2, queue, submit_loc);
-}
-
-bool SubmitTimeTracker::ProcessSubmitInfo(const VkSubmitInfo2& submit_info, VkQueue queue, const Location& submit_loc) const {
-    const auto wait_semaphores =
-        vvl::span<const VkSemaphoreSubmitInfo>(submit_info.pWaitSemaphoreInfos, submit_info.waitSemaphoreInfoCount);
-    const auto signal_semaphores =
-        vvl::span<const VkSemaphoreSubmitInfo>(submit_info.pSignalSemaphoreInfos, submit_info.signalSemaphoreInfoCount);
-
+bool SubmitTimeTracker::ProcessQueueSubmission(VkQueue queue, const QueueSubmission& submission) const {
     std::vector<std::shared_ptr<CommandBuffer>> command_buffers;
-    command_buffers.reserve(submit_info.commandBufferInfoCount);
-    for (const auto& cb_info : vvl::make_span(submit_info.pCommandBufferInfos, submit_info.commandBufferInfoCount)) {
-        // If Get returns null, store it to preserve original indexing
-        command_buffers.emplace_back(validator_.Get<CommandBuffer>(cb_info.commandBuffer));
+    command_buffers.reserve(submission.cb_submissions.size());
+    for (const auto& cb_info : submission.cb_submissions) {
+        command_buffers.emplace_back(cb_info.cb);
+    }
+
+    std::vector<VkSemaphoreSubmitInfo> wait_semaphores;
+    wait_semaphores.reserve(submission.wait_semaphores.size());
+    for (const SemaphoreInfo& wait : submission.wait_semaphores) {
+        VkSemaphoreSubmitInfo& semaphore_info = wait_semaphores.emplace_back();
+        semaphore_info.semaphore = wait.semaphore->VkHandle();
+        semaphore_info.value = wait.payload;
+    }
+
+    std::vector<VkSemaphoreSubmitInfo> signal_semaphores;
+    signal_semaphores.reserve(submission.signal_semaphores.size());
+    for (const SemaphoreInfo& signal : submission.signal_semaphores) {
+        VkSemaphoreSubmitInfo& semaphore_info = signal_semaphores.emplace_back();
+        semaphore_info.semaphore = signal.semaphore->VkHandle();
+        semaphore_info.value = signal.payload;
     }
 
     std::lock_guard lock(mutex_);
     SubmitTimeTracker& this_tracker = *const_cast<SubmitTimeTracker*>(this);
-    return this_tracker.ProcessBatch(std::move(command_buffers), wait_semaphores, signal_semaphores, queue, submit_loc);
+    return this_tracker.ProcessBatch(std::move(command_buffers), wait_semaphores, signal_semaphores, queue, submission.loc.Get());
 }
 
 bool SubmitTimeTracker::ProcessSignalSemaphore(const VkSemaphoreSignalInfo& signal_info) const {
