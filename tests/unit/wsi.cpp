@@ -3992,27 +3992,24 @@ TEST_F(NegativeWsi, PresentInfoSwapchainsDifferentPresentModes) {
     swapchain_ci.pNext = &present_modes_ci;
     vkt::Swapchain swapchain2(*m_device, swapchain_ci);
 
-    vkt::Semaphore image_acquired1(*m_device);
-    vkt::Semaphore image_acquired2(*m_device);
+    vkt::Fence image_acquired1(*m_device);
+    vkt::Fence image_acquired2(*m_device);
     const uint32_t image_index1 = swapchain1.AcquireNextImage(image_acquired1, kWaitTimeout);
     const uint32_t image_index2 = swapchain2.AcquireNextImage(image_acquired2, kWaitTimeout);
+    image_acquired1.Wait(kWaitTimeout);
+    image_acquired2.Wait(kWaitTimeout);
     SetPresentImageLayout(swapchain1.GetImages()[image_index1]);
     SetPresentImageLayout(swapchain2.GetImages()[image_index2]);
 
-    VkSemaphore acquire_semaphores[] = {image_acquired1, image_acquired2};
     VkSwapchainKHR swapchains[] = {swapchain1, swapchain2};
     uint32_t image_indices[] = {image_index1, image_index2};
-
     VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 2u;
-    present.pWaitSemaphores = acquire_semaphores;
     present.pSwapchains = swapchains;
     present.pImageIndices = image_indices;
     present.swapchainCount = 2;
     m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pSwapchains-09199");
     vk::QueuePresentKHR(m_default_queue->handle(), &present);
     m_errorMonitor->VerifyFound();
-    m_device->Wait();
 }
 
 TEST_F(NegativeWsi, ReleaseSwapchainImagesWithoutFeature) {
@@ -4533,8 +4530,9 @@ TEST_F(NegativeWsi, PresentSignaledFence) {
     RETURN_IF_SKIP(InitSwapchain());
 
     const auto swapchain_images = m_swapchain.GetImages();
-    const vkt::Semaphore acquire_semaphore(*m_device);
-    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+    const vkt::Fence image_acquired(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
+    image_acquired.Wait(kWaitTimeout);
     SetPresentImageLayout(swapchain_images[image_index]);
 
     vkt::Fence present_fence(*m_device, VK_FENCE_CREATE_SIGNALED_BIT);
@@ -4543,7 +4541,7 @@ TEST_F(NegativeWsi, PresentSignaledFence) {
     present_fence_info.pFences = &present_fence.handle();
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentFenceInfoKHR-pFences-07758");
-    m_default_queue->Present(m_swapchain, image_index, acquire_semaphore, &present_fence_info);
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore, &present_fence_info);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
@@ -4558,8 +4556,9 @@ TEST_F(NegativeWsi, PresentFenceInUse) {
     RETURN_IF_SKIP(InitSwapchain());
 
     const auto swapchain_images = m_swapchain.GetImages();
-    const vkt::Semaphore acquire_semaphore(*m_device);
-    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+    const vkt::Fence image_acquired(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
+    image_acquired.Wait(kWaitTimeout);
     SetPresentImageLayout(swapchain_images[image_index]);
 
     vkt::Fence present_fence(*m_device);
@@ -4570,7 +4569,7 @@ TEST_F(NegativeWsi, PresentFenceInUse) {
     m_default_queue->Submit(vkt::no_cmd, present_fence);
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentFenceInfoKHR-pFences-07759");
-    m_default_queue->Present(m_swapchain, image_index, acquire_semaphore, &present_fence_info);
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore, &present_fence_info);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
@@ -4608,9 +4607,10 @@ TEST_F(NegativeWsi, PresentMismatchedSwapchainCount) {
 
     vkt::Swapchain swapchain(*m_device, swapchain_ci);
 
-    const vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Fence image_acquired(*m_device);
     const auto swapchain_images = swapchain.GetImages();
-    const uint32_t image_index = swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+    const uint32_t image_index = swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
+    image_acquired.Wait(kWaitTimeout);
     SetPresentImageLayout(swapchain_images[image_index]);
 
     VkPresentModeKHR present_modes[2] = {present_mode, present_mode};
@@ -4620,9 +4620,8 @@ TEST_F(NegativeWsi, PresentMismatchedSwapchainCount) {
     present_mode_info.pPresentModes = present_modes;
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModeInfoKHR-swapchainCount-07760");
-    m_default_queue->Present(swapchain, image_index, acquire_semaphore, &present_mode_info);
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_mode_info);
     m_errorMonitor->VerifyFound();
-    m_default_queue->Wait();
 }
 
 TEST_F(NegativeWsi, InvalidRectLayer) {
@@ -4651,10 +4650,11 @@ TEST_F(NegativeWsi, InvalidRectLayer) {
 
     vkt::Swapchain swapchain(*m_device, swapchain_ci);
 
-    const vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Fence image_acquired(*m_device);
 
     const auto swapchain_images = swapchain.GetImages();
-    const uint32_t image_index = swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+    const uint32_t image_index = swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
+    image_acquired.Wait(kWaitTimeout);
     SetPresentImageLayout(swapchain_images[image_index]);
 
     VkRectLayerKHR rectangle;
@@ -4672,14 +4672,14 @@ TEST_F(NegativeWsi, InvalidRectLayer) {
     present_regions.pRegions = &present_region;
 
     m_errorMonitor->SetDesiredError("VUID-VkRectLayerKHR-layer-01262");
-    m_default_queue->Present(swapchain, image_index, acquire_semaphore, &present_regions);
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_regions);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 
     rectangle.layer = 0u;
     rectangle.offset.x = 1;
     m_errorMonitor->SetDesiredError("VUID-VkRectLayerKHR-offset-04864");
-    m_default_queue->Present(swapchain, image_index, acquire_semaphore, &present_regions);
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_regions);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
@@ -4706,9 +4706,10 @@ TEST_F(NegativeWsi, PresentWithUnsupportedQueue) {
         GTEST_SKIP() << "Surface is supported";
     }
 
-    const vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Fence image_acquired(*m_device);
     const auto swapchain_images = m_swapchain.GetImages();
-    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
+    image_acquired.Wait(kWaitTimeout);
     SetPresentImageLayout(swapchain_images[image_index]);
 
     vkt::Fence present_fence(*m_device);
@@ -4717,7 +4718,7 @@ TEST_F(NegativeWsi, PresentWithUnsupportedQueue) {
     present_fence_info.pFences = &present_fence.handle();
 
     m_errorMonitor->SetDesiredError("VUID-vkQueuePresentKHR-pSwapchains-01292");
-    m_device->TransferOnlyQueue()->Present(m_swapchain, image_index, acquire_semaphore, &present_fence_info);
+    m_device->TransferOnlyQueue()->Present(m_swapchain, image_index, vkt::no_semaphore, &present_fence_info);
     m_errorMonitor->VerifyFound();
     m_device->TransferOnlyQueue()->Wait();
 }
