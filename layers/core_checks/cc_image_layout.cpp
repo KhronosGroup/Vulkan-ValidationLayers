@@ -313,13 +313,38 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::Comm
             const bool has_layout_transition = cb_layout_state.current_layout != kInvalidLayout;
             if (has_layout_transition) {
                 if (image_state->IsSwapchainImage()) {
-                    if (!image_state->bind_swapchain->images[image_state->swapchain_image_index].acquired) {
+                    const auto& swapchain_image = image_state->bind_swapchain->images[image_state->swapchain_image_index];
+                    const bool has_wait = swapchain_image.acquire_semaphore_status == vvl::AcquireSyncStatus::WasWaitedOn ||
+                                          swapchain_image.acquire_fence_status == vvl::AcquireSyncStatus::WasWaitedOn;
+                    const bool semaphore_signal = swapchain_image.acquire_semaphore_status == vvl::AcquireSyncStatus::Signaled;
+                    const bool fence_signal = swapchain_image.acquire_fence_status == vvl::AcquireSyncStatus::Signaled;
+
+                    if (!swapchain_image.acquired) {
                         const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
                         // VUID request: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4784
                         skip |= LogError("UNASSIGNED-non-acquired-swapchain-image-used", objlist, loc,
                                          "performs a layout transition on presentable %s, but the image has not been acquired from "
-                                         "%s (either never or since the last present operation)",
+                                         "%s (either never or since the last present operation).",
                                          FormatHandle(*image_state).c_str(), FormatHandle(*image_state->bind_swapchain).c_str());
+                    } else if (!has_wait && (semaphore_signal || fence_signal)) {
+                        std::ostringstream oss;
+                        const char* was_were = "was";
+                        if (semaphore_signal) {
+                            oss << FormatHandle(*swapchain_image.acquire_semaphore);
+                        }
+                        if (fence_signal) {
+                            if (semaphore_signal) {
+                                oss << " and ";
+                                was_were = "were";
+                            }
+                            oss << FormatHandle(*swapchain_image.acquire_fence);
+                        }
+                        const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
+                        // VUID request: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4784
+                        skip |= LogError("UNASSIGNED-non-acquired-swapchain-image-used", objlist, loc,
+                                         "performs a layout transition on presentable %s, but %s signaled by image acquire "
+                                         "operation %s not waited on.",
+                                         FormatHandle(*image_state).c_str(), oss.str().c_str(), was_were);
                     }
                 }
             }
