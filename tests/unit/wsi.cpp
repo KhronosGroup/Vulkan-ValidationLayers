@@ -6874,3 +6874,57 @@ TEST_F(NegativeWsi, TransitionImageAfterPresent) {
 
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeWsi, TransitionImageMissingAcquireSemaphoreWait) {
+    TEST_DESCRIPTION("Transition image without waiting on acquire semaphore");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+
+    vkt::Semaphore acquire_semaphore(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-non-acquired-swapchain-image-used");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, TransitionImageMissingAcquireFenceWait) {
+    TEST_DESCRIPTION("Transition image without waiting on acquire fence");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-non-acquired-swapchain-image-used");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, TransitionImageMissingAcquireSemaphoreOrFenceWait) {
+    TEST_DESCRIPTION("Transition image without waiting on acquire semaphore and fence");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+
+    vkt::Semaphore semaphore(*m_device);
+    vkt::Fence fence(*m_device);
+
+    uint32_t image_index = 0;
+    vk::AcquireNextImageKHR(*m_device, m_swapchain, kWaitTimeout, semaphore, fence, &image_index);
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-non-acquired-swapchain-image-used");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}

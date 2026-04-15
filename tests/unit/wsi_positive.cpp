@@ -1817,7 +1817,7 @@ TEST_F(PositiveWsi, MultiSwapchainPresentWithOneBadSwapchain) {
 
         // The test checks that image acquire from the first swapchain does not generate validation error that no images left.
         // The second swapchain should not affect acquired image tracking in the first swapchain.
-        const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, vvl::kU64Max);
+        const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
         // Do not try to acquire images from the second swapchain, it is broken.
         // Suppress error that we present not acquired image.
