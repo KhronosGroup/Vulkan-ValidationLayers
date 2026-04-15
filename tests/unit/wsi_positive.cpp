@@ -381,12 +381,13 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
 
-    const vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Fence image_acquired(*m_device);
     const auto swapchain_images = m_swapchain.GetImages();
-    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
+    image_acquired.Wait(kWaitTimeout);
     SetPresentImageLayout(swapchain_images[image_index]);
 
-    m_default_queue->Present(m_swapchain, image_index, acquire_semaphore);
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
     m_default_queue->Wait();
 }
 
@@ -1309,8 +1310,7 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
 
         vkt::Fence submit_fence(*m_device);
         m_default_queue->Submit(m_command_buffer, submit_fence);
-
-        vk::WaitForFences(device(), 1, &submit_fence.handle(), VK_TRUE, kWaitTimeout);
+        submit_fence.Wait(kWaitTimeout);
 
         // It's safe to reset command buffer because we waited on the fence
         m_command_buffer.Reset();
@@ -1323,9 +1323,10 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
 
         const auto swapchain_images = m_swapchain.GetImages();
         const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
-        SetPresentImageLayout(swapchain_images[image_index]);
 
         m_command_buffer.Begin();
+        m_command_buffer.TransitionLayout(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED,
+                                          VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
         m_command_buffer.End();
 
         m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore), vkt::Signal(submit_semaphore));
@@ -1417,10 +1418,11 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
 
-    const vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Fence image_acquired(*m_device);
 
     const auto swapchain_images = m_swapchain.GetImages();
-    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
+    image_acquired.Wait(kWaitTimeout);
     SetPresentImageLayout(swapchain_images[image_index]);
 
     vkt::Fence present_fence(*m_device);
@@ -1428,7 +1430,7 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence) {
     present_fence_info.swapchainCount = 1;
     present_fence_info.pFences = &present_fence.handle();
 
-    m_default_queue->Present(m_swapchain, image_index, acquire_semaphore, &present_fence_info);
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore, &present_fence_info);
 
     // QueueWaitIdle (and also DeviceWaitIdle) can wait for present fences.
     m_default_queue->Wait();
@@ -1452,15 +1454,16 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence2) {
     vkt::Swapchain swapchain2 =
         CreateSwapchain(surface2.Handle(), VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
 
-    const vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Fence image_acquired(*m_device);
     const auto swapchain_images = m_swapchain.GetImages();
-    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
-
-    const vkt::Semaphore acquire_semaphore2(*m_device);
-    const auto swapchain_images2 = swapchain2.GetImages();
-    const uint32_t image_index2 = swapchain2.AcquireNextImage(acquire_semaphore2, kWaitTimeout);
-
+    const uint32_t image_index = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
+    image_acquired.Wait(kWaitTimeout);
     SetPresentImageLayout(swapchain_images[image_index]);
+
+    const vkt::Fence image_acquired2(*m_device);
+    const auto swapchain_images2 = swapchain2.GetImages();
+    const uint32_t image_index2 = swapchain2.AcquireNextImage(image_acquired2, kWaitTimeout);
+    image_acquired2.Wait(kWaitTimeout);
     SetPresentImageLayout(swapchain_images2[image_index2]);
 
     vkt::Fence present_fence(*m_device);
@@ -1470,12 +1473,9 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence2) {
     present_fence_info.swapchainCount = 2;
     present_fence_info.pFences = present_fences;
 
-    const VkSemaphore wait_semaphores[2] = {acquire_semaphore, acquire_semaphore2};
     const VkSwapchainKHR swapchains[2] = {m_swapchain, swapchain2};
     const uint32_t image_indices[2]{image_index, image_index2};
     VkPresentInfoKHR present = vku::InitStructHelper(&present_fence_info);
-    present.waitSemaphoreCount = 2;
-    present.pWaitSemaphores = wait_semaphores;
     present.swapchainCount = 2;
     present.pSwapchains = swapchains;
     present.pImageIndices = image_indices;
@@ -1503,29 +1503,22 @@ TEST_F(PositiveWsi, PresentFenceRetiresPresentSemaphores) {
     vkt::Swapchain swapchain2 =
         CreateSwapchain(surface2.Handle(), VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
 
-    vkt::Semaphore acquire_semaphore(*m_device);
+    vkt::Fence image_acquired(*m_device);
     const auto swapchain_images = m_swapchain.GetImages();
-    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
+    image_acquired.Wait(kWaitTimeout);
     SetPresentImageLayout(swapchain_images[image_index]);
 
-    vkt::Semaphore acquire_semaphore2(*m_device);
+    vkt::Fence image_acquired2(*m_device);
     const auto swapchain_images2 = swapchain2.GetImages();
-    const uint32_t image_index2 = swapchain2.AcquireNextImage(acquire_semaphore2, kWaitTimeout);
+    const uint32_t image_index2 = swapchain2.AcquireNextImage(image_acquired2, kWaitTimeout);
+    image_acquired2.Wait(kWaitTimeout);
     SetPresentImageLayout(swapchain_images2[image_index2]);
 
-    const VkSemaphore acquire_semaphores_handles[2] = {acquire_semaphore, acquire_semaphore2};
     const VkSwapchainKHR swapchain_handles[2] = {m_swapchain, swapchain2};
-    const VkPipelineStageFlags wait_stage_masks[2] = {VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
 
     vkt::Semaphore submit_semaphore(*m_device);
-
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.waitSemaphoreCount = 2;
-    submit_info.pWaitSemaphores = acquire_semaphores_handles;
-    submit_info.pWaitDstStageMask = wait_stage_masks;
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &submit_semaphore.handle();
-    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(submit_semaphore));
 
     vkt::Fence present_fence(*m_device);
     vkt::Fence present_fence2(*m_device);

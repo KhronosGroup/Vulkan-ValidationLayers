@@ -148,8 +148,9 @@ TEST_F(PositiveImageLayout, ImagelessTracking) {
 
     const std::vector<VkImage> swapchain_images = m_swapchain.GetImages();
 
-    vkt::Semaphore image_acquired(*m_device);
+    vkt::Fence image_acquired(*m_device);
     const uint32_t current_buffer = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
+    image_acquired.Wait(kWaitTimeout);
 
     vkt::ImageView imageView = image.CreateView();
     VkFramebufferAttachmentImageInfo framebufferAttachmentImageInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO_KHR,
@@ -189,7 +190,7 @@ TEST_F(PositiveImageLayout, ImagelessTracking) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    m_default_queue->Present(m_swapchain, current_buffer, image_acquired);
+    m_default_queue->Present(m_swapchain, current_buffer, vkt::no_semaphore);
     m_default_queue->Wait();
 }
 

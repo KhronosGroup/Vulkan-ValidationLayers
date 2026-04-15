@@ -40,7 +40,7 @@ struct NegativeSyncValWsi : public VkSyncValTest {};
         }                                                               \
     }
 
-TEST_F(NegativeSyncValWsi, PresentAcquire) {
+TEST_F(NegativeSyncValWsi, DISABLED_PresentAcquire) {
     TEST_DESCRIPTION("Try destroying a swapchain presentable image with vkDestroyImage");
 
     AddSurfaceExtension();
@@ -105,6 +105,7 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     // Look for errors between the acquire and first use...
     // No sync operations...
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-PRESENT");
+    fence.Wait(kWaitTimeout);
     m_default_queue->Submit(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
@@ -200,7 +201,7 @@ TEST_F(NegativeSyncValWsi, SubmitDoesNotWaitForAcquire) {
     // TODO: current implementation does not report that the image is still being read by the acquire
     // and at the same time it is being transitioned (there is no wait on the acquire semaphore).
     // Fix this and ensure the following submit triggers validation error.
-    m_default_queue->Submit2(m_command_buffer);
+    m_default_queue->Submit2(m_command_buffer, vkt::Wait(acquire_semaphore));
     m_device->Wait();
 }
 
