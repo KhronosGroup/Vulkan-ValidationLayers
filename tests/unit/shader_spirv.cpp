@@ -2303,41 +2303,6 @@ TEST_F(NegativeShaderSpirv, DynamicUniformIndex) {
     }
 }
 
-// TODO - https://github.com/KhronosGroup/SPIRV-Tools/issues/5468
-TEST_F(NegativeShaderSpirv, DISABLED_SpecConstantTextureIndex) {
-    TEST_DESCRIPTION("Apply spec constant to lower array size and detect array being oob");
-    RETURN_IF_SKIP(Init());
-    InitRenderTarget();
-
-    const char* fragment_source = R"glsl(
-        #version 400
-        #extension GL_ARB_separate_shader_objects : enable
-        #extension GL_ARB_shading_language_420pack : enable
-
-        layout (location = 0) out vec4 out_color;
-
-        layout (constant_id = 0) const int num_textures = 3;
-        layout (binding = 0) uniform sampler2D textures[num_textures];
-
-        void main() {
-            out_color = texture(textures[2], vec2(0.0));
-        }
-    )glsl";
-
-    uint32_t data = 2;  // will make textures[2] OOB
-    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
-    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
-    const VkShaderObj fs(*m_device, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
-                         &specialization_info);
-
-    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
-    CreatePipelineHelper pipe(*this);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL_GRAPHICS, nullptr}};
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(NegativeShaderSpirv, SpecConstantArraySize) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/SPIRV-Tools/issues/5921");
     RETURN_IF_SKIP(Init());
