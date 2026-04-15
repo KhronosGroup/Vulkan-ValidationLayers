@@ -2575,7 +2575,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
         }
     }
 
-    if (!decorations.IsDescriptorSet()) {
+    if (IsHeap()) {
         // Should only be possible with VK_EXT_descriptor_heap + Untyped Pointers
         assert(module_state.static_data_.has_descriptor_heap);
         // TODO - This works for GLSL, make sure this catches all uses

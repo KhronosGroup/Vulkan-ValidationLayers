@@ -112,6 +112,8 @@ class ValidationCache {
 
 void DumpSpirvToFile(const std::string &file_name, const uint32_t *spirv, size_t spirv_dwords_count);
 
+bool IsResourceVaribleInMapping(const VkDescriptorSetAndBindingMappingEXT& mapping,
+                                const spirv::ResourceInterfaceVariable& resource_variable);
 bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
                                 const spirv::ResourceInterfaceVariable& resource_variable);
 std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_type,

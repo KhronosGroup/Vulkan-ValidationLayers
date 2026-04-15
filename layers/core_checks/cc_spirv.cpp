@@ -3240,7 +3240,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
         // If not flag, this is just a "normal" vulkan 1.0 situtation
         if (stage_state.descriptor_heap_mode) {
             for (const spirv::ResourceInterfaceVariable& resource_variable : entrypoint.resource_interface_variables) {
-                if (resource_variable.decorations.IsDescriptorSet()) {
+                if (!resource_variable.IsHeap()) {
                     skip |= LogError(
                         vvl::GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::DescriptorHeapMapping_11312),
                         module_state.handle(), loc,
@@ -3271,18 +3271,14 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
     std::unordered_set<const spirv::ResourceInterfaceVariable*> unmapped_variables;
 
     for (const spirv::ResourceInterfaceVariable& resource_variable : entrypoint.resource_interface_variables) {
-        if (!resource_variable.decorations.IsDescriptorSet()) {
+        if (resource_variable.IsHeap()) {
             continue;
         }
-        const uint32_t descriptor_set = resource_variable.decorations.set;
-        const uint32_t descriptor_binding = resource_variable.decorations.binding;
 
         bool found_mapping = false;
         for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
             const auto& mapping = mapping_info->pMappings[i];
-            if (mapping.descriptorSet != descriptor_set || descriptor_binding < mapping.firstBinding ||
-                descriptor_binding >= mapping.firstBinding + uint64_t(mapping.bindingCount) ||
-                !ResourceTypeMatchesBinding(mapping.resourceMask, resource_variable)) {
+            if (!IsResourceVaribleInMapping(mapping, resource_variable)) {
                 continue;
             }
             used_mapping_set[i] = true;

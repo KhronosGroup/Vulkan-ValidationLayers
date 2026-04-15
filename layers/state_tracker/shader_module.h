@@ -115,7 +115,6 @@ struct DecorationSet : public DecorationBase {
     bool HasAnyBuiltIn() const;
     bool HasInMember(FlagBit flag_bit) const;
     bool AllMemberHave(FlagBit flag_bit) const;
-    bool IsDescriptorSet() const { return set != kInvalidValue && binding != kInvalidValue; }
 };
 
 // Tracking of OpExecutionMode / OpExecutionModeId values
