@@ -66,9 +66,6 @@ uint64_t vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission>&& submissions) 
     if (!submissions.empty()) {
         submissions.back().is_last_submission = true;
     }
-    for (auto& item : sub_states_) {
-        item.second->PreSubmit(submissions);
-    }
     uint64_t last_batch_seq = 0;
     for (QueueSubmission& submission : submissions) {
         for (CommandBufferSubmission& cb_submission : submission.cb_submissions) {
@@ -100,12 +97,16 @@ uint64_t vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission>&& submissions) 
                 submission.has_external_fence = true;
             }
         }
-        {
-            auto guard = Lock();
-            submissions_.emplace_back(std::move(submission));
-            if (!thread_) {
-                thread_ = std::make_unique<std::thread>(&Queue::ThreadFunc, this);
-            }
+    }
+    for (auto& item : sub_states_) {
+        item.second->PreSubmit(submissions);
+    }
+    {
+        auto guard = Lock();
+        submissions_.insert(submissions_.end(), std::make_move_iterator(submissions.begin()),
+                            std::make_move_iterator(submissions.end()));
+        if (!thread_) {
+            thread_ = std::make_unique<std::thread>(&Queue::ThreadFunc, this);
         }
     }
     return last_batch_seq;
