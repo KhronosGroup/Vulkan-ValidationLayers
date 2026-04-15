@@ -89,12 +89,10 @@ bool ShaderStageState::ResourceHeapIsUsed() {
     }
 
     for (const spirv::ResourceInterfaceVariable& resource_variable : entrypoint->resource_interface_variables) {
-        if (resource_variable.decorations.IsDescriptorSet() && !resource_variable.is_sampler && mapping_info) {
+        if (!resource_variable.IsHeap() && !resource_variable.is_sampler && mapping_info) {
             for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
                 const auto& mapping = mapping_info->pMappings[i];
-                if (mapping.descriptorSet == resource_variable.decorations.set &&
-                    mapping.firstBinding <= resource_variable.decorations.binding &&
-                    ResourceTypeMatchesBinding(mapping.resourceMask, resource_variable) &&
+                if (IsResourceVaribleInMapping(mapping, resource_variable) &&
                     IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT,
                                                VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
                                                VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
@@ -121,12 +119,10 @@ bool ShaderStageState::SamplerHeapIsUsed() {
     }
 
     for (const spirv::ResourceInterfaceVariable& resource_variable : entrypoint->resource_interface_variables) {
-        if (resource_variable.is_sampler && mapping_info) {
+        if (!resource_variable.IsHeap() && resource_variable.is_sampler && mapping_info) {
             for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
                 const auto& mapping = mapping_info->pMappings[i];
-                if (mapping.descriptorSet == resource_variable.decorations.set &&
-                    mapping.firstBinding <= resource_variable.decorations.binding &&
-                    ResourceTypeMatchesBinding(mapping.resourceMask, resource_variable) &&
+                if (IsResourceVaribleInMapping(mapping, resource_variable) &&
                     IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT,
                                                VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
                                                VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,

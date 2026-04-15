@@ -504,13 +504,10 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
             }
 
             const uint32_t var_set = resource_variable.decorations.set;
-            const uint32_t var_binding = resource_variable.decorations.binding;
 
             for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
                 const VkDescriptorSetAndBindingMappingEXT& mapping = mapping_info->pMappings[i];
-                if (mapping.descriptorSet != var_set || var_binding < mapping.firstBinding ||
-                    var_binding >= mapping.firstBinding + uint64_t(mapping.bindingCount) ||
-                    !ResourceTypeMatchesBinding(mapping.resourceMask, resource_variable)) {
+                if (!IsResourceVaribleInMapping(mapping, resource_variable)) {
                     continue;
                 }
                 mapping_info_map[var_set].emplace_back(MappingInfo{&mapping, &resource_variable, i});

@@ -161,6 +161,15 @@ void DumpSpirvToFile(const std::string& file_path, const uint32_t* spirv, size_t
     debug_file.write(reinterpret_cast<const char*>(spirv), spirv_dwords_count * sizeof(uint32_t));
 }
 
+bool IsResourceVaribleInMapping(const VkDescriptorSetAndBindingMappingEXT& mapping,
+                                const spirv::ResourceInterfaceVariable& resource_variable) {
+    const uint32_t descriptor_set = resource_variable.decorations.set;
+    const uint32_t descriptor_binding = resource_variable.decorations.binding;
+    const uint32_t last_binding = mapping.firstBinding + mapping.bindingCount;
+    return (mapping.descriptorSet == descriptor_set && descriptor_binding >= mapping.firstBinding &&
+            descriptor_binding < last_binding && ResourceTypeMatchesBinding(mapping.resourceMask, resource_variable));
+}
+
 bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
                                 const spirv::ResourceInterfaceVariable& resource_variable) {
     if (resource_type == VK_SPIRV_RESOURCE_TYPE_ALL_EXT) {
