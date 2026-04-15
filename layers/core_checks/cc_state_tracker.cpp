@@ -41,7 +41,7 @@ void CoreChecks::Created(vvl::CommandBuffer& cb) {
 }
 
 void CoreChecks::Created(vvl::Queue& queue) {
-    queue.SetSubState(container_type, std::make_unique<core::QueueSubState>(queue));
+    queue.SetSubState(container_type, std::make_unique<core::QueueSubState>(queue, submit_time_tracker));
 }
 
 namespace core {
@@ -1221,6 +1221,7 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
             CommandBufferSubState& cb_substate = SubState(*cb.cb);
             cb_substate.SubmitTimeValidate();
         }
+        submit_time_tracker->ProcessQueueSubmission(VkHandle(), submission);
     }
 }
 
