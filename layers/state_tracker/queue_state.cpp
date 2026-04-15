@@ -30,8 +30,8 @@ void vvl::QueueSubmission::BeginUse() {
     for (SemaphoreInfo& wait : wait_semaphores) {
         wait.semaphore->BeginUse();
     }
-    for (CommandBufferSubmission& cb_submission : cb_submissions) {
-        cb_submission.cb->BeginUse();
+    for (CommandBufferInfo& cb_info : cb_infos) {
+        cb_info.cb->BeginUse();
     }
     for (SemaphoreInfo& signal : signal_semaphores) {
         signal.semaphore->BeginUse();
@@ -48,8 +48,8 @@ void vvl::QueueSubmission::EndUse() {
     for (SemaphoreInfo& wait : wait_semaphores) {
         wait.semaphore->EndUse();
     }
-    for (CommandBufferSubmission& cb_submission : cb_submissions) {
-        cb_submission.cb->EndUse();
+    for (CommandBufferInfo& cb_info : cb_infos) {
+        cb_info.cb->EndUse();
     }
     for (SemaphoreInfo& signal : signal_semaphores) {
         signal.semaphore->EndUse();
@@ -68,14 +68,14 @@ uint64_t vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission>&& submissions) 
     }
     uint64_t last_batch_seq = 0;
     for (QueueSubmission& submission : submissions) {
-        for (CommandBufferSubmission& cb_submission : submission.cb_submissions) {
-            auto cb_guard = cb_submission.cb->WriteLock();
-            for (CommandBuffer* secondary_cmd_buffer : cb_submission.cb->linked_command_buffers) {
+        for (CommandBufferInfo& cb_info : submission.cb_infos) {
+            auto cb_guard = cb_info.cb->WriteLock();
+            for (CommandBuffer* secondary_cmd_buffer : cb_info.cb->linked_command_buffers) {
                 auto secondary_guard = secondary_cmd_buffer->WriteLock();
                 secondary_cmd_buffer->submit_count++;
             }
-            cb_submission.cb->submit_count++;
-            cb_submission.cb->SubmitTimeValidate(*this, submission.perf_submit_pass, submission.loc.Get());
+            cb_info.cb->submit_count++;
+            cb_info.cb->SubmitTimeValidate(*this, submission.perf_submit_pass, submission.loc.Get());
         }
         // seq_ is atomic so we don't need a lock until updating the deque below.
         // Note that this relies on the external synchonization requirements for the

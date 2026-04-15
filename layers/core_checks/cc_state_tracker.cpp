@@ -1216,7 +1216,7 @@ void CommandBufferSubState::SubmitTimeValidate() {
 
 void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
     for (const auto& submission : submissions) {
-        for (auto& cb : submission.cb_submissions) {
+        for (auto& cb : submission.cb_infos) {
             auto guard = cb.cb->ReadLock();
             CommandBufferSubState& cb_substate = SubState(*cb.cb);
             cb_substate.SubmitTimeValidate();
@@ -1234,11 +1234,11 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
                 first_queue_submission = false;
                 continue;
             }
-            for (const vvl::CommandBufferSubmission& cb_submission : queue_submission.cb_submissions) {
+            for (const vvl::CommandBufferInfo& cb_info : queue_submission.cb_infos) {
                 if (query_object.perf_pass != queue_submission.perf_submit_pass) {
                     continue;
                 }
-                if (cb_submission.cb->UpdatesQuery(query_object)) {
+                if (cb_info.cb->UpdatesQuery(query_object)) {
                     return true;
                 }
             }
@@ -1246,10 +1246,10 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
         return false;
     };
 
-    for (vvl::CommandBufferSubmission& cb_submission : submission.cb_submissions) {
-        CommandBufferSubState& cb_sub_state = SubState(*cb_submission.cb);
+    for (vvl::CommandBufferInfo& cb_info : submission.cb_infos) {
+        CommandBufferSubState& cb_sub_state = SubState(*cb_info.cb);
         auto cb_guard = cb_sub_state.base.WriteLock();
-        for (vvl::CommandBuffer* secondary_cmd_buffer : cb_submission.cb->linked_command_buffers) {
+        for (vvl::CommandBuffer* secondary_cmd_buffer : cb_info.cb->linked_command_buffers) {
             CommandBufferSubState& secondary_sub_state = SubState(*secondary_cmd_buffer);
             auto secondary_guard = secondary_sub_state.base.WriteLock();
             secondary_sub_state.Retire(submission.perf_submit_pass, is_query_updated_after);

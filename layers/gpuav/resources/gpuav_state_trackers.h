@@ -216,7 +216,7 @@ class QueueSubState : public vvl::QueueSubState {
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
     VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
     VkSemaphore barrier_sem_{VK_NULL_HANDLE};
-    std::deque<std::vector<vvl::CommandBufferSubmission>> retiring_;
+    std::deque<std::vector<vvl::CommandBufferInfo>> retiring_;
     const bool timeline_khr_;
 };
 
