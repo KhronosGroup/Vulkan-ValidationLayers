@@ -236,6 +236,10 @@ bool Context::ValidateStructPnext(const Location& loc, const void* next, size_t 
                                   const char* stype_vuid, const bool is_const_param) const {
     bool skip = false;
 
+    if (HasCustomStypeInfo()) {
+        return skip;
+    }
+
     if (next != nullptr) {
         vvl::unordered_set<const void*> cycle_check;
         vvl::unordered_set<VkStructureType, vvl::hash<int>> unique_stype_check;
@@ -246,7 +250,7 @@ bool Context::ValidateStructPnext(const Location& loc, const void* next, size_t 
             "header, in which case the use of %s is undefined and may not work correctly with validation enabled";
 
         const Location pNext_loc = loc.dot(Field::pNext);
-        if ((allowed_type_count == 0) && (GetCustomStypeInfo().empty())) {
+        if (allowed_type_count == 0) {
             std::string message = "must be NULL.\n";
             message += disclaimer;
             skip |=
@@ -268,40 +272,29 @@ bool Context::ValidateStructPnext(const Location& loc, const void* next, size_t 
                         unique_stype_check.insert(current->sType);
                     }
 
-                    // Search custom stype list -- if sType found, skip this entirely
-                    bool custom = false;
-                    for (const auto& item : GetCustomStypeInfo()) {
-                        if (item.first == current->sType) {
-                            custom = true;
-                            break;
+                    if (std::find(start, end, current->sType) == end) {
+                        const std::string type_name = string_VkStructureType(current->sType);
+                        if (type_name.compare("Unhandled VkStructureType") == 0) {
+                            std::string message = "chain includes a structure with unknown VkStructureType (%" PRIu32 ").\n%s\n";
+                            message += disclaimer;
+                            skip |= log.LogError(pnext_vuid, error_obj.handle, pNext_loc, message.c_str(), current->sType,
+                                                 PrintPNextChain(Struct::Empty, next).c_str(), header_version,
+                                                 pNext_loc.Fields().c_str());
+                        } else {
+                            std::string message = "chain includes a structure with unexpected VkStructureType %s.\n%s\n";
+                            message += disclaimer;
+                            skip |= log.LogError(pnext_vuid, error_obj.handle, pNext_loc, message.c_str(), type_name.c_str(),
+                                                 PrintPNextChain(Struct::Empty, next).c_str(), header_version,
+                                                 pNext_loc.Fields().c_str());
                         }
                     }
-                    if (!custom) {
-                        if (std::find(start, end, current->sType) == end) {
-                            const std::string type_name = string_VkStructureType(current->sType);
-                            if (type_name.compare("Unhandled VkStructureType") == 0) {
-                                std::string message =
-                                    "chain includes a structure with unknown VkStructureType (%" PRIu32 ").\n%s\n";
-                                message += disclaimer;
-                                skip |= log.LogError(pnext_vuid, error_obj.handle, pNext_loc, message.c_str(), current->sType,
-                                                     PrintPNextChain(Struct::Empty, next).c_str(), header_version,
-                                                     pNext_loc.Fields().c_str());
-                            } else {
-                                std::string message = "chain includes a structure with unexpected VkStructureType %s.\n%s\n";
-                                message += disclaimer;
-                                skip |= log.LogError(pnext_vuid, error_obj.handle, pNext_loc, message.c_str(), type_name.c_str(),
-                                                     PrintPNextChain(Struct::Empty, next).c_str(), header_version,
-                                                     pNext_loc.Fields().c_str());
-                            }
-                        }
-                        // Send Location without pNext field so the pNext() connector can be used
-                        skip |= ValidatePnextStructContents(loc, current, pnext_vuid, is_const_param);
-                        skip |= ValidatePnextStructExtension(loc, current);
-                        // pNext contents for vkGetPhysicalDeviceProperties2KHR() is no longer checked.
-                        if (loc.function == Func::vkGetPhysicalDeviceFeatures2 ||
-                            loc.function == Func::vkGetPhysicalDeviceFeatures2KHR || loc.function == Func::vkCreateDevice) {
-                            skip |= ValidatePnextFeatureStructContents(loc, current, pnext_vuid, is_const_param);
-                        }
+                    // Send Location without pNext field so the pNext() connector can be used
+                    skip |= ValidatePnextStructContents(loc, current, pnext_vuid, is_const_param);
+                    skip |= ValidatePnextStructExtension(loc, current);
+                    // pNext contents for vkGetPhysicalDeviceProperties2KHR() is no longer checked.
+                    if (loc.function == Func::vkGetPhysicalDeviceFeatures2 ||
+                        loc.function == Func::vkGetPhysicalDeviceFeatures2KHR || loc.function == Func::vkCreateDevice) {
+                        skip |= ValidatePnextFeatureStructContents(loc, current, pnext_vuid, is_const_param);
                     }
                 }
                 current = reinterpret_cast<const VkBaseOutStructure*>(current->pNext);
