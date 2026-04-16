@@ -916,10 +916,10 @@ static const char* GetDefaultPrefix() {
 }
 #endif  // !defined(BUILD_SELF_VVL)
 
-// Global list of sType,size identifiers
-std::vector<std::pair<uint32_t, uint32_t>>& GetCustomStypeInfo() {
-    static std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
-    return custom_stype_info;
+// This is a (less than desired) way to allow Statless validation tracking a setting
+bool& HasCustomStypeInfo() {
+    static bool allow_custom_types = false;
+    return allow_custom_types;
 }
 
 #if !defined(BUILD_SELF_VVL)
@@ -961,7 +961,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
     std::vector<std::string> setting_warnings;
 
     // If not cleared, garbage has been seen in some Android run effecting the error message
-    GetCustomStypeInfo().clear();
+    HasCustomStypeInfo() = false;
 
     VkuLayerSettingSet layer_setting_set = VK_NULL_HANDLE;
     auto layer_setting_create_info = vkuFindLayerSettingsCreateInfo(settings_data->create_info);
@@ -1007,7 +1007,13 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_CUSTOM_STYPE_LIST)) {
-        vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_CUSTOM_STYPE_LIST, GetCustomStypeInfo());
+        // We use to support this, but feel no one is using this
+        // As a transition, we will allow to be used and just skip the 1 VU check if anything is set
+        // (added after SDK 1.4.341)
+        setting_warnings.emplace_back(
+            "VK_LAYER_CUSTOM_STYPE_LIST is set, but currently the feature seems unused, we plan to drop this support, so please "
+            "report if seeing this warning");
+        HasCustomStypeInfo() = true;
     }
 
     GpuAVSettings& gpuav_settings = *settings_data->gpuav_settings;
