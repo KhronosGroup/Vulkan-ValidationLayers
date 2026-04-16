@@ -20,6 +20,7 @@
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
 #include "state_tracker/queue_state.h"
+#include "generated/dispatch_functions.h"
 
 bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkImage* pImage,
@@ -265,7 +266,27 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
     auto last_usage = sub_state.UpdateUsage(array_layer, mip_level, usage, queue_family);
 
     // Concurrent sharing usage of image with exclusive sharing mode
-    if (image_state.GetSharingMode() == VK_SHARING_MODE_EXCLUSIVE && last_usage.queue_family_index != queue_family) {
+    bool qfot_required = true;
+    if (enabled_features.maintenance9) {
+        if (image_state.GetTiling() == VK_IMAGE_TILING_LINEAR) {
+            qfot_required = false;
+        } else if ((image_state.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+                                         VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
+                                         VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT |
+                                         VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) == 0) {
+            // The list of image usages not allowed comes from
+            // https://registry.khronos.org/vulkan/specs/latest/man/html/VkSharingMode.html
+            VkQueueFamilyOwnershipTransferPropertiesKHR qfot_props = vku::InitStructHelper();
+            uint32_t qf_count = last_usage.queue_family_index + 1;
+            std::vector<VkQueueFamilyProperties2> qf_props(qf_count);
+            qf_props.back().pNext = &qfot_props;
+            DispatchGetPhysicalDeviceQueueFamilyProperties2(cbs.dev_data.physical_device, &qf_count, qf_props.data());
+            qfot_required = (qfot_props.optimalImageTransferToQueueFamilies & (1 << last_usage.queue_family_index)) == 0;
+        }
+    }
+
+    if (image_state.GetSharingMode() == VK_SHARING_MODE_EXCLUSIVE && last_usage.queue_family_index != queue_family &&
+        qfot_required) {
         // if UNDEFINED then first use/acquisition of subresource
         if (last_usage.type != IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED) {
             // If usage might read from the subresource, as contents are undefined
