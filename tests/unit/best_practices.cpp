@@ -2056,6 +2056,56 @@ TEST_F(VkBestPracticesLayerTest, UnneededQueueFamilyOwnershipTransfer) {
     transfer_cb.End();
 }
 
+TEST_F(VkBestPracticesLayerTest, UnneededQueueFamilyOwnershipTransferImage) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance9);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+
+    std::optional<uint32_t> transfer_only_family = m_device->TransferOnlyQueueFamily();
+    if (!transfer_only_family.has_value()) {
+        GTEST_SKIP() << "Transfer-only queue family is required";
+    }
+
+    uint32_t qf_count = m_device->physical_device_.queue_properties_.size();
+    std::vector<VkQueueFamilyOwnershipTransferPropertiesKHR> qfot_props(qf_count);
+    std::vector<VkQueueFamilyProperties2> qf_props(qf_count);
+    for (uint32_t i = 0; i < qf_count; i++) {
+        qfot_props[i] = vku::InitStructHelper();
+        qf_props[i] = vku::InitStructHelper(&qfot_props[i]);
+    }
+    vk::GetPhysicalDeviceQueueFamilyProperties2(gpu_, &qf_count, qf_props.data());
+
+    if ((qfot_props[transfer_only_family.value()].optimalImageTransferToQueueFamilies & (1 << transfer_only_family.value())) == 0) {
+        GTEST_SKIP() << "optimalImageTransferToQueueFamilies does not include transfer queue";
+    }
+
+    vkt::CommandPool transfer_pool(*m_device, transfer_only_family.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandBuffer transfer_cb(*m_device, transfer_pool);
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+
+    VkImageMemoryBarrier2 acquire_barrier = vku::InitStructHelper();
+    acquire_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    acquire_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    acquire_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    acquire_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    acquire_barrier.srcQueueFamilyIndex = m_default_queue->family_index;
+    acquire_barrier.dstQueueFamilyIndex = transfer_only_family.value();
+    acquire_barrier.image = image;
+    acquire_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    transfer_cb.Begin();
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-PipelineBarrier-unneeded-QFOT");
+    transfer_cb.Barrier(acquire_barrier);
+    m_errorMonitor->VerifyFound();
+    transfer_cb.End();
+}
+
 TEST_F(VkBestPracticesLayerTest, BadDestroy) {
     TEST_DESCRIPTION(
         "In PreCallRecordDestroyDevice, make sure CommandBufferSubState is destroyed before destroying device state and validation "
