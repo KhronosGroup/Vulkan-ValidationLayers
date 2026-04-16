@@ -1002,25 +1002,25 @@ std::string CreateActionVuid(vvl::Func function, const ActionVUID id) {
         // ### VUID-vkCmdDraw-dynamicPrimitiveTopologyUnrestricted-07500
         case ActionVUID::PRIMITIVE_TOPOLOGY_CLASS_07500: suffix = "dynamicPrimitiveTopologyUnrestricted-07500"; break;
         // ### VUID-vkCmdDraw-primitiveTopology-10286
-        case ActionVUID::PRIMITIVE_TOPOLOGY_10286: suffix = "VUID-vkCmdDraw-primitiveTopology-10286"; break;
+        case ActionVUID::PRIMITIVE_TOPOLOGY_10286: suffix = "primitiveTopology-10286"; break;
         // ### VUID-vkCmdDraw-primitiveTopology-10747
-        case ActionVUID::PRIMITIVE_TOPOLOGY_10747: suffix = "VUID-vkCmdDraw-primitiveTopology-10747"; break;
+        case ActionVUID::PRIMITIVE_TOPOLOGY_10747: suffix = "primitiveTopology-10747"; break;
         // ### VUID-vkCmdDraw-primitiveTopology-10748
-        case ActionVUID::PRIMITIVE_TOPOLOGY_10748: suffix = "VUID-vkCmdDraw-primitiveTopology-10748"; break;
+        case ActionVUID::PRIMITIVE_TOPOLOGY_10748: suffix = "primitiveTopology-10748"; break;
         // ### VUID-vkCmdDraw-None-09637
-        case ActionVUID::PRIMITIVE_RESTART_09637: suffix = "VUID-vkCmdDraw-None-09637"; break;
+        case ActionVUID::PRIMITIVE_RESTART_09637: suffix = "None-09637"; break;
         // ### VUID-vkCmdDraw-None-10909
-        case ActionVUID::PRIMITIVE_RESTART_10909: suffix = "VUID-vkCmdDraw-None-10909"; break;
+        case ActionVUID::PRIMITIVE_RESTART_10909: suffix = "None-10909"; break;
         // ### VUID-vkCmdDraw-Input-08734
-        case ActionVUID::VERTEX_INPUT_08734: suffix = "VUID-vkCmdDraw-Input-08734"; break;
+        case ActionVUID::VERTEX_INPUT_08734: suffix = "Input-08734"; break;
         // ### VUID-vkCmdDraw-format-08936
-        case ActionVUID::VERTEX_INPUT_FORMAT_08936: suffix = "VUID-vkCmdDraw-format-08936"; break;
+        case ActionVUID::VERTEX_INPUT_FORMAT_08936: suffix = "format-08936"; break;
         // ### VUID-vkCmdDraw-format-08937
-        case ActionVUID::VERTEX_INPUT_FORMAT_08937: suffix = "VUID-vkCmdDraw-format-08937"; break;
+        case ActionVUID::VERTEX_INPUT_FORMAT_08937: suffix = "format-08937"; break;
         // ### VUID-vkCmdDraw-None-09203
-        case ActionVUID::VERTEX_INPUT_FORMAT_09203: suffix = "VUID-vkCmdDraw-None-09203"; break;
+        case ActionVUID::VERTEX_INPUT_FORMAT_09203: suffix = "None-09203"; break;
         // ### VUID-vkCmdDraw-Input-07939
-        case ActionVUID::VERTEX_INPUT_FORMAT_07939: suffix = "VUID-vkCmdDraw-Input-07939"; break;
+        case ActionVUID::VERTEX_INPUT_FORMAT_07939: suffix = "Input-07939"; break;
         // ### VUID-vkCmdDraw-commandBuffer-04617
         case ActionVUID::RAY_QUERY_04617: suffix = "commandBuffer-04617"; break;
         // ### VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688
