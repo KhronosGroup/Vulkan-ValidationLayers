@@ -180,17 +180,20 @@ bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT) != 0 && opcode == spv::OpTypeSampler) {
         return true;
     }
-    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT) != 0 && opcode == spv::OpTypeImage &&
-        resource_variable.base_type.Word(7) == 1) {
-        return true;
-    }
-    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT) != 0 && opcode == spv::OpTypeImage &&
-        resource_variable.base_type.Word(7) == 2 && resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
-        return true;
-    }
-    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT) != 0 && opcode == spv::OpTypeImage &&
-        resource_variable.base_type.Word(7) == 2 && !resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
-        return true;
+    if (opcode == spv::OpTypeImage) {
+        if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT) != 0 && resource_variable.base_type.Word(7) == 1) {
+            return true;
+        }
+        const bool nonwritable = resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit) ||
+                                 resource_variable.decorations.HasInMember(spirv::DecorationSet::nonwritable_bit);
+        if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT) != 0 && resource_variable.base_type.Word(7) == 2 &&
+            nonwritable) {
+            return true;
+        }
+        if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT) != 0 && resource_variable.base_type.Word(7) == 2 &&
+            !nonwritable) {
+            return true;
+        }
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT) != 0 && resource_variable.is_type_sampled_image) {
         return true;
@@ -198,13 +201,15 @@ bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT) != 0 && resource_variable.is_uniform_buffer) {
         return true;
     }
-    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT) != 0 && resource_variable.is_storage_buffer &&
-        resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
-        return true;
-    }
-    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT) != 0 && resource_variable.is_storage_buffer &&
-        !resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
-        return true;
+    if (resource_variable.is_storage_buffer) {
+        const bool nonwritable = resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit) ||
+                                 resource_variable.decorations.HasInMember(spirv::DecorationSet::nonwritable_bit);
+        if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT) != 0 && nonwritable) {
+            return true;
+        }
+        if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT) != 0 && !nonwritable) {
+            return true;
+        }
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT) != 0 &&
         opcode == spv::OpTypeAccelerationStructureKHR) {
