@@ -1772,9 +1772,7 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
     init_pipe.descriptor_set_.WriteDescriptorBufferInfo(0, ssbo_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     init_pipe.descriptor_set_.UpdateDescriptorSets();
 
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, kHostVisibleMemProps, &allocate_flag_info);
+    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
 
     VkDeviceSize pre_process_size = 0;
     {
@@ -1788,10 +1786,8 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
     }
 
     VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
-    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
-    buffer_ci.size = pre_process_size;
-    vkt::Buffer pre_process_buffer(*m_device, buffer_ci, 0, &allocate_flag_info);
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT;
+    vkt::Buffer pre_process_buffer(*m_device, pre_process_size, buffer_usage_flags, vkt::device_address);
 
     uint32_t* block_buffer_ptr = (uint32_t*)block_buffer.Memory().Map();
     block_buffer_ptr[0] = 2;  // pick pipeline 2
