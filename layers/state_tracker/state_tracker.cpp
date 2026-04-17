@@ -5667,8 +5667,9 @@ void DeviceState::PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
         TrackDeviceAddressRange(*cb_state, pGeneratedCommandsInfo->sequenceCountAddress, sizeof(uint32_t),
                                 VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT_KHR);
     }
-    // TODO - Track indirectAddress as well, need usage flag
-    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4780
+
+    TrackDeviceAddressRange(*cb_state, pGeneratedCommandsInfo->indirectAddress, pGeneratedCommandsInfo->indirectAddressSize,
+                            VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT_KHR);
 }
 
 void DeviceState::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
