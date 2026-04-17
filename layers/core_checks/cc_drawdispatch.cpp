@@ -155,12 +155,12 @@ bool CoreChecks::ValidateVTGShaderStages(const LastBound& last_bound_state, cons
 
     if (last_bound_state.pipeline_state &&
         last_bound_state.pipeline_state->active_shaders & (VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
-        skip |= LogError(
-            CreateActionVuid(loc.function, vvl::ActionVUID::INVALID_MESH_SHADER_STAGES_06481),
-            last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-            "The bound graphics pipeline must not have been created with "
-            "VK_SHADER_STAGE_TASK_BIT_EXT or VK_SHADER_STAGE_MESH_BIT_EXT. Active shader stages on the bound pipeline are %s.",
-            string_VkShaderStageFlags(last_bound_state.pipeline_state->active_shaders).c_str());
+        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::INVALID_MESH_SHADER_STAGES_06481),
+                         last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                         "The bound graphics pipeline must not have been created with "
+                         "VK_SHADER_STAGE_TASK_BIT_EXT or VK_SHADER_STAGE_MESH_BIT_EXT (you need to use something like "
+                         "vkCmdDrawMeshTasksEXT instead).\nActive shader stages on the bound pipeline are %s.",
+                         string_VkShaderStageFlags(last_bound_state.pipeline_state->active_shaders).c_str());
     }
     return skip;
 }
