@@ -12,6 +12,7 @@
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include "shader_helper.h"
+#include "shader_templates.h"
 #include "test_framework.h"
 #include "utils/math_utils.h"
 #include "../framework/layer_validation_tests.h"
@@ -3771,4 +3772,76 @@ TEST_F(PositiveDescriptorHeap, MappingSourceWithoutHeap) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveDescriptorHeap, ReadOnlyStorageBufferHlsl) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12100");
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    InitRenderTarget();
+
+    // https://godbolt.org/z/czcfrzsYs (with only interface)
+    const char* fs_shader = R"asm(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %PSMain "main" %out_var_SV_Target0 %materials
+               OpExecutionMode %PSMain OriginUpperLeft
+               OpDecorate %out_var_SV_Target0 Location 0
+               OpDecorate %materials DescriptorSet 0
+               OpDecorate %materials Binding 0
+               OpMemberDecorate %BaseColor 0 Offset 0
+               OpMemberDecorate %BaseColor 1 Offset 16
+               OpMemberDecorate %Normal 0 Offset 0
+               OpMemberDecorate %Normal 1 Offset 4
+               OpMemberDecorate %Material 0 Offset 0
+               OpMemberDecorate %Material 1 Offset 32
+               OpDecorate %_runtimearr_Material ArrayStride 48
+               OpMemberDecorate %type_StructuredBuffer_Material 0 Offset 0
+               OpMemberDecorate %type_StructuredBuffer_Material 0 NonWritable
+               OpDecorate %type_StructuredBuffer_Material Block
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+       %uint = OpTypeInt 32 0
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+  %BaseColor = OpTypeStruct %v4float %int
+     %Normal = OpTypeStruct %int %float
+   %Material = OpTypeStruct %BaseColor %Normal
+%_runtimearr_Material = OpTypeRuntimeArray %Material
+%type_StructuredBuffer_Material = OpTypeStruct %_runtimearr_Material
+%_ptr_StorageBuffer_type_StructuredBuffer_Material = OpTypePointer StorageBuffer %type_StructuredBuffer_Material
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+       %void = OpTypeVoid
+         %21 = OpTypeFunction %void
+%_ptr_StorageBuffer_Material = OpTypePointer StorageBuffer %Material
+  %materials = OpVariable %_ptr_StorageBuffer_type_StructuredBuffer_Material StorageBuffer
+%out_var_SV_Target0 = OpVariable %_ptr_Output_v4float Output
+     %PSMain = OpFunction %void None %21
+         %23 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )asm";
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.resourceMask = VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    VkShaderObj vs_module = VkShaderObj(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs_module = VkShaderObj(*m_device, fs_shader, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
+
+    VkPipelineShaderStageCreateInfo stages[2] = {vs_module.GetStageCreateInfo(), fs_module.GetStageCreateInfo()};
+    stages[1].pNext = &mapping_info;
+
+    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.gp_ci_.layout = VK_NULL_HANDLE;
+    pipe.gp_ci_.stageCount = 2;
+    pipe.gp_ci_.pStages = stages;
+    pipe.CreateGraphicsPipeline(false);
 }
