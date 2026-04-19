@@ -1116,6 +1116,7 @@ VkResult DispatchDevice::CreateGraphicsPipelines(VkDevice device, VkPipelineCach
             }
             if (pCreateInfos[idx0].pStages) {
                 for (uint32_t idx1 = 0; idx1 < pCreateInfos[idx0].stageCount; ++idx1) {
+                    UnwrapPnextChainHandles(local_pCreateInfos[idx0].pStages[idx1].pNext);
                     if (pCreateInfos[idx0].pStages[idx1].module) {
                         local_pCreateInfos[idx0].pStages[idx1].module = Unwrap(pCreateInfos[idx0].pStages[idx1].module);
                     }
