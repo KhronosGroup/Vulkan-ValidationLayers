@@ -1088,6 +1088,9 @@ TEST_F(PositiveSyncValWsi, ConcurrentPresentAndSubmit) {
     const auto swapchain_images = m_swapchain.GetImages();
     const int N = 500;
 
+    std::atomic<bool> bailout{false};
+    monitor_.SetBailout(&bailout);
+
     // QueueSubmit on the second queue and QueuePresent on the main queue run in parallel.
     // It is a valid setup because submits to different queues do not require synchronization.
     std::thread thread([&] {
@@ -1096,6 +1099,9 @@ TEST_F(PositiveSyncValWsi, ConcurrentPresentAndSubmit) {
             m_second_queue->Submit(vkt::no_cmd, fence);
             fence.Wait(kWaitTimeout);
             fence.Reset();
+            if (bailout.load()) {
+                break;
+            }
         }
     });
     {
@@ -1104,7 +1110,11 @@ TEST_F(PositiveSyncValWsi, ConcurrentPresentAndSubmit) {
             const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
             m_default_queue->Present(m_swapchain, image_index, acquire_semaphore);
             m_default_queue->Wait();
+            if (bailout.load()) {
+                break;
+            }
         }
     }
     thread.join();
+    monitor_.SetBailout(nullptr);
 }
