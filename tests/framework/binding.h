@@ -1411,12 +1411,14 @@ class Swapchain : public internal::NonDispHandle<VkSwapchainKHR> {
     std::vector<VkImage> GetImages() const;
 
     // Each command buffer records layout transition to present layout for corresponding swapchain image
-    std::vector<vkt::CommandBuffer> RecordTransitionToPresentLayout(const vkt::Device& device,
-                                                                    const vkt::CommandPool& command_pool) const;
+    std::vector<vkt::CommandBuffer> RecordTransitionToPresentLayout(
+        const vkt::Device& device, const vkt::CommandPool& command_pool,
+        VkImageLayout present_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) const;
 
     // Return true if *all* swapchain images were transitioned.
     // We don't have a guarantee its always possible because the ordering of the acquired images is unspecified
-    bool TryTransitionToPresentLayout(const vkt::Device& device, vkt::Queue& queue, const vkt::CommandPool& command_pool);
+    bool TryTransitionToPresentLayout(const vkt::Device& device, vkt::Queue& queue, const vkt::CommandPool& command_pool,
+                                      VkImageLayout present_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     uint32_t AcquireNextImage(const Semaphore &image_acquired, uint64_t timeout, VkResult *result = nullptr);
     uint32_t AcquireNextImage(const Fence &image_acquired, uint64_t timeout, VkResult *result = nullptr);

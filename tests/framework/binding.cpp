@@ -2356,22 +2356,24 @@ std::vector<VkImage> Swapchain::GetImages() const {
 }
 
 std::vector<vkt::CommandBuffer> Swapchain::RecordTransitionToPresentLayout(const vkt::Device& device,
-                                                                           const vkt::CommandPool& command_pool) const {
+                                                                           const vkt::CommandPool& command_pool,
+                                                                           VkImageLayout present_layout) const {
     const std::vector<VkImage> swapchain_images = GetImages();
     std::vector<vkt::CommandBuffer> command_buffers;
     command_buffers.reserve(swapchain_images.size());
     for (size_t i = 0; i < swapchain_images.size(); i++) {
         auto& cb = command_buffers.emplace_back(device, command_pool);
         cb.Begin();
-        cb.TransitionLayout(swapchain_images[i], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        cb.TransitionLayout(swapchain_images[i], VK_IMAGE_LAYOUT_UNDEFINED, present_layout);
         cb.End();
     }
     return command_buffers;
 }
 
-bool Swapchain::TryTransitionToPresentLayout(const vkt::Device& device, vkt::Queue& queue, const vkt::CommandPool& command_pool) {
+bool Swapchain::TryTransitionToPresentLayout(const vkt::Device& device, vkt::Queue& queue, const vkt::CommandPool& command_pool,
+                                             VkImageLayout present_layout) {
     const std::vector<VkImage> swapchain_images = GetImages();
-    auto transition_to_present_cbs = RecordTransitionToPresentLayout(device, command_pool);
+    auto transition_to_present_cbs = RecordTransitionToPresentLayout(device, command_pool, present_layout);
     std::vector<bool> is_transitioned(swapchain_images.size(), false);
     vkt::Fence fence(device);
 

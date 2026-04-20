@@ -10,6 +10,7 @@
  */
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 #include <thread>
 
 std::optional<VkPhysicalDeviceGroupProperties> WsiTest::FindPhysicalDeviceGroup() {
@@ -3368,4 +3369,80 @@ TEST_F(PositiveWsi, MultipleCreateDisplay) {
     display_surface_info.displayMode = display_mode[0];
     vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
     vk::DestroySurfaceKHR(instance(), surface, nullptr);
+}
+
+TEST_F(PositiveWsi, SharedPresentLayout) {
+    TEST_DESCRIPTION("Use single SHARED_PRESENT layout both for rendering and presentation");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    if (!m_swapchain.TryTransitionToPresentLayout(*m_device, *m_default_queue, m_command_pool,
+                                                  VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR)) {
+        GTEST_SKIP() << "Failed to pre-transition swapchain images";
+    }
+    const auto swapchain_images = m_swapchain.GetImages();
+
+    const vkt::Fence fence(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(m_surface_formats[0].format, VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR,
+                                         VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR);
+    render_pass.CreateRenderPass();
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.image = swapchain_images[image_index];
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = m_surface_formats[0].format;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkt::ImageView image_view(*m_device, image_view_ci);
+
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 1, 1);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 1, 1);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveWsi, SharedPresentLayout2) {
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+
+    const vkt::Fence fence(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(m_surface_formats[0].format, VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR,
+                                         VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR);
+    render_pass.CreateRenderPass();
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.image = swapchain_images[image_index];
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = m_surface_formats[0].format;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkt::ImageView image_view(*m_device, image_view_ci);
+
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 1, 1);
+
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR);
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }

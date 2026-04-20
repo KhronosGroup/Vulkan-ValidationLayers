@@ -14,6 +14,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 #include "containers/container_utils.h"
 #include "generated/vk_function_pointers.h"
 #include <algorithm>
@@ -6927,4 +6928,55 @@ TEST_F(NegativeWsi, TransitionImageMissingAcquireSemaphoreOrFenceWait) {
     m_errorMonitor->SetDesiredError("UNASSIGNED-non-acquired-swapchain-image-used");
     m_default_queue->Submit(m_command_buffer);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, SharedPresentLayout) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7897
+    TEST_DESCRIPTION("SHARED_PRESENT layout is not special and must match expected layout");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    // Pre-transition swapchain image to SHARED_PRESENT layout.
+    // We are allowed to use SHARED_PRESENT both for present and rendering, but layout matching
+    // rules stay the same. If API specifies expected layout then it must match current layout
+    // during execution on device. If we are going to use SHARED_PRESENT layout for all usages,
+    // then all APIs must specify SHARED_PRESENT as expected layout.
+    if (!m_swapchain.TryTransitionToPresentLayout(*m_device, *m_default_queue, m_command_pool,
+                                                  VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR)) {
+        GTEST_SKIP() << "Failed to pre-transition swapchain images";
+    }
+    const auto swapchain_images = m_swapchain.GetImages();
+
+    const vkt::Fence fence(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+
+    // Render pass specifies COLOR_ATTACHMENT_OPTIMAL that does not match SHARED_PRESENT
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(m_surface_formats[0].format, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    render_pass.CreateRenderPass();
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.image = swapchain_images[image_index];
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = m_surface_formats[0].format;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkt::ImageView image_view(*m_device, image_view_ci);
+
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 1, 1);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 1, 1);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    monitor_.SetDesiredError("VUID-vkCmdDraw-None-09600");
+    m_default_queue->Submit(m_command_buffer);
+    monitor_.VerifyFound();
+    m_default_queue->Wait();
 }
