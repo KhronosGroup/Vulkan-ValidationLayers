@@ -3858,7 +3858,9 @@ TEST_F(PositiveDescriptorHeap, YcbcrImage) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
-    CreateResourceHeap(heap_props.imageDescriptorSize);
+    // Handle if driver has combinedImageSamplerDescriptorCount of 4 (the most it should ever possibily be)
+    const size_t ycbcr_descriptor_size = heap_props.imageDescriptorSize * 4;
+    CreateResourceHeap(ycbcr_descriptor_size);
 
     auto image_ci =
         vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -3885,7 +3887,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImage) {
 
     VkHostAddressRangeEXT resource_host;
     resource_host.address = resource_heap_data_;
-    resource_host.size = static_cast<size_t>(heap_props.imageDescriptorSize);
+    resource_host.size = ycbcr_descriptor_size;
 
     VkImageViewCreateInfo view_info = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_COLOR_BIT);
     view_info.pNext = &ycbcr_conversion_info;
@@ -3936,7 +3938,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImage) {
     mapping_info.pMappings = &mapping;
 
     VkPipelineShaderStageCreateInfo stages[2] = {vs_module.GetStageCreateInfo(), fs_module.GetStageCreateInfo()};
-    // stages[0].pNext = &mapping_info;
+    stages[0].pNext = &mapping_info;
     stages[1].pNext = &mapping_info;
 
     CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);

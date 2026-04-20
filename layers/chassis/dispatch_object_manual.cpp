@@ -18,8 +18,10 @@
  * limitations under the License.
  ****************************************************************************/
 
+#include <vulkan/vulkan_core.h>
 #include "chassis/dispatch_object.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
+#include "containers/custom_containers.h"
 #include "generated/vk_extension_helper.h"
 #include "state_tracker/pipeline_state.h"
 #include "containers/small_vector.h"
@@ -1114,9 +1116,47 @@ VkResult DispatchDevice::CreateGraphicsPipelines(VkDevice device, VkPipelineCach
             if (pCreateInfos[idx0].layout) {
                 local_pCreateInfos[idx0].layout = Unwrap(pCreateInfos[idx0].layout);
             }
+
+            // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12108
+            // We can have a case where 2 chained pNext can share the same handle and don't have a local copy
+            // Simple answer is to just track as a set, might be a better way to do
+            vvl::unordered_set<VkSamplerYcbcrConversion> conversions;
+
             if (pCreateInfos[idx0].pStages) {
                 for (uint32_t idx1 = 0; idx1 < pCreateInfos[idx0].stageCount; ++idx1) {
-                    UnwrapPnextChainHandles(local_pCreateInfos[idx0].pStages[idx1].pNext);
+                    if (auto* mapping_info = vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(
+                            local_pCreateInfos[idx0].pStages[idx1].pNext)) {
+                        for (uint32_t idx2 = 0; idx2 < mapping_info->mappingCount; ++idx2) {
+                            const auto& mapping = mapping_info->pMappings[idx2];
+                            const void* embedded_sampler_pNext = nullptr;
+                            if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT &&
+                                mapping.sourceData.constantOffset.pEmbeddedSampler) {
+                                embedded_sampler_pNext = mapping.sourceData.constantOffset.pEmbeddedSampler->pNext;
+                            } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT &&
+                                       mapping.sourceData.pushIndex.pEmbeddedSampler) {
+                                embedded_sampler_pNext = mapping.sourceData.pushIndex.pEmbeddedSampler->pNext;
+                            } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT &&
+                                       mapping.sourceData.indirectIndex.pEmbeddedSampler) {
+                                embedded_sampler_pNext = mapping.sourceData.indirectIndex.pEmbeddedSampler->pNext;
+                            } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT &&
+                                       mapping.sourceData.indirectIndexArray.pEmbeddedSampler) {
+                                embedded_sampler_pNext = mapping.sourceData.indirectIndexArray.pEmbeddedSampler->pNext;
+                            } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT &&
+                                       mapping.sourceData.shaderRecordIndex.pEmbeddedSampler) {
+                                embedded_sampler_pNext = mapping.sourceData.shaderRecordIndex.pEmbeddedSampler->pNext;
+                            }
+
+                            if (auto* sampler_conversion_info =
+                                    vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(embedded_sampler_pNext)) {
+                                if (sampler_conversion_info->conversion &&
+                                    !conversions.insert(sampler_conversion_info->conversion).second) {
+                                    const_cast<VkSamplerYcbcrConversionInfo*>(sampler_conversion_info)->conversion =
+                                        Unwrap(sampler_conversion_info->conversion);
+                                }
+                            }
+                        }
+                    }
+
                     if (pCreateInfos[idx0].pStages[idx1].module) {
                         local_pCreateInfos[idx0].pStages[idx1].module = Unwrap(pCreateInfos[idx0].pStages[idx1].module);
                     }
