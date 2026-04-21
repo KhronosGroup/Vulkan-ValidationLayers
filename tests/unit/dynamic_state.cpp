@@ -2244,6 +2244,7 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
                                                                   binding);
         for (uint32_t i = 0; i < bindings.size(); ++i) bindings[i].binding = i;
         m_errorMonitor->SetDesiredError("VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791");
+        m_errorMonitor->SetDesiredError("VUID-VkVertexInputBindingDescription2EXT-binding-04796");
         vk::CmdSetVertexInputEXT(m_command_buffer, m_device->Physical().limits_.maxVertexInputBindings + 1u, bindings.data(), 0,
                                  nullptr);
         m_errorMonitor->VerifyFound();
@@ -2296,7 +2297,7 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
     {
         VkVertexInputBindingDescription2EXT binding = {VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT,
                                                        nullptr,
-                                                       m_device->Physical().limits_.maxVertexInputBindings + 1u,
+                                                       m_device->Physical().limits_.maxVertexInputBindings,
                                                        0,
                                                        VK_VERTEX_INPUT_RATE_VERTEX,
                                                        1};
