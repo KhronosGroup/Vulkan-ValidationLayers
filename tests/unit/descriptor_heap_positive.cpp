@@ -3870,17 +3870,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImage) {
     }
     vkt::Image image(*m_device, image_ci);
 
-    VkSamplerYcbcrConversionCreateInfo ycbcr_conversion_ci = vku::InitStructHelper();
-    ycbcr_conversion_ci.format = format;
-    ycbcr_conversion_ci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
-    ycbcr_conversion_ci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
-    ycbcr_conversion_ci.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-                                      VK_COMPONENT_SWIZZLE_IDENTITY};
-    ycbcr_conversion_ci.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    ycbcr_conversion_ci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    ycbcr_conversion_ci.chromaFilter = VK_FILTER_NEAREST;
-    ycbcr_conversion_ci.forceExplicitReconstruction = false;
-    vkt::SamplerYcbcrConversion ycbcr_conversion(*m_device, ycbcr_conversion_ci);
+    vkt::SamplerYcbcrConversion ycbcr_conversion(*m_device, format);
 
     VkSamplerYcbcrConversionInfo ycbcr_conversion_info = vku::InitStructHelper();
     ycbcr_conversion_info.conversion = ycbcr_conversion;
@@ -3905,20 +3895,20 @@ TEST_F(PositiveDescriptorHeap, YcbcrImage) {
 
     const char* vs_source = R"glsl(
         #version 450
-        layout(location = 0) out vec2 uv;
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+        layout(location = 0) out vec4 uv;
         void main() {
             vec2 pos = vec2(gl_VertexIndex & 1, gl_VertexIndex >> 1);
-            uv = pos;
-            gl_Position = vec4(pos * 2.0f - 1.0f, 0.0f, 1.0f);
+            gl_Position = texture(tex, pos);
         }
     )glsl";
+
     const char* fs_source = R"glsl(
         #version 450
-        layout(location = 0) in vec2 uv;
         layout(location = 0) out vec4 color;
         layout(set = 0, binding = 0) uniform sampler2D tex;
         void main() {
-            color = texture(tex, uv);
+            color = texture(tex, vec2(0.0));
         }
     )glsl";
     VkShaderObj vs_module = VkShaderObj(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
@@ -3969,6 +3959,112 @@ TEST_F(PositiveDescriptorHeap, YcbcrImage) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
+TEST_F(PositiveDescriptorHeap, YcbcrImageDifferentMapping) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12108");
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    InitRenderTarget();
+
+    VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM;
+    if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    // Handle if driver has combinedImageSamplerDescriptorCount of 4 (the most it should ever possibily be)
+    const size_t ycbcr_descriptor_size = heap_props.imageDescriptorSize * 4;
+    CreateResourceHeap(ycbcr_descriptor_size);
+
+    auto image_ci =
+        vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT;
+    if (!IsImageFormatSupported(Gpu(), image_ci, features)) {
+        GTEST_SKIP() << "Single-plane _422 image format not supported";
+    }
+    vkt::Image image(*m_device, image_ci);
+
+    vkt::SamplerYcbcrConversion ycbcr_conversion(*m_device, format);
+
+    VkSamplerYcbcrConversionInfo ycbcr_conversion_info_v = vku::InitStructHelper();
+    ycbcr_conversion_info_v.conversion = ycbcr_conversion;
+
+    VkSamplerYcbcrConversionInfo ycbcr_conversion_info_f = vku::InitStructHelper();
+    ycbcr_conversion_info_f.conversion = ycbcr_conversion;
+
+    VkHostAddressRangeEXT resource_host;
+    resource_host.address = resource_heap_data_;
+    resource_host.size = ycbcr_descriptor_size;
+
+    VkImageViewCreateInfo view_info = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+    view_info.pNext = &ycbcr_conversion_info_v;
+
+    VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
+    image_info.pView = &view_info;
+    image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_info.data.pImage = &image_info;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &resource_host);
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+        layout(location = 0) out vec4 uv;
+        void main() {
+            vec2 pos = vec2(gl_VertexIndex & 1, gl_VertexIndex >> 1);
+            gl_Position = texture(tex, pos);
+        }
+    )glsl";
+
+    const char* fs_source = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 color;
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+        void main() {
+            color = texture(tex, vec2(0.0));
+        }
+    )glsl";
+    VkShaderObj vs_module = VkShaderObj(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs_module = VkShaderObj(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    VkSamplerCreateInfo sampler_info_v = SafeSaneSamplerCreateInfo(&ycbcr_conversion_info_v);
+    VkDescriptorSetAndBindingMappingEXT mapping_v;
+    mapping_v = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
+    mapping_v.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping_v.sourceData.constantOffset = {};
+    mapping_v.sourceData.constantOffset.pEmbeddedSampler = &sampler_info_v;
+
+    VkSamplerCreateInfo sampler_info_f = SafeSaneSamplerCreateInfo(&ycbcr_conversion_info_f);
+    VkDescriptorSetAndBindingMappingEXT mapping_f;
+    mapping_f = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
+    mapping_f.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping_f.sourceData.constantOffset = {};
+    mapping_f.sourceData.constantOffset.pEmbeddedSampler = &sampler_info_f;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info_v = vku::InitStructHelper();
+    mapping_info_v.mappingCount = 1u;
+    mapping_info_v.pMappings = &mapping_v;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info_f = vku::InitStructHelper();
+    mapping_info_f.mappingCount = 1u;
+    mapping_info_f.pMappings = &mapping_f;
+
+    VkPipelineShaderStageCreateInfo stages[2] = {vs_module.GetStageCreateInfo(), fs_module.GetStageCreateInfo()};
+    stages[0].pNext = &mapping_info_v;
+    stages[1].pNext = &mapping_info_f;
+
+    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.gp_ci_.layout = VK_NULL_HANDLE;
+    pipe.gp_ci_.stageCount = 2u;
+    pipe.gp_ci_.pStages = stages;
+    pipe.CreateGraphicsPipeline(false);
+}
+
 TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -3997,17 +4093,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
     }
     vkt::Image image(*m_device, image_ci);
 
-    VkSamplerYcbcrConversionCreateInfo ycbcr_conversion_ci = vku::InitStructHelper();
-    ycbcr_conversion_ci.format = format;
-    ycbcr_conversion_ci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
-    ycbcr_conversion_ci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
-    ycbcr_conversion_ci.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-                                      VK_COMPONENT_SWIZZLE_IDENTITY};
-    ycbcr_conversion_ci.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    ycbcr_conversion_ci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    ycbcr_conversion_ci.chromaFilter = VK_FILTER_NEAREST;
-    ycbcr_conversion_ci.forceExplicitReconstruction = false;
-    vkt::SamplerYcbcrConversion ycbcr_conversion(*m_device, ycbcr_conversion_ci);
+    vkt::SamplerYcbcrConversion ycbcr_conversion(*m_device, format);
 
     VkSamplerYcbcrConversionInfo ycbcr_conversion_info = vku::InitStructHelper();
     ycbcr_conversion_info.conversion = ycbcr_conversion;
@@ -4067,8 +4153,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
     const auto vspv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
     const auto fspv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
 
-    VkShaderCreateInfoEXT vert_create_info = vku::InitStructHelper();
-    // vert_create_info.pNext = &mapping_info;
+    VkShaderCreateInfoEXT vert_create_info = vku::InitStructHelper(&mapping_info);
     vert_create_info.flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
     vert_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vert_create_info.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
