@@ -48,15 +48,50 @@
 // locations without a barrier in between, this could lead to false positives.
 // This assumes barrier() is used for all shared memory synchronization.
 
-// The thread ID is stored in the lower bits, we "could" possibly only use 16-bit,
-// but 16-bit atomics are not fully supported everywhere
-const uint STORE_BIT = 0x80000000;
-const uint ATOMIC_BIT = 0x40000000;
-const uint MULTI_LOAD_BIT = 0x20000000;
-const uint SENTINEL = 0x1FFFFFFF;
+// Shadow word layout (32 bits):
+//   [31]    STORE_BIT
+//   [30]    ATOMIC_BIT
+//   [29]    MULTI_LOAD_BIT
+//   [28:12] inst_offset (word offset of the accessing instruction in the SPIR-V)
+//   [11:0]  thread_id   (gl_LocalInvocationIndex)
+//
+// Packing inst_offset into the shadow lets a racing access pull the offender's source
+// location out of atomicExchange's return value, so we can report both halves of the race.
+// thread_id sits in the low bits so it compares directly against gl_LocalInvocationIndex.
+//
+// The atomicOr paths (multi-loader promotion, coopmat_load) can only set bits, so they
+// leave thread_id and inst_offset alone - whatever populated the slot first is what gets
+// reported as the other half. inst_do_atomic and inst_do_coopmat_store record an inst_offset
+// but no useful thread_id, so they write THREAD_ID_MASK (reserved; the pass caps workgroup
+// size to 0xFFE) and the host logger prints that as "unknown invocation".
+const uint STORE_BIT         = 0x80000000u;
+const uint ATOMIC_BIT        = 0x40000000u;
+const uint MULTI_LOAD_BIT    = 0x20000000u;
+const uint INST_OFFSET_SHIFT = 12u;
+const uint THREAD_ID_MASK    = 0x00000FFFu;   // bits 11..0
+const uint INST_OFFSET_MASK  = 0x1FFFF000u;   // bits 28..12
+const uint FLAG_AND_TID_MASK = 0xE0000FFFu;   // everything except inst_offset (flags | thread_id)
+const uint SENTINEL          = 0x1FFFFFFFu;   // bits 28..0 set = unique "no access" marker
 
 // This array has a placeholder size and the whole array is replaced in LinkFunctions
 shared uint shadow[99999];
+
+// Macros, not functions: the offline linker doesn't resolve OpFunctionCalls between
+// functions in this file, and kOfflineFunction[] expects exactly the six inst_* bodies.
+
+// Pack a shadow word from its three fields.
+#define PACK_SHADOW(flags, thread_id, inst_offset) \
+    ((flags) | (((inst_offset) << INST_OFFSET_SHIFT) & INST_OFFSET_MASK) | ((thread_id) & THREAD_ID_MASK))
+
+// Emit an ErrorPayload for a detected race. raced_against is the prior shadow word -
+// the "other half" of the race, with its flags, inst_offset, and thread_id intact.
+#define REPORT_RACE(sub_code, inst_offset, thread_id, raced_against, variable_idx)                                           \
+    error_payload = ErrorPayload(                                                                                            \
+        (inst_offset),                                                                                                       \
+        SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | ((sub_code) << kErrorSubCode_Shift), \
+        (thread_id),                                                                                                         \
+        (raced_against),                                                                                                     \
+        (variable_idx))
 
 void inst_init_shadow(const in uint length, const in uint wg_size) {
     barrier();
@@ -68,25 +103,13 @@ void inst_init_shadow(const in uint length, const in uint wg_size) {
 
 void inst_do_store(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx) {
     uint thread_id = gl_LocalInvocationIndex;
-    uint ret = atomicExchange(shadow[start + idx], thread_id | STORE_BIT);
-    if (ret != SENTINEL && ret != thread_id && ret != (thread_id | STORE_BIT)) {
-        if ((ret & ATOMIC_BIT) != 0) {
-            error_payload = ErrorPayload(
-                            inst_offset,
-                            SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnLoadStoreVsAtomic << kErrorSubCode_Shift),
-                            thread_id,
-                            ret,
-                            variable_idx
-                        );
-        } else {
-            error_payload = ErrorPayload(
-                            inst_offset,
-                            SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnStore << kErrorSubCode_Shift),
-                            thread_id,
-                            ret,
-                            variable_idx
-                        );
-        }
+    uint ret = atomicExchange(shadow[start + idx], PACK_SHADOW(STORE_BIT, thread_id, inst_offset));
+    // Not a race: initial SENTINEL, same thread's prior load, same thread's prior store.
+    uint ret_no_offset = ret & FLAG_AND_TID_MASK;
+    if (ret != SENTINEL && ret_no_offset != thread_id && ret_no_offset != (STORE_BIT | thread_id)) {
+        uint sub_code = ((ret & ATOMIC_BIT) != 0) ? kErrorSubCode_SharedMemoryDataRace_RaceOnLoadStoreVsAtomic
+                                                  : kErrorSubCode_SharedMemoryDataRace_RaceOnStore;
+        REPORT_RACE(sub_code, inst_offset, thread_id, ret, variable_idx);
     }
 }
 
@@ -94,64 +117,44 @@ void inst_do_load(const in uint start, const in uint idx, const in uint inst_off
     uint thread_id = gl_LocalInvocationIndex;
 
     uint ret = atomicLoad(shadow[start + idx], gl_ScopeDevice, 0, 0);
+    // Fast path: no store/atomic set and either multi-load is set or this thread already owns the slot.
     if ((ret & (STORE_BIT | ATOMIC_BIT)) == 0 &&
-        ((ret & MULTI_LOAD_BIT) != 0 || ret == thread_id)) {
+        ((ret & MULTI_LOAD_BIT) != 0 || (ret & FLAG_AND_TID_MASK) == thread_id)) {
         return;
     }
 
-    ret = atomicExchange(shadow[start + idx], thread_id);
+    ret = atomicExchange(shadow[start + idx], PACK_SHADOW(0, thread_id, inst_offset));
+    uint ret_no_offset = ret & FLAG_AND_TID_MASK;
     if ((ret & ATOMIC_BIT) != 0) {
-        error_payload = ErrorPayload(
-                        inst_offset,
-                        SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnLoadStoreVsAtomic << kErrorSubCode_Shift),
-                        thread_id,
-                        ret,
-                        variable_idx
-                    );
-    } else if (ret == (thread_id | STORE_BIT)) {
-        ret = atomicExchange(shadow[start + idx], thread_id | STORE_BIT);
-        if (ret != thread_id) {
-            error_payload = ErrorPayload(
-                            inst_offset,
-                            SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnLoad << kErrorSubCode_Shift),
-                            thread_id,
-                            ret,
-                            variable_idx
-                        );
+        REPORT_RACE(kErrorSubCode_SharedMemoryDataRace_RaceOnLoadStoreVsAtomic, inst_offset, thread_id, ret, variable_idx);
+    } else if (ret_no_offset == (STORE_BIT | thread_id)) {
+        // This thread previously stored. Restore the original store word so a later
+        // racing access reports the store's source line as the other half, not this load's.
+        uint restore = ret;
+        ret = atomicExchange(shadow[start + idx], restore);
+        if ((ret & FLAG_AND_TID_MASK) != thread_id) {
+            REPORT_RACE(kErrorSubCode_SharedMemoryDataRace_RaceOnLoad, inst_offset, thread_id, ret, variable_idx);
         }
     } else if ((ret & STORE_BIT) != 0) {
-        error_payload = ErrorPayload(
-                        inst_offset,
-                        SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnLoad << kErrorSubCode_Shift),
-                        thread_id,
-                        ret,
-                        variable_idx
-                    );
-    } else if ((ret & MULTI_LOAD_BIT) != 0 || (ret & ~MULTI_LOAD_BIT) != thread_id) {
+        REPORT_RACE(kErrorSubCode_SharedMemoryDataRace_RaceOnLoad, inst_offset, thread_id, ret, variable_idx);
+    } else if ((ret & MULTI_LOAD_BIT) != 0 || (ret & (FLAG_AND_TID_MASK & ~MULTI_LOAD_BIT)) != thread_id) {
+        // Another thread loaded here first. Promote to multi-load via atomicOr; thread_id and
+        // inst_offset stay as the first loader wrote them, which is what we want to report.
         ret = atomicOr(shadow[start + idx], MULTI_LOAD_BIT);
         if ((ret & (STORE_BIT | ATOMIC_BIT)) != 0) {
-            error_payload = ErrorPayload(
-                            inst_offset,
-                            SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnLoad << kErrorSubCode_Shift),
-                            thread_id,
-                            ret,
-                            variable_idx
-                        );
+            REPORT_RACE(kErrorSubCode_SharedMemoryDataRace_RaceOnLoad, inst_offset, thread_id, ret, variable_idx);
         }
     }
 }
 
 void inst_do_atomic(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx) {
     uint thread_id = gl_LocalInvocationIndex;
-    uint ret = atomicExchange(shadow[start + idx], ATOMIC_BIT);
-    if (ret != SENTINEL && ret != ATOMIC_BIT) {
-        error_payload = ErrorPayload(
-                        inst_offset,
-                        SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnAtomic << kErrorSubCode_Shift),
-                        thread_id,
-                        ret,
-                        variable_idx
-                    );
+    // Multiple atomics on the same slot don't race, so the offending thread isn't worth
+    // tracking - write THREAD_ID_MASK ("unknown") in the tid field. inst_offset is still
+    // recorded so a racing non-atomic access can report this atomic's source line.
+    uint ret = atomicExchange(shadow[start + idx], PACK_SHADOW(ATOMIC_BIT, THREAD_ID_MASK, inst_offset));
+    if (ret != SENTINEL && (ret & ~INST_OFFSET_MASK) != (ATOMIC_BIT | THREAD_ID_MASK)) {
+        REPORT_RACE(kErrorSubCode_SharedMemoryDataRace_RaceOnAtomic, inst_offset, thread_id, ret, variable_idx);
     }
 }
 
@@ -164,16 +167,12 @@ void inst_do_coopmat_load(const in uint start, const in uint idx, const in uint 
         uint c = i % cols;
         uint r = i / cols;
         uint loc = memory_layout == gl_CooperativeMatrixLayoutRowMajor ? (r * stride + c) : (c * stride + r);
-        // Treat coopmat load as multi_load with no known thread id.
+        // Treat coopmat load as multi_load with no known thread id. atomicOr can't write
+        // inst_offset, so the other half reported by a later racing access is whatever
+        // populated the slot first (or "not recorded" if the slot was still SENTINEL).
         uint ret = atomicOr(shadow[start + idx + loc], MULTI_LOAD_BIT);
         if ((ret & (STORE_BIT | ATOMIC_BIT)) != 0) {
-            error_payload = ErrorPayload(
-                            inst_offset,
-                            SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnLoad << kErrorSubCode_Shift),
-                            thread_id,
-                            ret,
-                            variable_idx
-                        );
+            REPORT_RACE(kErrorSubCode_SharedMemoryDataRace_RaceOnLoad, inst_offset, thread_id, ret, variable_idx);
         }
     }
 }
@@ -188,18 +187,13 @@ void inst_do_coopmat_store(const in uint start, const in uint idx, const in uint
         uint r = i / cols;
         uint loc = memory_layout == gl_CooperativeMatrixLayoutRowMajor ? (r * stride + c) : (c * stride + r);
 
-        // No thread_id
-        uint ret = atomicExchange(shadow[start + idx + loc], STORE_BIT);
+        // No meaningful thread_id (write THREAD_ID_MASK = "unknown"), but record inst_offset
+        // so races against this coopmat store can cite the coopmat instruction's source line.
+        uint ret = atomicExchange(shadow[start + idx + loc], PACK_SHADOW(STORE_BIT, THREAD_ID_MASK, inst_offset));
         // The memory can't have been written or read, even by other coopmatload/store calls,
         // because the mapping of matrix elements to invocations is unknown.
         if (ret != SENTINEL) {
-            error_payload = ErrorPayload(
-                            inst_offset,
-                            SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnStore << kErrorSubCode_Shift),
-                            thread_id,
-                            ret,
-                            variable_idx
-                        );
+            REPORT_RACE(kErrorSubCode_SharedMemoryDataRace_RaceOnStore, inst_offset, thread_id, ret, variable_idx);
         }
     }
 }
