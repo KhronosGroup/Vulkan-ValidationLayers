@@ -31,7 +31,7 @@
 
 #include <spirv/unified1/spirv.hpp>
 #include <spirv/1.2/GLSL.std.450.h>
-#include <spirv/unified1/NonSemanticShaderDebugInfo100.h>
+#include <spirv/unified1/NonSemanticShaderDebugInfo.h>
 #include <vulkan/vulkan_core.h>
 #include "error_message/spirv_logging.h"
 #include "utils/math_utils.h"
@@ -1221,7 +1221,7 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                         uses_interpolate_at_sample = true;
                     }
                 } else if (set == extended.shader_debug_info) {
-                    if (ext_instruction == NonSemanticShaderDebugInfo100DebugGlobalVariable) {
+                    if (ext_instruction == NonSemanticShaderDebugInfoDebugGlobalVariable) {
                         parsed.debug_global_variables.emplace_back(&insn);
                     }
                 } else if (set == extended.tosa_001000_1) {
@@ -1252,9 +1252,9 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 const char* ext_name = insn.GetAsString(2);
                 if (strcmp(ext_name, "GLSL.std.450") == 0) {
                     extended.glsl_std450 = insn.ResultId();
-                } else if (strcmp(ext_name, "NonSemantic.Shader.DebugInfo.100") == 0) {
+                } else if (strncmp(ext_name, "NonSemantic.Shader.DebugInfo.", 29) == 0) {
                     extended.shader_debug_info = insn.ResultId();
-                } else if (strncmp(ext_name, "TOSA.001000.1", strlen("TOSA.001000.1")) == 0) {
+                } else if (strncmp(ext_name, "TOSA.001000.1", 13) == 0) {
                     extended.tosa_001000_1 = insn.ResultId();
                 }
                 break;
@@ -1576,7 +1576,7 @@ std::string Module::DescribeInstruction(const Instruction& error_insn) const {
     for (const auto& insn : static_data_.instructions) {
         const uint32_t opcode = insn.Opcode();
         if (opcode == spv::OpExtInst && insn.Word(3) == static_data_.extended.shader_debug_info &&
-            insn.Word(4) == NonSemanticShaderDebugInfo100DebugLine) {
+            insn.Word(4) == NonSemanticShaderDebugInfoDebugLine) {
             last_line_inst = &insn;
         } else if (opcode == spv::OpLine) {
             last_line_inst = &insn;

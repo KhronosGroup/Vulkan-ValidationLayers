@@ -344,7 +344,7 @@ struct VariableBase {
     const VkShaderStageFlagBits stage;
     VariableBase(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage, const ParsedInfo &parsed);
 
-    const Instruction* debug_global_variable;  // DebugGlobalVariable from NonSemantic.Shader.DebugInfo.100
+    const Instruction* debug_global_variable;  // DebugGlobalVariable from NonSemantic.Shader.DebugInfo.*
     // We need to store a std::string since the original SPIR-V string can be gone when we need to print this in an error message
     const std::string debug_name;  // OpName or OpString (empty if no debug info found)
 
@@ -728,7 +728,7 @@ struct Module {
         // ID from OpExtInstImport required to know if a OpExtInst is from it
         struct ExtendedInstructionSets {
             uint32_t glsl_std450 = 0;        // GLSL.std.450
-            uint32_t shader_debug_info = 0;  // NonSemantic.Shader.DebugInfo.100
+            uint32_t shader_debug_info = 0;  // NonSemantic.Shader.DebugInfo.*
             uint32_t tosa_001000_1 = 0;      // TOSA.001000.1
         } extended;
 
