@@ -183,8 +183,9 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
     if (cb_state->InUse()) {
         skip |= LogError("VUID-vkBeginCommandBuffer-commandBuffer-00049", commandBuffer, error_obj.location,
                          "on active %s before it has completed. You must check "
-                         "command buffer fence before this call.",
-                         FormatHandle(commandBuffer).c_str());
+                         "command buffer fence before this call.%s",
+                         FormatHandle(commandBuffer).c_str(),
+                         is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occured, the command buffer must be freed)" : "");
     }
     const Location begin_info_loc = error_obj.location.dot(Field::pBeginInfo);
     if (cb_state->IsPrimary()) {
@@ -518,8 +519,9 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
 
     if (cb_state->InUse()) {
         const LogObjectList objlist(commandBuffer, cmd_pool);
-        skip |= LogError("VUID-vkResetCommandBuffer-commandBuffer-00045", objlist, error_obj.location, "(%s) is in use.",
-                         FormatHandle(commandBuffer).c_str());
+        skip |= LogError("VUID-vkResetCommandBuffer-commandBuffer-00045", objlist, error_obj.location, "(%s) is in use.%s",
+                         FormatHandle(commandBuffer).c_str(),
+                         is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occured, the command buffers must be freed)" : "");
     }
 
     return skip;
@@ -1377,8 +1379,9 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 const LogObjectList objlist(commandBuffer, secondary_cb);
                 skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00091", objlist, secondary_cb_loc,
                                  "(%s) is pending and can't execute again because it was not recorded with "
-                                 "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT.",
-                                 FormatHandle(secondary_cb).c_str());
+                                 "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT.%s",
+                                 FormatHandle(secondary_cb).c_str(),
+                                 is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occured, the command buffer must be freed)" : "");
             }
             // We use an const_cast, because one cannot query a container keyed on a non-const pointer using a const pointer
             if (cb_state.linked_command_buffers.count(const_cast<vvl::CommandBuffer*>(&secondary_cb_state))) {
