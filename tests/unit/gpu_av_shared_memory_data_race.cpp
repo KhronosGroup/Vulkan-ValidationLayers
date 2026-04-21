@@ -20,7 +20,40 @@ class NegativeGpuAVSharedMemoryDataRace : public GpuAVSharedMemoryDataRaceTest {
   protected:
     void TestHelper(const char* source, int source_type, uint32_t count, VkScopeKHR coopmat_scope = VK_SCOPE_DEVICE_KHR,
                     const char* error = "SharedMemoryDataRace");
+    // Runs a compute pipeline built from `glsl_source` and asserts the race error matches
+    // `full_regex`. The pipeline/buffer are kept alive on the stack here so they outlive
+    // SubmitAndWait.
+    void RunAndAssertErrorRegex(const char* glsl_source, bool add_ssbo, const std::string& full_regex);
 };
+
+void NegativeGpuAVSharedMemoryDataRace::RunAndAssertErrorRegex(const char* glsl_source, bool add_ssbo,
+                                                               const std::string& full_regex) {
+    CreateComputePipelineHelper pipe(*this);
+    if (add_ssbo) {
+        pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    }
+    pipe.cs_ = VkShaderObj(*m_device, glsl_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    if (add_ssbo) {
+        pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+        pipe.descriptor_set_.UpdateDescriptorSets();
+    }
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    if (add_ssbo) {
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                                  &pipe.descriptor_set_.set_, 0, nullptr);
+    }
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredErrorRegex("", full_regex);
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
 
 void NegativeGpuAVSharedMemoryDataRace::TestHelper(const char* shader_source, int source_type, uint32_t count,
                                                    VkScopeKHR coopmat_scope, const char* error) {
@@ -1164,4 +1197,131 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreOverlapUint8Col
     )glsl";
 
     TestHelper(shader_source, SPV_SOURCE_GLSL, 1, VK_SCOPE_SUBGROUP_KHR);
+}
+
+// Race between atomicAdd and coopMatStore on overlapping shared memory. Both
+// inst_do_atomic and inst_do_coopmat_store write THREAD_ID_MASK as the offender's
+// thread_id, so the host logger should print "unknown invocation" regardless of which
+// side detects the race. inst_offset is still preserved via atomicExchange so the
+// "other access" line is real. If anyone reverts to writing 0 we'd see a misleading
+// "local invocation index 0" instead.
+TEST_F(NegativeGpuAVSharedMemoryDataRace, AtomicVsCoopMatStore) {
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSharedMemoryDataRace());
+    CooperativeMatrixHelper helper(*this);
+    if (!helper.HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 16, 16, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+        GTEST_SKIP() << "16x16 float16 Property not found";
+    }
+
+    // 16x16 f16 coopmat over a uint backing: each uint holds 2 f16s, so the matrix
+    // covers 128 uints with stride 8 uints/row. atomicAdd targets a uint that the
+    // coopMatStore also writes.
+    const char* shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+
+        layout(local_size_x = 128) in;
+        shared uint arr[16*16/2];
+        coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
+        void main() {
+            if (gl_LocalInvocationIndex == 40) {
+                atomicAdd(arr[5], 1);
+            }
+            if (gl_SubgroupID == 0) {
+                coopMatStore(mat, arr, 0, 16/2, gl_CooperativeMatrixLayoutRowMajor);
+            }
+        }
+    )glsl";
+
+    RunAndAssertErrorRegex(shader_source, /*add_ssbo=*/false,
+                           R"((?=[\s\S]*SharedMemoryDataRace))"
+                           R"((?=[\s\S]*Likely against unknown invocation))"
+                           R"((?=[\s\S]*The other access in this race was at:))");
+}
+
+// Verify the offender's SPIR-V op kind is reported correctly. These tests use GLSL without
+// debug info so the reported other access prints as "SPIR-V Instruction: Op<Kind>" which
+// we can grep for.
+
+// Store-vs-store race: the offender stored, so the other access must cite an OpStore.
+TEST_F(NegativeGpuAVSharedMemoryDataRace, OffenderIsOpStore) {
+    RETURN_IF_SKIP(InitSharedMemoryDataRace());
+
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 2) in;
+        shared uint temp;
+        void main() {
+            temp = 0;
+        }
+    )glsl";
+
+    RunAndAssertErrorRegex(shader_source, /*add_ssbo=*/false,
+                           R"((?=[\s\S]*SharedMemoryDataRace-RaceOnStore))"
+                           R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: OpStore))");
+}
+
+// Several concurrent loaders racing one store. The loaders and the storer have no
+// synchronization between them, so either side can win: if the loaders go first the
+// offender is OpLoad (recorded by the multi-load atomicOr path), if the store goes
+// first the offender is OpStore. The point of the test is that whichever opcode is
+// reported is a real OpLoad or OpStore - i.e. inst_offset survived the atomicOr. A
+// regression there would fall through to the "not recorded" fallback, which matches
+// neither.
+TEST_F(NegativeGpuAVSharedMemoryDataRace, OffenderIsOpLoadFromMultipleLoaders) {
+    RETURN_IF_SKIP(InitSharedMemoryDataRace());
+
+    // 16 invocations: 15 loaders driving the shadow through the atomicOr path, plus one
+    // storer. With that many loaders we reliably exercise the multi-load promotion.
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 16) in;
+        shared uint temp;
+        layout(set = 0, binding = 0) buffer SSBO { uint out_val; } ssbo;
+        void main() {
+            if (gl_LocalInvocationIndex > 0) {
+                ssbo.out_val = temp;
+            }
+            if (gl_LocalInvocationIndex == 0) {
+                temp = 42;
+            }
+        }
+    )glsl";
+
+    // OpLoad produces a result id ("%<n> = OpLoad ..."); OpStore does not.
+    RunAndAssertErrorRegex(shader_source, /*add_ssbo=*/true,
+                           R"((?=[\s\S]*SharedMemoryDataRace))"
+                           R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: (?:%\d+ = OpLoad|OpStore)))");
+}
+
+// Atomic vs store race. If the atomic wins, the plain store detects and the offender is
+// OpAtomicIAdd; if the store wins, the atomic detects and the offender is OpStore. The
+// regex accepts either, so the test is order-independent.
+TEST_F(NegativeGpuAVSharedMemoryDataRace, OffenderIsOpAtomic) {
+    RETURN_IF_SKIP(InitSharedMemoryDataRace());
+
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 2) in;
+        shared uint temp;
+        void main() {
+            if (gl_LocalInvocationIndex == 0) {
+                atomicAdd(temp, 1);
+            } else {
+                temp = 0;
+            }
+        }
+    )glsl";
+
+    // OpAtomicIAdd has a result id ("%<n> = OpAtomicIAdd ..."); OpStore does not.
+    RunAndAssertErrorRegex(
+        shader_source, /*add_ssbo=*/false,
+        R"((?=[\s\S]*SharedMemoryDataRace-RaceOnLoadStoreVsAtomic))"
+        R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: (?:%\d+ = OpAtomicIAdd|OpStore)))");
 }

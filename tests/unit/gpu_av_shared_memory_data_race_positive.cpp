@@ -368,7 +368,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangBasic) {
             }
             GroupMemoryBarrierWithGroupSync();
 
-            if (groupThreadID.x == 0) {
+            if (groupThreadID.x == 1) {
                 outputBuffer[0] = temp;
             }
         }
@@ -400,7 +400,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangNestedStruct) {
             }
             GroupMemoryBarrierWithGroupSync();
 
-            if (groupThreadID.x == 0) {
+            if (groupThreadID.x == 1) {
                 outputBuffer[0] = temp.z[1].b;
             }
         }
@@ -792,4 +792,70 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreDisjointUint8) 
     )glsl";
 
     TestHelper(shader_source, SPV_SOURCE_GLSL, SPV_ENV_VULKAN_1_2, VK_SCOPE_SUBGROUP_KHR);
+}
+
+// Positive store-barrier-load scenario carrying NonSemantic.Shader.DebugInfo.100 records
+// (DebugSource + DebugLine on the store and on the load). Hand-written SPIR-V because
+// neither glslang nor Slang emit debug info through the current test framework.
+TEST_F(PositiveGpuAVSharedMemoryDataRace, ShaderDebugInfo) {
+    const char* shader_source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+          %2 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %temp %gl_LocalInvocationID
+               OpExecutionMode %main LocalSize 2 1 1
+        %src = OpString "void main() {
+    if (gl_LocalInvocationIndex == 0) { temp = 0; }
+    barrier();
+    if (gl_LocalInvocationIndex == 1) { uint x = temp; }
+}
+"
+       %file = OpString "race_positive_debug.glsl"
+               OpDecorate %gl_LocalInvocationID BuiltIn LocalInvocationId
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+       %bool = OpTypeBool
+     %v3uint = OpTypeVector %uint 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+%gl_LocalInvocationID = OpVariable %_ptr_Input_v3uint Input
+       %temp = OpVariable %_ptr_Workgroup_uint Workgroup
+     %uint_0 = OpConstant %uint 0
+     %uint_1 = OpConstant %uint 1
+     %uint_2 = OpConstant %uint 2
+     %uint_4 = OpConstant %uint 4
+     %uint_5 = OpConstant %uint 5
+    %uint_11 = OpConstant %uint 11
+   %uint_100 = OpConstant %uint 100
+   %uint_264 = OpConstant %uint 264
+   %d_source = OpExtInst %void %2 DebugSource %file %src
+     %d_unit = OpExtInst %void %2 DebugCompilationUnit %uint_100 %uint_5 %d_source %uint_11
+       %main = OpFunction %void None %3
+      %entry = OpLabel
+       %tidv = OpLoad %v3uint %gl_LocalInvocationID
+        %tid = OpCompositeExtract %uint %tidv 0
+    %is_zero = OpIEqual %bool %tid %uint_0
+               OpSelectionMerge %after_store None
+               OpBranchConditional %is_zero %do_store %after_store
+   %do_store = OpLabel
+        %dls = OpExtInst %void %2 DebugLine %d_source %uint_2 %uint_2 %uint_0 %uint_0
+               OpStore %temp %uint_0
+               OpBranch %after_store
+%after_store = OpLabel
+               OpControlBarrier %uint_2 %uint_2 %uint_264
+     %is_one = OpIEqual %bool %tid %uint_1
+               OpSelectionMerge %after_load None
+               OpBranchConditional %is_one %do_load %after_load
+    %do_load = OpLabel
+        %dll = OpExtInst %void %2 DebugLine %d_source %uint_4 %uint_4 %uint_0 %uint_0
+        %val = OpLoad %uint %temp
+               OpBranch %after_load
+ %after_load = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    TestHelper(shader_source, SPV_SOURCE_ASM);
 }
