@@ -811,11 +811,13 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ShaderDebugSourceContinued) {
 #extension GL_EXT_buffer_reference : enable
 layout(buffer_reference, std430) readonly buffer IndexBuffer {
     int indices[];
-};"
+};
+"
          %s2 = OpString "layout(set = 0, binding = 0) buffer foo {
     IndexBuffer data;
     int x;
-};"
+};
+"
          %s3 = OpString "void main() {
     x = data.indices[16];
 }"

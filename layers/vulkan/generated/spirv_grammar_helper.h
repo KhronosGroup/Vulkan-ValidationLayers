@@ -329,6 +329,8 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpBufferPointerEXT:
         case spv::OpUntypedImageTexelPointerEXT:
         case spv::OpConstantSizeOfEXT:
+        case spv::OpConstantDataKHR:
+        case spv::OpSpecConstantDataKHR:
         case spv::OpHitObjectGetWorldToObjectNV:
         case spv::OpHitObjectGetObjectToWorldNV:
         case spv::OpHitObjectGetObjectRayDirectionNV:
@@ -805,6 +807,8 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpBufferPointerEXT:
         case spv::OpUntypedImageTexelPointerEXT:
         case spv::OpConstantSizeOfEXT:
+        case spv::OpConstantDataKHR:
+        case spv::OpSpecConstantDataKHR:
         case spv::OpHitObjectGetWorldToObjectNV:
         case spv::OpHitObjectGetObjectToWorldNV:
         case spv::OpHitObjectGetObjectRayDirectionNV:
