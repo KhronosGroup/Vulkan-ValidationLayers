@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2025 Valve Corporation
-# Copyright (c) 2020-2025 LunarG, Inc.
+# Copyright (c) 2020-2026 Valve Corporation
+# Copyright (c) 2020-2026 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -140,7 +140,7 @@ def Build(args):
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
         sys.exit(proc_error.returncode)
     except Exception as unknown_error:
-        print('An unknown error occured: %s', unknown_error)
+        print('An unknown error occurred: %s', unknown_error)
         sys.exit(1)
 
     sys.exit(0)
@@ -236,7 +236,7 @@ def Test(args):
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
         sys.exit(proc_error.returncode)
     except Exception as unknown_error:
-        print('An unknown error occured: %s', unknown_error)
+        print('An unknown error occurred: %s', unknown_error)
         sys.exit(1)
 
     sys.exit(0)

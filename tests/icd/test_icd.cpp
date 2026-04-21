@@ -610,7 +610,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submit
                                                   VkFence fence) {
     // Special way to cause DEVICE_LOST
     // Picked VkExportFenceCreateInfo because needed some struct that wouldn't get cleared by validation Safe Struct
-    // ... TODO - It would be MUCH nicer to have a layer or other setting control when this occured
+    // ... TODO - It would be MUCH nicer to have a layer or other setting control when this occurred
     // For now this is used to allow Validation Layers test reacting to device losts
     if (submitCount > 0 && pSubmits) {
         auto pNext = reinterpret_cast<const VkBaseInStructure*>(pSubmits[0].pNext);

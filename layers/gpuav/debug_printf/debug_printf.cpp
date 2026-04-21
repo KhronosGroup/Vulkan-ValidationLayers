@@ -188,7 +188,7 @@ struct OutputRecord {
 struct BufferInfo {
     // The buffer where DebugPrintf data was written to (and need to report)
     vko::BufferRange output_mem_buffer;
-    // Same as GPU-AV, we need these to generate details in error message where error occured in the CmdBuffer
+    // Same as GPU-AV, we need these to generate details in error message where error occurred in the CmdBuffer
     VkPipelineBindPoint pipeline_bind_point;
     uint32_t action_command_index;
     // Before the draw/dispatch/etc we can save the pipeline/shaderObject that are being used

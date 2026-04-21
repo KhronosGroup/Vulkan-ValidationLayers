@@ -62,7 +62,7 @@ struct InstrumentedShader {
     VkPipeline pipeline;
     VkShaderModule shader_module;
     VkShaderEXT shader_object;
-    // We keep the original SPIR-V so we can match up where the error occured to map to shader source files
+    // We keep the original SPIR-V so we can match up where the error occurred to map to shader source files
     std::vector<uint32_t> original_spirv;
 };
 

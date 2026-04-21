@@ -609,7 +609,7 @@ TEST_F(NegativeSyncValReporting, StaleLabelCommand) {
     m_command_buffer.End();
 
     // This will detect write-after-write hazard. During error reporting debug label
-    // information says that prior read occured after the 4th label command. Attempt
+    // information says that prior read occurred after the 4th label command. Attempt
     // to access those label commands can lead to crash if out of bounds check is missing.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     m_default_queue->Submit(m_command_buffer);

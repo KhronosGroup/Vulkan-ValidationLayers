@@ -357,7 +357,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
                         "GPUAV-Overflow-Unknown", queue, loc,
                         "An error was detected, but after internal limit of %" PRIu32
                         " draw/dispatch/traceRays commands in a command buffer, we are unable to track which validation error "
-                        "occured.\nThis can be adjusted setting env var VK_LAYER_GPUAV_MAX_INDICES_COUNT to a higher value.",
+                        "occurred.\nThis can be adjusted setting env var VK_LAYER_GPUAV_MAX_INDICES_COUNT to a higher value.",
                         gpuav_.gpuav_settings.invalid_index_command);
                     break;  // only report once
                 } else {

@@ -633,7 +633,8 @@ bool CoreChecks::ValidateCommandBufferSimultaneousUse(const Location& loc, const
         const auto& vuid = GetQueueSubmitVUID(loc, vvl::SubmitError::kCmdNotSimultaneous);
 
         skip |= LogError(vuid, device, loc, "%s is already in use and is not marked for simultaneous use.%s",
-                         FormatHandle(cb_state).c_str(), is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occured, the queue must be used)" : "");
+                         FormatHandle(cb_state).c_str(),
+                         is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the queue must be used)" : "");
     }
     return skip;
 }

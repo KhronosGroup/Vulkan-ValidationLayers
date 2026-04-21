@@ -90,7 +90,7 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM& descript
                 }
                 i--;
             }
-            // if other errors above occured, i might be zero, but another error will be reported already
+            // if other errors above occurred, i might be zero, but another error will be reported already
             if (!is_packed && i > 0) {
                 skip |= LogError("VUID-VkTensorDescriptionARM-None-09740", device, description_loc,
                                  "does not define a packed tensor: pStrides[%" PRIi64 "] (%" PRIi64 ") != pStrides[%" PRIi64

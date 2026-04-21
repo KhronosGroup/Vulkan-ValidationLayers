@@ -226,7 +226,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     VkPipeline invalidated_state_pipe[CB_DYNAMIC_STATE_STATUS_NUM];
     std::string DescribeInvalidatedState(CBDynamicState dynamic_state) const;
 
-    // Return true if the corresponding vkCmdSet* call has occured in the command buffer.
+    // Return true if the corresponding vkCmdSet* call has occurred in the command buffer.
     // Used for calls like vkCmdSetColorBlendEnableEXT where we have both a VU for
     //   - it was called it at all
     //   - it was called for every attachment

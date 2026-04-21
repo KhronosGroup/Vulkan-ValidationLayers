@@ -28,7 +28,7 @@ Here we see a few things, listed in the order they appear
 2. The [VUID](https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/validation_overview.adoc#valid-usage-id-vuid)
 3. Message ID
     - This is just a hash of the VUID used internally to detect if the message duplication rate was hit
-4. Which function the error occured at
+4. Which function the error occurred at
 5. The faulty parameter / struct member
     - Helps if there is an array to know which index it is in
 6. The "main message"
