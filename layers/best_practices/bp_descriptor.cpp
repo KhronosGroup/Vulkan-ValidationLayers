@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -88,7 +88,7 @@ bool BestPractices::PreCallValidateCreateSampler(VkDevice device, const VkSample
             skip |= LogPerformanceWarning(
                 "BestPractices-Arm-vkCreateSampler-lod-clamping", device, error_obj.location,
                 "%s Creating a sampler object with LOD clamping (minLod = %f, maxLod = %f).\nThis may cause reduced performance. "
-                "Instead of clamping LOD in the sampler, consider using an VkImageView which restricts the mip-levels, set minLod "
+                "Instead of clamping LOD in the sampler, consider using a VkImageView which restricts the mip-levels, set minLod "
                 "to 0.0, and maxLod to VK_LOD_CLAMP_NONE.",
                 VendorSpecificTag(kBPVendorArm), pCreateInfo->minLod, pCreateInfo->maxLod);
         }

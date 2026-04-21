@@ -779,7 +779,7 @@ bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayo
                 skip |= LogError("VUID-VkDescriptorSetLayoutBinding-flags-08005", device, binding_loc.dot(Field::descriptorType),
                                  "is %s but pCreateInfo->flags includes "
                                  "VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT.\nHint: Try moving your "
-                                 "immutable samplers to a seperate Descriptor Set.",
+                                 "immutable samplers to a separate Descriptor Set.",
                                  string_VkDescriptorType(binding_info.descriptorType));
             }
 
