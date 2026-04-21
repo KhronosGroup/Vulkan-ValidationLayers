@@ -1052,8 +1052,10 @@ void CopyCreatePipelineFeedbackData(const void* src_chain, const void* dst_chain
     }
 }
 
-static void UnwrapMappingInfo(HandleWrapper* handle_wrapper, vvl::unordered_set<VkSamplerYcbcrConversion>& conversions,
-                              const void* pNext) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12108
+// We can have a case where 2 chained pNext can share the same handle and don't have a local copy
+// Simple answer is to just track as a set, might be a better way to do
+static void UnwrapMappingInfo(HandleWrapper* handle_wrapper, const void* pNext) {
     if (auto* mapping_info = vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(pNext)) {
         for (uint32_t idx2 = 0; idx2 < mapping_info->mappingCount; ++idx2) {
             const auto& mapping = mapping_info->pMappings[idx2];
@@ -1076,9 +1078,12 @@ static void UnwrapMappingInfo(HandleWrapper* handle_wrapper, vvl::unordered_set<
             }
 
             if (auto* sampler_conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(embedded_sampler_pNext)) {
-                if (sampler_conversion_info->conversion && !conversions.insert(sampler_conversion_info->conversion).second) {
-                    const_cast<VkSamplerYcbcrConversionInfo*>(sampler_conversion_info)->conversion =
-                        handle_wrapper->Unwrap(sampler_conversion_info->conversion);
+                // TODO - This is bad, we are hoping that if 2 structs are pointing to the same handle that unwrapping it twice will
+                // not be in the handle wrapping list (which very high chance it won't be)... This needs a proper, auto generated
+                // solution https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12108
+                VkSamplerYcbcrConversion unwrapped_conversion = handle_wrapper->Unwrap(sampler_conversion_info->conversion);
+                if (unwrapped_conversion != VK_NULL_HANDLE) {
+                    const_cast<VkSamplerYcbcrConversionInfo*>(sampler_conversion_info)->conversion = unwrapped_conversion;
                 }
             }
         }
@@ -1150,14 +1155,9 @@ VkResult DispatchDevice::CreateGraphicsPipelines(VkDevice device, VkPipelineCach
                 local_pCreateInfos[idx0].layout = Unwrap(pCreateInfos[idx0].layout);
             }
 
-            // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12108
-            // We can have a case where 2 chained pNext can share the same handle and don't have a local copy
-            // Simple answer is to just track as a set, might be a better way to do
-            vvl::unordered_set<VkSamplerYcbcrConversion> conversions;
-
             if (pCreateInfos[idx0].pStages) {
                 for (uint32_t idx1 = 0; idx1 < pCreateInfos[idx0].stageCount; ++idx1) {
-                    UnwrapMappingInfo(this, conversions, local_pCreateInfos[idx0].pStages[idx1].pNext);
+                    UnwrapMappingInfo(this, local_pCreateInfos[idx0].pStages[idx1].pNext);
 
                     if (pCreateInfos[idx0].pStages[idx1].module) {
                         local_pCreateInfos[idx0].pStages[idx1].module = Unwrap(pCreateInfos[idx0].pStages[idx1].module);
@@ -2784,12 +2784,11 @@ VkResult DispatchDevice::CreateShadersEXT(VkDevice device, uint32_t createInfoCo
     if (pCreateInfos) {
         var_local_pCreateInfos.resize(createInfoCount);
         local_pCreateInfos = var_local_pCreateInfos.data();
-        vvl::unordered_set<VkSamplerYcbcrConversion> conversions;
 
         for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
             local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
 
-            UnwrapMappingInfo(this, conversions, local_pCreateInfos[index0].pNext);
+            UnwrapMappingInfo(this, local_pCreateInfos[index0].pNext);
 
             if (local_pCreateInfos[index0].pSetLayouts) {
                 for (uint32_t index1 = 0; index1 < local_pCreateInfos[index0].setLayoutCount; ++index1) {
