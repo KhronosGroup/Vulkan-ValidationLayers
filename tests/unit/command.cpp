@@ -5212,3 +5212,44 @@ TEST_F(NegativeCommand, SetPrimitiveRestartIndex) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+// See https://gitlab.khronos.org/vulkan/vulkan/-/issues/4793
+// You are not allowed to call reset on destroyed objects
+TEST_F(NegativeCommand, DeviceLostInUse) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test only supported by MockICD";
+    }
+
+    m_command_buffer.Begin();
+    m_command_buffer.End();
+
+    vkt::Fence fence(*m_device);
+
+    // Special way to force VK_ERROR_DEVICE_LOST with MockICD
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSubmitInfo-pNext-pNext");
+    VkExportFenceCreateInfo fault_injection = vku::InitStructHelper();
+
+    VkSubmitInfo submit_info = vku::InitStructHelper(&fault_injection);
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
+    VkResult result = vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, fence);
+
+    if (result != VK_ERROR_DEVICE_LOST) {
+        vk::QueueWaitIdle(m_default_queue->handle());
+        GTEST_SKIP() << "No device lost found";
+    }
+
+    m_errorMonitor->SetDesiredError("VUID-vkResetFences-pFences-01123");
+    fence.Reset();
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkResetCommandBuffer-commandBuffer-00045");
+    vk::ResetCommandBuffer(m_command_buffer, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkResetCommandPool-commandPool-00040");
+    vk::ResetCommandPool(*m_device, m_command_pool, 0);
+    m_errorMonitor->VerifyFound();
+}
