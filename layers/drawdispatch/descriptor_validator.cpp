@@ -1101,12 +1101,13 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     if ((resource_variable.IsAtomic()) && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
         !(buffer_format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
-        skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::BUFFER_VIEW_ATOMIC_07888), objlist, loc.Get(),
-                         "the %s has %s with format of %s which doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.\n"
-                         "(supported features: %s).%s",
-                         DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer_view).c_str(),
-                         string_VkFormat(buffer_view_format), string_VkFormatFeatureFlags2(buffer_format_features).c_str(),
-                         DescribeInstruction().c_str());
+        skip |=
+            LogError(CreateActionVuid(loc.Get().function, ActionVUID::BUFFER_VIEW_ATOMIC_07888), objlist, loc.Get(),
+                     "the %s has %s with format of %s which doesn't support VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT.\n"
+                     "(supported features: %s).%s",
+                     DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer_view).c_str(),
+                     string_VkFormat(buffer_view_format), string_VkFormatFeatureFlags2(buffer_format_features).c_str(),
+                     DescribeInstruction().c_str());
     }
 
     // When KHR_format_feature_flags2 is supported, the read/write without
