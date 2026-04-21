@@ -664,7 +664,7 @@ bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool 
             const LogObjectList objlist(cb_state->Handle(), commandPool);
             skip |= LogError("VUID-vkResetCommandPool-commandPool-00040", objlist, error_obj.location, "(%s) is in use.%s",
                              FormatHandle(cb_state->Handle()).c_str(),
-                             is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occured, the command pool must be destroyed)" : "");
+                             is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command pool must be destroyed)" : "");
         }
     }
     return skip;

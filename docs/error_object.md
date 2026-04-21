@@ -10,7 +10,7 @@ The `chassis.cpp` holds the single `ErrorObject` reference which is passed to al
 
 ## Location
 
-It is very important to know "where" in a function call the error occured, this is where the `Location` object comes in.
+It is very important to know "where" in a function call the error occurred, this is where the `Location` object comes in.
 
 inside `chassis.cpp` we generate the starting `Location` for `ErrorObject`. From here inside each function, we can append what we need
 

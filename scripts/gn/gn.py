@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# Copyright 2023-2024 The Khronos Group Inc.
-# Copyright 2023-2024 Valve Corporation
-# Copyright 2023-2024 LunarG, Inc.
+# Copyright 2023-2026 The Khronos Group Inc.
+# Copyright 2023-2026 Valve Corporation
+# Copyright 2023-2026 LunarG, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -47,7 +47,7 @@ def main():
         print(f'Command {proc_error.cmd} failed with return code {proc_error.returncode}')
         sys.exit(proc_error.returncode)
     except Exception as unknown_error:
-        print(f'An unkown error occured: {unknown_error}')
+        print(f'An unkown error occurred: {unknown_error}')
         sys.exit(1)
 
     sys.exit(0)

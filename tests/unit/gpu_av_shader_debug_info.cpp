@@ -107,7 +107,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, OpLine) {
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, OpLineColumn) {
-    TEST_DESCRIPTION("Make sure the column in OpLine will add value to show which part the error occured");
+    TEST_DESCRIPTION("Make sure the column in OpLine will add value to show which part the error occurred");
 
     const char* shader_source = R"(
                OpCapability Shader
@@ -1452,7 +1452,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ShaderObjectHandle) {
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, CommandBufferCommandIndex) {
-    TEST_DESCRIPTION("Make sure we print which index in the command buffer the issue occured");
+    TEST_DESCRIPTION("Make sure we print which index in the command buffer the issue occurred");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);

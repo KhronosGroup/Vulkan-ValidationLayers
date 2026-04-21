@@ -577,7 +577,7 @@ bool CoreChecks::ValidateFramebufferAndRenderPassLayouts(const vvl::CommandBuffe
         return skip;
     }
 
-    // Have the location where the VkRenderPass is reference, and where in it's creation the error occured
+    // Have the location where the VkRenderPass is reference, and where in it's creation the error occurred
     const Location rp_loc = rp_begin_loc.dot(Field::renderPass);
     // only printing Fields, but use same Function to make getting correct VUID easier
     const Location rp_create_info(rp_begin_loc.function, Field::pCreateInfo);

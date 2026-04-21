@@ -1908,7 +1908,7 @@ static void GenerateStageMessage(std::ostringstream& ss, const uint32_t* error_r
     ss << '\n';
 }
 
-// Where we build up the error message with all the useful debug information about where the error occured
+// Where we build up the error message with all the useful debug information about where the error occurred
 std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const uint32_t* error_record,
                                                             const InstrumentedShader* instrumented_shader,
                                                             VkPipelineBindPoint pipeline_bind_point,

@@ -239,7 +239,7 @@ void main() {
 }
 
 TEST_F(NegativeDebugPrintfShaderDebugInfo, CommandBufferCommandIndex) {
-    TEST_DESCRIPTION("Make sure we print which index in the command buffer the issue occured");
+    TEST_DESCRIPTION("Make sure we print which index in the command buffer the issue occurred");
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
