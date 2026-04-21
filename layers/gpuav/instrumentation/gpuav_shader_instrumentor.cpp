@@ -33,7 +33,7 @@
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/spirv/log_error_pass.h"
 #include "error_message/spirv_logging.h"
-#include <spirv/unified1/NonSemanticShaderDebugInfo100.h>
+#include <spirv/unified1/NonSemanticShaderDebugInfo.h>
 #include <spirv/unified1/spirv.hpp>
 
 #include "state_tracker/pipeline_state.h"
