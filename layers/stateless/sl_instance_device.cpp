@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include <sstream>
 #include "generated/vk_extension_helper.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
@@ -37,48 +38,10 @@ struct StringJoinSizeTrait<const char*> {
         return strlen(str);
     }
 };
-// Similar to perl/python join
-//    * String must support size, reserve, append, and be default constructable
-//    * StringCollection must support size, const forward iteration, and store
-//      strings compatible with String::append
-//    * Accessor trait can be set if default accessors (compatible with string
-//      and const char *) don't support size(StringCollection::value_type &)
-//
-// Return type based on sep type
-template <typename String = std::string, typename StringCollection = std::vector<String>,
-          typename Accessor = StringJoinSizeTrait<typename StringCollection::value_type>>
-static inline String string_join(const String& sep, const StringCollection& strings) {
-    String joined;
-    const size_t count = strings.size();
-    if (!count) return joined;
-
-    // Prereserved storage, s.t. we will execute in linear time (avoids reallocation copies)
-    size_t reserve = (count - 1) * sep.size();
-    for (const auto& str : strings) {
-        reserve += Accessor::size(str);  // abstracted to allow const char * type in StringCollection
-    }
-    joined.reserve(reserve + 1);
-
-    // Seps only occur *between* strings entries, so first is special
-    auto current = strings.cbegin();
-    joined.append(*current);
-    ++current;
-    for (; current != strings.cend(); ++current) {
-        joined.append(sep);
-        joined.append(*current);
-    }
-    return joined;
-}
-
-// Requires StringCollection::value_type has a const char * constructor and is compatible the string_join::String above
-template <typename StringCollection = std::vector<std::string>, typename SepString = std::string>
-static inline SepString string_join(const char* sep, const StringCollection& strings) {
-    return string_join<SepString, StringCollection>(SepString(sep), strings);
-}
 
 template <typename ExtensionState>
-bool Instance::ValidateExtensionReqs(const ExtensionState& extensions, const char* vuid, const char* extension_type,
-                                     vvl::Extension extension, const Location& extension_loc) const {
+bool Instance::ValidateExtensionReqs(const ExtensionState& extensions, bool is_instance, vvl::Extension extension,
+                                     const Location& extension_loc) const {
     bool skip = false;
     if (extension == vvl::Extension::Empty) {
         return skip;
@@ -97,12 +60,35 @@ bool Instance::ValidateExtensionReqs(const ExtensionState& extensions, const cha
         }
     }
 
-    // Report any missing requirements
-    if (missing.size()) {
-        std::string missing_joined_list = string_join(", ", missing);
-        skip |= LogError(vuid, instance, extension_loc, "Missing extension%s required by the %s extension %s: %s.",
-                         ((missing.size() > 1) ? "s" : ""), extension_type, String(extension), missing_joined_list.c_str());
+    if (missing.empty()) {
+        return skip;
     }
+
+    // Provide a better error message if instance or device (since device can depend on instance level extensions)
+    if (is_instance) {
+        std::ostringstream ss;
+        ss << "Missing extension" << ((missing.size() > 1) ? "s" : "") << " required to enable instance extension "
+           << String(extension) << ":\n";
+        for (auto missing_name : missing) {
+            ss << " - " << missing_name << "\n";
+        }
+        skip |= LogError("VUID-vkCreateInstance-ppEnabledExtensionNames-01388", instance, extension_loc, "%s", ss.str().c_str());
+
+    } else {
+        std::ostringstream ss;
+        ss << "Missing extension" << ((missing.size() > 1) ? "s" : "") << " required to enable device extension "
+           << String(extension) << ":\n";
+        for (auto missing_name : missing) {
+            ss << " - " << missing_name;
+            vvl::Extension missing_extension = GetExtension(missing_name);
+            if (IsInstanceExtension(missing_extension)) {
+                ss << " (instance extension, which needs to be added to VkInstanceCreateInfo::ppEnabledExtensionNames)";
+            }
+            ss << '\n';
+        }
+        skip |= LogError("VUID-vkCreateDevice-ppEnabledExtensionNames-01387", instance, extension_loc, "%s", ss.str().c_str());
+    }
+
     return skip;
 }
 
@@ -181,8 +167,7 @@ bool Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreate
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
-        skip |= ValidateExtensionReqs(instance_extensions, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388", "instance",
-                                      extension, create_info_loc.dot(Field::ppEnabledExtensionNames, i));
+        skip |= ValidateExtensionReqs(instance_extensions, true, extension, create_info_loc.dot(Field::ppEnabledExtensionNames, i));
     }
     if (pCreateInfo->flags & VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR &&
         !instance_extensions.vk_khr_portability_enumeration) {
@@ -392,8 +377,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
         skip |= context.ValidateString(create_info_loc.dot(Field::ppEnabledExtensionNames),
                                        "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-parameter",
                                        pCreateInfo->ppEnabledExtensionNames[i]);
-        skip |= ValidateExtensionReqs(extensions, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387", "device", extension,
-                                      create_info_loc.dot(Field::ppEnabledExtensionNames, i));
+        skip |= ValidateExtensionReqs(extensions, false, extension, create_info_loc.dot(Field::ppEnabledExtensionNames, i));
         if (extension == vvl::Extension::_VK_KHR_portability_subset) {
             portability_requested = true;
         }

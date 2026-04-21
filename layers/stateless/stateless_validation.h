@@ -342,8 +342,8 @@ class Instance : public vvl::BaseInstance {
     bool CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const Location &loc, const uint32_t promoted_version) const;
 
     template <typename ExtensionState>
-    bool ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
-                               vvl::Extension extension, const Location &extension_loc) const;
+    bool ValidateExtensionReqs(const ExtensionState& extensions, bool is_instance, vvl::Extension extension,
+                               const Location& extension_loc) const;
 
     bool PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                        VkInstance *pInstance, const ErrorObject &error_obj) const override;
