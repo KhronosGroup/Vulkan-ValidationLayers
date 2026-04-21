@@ -1052,6 +1052,39 @@ void CopyCreatePipelineFeedbackData(const void* src_chain, const void* dst_chain
     }
 }
 
+static void UnwrapMappingInfo(HandleWrapper* handle_wrapper, vvl::unordered_set<VkSamplerYcbcrConversion>& conversions,
+                              const void* pNext) {
+    if (auto* mapping_info = vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(pNext)) {
+        for (uint32_t idx2 = 0; idx2 < mapping_info->mappingCount; ++idx2) {
+            const auto& mapping = mapping_info->pMappings[idx2];
+            const void* embedded_sampler_pNext = nullptr;
+            if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT &&
+                mapping.sourceData.constantOffset.pEmbeddedSampler) {
+                embedded_sampler_pNext = mapping.sourceData.constantOffset.pEmbeddedSampler->pNext;
+            } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT &&
+                       mapping.sourceData.pushIndex.pEmbeddedSampler) {
+                embedded_sampler_pNext = mapping.sourceData.pushIndex.pEmbeddedSampler->pNext;
+            } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT &&
+                       mapping.sourceData.indirectIndex.pEmbeddedSampler) {
+                embedded_sampler_pNext = mapping.sourceData.indirectIndex.pEmbeddedSampler->pNext;
+            } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT &&
+                       mapping.sourceData.indirectIndexArray.pEmbeddedSampler) {
+                embedded_sampler_pNext = mapping.sourceData.indirectIndexArray.pEmbeddedSampler->pNext;
+            } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT &&
+                       mapping.sourceData.shaderRecordIndex.pEmbeddedSampler) {
+                embedded_sampler_pNext = mapping.sourceData.shaderRecordIndex.pEmbeddedSampler->pNext;
+            }
+
+            if (auto* sampler_conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(embedded_sampler_pNext)) {
+                if (sampler_conversion_info->conversion && !conversions.insert(sampler_conversion_info->conversion).second) {
+                    const_cast<VkSamplerYcbcrConversionInfo*>(sampler_conversion_info)->conversion =
+                        handle_wrapper->Unwrap(sampler_conversion_info->conversion);
+                }
+            }
+        }
+    }
+}
+
 VkResult DispatchDevice::CreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                  const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
@@ -1124,38 +1157,7 @@ VkResult DispatchDevice::CreateGraphicsPipelines(VkDevice device, VkPipelineCach
 
             if (pCreateInfos[idx0].pStages) {
                 for (uint32_t idx1 = 0; idx1 < pCreateInfos[idx0].stageCount; ++idx1) {
-                    if (auto* mapping_info = vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(
-                            local_pCreateInfos[idx0].pStages[idx1].pNext)) {
-                        for (uint32_t idx2 = 0; idx2 < mapping_info->mappingCount; ++idx2) {
-                            const auto& mapping = mapping_info->pMappings[idx2];
-                            const void* embedded_sampler_pNext = nullptr;
-                            if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT &&
-                                mapping.sourceData.constantOffset.pEmbeddedSampler) {
-                                embedded_sampler_pNext = mapping.sourceData.constantOffset.pEmbeddedSampler->pNext;
-                            } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT &&
-                                       mapping.sourceData.pushIndex.pEmbeddedSampler) {
-                                embedded_sampler_pNext = mapping.sourceData.pushIndex.pEmbeddedSampler->pNext;
-                            } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT &&
-                                       mapping.sourceData.indirectIndex.pEmbeddedSampler) {
-                                embedded_sampler_pNext = mapping.sourceData.indirectIndex.pEmbeddedSampler->pNext;
-                            } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT &&
-                                       mapping.sourceData.indirectIndexArray.pEmbeddedSampler) {
-                                embedded_sampler_pNext = mapping.sourceData.indirectIndexArray.pEmbeddedSampler->pNext;
-                            } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT &&
-                                       mapping.sourceData.shaderRecordIndex.pEmbeddedSampler) {
-                                embedded_sampler_pNext = mapping.sourceData.shaderRecordIndex.pEmbeddedSampler->pNext;
-                            }
-
-                            if (auto* sampler_conversion_info =
-                                    vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(embedded_sampler_pNext)) {
-                                if (sampler_conversion_info->conversion &&
-                                    !conversions.insert(sampler_conversion_info->conversion).second) {
-                                    const_cast<VkSamplerYcbcrConversionInfo*>(sampler_conversion_info)->conversion =
-                                        Unwrap(sampler_conversion_info->conversion);
-                                }
-                            }
-                        }
-                    }
+                    UnwrapMappingInfo(this, conversions, local_pCreateInfos[idx0].pStages[idx1].pNext);
 
                     if (pCreateInfos[idx0].pStages[idx1].module) {
                         local_pCreateInfos[idx0].pStages[idx1].module = Unwrap(pCreateInfos[idx0].pStages[idx1].module);
@@ -2782,8 +2784,13 @@ VkResult DispatchDevice::CreateShadersEXT(VkDevice device, uint32_t createInfoCo
     if (pCreateInfos) {
         var_local_pCreateInfos.resize(createInfoCount);
         local_pCreateInfos = var_local_pCreateInfos.data();
+        vvl::unordered_set<VkSamplerYcbcrConversion> conversions;
+
         for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
             local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
+
+            UnwrapMappingInfo(this, conversions, local_pCreateInfos[index0].pNext);
+
             if (local_pCreateInfos[index0].pSetLayouts) {
                 for (uint32_t index1 = 0; index1 < local_pCreateInfos[index0].setLayoutCount; ++index1) {
                     local_pCreateInfos[index0].pSetLayouts[index1] = Unwrap(local_pCreateInfos[index0].pSetLayouts[index1]);
