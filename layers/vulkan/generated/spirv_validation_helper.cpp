@@ -298,8 +298,7 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityDotProductFloat16AccFloat16VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat16AccFloat16, nullptr, ""}},
         {spv::CapabilityDotProductBFloat16AccVALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductBFloat16Acc, nullptr, ""}},
         {spv::CapabilityDotProductFloat8AccFloat32VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat8AccFloat32, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityConstantDataKHR, {0, &DeviceFeatures::shaderConstantData, nullptr, ""}},
+        {spv::CapabilityConstantDataKHR, {0, &DeviceFeatures::shaderConstantData, nullptr, ""}},
         {spv::CapabilityAbortKHR, {0, &DeviceFeatures::shaderAbort, nullptr, ""}},
     };
     // clang-format on
@@ -691,6 +690,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "AbortKHR";
         case spv::CapabilityDescriptorHeapEXT:
             return "DescriptorHeapEXT";
+        case spv::CapabilityConstantDataKHR:
+            return "ConstantDataKHR";
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case spv::CapabilityPoisonFreezeKHR:
             return "PoisonFreezeKHR";
@@ -1281,6 +1282,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityDotProductFloat16AccFloat16VALVE, "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat16AccFloat16"},
     {spv::CapabilityDotProductBFloat16AccVALVE, "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductBFloat16Acc"},
     {spv::CapabilityDotProductFloat8AccFloat32VALVE, "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat8AccFloat32"},
+    {spv::CapabilityConstantDataKHR, "VkPhysicalDeviceShaderConstantDataFeaturesKHR::shaderConstantData"},
     {spv::CapabilityAbortKHR, "VkPhysicalDeviceShaderAbortFeaturesKHR::shaderAbort"},
     };
 

@@ -767,6 +767,10 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpMemberDecorateIdEXT";
         case spv::OpConstantSizeOfEXT:
             return "OpConstantSizeOfEXT";
+        case spv::OpConstantDataKHR:
+            return "OpConstantDataKHR";
+        case spv::OpSpecConstantDataKHR:
+            return "OpSpecConstantDataKHR";
         case spv::OpHitObjectRecordHitMotionNV:
             return "OpHitObjectRecordHitMotionNV";
         case spv::OpHitObjectRecordHitWithIndexMotionNV:
@@ -1655,6 +1659,8 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "ArrayStrideIdEXT";
         case spv::DecorationOffsetIdEXT:
             return "OffsetIdEXT";
+        case spv::DecorationUTFEncodedKHR:
+            return "UTFEncodedKHR";
         case spv::DecorationOverrideCoverageNV:
             return "OverrideCoverageNV";
         case spv::DecorationPassthroughNV:
@@ -2609,6 +2615,8 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpUntypedImageTexelPointerEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpMemberDecorateIdEXT, {{OperandKind::Id, OperandKind::Literal, OperandKind::ValueEnum}}},
         {spv::OpConstantSizeOfEXT, {{OperandKind::Id}}},
+        {spv::OpConstantDataKHR, {{OperandKind::Literal}}},
+        {spv::OpSpecConstantDataKHR, {{OperandKind::Literal}}},
         {spv::OpHitObjectRecordHitMotionNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpHitObjectRecordHitWithIndexMotionNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpHitObjectRecordMissMotionNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
