@@ -345,6 +345,9 @@ void CommandBuffer::ResetCBState() {
     linked_command_buffers.clear();
     bound_tile_memory = nullptr;
 
+    // Both SetDescriptorMode and lastBound.Reset() will reset the descriptor mode, but SetDescriptorMode will also clear up the
+    // descriptor heaps/buffers state if used, so it needs to be called first
+    SetDescriptorMode(vvl::DescriptorModeUnknown, vvl::Func::Empty);
     for (auto& item : lastBound) {
         item.Reset();
     }
@@ -372,7 +375,6 @@ void CommandBuffer::ResetCBState() {
     bind_vertex_buffer_3_used = false;
     stride_set_with_bind_vertex_buffer_3 = false;
 
-    SetDescriptorMode(vvl::DescriptorModeUnknown, vvl::Func::Empty);
     // Need to reset on initalization
     descriptor_heap.Reset();
     descriptor_buffer.Reset();
