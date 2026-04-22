@@ -336,8 +336,6 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidatePipelineVertexDivisors(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     void EnqueueValidateImageBarrierAttachment(const Location& loc, core::CommandBufferSubState& cb_sub_state,
                                                const ImageBarrier& barrier);
-    void EnqueueValidateDynamicRenderingImageBarrierLayouts(const Location barrier_loc, vvl::CommandBuffer& cb_state,
-                                                            const ImageBarrier& image_barrier);
     bool ValidateImageBarrierAttachment(const Location& barrier_loc, vvl::CommandBuffer const& cb_state,
                                         const vvl::Framebuffer& fb_state, uint32_t active_subpass,
                                         const vku::safe_VkSubpassDescription2& sub_desc, const VkRenderPass rp_handle,
