@@ -50,6 +50,32 @@ struct SpirvLoggingInfo {
     std::string reported_filename;
 };
 
+static void AppendSourceText(const char* text, std::vector<std::string>& out_source_lines) {
+    if (!text) {
+        return;
+    }
+
+    // Handle first line case
+    if (out_source_lines.empty() && text[0] != '\0') {
+        out_source_lines.emplace_back("");
+    }
+
+    for (const char* c = text; *c != '\0'; ++c) {
+        if (*c == '\n') {
+            out_source_lines.emplace_back("");
+        } else if (*c == '\r') {
+            // Look for "\r\n" to avoid double-line breaking
+            if (*(c + 1) == '\n') {
+                continue;
+            }
+            out_source_lines.emplace_back("");
+        } else {
+            // Append to the current "active" line
+            out_source_lines.back() += *c;
+        }
+    }
+};
+
 // Read the contents of the SPIR-V OpSource instruction and any following continuation instructions.
 // Split the single string into a vector of strings, one for each line, for easier processing.
 static void ReadOpSource(const std::vector<uint32_t>& instructions, const uint32_t reported_file_id,
@@ -59,22 +85,13 @@ static void ReadOpSource(const std::vector<uint32_t>& instructions, const uint32
         const uint32_t instruction = instructions[offset];
         const uint32_t length = Length(instruction);
         const uint32_t opcode = Opcode(instruction);
-        if (opcode != spv::OpSource || length < 5 || instructions[offset + 3] != reported_file_id) {
-            offset += length;
-            continue;
+        if (opcode == spv::OpSource && length >= 5 && instructions[offset + 3] == reported_file_id) {
+            const char* source_text = reinterpret_cast<const char*>(&instructions[offset + 4]);
+            AppendSourceText(source_text, out_source_lines);
+            offset += length;  // point to next instruction after OpSource
+            break;
         }
-
-        // OpSource has been found
-        std::istringstream in_stream;
-        std::string current_line;
-        const char* str = reinterpret_cast<const char*>(&instructions[offset + 4]);
-        in_stream.str(str);
-        while (std::getline(in_stream, current_line)) {
-            out_source_lines.emplace_back(current_line);
-        }
-
-        offset += length;  // point to next instruction after OpSource
-        break;
+        offset += length;
     }
 
     // Look for OpSourceContinued, it must be right after
@@ -86,13 +103,8 @@ static void ReadOpSource(const std::vector<uint32_t>& instructions, const uint32
             break;
         }
 
-        std::istringstream in_stream;
-        std::string current_line;
-        const char* str = reinterpret_cast<const char*>(&instructions[offset + 1]);
-        in_stream.str(str);
-        while (std::getline(in_stream, current_line)) {
-            out_source_lines.emplace_back(current_line);
-        }
+        const char* continue_text = reinterpret_cast<const char*>(&instructions[offset + 1]);
+        AppendSourceText(continue_text, out_source_lines);
         offset += length;
     }
 }
@@ -104,38 +116,28 @@ static void ReadDebugSource(const std::vector<uint32_t>& instructions, const uin
         const uint32_t instruction = instructions[offset];
         const uint32_t length = Length(instruction);
         const uint32_t opcode = Opcode(instruction);
-        if (opcode != spv::OpExtInst || instructions[offset + 2] != debug_source_id ||
-            instructions[offset + 4] != NonSemanticShaderDebugInfoDebugSource) {
+
+        if (opcode == spv::OpExtInst && instructions[offset + 2] == debug_source_id &&
+            instructions[offset + 4] == NonSemanticShaderDebugInfoDebugSource) {
+            // We have now found the proper OpExtInst DebugSource
+            out_file_string_id = instructions[offset + 5];
+
+            // Optional source Text not provided so nothing left to do
+            if (length >= 7) {
+                const uint32_t string_id = instructions[offset + 6];
+                const char* source_text = spirv::GetOpString(instructions, string_id);
+                if (!source_text) {
+                    return;  // error should be caught in spirv-val, but don't crash here
+                }
+                AppendSourceText(source_text, out_source_lines);
+            }
             offset += length;
-            continue;
+            break;
         }
-
-        // We have now found the proper OpExtInst DebugSource
-        out_file_string_id = instructions[offset + 5];
-
-        // Optional source Text not provided so nothing left to do
-        if (length < 7) {
-            return;
-        }
-
-        const uint32_t string_id = instructions[offset + 6];
-        const char* source_text = spirv::GetOpString(instructions, string_id);
-        if (!source_text) {
-            return;  // error should be caught in spirv-val, but don't crash here
-        }
-
-        std::istringstream in_stream;
-        std::string current_line;
-        in_stream.str(source_text);
-        while (std::getline(in_stream, current_line)) {
-            out_source_lines.emplace_back(current_line);
-        }
-
-        offset += length;  // point to next instruction after OpSource
-        break;
+        offset += length;
     }
 
-    // Look for DebugSourceContinued, it must be right after
+    // Look for any DebugSourceContinued, which must be right after if they exist
     while (offset < instructions.size()) {
         const uint32_t continue_insn = instructions[offset];
         const uint32_t length = Length(continue_insn);
@@ -150,14 +152,7 @@ static void ReadDebugSource(const std::vector<uint32_t>& instructions, const uin
         if (!continue_text) {
             return;  // error should be caught in spirv-val, but don't crash here
         }
-
-        std::istringstream in_stream;
-        std::string current_line;
-        in_stream.str(continue_text);
-        while (std::getline(in_stream, current_line)) {
-            out_source_lines.emplace_back(current_line);
-        }
-
+        AppendSourceText(continue_text, out_source_lines);
         offset += length;
     }
 }

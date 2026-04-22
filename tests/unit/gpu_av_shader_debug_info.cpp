@@ -178,9 +178,11 @@ TEST_F(NegativeGpuAVShaderDebugInfo, OpSourceContinued) {
           %1 = OpString "a.comp"
                OpSource GLSL 450 %1 "#version 450
 #extension GL_EXT_buffer_reference : enable
-layout(buffer_reference, std430) readonly buffer IndexBuffer { int indices[]; };"
+layout(buffer_reference, std430) readonly buffer IndexBuffer { int indices[]; };
+"
                OpSourceContinued "layout(set = 0, binding = 0) buffer foo { IndexBuffer data; int x; };"
-               OpSourceContinued "void main() {
+               OpSourceContinued "
+void main() {
     x = data.indices[16];
 }"
                OpMemberDecorate %foo 0 Offset 0

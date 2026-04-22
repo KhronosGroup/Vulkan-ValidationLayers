@@ -770,7 +770,7 @@ void main() {
 
 TEST_F(NegativeShaderDebugInfo, Version101) {
     // Makes sure the new Revision 101 works, which added 2 new instructions
-    // (We aren't use it, want to make sure OpExtInstImport works)
+    // (We don't use them, but want to make sure OpExtInstImport works)
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
@@ -820,6 +820,130 @@ void main() {
 
     // VUID-RuntimeSpirv-vulkanMemoryModel-06265
     m_errorMonitor->SetDesiredError("Error occurred at in.comp:4");
+    VkShaderObj cs(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderDebugInfo, DebugSourceContinued) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    RETURN_IF_SKIP(Init());
+
+    const char* source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+          %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+          %3 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+       %file = OpString "in.comp"
+       %text = OpString "#version 450
+"
+       %text1 = OpString "layout(set = 0, binding = 0) buffer ssbo { uint y; };"
+       %text2 = OpString "
+void main() {
+"
+       %text3 = OpString "    atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
+}"
+               OpDecorate %ssbo Block
+               OpMemberDecorate %ssbo 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %5 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+     %uint_1 = OpConstant %uint 1
+     %uint_4 = OpConstant %uint 4
+    %uint_68 = OpConstant %uint 68
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+       %ssbo = OpTypeStruct %uint
+
+%debug_source = OpExtInst %void %1 DebugSource %file %text
+          %c1 = OpExtInst %void %1 DebugSourceContinued %text1
+          %c2 = OpExtInst %void %1 DebugSourceContinued %text2
+          %c3 = OpExtInst %void %1 DebugSourceContinued %text3
+
+%_ptr_StorageBuffer_ssbo = OpTypePointer StorageBuffer %ssbo
+          %_ = OpVariable %_ptr_StorageBuffer_ssbo StorageBuffer
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+       %main = OpFunction %void None %5
+         %15 = OpLabel
+         %48 = OpExtInst %void %1 DebugLine %debug_source %uint_4 %uint_4 %uint_0 %uint_0
+         %47 = OpAccessChain %_ptr_StorageBuffer_uint %_ %int_0
+               OpAtomicStore %47 %int_1 %uint_68 %uint_1
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    // VUID-RuntimeSpirv-vulkanMemoryModel-06265
+    m_errorMonitor->SetDesiredError("4:     atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);");
+    VkShaderObj cs(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderDebugInfo, DebugSourceContinuedNoNewLine) {
+    TEST_DESCRIPTION("Found that DebugSourceContinued does not mean a new-line");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    RETURN_IF_SKIP(Init());
+
+    const char* source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+          %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+          %3 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+       %file = OpString "in.comp"
+       %text = OpString "#version 450
+layout(set = 0, binding = 0) buffer ssbo {uint y;};
+void main() {
+    atomicStore(y, 1u, gl_ScopeDevice, "
+    ; The line is continued here
+    %text1 = OpString "gl_StorageSemanticsBuffer,"
+    %text2 = OpString " gl_SemanticsRelease);
+}"
+               OpDecorate %ssbo Block
+               OpMemberDecorate %ssbo 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %5 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+     %uint_1 = OpConstant %uint 1
+     %uint_4 = OpConstant %uint 4
+    %uint_68 = OpConstant %uint 68
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+       %ssbo = OpTypeStruct %uint
+
+%debug_source = OpExtInst %void %1 DebugSource %file %text
+          %c1 = OpExtInst %void %1 DebugSourceContinued %text1
+          %c2 = OpExtInst %void %1 DebugSourceContinued %text2
+
+%_ptr_StorageBuffer_ssbo = OpTypePointer StorageBuffer %ssbo
+          %_ = OpVariable %_ptr_StorageBuffer_ssbo StorageBuffer
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+       %main = OpFunction %void None %5
+         %15 = OpLabel
+         %48 = OpExtInst %void %1 DebugLine %debug_source %uint_4 %uint_4 %uint_0 %uint_0
+         %47 = OpAccessChain %_ptr_StorageBuffer_uint %_ %int_0
+               OpAtomicStore %47 %int_1 %uint_68 %uint_1
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    // VUID-RuntimeSpirv-vulkanMemoryModel-06265
+    m_errorMonitor->SetDesiredError("4:     atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);");
     VkShaderObj cs(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
