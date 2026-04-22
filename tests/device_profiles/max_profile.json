@@ -103,6 +103,9 @@
                 "VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT": {
                     "shaderUniformBufferUnsizedArray": true
                 },
+                "VkPhysicalDeviceShaderConstantDataFeaturesKHR": {
+                    "shaderConstantData": true
+                },
                 "VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT": {
                     "primitiveRestartIndex": true
                 },
@@ -2620,6 +2623,7 @@
                 "VK_KHR_shader_atomic_int64": 1,
                 "VK_KHR_shader_bfloat16": 1,
                 "VK_KHR_shader_clock": 1,
+                "VK_KHR_shader_constant_data": 1,
                 "VK_KHR_shader_draw_parameters": 1,
                 "VK_KHR_shader_expect_assume": 1,
                 "VK_KHR_shader_float16_int8": 1,

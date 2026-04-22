@@ -13,6 +13,7 @@
 
 #include <gtest/gtest.h>
 #include <spirv-tools/libspirv.h>
+#include <cstdint>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/shader_helper.h"
@@ -2594,5 +2595,174 @@ TEST_F(PositiveShaderSpirv, LongVectorDotProductSpecConstant) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ =
         VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM, &specialization_info);
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveShaderSpirv, SpecializationConstantDataDefault) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_CONSTANT_DATA_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderConstantData);
+    RETURN_IF_SKIP(Init());
+    const char* cs_src = R"(
+               OpCapability Shader
+               OpCapability ConstantDataKHR
+               OpExtension "SPV_KHR_constant_data"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %length SpecId 1
+               OpDecorate %data SpecId 2
+       %void = OpTypeVoid
+       %uint = OpTypeInt 32 0
+     %length = OpSpecConstant %uint 4
+ %array_length = OpTypeArray %uint %length
+       %data = OpSpecConstantDataKHR %array_length 1 2 3 4
+  %void_func = OpTypeFunction %void
+       %main = OpFunction %void None %void_func
+ %main_label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveShaderSpirv, SpecializationConstantDataExpand) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_CONSTANT_DATA_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderConstantData);
+    RETURN_IF_SKIP(Init());
+    const char* cs_src = R"(
+               OpCapability Shader
+               OpCapability ConstantDataKHR
+               OpExtension "SPV_KHR_constant_data"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %length SpecId 1
+               OpDecorate %data SpecId 2
+       %void = OpTypeVoid
+       %uint = OpTypeInt 32 0
+     %length = OpSpecConstant %uint 2
+ %array_length = OpTypeArray %uint %length
+       %data = OpSpecConstantDataKHR %array_length 1 2
+  %void_func = OpTypeFunction %void
+       %main = OpFunction %void None %void_func
+ %main_label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    uint32_t data[6] = {
+        5,             // length
+        8, 6, 8, 8, 9  // data
+    };
+
+    // {id, offset, size}
+    VkSpecializationMapEntry entries[2] = {
+        {1, 0, 4},   // length
+        {2, 4, 20},  // data
+    };
+
+    // int32_t data = 0;
+    VkSpecializationInfo specialization_info = {2, entries, 24, data};
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ =
+        VkShaderObj(*m_device, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM, &specialization_info);
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveShaderSpirv, SpecializationConstantDataShrink) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_CONSTANT_DATA_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderConstantData);
+    RETURN_IF_SKIP(Init());
+    const char* cs_src = R"(
+               OpCapability Shader
+               OpCapability ConstantDataKHR
+               OpExtension "SPV_KHR_constant_data"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %length SpecId 1
+               OpDecorate %data SpecId 2
+       %void = OpTypeVoid
+       %uint = OpTypeInt 32 0
+     %length = OpSpecConstant %uint 8
+ %array_length = OpTypeArray %uint %length
+       %data = OpSpecConstantDataKHR %array_length 1 2 3 4 5 6 7 8
+  %void_func = OpTypeFunction %void
+       %main = OpFunction %void None %void_func
+ %main_label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    uint32_t data[3] = {
+        2,        // length
+        0xa, 0xb  // data
+    };
+
+    // {id, offset, size}
+    VkSpecializationMapEntry entries[2] = {
+        {1, 0, 4},  // length
+        {2, 4, 8},  // data
+    };
+
+    VkSpecializationInfo specialization_info = {2, entries, 12, data};
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ =
+        VkShaderObj(*m_device, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM, &specialization_info);
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveShaderSpirv, SpecializationConstantInt8) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_CONSTANT_DATA_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderConstantData);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    RETURN_IF_SKIP(Init());
+    const char* cs_src = R"(
+               OpCapability Shader
+               OpCapability Int8
+               OpCapability ConstantDataKHR
+               OpExtension "SPV_KHR_constant_data"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %length SpecId 1
+               OpDecorate %data SpecId 2
+       %void = OpTypeVoid
+       %char = OpTypeInt 8 0
+     %length = OpSpecConstant %char 200 ; to large if not set
+ %array_length = OpTypeArray %char %length
+       %data = OpSpecConstantDataKHR %array_length 0
+  %void_func = OpTypeFunction %void
+       %main = OpFunction %void None %void_func
+ %main_label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    uint8_t data[9] = {
+        1, 2, 3, 4, 5, 6, 7, 8,  // data
+        5                        // length
+    };
+
+    // {id, offset, size}
+    VkSpecializationMapEntry entries[2] = {
+        {1, 8, 1},  // length
+        {2, 2, 5},  // data
+    };
+
+    VkSpecializationInfo specialization_info = {2, entries, 9, data};
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ =
+        VkShaderObj(*m_device, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM, &specialization_info);
     pipe.CreateComputePipeline();
 }
