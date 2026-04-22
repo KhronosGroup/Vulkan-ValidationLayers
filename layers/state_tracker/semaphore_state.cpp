@@ -134,7 +134,7 @@ void vvl::Semaphore::EnqueueWait(const SubmissionReference& wait_submit, uint64_
     auto guard = WriteLock();
     if (type == VK_SEMAPHORE_TYPE_BINARY) {
         // Update the swapchain image acquire state if the semaphore was used by the acquire operation
-        if (acquired_image_swapchain_) {
+        if (acquired_image_swapchain_ && !acquired_image_swapchain_->Destroyed()) {
             assert(acquired_image_index_ != vvl::kNoIndex32);
             acquired_image_swapchain_->images[acquired_image_index_].acquire_semaphore_status = AcquireSyncStatus::WasWaitedOn;
             acquired_image_swapchain_.reset();

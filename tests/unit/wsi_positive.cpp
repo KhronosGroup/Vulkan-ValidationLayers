@@ -3446,3 +3446,38 @@ TEST_F(PositiveWsi, SharedPresentLayout2) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveWsi, WaitAcquireFenceForDestoryedSwapchain) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12122");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
+    const VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, surface_info);
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    vkt::Fence fence(*m_device);
+    [[maybe_unused]] const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    swapchain.Destroy();
+    fence.Wait(kWaitTimeout);
+}
+
+TEST_F(PositiveWsi, WaitAcquireSemaphoreForDestoryedSwapchain) {
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
+    const VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, surface_info);
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    vkt::Semaphore semaphore(*m_device);
+    [[maybe_unused]] const uint32_t image_index = swapchain.AcquireNextImage(semaphore, kWaitTimeout);
+    swapchain.Destroy();
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore));
+    m_default_queue->Wait();
+}
