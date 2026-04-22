@@ -1121,67 +1121,6 @@ bool CoreChecks::VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuf
     return skip;
 }
 
-void CoreChecks::EnqueueValidateDynamicRenderingImageBarrierLayouts(const Location barrier_loc, vvl::CommandBuffer& cb_state,
-                                                                    const ImageBarrier& image_barrier) {
-    if (!cb_state.active_render_pass || !cb_state.active_render_pass->UsesDynamicRendering()) {
-        return;
-    }
-    const VkRenderingInfo& rendering_info = *cb_state.active_render_pass->dynamic_rendering_begin_rendering_info.ptr();
-    std::shared_ptr<const CommandBufferImageLayoutMap> image_layout_map = cb_state.GetImageLayoutMap(image_barrier.image);
-
-    auto& cb_sub_state = core::SubState(cb_state);
-
-    auto process_image_view = [&image_barrier, &image_layout_map, &cb_sub_state,
-                               &barrier_loc](const vvl::ImageView& image_view_state) {
-        // Skip attachments that use different image than a barrier
-        if (image_barrier.image != image_view_state.image_state->VkHandle()) {
-            return;
-        }
-        // Skip images that already have image layout specified so layout validation was done at record time
-        if (image_layout_map) {
-            auto any_range_pred = [](const LayoutRange&, const ImageLayoutState&) { return true; };
-            if (ForEachMatchingLayoutMapRange(*image_layout_map, RangeGenerator(image_view_state.range_generator),
-                                              any_range_pred)) {
-                return;
-            }
-        }
-        // Enqueue distinct subresource ranges for this image.
-        // Then during submit time the layouts of these subresources are validated against allowed values
-        auto& enqueued_subresources = cb_sub_state.submit_validate_dynamic_rendering_barrier_subresources[image_barrier.image];
-        auto it = std::find_if(enqueued_subresources.begin(), enqueued_subresources.end(), [&image_view_state](const auto& entry) {
-            return entry.first == image_view_state.normalized_subresource_range;
-        });
-        if (it == enqueued_subresources.end()) {
-            enqueued_subresources.emplace_back(
-                std::make_pair(image_view_state.normalized_subresource_range, vvl::LocationCapture(barrier_loc)));
-        }
-    };
-
-    for (auto color_attachment_idx : GetUsedColorAttachments(cb_state)) {
-        if (color_attachment_idx >= rendering_info.colorAttachmentCount) {
-            continue;
-        }
-        const auto& color_attachment = rendering_info.pColorAttachments[color_attachment_idx];
-        if (const auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView)) {
-            process_image_view(*image_view_state);
-        }
-    }
-    if (rendering_info.pDepthAttachment) {
-        const AttachmentInfo& attachment =
-            cb_state.active_attachments[cb_state.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Depth)];
-        if (attachment.image_view) {
-            process_image_view(*attachment.image_view);
-        }
-    }
-    if (rendering_info.pStencilAttachment) {
-        const AttachmentInfo& attachment =
-            cb_state.active_attachments[cb_state.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Stencil)];
-        if (attachment.image_view) {
-            process_image_view(*attachment.image_view);
-        }
-    }
-}
-
 void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer& cb_state, const ImageBarrier& mem_barrier,
                                              const vvl::Image& image_state) {
     if (enabled_features.synchronization2) {

@@ -132,8 +132,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     void RecordExecuteCommand(vvl::CommandBuffer &secondary_command_buffer, uint32_t cmd_index, const Location &loc) final;
 
-    // Called from the Queue state
-    void SubmitTimeValidate();
     // Called from the Command Buffer state
     void Submit(vvl::Queue &queue_state, uint32_t perf_submit_pass, const Location &loc) final;
 
@@ -201,10 +199,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     // Validation functions run at primary CB queue submit time
     using QueueCallback = std::function<bool(const class vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state)>;
     std::vector<QueueCallback> queue_submit_functions;
-
-    // The subresources from dynamic rendering barriers that can't be validated during record time.
-    vvl::unordered_map<VkImage, std::vector<std::pair<VkImageSubresourceRange, vvl::LocationCapture>>>
-        submit_validate_dynamic_rendering_barrier_subresources;
 
     using EventCallback = std::function<bool(vvl::CommandBuffer &cb_state, bool do_validate, EventMap &local_event_signal_info,
                                              VkQueue waiting_queue, const Location &loc)>;

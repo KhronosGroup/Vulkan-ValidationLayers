@@ -636,11 +636,8 @@ void CommandBufferSubState::RecordBarriers(uint32_t buffer_barrier_count, const 
         Location barrier_loc(loc.function, vvl::Struct::VkImageMemoryBarrier, vvl::Field::pImageMemoryBarriers, i);
         const ImageBarrier img_barrier(image_barriers[i], src_stage_mask, dst_stage_mask);
         validator.RecordBarrierValidationInfo(barrier_loc, base, img_barrier, *image_state, qfo_transfer_image_barriers);
-        validator.EnqueueValidateImageBarrierAttachment(barrier_loc, *this, img_barrier);
-        validator.EnqueueValidateDynamicRenderingImageBarrierLayouts(barrier_loc, base, img_barrier);
-
-        // Update layouts at the end. Submit time enqueuing logic above needs pre-update layout map.
         validator.RecordTransitionImageLayout(base, img_barrier, *image_state);
+        validator.EnqueueValidateImageBarrierAttachment(barrier_loc, *this, img_barrier);
     }
 }
 
@@ -657,11 +654,8 @@ void CommandBufferSubState::RecordBarriers2(const VkDependencyInfo& dep_info, co
         Location barrier_loc(loc.function, vvl::Struct::VkImageMemoryBarrier2, vvl::Field::pImageMemoryBarriers, i);
         const ImageBarrier img_barrier(dep_info.pImageMemoryBarriers[i]);
         validator.RecordBarrierValidationInfo(barrier_loc, base, img_barrier, *image_state, qfo_transfer_image_barriers);
-        validator.EnqueueValidateImageBarrierAttachment(barrier_loc, *this, img_barrier);
-        validator.EnqueueValidateDynamicRenderingImageBarrierLayouts(barrier_loc, base, img_barrier);
-
-        // Update layouts at the end. Submit time enqueuing logic above needs pre-update layout map.
         validator.RecordTransitionImageLayout(base, img_barrier, *image_state);
+        validator.EnqueueValidateImageBarrierAttachment(barrier_loc, *this, img_barrier);
     }
     if (const auto tensor_barrier_dep_info = vku::FindStructInPNextChain<VkTensorDependencyInfoARM>(dep_info.pNext)) {
         const Location tensor_dep_info_loc(loc.function, vvl::Struct::VkTensorDependencyInfoARM, vvl::Field::pNext);
@@ -1083,7 +1077,6 @@ void CommandBufferSubState::ResetCBState() {
 
     // Submit time validation
     queue_submit_functions.clear();
-    submit_validate_dynamic_rendering_barrier_subresources.clear();
     event_updates.clear();
     cmd_execute_commands_functions.clear();
     query_updates.clear();
@@ -1180,47 +1173,8 @@ void CommandBufferSubState::Submit(vvl::Queue& queue_state, uint32_t perf_submit
     }
 }
 
-void CommandBufferSubState::SubmitTimeValidate() {
-    for (const auto& [image, subresources] : submit_validate_dynamic_rendering_barrier_subresources) {
-        const auto image_state = validator.Get<vvl::Image>(image);
-        if (!image_state) {
-            continue;
-        }
-        const auto global_layout_map = image_state->layout_map.get();
-        ASSERT_AND_CONTINUE(global_layout_map);
-        auto global_layout_map_guard = image_state->LayoutMapReadLock();
-
-        for (const std::pair<VkImageSubresourceRange, vvl::LocationCapture>& entry : subresources) {
-            const VkImageSubresourceRange& subresource = entry.first;
-            const Location& barrier_loc = entry.second.Get();
-            subresource_adapter::RangeGenerator range_gen(image_state->subresource_encoder, subresource);
-            ForEachMatchingLayoutMapRange(
-                *global_layout_map, std::move(range_gen),
-                [this, &barrier_loc, &image_state](const ImageLayoutMap::key_type& range, const VkImageLayout& layout) {
-                    if (layout != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && layout != VK_IMAGE_LAYOUT_GENERAL) {
-                        const auto& vuid =
-                            GetDynamicRenderingBarrierVUID(barrier_loc, vvl::DynamicRenderingBarrierError::kImageLayout);
-                        const LogObjectList objlist(base.Handle(), image_state->Handle());
-                        const Location& image_loc = barrier_loc.dot(vvl::Field::image);
-                        const VkImageSubresource subresource =
-                            static_cast<VkImageSubresource>(image_state->subresource_encoder.Decode(range.begin));
-                        return validator.LogError(vuid, objlist, image_loc, "(%s, %s) has layout %s.",
-                                                  validator.FormatHandle(image_state->Handle()).c_str(),
-                                                  string_VkImageSubresource(subresource).c_str(), string_VkImageLayout(layout));
-                    }
-                    return false;
-                });
-        }
-    }
-}
-
 void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
     for (const auto& submission : submissions) {
-        for (auto& cb : submission.cb_submissions) {
-            auto guard = cb.cb->ReadLock();
-            CommandBufferSubState& cb_substate = SubState(*cb.cb);
-            cb_substate.SubmitTimeValidate();
-        }
         submit_time_tracker->ProcessQueueSubmission(VkHandle(), submission);
     }
 }
