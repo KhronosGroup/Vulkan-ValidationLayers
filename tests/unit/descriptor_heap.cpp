@@ -6479,3 +6479,89 @@ TEST_F(NegativeDescriptorHeap, ImageDescriptorAspect) {
     vk::WriteResourceDescriptorsEXT(device(), 1u, &resource_desc_info, &descriptors);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptorHeap, SamplerHeapBoundResourceHeapNotBound) {
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    InitRenderTarget();
+
+    const uint32_t buffer_index = 16u;
+
+    const VkDeviceSize image_offset = 0u;
+    const VkDeviceSize image_size = heap_props.imageDescriptorSize;
+    const VkDeviceSize buffer_offset = heap_props.bufferDescriptorSize * buffer_index;
+    const VkDeviceSize buffer_size = heap_props.bufferDescriptorSize;
+    const VkDeviceSize resource_heap_app_size = buffer_offset + buffer_size;
+
+    CreateResourceHeap(resource_heap_app_size);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    VkHostAddressRangeEXT resource_host[2];
+    resource_host[0].address = resource_heap_data_ + image_offset;
+    resource_host[0].size = static_cast<size_t>(image_size);
+    resource_host[1].address = resource_heap_data_ + buffer_offset;
+    resource_host[1].size = static_cast<size_t>(buffer_size);
+
+    VkImageViewCreateInfo view_info = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
+    image_info.pView = &view_info;
+    image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkDeviceAddressRangeEXT buffer_address_range = {buffer.Address(), 256};
+
+    VkResourceDescriptorInfoEXT descriptor_info[2];
+    descriptor_info[0] = vku::InitStructHelper();
+    descriptor_info[0].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_info[0].data.pImage = &image_info;
+    descriptor_info[1] = vku::InitStructHelper();
+    descriptor_info[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info[1].data.pAddressRange = &buffer_address_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 2u, descriptor_info, resource_host);
+
+    VkDeviceSize sampler_desc_heap_size_tracker = 0u;
+    const VkDeviceSize sampler_offset = AlignedAppend(sampler_desc_heap_size_tracker, VK_DESCRIPTOR_TYPE_SAMPLER);
+    const VkDeviceSize sampler_size = sampler_desc_heap_size_tracker - sampler_offset;
+
+    CreateSamplerHeap(sampler_desc_heap_size_tracker);
+
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+
+    VkHostAddressRangeEXT sampler_host = {sampler_heap_data_ + sampler_offset, static_cast<size_t>(sampler_size)};
+    vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_descriptor_heap : require
+        layout(descriptor_heap) uniform texture2D heapTextures[];
+        layout(descriptor_heap) uniform sampler heapSamplers[];
+        layout(descriptor_heap) buffer ssbo {
+            vec4 data;
+        } heapBuffer[];
+        void main() {
+            heapBuffer[16].data = texture(sampler2D(heapTextures[0], heapSamplers[0]), vec2(0.5f));
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    BindSamplerHeap();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11308");
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
