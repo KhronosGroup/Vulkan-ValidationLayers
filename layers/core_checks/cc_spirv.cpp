@@ -2090,15 +2090,23 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
             specialization_info->pMapEntries != nullptr) {
             // Gather the specialization-constant values.
             auto const& specialization_data = reinterpret_cast<uint8_t const*>(specialization_info->pData);
-            std::unordered_map<uint32_t, std::vector<uint32_t>> id_value_map;  // note: this must be std:: to work with spvtools
+            // This must be std:: (instead of vvl::) to work with spvtools
+            // The value here is a vector because SPIR-V is a list of 32-bit words, so for 64-bit constants, it takes 2 words
+            // Also there is now OpSpecConstantData that can take any number of values
+            std::unordered_map<uint32_t, std::vector<uint32_t>> id_value_map;
             id_value_map.reserve(specialization_info->mapEntryCount);
+
+            // < spec_id, map_entry_index >
+            vvl::unordered_map<uint32_t, uint32_t> spec_constant_data;
 
             // spirv-val makes sure every OpSpecConstant has a OpDecoration.
             for (const auto& [result_id, spec_id] : module_state_ptr->static_data_.id_to_spec_id) {
                 VkSpecializationMapEntry map_entry = {spirv::kInvalidValue, 0, 0};
+                uint32_t map_entry_index = 0;
                 for (uint32_t i = 0; i < specialization_info->mapEntryCount; i++) {
                     if (specialization_info->pMapEntries[i].constantID == spec_id) {
                         map_entry = specialization_info->pMapEntries[i];
+                        map_entry_index = i;
                         break;
                     }
                 }
@@ -2113,8 +2121,9 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
                 const spirv::Instruction* def_insn = module_state_ptr->FindDef(result_id);
                 const spirv::Instruction* type_insn = module_state_ptr->FindDef(def_insn->Word(1));
 
-                // Specialization constants can only be of type bool, scalar integer, or scalar floating point
-                switch (type_insn->Opcode()) {
+                // Specialization constants can only be scalar (or array of scalar)
+                const uint32_t type_opcode = type_insn->Opcode();
+                switch (type_opcode) {
                     case spv::OpTypeBool:
                         // "If the specialization constant is of type boolean, size must be the byte size of VkBool32"
                         spec_const_size = sizeof(VkBool32);
@@ -2123,25 +2132,33 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
                     case spv::OpTypeFloat:
                         spec_const_size = type_insn->Word(2) / 8;
                         break;
-                    default:
-                        // spirv-val should catch if SpecId is not used on a
-                        // OpSpecConstantTrue/OpSpecConstantFalse/OpSpecConstant and OpSpecConstant is validated to be a
-                        // OpTypeInt or OpTypeFloat
+                    case spv::OpTypeArray:
+                        // Array is not allowed for other spec constants
+                        assert(def_insn->Opcode() == spv::OpSpecConstantDataKHR);
                         break;
+                    default:
+                        break;  // spirv-val should catch this
                 }
 
-                if (map_entry.size != spec_const_size) {
-                    std::ostringstream name;
+                if (def_insn->Opcode() == spv::OpSpecConstantDataKHR) {
+                    spec_constant_data.emplace(spec_id, map_entry_index);
+                } else if (map_entry.size != spec_const_size) {
+                    std::ostringstream ss;
+                    ss << "specialization constant (OpDecorate %" << result_id << " SpecId " << spec_id << ") ";
                     if (module_state_ptr->handle() != NullVulkanTypedHandle) {
-                        name << "shader module " << FormatHandle(module_state_ptr->handle());
-                    } else {
-                        name << "shader object";
+                        // if inlined or shader object, not handle to print
+                        ss << "in " << FormatHandle(module_state_ptr->handle());
                     }
-                    skip |= LogError("VUID-VkSpecializationMapEntry-constantID-00776", device, loc,
-                                     "specialization constant (ID = %" PRIu32 ", entry = %" PRIu32
-                                     ") has invalid size %zu in %s. Expected size is %" PRIu32 " from shader definition.",
-                                     map_entry.constantID, spec_id, map_entry.size,
-                                     FormatHandle(module_state_ptr->handle()).c_str(), spec_const_size);
+                    ss << " is mapped to pMapEntries[" << map_entry_index << "].size of " << map_entry.size
+                       << ", but the shader references a ";
+                    if (type_opcode == spv::OpTypeBool) {
+                        ss << "OpTypeBool is defined as sizeof(VkBool32) (" << sizeof(VkBool32) << " bytes";
+                    } else if (type_opcode == spv::OpTypeInt) {
+                        ss << type_insn->Word(2) << "-bit OpTypeInt which requires " << spec_const_size << " bytes";
+                    } else if (type_opcode == spv::OpTypeFloat) {
+                        ss << type_insn->Word(2) << "-bit OpTypeFloat which requires " << spec_const_size << " bytes";
+                    }
+                    skip |= LogError("VUID-VkSpecializationMapEntry-constantID-00776", device, loc, "%s", ss.str().c_str());
                 }
 
                 if ((map_entry.offset + map_entry.size) <= specialization_info->dataSize) {
@@ -2153,6 +2170,65 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
 
                     std::copy(start_in_p, end_in_p, out_p);
                     id_value_map.emplace(map_entry.constantID, std::move(entry_data));
+                }
+            }
+
+            // We need to validate the size of OpSpecConstantData afterwards because the lenght is likely an OpSpecConstant and we
+            // need to get the value
+            for (auto& [spec_id, map_entry_index] : spec_constant_data) {
+                VkSpecializationMapEntry map_entry = specialization_info->pMapEntries[map_entry_index];
+                uint32_t result_id = 0;
+                for (const auto& [search_result_id, search_spec_id] : module_state_ptr->static_data_.id_to_spec_id) {
+                    if (search_spec_id == spec_id) {
+                        result_id = search_result_id;
+                        break;
+                    }
+                }
+                assert(result_id != 0);  // we already found above, so can find again here
+
+                const spirv::Instruction* def_insn = module_state_ptr->FindDef(result_id);
+                const spirv::Instruction* type_insn = module_state_ptr->FindDef(def_insn->Word(1));
+                // Result Type must be an array of scalar integer type elements
+                assert(type_insn->Opcode() == spv::OpTypeArray);
+                const spirv::Instruction* element_inst = module_state_ptr->FindDef(type_insn->Word(2));
+                assert(element_inst->Opcode() == spv::OpTypeInt);
+                const uint32_t byte_width = element_inst->Word(2) / 8;
+                const spirv::Instruction* length_inst = module_state_ptr->FindDef(type_insn->Word(3));
+
+                uint32_t length = 0;
+                if (length_inst->Opcode() == spv::OpConstant) {
+                    length = length_inst->Word(3);
+                } else if (length_inst->Opcode() == spv::OpSpecConstant) {
+                    // Need to do yet-another-reverse lookup to get the length SpecId
+                    uint32_t length_spec_id = spirv::kInvalidValue;
+                    for (const auto& [search_result_id, search_spec_id] : module_state_ptr->static_data_.id_to_spec_id) {
+                        if (search_result_id == length_inst->ResultId()) {
+                            length_spec_id = search_spec_id;
+                            break;
+                        }
+                    }
+
+                    auto it = id_value_map.find(length_spec_id);
+                    if (it != id_value_map.end()) {
+                        // Hard assumption this is not a 64-bit spec constant
+                        length = it->second[0];
+                    } else {
+                        length = length_inst->Word(3);  // use the default
+                    }
+                } else {
+                    assert(false);  // spirv-val should catch
+                }
+
+                if ((length * byte_width) != map_entry.size) {
+                    std::ostringstream ss;
+                    ss << "specialization constant (OpDecorate %" << result_id << " SpecId " << spec_id << ") ";
+                    if (module_state_ptr->handle() != NullVulkanTypedHandle) {
+                        ss << "in " << FormatHandle(module_state_ptr->handle());
+                    }
+                    ss << " is mapped to pMapEntries[" << map_entry_index << "].size of " << map_entry.size << ", but should be "
+                       << (length * byte_width) << " since the shader references an OpSpecConstantDataKHR where each element is "
+                       << byte_width << " bytes and the OpTypeArray has a length of " << length;
+                    skip |= LogError("VUID-VkSpecializationMapEntry-constantID-00776", device, loc, "%s", ss.str().c_str());
                 }
             }
 
@@ -2190,7 +2266,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
                                             : "VUID-VkShaderCreateInfoEXT-pCode-08460";
                 std::string name = pipeline ? FormatHandle(module_state_ptr->handle()) : "shader object";
                 skip |= LogError(vuid, device, loc,
-                                 "After specialization was applied, %s produces a spirv-val error (stage %s):\n%s\nCommand to "
+                                 "after specialization was applied, %s produces a spirv-val error (stage %s):\n%s\nCommand to "
                                  "reproduce:\n\t%s\n",
                                  name.c_str(), string_VkShaderStageFlagBits(stage),
                                  diag && diag->error ? diag->error : "(no error text)", spirv_val_command.c_str());
