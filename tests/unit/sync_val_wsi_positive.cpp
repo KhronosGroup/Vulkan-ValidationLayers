@@ -1118,3 +1118,19 @@ TEST_F(PositiveSyncValWsi, ConcurrentPresentAndSubmit) {
     thread.join();
     monitor_.SetBailout(nullptr);
 }
+
+TEST_F(PositiveSyncValWsi, WaitAcquireFenceForDestoryedSwapchain) {
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(InitSyncVal());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
+    const VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, surface_info);
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    vkt::Fence fence(*m_device);
+    [[maybe_unused]] const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    swapchain.Destroy();
+    fence.Wait(kWaitTimeout);
+}

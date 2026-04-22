@@ -249,15 +249,11 @@ void SyncValidator::UpdateFenceHostSyncPoint(VkFence fence, FenceHostSyncPoint&&
 }
 
 void SyncValidator::WaitForFence(VkFence fence) {
-    auto fence_it = waitable_fences_.find(fence);
-    if (fence_it != waitable_fences_.end()) {
-        // The fence may no longer be waitable for several valid reasons.
+    if (auto fence_it = waitable_fences_.find(fence); fence_it != waitable_fences_.end()) {
         FenceHostSyncPoint& wait_for = fence_it->second;
-        if (wait_for.acquired.Invalid()) {
-            // This is just a normal fence wait
+        if (wait_for.queue_id != kQueueIdInvalid) {
             ApplyTaggedWait(wait_for.queue_id, wait_for.tag, {}, wait_for.queue_sync_tags);
-        } else {
-            // This a fence wait for a present operation
+        } else if (!wait_for.acquired.Invalid()) {
             ApplyAcquireWait(wait_for.acquired);
         }
         waitable_fences_.erase(fence_it);
