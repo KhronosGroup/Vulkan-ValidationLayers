@@ -91,7 +91,7 @@ void vvl::Fence::NotifyAndWait(const Location& loc) {
                 queue_ = nullptr;
                 seq_ = 0;
                 // Update the swapchain image acquire state if the fence was used by the acquire operation
-                if (acquired_image_swapchain_) {
+                if (acquired_image_swapchain_ && !acquired_image_swapchain_->Destroyed()) {
                     assert(acquired_image_index_ != vvl::kNoIndex32);
                     acquired_image_swapchain_->images[acquired_image_index_].acquire_fence_status = AcquireSyncStatus::WasWaitedOn;
                     acquired_image_swapchain_.reset();
