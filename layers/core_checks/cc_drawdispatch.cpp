@@ -1913,7 +1913,8 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
                              "VkCommandBufferInheritanceDescriptorHeapInfoEXT::pSamplerHeapBindInfo is NULL.%s",
                              entry_point.Describe().c_str(), print_used_variables(true).c_str());
         }
-    } else if (stage_state.uses_resource_heap) {
+    }
+    if (stage_state.uses_resource_heap) {
         if (cb_state.IsPrimary()) {
             if (!cb_state.descriptor_heap.resource_bound) {
                 skip |= LogError(
