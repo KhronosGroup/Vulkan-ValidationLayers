@@ -636,10 +636,17 @@ void AccelerationStructureNVSubState::NotifyInvalidate(const vvl::StateObject::N
     id_tracker.reset();
 }
 
-AccelerationStructureKHRSubState::AccelerationStructureKHRSubState(vvl::AccelerationStructureKHR& obj, DescriptorHeap& heap)
-    : vvl::AccelerationStructureKHRSubState(obj), id_tracker(std::in_place, heap, obj.Handle()) {}
+AccelerationStructureKHRSubState::AccelerationStructureKHRSubState(Validator& validator, vvl::AccelerationStructureKHR& obj,
+                                                                   DescriptorHeap& heap)
+    : vvl::AccelerationStructureKHRSubState(obj), id_tracker(std::in_place, heap, obj.Handle()), validator(validator) {
+    gpu_state = validator.gpu_resources_manager_.GetHostCoherentBufferRange(sizeof(uint32_t));
+    gpu_state.Clear();
+}
 
-void AccelerationStructureKHRSubState::Destroy() { id_tracker.reset(); }
+void AccelerationStructureKHRSubState::Destroy() {
+    id_tracker.reset();
+    validator.gpu_resources_manager_.ReturnHostCoherentBufferRange(gpu_state);
+}
 
 void AccelerationStructureKHRSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) {
     id_tracker.reset();

@@ -72,7 +72,7 @@ void Validator::Created(vvl::AccelerationStructureNV& obj) {
 }
 void Validator::Created(vvl::AccelerationStructureKHR& obj) {
     DescriptorHeap& desc_heap = shared_resources_cache.Get<DescriptorHeap>();
-    obj.SetSubState(container_type, std::make_unique<AccelerationStructureKHRSubState>(obj, desc_heap));
+    obj.SetSubState(container_type, std::make_unique<AccelerationStructureKHRSubState>(*this, obj, desc_heap));
 }
 void Validator::Created(vvl::Tensor& obj) {
     DescriptorHeap& desc_heap = shared_resources_cache.Get<DescriptorHeap>();

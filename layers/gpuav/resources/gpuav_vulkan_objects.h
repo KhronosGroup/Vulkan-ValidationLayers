@@ -105,6 +105,7 @@ class GpuResourcesManager {
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
 
     vko::BufferRange GetHostCoherentBufferRange(VkDeviceSize size);
+    void ReturnHostCoherentBufferRange(const vko::BufferRange& buffer_range);
     vko::BufferRange GetHostCachedBufferRange(VkDeviceSize size);
     void FlushAllocation(const vko::BufferRange &buffer_range);
     void InvalidateAllocation(const vko::BufferRange &buffer_range);

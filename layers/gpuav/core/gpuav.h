@@ -188,6 +188,10 @@ class Validator : public GpuShaderInstrumentor {
                                                         const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                                         const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
                                                         const RecordObject& record_obj) final;
+    void PostCallRecordCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                         const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                                                         const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
+                                                         const RecordObject& record_obj) final;
     void PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
                                      VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
                                      VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,

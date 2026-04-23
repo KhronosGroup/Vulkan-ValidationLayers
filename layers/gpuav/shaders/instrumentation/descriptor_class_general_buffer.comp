@@ -23,13 +23,10 @@
 
 #include "common_descriptor_sets.h"
 #include "error_payload.h"
+#include "descriptor_encoding.h"
 
 layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorEncodings {
-    // struct glsl::DescriptorState {
-    //   x: id
-    //   y: extra data depending on the descriptor type
-    // }
-    uvec2 data[];
+    DescriptorEncoding data[];
 };
 
 layout(buffer_reference, buffer_reference_align = 8, scalar) buffer UnusedInitializedStatus;
@@ -56,7 +53,7 @@ void inst_descriptor_class_general_buffer(const uint inst_offset, const uint des
     DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
     const uint global_descriptor_index = binding_layout_offset + desc_index;
     // check that the offset is in bounds
-    uint resource_size = descriptor_encodings.data[global_descriptor_index].y;
+    uint resource_size = descriptor_encodings.data[global_descriptor_index].dword_0;
     if (byte_offset >= resource_size) {
         error_payload = ErrorPayload(
                             inst_offset,
@@ -76,7 +73,7 @@ void inst_descriptor_class_general_buffer_coop_mat(const uint inst_offset, const
         DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
         const uint global_descriptor_index = binding_layout_offset + desc_index;
         // check that the offset is in bounds
-        uint resource_size = descriptor_encodings.data[global_descriptor_index].y;
+        uint resource_size = descriptor_encodings.data[global_descriptor_index].dword_0;
         if (byte_offset >= resource_size) {
             error_payload = ErrorPayload(
                                 inst_offset,

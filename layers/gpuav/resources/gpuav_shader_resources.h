@@ -61,13 +61,15 @@ struct PostProcessDescriptorIndexSlot {
     uint32_t instruction_position_offset;
 };
 
-// Represented as a uvec2 in the shader
 struct DescriptorEncoding {
-    DescriptorEncoding() : id(0), extra_data(0) {}
-    DescriptorEncoding(vvl::DescriptorClass dc, uint32_t id_, uint32_t extra_data_ = 1)
-        : id(ClassToShaderBits(dc) | id_), extra_data(extra_data_) {}
-    uint32_t id;
-    uint32_t extra_data;
+    DescriptorEncoding() = default;
+
+    DescriptorEncoding(vvl::DescriptorClass dc, uint32_t id_, uint32_t data = 1) : id(ClassToShaderBits(dc) | id_), dword_0(data) {}
+    uint32_t id{0};
+    uint32_t dword_0{0};
+    // As of writing only used for Acceleration Structure descriptors,
+    // see corresponding GetDescriptorEncoding in gpuav_descriptor_set.cpp
+    VkDeviceAddress dwords_1_2{0};
 
     static uint32_t ClassToShaderBits(vvl::DescriptorClass dc) {
         switch (dc) {

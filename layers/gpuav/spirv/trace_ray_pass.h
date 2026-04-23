@@ -30,6 +30,9 @@ class TraceRayPass : public Pass {
     void PrintDebugInfo() const final;
 
   private:
+    std::vector<uint32_t> GetTraceRayAccelerationStructureValidationFunctionCallInstructions(const Function& function,
+                                                                                             BasicBlock& block,
+                                                                                             InstructionIt* trace_ray_inst_it);
     std::vector<uint32_t> GetTraceRayValidationFunctionCallInstructions(InstructionIt* trace_ray_inst_it);
     std::vector<uint32_t> GetRayHitObjectValidationFunctionCallInstructions(InstructionIt* ray_hit_object_inst_it);
     std::vector<uint32_t> GetRayHitObjectSbtIndexValidationFunctionCallInstructions(
@@ -37,6 +40,7 @@ class TraceRayPass : public Pass {
     uint32_t AddFunctionCall(BasicBlock& block, std::vector<uint32_t>&& instructions, InstructionIt* inst_it);
     // Function IDs to link in
     uint32_t trace_ray_link_function_id_ = 0;
+    uint32_t trace_ray_as_link_function_id_ = 0;
     uint32_t hit_object_link_function_id_ = 0;
     uint32_t hit_object_sbt_index_link_function_id_ = 0;
 };

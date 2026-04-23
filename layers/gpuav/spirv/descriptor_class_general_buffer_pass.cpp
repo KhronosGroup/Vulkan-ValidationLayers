@@ -54,8 +54,8 @@ uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId(bool is_coop_mat) {
 
 void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     assert(!meta.access_chain_insts.empty());
-    const Constant& set_constant = type_manager_.GetConstantUInt32(meta.descriptor_set);
-    const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
+    const Constant& desc_set_constant = type_manager_.GetConstantUInt32(meta.descriptor_set);
+    const uint32_t desc_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
 
     const uint32_t descriptor_offset_id =
         GetLastByte(*meta.descriptor_type, meta.access_chain_insts, meta.coop_mat_access, block, inst_it);
@@ -73,7 +73,7 @@ void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, Ins
     const uint32_t void_type = type_manager_.GetTypeVoid().Id();
 
     block.CreateInstruction(spv::OpFunctionCall,
-                            {void_type, function_result, function_def, inst_position_id, set_constant.Id(), descriptor_index_id,
+                            {void_type, function_result, function_def, inst_position_id, desc_set_constant.Id(), desc_index_id,
                              descriptor_offset_id, binding_layout_offset.Id()},
                             inst_it);
 
@@ -143,7 +143,9 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
 
     // Grab front() as it will be the "final" type we access
     const Type* value_type = type_manager_.FindValueTypeById(meta.access_chain_insts.front()->TypeId());
-    if (!value_type) return false;
+    if (!value_type) {
+        return false;
+    }
 
     if (is_descriptor_array) {
         // Because you can't have 2D array of descriptors, the first index of the last accessChain is the descriptor index

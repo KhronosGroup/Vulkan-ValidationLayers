@@ -18,8 +18,22 @@
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
+
 #include "common_descriptor_sets.h"
 #include "error_payload.h"
+#include "descriptor_encoding.h"
+#include "../setup/acceleration_structure_gpu_state_update.h"
+
+layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorEncodings {
+    DescriptorEncoding data[];
+};
+
+layout(buffer_reference, buffer_reference_align = 8, scalar) buffer UnusedInitializedStatus;
+
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, scalar) buffer BoundDescriptorSetsSSBO {
+    UnusedInitializedStatus unused_initialized_status;
+    DescriptorEncodings descriptor_encodings[kDebugInputBindlessMaxDescSets];
+} gpuav;
 
 // from RayFlagsMask in spirv.hpp
 const uint SpvRayFlags_OpaqueKHR = 0x00000001;
@@ -38,6 +52,43 @@ const uint SpvRayFlags_ForceOpacityMicromap2StateEXTMask = 0x00000400;
 #define has_multiple_flags(masked_flags) (((masked_flags) & ((masked_flags) - 1)) != 0)
 #define is_nan_or_inf(x) (isnan(x) || isinf(x))
 
+bool inst_trace_ray_acceleration_structure(const uint inst_offset,
+                                           const uint desc_set,
+                                           const uint desc_index,
+                                           const uint binding_layout_offset) {
+    uint error = 0u;
+    uint param_0 = 0u;
+    uint param_1 = 0u;
+
+    DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
+    const uint global_descriptor_index = binding_layout_offset + desc_index;
+
+    // dwords_1_2 holds the AS gpu_state device address; can be zero when using VK_EXT_descriptor_buffer for instance,
+    // BoundDescriptorSetsSSBO is only populated for classic descriptor sets
+    const uvec2 raw_gpu_state_ptr = descriptor_encodings.data[global_descriptor_index].dwords_1_2;
+    if (raw_gpu_state_ptr != uvec2(0)) {
+        GpuStatePtr gpu_state_ptr = GpuStatePtr(raw_gpu_state_ptr);
+        const uint gpu_state = gpu_state_ptr.state;
+        if (((gpu_state & kAsGpuStateValidMask) >> kAsGpuStateValidShift) == 0) {
+            error = kErrorSubCode_TraceRay_TlasNotBuilt;
+            param_0 = (desc_set << kInst_DescriptorIndexing_SetShift) | global_descriptor_index;
+            param_1 = gpu_state;
+        }
+    }
+
+    if (0u != error) {
+        error_payload = ErrorPayload(
+                           inst_offset,
+                           SpecConstantLinkShaderId | (kErrorGroup_TraceRay << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
+                           param_0,
+                           param_1,
+                           0
+                       );
+        return false;
+    }
+
+    return true;
+}
 
 bool inst_trace_ray(const uint inst_offset,
                     const uint ray_flags,
