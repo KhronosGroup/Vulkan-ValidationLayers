@@ -297,6 +297,8 @@ void CommandBuffer::ResetCBState() {
 
     begin_info_flags = 0;
     has_inheritance = false;
+    inheritance_info = {};
+    inheritance_descriptor_heap_info = {};
 
     state = CbState::New;
     command_count = 0;
