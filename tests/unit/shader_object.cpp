@@ -16,6 +16,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
 #include "../framework/shader_helper.h"
+#include "../framework/pipeline_helper.h"
 #include "generated/vk_function_pointers.h"
 #include "shader_templates.h"
 #include "utils/math_utils.h"
@@ -7943,4 +7944,42 @@ TEST_F(NegativeShaderObject, MissingHeapBind) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(NegativeShaderObject, ResetShaderObjectBinding) {
+    TEST_DESCRIPTION("Bind a pipeline after shader objects to invalidate the shader object bindings.");
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitRenderTarget();
+
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    const auto vert_spv = GLSLToSPV(stages[0], kVertexMinimalGlsl);
+    const auto frag_spv = GLSLToSPV(stages[1], kFragmentMinimalGlsl);
+
+    VkShaderCreateInfoEXT create_infos[2];
+    create_infos[0] = ShaderCreateInfo(vert_spv, stages[0]);
+    create_infos[1] = ShaderCreateInfo(frag_spv, stages[1]);
+
+    const vkt::Shader vert_shader(*m_device, create_infos[0]);
+    const vkt::Shader frag_shader(*m_device, create_infos[1]);
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1u;
+    pipeline_rendering_info.pColorAttachmentFormats = &m_render_target_fmt;
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &stages[0], &vert_shader.handle());
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &stages[1], &frag_shader.handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &stages[0], &vert_shader.handle());
+    SetDefaultDynamicStatesExclude();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08688");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
 }
