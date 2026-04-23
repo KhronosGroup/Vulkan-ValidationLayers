@@ -402,3 +402,31 @@ TEST_F(PositiveHostImageCopy, TransitionImageLayoutDepthWrongAspect) {
     transition_info.subresourceRange = range;
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
 }
+
+TEST_F(PositiveHostImageCopy, CopyImageToImageMemcpyUsesSubresourceExtent) {
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    image_ci.mipLevels = 2u;
+    VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    vkt::Image src(*m_device, image_ci);
+    vkt::Image dst(*m_device, image_ci);
+    src.SetLayout(layout);
+    dst.SetLayout(layout);
+
+    VkImageCopy2 region = vku::InitStructHelper();
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 0, 1};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 0, 1};
+    region.extent = {width / 2, height / 2, 1};
+
+    VkCopyImageToImageInfo copy = vku::InitStructHelper();
+    copy.flags = VK_HOST_IMAGE_COPY_MEMCPY;
+    copy.srcImage = src;
+    copy.dstImage = dst;
+    copy.srcImageLayout = layout;
+    copy.dstImageLayout = layout;
+    copy.regionCount = 1;
+    copy.pRegions = &region;
+
+    vk::CopyImageToImageEXT(*m_device, &copy);
+}
