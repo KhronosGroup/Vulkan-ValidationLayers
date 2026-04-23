@@ -46,6 +46,26 @@ void LastBound::UnbindAndResetPushDescriptorSet(std::shared_ptr<vvl::DescriptorS
 
 bool LastBound::IsDynamic(const CBDynamicState state) const { return !pipeline_state || pipeline_state->IsDynamic(state); }
 
+void LastBound::BindPipeline(vvl::Pipeline* pipe_state) {
+    pipeline_state = pipe_state;
+
+    // Mark any previous shader object binds as invalidated vkspec.html#shaders-objects-pipeline-interaction
+    for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
+        shader_object_bound[i] = false;
+        shader_object_states[i] = nullptr;
+    }
+}
+
+void LastBound::BindShaderObject(VkShaderStageFlagBits shader_stage, vvl::ShaderObject* shader_object_state) {
+    const auto stage_index = static_cast<uint32_t>(VkShaderStageToShaderObjectStage(shader_stage));
+    shader_object_bound[stage_index] = true;
+    shader_object_states[stage_index] = shader_object_state;
+
+    // We use this to mark any previous pipeline bounds are invalidated now
+    // vkspec.html#shaders-objects-pipeline-interaction
+    pipeline_state = nullptr;
+}
+
 void LastBound::Reset() {
     pipeline_state = nullptr;
     for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {

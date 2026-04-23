@@ -84,6 +84,9 @@ struct LastBound {
     // Ordered bound set tracking where index is set# that given set is bound to
     std::vector<DescriptorSetSlot> ds_slots;
 
+    void BindPipeline(vvl::Pipeline* pipe_state);
+    void BindShaderObject(VkShaderStageFlagBits shader_stage, vvl::ShaderObject* shader_object_state);
+
     void Reset();
 
     void UnbindAndResetPushDescriptorSet(std::shared_ptr<vvl::DescriptorSet> &&ds);
