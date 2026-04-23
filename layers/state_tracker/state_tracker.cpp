@@ -1924,11 +1924,8 @@ void DeviceState::PostCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer,
         if (pShaders && pShaders[i] != VK_NULL_HANDLE) {
             shader_object_state = Get<ShaderObject>(pShaders[i]).get();
         }
-        cb_state->BindShader(pStages[i], shader_object_state);
 
-        // We use this to mark any previous pipeline bounds are invalidated now
-        // vkspec.html#shaders-objects-pipeline-interaction
-        cb_state->BindLastBoundPipeline(ConvertStageToVvlBindPoint(pStages[i]), nullptr);
+        cb_state->RecordBindShaderObject(pStages[i], shader_object_state);
     }
 }
 
@@ -2696,9 +2693,6 @@ void DeviceState::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, V
     auto pipeline_state = Get<Pipeline>(pipeline);
     ASSERT_AND_RETURN(pipeline_state);
     cb_state->RecordBindPipeline(pipelineBindPoint, *pipeline_state);
-
-    // Mark any previous shader object binds as invalidated vkspec.html#shaders-objects-pipeline-interaction
-    cb_state->InvalidateShaderObjects(pipelineBindPoint);
 
     if (!disabled[command_buffer_state]) {
         cb_state->AddChild(pipeline_state);

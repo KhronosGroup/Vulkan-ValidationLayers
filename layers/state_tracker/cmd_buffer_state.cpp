@@ -1562,7 +1562,8 @@ void CommandBuffer::RecordExecuteGeneratedCommands(const VkGeneratedCommandsInfo
 }
 
 void CommandBuffer::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline& pipeline) {
-    BindLastBoundPipeline(ConvertToVvlBindPoint(bind_point), &pipeline);
+    auto& last_bound = lastBound[ConvertToVvlBindPoint(bind_point)];
+    last_bound.BindPipeline(&pipeline);
 
     for (auto& item : sub_states_) {
         item.second->RecordBindPipeline(bind_point, pipeline);
@@ -1625,6 +1626,11 @@ void CommandBuffer::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipe
     }
 
     dirty_static_state = false;
+}
+
+void CommandBuffer::RecordBindShaderObject(VkShaderStageFlagBits shader_stage, vvl::ShaderObject* shader_object_state) {
+    auto& last_bound = lastBound[ConvertStageToVvlBindPoint(shader_stage)];
+    last_bound.BindShaderObject(shader_stage, shader_object_state);
 }
 
 // Helper for descriptor set (and buffer) updates.
@@ -2379,21 +2385,6 @@ bool CommandBuffer::HasExternalFormatResolveAttachment() const {
                VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID;
     }
     return false;
-}
-
-void CommandBuffer::InvalidateShaderObjects(VkPipelineBindPoint pipeline_bind_point) {
-    auto& last_bound = lastBound[ConvertToVvlBindPoint(pipeline_bind_point)];
-    for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
-        last_bound.shader_object_bound[i] = false;
-        last_bound.shader_object_states[i] = nullptr;
-    }
-}
-
-void CommandBuffer::BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject* shader_object_state) {
-    auto& last_bound_state = lastBound[ConvertStageToVvlBindPoint(shader_stage)];
-    const auto stage_index = static_cast<uint32_t>(VkShaderStageToShaderObjectStage(shader_stage));
-    last_bound_state.shader_object_bound[stage_index] = true;
-    last_bound_state.shader_object_states[stage_index] = shader_object_state;
 }
 
 // Only called for Graphics and during Multiview

@@ -712,6 +712,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordSetDepthCompareOp(VkCompareOp depth_compare_op);
     void RecordSetDepthTestEnable(VkBool32 depth_test_enable);
     void RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline &pipeline);
+    void RecordBindShaderObject(VkShaderStageFlagBits shader_stage, vvl::ShaderObject* shader_object_state);
 
     void RecordBindIndexbuffer(const Location& loc);
     void RecordSetPrimitiveRestartIndex(uint32_t primitive_restart_index, const Location& loc);
@@ -812,12 +813,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     uint32_t GetViewMask() const;
 
     bool HasExternalFormatResolveAttachment() const;
-
-    inline void BindLastBoundPipeline(vvl::BindPoint bind_point, vvl::Pipeline *pipe_state) {
-        lastBound[bind_point].pipeline_state = pipe_state;
-    }
-    void InvalidateShaderObjects(VkPipelineBindPoint pipeline_bind_point);
-    void BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject *shader_object_state);
 
     bool IsPrimary() const { return allocate_info.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }
     bool IsSecondary() const { return allocate_info.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY; }
