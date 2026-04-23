@@ -6519,3 +6519,52 @@ TEST_F(NegativeDescriptorHeap, SamplerHeapBoundResourceHeapNotBound) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDescriptorHeap, ResetPushConstsWithPushData) {
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    InitRenderTarget();
+
+    char const* vert_source = R"glsl(
+        #version 450
+        layout(push_constant) uniform PushConstant {
+            float pos;
+        };
+        void main() {
+            gl_Position = vec4(pos);
+        }
+    )glsl";
+
+    VkShaderObj vert_module = VkShaderObj(*m_device, vert_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj frag_module = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const float push_data = 0.5f;
+    VkPushConstantRange push_const_range;
+    push_const_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    push_const_range.offset = 0u;
+    push_const_range.size = sizeof(push_data);
+
+    vkt::PipelineLayout pipelineLayout(*m_device, {}, {push_const_range});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vert_module.GetStageCreateInfo(), frag_module.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipelineLayout;
+    pipe.CreateGraphicsPipeline();
+
+    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
+    push_data_info.offset = 0;
+    push_data_info.data.size = sizeof(push_data);
+    push_data_info.data.address = &push_data;
+
+    m_command_buffer.Begin();
+    vk::CmdPushConstants(m_command_buffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(push_data), &push_data);
+    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
