@@ -366,6 +366,10 @@ vko::BufferRange GpuResourcesManager::GetHostCoherentBufferRange(VkDeviceSize si
     return buffer_caches_.host_coherent.GetBufferRange(gpuav_, size, alignment, min_buffer_block_size);
 }
 
+void GpuResourcesManager::ReturnHostCoherentBufferRange(const vko::BufferRange& buffer_range) {
+    buffer_caches_.host_coherent.ReturnBufferRange(buffer_range);
+}
+
 vko::BufferRange GpuResourcesManager::GetHostCachedBufferRange(VkDeviceSize size) {
     // Kind of arbitrary, considered "big enough"
     constexpr VkDeviceSize min_buffer_block_size = 4 * 1024;
