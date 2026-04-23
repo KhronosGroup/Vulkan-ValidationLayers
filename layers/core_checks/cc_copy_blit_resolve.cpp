@@ -2874,28 +2874,29 @@ bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCo
 
 bool CoreChecks::ValidateMemcpyExtents(const ImageCopyRegion& region, const Location& region_loc) const {
     bool skip = false;
+
     if (region.src_offset.x != 0 || region.src_offset.y != 0 || region.src_offset.z != 0) {
         skip |= LogError("VUID-VkCopyImageToImageInfo-srcOffset-09114", device, region_loc.dot(Field::srcOffset),
                          "is (%s) but flags contains VK_HOST_IMAGE_COPY_MEMCPY.", string_VkOffset3D(region.src_offset).c_str());
     }
-    if (!IsExtentEqual(region.extent, region.src_state.GetExtent())) {
+    if (!IsExtentEqual(region.extent, region.src_subresource_extent)) {
         skip |=
             LogError("VUID-VkCopyImageToImageInfo-srcImage-09115", region.src_state.Handle(), region_loc.dot(Field::imageExtent),
                      "(%s) must match the image's subresource "
                      "extents (%s) when VkCopyImageToImageInfo->flags contains VK_HOST_IMAGE_COPY_MEMCPY",
-                     string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(region.src_state.GetExtent()).c_str());
+                     string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(region.src_subresource_extent).c_str());
     }
 
     if (region.dst_offset.x != 0 || region.dst_offset.y != 0 || region.dst_offset.z != 0) {
         skip |= LogError("VUID-VkCopyImageToImageInfo-dstOffset-09114", device, region_loc.dot(Field::dstOffset),
                          "is (%s) but flags contains VK_HOST_IMAGE_COPY_MEMCPY.", string_VkOffset3D(region.dst_offset).c_str());
     }
-    if (!IsExtentEqual(region.extent, region.dst_state.GetExtent())) {
+    if (!IsExtentEqual(region.extent, region.dst_subresource_extent)) {
         skip |=
             LogError("VUID-VkCopyImageToImageInfo-dstImage-09115", region.dst_state.Handle(), region_loc.dot(Field::imageExtent),
                      "(%s) must match the image's subresource "
                      "extents (%s) when VkCopyImageToImageInfo->flags contains VK_HOST_IMAGE_COPY_MEMCPY",
-                     string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(region.dst_state.GetExtent()).c_str());
+                     string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(region.dst_subresource_extent).c_str());
     }
     return skip;
 }
