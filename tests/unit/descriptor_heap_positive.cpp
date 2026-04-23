@@ -4194,3 +4194,41 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveDescriptorHeap, ResetInheritanceDescriptorHeapInfo) {
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    const VkDeviceSize heap_size = heap_props.minSamplerHeapReservedRange + 2 * heap_props.samplerDescriptorSize;
+    vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkCommandBufferInheritanceDescriptorHeapInfoEXT inh_desc_heap_info = vku::InitStructHelper();
+    VkBindHeapInfoEXT secondary_bind_info = vku::InitStructHelper();
+    secondary_bind_info.heapRange = {heap.Address(), heap_size / 2};
+    secondary_bind_info.reservedRangeOffset = 0;
+    secondary_bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
+    inh_desc_heap_info.pSamplerHeapBindInfo = &secondary_bind_info;
+
+    VkCommandBufferInheritanceInfo inh = vku::InitStructHelper(&inh_desc_heap_info);
+    VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
+    cbbi.pInheritanceInfo = &inh;
+
+    secondary.Begin(&cbbi);
+    secondary.End();
+
+    secondary.Begin();
+    secondary.End();
+
+    VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
+    bind_info.heapRange = heap.AddressRange();
+    bind_info.reservedRangeOffset = 0;
+    bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
+
+    m_command_buffer.Begin();
+    vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_info);
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
+    m_command_buffer.End();
+}
