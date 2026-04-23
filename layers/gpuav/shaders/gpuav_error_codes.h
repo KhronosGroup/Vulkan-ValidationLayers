@@ -128,6 +128,7 @@ const int kErrorSubCode_TraceRay_DirectionNaNOrInf = 21;
 const int kErrorSubCode_TraceRay_TNegative = 22;
 const int kErrorSubCode_TraceRay_TMaxLessThanTMin = 23;
 const int kErrorSubCode_TraceRay_RayParametersNans = 24;
+const int kErrorSubCode_TraceRay_TlasNotBuilt = 25;
 
 // Shared Memory Data Race
 const int kErrorSubCode_SharedMemoryDataRace_RaceOnStore = 1;
