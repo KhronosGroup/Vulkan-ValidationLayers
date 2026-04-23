@@ -5058,66 +5058,43 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountShaderObject) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, SamplerAllocationTotalCountPipeline) {
+TEST_F(NegativeDescriptorHeap, MaxEmbeddedSamplers) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    const VkPhysicalDeviceLimits& limits = m_device->Physical().limits_;
-    if (limits.maxSamplerAllocationCount < heap_props.maxDescriptorHeapEmbeddedSamplers) {
-        GTEST_SKIP() << "maxSamplerAllocationCount < maxDescriptorHeapEmbeddedSamplers";
-    }
-    if (heap_props.maxDescriptorHeapEmbeddedSamplers > 2048) {
+    const size_t max_samplers = heap_props.maxDescriptorHeapEmbeddedSamplers;
+    if (max_samplers > 2048) {
         GTEST_SKIP() << "maxDescriptorHeapEmbeddedSamplers too large to run the test";
     }
 
-    const size_t max_samplers = heap_props.maxDescriptorHeapEmbeddedSamplers - 1;
-    std::vector<VkSampler> samplers(max_samplers);
-
-    VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
-
-    VkResult err = VK_SUCCESS;
-    for (size_t i = 0; i < max_samplers; i++) {
-        err = vk::CreateSampler(device(), &sampler_create_info, nullptr, &samplers[i]);
-        if (err != VK_SUCCESS) {
-            break;
-        }
-    }
-
-    m_errorMonitor->SetDesiredError("VUID-vkCreateComputePipelines-pCreateInfos-11429");
-
-    const size_t maxSamplerAllocationCount =
-        static_cast<size_t>(limits.maxSamplerAllocationCount -
-                            SafeDivision(heap_props.minSamplerHeapReservedRangeWithEmbedded, heap_props.samplerDescriptorSize));
-    if (max_samplers >= maxSamplerAllocationCount) {
-        m_errorMonitor->SetDesiredError("VUID-vkCreateComputePipelines-pCreateInfos-11414");
-    }
-
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
-    VkDescriptorSetAndBindingMappingEXT mapping[2];
-    mapping[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
-    mapping[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-    mapping[0].sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
-    mapping[1] = MakeSetAndBindingMapping(0, 1, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
-    mapping[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-    mapping[1].sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
+    VkDescriptorSetAndBindingMappingEXT mapping;
+    mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
-    mapping_info.mappingCount = 2;
-    mapping_info.pMappings = mapping;
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
 
     VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
     pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.LateBindPipelineInfo();
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage.pNext = &mapping_info;
-    pipe.CreateComputePipeline(false);
-
-    m_errorMonitor->VerifyFound();
-
-    for (auto& sampler : samplers) {
-        vk::DestroySampler(device(), sampler, nullptr);
+    std::vector<CreateComputePipelineHelper> pipes(max_samplers + 1);
+    for (size_t i = 0; i < max_samplers; i++) {
+        pipes[i] = CreateComputePipelineHelper(*this, &pipeline_create_flags_2_create_info);
+        pipes[i].LateBindPipelineInfo();
+        pipes[i].cp_ci_.layout = VK_NULL_HANDLE;
+        pipes[i].cp_ci_.stage.pNext = &mapping_info;
+        pipes[i].CreateComputePipeline(false);
     }
+
+    pipes[max_samplers] = CreateComputePipelineHelper(*this, &pipeline_create_flags_2_create_info);
+    pipes[max_samplers].LateBindPipelineInfo();
+    pipes[max_samplers].cp_ci_.layout = VK_NULL_HANDLE;
+    pipes[max_samplers].cp_ci_.stage.pNext = &mapping_info;
+    m_errorMonitor->SetDesiredError("VUID-vkCreateComputePipelines-pCreateInfos-11429");
+    pipes[max_samplers].CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, PipelineLayoutNotNull) {
@@ -5147,59 +5124,36 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationTotalCountShaderObject) {
     AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    const VkPhysicalDeviceLimits& limits = m_device->Physical().limits_;
-    if (limits.maxSamplerAllocationCount < heap_props.maxDescriptorHeapEmbeddedSamplers) {
-        GTEST_SKIP() << "maxSamplerAllocationCount < maxDescriptorHeapEmbeddedSamplers";
-    }
+    const size_t max_samplers = heap_props.maxDescriptorHeapEmbeddedSamplers;
     if (heap_props.maxDescriptorHeapEmbeddedSamplers > 2048) {
         GTEST_SKIP() << "maxDescriptorHeapEmbeddedSamplers too large to run the test";
     }
-
-    const size_t max_samplers = heap_props.maxDescriptorHeapEmbeddedSamplers - 1;
-    std::vector<VkSampler> samplers(max_samplers);
-
-    VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
-
-    VkResult err = VK_SUCCESS;
-    for (size_t i = 0; i < max_samplers; i++) {
-        err = vk::CreateSampler(device(), &sampler_create_info, nullptr, &samplers[i]);
-        if (err != VK_SUCCESS) {
-            break;
-        }
-    }
-
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
-    VkDescriptorSetAndBindingMappingEXT mapping[2];
-    mapping[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
-    mapping[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-    mapping[0].sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
-    mapping[1] = MakeSetAndBindingMapping(0, 1, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
-    mapping[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-    mapping[1].sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
+    VkDescriptorSetAndBindingMappingEXT mapping;
+    mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
-    mapping_info.mappingCount = 2u;
-    mapping_info.pMappings = mapping;
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const VkShaderCreateFlagsEXT flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
     VkShaderCreateInfoEXT vert_ci = ShaderCreateInfoFlag(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, flags);
     vert_ci.pNext = &mapping_info;
 
-    m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-11428");
-
-    const size_t maxSamplerAllocationCount =
-        static_cast<size_t>(limits.maxSamplerAllocationCount -
-                            SafeDivision(heap_props.minSamplerHeapReservedRangeWithEmbedded, heap_props.samplerDescriptorSize));
-    if (max_samplers >= maxSamplerAllocationCount) {
-        m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-11413");
+    std::vector<vkt::Shader*> shaders(max_samplers + 1);
+    for (size_t i = 0; i < max_samplers; i++) {
+        shaders[i] = new vkt::Shader(*m_device, vert_ci);
     }
 
-    const vkt::Shader vertShader(*m_device, vert_ci);
+    m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-11428");
+    shaders[max_samplers] = new vkt::Shader(*m_device, vert_ci);
     m_errorMonitor->VerifyFound();
 
-    for (auto& sampler : samplers) {
-        vk::DestroySampler(device(), sampler, nullptr);
+    for (size_t i = 0; i < max_samplers + 1; i++) {
+        delete shaders[i];
     }
 }
 
