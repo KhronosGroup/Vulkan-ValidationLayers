@@ -2381,6 +2381,14 @@ bool CommandBuffer::HasExternalFormatResolveAttachment() const {
     return false;
 }
 
+void CommandBuffer::InvalidateShaderObjects(VkPipelineBindPoint pipeline_bind_point) {
+    auto& last_bound = lastBound[ConvertToVvlBindPoint(pipeline_bind_point)];
+    for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
+        last_bound.shader_object_bound[i] = false;
+        last_bound.shader_object_states[i] = nullptr;
+    }
+}
+
 void CommandBuffer::BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject* shader_object_state) {
     auto& last_bound_state = lastBound[ConvertStageToVvlBindPoint(shader_stage)];
     const auto stage_index = static_cast<uint32_t>(VkShaderStageToShaderObjectStage(shader_stage));
