@@ -2697,6 +2697,9 @@ void DeviceState::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, V
     ASSERT_AND_RETURN(pipeline_state);
     cb_state->RecordBindPipeline(pipelineBindPoint, *pipeline_state);
 
+    // Mark any previous shader object binds as invalidated vkspec.html#shaders-objects-pipeline-interaction
+    cb_state->InvalidateShaderObjects(pipelineBindPoint);
+
     if (!disabled[command_buffer_state]) {
         cb_state->AddChild(pipeline_state);
     }

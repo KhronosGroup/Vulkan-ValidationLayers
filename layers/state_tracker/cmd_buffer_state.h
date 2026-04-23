@@ -816,6 +816,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     inline void BindLastBoundPipeline(vvl::BindPoint bind_point, vvl::Pipeline *pipe_state) {
         lastBound[bind_point].pipeline_state = pipe_state;
     }
+    void InvalidateShaderObjects(VkPipelineBindPoint pipeline_bind_point);
     void BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject *shader_object_state);
 
     bool IsPrimary() const { return allocate_info.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }

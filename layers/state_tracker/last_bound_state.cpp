@@ -48,6 +48,10 @@ bool LastBound::IsDynamic(const CBDynamicState state) const { return !pipeline_s
 
 void LastBound::Reset() {
     pipeline_state = nullptr;
+    for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
+        shader_object_bound[i] = false;
+        shader_object_states[i] = nullptr;
+    }
     desc_set_pipeline_layout.reset();
     if (push_descriptor_set) {
         cb_state.RemoveChild(push_descriptor_set);
