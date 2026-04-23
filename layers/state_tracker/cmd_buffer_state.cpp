@@ -244,7 +244,7 @@ void CommandBuffer::RemoveChild(std::shared_ptr<StateObject>& child_node) {
 //   - Set graphics to use classic descriptor
 //   - Set compute to use Descriptor buffer
 //   - Override both using Heaps
-// To "properly" do this, we woudl need to really devide LastBound state into 3 structs for each
+// To "properly" do this, we would need to really devide LastBound state into 3 structs for each
 // For the practical future, we will try and get away just assuming these crazy cases are not happening
 void CommandBuffer::SetDescriptorMode(vvl::DescriptorMode new_mode, vvl::Func function) {
     // 99% of time, all LastBound will be the same mode
@@ -270,17 +270,9 @@ void CommandBuffer::SetDescriptorMode(vvl::DescriptorMode new_mode, vvl::Func fu
 
         lastBound[i].SetDescriptorMode(new_mode, function);
     }
-}
 
-// Some functions like vkCmdPushConstant are valid in Classic/Buffer, but invalid in Heap
-// So calling it doesn't "set" a mode, but instead only "invalidates"
-void CommandBuffer::InvalidateDescriptorMode(vvl::DescriptorMode invalidate_mode, vvl::Func function) {
-    for (uint32_t i = 0; i < vvl::BindPointCount; i++) {
-        const vvl::DescriptorMode current_mode = lastBound[i].GetDescriptorMode();
-        if (current_mode == invalidate_mode) {
-            // This will happen calling vkCmdPushConstant when in heap, go to "Classic" as a fallback
-            SetDescriptorMode(vvl::DescriptorModeClassic, function);
-        }
+    if (new_mode == vvl::DescriptorMode::DescriptorModeHeap) {
+        push_constant_ranges_layout.reset();
     }
 }
 
