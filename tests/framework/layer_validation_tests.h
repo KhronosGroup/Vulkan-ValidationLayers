@@ -4,6 +4,7 @@
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2026 Google, Inc.
  * Copyright (C) 2025 Arm Limited.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -525,6 +526,24 @@ class WsiTest : public VkLayerTest {
 class CooperativeMatrixTest : public VkLayerTest {
   public:
     void InitCooperativeMatrixKHR();
+};
+
+class TileShadingTest : public VkLayerTest {
+  public:
+    struct TileShadingRenderTargetConfig {
+        VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+        VkExtent2D rt_size = {64, 64};
+        VkExtent2D tile_apron_size = {0, 0};
+        bool use_render_pass2 = false;
+    };
+
+    void InitBasicTileShading();
+    void InitTileShadingRenderTarget(const TileShadingRenderTargetConfig& tile_shading_rp_config);
+
+    vkt::RenderPass m_tile_shading_render_pass;
+    vkt::Framebuffer m_tile_shading_framebuffer;
+    vkt::Image m_color_image;
+    vkt::ImageView m_color_view;
 };
 
 class ParentTest : public VkLayerTest {

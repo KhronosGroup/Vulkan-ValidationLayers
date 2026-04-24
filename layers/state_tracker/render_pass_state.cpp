@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -291,6 +292,20 @@ static bool IsRenderPassMultiViewEnabled(const VkRenderPassCreateInfo2& renderpa
     return is_multiview_enabled;
 }
 
+static bool IsRenderPassTileShadingEnabled(const VkRenderPassCreateInfo2& render_pass_ci) {
+    // From the spec:
+    // To enable tile shading for a render pass object, add a VkRenderPassTileShadingCreateInfoQCOM
+    // to the pNext chain of VkRenderPassCreateInfo or VkRenderPassCreateInfo2.
+    return vku::FindStructInPNextChain<VkRenderPassTileShadingCreateInfoQCOM>(render_pass_ci.pNext) != nullptr;
+}
+
+static bool IsRenderPassTileShadingEnabled(const VkRenderingInfo& rendering_info) {
+    // From the spec:
+    // To enable tile shading for a dynamic render pass, add a VkRenderPassTileShadingCreateInfoQCOM
+    // to the pNext chain of VkRenderingInfo.
+    return vku::FindStructInPNextChain<VkRenderPassTileShadingCreateInfoQCOM>(rendering_info.pNext) != nullptr;
+}
+
 static void InitRenderPassState(vvl::RenderPass& render_pass) {
     auto create_info = render_pass.create_info.ptr();
 
@@ -324,7 +339,8 @@ RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo2 const* pCrea
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(false),
       dynamic_rendering_color_attachment_count(0),
-      has_multiview_enabled(IsRenderPassMultiViewEnabled(*create_info.ptr())) {
+      has_multiview_enabled(IsRenderPassMultiViewEnabled(*create_info.ptr())),
+      has_tile_shading_enabled(IsRenderPassTileShadingEnabled(*create_info.ptr())) {
     InitRenderPassState(*this);
 }
 
@@ -340,7 +356,8 @@ RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo const* pCreat
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(false),
       dynamic_rendering_color_attachment_count(0),
-      has_multiview_enabled(IsRenderPassMultiViewEnabled(*create_info.ptr())) {
+      has_multiview_enabled(IsRenderPassMultiViewEnabled(*create_info.ptr())),
+      has_tile_shading_enabled(IsRenderPassTileShadingEnabled(*create_info.ptr())) {
     InitRenderPassState(*this);
 }
 
@@ -352,7 +369,8 @@ RenderPass::RenderPass(const VkPipelineRenderingCreateInfo& rendering_ci)
       use_dynamic_rendering_inherited(false),
       dynamic_pipeline_rendering_create_info(&rendering_ci),
       dynamic_rendering_color_attachment_count(rendering_ci.colorAttachmentCount),
-      has_multiview_enabled(rendering_ci.viewMask != 0) {}
+      has_multiview_enabled(rendering_ci.viewMask != 0),
+      has_tile_shading_enabled(false) {}
 
 bool RenderPass::UsesColorAttachment(uint32_t subpass_num) const {
     bool result = false;
@@ -433,7 +451,8 @@ RenderPass::RenderPass(const VkRenderingInfo& rendering_info)
       use_dynamic_rendering_inherited(false),
       dynamic_rendering_begin_rendering_info(&rendering_info),
       dynamic_rendering_color_attachment_count(dynamic_rendering_begin_rendering_info.colorAttachmentCount),
-      has_multiview_enabled(rendering_info.viewMask != 0u) {}
+      has_multiview_enabled(rendering_info.viewMask != 0u),
+      has_tile_shading_enabled(IsRenderPassTileShadingEnabled(rendering_info)) {}
 
 // vkBeginCommandBuffer (dynamic rendering in secondary command buffer)
 RenderPass::RenderPass(VkCommandBufferInheritanceRenderingInfo const* pInheritanceRenderingInfo)
@@ -442,7 +461,8 @@ RenderPass::RenderPass(VkCommandBufferInheritanceRenderingInfo const* pInheritan
       use_dynamic_rendering_inherited(true),
       inheritance_rendering_info(pInheritanceRenderingInfo),
       dynamic_rendering_color_attachment_count(inheritance_rendering_info.colorAttachmentCount),
-      has_multiview_enabled(false) {}
+      has_multiview_enabled(false),
+      has_tile_shading_enabled(false) {}
 
 Framebuffer::Framebuffer(VkFramebuffer handle, const VkFramebufferCreateInfo* pCreateInfo, std::shared_ptr<RenderPass>&& rpstate,
                          std::vector<std::shared_ptr<vvl::ImageView>>&& attachments)
