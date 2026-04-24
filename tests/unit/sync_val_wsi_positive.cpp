@@ -1134,3 +1134,219 @@ TEST_F(PositiveSyncValWsi, WaitAcquireFenceForDestoryedSwapchain) {
     swapchain.Destroy();
     fence.Wait(kWaitTimeout);
 }
+
+TEST_F(PositiveSyncValWsi, ConcurrentPresentMultipleSwapchains) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8576");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const uint32_t num_threads = 8;
+    const uint32_t num_frames_in_flight = 2;
+    const uint32_t N = 200;
+
+    std::mutex queue_mutex;
+
+    std::vector<SurfaceContext> surface_contexts(num_threads);
+    std::vector<vkt::Surface> surfaces(num_threads);
+    std::vector<vkt::Swapchain> swapchains;
+
+    for (uint32_t i = 0; i < num_threads; i++) {
+        if (CreateSurface(surface_contexts[i], surfaces[i]) != VK_SUCCESS) {
+            GTEST_SKIP() << "Failed to create surface " << i;
+        }
+        const SurfaceInformation surface_info = GetSwapchainInfo(surfaces[i]);
+        const VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(surfaces[i], surface_info);
+        swapchains.emplace_back(*m_device, swapchain_ci);
+    }
+
+    std::atomic<bool> bailout{false};
+    monitor_.SetBailout(&bailout);
+
+    auto presenter_thread = [&, this](uint32_t thread_index) {
+        vkt::Swapchain& swapchain = swapchains[thread_index];
+        const auto swapchain_images = swapchain.GetImages();
+
+        std::vector<vkt::Semaphore> acquire_semaphores;
+        std::vector<vkt::Semaphore> present_semaphores;
+        std::vector<vkt::Fence> frame_fences;
+
+        vkt::CommandPool command_pool(*m_device, m_default_queue->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+        std::vector<vkt::CommandBuffer> command_buffers;
+        for (uint32_t i = 0; i < num_frames_in_flight; i++) {
+            acquire_semaphores.emplace_back(*m_device);
+            frame_fences.emplace_back(*m_device, VK_FENCE_CREATE_SIGNALED_BIT);
+            command_buffers.emplace_back(*m_device, command_pool);
+        }
+        for (uint32_t i = 0; i < swapchain.GetImageCount(); i++) {
+            present_semaphores.emplace_back(*m_device);
+        }
+        uint32_t current_frame = 0;
+        for (uint32_t i = 0; i < N; i++) {
+            const uint32_t frame_index = current_frame % num_frames_in_flight;
+            frame_fences[frame_index].Wait(kWaitTimeout);
+            frame_fences[frame_index].Reset();
+
+            const uint32_t image_index = swapchain.AcquireNextImage(acquire_semaphores[frame_index], kWaitTimeout);
+
+            vkt::CommandBuffer& command_buffer = command_buffers[frame_index];
+            command_buffer.Begin();
+            command_buffer.TransitionLayout(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED,
+                                            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+            command_buffer.End();
+
+            {
+                std::unique_lock<std::mutex> lock(queue_mutex);
+                m_default_queue->Submit(command_buffer, vkt::Wait(acquire_semaphores[frame_index]),
+                                        vkt::Signal(present_semaphores[image_index]), frame_fences[frame_index]);
+            }
+            {
+                std::unique_lock<std::mutex> lock(queue_mutex);
+                m_default_queue->Present(swapchain, image_index, present_semaphores[image_index]);
+            }
+            current_frame++;
+            if (bailout.load()) {
+                break;
+            }
+        }
+        {
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            m_default_queue->Wait();
+        }
+    };
+    std::vector<std::thread> presenters;
+    for (int i = 0; i < num_threads; i++) {
+        presenters.emplace_back(presenter_thread, i);
+    }
+
+    for (auto& presenter : presenters) {
+        presenter.join();
+    }
+    monitor_.SetBailout(nullptr);
+}
+
+TEST_F(PositiveSyncValWsi, WaitForFencesClearsLastSynchronizedPresents) {
+    // It's a single threaded deterministic version of ConcurrentPresentMultipleSwapchains.
+    // If present access is marked as synchronized (last_synchronized_present in syncval implementation),
+    // then WaitForFences must clear such accesses.
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8576");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(InitSyncVal());
+
+    struct SwapchainContext {
+        SurfaceContext surface_context;
+        vkt::Surface surface;
+        vkt::Swapchain swapchain;
+        std::vector<VkImage> swapchain_images;
+        vkt::Fence frame_fence;
+        vkt::CommandBuffer command_buffer;
+        vkt::Semaphore acquire_semaphore;
+        std::vector<vkt::Semaphore> present_semaphores;
+
+        void Init(PositiveSyncValWsi& test, vkt::CommandPool& command_pool) {
+            if (test.CreateSurface(surface_context, surface) != VK_SUCCESS) {
+                GTEST_SKIP() << "Failed to create surfac";
+            }
+            const SurfaceInformation surface_info = test.GetSwapchainInfo(surface);
+            const VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(surface, surface_info);
+            swapchain = vkt::Swapchain(*test.DeviceObj(), swapchain_ci);
+            swapchain_images = swapchain.GetImages();
+            if (swapchain_images.size() != 2) {
+                GTEST_SKIP() << "The test requires swapchain with 2 images";
+            }
+            frame_fence = vkt::Fence(*test.DeviceObj(), VK_FENCE_CREATE_SIGNALED_BIT);
+            command_buffer = vkt::CommandBuffer(*test.DeviceObj(), command_pool);
+            acquire_semaphore = vkt::Semaphore(*test.DeviceObj());
+            for (size_t i = 0; i < swapchain_images.size(); i++) {
+                present_semaphores.emplace_back(*test.DeviceObj());
+            }
+        }
+    };
+    SwapchainContext ctx_a;
+    SwapchainContext ctx_b;
+    RETURN_IF_SKIP(ctx_a.Init(*this, m_command_pool));
+    RETURN_IF_SKIP(ctx_b.Init(*this, m_command_pool));
+
+    auto begin_frame = [&](SwapchainContext& ctx) {
+        ctx.frame_fence.Wait(kWaitTimeout);
+        ctx.frame_fence.Reset();
+
+        const uint32_t image_index = ctx.swapchain.AcquireNextImage(ctx.acquire_semaphore, kWaitTimeout);
+        ctx.command_buffer.Begin();
+        ctx.command_buffer.TransitionLayout(ctx.swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED,
+                                            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        ctx.command_buffer.End();
+        return image_index;
+    };
+    auto submit = [&](SwapchainContext& ctx, uint32_t image_index) {
+        m_default_queue->Submit(ctx.command_buffer, vkt::Wait(ctx.acquire_semaphore),
+                                vkt::Signal(ctx.present_semaphores[image_index]), ctx.frame_fence);
+    };
+    auto present = [&](SwapchainContext& ctx, uint32_t image_index) {
+        m_default_queue->Present(ctx.swapchain, image_index, ctx.present_semaphores[image_index]);
+    };
+
+    // Re-acquire image on swapchain A (need image that was already presented)
+    {
+        uint32_t image_index = begin_frame(ctx_a);
+        if (image_index != 0) {
+            GTEST_SKIP() << "Expected image index 0";
+        }
+        submit(ctx_a, image_index);
+        present(ctx_a, image_index);
+
+        image_index = begin_frame(ctx_a);
+        if (image_index != 1) {
+            m_default_queue->Wait();
+            GTEST_SKIP() << "Expected image index 1";
+        }
+        submit(ctx_a, image_index);
+        present(ctx_a, image_index);
+
+        image_index = begin_frame(ctx_a);
+        if (image_index != 0) {  // get image 0 again
+            m_default_queue->Wait();
+            GTEST_SKIP() << "Expected image index 0";
+        }
+    }
+
+    // Run frame on B. This imports A's synchronized present access into ctx B.
+    // (synchronized because image was re-acquired)
+    {
+        const uint32_t image_index = begin_frame(ctx_b);
+        if (image_index != 0) {
+            m_default_queue->Wait();
+            GTEST_SKIP() << "Expected image index 0";
+        }
+        submit(ctx_b, image_index);
+        present(ctx_b, image_index);
+    }
+
+    // Submit layout transition on A
+    submit(ctx_a, 0);
+
+    {
+        // Import A's layout transition into B (via last batch)
+        const uint32_t image_index = begin_frame(ctx_b);
+        if (image_index != 1) {
+            m_default_queue->Wait();
+            GTEST_SKIP() << "Expected image index 1";
+        }
+        submit(ctx_b, image_index);
+        present(ctx_b, image_index);
+
+        // Import synchronized present accesses from B's image 0
+        // Fence wait removes imported A's layout transitions.
+        // In the original issue this did not remove *already synchronized present accesses* though
+        const uint32_t image_index2 = begin_frame(ctx_b);
+        if (image_index2 != 0) {
+            m_default_queue->Wait();
+            GTEST_SKIP() << "Expected image index 0";
+        }
+        submit(ctx_b, image_index2);
+    }
+
+    // This caused WRITE-AFTER-PRESENT hazard in the original issue
+    present(ctx_a, 0);
+
+    m_default_queue->Wait();
+}
