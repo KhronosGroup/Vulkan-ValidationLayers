@@ -5809,14 +5809,12 @@ TEST_F(NegativeDebugPrintf, DescriptorHeap) {
     pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
     CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
     pipe.CreateComputePipeline(false);
 
     CreateComputePipelineHelper pipe2(*this, &pipeline_create_flags_2_create_info);
-    pipe2.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe2.cp_ci_.stage.pNext = &mapping_info;
+    pipe2.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     pipe2.cp_ci_.layout = VK_NULL_HANDLE;
     pipe2.CreateComputePipeline(false);
 
@@ -5923,9 +5921,8 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapGraphics) {
     VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
     pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
-    VkPipelineShaderStageCreateInfo stages[2] = {vs_module.GetStageCreateInfo(), fs_module.GetStageCreateInfo()};
-    stages[0].pNext = &mapping_info;
-    stages[1].pNext = &mapping_info;
+    VkPipelineShaderStageCreateInfo stages[2] = {vs_module.GetStageCreateInfo(&mapping_info),
+                                                 fs_module.GetStageCreateInfo(&mapping_info)};
 
     CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.gp_ci_.layout = VK_NULL_HANDLE;
@@ -6380,8 +6377,7 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeap) {
     pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
     CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
     pipe.CreateComputePipeline(false);
 
@@ -6501,9 +6497,8 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeapGraphics) {
     VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
     pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
-    VkPipelineShaderStageCreateInfo stages[2] = {vs_module.GetStageCreateInfo(), fs_module.GetStageCreateInfo()};
-    stages[0].pNext = &mapping_info;
-    stages[1].pNext = &mapping_info;
+    VkPipelineShaderStageCreateInfo stages[2] = {vs_module.GetStageCreateInfo(&mapping_info),
+                                                 fs_module.GetStageCreateInfo(&mapping_info)};
 
     CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.gp_ci_.layout = VK_NULL_HANDLE;
@@ -6640,10 +6635,8 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeapMesh) {
     VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
     pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
-    VkPipelineShaderStageCreateInfo stages[3] = {ts_module.GetStageCreateInfo(), ms_module.GetStageCreateInfo(),
-                                                 fs_module.GetStageCreateInfo()};
-    stages[0].pNext = &mapping_info;  // unused
-    stages[1].pNext = &mapping_info;
+    VkPipelineShaderStageCreateInfo stages[3] = {ts_module.GetStageCreateInfo(&mapping_info),
+                                                 ms_module.GetStageCreateInfo(&mapping_info), fs_module.GetStageCreateInfo()};
 
     CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.gp_ci_.layout = VK_NULL_HANDLE;

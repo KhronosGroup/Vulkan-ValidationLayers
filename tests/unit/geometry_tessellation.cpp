@@ -1619,7 +1619,7 @@ TEST_F(NegativeGeometryTessellation, WritingToLayerWithSingleFramebufferLayer) {
             gl_Layer = 4;
         }
     )glsl";
-    const VkShaderObj gs(*m_device, gsSource.data(), VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderObj gs(*m_device, gsSource.data(), VK_SHADER_STAGE_GEOMETRY_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};

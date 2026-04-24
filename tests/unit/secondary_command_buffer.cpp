@@ -1553,8 +1553,8 @@ TEST_F(NegativeSecondaryCommandBuffer, InheritanceDescriptorHeapInfo) {
     VkCommandBufferInheritanceDescriptorHeapInfoEXT inheritance_descriptor_heap_info = vku::InitStructHelper();
     VkBindHeapInfoEXT resource_heap_bind_info = vku::InitStructHelper();
     VkBindHeapInfoEXT sampler_heap_bind_info = vku::InitStructHelper();
-    resource_heap_bind_info.heapRange = {resource_buffer.Address(), resource_buffer.CreateInfo().size};
-    sampler_heap_bind_info.heapRange = {resource_buffer.Address(), resource_buffer.CreateInfo().size};
+    resource_heap_bind_info.heapRange = resource_buffer.AddressRange();
+    sampler_heap_bind_info.heapRange = resource_buffer.AddressRange();
     inheritance_descriptor_heap_info.pResourceHeapBindInfo = &resource_heap_bind_info;
     inheritance_descriptor_heap_info.pSamplerHeapBindInfo = &sampler_heap_bind_info;
 
@@ -1602,8 +1602,8 @@ TEST_F(NegativeSecondaryCommandBuffer, InheritanceDescriptorHeapInfo_1_4) {
     VkCommandBufferInheritanceDescriptorHeapInfoEXT inheritance_descriptor_heap_info = vku::InitStructHelper();
     VkBindHeapInfoEXT resource_heap_bind_info = vku::InitStructHelper();
     VkBindHeapInfoEXT sampler_heap_bind_info = vku::InitStructHelper();
-    resource_heap_bind_info.heapRange = {resource_buffer.Address(), resource_buffer.CreateInfo().size};
-    sampler_heap_bind_info.heapRange = {resource_buffer.Address(), resource_buffer.CreateInfo().size};
+    resource_heap_bind_info.heapRange = resource_buffer.AddressRange();
+    sampler_heap_bind_info.heapRange = resource_buffer.AddressRange();
     inheritance_descriptor_heap_info.pResourceHeapBindInfo = &resource_heap_bind_info;
     inheritance_descriptor_heap_info.pSamplerHeapBindInfo = &sampler_heap_bind_info;
 

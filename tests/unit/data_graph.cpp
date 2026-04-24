@@ -706,8 +706,7 @@ TEST_F(NegativeDataGraph, DestroySessionInUse) {
     VkSemaphoreTypeCreateInfo sem_type = vku::InitStructHelper();
     sem_type.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     sem_type.initialValue = 0;
-    VkSemaphoreCreateInfo create_sem = vku::InitStructHelper();
-    create_sem.pNext = &sem_type;
+    VkSemaphoreCreateInfo create_sem = vku::InitStructHelper(&sem_type);
 
     vkt::Semaphore sem(*m_device, create_sem);
     VkTimelineSemaphoreSubmitInfo timeline_info = vku::InitStructHelper();
@@ -717,8 +716,7 @@ TEST_F(NegativeDataGraph, DestroySessionInUse) {
 
     VkPipelineStageFlags dst_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
-    VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.pNext = &timeline_info;
+    VkSubmitInfo submit_info = vku::InitStructHelper(&timeline_info);
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &sem.handle();
     submit_info.pWaitDstStageMask = &dst_stage_mask;

@@ -3563,15 +3563,14 @@ TEST_F(NegativeImage, ImageViewMinLod) {
     image_create_info.flags = 0;
     vkt::Image image2D(*m_device, image_create_info, vkt::set_layout);
 
-    VkImageViewCreateInfo ivci = vku::InitStructHelper();
+    VkImageViewMinLodCreateInfoEXT ivml = vku::InitStructHelper();
+    ivml.minLod = 4.0;
+
+    VkImageViewCreateInfo ivci = vku::InitStructHelper(&ivml);
     ivci.image = image2D;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_R8G8_UNORM;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 4, 0, 1};
-
-    VkImageViewMinLodCreateInfoEXT ivml = vku::InitStructHelper();
-    ivml.minLod = 4.0;
-    ivci.pNext = &ivml;
 
     CreateImageViewTest(ivci, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06456");
     ivml.minLod = 1.0;

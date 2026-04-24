@@ -320,13 +320,12 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_ReuseAllocations) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
 
-    VkMemoryAllocateInfo memory_ai = vku::InitStructHelper();
-    memory_ai.allocationSize = 0x100000;
-    memory_ai.memoryTypeIndex = 0;
-
     VkMemoryPriorityAllocateInfoEXT priority = vku::InitStructHelper();
     priority.priority = 0.5f;
-    memory_ai.pNext = &priority;
+
+    VkMemoryAllocateInfo memory_ai = vku::InitStructHelper(&priority);
+    memory_ai.allocationSize = 0x100000;
+    memory_ai.memoryTypeIndex = 0;
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-AllocateMemory-ReuseAllocations");
     {
@@ -364,15 +363,12 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
     queue_ci.pQueuePriorities = &defaultQueuePriority;
 
     VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT pageable_features = vku::InitStructHelper();
-    pageable_features.pNext = nullptr;
     pageable_features.pageableDeviceLocalMemory = VK_TRUE;
 
-    VkPhysicalDeviceMaintenance4Features maintenance4_features = vku::InitStructHelper();
-    maintenance4_features.pNext = &pageable_features;
+    VkPhysicalDeviceMaintenance4Features maintenance4_features = vku::InitStructHelper(&pageable_features);
     maintenance4_features.maintenance4 = VK_TRUE;
 
-    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
-    device_ci.pNext = &maintenance4_features;
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper(&maintenance4_features);
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &queue_ci;
     device_ci.enabledExtensionCount = m_device_extension_names.size();
@@ -430,15 +426,12 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_StaticPriority) {
     queue_ci.pQueuePriorities = &defaultQueuePriority;
 
     VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT pageable_features = vku::InitStructHelper();
-    pageable_features.pNext = nullptr;
     pageable_features.pageableDeviceLocalMemory = VK_TRUE;
 
-    VkPhysicalDeviceMaintenance4Features maintenance4_features = vku::InitStructHelper();
-    maintenance4_features.pNext = &pageable_features;
+    VkPhysicalDeviceMaintenance4Features maintenance4_features = vku::InitStructHelper(&pageable_features);
     maintenance4_features.maintenance4 = VK_TRUE;
 
-    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
-    device_ci.pNext = &maintenance4_features;
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper(&maintenance4_features);
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &queue_ci;
     device_ci.enabledExtensionCount = m_device_extension_names.size();
@@ -464,8 +457,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_StaticPriority) {
     VkMemoryPriorityAllocateInfoEXT priority = vku::InitStructHelper();
     priority.priority = 0.5f;
 
-    VkMemoryAllocateInfo memory_ai = vku::InitStructHelper();
-    memory_ai.pNext = &priority;
+    VkMemoryAllocateInfo memory_ai = vku::InitStructHelper(&priority);
     memory_ai.allocationSize = memory_requirements.size;
     memory_ai.memoryTypeIndex = memory_type_index;
 
