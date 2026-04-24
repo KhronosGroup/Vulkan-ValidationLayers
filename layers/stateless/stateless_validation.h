@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
  * Copyright (C) 2025 Arm Limited.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -484,6 +485,9 @@ class Device : public vvl::BaseDevice {
 
     bool ValidateSubpassGraphicsFlags(const VkRenderPassCreateInfo2 &create_info, uint32_t subpass, VkPipelineStageFlags2 stages,
                                       const char *vuid, const Location &loc) const;
+
+    bool ValidateRenderPassTileShadingCreateInfo(const VkRenderPassTileShadingCreateInfoQCOM &rp_tile_shading_ci,
+                                                 const Location &rp_tile_shading_loc) const;
 
     bool ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_info, const ErrorObject &error_obj) const;
 

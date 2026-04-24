@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2023 Google Inc.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,43 +122,36 @@ static vku::safe_VkSubpassDependency2 ToV2KHR(const VkSubpassDependency& in_stru
 }
 
 vku::safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& create_info) {
+    const auto* multiview_info = vku::FindStructInPNextChain<VkRenderPassMultiviewCreateInfo>(create_info.pNext);
+    const auto* input_attachment_aspect_info = vku::FindStructInPNextChain<VkRenderPassInputAttachmentAspectCreateInfo>(create_info.pNext);
+
     vku::safe_VkRenderPassCreateInfo2 out_struct;
-    const auto multiview_info = vku::FindStructInPNextChain<VkRenderPassMultiviewCreateInfo>(create_info.pNext);
-    const auto* input_attachment_aspect_info =
-        vku::FindStructInPNextChain<VkRenderPassInputAttachmentAspectCreateInfo>(create_info.pNext);
-    const auto fragment_density_map_info =
-        vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(create_info.pNext);
-    const auto tile_memory_size_info = vku::FindStructInPNextChain<VkTileMemorySizeInfoQCOM>(create_info.pNext);
-
     out_struct.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
-
-    // Fixup RPCI2 pNext chain.  Only FDM2 and Tile Mem Size is valid on both chains.
-    if (fragment_density_map_info || tile_memory_size_info) {
-        VkBaseOutStructure* last_base_out_struct = nullptr;
-        if (fragment_density_map_info) {
-            out_struct.pNext = vku::SafePnextCopy(fragment_density_map_info);
-            auto base_struct = reinterpret_cast<const VkBaseOutStructure*>(out_struct.pNext);
-            const_cast<VkBaseOutStructure*>(base_struct)->pNext = nullptr;
-            last_base_out_struct = const_cast<VkBaseOutStructure*>(base_struct);
-        }
-        if (tile_memory_size_info) {
-            if (!last_base_out_struct) {
-                out_struct.pNext = vku::SafePnextCopy(tile_memory_size_info);
-                auto base_struct = reinterpret_cast<const VkBaseOutStructure*>(out_struct.pNext);
-                const_cast<VkBaseOutStructure*>(base_struct)->pNext = nullptr;
-                last_base_out_struct = const_cast<VkBaseOutStructure*>(base_struct);
+    out_struct.pNext = vku::SafePnextCopy(create_info.pNext);
+    // VkRenderPassMultiviewCreateInfo and VkRenderPassInputAttachmentAspectCreateInfo extend
+    // VkRenderPassCreateInfo but are not valid in VkRenderPassCreateInfo2::pNext.
+    // Remove them from the copied chain.
+    {
+        const void* src = out_struct.pNext;
+        out_struct.pNext = nullptr;
+        VkBaseOutStructure* tail = nullptr;
+        while (src) {
+            auto* node = reinterpret_cast<VkBaseOutStructure*>(const_cast<void*>(src));
+            src = node->pNext;
+            node->pNext = nullptr;
+            if (node->sType == VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO ||
+                node->sType == VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO) {
+                vku::FreePnextChain(node);
             } else {
-                last_base_out_struct->pNext =
-                    reinterpret_cast<VkBaseOutStructure*>(const_cast<VkTileMemorySizeInfoQCOM*>(tile_memory_size_info));
-                auto base_struct = reinterpret_cast<const VkBaseOutStructure*>(last_base_out_struct->pNext);
-                const_cast<VkBaseOutStructure*>(base_struct)->pNext = nullptr;
-                last_base_out_struct = last_base_out_struct->pNext;
+                if (!tail) {
+                    out_struct.pNext = node;
+                } else {
+                    tail->pNext = node;
+                }
+                tail = node;
             }
         }
-    } else {
-        out_struct.pNext = nullptr;
     }
-
     out_struct.flags = create_info.flags;
     out_struct.attachmentCount = create_info.attachmentCount;
     out_struct.pAttachments = nullptr;  // to be filled

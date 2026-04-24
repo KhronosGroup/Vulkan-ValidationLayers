@@ -47,6 +47,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/copy_buffer_image_positive.cpp
     unit/data_graph.cpp
     unit/data_graph_positive.cpp
+    unit/tile_shading.cpp
+    unit/tile_shading_positive.cpp
     unit/debug_extensions.cpp
     unit/debug_extensions_positive.cpp
     unit/debug_descriptor.cpp

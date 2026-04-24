@@ -1335,4 +1335,93 @@ TEST_F(NegativeAndroidExternalResolve, RenderPassAndFramebuffer) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeAndroidExternalResolve, TileShadingDynamicRenderingWithExternalFormatDownsample) {
+    TEST_DESCRIPTION("Try to launch a dynamic rendering when tile-shading is enabled and external-format-downsample is used.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_TILE_SHADING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_ANDROID_EXTERNAL_FORMAT_RESOLVE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::externalFormatResolve);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    AddRequiredFeature(vkt::Feature::tileShading);
+    AddRequiredFeature(vkt::Feature::tileShadingPerTileDraw);
+    AddRequiredFeature(vkt::Feature::tileShadingColorAttachments);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceExternalFormatResolvePropertiesANDROID external_resolve_props = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&external_resolve_props);
+    vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
+
+    if (external_resolve_props.nullColorAttachmentWithExternalFormatResolve != VK_TRUE) {
+        GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve is VK_FALSE, skipping test.";
+    }
+
+    vkt::AHB ahb(AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420, AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE, 64, 64);
+    if (!ahb.handle()) {
+        GTEST_SKIP() << "Failed to allocate AHB, skipping test.";
+    }
+
+    constexpr uint32_t image_width = 32;
+    constexpr uint32_t image_height = 32;
+
+    VkAndroidHardwareBufferFormatResolvePropertiesANDROID format_resolve_prop = vku::InitStructHelper();
+    VkExternalFormatANDROID external_format = vku::InitStructHelper();
+    external_format.externalFormat = ahb.GetExternalFormat(*m_device, &format_resolve_prop);
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.pNext = &external_format;
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_UNDEFINED;
+    image_ci.extent = {image_width, image_height, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    vkt::Image resolve_image{*m_device, image_ci, vkt::set_layout};
+
+    VkSamplerYcbcrConversionCreateInfo syc_ci = vku::InitStructHelper(&external_format);
+    syc_ci.format = VK_FORMAT_UNDEFINED;
+    syc_ci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709;
+    syc_ci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_NARROW;
+    syc_ci.components = {VK_COMPONENT_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO,
+                         VK_COMPONENT_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO};
+
+    vkt::SamplerYcbcrConversion ycbcr_conv{*m_device, syc_ci};
+
+    VkSamplerYcbcrConversionInfo sy_ci = vku::InitStructHelper();
+    sy_ci.conversion = ycbcr_conv;
+
+    VkImageViewCreateInfo ivci = vku::InitStructHelper(&sy_ci);
+    ivci.image = resolve_image;
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_UNDEFINED;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    const vkt::ImageView resolve_view{*m_device, ivci};
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = VK_NULL_HANDLE;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID;
+    color_attachment.resolveImageView = resolve_view;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_ci = vku::InitStructHelper();
+    tile_shading_ci.flags = VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM;
+    tile_shading_ci.tileApronSize = {0, 0};
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&tile_shading_ci);
+    rendering_info.layerCount = 1;
+    rendering_info.viewMask = 0;
+    rendering_info.renderArea = {{0, 0}, {image_width, image_height}};
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-resolveMode-10644");
+    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 #endif

@@ -4,6 +4,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -495,6 +496,8 @@ StatelessDeviceData::StatelessDeviceData(DispatchInstance* instance, VkPhysicalD
                                              &phys_dev_ext_props.renderpass_counter_by_region_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_shader_long_vector,
                                              &phys_dev_ext_props.shader_long_vector_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_qcom_tile_shading,
+                                             &phys_dev_ext_props.tile_shading_props);
 
     // None of these "check if supported" features are possible without first having gpdp2 first
     if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
