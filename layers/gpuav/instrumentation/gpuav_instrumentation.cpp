@@ -571,8 +571,7 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator& gpuav
 
     // There likely is only Push Constants (and BDA) used, but because the VkDescriptorSetLayout is using VK_EXT_descriptor_buffer,
     // and GPU-AV requires using a previous vkCmdBindDescriptorBuffersEXT to inject our code, so we have to inject it ourselves
-    const auto descriptor_mode = last_bound.GetDescriptorMode();
-    if (descriptor_mode == vvl::DescriptorModeUnknown || descriptor_mode == vvl::DescriptorModeBuffer) {
+    if (cb_state.base.descriptor_buffer.binding_info.empty()) {
         VkDescriptorBufferBindingInfoEXT binding_info = vku::InitStructHelper();
         binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
         binding_info.address = gpuav.GetGlobalDescriptorBuffer().Address();
