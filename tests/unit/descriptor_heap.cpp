@@ -461,8 +461,6 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterSize) {
 
 TEST_F(NegativeDescriptorHeap, ResourceParameterDataNull) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT null pointer");
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const struct {
@@ -482,7 +480,6 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDataNull) {
          std::vector<VkDescriptorType>{// checked in separate test VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
                                        // VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV,
                                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER}},
-        {"VUID-VkResourceDescriptorInfoEXT-None-11457", std::vector<VkDescriptorType>{VK_DESCRIPTOR_TYPE_TENSOR_ARM}},
     };
     for (const auto& s : subtests) {
         for (auto type : s.types) {
@@ -514,6 +511,23 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDataNullAS) {
     VkHostAddressRangeEXT descriptors = {data.data(), static_cast<size_t>(size)};
 
     m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-None-11213");
+    vk::WriteResourceDescriptorsEXT(device(), 1u, &resource_desc_info, &descriptors);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorHeap, ResourceParameterDataNullTensor) {
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    const VkDeviceSize size = vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), VK_DESCRIPTOR_TYPE_TENSOR_ARM);
+    std::vector<uint8_t> data(static_cast<size_t>(size));
+
+    VkResourceDescriptorInfoEXT resource_desc_info = vku::InitStructHelper();
+    resource_desc_info.type = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
+    VkHostAddressRangeEXT descriptors = {data.data(), static_cast<size_t>(size)};
+
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-None-11457");
     vk::WriteResourceDescriptorsEXT(device(), 1u, &resource_desc_info, &descriptors);
     m_errorMonitor->VerifyFound();
 }

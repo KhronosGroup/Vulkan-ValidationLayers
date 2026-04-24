@@ -318,18 +318,12 @@ TEST_F(PositiveDescriptorHeap, GraphicsPushData) {
 TEST_F(PositiveDescriptorHeap, ResourceParameterDataNull) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT null pointer when nullDescriptor enabled");
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
-    AddRequiredFeature(vkt::Feature::tensors);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    std::vector<VkDescriptorType> types{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                        VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
-                                        VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
-                                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                        VK_DESCRIPTOR_TYPE_TENSOR_ARM};
+    std::vector<VkDescriptorType> types{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                        VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+                                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,       VK_DESCRIPTOR_TYPE_STORAGE_BUFFER};
     for (auto type : types) {
         const VkDeviceSize size = vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), type);
         auto data = std::make_unique<uint8_t[]>(static_cast<size_t>(size));
@@ -338,7 +332,7 @@ TEST_F(PositiveDescriptorHeap, ResourceParameterDataNull) {
         resource_desc_info.type = type;
         VkHostAddressRangeEXT descriptors = {data.get(), static_cast<size_t>(size)};
 
-        // We do not expect error messages due to nullDescriptor enables pTexelBuffer, pAddressRange, pImage, pTensorARM to be null
+        // We do not expect error messages due to nullDescriptor enables pTexelBuffer, pAddressRange, pImage to be null
         vk::WriteResourceDescriptorsEXT(device(), 1u, &resource_desc_info, &descriptors);
     }
 }
@@ -4231,4 +4225,70 @@ TEST_F(PositiveDescriptorHeap, ResetInheritanceDescriptorHeapInfo) {
     vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_info);
     vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
     m_command_buffer.End();
+}
+
+TEST_F(PositiveDescriptorHeap, NullDescriptorBuffer) {
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 2);
+
+    VkHostAddressRangeEXT descriptor_host[2];
+    descriptor_host[0].address = resource_heap_data_;
+    descriptor_host[0].size = static_cast<size_t>(resource_stride);
+    descriptor_host[1].address = resource_heap_data_ + resource_stride;
+    descriptor_host[1].size = static_cast<size_t>(resource_stride);
+
+    VkResourceDescriptorInfoEXT descriptor_info[2];
+    descriptor_info[0] = vku::InitStructHelper();
+    descriptor_info[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_info[0].data.pAddressRange = nullptr;
+    descriptor_info[1] = vku::InitStructHelper();
+    descriptor_info[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info[1].data.pAddressRange = nullptr;
+
+    vk::WriteResourceDescriptorsEXT(*m_device, 2, descriptor_info, descriptor_host);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[0].sourceData.constantOffset.heapArrayStride = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = static_cast<uint32_t>(resource_stride);
+    mappings[1].sourceData.constantOffset.heapArrayStride = 0;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) uniform A { uint a; };
+        layout(set = 0, binding = 1) buffer B { uint b; };
+        void main() {
+            b = a;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
