@@ -5470,7 +5470,9 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                 if (address_range.size == 0) {
                     skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11433", device,
                                      data_loc.dot(Field::pAddressRange).dot(Field::size),
-                                     "is zero. (address is 0x%" PRIx64 ")\npResources[%" PRIu32 "].type = %s",
+                                     "is zero. (address is 0x%" PRIx64 ")\npResources[%" PRIu32
+                                     "].type = %s\nHint: If trying to use nullDescriptor, you need to set the "
+                                     "VkResourceDescriptorInfoEXT::data pointer to null.",
                                      address_range.address, i, string_VkDescriptorType(resource.type));
                 }
 
