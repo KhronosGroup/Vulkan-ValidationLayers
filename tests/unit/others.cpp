@@ -736,8 +736,7 @@ TEST_F(VkLayerTest, DuplicatePhysicalDevices) {
 
     vkt::QueueCreateInfoArray queue_info(m_device->Physical().queue_properties_);
 
-    VkDeviceCreateInfo create_info = vku::InitStructHelper();
-    create_info.pNext = &create_device_pnext;
+    VkDeviceCreateInfo create_info = vku::InitStructHelper(&create_device_pnext);
     create_info.queueCreateInfoCount = queue_info.Size();
     create_info.pQueueCreateInfos = queue_info.Data();
     create_info.enabledLayerCount = 0;

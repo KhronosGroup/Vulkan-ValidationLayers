@@ -268,7 +268,7 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelOffset) {
     // OpImageFetch
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImageSample-06435");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImageSample-06436", 2);
-    VkShaderObj const fs(*m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj fs(*m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 

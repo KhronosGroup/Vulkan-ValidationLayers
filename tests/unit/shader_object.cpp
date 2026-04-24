@@ -7149,7 +7149,7 @@ TEST_F(NegativeShaderObject, EmbeddedSamplerReservedArea) {
 
     // reservedRangeOffset check
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange = {buffer.Address(), bdsize};
+    bind_info.heapRange = buffer.AddressRange();
     bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRangeWithEmbedded - 1;
 
     // Resource descriptor heap buffer
@@ -7175,7 +7175,7 @@ TEST_F(NegativeShaderObject, EmbeddedSamplerReservedArea) {
     vkt::Buffer out_buffer(*m_device, out_data_buffer_size, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
 
     VkHostAddressRangeEXT out_descriptor{resource_heap_ptr, static_cast<size_t>(resourceStride)};
-    VkDeviceAddressRangeEXT out_address_range = {out_buffer.Address(), out_data_buffer_size};
+    VkDeviceAddressRangeEXT out_address_range = out_buffer.AddressRange();
     VkResourceDescriptorInfoEXT out_descriptor_info = vku::InitStructHelper();
     out_descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     out_descriptor_info.data.pAddressRange = &out_address_range;
@@ -7277,7 +7277,7 @@ TEST_F(NegativeShaderObject, DescriptorHeapOpTypeImage) {
     vkt::Buffer out_buffer(*m_device, out_data_buffer_size, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT, vkt::device_address);
 
     VkHostAddressRangeEXT out_descriptor{resource_heap_ptr, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT out_address_range = {out_buffer.Address(), out_data_buffer_size};
+    VkDeviceAddressRangeEXT out_address_range = out_buffer.AddressRange();
     VkResourceDescriptorInfoEXT out_descriptor_info = vku::InitStructHelper();
     out_descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     out_descriptor_info.data.pAddressRange = &out_address_range;
@@ -7653,7 +7653,7 @@ TEST_F(NegativeShaderObject, DrawWithHeap) {
     VkDeviceSize buffer_size = sizeof(uint32_t) * 16u;
     vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
 
-    VkDeviceAddressRangeEXT buffer_address_range = {buffer.Address(), buffer_size};
+    VkDeviceAddressRangeEXT buffer_address_range = buffer.AddressRange();
     VkHostAddressRangeEXT resource_host = {resource_heap_data, static_cast<size_t>(heap_props.bufferDescriptorSize)};
 
     VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
@@ -7662,7 +7662,7 @@ TEST_F(NegativeShaderObject, DrawWithHeap) {
     vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &resource_host);
 
     VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
-    resource_bind_info.heapRange = {resource_heap.Address(), total_heap_size};
+    resource_bind_info.heapRange = resource_heap.AddressRange();
     resource_bind_info.reservedRangeOffset = resource_heap_size;
     resource_bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 

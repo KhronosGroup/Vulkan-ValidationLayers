@@ -197,11 +197,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, NoHeapBound) {
     VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
     pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
-    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
-
     CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.shader_stages_[0].pNext = &mapping_info;
-    pipe.shader_stages_[1].pNext = &mapping_info;
     pipe.gp_ci_.layout = VK_NULL_HANDLE;
 
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -268,11 +264,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HeapBoundBeforePipeline) {
     VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
     pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
-    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
-
     CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.shader_stages_[0].pNext = &mapping_info;
-    pipe.shader_stages_[1].pNext = &mapping_info;
     pipe.gp_ci_.layout = VK_NULL_HANDLE;
 
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -347,11 +339,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HeapBoundAfterPipeline) {
     VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
     pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
-    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
-
     CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.shader_stages_[0].pNext = &mapping_info;
-    pipe.shader_stages_[1].pNext = &mapping_info;
     pipe.gp_ci_.layout = VK_NULL_HANDLE;
 
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -426,11 +414,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerHeapBound) {
     VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
     pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
-    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
-
     CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.shader_stages_[0].pNext = &mapping_info;
-    pipe.shader_stages_[1].pNext = &mapping_info;
     pipe.gp_ci_.layout = VK_NULL_HANDLE;
 
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -465,8 +449,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerHeapBound) {
     vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange.address = heap.Address();
-    bind_resource_info.heapRange.size = heap_size;
+    bind_resource_info.heapRange = heap.AddressRange();
     bind_resource_info.reservedRangeOffset = descriptor_size;
     bind_resource_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
     vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_resource_info);
@@ -500,12 +483,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingsUsed) {
     vkt::Buffer buffer3(*m_device, 256u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     VkDeviceAddressRangeEXT address_ranges[3];
-    address_ranges[0].address = buffer1.Address();
-    address_ranges[0].size = 256u;
-    address_ranges[1].address = buffer2.Address();
-    address_ranges[1].size = 256u;
-    address_ranges[2].address = buffer3.Address();
-    address_ranges[2].size = 256u;
+    address_ranges[0] = buffer1.AddressRange();
+    address_ranges[1] = buffer2.AddressRange();
+    address_ranges[2] = buffer3.AddressRange();
 
     VkResourceDescriptorInfoEXT resource_infos[3];
     resource_infos[0] = vku::InitStructHelper();
@@ -579,9 +559,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingsUsed) {
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.shader_stages_[0].pNext = &mapping_info;
-    pipe.shader_stages_[1].pNext = &mapping_info;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(&mapping_info), pipe.fs_->GetStageCreateInfo(&mapping_info)};
     pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
     pipe.gp_ci_.pStages = pipe.shader_stages_.data();
     pipe.CreateGraphicsPipeline(false);

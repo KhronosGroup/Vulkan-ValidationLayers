@@ -3197,14 +3197,12 @@ TEST_F(NegativeDescriptorHeap, MappedPushIsBlockUniform) {
 
     CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_modules[0].GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_modules[0].GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11315");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 
-    pipe.cp_ci_.stage = cs_modules[1].GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_modules[1].GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11315");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
@@ -3277,8 +3275,7 @@ TEST_F(NegativeDescriptorHeap, MappedStructLessThanMaxPushDataSize) {
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 
-    pipe.cp_ci_.stage = cs_modules[1].GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_modules[1].GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11315");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
@@ -3331,8 +3328,7 @@ TEST_F(NegativeDescriptorHeap, OpTypeStruct) {
 
     for (int i = 0; i < 4; i++) {
         CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-        pipe.cp_ci_.stage = cs_modules[i / 2].GetStageCreateInfo();
-        pipe.cp_ci_.stage.pNext = &mapping_info;
+        pipe.cp_ci_.stage = cs_modules[i / 2].GetStageCreateInfo(&mapping_info);
 
         mappings.sourceData.constantOffset.heapOffset = (i % 2 == 0) ? 1 : 0;
         mappings.sourceData.constantOffset.heapArrayStride = (i % 2 == 0) ? 0 : 1;
@@ -3445,8 +3441,7 @@ TEST_F(NegativeDescriptorHeap, OpTypeSampler) {
         for (int i = 0; i < 2; i++) {
             CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
             pipe.cp_ci_.layout = VK_NULL_HANDLE;
-            pipe.cp_ci_.stage = cs_modules[j].GetStageCreateInfo();
-            pipe.cp_ci_.stage.pNext = &mapping_info;
+            pipe.cp_ci_.stage = cs_modules[j].GetStageCreateInfo(&mapping_info);
 
             mappings[1].sourceData.constantOffset.heapOffset = (i == 0) ? 1 : 0;
             mappings[1].sourceData.constantOffset.heapArrayStride = (i == 0) ? 0 : 1;
@@ -3514,8 +3509,7 @@ TEST_F(NegativeDescriptorHeap, OpTypeSampledImage) {
     for (int i = 0; i < 4; i++) {
         CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
         pipe.cp_ci_.layout = VK_NULL_HANDLE;
-        pipe.cp_ci_.stage = cs_modules[i / 2].GetStageCreateInfo();
-        pipe.cp_ci_.stage.pNext = &mapping_info;
+        pipe.cp_ci_.stage = cs_modules[i / 2].GetStageCreateInfo(&mapping_info);
 
         mappings[1].sourceData.constantOffset.samplerHeapOffset = (i % 2 == 0) ? 1 : 0;
         mappings[1].sourceData.constantOffset.samplerHeapArrayStride = (i % 2 == 0) ? 0 : 1;
@@ -3577,8 +3571,7 @@ TEST_F(NegativeDescriptorHeap, MappingWithoutFlag) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredWarning("WARNING-VkShaderDescriptorSetAndBindingMappingInfoEXT-ignored");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
@@ -3669,8 +3662,7 @@ TEST_F(NegativeDescriptorHeap, NoMappingComputePipeline) {
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
 
     for (uint32_t i = 0; i < 2; ++i) {
-        pipe.cp_ci_.stage = cs_modules[i].GetStageCreateInfo();
-        pipe.cp_ci_.stage.pNext = &mapping_info;
+        pipe.cp_ci_.stage = cs_modules[i].GetStageCreateInfo(&mapping_info);
         m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
         pipe.CreateComputePipeline(false);
         m_errorMonitor->VerifyFound();
@@ -3722,8 +3714,7 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappings) {
 
     CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
@@ -3766,8 +3757,7 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsAllUsed) {
 
     CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
@@ -3820,8 +3810,7 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsMostUsed) {
 
     CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
@@ -3874,8 +3863,7 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsMany) {
 
     CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
@@ -3925,7 +3913,7 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerReservedArea) {
     vkt::Buffer out_buffer(*m_device, out_data_buffer_size, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
 
     VkHostAddressRangeEXT out_descriptor{resource_heap_ptr, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT out_address_range = {out_buffer.Address(), out_data_buffer_size};
+    VkDeviceAddressRangeEXT out_address_range = out_buffer.AddressRange();
     VkResourceDescriptorInfoEXT out_descriptor_info = vku::InitStructHelper();
     out_descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     out_descriptor_info.data.pAddressRange = &out_address_range;
@@ -4000,8 +3988,7 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerReservedArea) {
 
         CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
         pipe.cp_ci_.layout = VK_NULL_HANDLE;
-        pipe.cp_ci_.stage = cs_modules[i].GetStageCreateInfo();
-        pipe.cp_ci_.stage.pNext = &mapping_info;
+        pipe.cp_ci_.stage = cs_modules[i].GetStageCreateInfo(&mapping_info);
 
         pipe.CreateComputePipeline(false);
 
@@ -4113,8 +4100,7 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerArray) {
     for (int i = 0; i < 2; ++i) {
         CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
         pipe.cp_ci_.layout = VK_NULL_HANDLE;
-        pipe.cp_ci_.stage = cs_modules[i].GetStageCreateInfo();
-        pipe.cp_ci_.stage.pNext = &mapping_info;
+        pipe.cp_ci_.stage = cs_modules[i].GetStageCreateInfo(&mapping_info);
 
         m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11399");
         pipe.CreateComputePipeline(false);
@@ -4150,7 +4136,7 @@ TEST_F(NegativeDescriptorHeap, PushDataAssignedPipeline) {
         vkt::Buffer out_buffer(*m_device, dataBufferSize, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT, vkt::device_address);
 
         VkHostAddressRangeEXT out_descriptor{resource_heap_ptr, static_cast<size_t>(resource_stride)};
-        VkDeviceAddressRangeEXT out_address_range = {out_buffer.Address(), dataBufferSize};
+        VkDeviceAddressRangeEXT out_address_range = out_buffer.AddressRange();
         VkResourceDescriptorInfoEXT out_descriptor_info = vku::InitStructHelper();
         out_descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         out_descriptor_info.data.pAddressRange = &out_address_range;
@@ -4173,8 +4159,7 @@ TEST_F(NegativeDescriptorHeap, PushDataAssignedPipeline) {
 
         CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
         pipe.cp_ci_.layout = VK_NULL_HANDLE;
-        pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-        pipe.cp_ci_.stage.pNext = &mapping_info;
+        pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
 
         std::vector<uint8_t> payload(4);
         VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
@@ -4236,7 +4221,7 @@ TEST_F(NegativeDescriptorHeap, PushDataAssignedShaderObject) {
         vkt::Buffer out_buffer(*m_device, dataBufferSize, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT, vkt::device_address);
 
         VkHostAddressRangeEXT out_descriptor{resource_heap_ptr, static_cast<size_t>(resource_stride)};
-        VkDeviceAddressRangeEXT out_address_range = {out_buffer.Address(), dataBufferSize};
+        VkDeviceAddressRangeEXT out_address_range = out_buffer.AddressRange();
         VkResourceDescriptorInfoEXT out_descriptor_info = vku::InitStructHelper();
         out_descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         out_descriptor_info.data.pAddressRange = &out_address_range;
@@ -4692,8 +4677,7 @@ TEST_F(NegativeDescriptorHeap, PushDataRange) {
 
     CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     pipe.CreateComputePipeline(false);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
@@ -4833,8 +4817,7 @@ TEST_F(NegativeDescriptorHeap, NonConstantImageMemoryAccess) {
 
     CreateComputePipelineHelper pipe(*this, &flags2_ci);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
     pipe.CreateComputePipeline(false);
@@ -4868,8 +4851,7 @@ TEST_F(NegativeDescriptorHeap, ArrayLengthOnMappingSourceAddress) {
 
     CreateComputePipelineHelper pipe(*this, &flags2_ci);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11378");
     pipe.CreateComputePipeline(false);
@@ -5225,8 +5207,7 @@ TEST_F(NegativeDescriptorHeap, NonConstantMemoryAccess) {
 
         CreateComputePipelineHelper pipe(*this, &flags2_ci);
         pipe.cp_ci_.layout = VK_NULL_HANDLE;
-        pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-        pipe.cp_ci_.stage.pNext = &mapping_info;
+        pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
         m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
         pipe.CreateComputePipeline(false);
         m_errorMonitor->VerifyFound();
@@ -5266,8 +5247,7 @@ TEST_F(NegativeDescriptorHeap, ResourceHeapNotBound) {
 
     CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     pipe.CreateComputePipeline(false);
 
     m_command_buffer.Begin();
@@ -5312,7 +5292,7 @@ TEST_F(NegativeDescriptorHeap, SamplerHeapNotBound) {
     image_info.pView = &view_info;
     image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    VkDeviceAddressRangeEXT buffer_address_range = {buffer.Address(), 16};
+    VkDeviceAddressRangeEXT buffer_address_range = buffer.AddressRange();
 
     VkResourceDescriptorInfoEXT descriptor_info[2];
     descriptor_info[0] = vku::InitStructHelper();
@@ -5438,7 +5418,7 @@ TEST_F(NegativeDescriptorHeap, UsagesValidation) {
         const VkDeviceSize buffer_size = 256;
         vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, vkt::device_address);
 
-        VkDeviceAddressRangeEXT address_range{buffer.Address(), buffer_size};
+        VkDeviceAddressRangeEXT address_range = buffer.AddressRange();
         VkResourceDescriptorInfoEXT desc_info = vku::InitStructHelper();
         desc_info.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         desc_info.data.pAddressRange = &address_range;
@@ -5531,8 +5511,7 @@ TEST_F(NegativeDescriptorHeap, MappedPushIsBlockUniformArray) {
 
     CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11315");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
@@ -5673,7 +5652,7 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferHeapMissingInheritance) {
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
 
     VkHostAddressRangeEXT descriptor_host = {resource_heap_data_, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = {buffer.Address(), 256};
+    VkDeviceAddressRangeEXT device_range = buffer.AddressRange();
     VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
     descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_info.data.pAddressRange = &device_range;
@@ -5754,7 +5733,7 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferResourceHeapUnbound) {
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
 
     VkHostAddressRangeEXT descriptor_host = {resource_heap_data_, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = {buffer.Address(), 256};
+    VkDeviceAddressRangeEXT device_range = buffer.AddressRange();
     VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
     descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_info.data.pAddressRange = &device_range;
@@ -5863,7 +5842,7 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferSamplerHeapUnbound) {
     image_info.pView = &view_info;
     image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    VkDeviceAddressRangeEXT buffer_address_range = {buffer.Address(), 16};
+    VkDeviceAddressRangeEXT buffer_address_range = buffer.AddressRange();
 
     VkResourceDescriptorInfoEXT descriptor_info[2];
     descriptor_info[0] = vku::InitStructHelper();
@@ -5929,8 +5908,7 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferSamplerHeapUnbound) {
 
     CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     pipe.CreateComputePipeline(false);
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -6231,8 +6209,7 @@ TEST_F(NegativeDescriptorHeap, UnboundResourceHeap) {
 
     CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     pipe.CreateComputePipeline(false);
 
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -6362,8 +6339,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorBufferInvalidatingHeap) {
 
     CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     pipe.CreateComputePipeline(false);
 
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -6481,7 +6457,7 @@ TEST_F(NegativeDescriptorHeap, SamplerHeapBoundResourceHeapNotBound) {
     image_info.pView = &view_info;
     image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    VkDeviceAddressRangeEXT buffer_address_range = {buffer.Address(), 256};
+    VkDeviceAddressRangeEXT buffer_address_range = buffer.AddressRange();
 
     VkResourceDescriptorInfoEXT descriptor_info[2];
     descriptor_info[0] = vku::InitStructHelper();

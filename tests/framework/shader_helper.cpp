@@ -463,7 +463,16 @@ bool SlangToSPV(const spv_target_env target_env, const char* slang_shader, const
 #endif
 }
 
-VkPipelineShaderStageCreateInfo const& VkShaderObj::GetStageCreateInfo() const { return m_stage_info; }
+const VkPipelineShaderStageCreateInfo& VkShaderObj::GetStageCreateInfo(void* update_pnext) {
+    // With things (but not limited to) descriptor heap, it is desired to have a pNext chain, but instead of trying to put it when
+    // creating a VkShaderObj (which already has way too many parameters) just apply it when we grab it as we want the pNext
+    // per-pipeline, not per-shaderModule in practice.
+    if (update_pnext) {
+        m_stage_info.pNext = update_pnext;
+    }
+
+    return m_stage_info;
+}
 
 VkShaderObj::VkShaderObj(vkt::Device& device, const char* source, VkShaderStageFlagBits stage, const spv_target_env env,
                          SpvSourceType source_type, const VkSpecializationInfo* spec_info, const char* entry_point,

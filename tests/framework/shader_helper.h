@@ -60,7 +60,7 @@ class VkShaderObj : public vkt::ShaderModule {
                 const char* entry_point = "main", const void* shader_module_ci_pNext = nullptr,
                 const void* pipeline_shader_stage_ci_pNext = nullptr);
 
-    VkPipelineShaderStageCreateInfo const &GetStageCreateInfo() const;
+    const VkPipelineShaderStageCreateInfo& GetStageCreateInfo(void* update_pnext = nullptr);
 
     bool InitFromGLSL(const void* shader_module_ci_pNext = nullptr);
     VkResult InitFromGLSLTry(const vkt::Device *custom_device = nullptr);

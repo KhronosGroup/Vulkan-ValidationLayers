@@ -1799,14 +1799,13 @@ TEST_F(PositiveShaderObject, DescriptorHeapStorageBuffer) {
 
     const auto cspv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src);
 
-    VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
+    VkShaderCreateInfoEXT create_info = vku::InitStructHelper(&mapping_info);
     create_info.flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
     create_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     create_info.codeSize = cspv.size() * sizeof(cspv[0]);
     create_info.pCode = cspv.data();
     create_info.pName = "main";
-    create_info.pNext = &mapping_info;
 
     const vkt::Shader comp_shader(*m_device, create_info);
 }
@@ -1895,7 +1894,7 @@ TEST_F(PositiveShaderObject, DrawWithHeap) {
     vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &resource_host);
 
     VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
-    resource_bind_info.heapRange = {resource_heap.Address(), total_heap_size};
+    resource_bind_info.heapRange = resource_heap.AddressRange();
     resource_bind_info.reservedRangeOffset = resource_heap_size;
     resource_bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 

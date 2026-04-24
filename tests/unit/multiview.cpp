@@ -328,8 +328,8 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         }
     )glsl";
 
-        VkShaderObj const vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-        VkShaderObj const fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+        VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 36};
         VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
@@ -395,8 +395,8 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
         vkt::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<vkt::DescriptorSetLayout const*>{});
 
-        VkShaderObj const vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-        VkShaderObj const fs(*m_device, kFragmentUniformGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+        VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj fs(*m_device, kFragmentUniformGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper pipe(*this);
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};

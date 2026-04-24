@@ -202,8 +202,8 @@ TEST_F(VkPositiveBestPracticesLayerTest, PushConstantSet) {
         }
     )glsl";
 
-    VkShaderObj const vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj const fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     uint32_t data[5];
     std::vector<VkPushConstantRange> push_constant_ranges = {{VK_SHADER_STAGE_VERTEX_BIT, 0, 16},

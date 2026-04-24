@@ -1901,8 +1901,7 @@ TEST_F(NegativeRayTracingNV, WriteResourcePartitionedAccelerationStructure) {
     std::vector<uint8_t> data(static_cast<size_t>(descriptor_size));
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, vkt::device_address);
-
-    VkDeviceAddressRangeEXT device_address_range = {buffer.Address(), 256};
+    VkDeviceAddressRangeEXT device_address_range = buffer.AddressRange();
 
     VkResourceDescriptorInfoEXT resource_info = vku::InitStructHelper();
     resource_info.type = VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV;
@@ -1933,8 +1932,7 @@ TEST_F(NegativeRayTracingNV, WriteResourceAccelerationStructure) {
     std::vector<uint8_t> data(static_cast<size_t>(descriptor_size));
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, vkt::device_address);
-
-    VkDeviceAddressRangeEXT device_address_range = {buffer.Address(), 256};
+    VkDeviceAddressRangeEXT device_address_range = buffer.AddressRange();
 
     VkResourceDescriptorInfoEXT resource_info = vku::InitStructHelper();
     resource_info.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;

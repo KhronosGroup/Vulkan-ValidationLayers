@@ -34,9 +34,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, BufferPointerOffset) {
     descriptor_host.address = resource_heap_data_;
     descriptor_host.size = resource_stride;
 
-    VkDeviceAddressRangeEXT device_range;
-    device_range.address = buffer.Address();
-    device_range.size = buffer.CreateInfo().size;
+    VkDeviceAddressRangeEXT device_range = buffer.AddressRange();
 
     VkResourceDescriptorInfoEXT descriptor_info;
     descriptor_info = vku::InitStructHelper();
@@ -105,9 +103,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, SamplerPointerOffset) {
     image_info.pView = &view_info;
     image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    VkDeviceAddressRangeEXT buffer_address_range;
-    buffer_address_range.address = buffer.Address();
-    buffer_address_range.size = sizeof(float) * 4u;
+    VkDeviceAddressRangeEXT buffer_address_range = buffer.AddressRange();
 
     VkResourceDescriptorInfoEXT descriptor_info[2];
     descriptor_info[0] = vku::InitStructHelper();
@@ -237,9 +233,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, PushAddress) {
     descriptor_host.address = heap_data + write_offset;
     descriptor_host.size = resource_stride;
 
-    VkDeviceAddressRangeEXT device_range;
-    device_range.address = write_buffer.Address();
-    device_range.size = write_buffer.CreateInfo().size;
+    VkDeviceAddressRangeEXT device_range = write_buffer.AddressRange();
 
     VkResourceDescriptorInfoEXT descriptor_info;
     descriptor_info = vku::InitStructHelper();
@@ -293,8 +287,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, PushAddress) {
     pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
     VkPipelineShaderStageCreateInfo stages[2];
-    stages[0] = vert_module.GetStageCreateInfo();
-    stages[0].pNext = &mapping_info;
+    stages[0] = vert_module.GetStageCreateInfo(&mapping_info);
     stages[1] = frag_module.GetStageCreateInfo();
 
     CreatePipelineHelper descriptor_heap_pipe(*this, &pipeline_create_flags_2_create_info);
@@ -374,9 +367,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, ResourceHeapImage) {
     image_info.pView = &view_info;
     image_info.layout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkDeviceAddressRangeEXT buffer_address_range;
-    buffer_address_range.address = buffer.Address();
-    buffer_address_range.size = sizeof(float) * 4u;
+    VkDeviceAddressRangeEXT buffer_address_range = buffer.AddressRange();
 
     VkResourceDescriptorInfoEXT descriptor_info[2];
     descriptor_info[0] = vku::InitStructHelper();

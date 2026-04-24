@@ -1645,8 +1645,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlagsDescriptorHeap1) {
 
     VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
 
-    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
-    pipeline_ci.pNext = &flags2_ci;
+    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper(&flags2_ci);
 
     pipeline_ci.stageCount = 1;
     pipeline_ci.pStages = &stage_create_info;
@@ -1722,8 +1721,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlagsDescriptorHeap2) {
 
     VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
 
-    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
-    pipeline_ci.pNext = &flags2_ci;
+    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper(&flags2_ci);
 
     pipeline_ci.stageCount = 1;
     pipeline_ci.pStages = &stage_create_info;
@@ -1802,8 +1800,7 @@ TEST_F(NegativeRayTracingPipeline, DescriptorHeapPipelineCreateFlag) {
     VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
     flags2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
-    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
-    pipeline_ci.pNext = &flags2_ci;
+    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper(&flags2_ci);
 
     pipeline_ci.stageCount = 1;
     pipeline_ci.pStages = &stage_create_info;
@@ -1884,17 +1881,15 @@ TEST_F(NegativeRayTracingPipeline, DescriptorHeapShaderRecordData) {
     mappingInfo.mappingCount = sizeof(mapping) / sizeof(mapping[0]);
     mappingInfo.pMappings = mapping;
 
-    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
+    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper(&mappingInfo);
     stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
     stage_create_info.module = rgen_shader.handle();
     stage_create_info.pName = "main";
-    stage_create_info.pNext = &mappingInfo;
 
     VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
     flags2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
-    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
-    pipeline_ci.pNext = &flags2_ci;
+    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper(&flags2_ci);
 
     pipeline_ci.stageCount = 1;
     pipeline_ci.pStages = &stage_create_info;
@@ -1954,17 +1949,15 @@ TEST_F(NegativeRayTracingPipeline, DescriptorHeapShaderRecordAddress) {
     mappingInfo.mappingCount = sizeof(mapping) / sizeof(mapping[0]);
     mappingInfo.pMappings = mapping;
 
-    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
+    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper(&mappingInfo);
     stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
     stage_create_info.module = rgen_shader.handle();
     stage_create_info.pName = "main";
-    stage_create_info.pNext = &mappingInfo;
 
     VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
     flags2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
-    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
-    pipeline_ci.pNext = &flags2_ci;
+    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper(&flags2_ci);
 
     pipeline_ci.stageCount = 1;
     pipeline_ci.pStages = &stage_create_info;
@@ -2031,17 +2024,15 @@ TEST_F(NegativeRayTracingPipeline, DescriptorHeapShaderRecordAddressSlang) {
     mappingInfo.mappingCount = sizeof(mapping) / sizeof(mapping[0]);
     mappingInfo.pMappings = mapping;
 
-    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
+    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper(&mappingInfo);
     stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
     stage_create_info.module = rgen_shader.handle();
     stage_create_info.pName = "main";
-    stage_create_info.pNext = &mappingInfo;
 
     VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
     flags2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
-    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
-    pipeline_ci.pNext = &flags2_ci;
+    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper(&flags2_ci);
 
     pipeline_ci.stageCount = 1;
     pipeline_ci.pStages = &stage_create_info;
@@ -2108,17 +2099,15 @@ TEST_F(NegativeRayTracingPipeline, DescriptorHeapPushAddressSlang) {
     mappingInfo.mappingCount = sizeof(mapping) / sizeof(mapping[0]);
     mappingInfo.pMappings = mapping;
 
-    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
+    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper(&mappingInfo);
     stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
     stage_create_info.module = rgen_shader.handle();
     stage_create_info.pName = "main";
-    stage_create_info.pNext = &mappingInfo;
 
     VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
     flags2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
-    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
-    pipeline_ci.pNext = &flags2_ci;
+    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper(&flags2_ci);
 
     pipeline_ci.stageCount = 1;
     pipeline_ci.pStages = &stage_create_info;

@@ -33,10 +33,9 @@ void RayTracingTest::InitFrameworkForRayTracingTest(VkValidationFeaturesEXT* ena
     VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "gpuav_ray_tracing_buffers_consistency", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
                                  &kVkTrue};
 
-    VkLayerSettingsCreateInfoEXT layer_setting_ci = vku::InitStructHelper();
+    VkLayerSettingsCreateInfoEXT layer_setting_ci = vku::InitStructHelper(enabled_features);
     layer_setting_ci.settingCount = 1;
     layer_setting_ci.pSettings = &setting;
-    layer_setting_ci.pNext = enabled_features;
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
 }
 
@@ -1656,7 +1655,6 @@ TEST_F(PositiveRayTracing, DISABLED_CmdBuildPartitionedAccelerationStructuresNV)
     input_info.maxInstancePerPartitionCount = instance_count / partition_count;
     input_info.partitionCount = partition_count;
     input_info.maxInstanceInGlobalPartitionCount = instance_count / partition_count;
-    input_info.pNext = &ptlas_flags;
 
     VkAccelerationStructureBuildSizesInfoKHR ptlas_size_info = vku::InitStructHelper();
     vk::GetPartitionedAccelerationStructuresBuildSizesNV(*m_device, &input_info, &ptlas_size_info);

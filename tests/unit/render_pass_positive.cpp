@@ -944,10 +944,6 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
     barriers.push_back(image.LayoutTransitionBarrier(VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
                                                      VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, depth_stencil_range));
 
-    VkRenderPassCreateInfo2 rp2 = vku::InitStructHelper();
-    VkAttachmentDescription2 desc = vku::InitStructHelper();
-    VkSubpassDescription2 sub = vku::InitStructHelper();
-    VkAttachmentReference2 att = vku::InitStructHelper();
     VkAttachmentDescriptionStencilLayout stencil_desc = vku::InitStructHelper();
     VkAttachmentReferenceStencilLayout stencil_att = vku::InitStructHelper();
     // Test that we can discard stencil layout.
@@ -955,6 +951,7 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
     stencil_desc.stencilFinalLayout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
     stencil_att.stencilLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
 
+    VkAttachmentDescription2 desc = vku::InitStructHelper(&stencil_desc);
     desc.format = ds_format;
     desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
     desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
@@ -963,14 +960,16 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
     desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
     desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    desc.pNext = &stencil_desc;
 
+    VkAttachmentReference2 att = vku::InitStructHelper(&stencil_att);
     att.layout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
     att.attachment = 0;
-    att.pNext = &stencil_att;
 
+    VkSubpassDescription2 sub = vku::InitStructHelper();
     sub.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     sub.pDepthStencilAttachment = &att;
+
+    VkRenderPassCreateInfo2 rp2 = vku::InitStructHelper();
     rp2.subpassCount = 1;
     rp2.pSubpasses = &sub;
     rp2.attachmentCount = 1;
