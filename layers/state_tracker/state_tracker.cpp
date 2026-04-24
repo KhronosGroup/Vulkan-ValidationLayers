@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
  * Copyright (c) 2025 Arm Limited.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  * Modifications Copyright (C) 2020,2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -3867,6 +3868,18 @@ void DeviceState::PostCallRecordCmdBindTileMemoryQCOM(VkCommandBuffer commandBuf
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     // The bound tile memory can be reset by the application
     cb_state->bound_tile_memory = pTileMemoryBindInfo ? Get<vvl::DeviceMemory>(pTileMemoryBindInfo->memory) : nullptr;
+}
+
+void DeviceState::PostCallRecordCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileBeginInfoQCOM* pPerTileBeginInfo,
+                                                             const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->per_tile_execution_model_enabled = true;
+}
+
+void DeviceState::PostCallRecordCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo,
+                                                           const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->per_tile_execution_model_enabled = false;
 }
 
 void DeviceState::PostCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR* pRenderingInfo,

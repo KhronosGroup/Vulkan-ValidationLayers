@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
  * Copyright (C) 2025 Arm Limited.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  * Modifications Copyright (C) 2020-2025 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022-2025 RasterGrid Kft.
  *
@@ -1727,6 +1728,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                                  const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingDepthAndStencilAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
                                                          const Location& rendering_info_loc) const;
+    bool ValidateBeginRenderingTileShadingCreateInfo(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
+                                                     const VkRenderPassTileShadingCreateInfoQCOM& rp_tile_shading_ci,
+                                                     const Location& rendering_info_loc) const;
     bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR* pRenderingInfo,
                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
@@ -2125,6 +2129,13 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
                                              const VkRenderPassFragmentDensityMapOffsetEndInfoEXT& fdm_offset_end_info,
                                              const Location& end_info_loc) const;
+
+    bool PreCallValidateCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
+                                                     const VkPerTileBeginInfoQCOM* pPerTileBeginInfo,
+                                                     const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
+                                                   const VkPerTileEndInfoQCOM* pPerTileEndInfo,
+                                                   const ErrorObject& error_obj) const override;
 
     class ViewportScissorInheritanceTracker;
     bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,

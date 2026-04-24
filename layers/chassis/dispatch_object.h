@@ -5,6 +5,7 @@
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2026 Google Inc.
  * Copyright (c) 2023-2024 RasterGrid Kft.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -119,6 +120,7 @@ struct DeviceExtensionProperties {
     VkPhysicalDevicePerformanceCountersByRegionPropertiesARM renderpass_counter_by_region_props;
     VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT ray_tracing_invocation_reorder_props;
     VkPhysicalDeviceShaderLongVectorPropertiesEXT shader_long_vector_props;
+    VkPhysicalDeviceTileShadingPropertiesQCOM tile_shading_props;
 };
 
 // This object holds all static state for the device (device properties, enabled extensions/features, etc.)

@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
  * Copyright (c) 2025 Arm Limited.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  * Modifications Copyright (C) 2020,2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -323,6 +324,7 @@ void CommandBuffer::ResetCBState() {
 
     has_render_pass_instance = false;
     resumes_render_pass_instance = false;
+    per_tile_execution_model_enabled = false;
     last_suspend_state = SuspendState::Empty;
     first_action_or_sync_command = Func::Empty;
     first_rendering_info = {};
@@ -895,6 +897,7 @@ void CommandBuffer::RecordEndRenderPass(const VkSubpassEndInfo* subpass_end_info
     SetActiveSubpass(0);
     active_framebuffer = VK_NULL_HANDLE;
     sample_locations_begin_info = {};
+    per_tile_execution_model_enabled = false;
 }
 
 static void InitDefaultRenderingAttachments(CommandBuffer::RenderingAttachment& attachments, uint32_t count) {
@@ -1061,6 +1064,7 @@ void CommandBuffer::RecordEndRendering(const VkRenderingEndInfoEXT* pRenderingEn
     RecordCommand(loc);
     active_render_pass = nullptr;
     active_color_attachments_index.clear();
+    per_tile_execution_model_enabled = false;
 }
 
 void CommandBuffer::RecordBeginCustomResolve(const Location& loc) {
