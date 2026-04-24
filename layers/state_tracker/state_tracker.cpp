@@ -6831,7 +6831,7 @@ void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBu
 void DeviceState::PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
                                                const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordCmdPushDataEXT(*pPushDataInfo, record_obj.location);
+    cb_state->RecordPushData(*pPushDataInfo, record_obj.location);
 
     cb_state->SetDescriptorMode(DescriptorModeHeap, record_obj.location.function);
 }

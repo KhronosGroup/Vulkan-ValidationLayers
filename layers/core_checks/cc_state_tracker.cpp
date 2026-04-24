@@ -244,6 +244,19 @@ void CommandBufferSubState::RecordSetPrimitiveRestartIndex(uint32_t primitive_re
     custom_primitive_restart_index = primitive_restart_index;
 }
 
+void CommandBufferSubState::RecordPushData(const VkPushDataInfoEXT& push_data_info) {
+    if (push_data_info.data.size > 0) {
+        const size_t begin = push_data_info.offset;
+        const size_t end = push_data_info.offset + push_data_info.data.size;
+        if (push_data_mask.size() < end) {
+            push_data_mask.resize(end);
+        }
+        memset(push_data_mask.data() + begin, 1, end - begin);
+    }
+}
+
+void CommandBufferSubState::ClearPushData() { push_data_mask.clear(); }
+
 void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo&, const VkSubpassEndInfo*, const Location&) {
     ASSERT_AND_RETURN(base.active_render_pass);
     validator.TransitionSubpassLayouts(base, *base.active_render_pass, base.GetActiveSubpass());
@@ -1074,6 +1087,8 @@ void CommandBufferSubState::ResetCBState() {
     custom_resolve.stencil_format = VK_FORMAT_UNDEFINED;
 
     custom_primitive_restart_index = 0;
+
+    push_data_mask.clear();
 
     // Submit time validation
     queue_submit_functions.clear();

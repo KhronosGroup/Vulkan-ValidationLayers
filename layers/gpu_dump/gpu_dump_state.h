@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 #pragma once
+#include <cstdint>
 #include "chassis/layer_object_id.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
@@ -27,6 +28,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     GpuDump& dev_data;
 
     void RecordActionCommand(LastBound& last_bound, const Location& loc) final;
+
+    void RecordPushData(const VkPushDataInfoEXT& push_data_info) final;
+    void ClearPushData() final;
 
     void RecordExecuteGeneratedCommands(const VkGeneratedCommandsInfoEXT& info, VkPipelineBindPoint bind_point,
                                         const Location& loc) final;
@@ -46,6 +50,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     void DumpDeviceGeneratedCommands(const VkGeneratedCommandsInfoEXT& info, VkPipelineBindPoint bind_point,
                                      const Location& loc) const;
+
+    std::vector<uint8_t> push_data_value;
 };
 
 static inline CommandBufferSubState& SubState(vvl::CommandBuffer& cb) {

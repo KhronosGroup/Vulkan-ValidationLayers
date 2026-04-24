@@ -2116,16 +2116,18 @@ bool CoreChecks::ValidateActionStatePushConstantDescriptorHeap(const vvl::Comman
 
     const auto& pc_variable = *entry_point->push_constant_variable;
     if (pc_variable.size > 0) {
+        const auto& cb_sub_state = core::SubState(cb_state);
+
         const uint32_t begin = pc_variable.offset;
         const uint32_t end = begin + pc_variable.size - 1;
 
-        if (!cb_state.descriptor_heap.push_data.empty()) {
-            const uint32_t size = static_cast<uint32_t>(cb_state.descriptor_heap.push_data.size());
+        if (!cb_sub_state.push_data_mask.empty()) {
+            const uint32_t size = static_cast<uint32_t>(cb_sub_state.push_data_mask.size());
             // Find the first range of bytes which were not set
             uint32_t unset_start = size;
             uint32_t unset_end = end;
             for (uint32_t i = begin; i <= end; i++) {
-                if (i >= size || !cb_state.descriptor_heap.push_data[i]) {
+                if (i >= size || !cb_sub_state.push_data_mask[i]) {
                     if (unset_start == size) {
                         unset_start = i;
                     }

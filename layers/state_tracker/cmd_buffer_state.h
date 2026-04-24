@@ -581,8 +581,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
         bool resource_bound;
         vvl::range<VkDeviceAddress> resource_range;
         vvl::range<VkDeviceAddress> resource_reserved;
-        // Heap buffer push data assigned with vkCmdPushDataKHR ranges
-        std::vector<uint8_t> push_data{};
 
         void Reset() {
             sampler_bound = false;
@@ -591,7 +589,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
             resource_bound = false;
             resource_reserved = {};
             resource_range = {};
-            push_data.clear();
         }
     } descriptor_heap;
 
@@ -767,7 +764,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
                           const VkDependencyInfo *dependency_info, const Location &loc);
     void RecordPushConstants(const vvl::PipelineLayout &pipeline_layout_state, VkShaderStageFlags stage_flags, uint32_t offset,
                              uint32_t size, const void *values);
-    void RecordCmdPushDataEXT(const VkPushDataInfoEXT& push_data_info, const Location& loc);
+    void RecordPushData(const VkPushDataInfoEXT& push_data_info, const Location& loc);
 
     void RecordBeginConditionalRendering(const Location &loc);
     void RecordEndConditionalRendering(const Location &loc);
@@ -940,6 +937,10 @@ class CommandBufferSubState {
 
     virtual void RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size,
                                      const void *values) {}
+    virtual void RecordPushData(const VkPushDataInfoEXT& push_data_info) {}
+
+    virtual void ClearPushConstants() {}
+    virtual void ClearPushData() {}
 
     virtual void RecordBeginRendering(const VkRenderingInfo &rendering_info, const Location &loc) {}
     virtual void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin, const VkSubpassBeginInfo &subpass_begin_info,
@@ -973,7 +974,6 @@ class CommandBufferSubState {
     virtual void RecordDecodeVideo(vvl::VideoSession &vs_state, const VkVideoDecodeInfoKHR &decode_info, const Location &loc) {}
     virtual void RecordEncodeVideo(vvl::VideoSession &vs_state, const VkVideoEncodeInfoKHR &encode_info, const Location &loc) {}
 
-    virtual void ClearPushConstants() {}
     virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
 
     virtual void Submit(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc) {}
