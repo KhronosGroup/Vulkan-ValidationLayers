@@ -2279,18 +2279,16 @@ void CommandBuffer::RecordPushConstants(const vvl::PipelineLayout& pipeline_layo
 
     for (auto& item : sub_states_) {
         item.second->RecordPushConstants(pipeline_layout_state.VkHandle(), stage_flags, offset, size, values);
+        item.second->ClearPushData();  // vkspec.html#descriptorheaps-invalidate-sets
     }
 }
 
-void CommandBuffer::RecordCmdPushDataEXT(const VkPushDataInfoEXT& push_data_info, const Location& loc) {
+void CommandBuffer::RecordPushData(const VkPushDataInfoEXT& push_data_info, const Location& loc) {
     RecordCommand(loc);
-    if (push_data_info.data.size > 0) {
-        const size_t begin = push_data_info.offset;
-        const size_t end = push_data_info.offset + push_data_info.data.size;
-        if (descriptor_heap.push_data.size() < end) {
-            descriptor_heap.push_data.resize(end);
-        }
-        memset(descriptor_heap.push_data.data() + begin, 1, end - begin);
+
+    for (auto& item : sub_states_) {
+        item.second->RecordPushData(push_data_info);
+        item.second->ClearPushConstants();  // vkspec.html#descriptorheaps-invalidate-sets
     }
 }
 

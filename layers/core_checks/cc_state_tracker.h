@@ -48,6 +48,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordBindIndexbuffer() final;
     void RecordSetPrimitiveRestartIndex(uint32_t primitive_restart_index) final;
 
+    void RecordPushData(const VkPushDataInfoEXT& push_data_info) final;
+    void ClearPushData() final;
+
     void RecordBeginRendering(const VkRenderingInfo &rendering_info, const Location &loc) final;
     void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin, const VkSubpassBeginInfo &subpass_begin_info,
                                const Location &loc) final;
@@ -180,6 +183,10 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     // VK_EXT_primitive_restart_index
     uint32_t custom_primitive_restart_index;
+
+    // VK_EXT_descriptor_heap
+    // Mark which ranges vkCmdPushDataKHR has set (will be 0 or 1)
+    std::vector<uint8_t> push_data_mask{};
 
     uint32_t used_viewport_scissor_count;
 
