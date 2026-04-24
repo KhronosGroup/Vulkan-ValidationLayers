@@ -1071,6 +1071,9 @@ class CommandPool : public internal::NonDispHandle<VkCommandPool> {
     void Init(const Device &dev, const VkCommandPoolCreateInfo &info);
     void Init(const Device &dev, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0);
     void SetName(const char *name) { NonDispHandle<VkCommandPool>::SetName(VK_OBJECT_TYPE_COMMAND_POOL, name); }
+
+    CommandPool(CommandPool&& rhs) noexcept : NonDispHandle(std::move(rhs)) {}
+    CommandPool& operator=(CommandPool&& rhs) noexcept;
 };
 
 class CommandBuffer : public internal::Handle<VkCommandBuffer> {

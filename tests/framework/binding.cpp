@@ -1967,6 +1967,12 @@ void CommandBuffer::Destroy() noexcept {
 }
 CommandBuffer::~CommandBuffer() noexcept { Destroy(); }
 
+CommandPool& CommandPool::operator=(CommandPool&& rhs) noexcept {
+    Destroy();
+    NonDispHandle<VkCommandPool>::operator=(std::move(rhs));
+    return *this;
+}
+
 CommandBuffer::CommandBuffer(CommandBuffer&& rhs) noexcept : Handle(std::move(rhs)) {
     dev_handle_ = rhs.dev_handle_;
     cmd_pool_ = rhs.cmd_pool_;
