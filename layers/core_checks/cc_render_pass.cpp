@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -654,6 +655,15 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
                                                                        pRenderPassBegin->renderArea, rp_begin_loc);
     }
 
+    if (error_obj.location.function != Func::vkCmdBeginRenderPass) {
+        const auto* rp_tile_shading_ci =
+            vku::FindStructInPNextChain<VkRenderPassTileShadingCreateInfoQCOM>(rp_state->create_info.pNext);
+        if (rp_tile_shading_ci) {
+            skip |= ValidateRenderPassTileShadingCreateInfo(commandBuffer, nullptr, *rp_tile_shading_ci,
+                                                            rp_begin_loc.dot(Field::renderPass).dot(Field::pCreateInfo));
+        }
+    }
+
     return skip;
 }
 
@@ -773,6 +783,12 @@ bool CoreChecks::ValidateCmdEndRenderPass(const vvl::CommandBuffer& cb_state, co
         skip |= LogError(vuid, objlist, error_obj.location,
                          "query %" PRIu32 " from %s was began in subpass %" PRIu32 " but never ended.", query.slot,
                          FormatHandle(query.pool).c_str(), query.subpass);
+    }
+
+    if (cb_state.per_tile_execution_model_enabled) {
+        const LogObjectList objlist(cb_state.Handle(), rp_state.Handle());
+        skip |= LogError("VUID-vkCmdEndRenderPass-None-10653", objlist, error_obj.location,
+                         "per-tile execution model is still enabled in this command buffer.");
     }
 
     return skip;
@@ -3923,6 +3939,11 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
             commandBuffer, *counters_begin_info, objlist, 1u, layer_or_view_count, pRenderingInfo->renderArea, rendering_info_loc);
     }
 
+    if (const auto* rp_tile_shading_ci =
+            vku::FindStructInPNextChain<VkRenderPassTileShadingCreateInfoQCOM>(pRenderingInfo->pNext)) {
+        skip |= ValidateRenderPassTileShadingCreateInfo(commandBuffer, pRenderingInfo, *rp_tile_shading_ci, rendering_info_loc);
+    }
+
     return skip;
 }
 
@@ -4540,6 +4561,61 @@ bool CoreChecks::ValidateBeginRenderingDepthAndStencilAttachment(VkCommandBuffer
     return skip;
 }
 
+bool CoreChecks::ValidateRenderPassTileShadingCreateInfo(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
+                                                         const VkRenderPassTileShadingCreateInfoQCOM& rp_tile_shading_ci,
+                                                         const Location& loc_before_next) const {
+    bool skip = false;
+    const bool has_rp_enable_bit = (rp_tile_shading_ci.flags & VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM) != 0;
+
+    if (pRenderingInfo) {
+        const bool has_rp_per_tile_exec_bit = (rp_tile_shading_ci.flags & VK_TILE_SHADING_RENDER_PASS_PER_TILE_EXECUTION_BIT_QCOM) != 0;
+        const auto* fragment_density_map_info =
+                vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext);
+        if (fragment_density_map_info && fragment_density_map_info->imageView != nullptr && has_rp_enable_bit) {
+            const LogObjectList objlist(commandBuffer, fragment_density_map_info->imageView);
+            skip |= LogError("VUID-VkRenderingInfo-imageView-10643", objlist,
+                             loc_before_next.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView),
+                             "is not VK_NULL_HANDLE, but VkRenderPassTileShadingCreateInfoQCOM::flags (%s) includes "
+                             "VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit.",
+                             string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci.flags).c_str());
+        }
+
+        for (uint32_t index = 0; index < pRenderingInfo->colorAttachmentCount; ++index) {
+            if (pRenderingInfo->pColorAttachments[index].resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID &&
+                has_rp_enable_bit) {
+                const LogObjectList objlist(commandBuffer, pRenderingInfo->pColorAttachments[index].resolveImageView);
+                skip |= LogError("VUID-VkRenderingInfo-resolveMode-10644", objlist,
+                                 loc_before_next.dot(Field::pColorAttachments, index).dot(Field::resolveMode),
+                                 "is VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID, but "
+                                 "VkRenderPassTileShadingCreateInfoQCOM::flags (%s) includes VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit",
+                                 string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci.flags).c_str());
+            }
+        }
+
+        if (has_rp_per_tile_exec_bit) {
+            skip |= LogError("VUID-vkCmdBeginRendering-flags-10642", commandBuffer,
+                             loc_before_next.pNext(Struct::VkRenderPassTileShadingCreateInfoQCOM, Field::flags),
+                             "(%s) includes VK_TILE_SHADING_RENDER_PASS_PER_TILE_EXECUTION_BIT_QCOM bit.",
+                             string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci.flags).c_str());
+        }
+    }
+
+    const auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN_SKIP(cb_state);
+
+    if (has_rp_enable_bit && (cb_state->begin_info_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) != 0) {
+        const char* vuid = (pRenderingInfo) ? "VUID-vkCmdBeginRendering-flags-10641" : "VUID-vkCmdBeginRenderPass2-flags-10652";
+        skip |= LogError(vuid, commandBuffer,
+                         loc_before_next.pNext(Struct::VkRenderPassTileShadingCreateInfoQCOM, Field::flags),
+                         "(%s) includes VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit, but commandBuffer "
+                         "has been recorded with VkCommandBufferUsageFlags (%s).",
+                         string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci.flags).c_str(),
+                         string_VkCommandBufferUsageFlags(cb_state->begin_info_flags).c_str());
+    }
+
+    return skip;
+}
+
 // Flags validation error if the associated call is made inside a render pass. The apiName routine should ONLY be called outside a
 // render pass.
 bool CoreChecks::InsideRenderPass(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const {
@@ -4628,6 +4704,10 @@ bool CoreChecks::ValidateCmdEndRendering(const vvl::CommandBuffer& cb_state, con
         skip |=
             LogError(vuid, objlist, error_obj.location, "query %" PRIu32 " from %s was began in the render pass, but never ended.",
                      query.slot, FormatHandle(query.pool).c_str());
+    }
+    if (cb_state.per_tile_execution_model_enabled) {
+        skip |= LogError("VUID-vkCmdEndRendering-None-10645", cb_state.Handle(), error_obj.location,
+                         "per-tile execution model is still enabled in this command buffer.");
     }
 
     return skip;

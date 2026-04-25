@@ -2067,6 +2067,57 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
+                                                            const VkPerTileBeginInfoQCOM* pPerTileBeginInfo,
+                                                            const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    if (!enabled_features.tileShadingPerTileDispatch && !enabled_features.tileShadingPerTileDraw) {
+        skip |= LogError("VUID-vkCmdBeginPerTileExecutionQCOM-None-10665", commandBuffer, error_obj.location,
+                         "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingPerTileDispatch and "
+                         "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingPerTileDraw features are not enabled.");
+    }
+
+    const auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN_SKIP(cb_state);
+    const auto rp_state = cb_state->active_render_pass;
+    ASSERT_AND_RETURN_SKIP(rp_state);
+
+    if (!rp_state->has_tile_shading_enabled) {
+        const LogObjectList objlist(cb_state->Handle(), rp_state->Handle());
+        skip |= LogError("VUID-vkCmdBeginPerTileExecutionQCOM-None-10664", objlist, error_obj.location,
+                         "current render pass doesn't have tile shading enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
+                                                           const VkPerTileEndInfoQCOM* pPerTileEndInfo,
+                                                           const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN_SKIP(cb_state);
+    const auto rp_state = cb_state->active_render_pass;
+    ASSERT_AND_RETURN_SKIP(rp_state);
+
+    if (!cb_state->per_tile_execution_model_enabled) {
+        const LogObjectList objlist(cb_state->Handle(), rp_state->Handle());
+        skip |= LogError("VUID-vkCmdEndPerTileExecutionQCOM-None-10666", objlist, error_obj.location,
+                         "the command buffer doesn't have the per-tile execution model enabled "
+                         "in the current render pass.");
+    }
+
+    if (!rp_state->has_tile_shading_enabled) {
+        const LogObjectList objlist(cb_state->Handle(), rp_state->Handle());
+        skip |= LogError("VUID-vkCmdEndPerTileExecutionQCOM-None-10667", objlist, error_obj.location,
+                         "current render pass doesn't have tile shading enabled.");
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT* pMarkerInfo,
                                                        const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);

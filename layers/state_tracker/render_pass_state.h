@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -87,6 +88,7 @@ class RenderPass : public StateObject {
     const uint32_t dynamic_rendering_color_attachment_count;
 
     const bool has_multiview_enabled;
+    const bool has_tile_shading_enabled;
 
     // For each subpass, indices into pDependencies for that subpass's self-dependencies
     const std::vector<std::vector<uint32_t>> self_dependencies;  // [subpassCount]

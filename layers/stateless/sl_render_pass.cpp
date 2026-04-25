@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +64,71 @@ bool Device::ValidateSubpassGraphicsFlags(const VkRenderPassCreateInfo2& create_
     return skip;
 }
 
+bool Device::ValidateRenderPassTileShadingCreateInfo(const VkRenderPassTileShadingCreateInfoQCOM& rp_tile_shading_ci,
+                                                     const Location& rp_tile_shading_loc) const {
+    bool skip = false;
+    const bool has_rp_enable_bit = ((rp_tile_shading_ci.flags & VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM) != 0);
+    const bool has_rp_per_tile_exec_bit = ((rp_tile_shading_ci.flags & VK_TILE_SHADING_RENDER_PASS_PER_TILE_EXECUTION_BIT_QCOM) != 0);
+    const bool disable_tile_shading_per_tile = (!enabled_features.tileShadingPerTileDispatch && !enabled_features.tileShadingPerTileDraw);
+    if (!enabled_features.tileShading && has_rp_enable_bit) {
+        skip |= LogError("VUID-VkRenderPassTileShadingCreateInfoQCOM-tileShading-10658", device,
+                         rp_tile_shading_loc.dot(Field::flags),
+                         "(%s) includes VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit, while "
+                         "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShading feature is not enabled.",
+                         string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci.flags).c_str());
+    }
+    if ((!enabled_features.tileShadingApron || !has_rp_enable_bit) &&
+        (rp_tile_shading_ci.tileApronSize.width != 0 || rp_tile_shading_ci.tileApronSize.height != 0)) {
+        skip |= LogError("VUID-VkRenderPassTileShadingCreateInfoQCOM-flags-10659", device,
+                         rp_tile_shading_loc.dot(Field::tileApronSize),
+                         "are (%" PRIu32 ", %" PRIu32 "), while VkRenderPassTileShadingCreateInfoQCOM::flags is (%s) "
+                         "and VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingApron feature is (%s).",
+                         rp_tile_shading_ci.tileApronSize.width, rp_tile_shading_ci.tileApronSize.height,
+                         string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci.flags).c_str(),
+                         string_VkBool32(enabled_features.tileShadingApron).c_str());
+    }
+    if ((disable_tile_shading_per_tile || !has_rp_enable_bit) && has_rp_per_tile_exec_bit) {
+        std::stringstream conditional_ss{};
+        if (disable_tile_shading_per_tile) {
+            conditional_ss << "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingPerTileDispatch and "
+                              "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingPerTileDraw features are not enabled";
+        }
+        if (has_rp_enable_bit) {
+            conditional_ss << (disable_tile_shading_per_tile ? ", and " : "")
+                           << "flags includes VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit";
+        }
+        skip |= LogError("VUID-VkRenderPassTileShadingCreateInfoQCOM-flags-10660", device,
+                         rp_tile_shading_loc.dot(Field::flags),
+                         "(%s) includes VK_TILE_SHADING_RENDER_PASS_PER_TILE_EXECUTION_BIT_QCOM bit, but %s.",
+                         string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci.flags).c_str(),
+                         conditional_ss.str().c_str());
+    }
+    if (!enabled_features.tileShadingAnisotropicApron &&
+        (rp_tile_shading_ci.tileApronSize.width != rp_tile_shading_ci.tileApronSize.height)) {
+        skip |= LogError("VUID-VkRenderPassTileShadingCreateInfoQCOM-tileShadingAnisotropicApron-10661", device,
+                         rp_tile_shading_loc.dot(Field::tileApronSize),
+                         "are (%" PRIu32 ", %" PRIu32 "), width isn't equal to height, while"
+                         "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingAnisotropicApron feature is not enabled.",
+                         rp_tile_shading_ci.tileApronSize.width, rp_tile_shading_ci.tileApronSize.height);
+    }
+    if (rp_tile_shading_ci.tileApronSize.width > phys_dev_ext_props.tile_shading_props.maxApronSize) {
+        skip |= LogError("VUID-VkRenderPassTileShadingCreateInfoQCOM-tileApronSize-10662", device,
+                         rp_tile_shading_loc.dot(Field::tileApronSize).dot(Field::width),
+                         "(%" PRIu32 ") is greater than "
+                         "VkPhysicalDeviceTileShadingPropertiesQCOM::maxApronSize (%" PRIu32 ").",
+                         rp_tile_shading_ci.tileApronSize.width, phys_dev_ext_props.tile_shading_props.maxApronSize);
+    }
+    if (rp_tile_shading_ci.tileApronSize.height > phys_dev_ext_props.tile_shading_props.maxApronSize) {
+        skip |= LogError("VUID-VkRenderPassTileShadingCreateInfoQCOM-tileApronSize-10663", device,
+                         rp_tile_shading_loc.dot(Field::tileApronSize).dot(Field::height),
+                         "(%" PRIu32 ") is greater than "
+                         "VkPhysicalDeviceTileShadingPropertiesQCOM::maxApronSize (%" PRIu32 ").",
+                         rp_tile_shading_ci.tileApronSize.height, phys_dev_ext_props.tile_shading_props.maxApronSize);
+    }
+
+    return skip;
+}
+
 bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2& create_info, const ErrorObject& error_obj) const {
     bool skip = false;
     const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
@@ -73,6 +139,40 @@ bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2& create_info
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     android_external_format_resolve_feature = enabled_features.externalFormatResolve;
 #endif
+
+    const auto* fragment_density_map_info =
+        vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(create_info.pNext);
+    const auto* rp_tile_shading_ci =
+        vku::FindStructInPNextChain<VkRenderPassTileShadingCreateInfoQCOM>(create_info.pNext);
+    const bool has_rp_enable_bit = rp_tile_shading_ci ? (rp_tile_shading_ci->flags & VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM) != 0 :
+                                                        false;
+    const VkExtent2D tile_apron_size = rp_tile_shading_ci ? rp_tile_shading_ci->tileApronSize : VkExtent2D{0, 0};
+
+    if (rp_tile_shading_ci) {
+        const Location rp_tile_shading_loc = create_info_loc.pNext(Struct::VkRenderPassTileShadingCreateInfoQCOM);
+        skip |= ValidateRenderPassTileShadingCreateInfo(*rp_tile_shading_ci, rp_tile_shading_loc);
+    }
+
+    if (rp_tile_shading_ci && (rp_tile_shading_ci->flags & VK_TILE_SHADING_RENDER_PASS_PER_TILE_EXECUTION_BIT_QCOM) != 0) {
+        const char* vuid = use_rp2 ? "VUID-vkCreateRenderPass2-flags-10649" : "VUID-vkCreateRenderPass-flags-10646";
+        skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkRenderPassTileShadingCreateInfoQCOM, Field::flags),
+                         "(%s) includes VK_TILE_SHADING_RENDER_PASS_PER_TILE_EXECUTION_BIT_QCOM bit.",
+                         string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci->flags).c_str());
+    }
+
+    if (fragment_density_map_info && fragment_density_map_info->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED &&
+        has_rp_enable_bit) {
+        const char* vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-fragmentDensityMapAttachment-10651" :
+                                     "VUID-VkRenderPassCreateInfo-fragmentDensityMapAttachment-10648";
+        const Location fragment_density_map_loc = create_info_loc.pNext(Struct::VkRenderPassFragmentDensityMapCreateInfoEXT,
+                                                                        Field::fragmentDensityMapAttachment);
+        const Location fragment_density_map_attachment_loc = fragment_density_map_loc.dot(Field::attachment);
+        skip |= LogError(vuid, device, fragment_density_map_attachment_loc,
+                         "is (%" PRIu32 "), but VkRenderPassTileShadingCreateInfoQCOM::flags (%s) "
+                         "includes VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit.",
+                         fragment_density_map_info->fragmentDensityMapAttachment.attachment,
+                         string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci->flags).c_str());
+    }
 
     for (uint32_t i = 0; i < create_info.attachmentCount; ++i) {
         const Location& attachment_loc = create_info_loc.dot(Field::pAttachments, i);
@@ -382,6 +482,55 @@ bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2& create_info
             skip |= LogError(vuid, device, create_info_loc.dot(Field::pSubpasses, i).dot(Field::inputAttachmentCount),
                              "(%" PRIu32 ") is greater than maxPerStageDescriptorInputAttachments (%" PRIu32 ").",
                              subpass_desc.inputAttachmentCount, phys_dev_props.limits.maxPerStageDescriptorInputAttachments);
+        }
+
+        if ((subpass_desc.flags & VK_SUBPASS_DESCRIPTION_TILE_SHADING_APRON_BIT_QCOM) != 0 &&
+            (tile_apron_size.width == 0 || tile_apron_size.height == 0)) {
+            std::stringstream conditional_ss{};
+            const char* vuid = use_rp2 ? "VUID-VkSubpassDescription2-flags-10683" : "VUID-VkSubpassDescription-flags-10683";
+            if (!rp_tile_shading_ci) {
+                conditional_ss << (use_rp2 ? "VkRenderPassCreateInfo2" : "VkRenderPassCreateInfo")
+                               << "::pNext chain doesn't include VkRenderPassTileShadingCreateInfoQCOM instance";
+            }
+            else {
+                conditional_ss << "VkRenderPassTileShadingCreateInfoQCOM::tileApronSize are ("
+                               << std::to_string(rp_tile_shading_ci->tileApronSize.width)
+                               << ", " << std::to_string(rp_tile_shading_ci->tileApronSize.height) << ")";
+            }
+            skip |= LogError(vuid, device,
+                             create_info_loc.dot(Field::pSubpasses, i).dot(Field::flags),
+                             "(%s) includes VK_SUBPASS_DESCRIPTION_TILE_SHADING_APRON_BIT_QCOM bit, but %s.",
+                             string_VkSubpassDescriptionFlags(subpass_desc.flags).c_str(),
+                             conditional_ss.str().c_str());
+        }
+
+        if (!has_rp_enable_bit) {
+            continue;
+        }
+
+        for (uint32_t j = 0; j < subpass_desc.colorAttachmentCount; ++j) {
+            if (!subpass_desc.pResolveAttachments) {
+                continue;
+            }
+
+            auto const &attachment_ref = subpass_desc.pResolveAttachments[j];
+            if (attachment_ref.attachment == VK_ATTACHMENT_UNUSED ||
+                attachment_ref.attachment >= create_info.attachmentCount) {
+                continue;
+            }
+
+            const VkFormat attachment_format = create_info.pAttachments[attachment_ref.attachment].format;
+            if (attachment_format == VK_FORMAT_UNDEFINED) {
+                const char *vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pResolveAttachments-10650" :
+                                             "VUID-VkRenderPassCreateInfo-pResolveAttachments-10647";
+                skip |= LogError(vuid, device,
+                                 create_info_loc.dot(Field::pSubpasses, i).dot(Field::pResolveAttachments, j),
+                                 "references attachment description (%" PRIu32 ") with a format of VK_FORMAT_UNDEFINED, "
+                                 "while VkRenderPassTileShadingCreateInfoQCOM::flags (%s) includes "
+                                 "VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit.",
+                                 attachment_ref.attachment,
+                                 string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci->flags).c_str());
+            }
         }
     }
 
@@ -830,6 +979,12 @@ bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
             vku::FindStructInPNextChain<VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM>(pRenderingInfo->pNext)) {
         skip |= ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(commandBuffer, nullptr, pRenderingInfo,
                                                                        *multiview_per_view_info, rendering_info_loc);
+    }
+
+    if (const auto* rp_tile_shading_ci =
+            vku::FindStructInPNextChain<VkRenderPassTileShadingCreateInfoQCOM>(pRenderingInfo->pNext)) {
+        const Location rp_tile_shading_loc = rendering_info_loc.pNext(Struct::VkRenderPassTileShadingCreateInfoQCOM);
+        skip |= ValidateRenderPassTileShadingCreateInfo(*rp_tile_shading_ci, rp_tile_shading_loc);
     }
 
     skip |= ValidateRenderPassStripeBeginInfo(commandBuffer, pRenderingInfo->pNext, pRenderingInfo->renderArea, rendering_info_loc);

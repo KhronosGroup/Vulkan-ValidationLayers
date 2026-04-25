@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
  * Copyright (C) 2025 Arm Limited.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  * Modifications Copyright (C) 2020,2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -433,6 +434,11 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     // True if the *first* render pass instance specifies VK_RENDERING_RESUMING_BIT
     bool resumes_render_pass_instance;
+
+    // Set to true when invokes vkCmdBeginPerTileExecutionQCOM
+    // Set to false when invokes vkCmdEndPerTileExecutionQCOM
+    // Also reset to false in ResetCBState, RecordEndRenderPass, RecordEndRendering
+    bool per_tile_execution_model_enabled;
 
     // During recording, this tracks the current suspension state of the command buffer.
     // When recording ends, this is the suspension state at the end of the command buffer.
