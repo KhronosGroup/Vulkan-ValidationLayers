@@ -2245,3 +2245,43 @@ TEST_F(PositiveDescriptorBuffer, ImmutableSamplerIdenticallyDefinedMaintenance4)
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDescriptorBuffer, SetPushConstsWithDifferentLayout) {
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+
+    VkDescriptorBufferBindingInfoEXT buffer_binding_info = vku::InitStructHelper();
+    buffer_binding_info.address = buffer.Address();
+    buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
+    const vkt::DescriptorSetLayout set_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    const vkt::PipelineLayout pipeline_layout1(*m_device, {&set_layout});
+
+    VkPushConstantRange push_const_range;
+    push_const_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    push_const_range.offset = 0u;
+    push_const_range.size = sizeof(uint32_t);
+    const vkt::PipelineLayout pipeline_layout2(*m_device, {}, {push_const_range});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.gp_ci_.layout = pipeline_layout1;
+    pipe.CreateGraphicsPipeline();
+
+    const uint32_t index = 0;
+    const VkDeviceSize offset = 0;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout2, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t), &index);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout1, 0, 1, &index,
+                                         &offset);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
