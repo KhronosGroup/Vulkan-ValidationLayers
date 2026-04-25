@@ -3301,11 +3301,12 @@ void DeviceState::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, 
     auto pipeline_layout_state = Get<PipelineLayout>(layout);
     ASSERT_AND_RETURN(cb_state && pipeline_layout_state);
 
-    const DescriptorMode descriptor_mode =
-        pipeline_layout_state->has_descriptor_buffer ? vvl::DescriptorModeBuffer : vvl::DescriptorModeClassic;
-    cb_state->SetDescriptorMode(descriptor_mode, record_obj.location.function);
     cb_state->RecordCommand(record_obj.location);
     cb_state->RecordPushConstants(*pipeline_layout_state, stageFlags, offset, size, pValues);
+
+    const DescriptorMode descriptor_mode =
+        pipeline_layout_state->has_descriptor_buffer ? vvl::DescriptorModeBuffer : vvl::DescriptorModeClassic;
+    cb_state->InvalidateDescriptorMode(vvl::DescriptorModeHeap, descriptor_mode, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo,

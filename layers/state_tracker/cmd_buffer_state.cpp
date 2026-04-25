@@ -276,6 +276,19 @@ void CommandBuffer::SetDescriptorMode(vvl::DescriptorMode new_mode, vvl::Func fu
     }
 }
 
+// Some functions like vkCmdPushConstant are valid in Classic/Buffer, but invalid in Heap
+// So calling it doesn't "set" a mode, but instead only "invalidates"
+void CommandBuffer::InvalidateDescriptorMode(vvl::DescriptorMode invalidate_mode, vvl::DescriptorMode new_mode,
+                                             vvl::Func function) {
+    for (uint32_t i = 0; i < vvl::BindPointCount; i++) {
+        const vvl::DescriptorMode current_mode = lastBound[i].GetDescriptorMode();
+        if (current_mode == invalidate_mode) {
+            SetDescriptorMode(new_mode, function);
+            break;
+        }
+    }
+}
+
 // Reset the command buffer state
 // Maintain the createInfo and set state to CB_NEW, but clear all other state
 void CommandBuffer::ResetCBState() {
