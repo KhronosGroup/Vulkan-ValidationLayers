@@ -121,7 +121,7 @@ class DeviceState;
 
 [[maybe_unused]] static std::string string_VkPushConstantRange(VkPushConstantRange range) {
     std::ostringstream ss;
-    ss << "range [" << range.offset << ", " << (range.offset + range.size) << ") for "
+    ss << "range [" << range.offset << ", " << (range.offset + range.size) << "] for "
        << string_VkShaderStageFlags(range.stageFlags);
     return ss.str();
 }
