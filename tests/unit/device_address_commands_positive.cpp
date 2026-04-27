@@ -226,3 +226,28 @@ TEST_F(PositiveDeviceAddressCommands, BindVertexBuffers3Stride) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDeviceAddressCommands, MultipleRegions) {
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+
+    vkt::Buffer src_buffer(*m_device, 1024u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, vkt::device_address);
+    vkt::Buffer dst_buffer(*m_device, 1024u, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+
+    VkDeviceMemoryCopyKHR regions[4];
+    for (uint32_t i = 0; i < 4; ++i) {
+        regions[i] = vku::InitStructHelper();
+        regions[i].srcRange = src_buffer.AddressRange();
+        regions[i].srcRange.address += i * 256u;
+        regions[i].srcRange.size = 256u;
+        regions[i].dstRange = dst_buffer.AddressRange();
+        regions[i].dstRange.address += i * 256u;
+        regions[i].dstRange.size = 256u;
+    }
+    VkCopyDeviceMemoryInfoKHR copy_memory_info = vku::InitStructHelper();
+    copy_memory_info.regionCount = 4u;
+    copy_memory_info.pRegions = regions;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyMemoryKHR(m_command_buffer, &copy_memory_info);
+    m_command_buffer.End();
+}
