@@ -147,15 +147,8 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
 
     assert(var_inst);
     meta.variable_id = var_inst->ResultId();
-    for (const auto& annotation : module_.annotations_) {
-        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == meta.variable_id) {
-            if (annotation->Word(2) == spv::DecorationDescriptorSet) {
-                meta.descriptor_set = annotation->Word(3);
-            } else if (annotation->Word(2) == spv::DecorationBinding) {
-                meta.descriptor_binding = annotation->Word(3);
-            }
-        }
-    }
+
+    GetDescriptorSetAndBinding(meta.variable_id, meta.descriptor_set, meta.descriptor_binding);
 
     if (meta.descriptor_set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");

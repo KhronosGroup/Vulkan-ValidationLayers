@@ -142,16 +142,7 @@ bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& fun
         meta.descriptor_index_id = type_manager_.GetConstantZeroUint32().Id();
     }
 
-    uint32_t variable_id = meta.var_inst->ResultId();
-    for (const auto& annotation : module_.annotations_) {
-        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable_id) {
-            if (annotation->Word(2) == spv::DecorationDescriptorSet) {
-                meta.descriptor_set = annotation->Word(3);
-            } else if (annotation->Word(2) == spv::DecorationBinding) {
-                meta.descriptor_binding = annotation->Word(3);
-            }
-        }
-    }
+    GetDescriptorSetAndBinding(meta.var_inst->ResultId(), meta.descriptor_set, meta.descriptor_binding);
 
     if (meta.descriptor_set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
