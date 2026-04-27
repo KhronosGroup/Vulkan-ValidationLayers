@@ -245,6 +245,18 @@ const Instruction* Pass::GetMemberDecoration(uint32_t id, uint32_t member_index,
     return nullptr;
 }
 
+void Pass::GetDescriptorSetAndBinding(uint32_t variable_id, uint32_t& out_set, uint32_t& out_binding) const {
+    for (const auto& annotation : module_.annotations_) {
+        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable_id) {
+            if (annotation->Word(2) == spv::DecorationDescriptorSet) {
+                out_set = annotation->Word(3);
+            } else if (annotation->Word(2) == spv::DecorationBinding) {
+                out_binding = annotation->Word(3);
+            }
+        }
+    }
+}
+
 // In an ideal world, this would be baked into the Type class when we construct it. The core issue is OpTypeMatrix size can be
 // different depending where it is used. Because of this, we need to have a higher level view what is going on in order to correctly
 // figure out the size of a given type.

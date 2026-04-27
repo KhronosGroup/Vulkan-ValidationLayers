@@ -63,6 +63,7 @@ class Pass {
 
     const Instruction* GetDecoration(uint32_t id, spv::Decoration decoration) const;
     const Instruction* GetMemberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration) const;
+    void GetDescriptorSetAndBinding(uint32_t variable_id, uint32_t& out_set, uint32_t& out_binding) const;
 
     uint32_t FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride = 0, bool col_major = false, bool in_matrix = false) const;
     // Currently only used in the General Buffer OOB check, put here so it can be adapted for general use if needed
