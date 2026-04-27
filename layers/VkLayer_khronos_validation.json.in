@@ -181,7 +181,7 @@
                 {
                     "label": "GPU-Assisted",
                     "description": "Check for API usage errors at shader execution time.",
-                    "platforms": [ "WINDOWS", "LINUX" ],
+                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
                     "status": "STABLE",
                     "settings": [
                         { "key": "validate_core", "value": false },
@@ -212,7 +212,7 @@
                 {
                     "label": "Debug Printf",
                     "description": "Debug shader code by \"printing\" any values of interest to the debug callback or stdout.",
-                    "platforms": [ "WINDOWS", "LINUX" ],
+                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
                     "status": "STABLE",
                     "settings": [
                         { "key": "validate_core", "value": false },
@@ -240,7 +240,7 @@
                 {
                     "label": "Legacy Detection Only",
                     "description": "Turn off everything but legacy detection.",
-                    "platforms": [ "WINDOWS", "LINUX" ],
+                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
                     "status": "STABLE",
                     "settings": [
                         { "key": "validate_core", "value": false },
@@ -533,7 +533,7 @@
                             "type": "BOOL",
                             "default": false,
                             "view": "DEBUG",
-                            "platforms": [ "WINDOWS", "LINUX" ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS" ]
                         },
                         {
                             "key": "printf_enable",
@@ -542,7 +542,7 @@
                             "type": "BOOL",
                             "url": "${LUNARG_SDK}/debug_printf.html",
                             "default": false,
-                            "platforms": [ "WINDOWS", "LINUX" ],
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
                             "settings": [
                                 {
                                     "key": "printf_to_stdout",
@@ -719,7 +719,7 @@
                             "type": "BOOL",
                             "default": false,
                             "expanded": true,
-                            "platforms": [ "WINDOWS", "LINUX" ],
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
                             "settings": [
                                 {
                                     "key": "gpuav_safe_mode",
