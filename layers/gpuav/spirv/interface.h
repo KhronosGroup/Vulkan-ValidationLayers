@@ -66,11 +66,6 @@ struct InstrumentationDescriptorSetLayouts {
     bool has_bindless_descriptors = false;
     // < set , [ bindings ] >
     std::vector<std::vector<spirv::BindingLayout>> set_index_to_bindings_layout_lut;
-
-    // Pipeline flags for ray tracing validation hit objects
-    bool pipeline_has_skip_aabbs_flag = false;
-    bool pipeline_has_skip_triangles_flag = false;
-    uint32_t max_shader_binding_table_record_index = 0;
 };
 
 // Top level struct to hold all the things we want to pass in from the Vulkan GPU-AV code into the SPIR-V instrumentation passes
@@ -88,6 +83,11 @@ struct InstrumentationInterface {
 
     // Used for MeshPass to know if a task will be used as well
     bool has_task_shader = false;
+
+    // ray tracing validation
+    bool pipeline_has_skip_aabbs_flag = false;
+    bool pipeline_has_skip_triangles_flag = false;
+    uint32_t max_shader_binding_table_record_index = 0;
 
     vvl::DescriptorMode descriptor_mode = vvl::DescriptorModeUnknown;
 

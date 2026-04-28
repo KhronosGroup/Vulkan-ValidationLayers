@@ -394,7 +394,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
             out_update.binding = glsl::kBindingInstDescriptorIndexingOOB;
         });
 
-    // For every descriptor binding command, and for each set bound by this command, update a GPU buffer holding the its
+    // For every descriptor binding command, and for each set bound by this command, update a GPU buffer holding its
     // corresponding descriptor states
     cb.on_pre_cb_submission_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer) {
         DescriptorSetBindings& desc_set_bindings = cb.shared_resources_cache.Get<DescriptorSetBindings>();
