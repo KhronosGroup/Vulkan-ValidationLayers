@@ -141,6 +141,10 @@ std::vector<uint32_t> TraceRayPass::GetTraceRayValidationFunctionCallInstruction
     const uint32_t direction_id = (*trace_ray_inst_it)->get()->Operand(8);
     const uint32_t t_max_id = (*trace_ray_inst_it)->get()->Operand(9);
 
+    const uint32_t pipeline_flags = (module_.interface_.pipeline_has_skip_aabbs_flag ? 0x1 : 0u) |
+                                    (module_.interface_.pipeline_has_skip_triangles_flag ? 0x2 : 0u);
+    const uint32_t pipeline_flags_id = type_manager_.CreateConstantUInt32(pipeline_flags).Id();
+
     const uint32_t inst_position = (*trace_ray_inst_it)->get()->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
@@ -156,7 +160,8 @@ std::vector<uint32_t> TraceRayPass::GetTraceRayValidationFunctionCallInstruction
             origin_id,
             t_min_id,
             direction_id,
-            t_max_id};
+            t_max_id,
+            pipeline_flags_id};
 }
 
 std::vector<uint32_t> TraceRayPass::GetRayHitObjectValidationFunctionCallInstructions(InstructionIt* ray_hit_object_inst_it) {
@@ -183,8 +188,8 @@ std::vector<uint32_t> TraceRayPass::GetRayHitObjectValidationFunctionCallInstruc
 
     const uint32_t opcode_type_id = type_manager_.CreateConstantUInt32(opcode).Id();
 
-    const uint32_t pipeline_flags = (module_.interface_.instrumentation_dsl.pipeline_has_skip_aabbs_flag ? 1u : 0u) |
-                                    (module_.interface_.instrumentation_dsl.pipeline_has_skip_triangles_flag ? 2u : 0u);
+    const uint32_t pipeline_flags = (module_.interface_.pipeline_has_skip_aabbs_flag ? 0x1 : 0u) |
+                                    (module_.interface_.pipeline_has_skip_triangles_flag ? 0x2 : 0u);
     const uint32_t pipeline_flags_id = type_manager_.CreateConstantUInt32(pipeline_flags).Id();
 
     // For non-motion opcodes, pass 0.0 as time (valid value, won't trigger error)
@@ -208,7 +213,7 @@ std::vector<uint32_t> TraceRayPass::GetRayHitObjectSbtIndexValidationFunctionCal
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
     // maxShaderBindingTableRecordIndex
-    const uint32_t max_sbt_index = module_.interface_.instrumentation_dsl.max_shader_binding_table_record_index;
+    const uint32_t max_sbt_index = module_.interface_.max_shader_binding_table_record_index;
     const uint32_t max_sbt_index_id = type_manager_.CreateConstantUInt32(max_sbt_index).Id();
 
     return {bool_type, function_result, function_def, inst_position_id, sbt_index_id, max_sbt_index_id};
