@@ -470,6 +470,7 @@ void QueueBatchContext::ResolvePresentSemaphoreWait(const SignalInfo& signal_inf
                 const ApplySemaphoreBarrierAction noop_sem_op(signal_scope, noop_semaphore_scope);
                 access_context_.ResolveFromContext(noop_sem_op, from_context);
             }
+            last_synchronized_present.Merge(signal_info.batch->last_synchronized_present);
         }
     }
 }
