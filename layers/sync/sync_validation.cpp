@@ -253,7 +253,7 @@ void SyncValidator::WaitForFence(VkFence fence) {
         FenceHostSyncPoint& wait_for = fence_it->second;
         if (wait_for.queue_id != kQueueIdInvalid) {
             ApplyTaggedWait(wait_for.queue_id, wait_for.tag, {}, wait_for.queue_sync_tags);
-        } else if (!wait_for.acquired.Invalid()) {
+        } else if (!vvl::StateObject::Invalid(wait_for.acquired.image)) {
             ApplyAcquireWait(wait_for.acquired);
         }
         waitable_fences_.erase(fence_it);
@@ -2248,8 +2248,9 @@ void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordOb
     // The last signal is needed to represent the current timeline state.
     EnsureTimelineSignalsLimit(1);
 
-    // As we we've waited for everything on device, any waits are mooted. (except for acquires)
-    vvl::EraseIf(waitable_fences_, [](const auto& waitable) { return waitable.second.acquired.Invalid(); });
+    // Cleanup fence waits associated with queues. Acquire fence waits are preserved
+    auto is_queue_fence = [](const auto& waitable) { return waitable.second.queue_id != kQueueIdInvalid; };
+    vvl::EraseIf(waitable_fences_, is_queue_fence);
     host_waitable_semaphores_.clear();
 }
 
@@ -2312,7 +2313,7 @@ bool SyncValidator::ProcessQueuePresent(VkQueue queue, const VkPresentInfoKHR* p
         queue_state.SetLastBatch(std::move(batch));
         ApplySignalsUpdate(signals_update, queue_state.LastBatch());
         for (auto& presented : presented_images) {
-            presented.ExportToSwapchain(*this);
+            presented.ExportToSwapchain();
         }
     }
     return skip;

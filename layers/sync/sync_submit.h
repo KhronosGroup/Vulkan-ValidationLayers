@@ -39,12 +39,16 @@ using CommandBufferConstPtr = std::shared_ptr<const vvl::CommandBuffer>;
 struct AcquiredImage {
     std::shared_ptr<const vvl::Image> image;
     subresource_adapter::ImageRangeGenerator generator;
-    ResourceUsageTag present_tag;
+
+    // Tag of the image acquire operation
     ResourceUsageTag acquire_tag;
-    bool Invalid() const;
+
+    // Last present before the acquire operation above.
+    // kInvalidTag if the image has never been presented
+    ResourceUsageTag present_tag;
 
     AcquiredImage() = default;
-    AcquiredImage(const PresentedImage &presented, ResourceUsageTag acq_tag);
+    AcquiredImage(const PresentedImage& presented, ResourceUsageTag acquire_tag);
 };
 
 // Information associated with a semaphore signal
@@ -171,7 +175,7 @@ struct PresentedImage : public PresentedImageRecord {
     // For non-previsously presented images..
     PresentedImage(std::shared_ptr<vvl::Swapchain> &&swapchain, uint32_t at_index);
     bool Invalid() const;
-    void ExportToSwapchain(SyncValidator &);
+    void ExportToSwapchain();
     void SetImage(uint32_t at_index);
 };
 using PresentedImages = std::vector<PresentedImage>;

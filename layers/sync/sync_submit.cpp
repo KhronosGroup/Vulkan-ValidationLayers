@@ -23,9 +23,7 @@
 namespace syncval {
 
 AcquiredImage::AcquiredImage(const PresentedImage& presented, ResourceUsageTag acq_tag)
-    : image(presented.image), generator(presented.range_gen), present_tag(presented.tag), acquire_tag(acq_tag) {}
-
-bool AcquiredImage::Invalid() const { return vvl::StateObject::Invalid(image); }
+    : image(presented.image), generator(presented.range_gen), acquire_tag(acq_tag), present_tag(presented.tag) {}
 
 SignalInfo::SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_state, const BatchContextPtr& batch,
                        const SyncExecScope& exec_scope, uint64_t timeline_value)
@@ -929,7 +927,7 @@ PresentedImage::PresentedImage(std::shared_ptr<vvl::Swapchain>&& swapchain, uint
 bool PresentedImage::Invalid() const { return vvl::StateObject::Invalid(image); }
 
 // Export uses move semantics...
-void PresentedImage::ExportToSwapchain(SyncValidator&) {  // Include this argument to prove the const cast is safe
+void PresentedImage::ExportToSwapchain() {
     // If the swapchain is dead just ignore the present
     auto swap_lock = swapchain_state.lock();
     if (vvl::StateObject::Invalid(swap_lock)) return;
