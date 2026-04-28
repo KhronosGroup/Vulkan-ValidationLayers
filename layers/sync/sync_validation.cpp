@@ -252,7 +252,8 @@ void SyncValidator::WaitForFence(VkFence fence) {
     if (auto fence_it = waitable_fences_.find(fence); fence_it != waitable_fences_.end()) {
         FenceHostSyncPoint& wait_for = fence_it->second;
         if (wait_for.queue_id != kQueueIdInvalid) {
-            ApplyTaggedWait(wait_for.queue_id, wait_for.tag, {}, wait_for.queue_sync_tags);
+            const QueueState& queue_state = GetQueueState(wait_for.queue_id);
+            ApplyTaggedWait(wait_for.queue_id, wait_for.tag, queue_state.GetLastSynchronizedPresent(), wait_for.queue_sync_tags);
         } else if (!vvl::StateObject::Invalid(wait_for.acquired.image)) {
             ApplyAcquireWait(wait_for.acquired);
         }
