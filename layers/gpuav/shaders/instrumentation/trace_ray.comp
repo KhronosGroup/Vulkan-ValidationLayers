@@ -90,6 +90,10 @@ bool inst_trace_ray_acceleration_structure(const uint inst_offset,
     return true;
 }
 
+// Pipeline flags
+const uint kPipelineHasSkipAABBs = 0x1;
+const uint kPipelineHasSkipTriangles = 0x2;
+
 bool inst_trace_ray(const uint inst_offset,
                     const uint ray_flags,
                     const uint cull_mask,
@@ -99,7 +103,8 @@ bool inst_trace_ray(const uint inst_offset,
                     const vec3 origin,
                     const float t_min,
                     const vec3 direction,
-                    const float t_max)
+                    const float t_max,
+                    const uint pipeline_flags)
 {
     uint error = 0u;
     uint param_0 = 0u;
@@ -141,6 +146,12 @@ bool inst_trace_ray(const uint inst_offset,
         error = kErrorSubCode_TraceRay_TMaxLessThanTMin;
         param_0 = floatBitsToUint(t_min);
         param_1 = floatBitsToUint(t_max);
+    } else if ((ray_flags & SpvRayFlags_SkipTrianglesKHR) != 0 && (pipeline_flags & kPipelineHasSkipAABBs) != 0) {
+        error = kErrorSubCode_TraceRay_SkipTrianglesWithPipelineSkipAABBs;
+        param_0 = ray_flags;
+    } else if ((ray_flags & SpvRayFlags_SkipAABBsKHR) != 0 && (pipeline_flags & kPipelineHasSkipTriangles) != 0) {
+        error = kErrorSubCode_TraceRay_SkipAABBsWithPipelineSkipTriangles;
+        param_0 = ray_flags;
     }
 
     if (0u != error) {
@@ -162,10 +173,6 @@ const uint OpHitObjectTraceReorderExecuteEXT = 5311;
 const uint OpHitObjectTraceMotionReorderExecuteEXT = 5312;
 const uint OpHitObjectTraceRayEXT = 5316;
 const uint OpHitObjectTraceRayMotionEXT = 5317;
-
-// Pipeline flags
-const uint kPipelineHasSkipAABBs = 0x1;
-const uint kPipelineHasSkipTriangles = 0x2;
 
 
 // Validation for VK_EXT_ray_tracing_invocation_reorder hit object operations:

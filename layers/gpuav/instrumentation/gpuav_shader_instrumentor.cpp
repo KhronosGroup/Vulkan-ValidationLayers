@@ -1052,14 +1052,6 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::Pipeline& pi
             BuildDescriptorSetLayoutInfo(*set_layout_state, set_layout_index, out_instrumentation_dsl);
         }
     }
-
-    // Set ray tracing pipeline flags for hit objects
-    out_instrumentation_dsl.pipeline_has_skip_aabbs_flag =
-        (pipeline_state.create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) != 0;
-    out_instrumentation_dsl.pipeline_has_skip_triangles_flag =
-        (pipeline_state.create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR) != 0;
-    out_instrumentation_dsl.max_shader_binding_table_record_index =
-        phys_dev_ext_props.ray_tracing_invocation_reorder_props.maxShaderBindingTableRecordIndex;
 }
 
 void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vku::safe_VkShaderCreateInfoEXT& modified_create_info,
@@ -1256,6 +1248,12 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
         interface.entry_point_stage = stage_state.GetStage();
         interface.specialization_info = stage_state.GetSpecializationInfo()->ptr();
         interface.has_task_shader = (pipeline_state.active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT) != 0;
+        interface.pipeline_has_skip_aabbs_flag =
+            (pipeline_state.create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) != 0;
+        interface.pipeline_has_skip_triangles_flag =
+            (pipeline_state.create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR) != 0;
+        interface.max_shader_binding_table_record_index =
+            phys_dev_ext_props.ray_tracing_invocation_reorder_props.maxShaderBindingTableRecordIndex;
         interface.descriptor_mode = pipeline_state.descriptor_heap_mode     ? vvl::DescriptorModeHeap
                                     : pipeline_state.descriptor_buffer_mode ? vvl::DescriptorModeBuffer
                                                                             : vvl::DescriptorModeClassic;
@@ -1461,6 +1459,12 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             interface.entry_point_stage = modified_stage_state.GetStage();
             interface.specialization_info = modified_stage_state.GetSpecializationInfo()->ptr();
             interface.has_task_shader = (linked_pipeline_state.active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT) != 0;
+            interface.pipeline_has_skip_aabbs_flag =
+                (linked_pipeline_state.create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) != 0;
+            interface.pipeline_has_skip_triangles_flag =
+                (linked_pipeline_state.create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR) != 0;
+            interface.max_shader_binding_table_record_index =
+                phys_dev_ext_props.ray_tracing_invocation_reorder_props.maxShaderBindingTableRecordIndex;
             interface.descriptor_mode = linked_pipeline_state.descriptor_heap_mode     ? vvl::DescriptorModeHeap
                                         : linked_pipeline_state.descriptor_buffer_mode ? vvl::DescriptorModeBuffer
                                                                                        : vvl::DescriptorModeClassic;

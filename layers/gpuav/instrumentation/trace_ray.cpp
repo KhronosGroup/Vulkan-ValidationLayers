@@ -223,6 +223,21 @@ void RegisterTraceRayValidation(Validator& gpuav, CommandBufferSubState& cb) {
                             out_vuid_msg = "VUID-RuntimeSpirv-OpTraceRayKHR-06359";
                             break;
                         }
+                        case kErrorSubCode_TraceRay_SkipTrianglesWithPipelineSkipAABBs: {
+                            const uint32_t value = error_record[kInst_LogError_ParameterOffset_0];
+                            strm << string_SpvOpcode(opcode) << " operand Ray Flags (0x" << std::hex << value
+                                 << ") contains SkipTrianglesKHR, but pipeline was created with "
+                                    "VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR. ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpTraceRayKHR-06553";
+                        } break;
+                        case kErrorSubCode_TraceRay_SkipAABBsWithPipelineSkipTriangles: {
+                            const uint32_t value = error_record[kInst_LogError_ParameterOffset_0];
+                            strm << string_SpvOpcode(opcode) << " operand Ray Flags (0x" << std::hex << value
+                                 << ") contains SkipAABBsKHR, but pipeline was created with "
+                                    "VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR. ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpTraceRayKHR-06554";
+                        } break;
+
                         default:
                             error_found = false;
                             break;
