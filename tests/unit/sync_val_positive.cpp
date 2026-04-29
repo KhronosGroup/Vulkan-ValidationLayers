@@ -97,6 +97,17 @@ void VkSyncValTest::InitRayTracing() {
     RETURN_IF_SKIP(InitSyncVal());
 }
 
+std::pair<vkt::Queue*, vkt::Queue*> VkSyncValTest::GetTwoQueuesFromSameFamily(const std::vector<vkt ::Queue*>& queues) {
+    for (size_t i = 0; i < queues.size(); i++) {
+        for (size_t k = i + 1; k < queues.size(); k++) {
+            if (queues[i]->family_index == queues[k]->family_index) {
+                return {queues[i], queues[k]};
+            }
+        }
+    }
+    return {};
+}
+
 TEST_F(PositiveSyncVal, BufferCopyNonOverlappedRegions) {
     TEST_DESCRIPTION("Copy to non-overlapped regions of the same buffer");
     RETURN_IF_SKIP(InitSyncVal());

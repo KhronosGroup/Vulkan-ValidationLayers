@@ -4762,17 +4762,6 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsFence) {
     m_default_queue->Wait();
 }
 
-static std::pair<vkt::Queue*, vkt::Queue*> GetTwoQueuesFromSameFamily(const std::vector<vkt ::Queue*>& queues) {
-    for (size_t i = 0; i < queues.size(); i++) {
-        for (size_t k = i + 1; k < queues.size(); k++) {
-            if (queues[i]->family_index == queues[k]->family_index) {
-                return {queues[i], queues[k]};
-            }
-        }
-    }
-    return {};
-}
-
 TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
     all_queue_count_ = true;
     RETURN_IF_SKIP(InitSyncVal());
