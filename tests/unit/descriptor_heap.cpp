@@ -3453,8 +3453,7 @@ TEST_F(NegativeDescriptorHeap, OpTypeSampler) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, OpTypeSampledImage) {
-    TEST_DESCRIPTION("Validate that mapping is aligned for OpTypeSampledImage");
+TEST_F(NegativeDescriptorHeap, OpTypeSampledImageAlignedSampler) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
@@ -3518,6 +3517,55 @@ TEST_F(NegativeDescriptorHeap, OpTypeSampledImage) {
         pipe.CreateComputePipeline(false);
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(NegativeDescriptorHeap, OpTypeSampledImageAlignedImage) {
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    if (heap_props.imageDescriptorAlignment < 2) {
+        GTEST_SKIP() << "Cannot be unaligned with imageDescriptorAlignment less than 2";
+    }
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[0].sourceData.constantOffset.heapArrayStride = 0;
+
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer Output { int result[]; };
+        layout(set = 0, binding = 1) uniform sampler2D tex;
+        void main() {
+            vec4 color = textureLod(tex, vec2(gl_GlobalInvocationID.xy), 0);
+            result[gl_LocalInvocationIndex] = int(color.r);
+        }
+    )glsl";
+
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+
+    mappings[1].sourceData.constantOffset.heapOffset = 1;
+    mappings[1].sourceData.constantOffset.heapArrayStride = 0;
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-combined-image");
+    pipe.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, NoMappingStruct) {
