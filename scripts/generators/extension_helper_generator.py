@@ -28,7 +28,7 @@ from pyparsing import ParseResults
 # From the Vulkan-Headers
 from parse_dependency import dependencyBNF
 
-def parseExpr(expr): return dependencyBNF().parseString(expr, parseAll=True)
+def parseExpr(expr): return dependencyBNF().parse_string(expr, parseAll=True)
 
 def dependCheck(pr: ParseResults, token, op, start_group, end_group) -> None:
     """
