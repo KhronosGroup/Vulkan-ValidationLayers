@@ -285,8 +285,8 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
         void Print(const CommandBufferSubState& cb_sub_state, std::ostringstream& map_ss, const VkPhysicalDevice physical_device) {
             map_ss << "    - Binding " << std::dec << resource_variable->decorations.binding << ", "
                    << string_VkDescriptorMappingSourceEXT(mapping->source) << " (from pMappings[" << mapping_index << "])\n";
-            // TODO - should print both here
-            const bool is_sampler = resource_variable->is_combined_image_sampler;
+            const bool is_combined_image_sampler = resource_variable->is_combined_image_sampler;
+            const char* main_heap_type = resource_variable->is_sampler ? "Sampler" : "Resource";
             const bool is_array = resource_variable->IsArray();
             uint32_t array_length = 0;
             if (is_array && !resource_variable->IsRuntimeArray() && resource_variable->array_length != spirv::kSpecConstant) {
@@ -308,10 +308,23 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
             vvl::CommandBuffer::DescriptorHeap& heap = cb_sub_state.base.descriptor_heap;
             if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
                 const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping->sourceData.constantOffset;
-                if (is_sampler) {
-                    map_ss << "samplerHeapOffset: 0x" << std::hex << map_data.samplerHeapOffset << ", samplerHeapArrayStride: 0x"
-                           << map_data.samplerHeapArrayStride;
-                    map_ss << "\n        Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset;
+
+                map_ss << "heapOffset: 0x" << std::hex << map_data.heapOffset << ", heapArrayStride: 0x"
+                       << map_data.heapArrayStride;
+                map_ss << "\n        " << main_heap_type << " Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset;
+                if (is_array) {
+                    map_ss << " + (descriptor_index * 0x" << map_data.heapArrayStride << ")";
+                    if (array_length != 0) {
+                        warn_index_oob = ((map_data.heapOffset + ((array_length - 1) * map_data.heapArrayStride) +
+                                           descriptor_size) > heap.resource_range.size());
+                    }
+                }
+                warn_oob |= (map_data.heapOffset + descriptor_size > heap.resource_range.size());
+
+                if (is_combined_image_sampler) {
+                    map_ss << "\n        samplerHeapOffset: 0x" << std::hex << map_data.samplerHeapOffset
+                           << ", samplerHeapArrayStride: 0x" << map_data.samplerHeapArrayStride;
+                    map_ss << "\n        Sampler Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset;
                     if (is_array) {
                         map_ss << " + (descriptor_index * 0x" << map_data.samplerHeapArrayStride << ")";
                         if (array_length != 0) {
@@ -320,30 +333,37 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
                         }
                     }
                     warn_oob |= (map_data.samplerHeapOffset + descriptor_size > heap.sampler_range.size());
-                } else {
-                    map_ss << "heapOffset: 0x" << std::hex << map_data.heapOffset << ", heapArrayStride: 0x"
-                           << map_data.heapArrayStride;
-                    map_ss << "\n        Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset;
-                    if (is_array) {
-                        map_ss << " + (descriptor_index * 0x" << map_data.heapArrayStride << ")";
-                        if (array_length != 0) {
-                            warn_index_oob = ((map_data.heapOffset + ((array_length - 1) * map_data.heapArrayStride) +
-                                               descriptor_size) > heap.resource_range.size());
-                        }
-                    }
-                    warn_oob |= (map_data.heapOffset + descriptor_size > heap.resource_range.size());
                 }
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
                 const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping->sourceData.pushIndex;
                 uint32_t push_index = *((uint32_t*)&cb_sub_state.push_data_value[map_data.pushOffset]);
 
-                if (is_sampler) {
-                    map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", samplerHeapOffset: 0x"
+                map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", heapOffset: 0x" << map_data.heapOffset
+                       << ", heapIndexStride: 0x" << map_data.heapIndexStride << ", heapArrayStride: 0x"
+                       << map_data.heapArrayStride;
+                map_ss << "\n        pushIndex: 0x" << push_index;
+                map_ss << "\n        " << main_heap_type << " Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset
+                       << " + (0x" << push_index << " * 0x" << map_data.heapIndexStride << ")";
+                if (is_array) {
+                    map_ss << " + (descriptor_index * 0x" << map_data.heapArrayStride << ")";
+                    if (array_length != 0) {
+                        warn_index_oob = ((map_data.heapOffset + ((array_length - 1) * map_data.heapArrayStride) +
+                                           descriptor_size) > heap.resource_range.size());
+                    }
+                } else {
+                    uint64_t final_offset = map_data.heapOffset + (push_index * map_data.heapIndexStride);
+                    map_ss << " [final address 0x" << (heap.resource_range.begin + final_offset) << "]";
+                    warn_oob |= (final_offset + descriptor_size > heap.resource_range.size());
+                }
+                warn_oob |= (map_data.heapOffset + descriptor_size > heap.resource_range.size());
+
+                if (is_combined_image_sampler) {
+                    map_ss << "\n        pushOffset: 0x" << std::hex << map_data.pushOffset << ", samplerHeapOffset: 0x"
                            << map_data.samplerHeapOffset << ", samplerHeapIndexStride: 0x" << map_data.samplerHeapIndexStride
                            << ", samplerHeapArrayStride: 0x" << map_data.samplerHeapArrayStride;
                     map_ss << "\n        pushIndex: 0x" << push_index;
-                    map_ss << "\n        Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset << " + (0x"
-                           << push_index << " * 0x" << map_data.samplerHeapIndexStride << ")";
+                    map_ss << "\n        Sampler Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset
+                           << " + (0x" << push_index << " * 0x" << map_data.samplerHeapIndexStride << ")";
                     if (is_array) {
                         map_ss << " + (descriptor_index * 0x" << map_data.samplerHeapArrayStride << ")";
                         if (array_length != 0) {
@@ -356,36 +376,33 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
                         warn_oob |= (final_offset + descriptor_size > heap.sampler_range.size());
                     }
                     warn_oob |= (map_data.samplerHeapOffset + descriptor_size > heap.sampler_range.size());
-                } else {
-                    map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", heapOffset: 0x" << map_data.heapOffset
-                           << ", heapIndexStride: 0x" << map_data.heapIndexStride << ", heapArrayStride: 0x"
-                           << map_data.heapArrayStride;
-                    map_ss << "\n        pushIndex: 0x" << push_index;
-                    map_ss << "\n        Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset << " + (0x"
-                           << push_index << " * 0x" << map_data.heapIndexStride << ")";
-                    if (is_array) {
-                        map_ss << " + (descriptor_index * 0x" << map_data.heapArrayStride << ")";
-                        if (array_length != 0) {
-                            warn_index_oob = ((map_data.heapOffset + ((array_length - 1) * map_data.heapArrayStride) +
-                                               descriptor_size) > heap.resource_range.size());
-                        }
-                    } else {
-                        uint64_t final_offset = map_data.heapOffset + (push_index * map_data.heapIndexStride);
-                        map_ss << " [final address 0x" << (heap.resource_range.begin + final_offset) << "]";
-                        warn_oob |= (final_offset + descriptor_size > heap.resource_range.size());
-                    }
-                    warn_oob |= (map_data.heapOffset + descriptor_size > heap.resource_range.size());
                 }
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
                 const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping->sourceData.indirectIndex;
                 uint64_t indirect_address = *((uint64_t*)&cb_sub_state.push_data_value[map_data.pushOffset]);
 
-                if (is_sampler) {
-                    map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset
-                           << ", samplerHeapOffset: 0x" << map_data.samplerHeapOffset << ", samplerHeapIndexStride: 0x"
-                           << map_data.samplerHeapIndexStride << ", samplerHeapArrayStride: 0x" << map_data.samplerHeapArrayStride;
+                map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset
+                       << ", heapOffset: 0x" << map_data.heapOffset << ", heapIndexStride: 0x" << map_data.heapIndexStride
+                       << ", heapArrayStride: 0x" << map_data.heapArrayStride;
+                map_ss << "\n        indirectAddress: 0x" << indirect_address;
+                map_ss << "\n        " << main_heap_type << " Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset
+                       << " + (indirectIndex * 0x" << map_data.heapIndexStride << ")";
+                if (is_array) {
+                    map_ss << " + (descriptor_index * 0x" << map_data.heapArrayStride << ")";
+                    if (array_length != 0) {
+                        warn_index_oob = ((map_data.heapOffset + ((array_length - 1) * map_data.heapArrayStride) +
+                                           descriptor_size) > heap.resource_range.size());
+                    }
+                }
+                warn_oob |= (map_data.heapOffset + descriptor_size > heap.resource_range.size());
+
+                if (is_combined_image_sampler) {
+                    map_ss << "\n        pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x"
+                           << map_data.addressOffset << ", samplerHeapOffset: 0x" << map_data.samplerHeapOffset
+                           << ", samplerHeapIndexStride: 0x" << map_data.samplerHeapIndexStride << ", samplerHeapArrayStride: 0x"
+                           << map_data.samplerHeapArrayStride;
                     map_ss << "\n        indirectAddress: 0x" << indirect_address;
-                    map_ss << "\n        Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset
+                    map_ss << "\n        Sampler Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset
                            << " + (indirectIndex * 0x" << map_data.samplerHeapIndexStride << ")";
                     if (is_array) {
                         map_ss << " + (descriptor_index * 0x" << map_data.samplerHeapArrayStride << ")";
@@ -395,41 +412,26 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
                         }
                     }
                     warn_oob |= (map_data.samplerHeapOffset + descriptor_size > heap.sampler_range.size());
-                } else {
-                    map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset
-                           << ", heapOffset: 0x" << map_data.heapOffset << ", heapIndexStride: 0x" << map_data.heapIndexStride
-                           << ", heapArrayStride: 0x" << map_data.heapArrayStride;
-                    map_ss << "\n        indirectAddress: 0x" << indirect_address;
-                    map_ss << "\n        Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset
-                           << " + (indirectIndex * 0x" << map_data.heapIndexStride << ")";
-                    if (is_array) {
-                        map_ss << " + (descriptor_index * 0x" << map_data.heapArrayStride << ")";
-                        if (array_length != 0) {
-                            warn_index_oob = ((map_data.heapOffset + ((array_length - 1) * map_data.heapArrayStride) +
-                                               descriptor_size) > heap.resource_range.size());
-                        }
-                    }
-                    warn_oob |= (map_data.heapOffset + descriptor_size > heap.resource_range.size());
                 }
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
                 const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data = mapping->sourceData.indirectIndexArray;
                 uint64_t indirect_address = *((uint64_t*)&cb_sub_state.push_data_value[map_data.pushOffset]);
 
-                if (is_sampler) {
-                    map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset
-                           << ", samplerHeapOffset: 0x" << map_data.samplerHeapOffset << ", samplerHeapIndexStride: 0x"
-                           << map_data.samplerHeapIndexStride;
+                map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset
+                       << ", heapOffset: 0x" << map_data.heapOffset << ", heapIndexStride: 0x" << map_data.heapIndexStride;
+                map_ss << "\n        indirectAddress: 0x" << indirect_address;
+                map_ss << "\n        " << main_heap_type << " Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset
+                       << " + (indirectIndex * 0x" << map_data.heapIndexStride << ")";
+                warn_oob |= (map_data.heapOffset + descriptor_size > heap.resource_range.size());
+
+                if (is_combined_image_sampler) {
+                    map_ss << "\n        pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x"
+                           << map_data.addressOffset << ", samplerHeapOffset: 0x" << map_data.samplerHeapOffset
+                           << ", samplerHeapIndexStride: 0x" << map_data.samplerHeapIndexStride;
                     map_ss << "\n        indirectAddress: 0x" << indirect_address;
-                    map_ss << "\n        Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset
+                    map_ss << "\n        Sampler Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset
                            << " + (indirectIndex * 0x" << map_data.samplerHeapIndexStride << ")";
                     warn_oob |= (map_data.samplerHeapOffset + descriptor_size > heap.sampler_range.size());
-                } else {
-                    map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset
-                           << ", heapOffset: 0x" << map_data.heapOffset << ", heapIndexStride: 0x" << map_data.heapIndexStride;
-                    map_ss << "\n        indirectAddress: 0x" << indirect_address;
-                    map_ss << "\n        Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset
-                           << " + (indirectIndex * 0x" << map_data.heapIndexStride << ")";
-                    warn_oob |= (map_data.heapOffset + descriptor_size > heap.resource_range.size());
                 }
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
                 const VkDescriptorMappingSourceHeapDataEXT& map_data = mapping->sourceData.heapData;
@@ -437,7 +439,8 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
 
                 map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", heapOffset: 0x" << map_data.heapOffset;
                 map_ss << "\n        Push data at 0x" << std::hex << map_data.pushOffset << ": 0x" << push_data;
-                map_ss << "\n        Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset << " + 0x" << push_data;
+                map_ss << "\n        " << main_heap_type << " Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset
+                       << " + 0x" << push_data;
                 uint64_t final_offset = map_data.heapOffset + push_data;
                 map_ss << " [final address 0x" << (heap.resource_range.begin + final_offset) << "]";
                 warn_oob |= (final_offset + descriptor_size > heap.resource_range.size());
@@ -455,14 +458,14 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
                 // TODO - Add address for RTX
                 const VkDescriptorMappingSourceShaderRecordIndexEXT& map_data = mapping->sourceData.shaderRecordIndex;
-                if (is_sampler) {
-                    map_ss << "samplerHeapOffset: 0x" << std::hex << map_data.samplerHeapOffset << ", samplerShaderRecordOffset: 0x"
-                           << map_data.samplerShaderRecordOffset << ", samplerHeapIndexStride: 0x"
-                           << map_data.samplerHeapIndexStride << ", samplerHeapArrayStride: 0x" << map_data.samplerHeapArrayStride;
-                } else {
-                    map_ss << "heapOffset: 0x" << std::hex << map_data.heapOffset << ", shaderRecordOffset: 0x"
-                           << map_data.shaderRecordOffset << ", heapIndexStride: 0x" << map_data.heapIndexStride
-                           << ", heapArrayStride: 0x" << map_data.heapArrayStride;
+                map_ss << "heapOffset: 0x" << std::hex << map_data.heapOffset << ", shaderRecordOffset: 0x"
+                       << map_data.shaderRecordOffset << ", heapIndexStride: 0x" << map_data.heapIndexStride
+                       << ", heapArrayStride: 0x" << map_data.heapArrayStride;
+                if (is_combined_image_sampler) {
+                    map_ss << "\n        samplerHeapOffset: 0x" << std::hex << map_data.samplerHeapOffset
+                           << ", samplerShaderRecordOffset: 0x" << map_data.samplerShaderRecordOffset
+                           << ", samplerHeapIndexStride: 0x" << map_data.samplerHeapIndexStride << ", samplerHeapArrayStride: 0x"
+                           << map_data.samplerHeapArrayStride;
                 }
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT) {
                 // TODO - Add more info probably
