@@ -164,7 +164,6 @@ void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, c
     RegisterBufferDeviceAddressValidation(*this, gpuav_cb_state);
     RegisterVertexAttributeFetchOobValidation(*this, gpuav_cb_state);
     RegisterMeshShadingValidation(*this, gpuav_cb_state);
-    RegisterRayQueryValidation(*this, gpuav_cb_state);
     RegisterSharedMemoryDataRaceValidation(*this, gpuav_cb_state);
     RegisterSanitizer(*this, gpuav_cb_state);
     RegisterTraceRayValidation(*this, gpuav_cb_state);

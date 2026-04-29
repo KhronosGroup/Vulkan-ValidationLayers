@@ -1050,7 +1050,7 @@ static std::string GetGpuAvSettingsCombinationTestName(const testing::TestParamI
 INSTANTIATE_TEST_SUITE_P(GpuAvShaderInstrumentationMainSettings, PositiveGpuAVParameterized,
 
                          ::testing::Combine(::testing::Values(std::vector<const char*>(
-                                                {"gpuav_descriptor_checks", "gpuav_buffer_address_oob", "gpuav_validate_ray_query",
+                                                {"gpuav_descriptor_checks", "gpuav_buffer_address_oob", "gpuav_validate_trace_ray",
                                                  "gpuav_select_instrumented_shaders"})),
                                             ::testing::Range(uint32_t(0), uint32_t(1) << 4)),
 

@@ -144,7 +144,6 @@ void RestorablePipelineState::Create(CommandBufferSubState& cb_state, VkPipeline
     LastBound& last_bound = cb_state.base.lastBound[vvl_bind_point];
     if (last_bound.pipeline_state) {
         pipeline_ = last_bound.pipeline_state->VkHandle();
-
     } else {
         assert(shader_objects_.empty());
         if (vvl_bind_point == vvl::BindPointGraphics) {
