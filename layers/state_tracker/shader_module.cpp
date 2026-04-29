@@ -2436,8 +2436,12 @@ vvl::unordered_set<VkDescriptorType> ResourceInterfaceVariable::GetAllDescriptor
         types.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     } else if (is_sampler) {
         types.insert(VK_DESCRIPTOR_TYPE_SAMPLER);
+        // See PositivePipeline.CombinedImageSamplerConsumedAsSampler
+        types.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     } else if (is_sampled_image) {
         types.insert(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+        // See PositivePipeline.CombinedImageSamplerConsumedAsImage
+        types.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     } else if (is_storage_buffer) {
         types.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
         types.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
@@ -2455,8 +2459,13 @@ vvl::unordered_set<VkDescriptorType> ResourceInterfaceVariable::GetAllDescriptor
         types.insert(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
     } else if (is_storage_tensor) {
         types.insert(VK_DESCRIPTOR_TYPE_TENSOR_ARM);
-    } else if (is_acceleration_structure || is_acceleration_structure_nv) {
+    } else if (is_acceleration_structure) {
         types.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
+        if (is_partitioned_acceleration_structure) {
+            types.insert(VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
+        }
+    } else if (is_acceleration_structure_nv) {
+        types.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
         if (is_partitioned_acceleration_structure) {
             types.insert(VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
         }
