@@ -205,7 +205,10 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
   private:
     DeviceState& device_state_;
     const VkQueueFamilyProperties queue_family_properties_;
-    uint32_t timeline_wait_count_ = 0;
+
+    // TODO: made this atomic to workaround thread sanitizer.
+    // Likely not a proper solution, need to investigate how this count should be used
+    std::atomic_uint32_t timeline_wait_count_ = 0;
 
     void ThreadFunc();
     QueueSubmission *NextSubmission();
