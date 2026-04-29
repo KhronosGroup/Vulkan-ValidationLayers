@@ -794,7 +794,8 @@ bool CoreChecks::ValidateCmdEndRenderPass(const vvl::CommandBuffer& cb_state, co
     if (cb_state.per_tile_execution_model_enabled) {
         const LogObjectList objlist(cb_state.Handle(), rp_state.Handle());
         skip |= LogError("VUID-vkCmdEndRenderPass-None-10653", objlist, error_obj.location,
-                         "per-tile execution model is still enabled in this command buffer.");
+                         "per-tile execution model is still enabled in this command buffer. (Did you forget to call "
+                         "vkCmdEndPerTileExecutionQCOM)");
     }
 
     return skip;
@@ -4707,7 +4708,8 @@ bool CoreChecks::ValidateCmdEndRendering(const vvl::CommandBuffer& cb_state, con
     }
     if (cb_state.per_tile_execution_model_enabled) {
         skip |= LogError("VUID-vkCmdEndRendering-None-10645", cb_state.Handle(), error_obj.location,
-                         "per-tile execution model is still enabled in this command buffer.");
+                         "per-tile execution model is still enabled in this command buffer. (Did you forget to call "
+                         "vkCmdEndPerTileExecutionQCOM)");
     }
 
     return skip;

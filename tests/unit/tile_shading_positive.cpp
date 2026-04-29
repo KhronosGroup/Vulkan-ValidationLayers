@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2026 The Khronos Group Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
  * Copyright (C) 2026 Qualcomm Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -9,8 +11,8 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "binding.h"
 #include "layer_validation_tests.h"
-#include "pipeline_helper.h"
 
 class PositiveTileShading : public TileShadingTest {};
 
@@ -24,9 +26,10 @@ void TileShadingTest::InitBasicTileShading() {
     AddRequiredFeature(vkt::Feature::tileShadingDepthAttachments);
     AddRequiredFeature(vkt::Feature::tileShadingStencilAttachments);
     AddRequiredFeature(vkt::Feature::tileShadingSampledAttachments);
+    RETURN_IF_SKIP(Init());
 }
 
-void TileShadingTest::InitTileShadingRenderTarget(const TileShadingRenderTargetConfig &tile_shading_rp_config) {
+void TileShadingTest::InitTileShadingRenderTarget() {
     m_color_image.Init(*m_device, tile_shading_rp_config.rt_size.width, tile_shading_rp_config.rt_size.height, 1,
                        tile_shading_rp_config.format,
                        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
@@ -138,11 +141,8 @@ void TileShadingTest::InitTileShadingRenderTarget(const TileShadingRenderTargetC
 
 TEST_F(PositiveTileShading, ExecutePerTileExecutionModel) {
     TEST_DESCRIPTION("Execute per-tile execution model for a secondary command buffer.");
-    InitBasicTileShading();
-    RETURN_IF_SKIP(Init());
-
-    TileShadingRenderTargetConfig tile_shading_rp_config{};
-    InitTileShadingRenderTarget(tile_shading_rp_config);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
 
     vkt::CommandBuffer secondary_command{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY};
 
@@ -158,6 +158,8 @@ TEST_F(PositiveTileShading, ExecutePerTileExecutionModel) {
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     begin_info.pInheritanceInfo = &inheritance_info;
+    secondary_command.Begin(&begin_info);
+    secondary_command.End();
 
     VkClearValue clear_value{};
     clear_value.color = {{0.f, 0.f, 0.f, 0.f}};
@@ -174,8 +176,6 @@ TEST_F(PositiveTileShading, ExecutePerTileExecutionModel) {
     VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
     VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
 
-    secondary_command.Begin(&begin_info);
-    secondary_command.End();
     m_command_buffer.Begin();
     vk::CmdBeginRenderPass(m_command_buffer, &rp_begin_info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
@@ -185,10 +185,9 @@ TEST_F(PositiveTileShading, ExecutePerTileExecutionModel) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveTileShading, CreateTileShadingRenderPassWithResolveAttachment) {
+TEST_F(PositiveTileShading, RenderPassWithResolveAttachment) {
     TEST_DESCRIPTION("Create a tile-shading render pass with a valid resolve attachment.");
-    InitBasicTileShading();
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTileShading());
 
     {
         std::array<VkAttachmentDescription, 2> attachment_descs{};
@@ -244,9 +243,7 @@ TEST_F(PositiveTileShading, CreateTileShadingRenderPassWithResolveAttachment) {
         rp_ci.dependencyCount = 1;
         rp_ci.pDependencies = &subpass_dependency;
 
-        VkRenderPass tile_shading_render_pass = VK_NULL_HANDLE;
-        ASSERT_EQ(vk::CreateRenderPass(device(), &rp_ci, nullptr, &tile_shading_render_pass), VK_SUCCESS);
-        vk::DestroyRenderPass(device(), tile_shading_render_pass, nullptr);
+        vkt::RenderPass rp(*m_device, rp_ci);
     }
     {
         std::array<VkAttachmentDescription2, 2> attachment_descs{};
@@ -304,17 +301,14 @@ TEST_F(PositiveTileShading, CreateTileShadingRenderPassWithResolveAttachment) {
         rp_ci2.dependencyCount = 1;
         rp_ci2.pDependencies = &subpass_dependency2;
 
-        VkRenderPass tile_shading_render_pass = VK_NULL_HANDLE;
-        ASSERT_EQ(vk::CreateRenderPass2(device(), &rp_ci2, nullptr, &tile_shading_render_pass), VK_SUCCESS);
-        vk::DestroyRenderPass(device(), tile_shading_render_pass, nullptr);
+        vkt::RenderPass rp(*m_device, rp_ci2);
     }
 }
 
-TEST_F(PositiveTileShading, CreateTileShadingRenderPassWithUnusedFragmentDensityMapAttachment) {
+TEST_F(PositiveTileShading, RenderPassWithUnusedFragmentDensityMapAttachment) {
     TEST_DESCRIPTION("Create a tile-shading render pass with an unused fragment-density-map attachment.");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    InitBasicTileShading();
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTileShading());
 
     {
         VkAttachmentDescription attachment_desc{};
@@ -350,9 +344,7 @@ TEST_F(PositiveTileShading, CreateTileShadingRenderPassWithUnusedFragmentDensity
         rp_ci.subpassCount = 1;
         rp_ci.pSubpasses = &subpass_desc;
 
-        VkRenderPass tile_shading_render_pass = VK_NULL_HANDLE;
-        ASSERT_EQ(vk::CreateRenderPass(device(), &rp_ci, nullptr, &tile_shading_render_pass), VK_SUCCESS);
-        vk::DestroyRenderPass(device(), tile_shading_render_pass, nullptr);
+        vkt::RenderPass rp(*m_device, rp_ci);
     }
     {
         VkAttachmentDescription2 attachment_desc = vku::InitStructHelper();
@@ -388,21 +380,17 @@ TEST_F(PositiveTileShading, CreateTileShadingRenderPassWithUnusedFragmentDensity
         rp_ci2.subpassCount = 1;
         rp_ci2.pSubpasses = &subpass_desc;
 
-        VkRenderPass tile_shading_render_pass = VK_NULL_HANDLE;
-        ASSERT_EQ(vk::CreateRenderPass2(device(), &rp_ci2, nullptr, &tile_shading_render_pass), VK_SUCCESS);
-        vk::DestroyRenderPass(device(), tile_shading_render_pass, nullptr);
+        vkt::RenderPass rp(*m_device, rp_ci2);
     }
 }
 
-TEST_F(PositiveTileShading, TileShadingDynamicRendering) {
+TEST_F(PositiveTileShading, DynamicRendering) {
     TEST_DESCRIPTION("Launch a dynamic rendering when tile-shading is enabled.");
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    InitBasicTileShading();
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTileShading());
 
-    constexpr uint32_t image_width = 32;
-    constexpr uint32_t image_height = 32;
-    vkt::Image color_image{*m_device, image_width, image_height, m_render_target_fmt, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT };
+    vkt::Image color_image{*m_device, 32, 32, m_render_target_fmt,
+                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT};
     vkt::ImageView color_view = color_image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -418,17 +406,13 @@ TEST_F(PositiveTileShading, TileShadingDynamicRendering) {
     tile_info.tileApronSize = {0, 0};
 
     VkRenderingInfo rendering_info = vku::InitStructHelper(&tile_info);
-    rendering_info.renderArea = {{0, 0}, {image_width, image_height}};
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
     rendering_info.layerCount = 1;
-    rendering_info.viewMask = 0;
     rendering_info.colorAttachmentCount = 1;
     rendering_info.pColorAttachments = &color_attachment;
-    rendering_info.pDepthAttachment = nullptr;
-    rendering_info.pStencilAttachment = nullptr;
 
     m_command_buffer.Begin();
-    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
-    vk::CmdEndRendering(m_command_buffer);
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
-

@@ -2077,7 +2077,8 @@ bool CoreChecks::PreCallValidateCmdBeginPerTileExecutionQCOM(VkCommandBuffer com
     if (rp_state && !rp_state->has_tile_shading_enabled) {
         const LogObjectList objlist(cb_state->Handle(), rp_state->Handle());
         skip |= LogError("VUID-vkCmdBeginPerTileExecutionQCOM-None-10664", objlist, error_obj.location,
-                         "current render pass doesn't have tile shading enabled.");
+                         "current render pass doesn't have tile shading enabled. (Can be enabled by using "
+                         "VkRenderPassTileShadingCreateInfoQCOM)");
     }
 
     return skip;
@@ -2095,13 +2096,14 @@ bool CoreChecks::PreCallValidateCmdEndPerTileExecutionQCOM(VkCommandBuffer comma
             const LogObjectList objlist(cb_state->Handle(), rp_state->Handle());
             skip |= LogError("VUID-vkCmdEndPerTileExecutionQCOM-None-10666", objlist, error_obj.location,
                              "the command buffer doesn't have the per-tile execution model enabled "
-                             "in the current render pass.");
+                             "in the current render pass. (Did you forget to call vkCmdBeginPerTileExecutionQCOM)");
         }
 
         if (!rp_state->has_tile_shading_enabled) {
             const LogObjectList objlist(cb_state->Handle(), rp_state->Handle());
             skip |= LogError("VUID-vkCmdEndPerTileExecutionQCOM-None-10667", objlist, error_obj.location,
-                             "current render pass doesn't have tile shading enabled.");
+                             "current render pass doesn't have tile shading enabled. (Can be enabled by using "
+                             "VkRenderPassTileShadingCreateInfoQCOM)");
         }
     }
 
