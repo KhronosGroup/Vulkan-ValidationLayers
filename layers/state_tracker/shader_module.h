@@ -495,6 +495,8 @@ struct ResourceInterfaceVariable : public VariableBase {
     // Type of resource type (vkspec.html#interfaces-resources-storage-class-correspondence)
     // A resource variable is not a 1:1 mapping to a VkDescriptorType, it can be many different possible types. We capture all
     // possible options and provide helper functions to get the information out depending what is actually needed
+    VkDescriptorType GetPotentialDescriptorType() const;
+    vvl::unordered_set<VkDescriptorType> GetAllDescriptorTypes() const;
     bool is_storage_buffer{false};
     bool is_uniform_buffer{false};
     bool is_storage_image{false};
