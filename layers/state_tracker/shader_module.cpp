@@ -1937,21 +1937,6 @@ VkFormat Module::GetTensorFormat(const spirv::Instruction& type_inst) const {
     return VK_FORMAT_UNDEFINED;
 }
 
-bool Module::HasRuntimeArray(uint32_t type_id) const {
-    const Instruction* type = FindDef(type_id);
-    if (!type) {
-        return false;
-    }
-    while (type->IsArray() || type->Opcode() == spv::OpTypePointer || type->Opcode() == spv::OpTypeSampledImage) {
-        if (type->Opcode() == spv::OpTypeRuntimeArray) {
-            return true;
-        }
-        const uint32_t next_word = (type->Opcode() == spv::OpTypePointer) ? 3 : 2;
-        type = FindDef(type->Word(next_word));
-    }
-    return false;
-}
-
 std::string InterfaceSlot::Describe() const {
     std::ostringstream msg;
     msg << "Location = " << Location() << " | Component = " << Component() << " | Type = " << string_SpvOpcode(type) << " "
@@ -2391,21 +2376,20 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
     // Takes a OpVariable and looks at the the descriptor type it uses. This will find things such as if the variable is writable,
     // image atomic operation, matching images to samplers, etc
     const Instruction* type = module_state.FindDef(variable.type_id);
+    assert(type->Opcode() == spv::OpTypePointer || type->Opcode() == spv::OpTypeUntypedPointerKHR);
+
+    if (variable.data_type_id != 0) {
+        type = module_state.FindDef(variable.data_type_id);
+    }
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
-    while (type->IsArray() || type->Opcode() == spv::OpTypePointer || type->Opcode() == spv::OpTypeSampledImage) {
-        if (type->IsArray() || type->Opcode() == spv::OpTypeSampledImage) {
-            // currently just tracks 1D arrays
-            if (type->Opcode() == spv::OpTypeArray && variable.array_length == 0) {
-                variable.array_length = module_state.GetConstantValueById(type->Word(3));
-            } else if (type->Opcode() == spv::OpTypeRuntimeArray) {
-                variable.array_length = spirv::kRuntimeArray;
-            }
-
-            if (type->Opcode() == spv::OpTypeSampledImage) {
-                variable.is_type_sampled_image = true;
-            }
-
+    while (type->IsArray() || type->Opcode() == spv::OpTypePointer) {
+        // currently just tracks 1D arrays
+        if (type->Opcode() == spv::OpTypeArray && variable.array_length == 0) {
+            variable.array_length = module_state.GetConstantValueById(type->Word(3));
+            type = module_state.FindDef(type->Word(2));  // Element type
+        } else if (type->Opcode() == spv::OpTypeRuntimeArray) {
+            variable.array_length = spirv::kRuntimeArray;
             type = module_state.FindDef(type->Word(2));  // Element type
         } else {
             type = module_state.FindDef(type->Word(3));  // Pointer type
@@ -2414,54 +2398,64 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
     return *type;
 }
 
-bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable& variable) {
-    // before VK_KHR_storage_buffer_storage_class Storage Buffer were a Uniform storage class
-    const bool physical_storage_buffer = variable.storage_class == spv::StorageClassPhysicalStorageBuffer;
-    const bool storage_buffer = variable.storage_class == spv::StorageClassStorageBuffer;
-    const bool uniform = variable.storage_class == spv::StorageClassUniform;
-    // Block decorations are always on the struct of the variable
-    const bool buffer_block =
-        variable.type_struct_info && variable.type_struct_info->decorations.Has(DecorationSet::buffer_block_bit);
-    const bool block = variable.type_struct_info && variable.type_struct_info->decorations.Has(DecorationSet::block_bit);
-    return ((uniform && buffer_block) || ((storage_buffer || physical_storage_buffer) && block));
-}
-
-bool ResourceInterfaceVariable::IsUniformBuffer(const ResourceInterfaceVariable& variable) {
-    const bool uniform = variable.storage_class == spv::StorageClassUniform;
-    const bool block = variable.type_struct_info && variable.type_struct_info->decorations.Has(DecorationSet::block_bit);
-    return (uniform && block);
-}
-
 ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state, const EntryPoint& entrypoint,
                                                      const Instruction& insn, const ParsedInfo& parsed)
-    : VariableBase(module_state, insn, entrypoint.stage, parsed),
-      is_type_sampled_image(false),
-      base_type(FindBaseType(*this, module_state)),
-      is_runtime_descriptor_array(module_state.HasRuntimeArray(type_id)),
-      is_storage_buffer(IsStorageBuffer(*this)),
-      is_uniform_buffer(IsUniformBuffer(*this)) {
+    : VariableBase(module_state, insn, entrypoint.stage, parsed), base_type(FindBaseType(*this, module_state)) {
     // to make sure no padding in-between the struct produce noise and force same data to become a different hash
     info = {};  // will be cleared with c++11 initialization
-    info.image_dim = base_type.FindImageDim();
-    info.is_image_array = base_type.IsImageArray();
-    info.is_multisampled = base_type.IsImageMultisampled();
 
-    // Handle anything specific to the base type
-    if (base_type.Opcode() == spv::OpTypeImage) {
-        const spirv::Instruction& element_type_instr = *module_state.FindDef(base_type.Word(2));
+    const uint32_t base_type_opcode = base_type.Opcode();
+    if (base_type_opcode == spv::OpTypeStruct) {
+        assert(type_struct_info);
+        // Block/BufferBlock are always on the OpTypeStruct
+        if (type_struct_info->decorations.Has(DecorationSet::block_bit)) {
+            if (storage_class == spv::StorageClassStorageBuffer) {
+                is_storage_buffer = true;
+            } else {
+                is_uniform_buffer = true;
+            }
+        } else if (type_struct_info->decorations.Has(DecorationSet::buffer_block_bit)) {
+            is_buffer_block = true;
+            is_storage_buffer = true;
+        }
+    } else if (base_type_opcode == spv::OpTypeImage || base_type_opcode == spv::OpTypeSampledImage) {
+        // OpTypeSamplerImage == CombinedImageSampler, so we want the image information from it still
+        const spirv::Instruction& image_type =
+            (base_type_opcode == spv::OpTypeImage) ? base_type : *module_state.FindDef(base_type.Word(2));
+
+        const spirv::Instruction& element_type_instr = *module_state.FindDef(image_type.Word(2));
         info.numeric_type = module_state.GetNumericType(element_type_instr);
         info.bit_width = static_cast<uint8_t>(element_type_instr.GetBitWidth());
-        info.vk_format = CompatibleSpirvImageFormat(base_type.Word(8));
+        info.vk_format = CompatibleSpirvImageFormat(image_type.Word(8));
+        info.image_dim = spv::Dim(image_type.Word(3));
+        info.is_image_array = image_type.Word(5) != 0;
+        // spirv-val makes sure that the MS operand is only non-zero when possible to be Multisampled
+        info.is_multisampled = image_type.Word(6) != 0;
+        const bool is_sampled_without_sampler = image_type.Word(7) == 2;  // Word(7) == Sampled
 
-        // Things marked regardless of the image being accessed or not
-        const bool is_sampled_without_sampler = base_type.Word(7) == 2;  // Word(7) == Sampled
-        if (is_sampled_without_sampler) {
-            if (info.image_dim == spv::DimSubpassData) {
-                is_input_attachment = true;
-            } else if (info.image_dim == spv::DimBuffer) {
-                is_storage_texel_buffer = true;
+        if (base_type_opcode == spv::OpTypeSampledImage) {
+            // Slight relaxation for some GLSL historical madness: samplerBuffer doesn't really have a sampler, and a texel
+            // buffer descriptor doesn't really provide one. Allow this slight mismatch.
+            const uint32_t dim = image_type.Word(3);
+            const uint32_t sampled = image_type.Word(7);
+            if (dim == spv::DimBuffer && sampled == 1) {
+                is_uniform_texel_buffer = true;
             } else {
-                is_storage_image = true;
+                is_combined_image_sampler = true;
+            }
+        } else if (base_type_opcode == spv::OpTypeImage) {
+            if (is_sampled_without_sampler) {
+                if (info.image_dim == spv::DimSubpassData) {
+                    is_input_attachment = true;
+                } else if (info.image_dim == spv::DimBuffer) {
+                    is_storage_texel_buffer = true;
+                } else {
+                    is_storage_image = true;
+                }
+            } else if (info.image_dim == spv::DimBuffer) {
+                is_uniform_texel_buffer = true;
+            } else {
+                is_sampled_image = true;
             }
         }
 
@@ -2483,7 +2477,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                 access_mask |= image_access.access_mask;
 
                 const bool is_image_without_format =
-                    ((is_sampled_without_sampler) && (base_type.Word(8) == spv::ImageFormatUnknown));
+                    ((is_sampled_without_sampler) && (image_type.Word(8) == spv::ImageFormatUnknown));
                 if (image_access.access_mask & AccessBit::image_write) {
                     if (is_image_without_format) {
                         info.is_write_without_format |= true;
@@ -2517,7 +2511,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                 }
 
                 // if not CombinedImageSampler, need to find all Samplers that were accessed with the image
-                if (!image_access.variable_sampler_insn.empty() && !is_type_sampled_image) {
+                if (!image_access.variable_sampler_insn.empty() && !is_combined_image_sampler) {
                     // if no AccessChain, it is same conceptually as being zero
                     // TODO - Handle Spec Constants
                     const uint32_t image_index = (image_access.image_access_chain_index != kInvalidValue &&
@@ -2543,15 +2537,29 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                 }
             }
         }
-    } else if (base_type.Opcode() == spv::OpTypeTensorARM) {
+    } else if (base_type_opcode == spv::OpTypeTensorARM) {
         is_storage_tensor = true;
         const spirv::Instruction& element_type_instr = *module_state.FindDef(base_type.Word(2));
         info.numeric_type = module_state.GetNumericType(element_type_instr);
         info.bit_width = static_cast<uint8_t>(element_type_instr.GetBitWidth());
         info.vk_format = module_state.GetTensorFormat(element_type_instr);
         info.tensor_rank = module_state.GetConstantValueById(base_type.Word(3));
-    } else if (base_type.Opcode() == spv::OpTypeSampler) {
+    } else if (base_type_opcode == spv::OpTypeSampler) {
         is_sampler = true;
+    } else if (base_type_opcode == spv::OpTypeAccelerationStructureKHR) {
+        // The SPIR-V OpType* are alias, but the Descriptor Types are different
+
+        // Only KHR or NV base acceleration structure is selected
+        if (module_state.HasCapability(spv::CapabilityRayTracingNV)) {
+            is_acceleration_structure_nv = true;
+        } else {
+            is_acceleration_structure = true;
+        }
+
+        // Additionally allow PTLAS if shader uses cluster acceleration structure features
+        if (module_state.HasCapability(spv::CapabilityRayTracingClusterAccelerationStructureNV)) {
+            is_partitioned_acceleration_structure = true;
+        }
     }
 
     for (const auto& accessible_id : entrypoint.accessible_ids) {

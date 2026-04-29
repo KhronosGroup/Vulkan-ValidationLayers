@@ -309,8 +309,8 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
         void Print(const CommandBufferSubState& cb_sub_state, std::ostringstream& map_ss, const VkPhysicalDevice physical_device) {
             map_ss << "    - Binding " << std::dec << resource_variable->decorations.binding << ", "
                    << string_VkDescriptorMappingSourceEXT(mapping->source) << " (from pMappings[" << mapping_index << "])\n";
-            const bool is_sampler =
-                (resource_variable->base_type.Opcode() == spv::OpTypeSampledImage) || resource_variable->is_type_sampled_image;
+            // TODO - should print both here
+            const bool is_sampler = resource_variable->is_combined_image_sampler;
             const bool is_array = resource_variable->IsArray();
             uint32_t array_length = 0;
             if (is_array && !resource_variable->IsRuntimeArray() && resource_variable->array_length != spirv::kSpecConstant) {

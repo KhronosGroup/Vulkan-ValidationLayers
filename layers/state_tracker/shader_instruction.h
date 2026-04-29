@@ -80,9 +80,6 @@ class Instruction {
     bool IsNonPtrAccessChain() const;
     bool IsAccessChain() const;
     // Helpers for OpTypeImage
-    spv::Dim FindImageDim() const;
-    bool IsImageArray() const;
-    bool IsImageMultisampled() const;
     bool IsTensor() const;
     bool IsConstant() const;
     bool IsSpecConstant() const;

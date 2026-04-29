@@ -930,8 +930,11 @@ bool vvl::DescriptorSet::ValidateBindingOnGPU(const DescriptorBinding& binding,
     } else if (IsBindless(binding.binding_flags)) {
         // If flags allow descriptor to be "bindless" (can be invalid up until submit time)
         return true;
-    } else if (variable.is_runtime_descriptor_array) {
+    } else if (variable.array_length == spirv::kRuntimeArray) {
         // We don't know where OOB is on the CPU
+        //
+        // True if the Resource variable itself is runtime descriptor array
+        // Online example to showcase various arrays we do/don't care about here https://godbolt.org/z/h9jhsKaPn
         return true;
     }
     return false;
