@@ -44,4 +44,6 @@ class VkSyncValTest : public VkLayerTest {
     std::unique_ptr<vkt::rt::Pipeline> GetTraceRaysPipeline(VkAccelerationStructureKHR as);
     std::unique_ptr<vkt::as::BuildGeometryInfoKHR> BuildBLAS();
     std::unique_ptr<vkt::as::BuildGeometryInfoKHR> BuildTLAS(const vkt::as::AccelerationStructureKHR &blas);
+
+    static std::pair<vkt::Queue*, vkt::Queue*> GetTwoQueuesFromSameFamily(const std::vector<vkt ::Queue*>& queues);
 };

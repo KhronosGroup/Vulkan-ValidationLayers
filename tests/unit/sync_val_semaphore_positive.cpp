@@ -795,3 +795,41 @@ TEST_F(PositiveSyncValTimelineSemaphore, ConcurrentHostSignalAndSubmit) {
     }
     thread.join();
 }
+
+TEST_F(PositiveSyncValTimelineSemaphore, WaitBeforeSinglaBlocksAnotherSubmit) {
+    TEST_DESCRIPTION("Test that a batch blocked by a wait-before-signal batch is not validated");
+    all_queue_count_ = true;
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    auto [queue0, queue1] = GetTwoQueuesFromSameFamily(m_device->QueuesWithTransferCapability());
+    if (!queue0) {
+        GTEST_SKIP() << "Test requires two queues with transfer capabilities from the same queue family";
+    }
+
+    vkt::Buffer buffer_a(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_b(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    vkt::CommandPool command_pool(*m_device, queue0->family_index);
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
+    command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    command_buffer.Copy(buffer_a, buffer_b);
+    command_buffer.End();
+
+    vkt::Semaphore timeline(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    queue0->Submit(vkt::no_cmd, vkt::TimelineWait(timeline, 2));
+    queue0->Submit(command_buffer);  // This will be block until the above wait is resolved
+
+    // This seemingly useless submit tests that syncval stops processing pending batches when
+    // it encounters the first batch blocked by wait-before-signal.
+    //
+    // Signal=1 does not resolve wait=2 in the first submit above, so the following submit on
+    // the same queue should not be processed, even though it does not wait on the semaphore directly.
+    //
+    // We had a bug where syncval iterated over all pending batches instead of stopping at the
+    // first blocked one. This introduced false positives.
+    queue1->Submit(command_buffer, vkt::TimelineSignal(timeline, 1));
+
+    queue1->Submit(vkt::no_cmd, vkt::TimelineSignal(timeline, 2));
+    m_device->Wait();
+}
