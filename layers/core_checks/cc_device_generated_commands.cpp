@@ -734,9 +734,11 @@ bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
     }
 
     uint32_t view_mask = cb_state.GetViewMask();
-    if (view_mask != 0) {
+    if (view_mask != 0 && pGeneratedCommandsInfo->indirectExecutionSet != VK_NULL_HANDLE) {
         skip |= LogError("VUID-vkCmdExecuteGeneratedCommandsEXT-None-11062", commandBuffer, error_obj.location,
-                         "The active render pass contains a non-zero viewMask (0x%" PRIx32 ").", view_mask);
+                         "The active render pass contains a non-zero viewMask (0x%" PRIx32
+                         ") but pGeneratedCommandsInfo->indirectExecutionSet (%s) is not VK_NULL_HANDLE.",
+                         view_mask, FormatHandle(pGeneratedCommandsInfo->indirectExecutionSet).c_str());
     }
 
     if (auto indirect_execution_set = Get<vvl::IndirectExecutionSet>(pGeneratedCommandsInfo->indirectExecutionSet)) {
