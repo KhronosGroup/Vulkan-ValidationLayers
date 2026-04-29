@@ -2398,6 +2398,74 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
     return *type;
 }
 
+// Used for things that just want to report the error message with "some" type
+// should NOT be used for checking the shader interface (use GetAllDescriptorTypes instead)
+VkDescriptorType ResourceInterfaceVariable::GetPotentialDescriptorType() const {
+    if (is_storage_image) {
+        return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    } else if (is_storage_texel_buffer) {
+        return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+    } else if (is_uniform_texel_buffer) {
+        return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+    } else if (is_storage_buffer) {
+        return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    } else if (is_uniform_buffer) {
+        return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    } else if (is_input_attachment) {
+        return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    } else if (is_storage_tensor) {
+        return VK_DESCRIPTOR_TYPE_TENSOR_ARM;
+    } else if (is_sampler) {
+        return VK_DESCRIPTOR_TYPE_SAMPLER;
+    } else if (is_sampled_image) {
+        return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    } else if (is_combined_image_sampler) {
+        return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    } else if (is_storage_tensor) {
+        return VK_DESCRIPTOR_TYPE_TENSOR_ARM;
+    } else if (is_acceleration_structure || is_acceleration_structure_nv) {
+        return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    }
+    return VK_DESCRIPTOR_TYPE_MAX_ENUM;
+}
+
+vvl::unordered_set<VkDescriptorType> ResourceInterfaceVariable::GetAllDescriptorTypes() const {
+    vvl::unordered_set<VkDescriptorType> types;
+
+    if (is_combined_image_sampler) {
+        types.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    } else if (is_sampler) {
+        types.insert(VK_DESCRIPTOR_TYPE_SAMPLER);
+    } else if (is_sampled_image) {
+        types.insert(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    } else if (is_storage_buffer) {
+        types.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+        types.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
+    } else if (is_uniform_buffer) {
+        types.insert(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        types.insert(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+        types.insert(VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK);
+    } else if (is_storage_image) {
+        types.insert(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    } else if (is_storage_texel_buffer) {
+        types.insert(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
+    } else if (is_uniform_texel_buffer) {
+        types.insert(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
+    } else if (is_input_attachment) {
+        types.insert(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+    } else if (is_storage_tensor) {
+        types.insert(VK_DESCRIPTOR_TYPE_TENSOR_ARM);
+    } else if (is_acceleration_structure || is_acceleration_structure_nv) {
+        types.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
+        if (is_partitioned_acceleration_structure) {
+            types.insert(VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
+        }
+    }
+
+    assert(!types.empty() || IsHeap());
+    return types;
+}
+
 ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state, const EntryPoint& entrypoint,
                                                      const Instruction& insn, const ParsedInfo& parsed)
     : VariableBase(module_state, insn, entrypoint.stage, parsed), base_type(FindBaseType(*this, module_state)) {

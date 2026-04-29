@@ -221,30 +221,6 @@ void CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
     }
 }
 
-// TODO - Make a helper in ResourceInterfaceVariable
-static VkDescriptorType GetResourceInterfaceVariableType(const spirv::ResourceInterfaceVariable& resource_variable) {
-    if (resource_variable.is_storage_image) {
-        return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    } else if (resource_variable.is_storage_texel_buffer) {
-        return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-    } else if (resource_variable.is_storage_buffer) {
-        return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    } else if (resource_variable.is_uniform_buffer) {
-        return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    } else if (resource_variable.is_input_attachment) {
-        return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    } else if (resource_variable.is_storage_tensor) {
-        return VK_DESCRIPTOR_TYPE_TENSOR_ARM;
-    } else if (resource_variable.is_sampler) {
-        return VK_DESCRIPTOR_TYPE_SAMPLER;
-    }
-    // TODO - Add support in ResourceInterfaceVariable to detect
-    // - VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
-    // - VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
-    // - VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR
-    return VK_DESCRIPTOR_TYPE_MAX_ENUM;
-}
-
 void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const LastBound& last_bound) const {
     const vvl::CommandBuffer& cb_state = last_bound.cb_state;
     if (!cb_state.descriptor_heap.resource_range.empty()) {
@@ -317,7 +293,7 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
                 array_length = resource_variable->array_length;
             }
 
-            const VkDescriptorType descriptor_type = GetResourceInterfaceVariableType(*resource_variable);
+            const VkDescriptorType descriptor_type = resource_variable->GetPotentialDescriptorType();
             // TODO - Cache these once on device creation
             VkDeviceSize descriptor_size = descriptor_type == VK_DESCRIPTOR_TYPE_MAX_ENUM
                                                ? 0
