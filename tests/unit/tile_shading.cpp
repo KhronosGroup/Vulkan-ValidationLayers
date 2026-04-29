@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2026 The Khronos Group Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
  * Copyright (C) 2026 Qualcomm Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -10,17 +12,11 @@
  */
 
 #include "layer_validation_tests.h"
-#include "pipeline_helper.h"
 
 class NegativeTileShading : public TileShadingTest {};
 
 TEST_F(NegativeTileShading, EndPerTileExecutionWithNonTileShadingRenderPass) {
-    TEST_DESCRIPTION("End per-tile execution model in a non-tile-shading render pass.");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_QCOM_TILE_SHADING_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tileShading);
-    AddRequiredFeature(vkt::Feature::tileShadingPerTileDraw);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTileShading());
     InitRenderTarget();
 
     VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
@@ -36,12 +32,7 @@ TEST_F(NegativeTileShading, EndPerTileExecutionWithNonTileShadingRenderPass) {
 }
 
 TEST_F(NegativeTileShading, BeginPerTileExecutionWithNonTileShadingRenderPass) {
-    TEST_DESCRIPTION("Begin per-tile execution model in a non-tile-shading render pass.");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_QCOM_TILE_SHADING_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tileShading);
-    AddRequiredFeature(vkt::Feature::tileShadingPerTileDraw);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTileShading());
     InitRenderTarget();
 
     VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
@@ -55,7 +46,7 @@ TEST_F(NegativeTileShading, BeginPerTileExecutionWithNonTileShadingRenderPass) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeTileShading, CreateTileShadingRenderPassButTileShadingFeatureNotEnabled) {
+TEST_F(NegativeTileShading, RenderPassButTileShadingFeatureNotEnabled) {
     TEST_DESCRIPTION("Try to create a tile-shading render pass, but tileShading feature is not enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_QCOM_TILE_SHADING_EXTENSION_NAME);
@@ -90,15 +81,13 @@ TEST_F(NegativeTileShading, CreateTileShadingRenderPassButTileShadingFeatureNotE
     rp_ci.subpassCount = 1;
     rp_ci.pSubpasses = &subpass_desc;
 
-    VkRenderPass tile_shading_render_pass = VK_NULL_HANDLE;
-
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassTileShadingCreateInfoQCOM-tileShading-10658");
-    vk::CreateRenderPass(device(), &rp_ci, nullptr, &tile_shading_render_pass);
+    VkRenderPass rp = VK_NULL_HANDLE;
+    vk::CreateRenderPass(device(), &rp_ci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
-    vk::DestroyRenderPass(device(), tile_shading_render_pass, nullptr);
 }
 
-TEST_F(NegativeTileShading, UseNonZeroTileApronSizeButTileShadingApronFeatureNotEnabled) {
+TEST_F(NegativeTileShading, NonZeroTileApronSizeButTileShadingApronFeatureNotEnabled) {
     TEST_DESCRIPTION("Try to use non-zero tile-apron size when creates a render pass, but "
                      "tileShadingApron feature is not enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -147,7 +136,7 @@ TEST_F(NegativeTileShading, UseNonZeroTileApronSizeButTileShadingApronFeatureNot
     vk::DestroyRenderPass(device(), tile_shading_render_pass, nullptr);
 }
 
-TEST_F(NegativeTileShading, UseAnisotropicApronSizeButTileShadingAnisotropicApronFeatureNotEnabled) {
+TEST_F(NegativeTileShading, AnisotropicApronSizeButTileShadingAnisotropicApronFeatureNotEnabled) {
     TEST_DESCRIPTION("Try to use anisotropic apron size when creates a render pass, but "
                      "tileShadingAnisotropicApron feature is not enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -197,13 +186,10 @@ TEST_F(NegativeTileShading, UseAnisotropicApronSizeButTileShadingAnisotropicApro
     vk::DestroyRenderPass(device(), tile_shading_render_pass, nullptr);
 }
 
-TEST_F(NegativeTileShading, UseLargerTileApronSize) {
+TEST_F(NegativeTileShading, LargerTileApronSize) {
     TEST_DESCRIPTION("Try to use tile apron size larger than maxApronSize when creates a render pass.");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_QCOM_TILE_SHADING_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tileShading);
     AddRequiredFeature(vkt::Feature::tileShadingApron);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTileShading());
 
     VkPhysicalDeviceTileShadingPropertiesQCOM tile_shading_props = vku::InitStructHelper();
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&tile_shading_props);
@@ -247,7 +233,7 @@ TEST_F(NegativeTileShading, UseLargerTileApronSize) {
     vk::DestroyRenderPass(device(), tile_shading_render_pass, nullptr);
 }
 
-TEST_F(NegativeTileShading, CreateTileShadingRenderPassWithPerTileExecutionBit) {
+TEST_F(NegativeTileShading, RenderPassWithPerTileExecutionBit) {
     TEST_DESCRIPTION("Try to create a tile-shading render pass with per-tile-execution bit, but "
                      "tileShadingPerTileDispatch and tileShadingPerTileDraw features are not enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -337,7 +323,7 @@ TEST_F(NegativeTileShading, CreateTileShadingRenderPassWithPerTileExecutionBit) 
     }
 }
 
-TEST_F(NegativeTileShading, BeginTileShadingDynamicRenderingButTileShadingFeatureNotEnabled) {
+TEST_F(NegativeTileShading, DynamicRenderingButTileShadingFeatureNotEnabled) {
     TEST_DESCRIPTION("Try to launch a tile-shading dynamic rendering, but tileShading feature isn't enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_QCOM_TILE_SHADING_EXTENSION_NAME);
@@ -373,7 +359,7 @@ TEST_F(NegativeTileShading, BeginTileShadingDynamicRenderingButTileShadingFeatur
     m_command_buffer.End();
 }
 
-TEST_F(NegativeTileShading, BeginTileShadingDynamicRenderingWithApronSizeButRequiredFeaturesNotEnabled) {
+TEST_F(NegativeTileShading, DynamicRenderingWithApronSizeButRequiredFeaturesNotEnabled) {
     TEST_DESCRIPTION("Try to launch a tile-shading dynamic rendering with specified anisotropic apron size, "
                      "but tileShadingApron and tileShadingAnisotropicApron features aren't enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -416,10 +402,9 @@ TEST_F(NegativeTileShading, BeginTileShadingDynamicRenderingWithApronSizeButRequ
     m_command_buffer.End();
 }
 
-TEST_F(NegativeTileShading, CreateTileShadingRenderPassWithUndefinedFormatResolveAttachment) {
+TEST_F(NegativeTileShading, RenderPassWithUndefinedFormatResolveAttachment) {
     TEST_DESCRIPTION("Try to create a tile-shading render pass, but provides a undefined format resolve attachment.");
-    InitBasicTileShading();
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTileShading());
 
     {
         std::array<VkAttachmentDescription, 2> attachment_descs{};
@@ -527,11 +512,10 @@ TEST_F(NegativeTileShading, CreateTileShadingRenderPassWithUndefinedFormatResolv
     }
 }
 
-TEST_F(NegativeTileShading, CreateTileShadingRenderPassWithFragmentDensityMapAttachment) {
+TEST_F(NegativeTileShading, RenderPassWithFragmentDensityMapAttachment) {
     TEST_DESCRIPTION("Try to create a tile-shading render pass, but provides an available fragment-density-map attachment.");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    InitBasicTileShading();
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTileShading());
 
     {
         std::array<VkAttachmentDescription, 2> attachment_descs{};
@@ -635,12 +619,11 @@ TEST_F(NegativeTileShading, CreateTileShadingRenderPassWithFragmentDensityMapAtt
     }
 }
 
-TEST_F(NegativeTileShading, BeginTileShadingDynamicRenderingInSimultaneousUseBitCommandBuffer) {
+TEST_F(NegativeTileShading, DynamicRenderingInSimultaneousUseBitCommandBuffer) {
     TEST_DESCRIPTION("Try to launch a dynamic rendering in a recorded command buffer "
                      "with simultaneous-use-bit used.");
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    InitBasicTileShading();
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTileShading());
 
     constexpr uint32_t image_width = 32;
     constexpr uint32_t image_height = 32;
@@ -671,11 +654,10 @@ TEST_F(NegativeTileShading, BeginTileShadingDynamicRenderingInSimultaneousUseBit
     m_command_buffer.End();
 }
 
-TEST_F(NegativeTileShading, BeginTileShadingDynamicRenderingWithPerTileExecutionBit) {
+TEST_F(NegativeTileShading, DynamicRenderingWithPerTileExecutionBit) {
     TEST_DESCRIPTION("Try to launch a tile-shading dynamic rendering but per-tile-execution bit is used.");
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    InitBasicTileShading();
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTileShading());
 
     constexpr uint32_t image_width = 32;
     constexpr uint32_t image_height = 32;
@@ -706,14 +688,11 @@ TEST_F(NegativeTileShading, BeginTileShadingDynamicRenderingWithPerTileExecution
     m_command_buffer.End();
 }
 
-TEST_F(NegativeTileShading, EndTileShadingDynamicRenderingButPerTileExecutionModelEnabled) {
+TEST_F(NegativeTileShading, DynamicRenderingButPerTileExecutionModelEnabled) {
     TEST_DESCRIPTION("Try to end a tile-shading dynamic rendering, but per-tile-execution model is still enabled.");
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    InitBasicTileShading();
-    RETURN_IF_SKIP(Init());
-
-    TileShadingRenderTargetConfig tile_shading_rp_config{};
-    InitTileShadingRenderTarget(tile_shading_rp_config);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
 
     VkClearValue clear_value{};
     clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
@@ -753,15 +732,13 @@ TEST_F(NegativeTileShading, EndTileShadingDynamicRenderingButPerTileExecutionMod
     m_command_buffer.End();
 }
 
-TEST_F(NegativeTileShading, BeginTileShadingRenderPassWithSimultaneousUseBit) {
+TEST_F(NegativeTileShading, RenderPassWithSimultaneousUseBit) {
     TEST_DESCRIPTION("Try to launch a tile-shading render pass in a recorded command buffer "
                      "with simultaneous-use-bit used.");
-    InitBasicTileShading();
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTileShading());
 
-    TileShadingRenderTargetConfig tile_shading_rp_config{};
     tile_shading_rp_config.use_render_pass2 = true;
-    InitTileShadingRenderTarget(tile_shading_rp_config);
+    InitTileShadingRenderTarget();
 
     VkClearValue clear_value{};
     clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
@@ -784,13 +761,10 @@ TEST_F(NegativeTileShading, BeginTileShadingRenderPassWithSimultaneousUseBit) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeTileShading, EndTileShadingRenderPassButPerTileExecutionModelEnabled) {
+TEST_F(NegativeTileShading, RenderPassButPerTileExecutionModelEnabled) {
     TEST_DESCRIPTION("Try to end a tile-shading render pass, but per-tile execution model is still enabled.");
-    InitBasicTileShading();
-    RETURN_IF_SKIP(Init());
-
-    TileShadingRenderTargetConfig tile_shading_rp_config{};
-    InitTileShadingRenderTarget(tile_shading_rp_config);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
 
     VkClearValue clear_value{};
     clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
@@ -817,20 +791,18 @@ TEST_F(NegativeTileShading, EndTileShadingRenderPassButPerTileExecutionModelEnab
     m_command_buffer.End();
 }
 
-TEST_F(NegativeTileShading, TileShadingDynamicRenderingWithFragmentDensityMapAttachment) {
+TEST_F(NegativeTileShading, DynamicRenderingWithFragmentDensityMapAttachment) {
     TEST_DESCRIPTION("Try to launch a dynamic rendering when tile-shading is enabled and fragment-density-map attachment is provided.");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::fragmentDensityMap);
     AddRequiredFeature(vkt::Feature::fragmentDensityMapNonSubsampledImages);
-    InitBasicTileShading();
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTileShading());
 
-    constexpr uint32_t image_width = 32;
-    constexpr uint32_t image_height = 32;
-    vkt::Image color_image{*m_device, image_width, image_height, m_render_target_fmt, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT };
+    vkt::Image color_image{*m_device, 32, 32, m_render_target_fmt,
+                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT};
     vkt::ImageView color_view = color_image.CreateView();
-    vkt::Image fdm_image{*m_device, image_width, image_height, VK_FORMAT_R8G8_UNORM, VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT};
+    vkt::Image fdm_image{*m_device, 32, 32, VK_FORMAT_R8G8_UNORM, VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT};
     vkt::ImageView fdm_view = fdm_image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -849,7 +821,7 @@ TEST_F(NegativeTileShading, TileShadingDynamicRenderingWithFragmentDensityMapAtt
     tile_shading_ci.tileApronSize = {0, 0};
 
     VkRenderingInfo rendering_info = vku::InitStructHelper(&tile_shading_ci);
-    rendering_info.renderArea = {{0, 0}, {image_width, image_height}};
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
     rendering_info.layerCount = 1;
     rendering_info.colorAttachmentCount = 1;
     rendering_info.pColorAttachments = &color_attachment;
@@ -861,11 +833,10 @@ TEST_F(NegativeTileShading, TileShadingDynamicRenderingWithFragmentDensityMapAtt
     m_command_buffer.End();
 }
 
-TEST_F(NegativeTileShading, TileShadingSubpassDescriptionWithZeroApronSize) {
+TEST_F(NegativeTileShading, SubpassDescriptionWithZeroApronSize) {
     TEST_DESCRIPTION("Try to create a tile-shading render pass, but provides a tile-shading-apron subpass "
                      "description with zero apron size.");
-    InitBasicTileShading();
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTileShading());
 
     {
         VkAttachmentDescription attachment_desc{};
@@ -901,12 +872,10 @@ TEST_F(NegativeTileShading, TileShadingSubpassDescriptionWithZeroApronSize) {
         rp_ci.subpassCount = 1;
         rp_ci.pSubpasses = &subpass_desc;
 
-        VkRenderPass tile_shading_render_pass = VK_NULL_HANDLE;
-
+        VkRenderPass rp = VK_NULL_HANDLE;
         m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription-flags-10683");
-        vk::CreateRenderPass(device(), &rp_ci, nullptr, &tile_shading_render_pass);
+        vk::CreateRenderPass(device(), &rp_ci, nullptr, &rp);
         m_errorMonitor->VerifyFound();
-        vk::DestroyRenderPass(device(), tile_shading_render_pass, nullptr);
     }
     {
         VkAttachmentDescription2 attachment_desc2 = vku::InitStructHelper();
@@ -944,11 +913,9 @@ TEST_F(NegativeTileShading, TileShadingSubpassDescriptionWithZeroApronSize) {
         rpci2.subpassCount = 1;
         rpci2.pSubpasses = &subpass_desc2;
 
-        VkRenderPass tile_shading_render_pass = VK_NULL_HANDLE;
-
+        VkRenderPass rp = VK_NULL_HANDLE;
         m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-flags-10683");
-        vk::CreateRenderPass2(device(), &rpci2, nullptr, &tile_shading_render_pass);
+        vk::CreateRenderPass2(device(), &rpci2, nullptr, &rp);
         m_errorMonitor->VerifyFound();
-        vk::DestroyRenderPass(device(), tile_shading_render_pass, nullptr);
     }
 }

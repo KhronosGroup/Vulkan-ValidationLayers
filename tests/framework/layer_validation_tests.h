@@ -530,15 +530,15 @@ class CooperativeMatrixTest : public VkLayerTest {
 
 class TileShadingTest : public VkLayerTest {
   public:
-    struct TileShadingRenderTargetConfig {
+    struct Config {
         VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
         VkExtent2D rt_size = {64, 64};
         VkExtent2D tile_apron_size = {0, 0};
         bool use_render_pass2 = false;
-    };
+    } tile_shading_rp_config;
 
     void InitBasicTileShading();
-    void InitTileShadingRenderTarget(const TileShadingRenderTargetConfig& tile_shading_rp_config);
+    void InitTileShadingRenderTarget();
 
     vkt::RenderPass m_tile_shading_render_pass;
     vkt::Framebuffer m_tile_shading_framebuffer;
