@@ -16,6 +16,7 @@
 #include "trace_ray_pass.h"
 
 #include "containers/container_utils.h"
+#include "gpuav/shaders/gpuav_error_codes.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "module.h"
 
@@ -37,16 +38,19 @@ const static OfflineFunction kRayHitObjectValidationFunction = {"inst_ray_hit_ob
                                                                 instrumentation_trace_ray_comp_function_2_offset};
 const static OfflineFunction kRayHitObjectSbtIndexValidationFunction = {"inst_ray_hit_object_sbt_index_check",
                                                                         instrumentation_trace_ray_comp_function_3_offset};
+const static OfflineFunction kRayQueryInitializeValidationFunction = {"inst_ray_query_comp",
+                                                                      instrumentation_trace_ray_comp_function_4_offset};
 
 TraceRayPass::TraceRayPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
 
-std::vector<uint32_t> TraceRayPass::GetTraceRayAccelerationStructureValidationFunctionCallInstructions(
-    const Function& function, BasicBlock& block, InstructionIt* trace_ray_inst_it) {
+std::vector<uint32_t> TraceRayPass::GetTlasValidationFunctionCallInstructions(const Function& function, uint32_t tlas_operand_pos,
+                                                                              uint32_t error_sub_code, BasicBlock& block,
+                                                                              InstructionIt* trace_ray_inst_it) {
     if (module_.interface_.descriptor_mode != vvl::DescriptorMode::DescriptorModeClassic) {
         return {};
     }
 
-    const uint32_t as_op_load_id = (*trace_ray_inst_it)->get()->Operand(0);
+    const uint32_t as_op_load_id = (*trace_ray_inst_it)->get()->Operand(tlas_operand_pos);
     const Instruction* as_op_load_inst = function.FindInstruction(as_op_load_id);
     if (!as_op_load_inst) {
         return {};
@@ -121,9 +125,16 @@ std::vector<uint32_t> TraceRayPass::GetTraceRayAccelerationStructureValidationFu
 
     const uint32_t inst_position = (*trace_ray_inst_it)->get()->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
+    const uint32_t error_sub_code_id = type_manager_.GetConstantUInt32(error_sub_code).Id();
 
-    return {bool_type,     function_result,           function_def, inst_position_id, desc_set_constant.Id(),
-            desc_index_id, binding_layout_offset.Id()};
+    return {bool_type,
+            function_result,
+            function_def,
+            inst_position_id,
+            desc_set_constant.Id(),
+            desc_index_id,
+            binding_layout_offset.Id(),
+            error_sub_code_id};
 }
 
 std::vector<uint32_t> TraceRayPass::GetTraceRayValidationFunctionCallInstructions(InstructionIt* trace_ray_inst_it) {
@@ -219,6 +230,24 @@ std::vector<uint32_t> TraceRayPass::GetRayHitObjectSbtIndexValidationFunctionCal
     return {bool_type, function_result, function_def, inst_position_id, sbt_index_id, max_sbt_index_id};
 }
 
+std::vector<uint32_t> TraceRayPass::GetRayQueryInitializeValidationFunctionCallInstructions(InstructionIt* ray_query_init_inst_it) {
+    const uint32_t function_result = module_.TakeNextId();
+    const uint32_t function_def = GetLinkFunction(ray_query_initialize_function_id_, kRayQueryInitializeValidationFunction);
+    const uint32_t bool_type = type_manager_.GetTypeBool().Id();
+
+    const uint32_t ray_flags_id = (*ray_query_init_inst_it)->get()->Operand(2);
+    const uint32_t ray_origin_id = (*ray_query_init_inst_it)->get()->Operand(4);
+    const uint32_t ray_tmin_id = (*ray_query_init_inst_it)->get()->Operand(5);
+    const uint32_t ray_direction_id = (*ray_query_init_inst_it)->get()->Operand(6);
+    const uint32_t ray_tmax_id = (*ray_query_init_inst_it)->get()->Operand(7);
+
+    const uint32_t inst_position = (*ray_query_init_inst_it)->get()->GetPositionOffset();
+    const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
+
+    return {bool_type,     function_result, function_def,     inst_position_id, ray_flags_id,
+            ray_origin_id, ray_tmin_id,     ray_direction_id, ray_tmax_id};
+}
+
 uint32_t TraceRayPass::AddFunctionCall(BasicBlock& block, std::vector<uint32_t>&& instructions, InstructionIt* inst_it) {
     const uint32_t function_result = instructions[1];
     block.CreateInstruction(spv::OpFunctionCall, std::move(instructions), inst_it);
@@ -258,15 +287,32 @@ bool TraceRayPass::Instrument() {
                         func_calls.emplace_back(std::move(func_call));
                     }
                 };
-                if (opcode == spv::OpTraceRayKHR) {
-                    add_func_call(GetTraceRayValidationFunctionCallInstructions(&inst_it));
-                    add_func_call(
-                        GetTraceRayAccelerationStructureValidationFunctionCallInstructions(function, current_block, &inst_it));
-                } else if (opcode == spv::OpHitObjectSetShaderBindingTableRecordIndexEXT) {
-                    add_func_call(GetRayHitObjectSbtIndexValidationFunctionCallInstructions(&inst_it));
-                } else if (IsValueIn(opcode, {spv::OpHitObjectTraceRayEXT, spv::OpHitObjectTraceReorderExecuteEXT,
-                                              spv::OpHitObjectTraceRayMotionEXT, spv::OpHitObjectTraceMotionReorderExecuteEXT})) {
-                    add_func_call(GetRayHitObjectValidationFunctionCallInstructions(&inst_it));
+                switch (opcode) {
+                    case spv::OpRayQueryInitializeKHR: {
+                        add_func_call(GetTlasValidationFunctionCallInstructions(
+                            function, 1, glsl::kErrorSubCode_RayQuery_TlasNotBuilt, current_block, &inst_it));
+                        add_func_call(GetRayQueryInitializeValidationFunctionCallInstructions(&inst_it));
+                        break;
+                    }
+                    case spv::OpTraceRayKHR: {
+                        add_func_call(GetTraceRayValidationFunctionCallInstructions(&inst_it));
+                        add_func_call(GetTlasValidationFunctionCallInstructions(
+                            function, 0, glsl::kErrorSubCode_TraceRay_TlasNotBuilt, current_block, &inst_it));
+                        break;
+                    }
+                    case spv::OpHitObjectSetShaderBindingTableRecordIndexEXT: {
+                        add_func_call(GetRayHitObjectSbtIndexValidationFunctionCallInstructions(&inst_it));
+                        break;
+                    }
+                    case spv::OpHitObjectTraceRayEXT:
+                    case spv::OpHitObjectTraceReorderExecuteEXT:
+                    case spv::OpHitObjectTraceRayMotionEXT:
+                    case spv::OpHitObjectTraceMotionReorderExecuteEXT: {
+                        add_func_call(GetRayHitObjectValidationFunctionCallInstructions(&inst_it));
+                        break;
+                    }
+                    default:
+                        break;
                 }
 
                 if (func_calls.empty()) {

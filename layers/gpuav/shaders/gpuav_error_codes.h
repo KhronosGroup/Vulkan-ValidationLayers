@@ -30,7 +30,6 @@ namespace glsl {
 // Note - We currently have a max of 256 slots for error groups (see kHeader_ShaderIdErrorOffset)
 const int kErrorGroup_InstDescriptorIndexingOOB = 1;
 const int kErrorGroup_InstBufferDeviceAddress = 2;
-const int kErrorGroup_InstRayQuery = 3;
 const int kErrorGroup_GpuPreDraw = 4;
 const int kErrorGroup_GpuPreDispatch = 5;
 const int kErrorGroup_GpuPreTraceRays = 6;
@@ -84,26 +83,8 @@ const int kErrorSubCode_DescriptorClass_GeneralBufferCoopMatBounds = 3;
 const int kErrorSubCode_BufferDeviceAddress_UnallocRef = 1;
 const int kErrorSubCode_BufferDeviceAddress_Alignment = 2;
 
-// Ray Query
+// Ray Tracing
 //
-const int kErrorSubCode_RayQuery_NegativeMin = 1;
-const int kErrorSubCode_RayQuery_NegativeMax = 2;
-const int kErrorSubCode_RayQuery_BothSkip = 3;
-const int kErrorSubCode_RayQuery_SkipCull = 4;
-const int kErrorSubCode_RayQuery_Opaque = 5;
-const int kErrorSubCode_RayQuery_MinMax = 6;
-const int kErrorSubCode_RayQuery_MinNaN = 7;
-const int kErrorSubCode_RayQuery_MaxNaN = 8;
-const int kErrorSubCode_RayQuery_OriginNaN = 9;
-const int kErrorSubCode_RayQuery_DirectionNaN = 10;
-const int kErrorSubCode_RayQuery_OriginFinite = 11;
-const int kErrorSubCode_RayQuery_DirectionFinite = 12;
-
-// Trace Ray
-//
-// Ray Hit Object (VK_EXT_ray_tracing_invocation_reorder)
-// OpHitObjectTraceRayEXT, OpHitObjectTraceReorderExecuteEXT, OpHitObjectTraceRayMotionEXT,
-// OpHitObjectTraceMotionReorderExecuteEXT, OpHitObjectSetShaderBindingTableRecordIndexEXT
 const int kErrorSubCode_RayHitObject_NegativeMin = 1;
 const int kErrorSubCode_RayHitObject_NegativeMax = 2;
 const int kErrorSubCode_RayHitObject_BothSkip = 3;
@@ -131,6 +112,19 @@ const int kErrorSubCode_TraceRay_RayParametersNans = 24;
 const int kErrorSubCode_TraceRay_TlasNotBuilt = 25;
 const int kErrorSubCode_TraceRay_SkipTrianglesWithPipelineSkipAABBs = 26;
 const int kErrorSubCode_TraceRay_SkipAABBsWithPipelineSkipTriangles = 27;
+const int kErrorSubCode_RayQuery_NegativeMin = 28;
+const int kErrorSubCode_RayQuery_NegativeMax = 29;
+const int kErrorSubCode_RayQuery_BothSkip = 30;
+const int kErrorSubCode_RayQuery_SkipCull = 31;
+const int kErrorSubCode_RayQuery_Opaque = 32;
+const int kErrorSubCode_RayQuery_MinMax = 33;
+const int kErrorSubCode_RayQuery_MinNaN = 34;
+const int kErrorSubCode_RayQuery_MaxNaN = 35;
+const int kErrorSubCode_RayQuery_OriginNaN = 36;
+const int kErrorSubCode_RayQuery_DirectionNaN = 37;
+const int kErrorSubCode_RayQuery_OriginFinite = 38;
+const int kErrorSubCode_RayQuery_DirectionFinite = 39;
+const int kErrorSubCode_RayQuery_TlasNotBuilt = 40;
 
 // Shared Memory Data Race
 const int kErrorSubCode_SharedMemoryDataRace_RaceOnStore = 1;
