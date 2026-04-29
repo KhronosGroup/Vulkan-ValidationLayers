@@ -1801,7 +1801,7 @@ bool CoreChecks::ValidateShaderYcbcrSampler(const spirv::Module& module_state, c
     }
 
     // YCbCr is only allowed for Combined Image Samplers (error is caught before)
-    if (!variable.is_type_sampled_image) {
+    if (!variable.is_combined_image_sampler) {
         return skip;
     }
 
@@ -3365,9 +3365,9 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
                                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT,
                                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT})) {
-                const spirv::Instruction& base_type = resource_variable.base_type;
-                const uint32_t base_opcode = base_type.Opcode();
-                const bool is_sampler = (base_opcode == spv::OpTypeSampledImage) || resource_variable.is_type_sampled_image;
+                const uint32_t base_opcode = resource_variable.base_type.Opcode();
+                // TODO - Seem we are missing the image portion of combined image samplers
+                const bool is_sampler = resource_variable.is_combined_image_sampler;
 
                 struct MappingSourceInfo {
                     uint32_t offset = 0;
