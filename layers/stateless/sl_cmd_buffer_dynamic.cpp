@@ -118,6 +118,8 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
     const auto& error_obj = context.error_obj;
 
     if (vertexBindingDescriptionCount > phys_dev_props.limits.maxVertexInputBindings) {
+        // This VU is redundant, but decided in WG to leave it
+        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8229
         skip |= LogError("VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791", commandBuffer,
                          error_obj.location.dot(Field::vertexBindingDescriptionCount),
                          "(%" PRIu32 ") is greater than the maxVertexInputBindings limit (%" PRIu32 ").",
