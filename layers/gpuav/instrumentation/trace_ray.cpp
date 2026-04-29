@@ -192,7 +192,8 @@ void RegisterTraceRayValidation(Validator& gpuav, CommandBufferSubState& cb) {
                             strm << "OpTraceRayKHR operand Ray Tmin (" << t_min << ") or Ray Tmax (" << t_max << ") are NaNs.";
                             out_vuid_msg = "VUID-RuntimeSpirv-OpTraceRayKHR-06358";
                         } break;
-                        case kErrorSubCode_TraceRay_TlasNotBuilt: {
+                        case kErrorSubCode_TraceRay_TlasNotBuilt:
+                        case kErrorSubCode_RayQuery_TlasNotBuilt: {
                             // Eg when using VK_EXT_descriptor_buffer, descriptor state is only tracked when using classic
                             // descriptor sets
                             if (descriptor_binding_index == vvl::kNoIndex32) {
@@ -218,9 +219,15 @@ void RegisterTraceRayValidation(Validator& gpuav, CommandBufferSubState& cb) {
                                                       .GetAccelerationStructureStateKHR();
 
                             strm << "(set = " << set_num << ", binding = " << binding_num << ", index " << desc_index << ") ";
-                            strm << "OpTraceRayKHR operand Acceleration structure (" << gpuav.FormatHandle(as_state->VkHandle())
-                                 << ") has not been built.";
-                            out_vuid_msg = "VUID-RuntimeSpirv-OpTraceRayKHR-06359";
+                            if (error_sub_code == kErrorSubCode_RayQuery_TlasNotBuilt) {
+                                strm << "OpRayQueryInitializeKHR operand Acceleration structure ("
+                                     << gpuav.FormatHandle(as_state->VkHandle()) << ") has not been built.";
+                                out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06352";
+                            } else {
+                                strm << "OpTraceRayKHR operand Acceleration structure (" << gpuav.FormatHandle(as_state->VkHandle())
+                                     << ") has not been built.";
+                                out_vuid_msg = "VUID-RuntimeSpirv-OpTraceRayKHR-06359";
+                            }
                             break;
                         }
                         case kErrorSubCode_TraceRay_SkipTrianglesWithPipelineSkipAABBs: {
@@ -237,7 +244,63 @@ void RegisterTraceRayValidation(Validator& gpuav, CommandBufferSubState& cb) {
                                     "VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR. ";
                             out_vuid_msg = "VUID-RuntimeSpirv-OpTraceRayKHR-06554";
                         } break;
-
+                        case kErrorSubCode_RayQuery_NegativeMin: {
+                            // Should use std::bit_cast but requires c++20
+                            const float tmin = *(float*)(error_record + kInst_LogError_ParameterOffset_0);
+                            strm << "OpRayQueryInitializeKHR operand Ray Tmin value (" << tmin << ") is negative. ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349";
+                        } break;
+                        case kErrorSubCode_RayQuery_NegativeMax: {
+                            const float tmax = *(float*)(error_record + kInst_LogError_ParameterOffset_0);
+                            strm << "OpRayQueryInitializeKHR operand Ray Tmax value (" << tmax << ") is negative. ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349";
+                        } break;
+                        case kErrorSubCode_RayQuery_MinMax: {
+                            const float tmin = *(float*)(error_record + kInst_LogError_ParameterOffset_0);
+                            const float tmax = *(float*)(error_record + kInst_LogError_ParameterOffset_1);
+                            strm << "OpRayQueryInitializeKHR operand Ray Tmax (" << tmax << ") is less than Ray Tmin (" << tmin
+                                 << "). ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06350";
+                        } break;
+                        case kErrorSubCode_RayQuery_MinNaN: {
+                            strm << "OpRayQueryInitializeKHR operand Ray Tmin is NaN. ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06351";
+                        } break;
+                        case kErrorSubCode_RayQuery_MaxNaN: {
+                            strm << "OpRayQueryInitializeKHR operand Ray Tmax is NaN. ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06351";
+                        } break;
+                        case kErrorSubCode_RayQuery_OriginNaN: {
+                            strm << "OpRayQueryInitializeKHR operand Ray Origin contains a NaN. ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06351";
+                        } break;
+                        case kErrorSubCode_RayQuery_DirectionNaN: {
+                            strm << "OpRayQueryInitializeKHR operand Ray Direction contains a NaN. ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06351";
+                        } break;
+                        case kErrorSubCode_RayQuery_OriginFinite: {
+                            strm << "OpRayQueryInitializeKHR operand Ray Origin contains a non-finite value. ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06348";
+                        } break;
+                        case kErrorSubCode_RayQuery_DirectionFinite: {
+                            strm << "OpRayQueryInitializeKHR operand Ray Direction contains a non-finite value. ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06348";
+                        } break;
+                        case kErrorSubCode_RayQuery_BothSkip: {
+                            const uint32_t value = error_record[kInst_LogError_ParameterOffset_0];
+                            strm << "OpRayQueryInitializeKHR operand Ray Flags is 0x" << std::hex << value << ". ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06889";
+                        } break;
+                        case kErrorSubCode_RayQuery_SkipCull: {
+                            const uint32_t value = error_record[kInst_LogError_ParameterOffset_0];
+                            strm << "OpRayQueryInitializeKHR operand Ray Flags is 0x" << std::hex << value << ". ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06890";
+                        } break;
+                        case kErrorSubCode_RayQuery_Opaque: {
+                            const uint32_t value = error_record[kInst_LogError_ParameterOffset_0];
+                            strm << "OpRayQueryInitializeKHR operand Ray Flags is 0x" << std::hex << value << ". ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06891";
+                        } break;
                         default:
                             error_found = false;
                             break;

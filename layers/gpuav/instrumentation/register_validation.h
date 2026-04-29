@@ -20,7 +20,6 @@ class CommandBufferSubState;
 
 void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& cb);
-void RegisterRayQueryValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterMeshShadingValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterVertexAttributeFetchOobValidation(Validator& gpuav, CommandBufferSubState& cb);

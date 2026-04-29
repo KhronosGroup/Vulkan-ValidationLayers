@@ -67,11 +67,6 @@ extern const uint32_t instrumentation_post_process_descriptor_index_comp[];
 // These offset match the function in the order they are declared in the GLSL source
 extern const uint32_t instrumentation_post_process_descriptor_index_comp_function_0_offset;
 
-extern const uint32_t instrumentation_ray_query_comp_size;
-extern const uint32_t instrumentation_ray_query_comp[];
-// These offset match the function in the order they are declared in the GLSL source
-extern const uint32_t instrumentation_ray_query_comp_function_0_offset;
-
 extern const uint32_t instrumentation_sanitizer_comp_size;
 extern const uint32_t instrumentation_sanitizer_comp[];
 // These offset match the function in the order they are declared in the GLSL source
@@ -99,6 +94,7 @@ extern const uint32_t instrumentation_trace_ray_comp_function_0_offset;
 extern const uint32_t instrumentation_trace_ray_comp_function_1_offset;
 extern const uint32_t instrumentation_trace_ray_comp_function_2_offset;
 extern const uint32_t instrumentation_trace_ray_comp_function_3_offset;
+extern const uint32_t instrumentation_trace_ray_comp_function_4_offset;
 
 extern const uint32_t instrumentation_vertex_attribute_fetch_oob_vert_size;
 extern const uint32_t instrumentation_vertex_attribute_fetch_oob_vert[];
