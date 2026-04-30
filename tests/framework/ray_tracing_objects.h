@@ -438,6 +438,7 @@ class Pipeline {
     void AddSpirvMissShader(const char* spirv, const char* entry_point);
     void AddSlangMissShader(const char* slang, const char* entry_point);
     void AddGlslClosestHitShader(const char* glsl);
+    void AddGlslHitGroupShader(const char* closest_hit_glsl, const char* intersection_glsl = nullptr);
     void AddSpirvClosestHitShader(const char* spirv, const char* entry_point);
     void AddSlangClosestHitShader(const char* slang, const char* entry_point);
     void AddLibrary(const Pipeline& library);
@@ -474,9 +475,9 @@ class Pipeline {
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> GetRayTracingShaderGroupCreateInfos();
 
   private:
-    uint32_t GetRayGenShadersCount() const;
-    uint32_t GetMissShadersCount() const;
-    uint32_t GetClosestHitShadersCount() const;
+    uint32_t GetRayGenShaderGroupsCount() const;
+    uint32_t GetMissShaderGroupsCount() const;
+    uint32_t GetHitShaderGroupsCount() const;
 
   private:
     VkLayerTest& test_;
@@ -493,7 +494,11 @@ class Pipeline {
     std::vector<VkDynamicState> dynamic_states{};
     std::vector<std::unique_ptr<VkShaderObj>> ray_gen_shaders_{};
     std::vector<std::unique_ptr<VkShaderObj>> miss_shaders_{};
-    std::vector<std::unique_ptr<VkShaderObj>> closest_hit_shaders_{};
+    struct HitShader {
+        std::unique_ptr<VkShaderObj> closest_hit;
+        std::unique_ptr<VkShaderObj> intersection;
+    };
+    std::vector<HitShader> hit_shaders_{};
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shader_group_cis_{};
     vkt::Pipeline rt_pipeline_{};
     VkDeferredOperationKHR deferred_op_ = VK_NULL_HANDLE;

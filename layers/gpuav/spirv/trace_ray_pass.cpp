@@ -40,6 +40,8 @@ const static OfflineFunction kRayHitObjectSbtIndexValidationFunction = {"inst_ra
                                                                         instrumentation_trace_ray_comp_function_3_offset};
 const static OfflineFunction kRayQueryInitializeValidationFunction = {"inst_ray_query_comp",
                                                                       instrumentation_trace_ray_comp_function_4_offset};
+const static OfflineFunction kReportIntersectionValidationFunction = {"inst_report_intersection_comp",
+                                                                      instrumentation_trace_ray_comp_function_5_offset};
 
 TraceRayPass::TraceRayPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
 
@@ -248,6 +250,20 @@ std::vector<uint32_t> TraceRayPass::GetRayQueryInitializeValidationFunctionCallI
             ray_origin_id, ray_tmin_id,     ray_direction_id, ray_tmax_id};
 }
 
+std::vector<uint32_t> TraceRayPass::GetReportIntersectionValidationFunctionCallInstructions(
+    InstructionIt* report_intersection_inst_it) {
+    const uint32_t function_result = module_.TakeNextId();
+    const uint32_t function_def = GetLinkFunction(report_intersection_function_id_, kReportIntersectionValidationFunction);
+    const uint32_t bool_type = type_manager_.GetTypeBool().Id();
+
+    const uint32_t hit_kind_id = (*report_intersection_inst_it)->get()->Operand(1);
+
+    const uint32_t inst_position = (*report_intersection_inst_it)->get()->GetPositionOffset();
+    const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
+
+    return {bool_type, function_result, function_def, inst_position_id, hit_kind_id};
+}
+
 uint32_t TraceRayPass::AddFunctionCall(BasicBlock& block, std::vector<uint32_t>&& instructions, InstructionIt* inst_it) {
     const uint32_t function_result = instructions[1];
     block.CreateInstruction(spv::OpFunctionCall, std::move(instructions), inst_it);
@@ -309,6 +325,10 @@ bool TraceRayPass::Instrument() {
                     case spv::OpHitObjectTraceRayMotionEXT:
                     case spv::OpHitObjectTraceMotionReorderExecuteEXT: {
                         add_func_call(GetRayHitObjectValidationFunctionCallInstructions(&inst_it));
+                        break;
+                    }
+                    case spv::OpReportIntersectionKHR: {
+                        add_func_call(GetReportIntersectionValidationFunctionCallInstructions(&inst_it));
                         break;
                     }
                     default:
