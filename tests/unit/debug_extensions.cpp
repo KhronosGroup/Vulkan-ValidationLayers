@@ -538,7 +538,7 @@ TEST_F(NegativeDebugExtensions, SwapchainImagesDebugMarker) {
     swapchain_create_info.minImageCount = info.surface_capabilities.minImageCount;
     swapchain_create_info.imageFormat = info.surface_formats[0].format;
     swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = info.surface_capabilities.minImageExtent;
+    swapchain_create_info.imageExtent = GetSwapchainExtent(info.surface_capabilities);
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;

@@ -423,8 +423,8 @@ TEST_F(PositiveSyncValWsi, ResyncWithSwapchain) {
     transition_swapchain_image0.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     const SurfaceInformation info = GetSwapchainInfo(m_surface);
-    const uint32_t width = info.surface_capabilities.minImageExtent.width;
-    const uint32_t height = info.surface_capabilities.minImageExtent.height;
+    const uint32_t width = GetSwapchainExtent(info.surface_capabilities).width;
+    const uint32_t height = GetSwapchainExtent(info.surface_capabilities).height;
     const uint32_t format_size = vkuFormatTexelBlockSize(info.surface_formats[0].format);
     vkt::Buffer buffer(*m_device, width * height * format_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
@@ -536,8 +536,8 @@ TEST_F(PositiveSyncValWsi, ResyncWithSwapchain2) {
     transition_swapchain_image0.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     const SurfaceInformation info = GetSwapchainInfo(m_surface);
-    const uint32_t width = info.surface_capabilities.minImageExtent.width;
-    const uint32_t height = info.surface_capabilities.minImageExtent.height;
+    const uint32_t width = GetSwapchainExtent(info.surface_capabilities).width;
+    const uint32_t height = GetSwapchainExtent(info.surface_capabilities).height;
     const uint32_t format_size = vkuFormatTexelBlockSize(info.surface_formats[0].format);
     vkt::Buffer buffer(*m_device, width * height * format_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
@@ -625,8 +625,8 @@ TEST_F(PositiveSyncValWsi, ResyncWithSwapchain3) {
     transition_swapchain_image0.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     const SurfaceInformation info = GetSwapchainInfo(m_surface);
-    const uint32_t width = info.surface_capabilities.minImageExtent.width;
-    const uint32_t height = info.surface_capabilities.minImageExtent.height;
+    const uint32_t width = GetSwapchainExtent(info.surface_capabilities).width;
+    const uint32_t height = GetSwapchainExtent(info.surface_capabilities).height;
     const uint32_t format_size = vkuFormatTexelBlockSize(info.surface_formats[0].format);
     vkt::Buffer buffer(*m_device, width * height * format_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
@@ -726,8 +726,8 @@ TEST_F(PositiveSyncValWsi, ResyncWithSwapchain4) {
     transition_swapchain_image.image = swapchain_image0;
     transition_swapchain_image.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    const uint32_t width = surface_info.surface_capabilities.minImageExtent.width;
-    const uint32_t height = surface_info.surface_capabilities.minImageExtent.height;
+    const uint32_t width = GetSwapchainExtent(surface_info.surface_capabilities).width;
+    const uint32_t height = GetSwapchainExtent(surface_info.surface_capabilities).height;
     const uint32_t format_size = vkuFormatTexelBlockSize(surface_info.surface_formats[0].format);
     vkt::Buffer buffer(*m_device, width * height * format_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
@@ -923,8 +923,8 @@ TEST_F(PositiveSyncValWsi, BindSwapchainImage) {
     image_ci.pNext = &image_swapchain_ci;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = m_surface_formats[0].format;
-    image_ci.extent.width = m_surface_capabilities.minImageExtent.width;
-    image_ci.extent.height = m_surface_capabilities.minImageExtent.height;
+    image_ci.extent.width = GetSwapchainExtent(m_surface_capabilities).width;
+    image_ci.extent.height = GetSwapchainExtent(m_surface_capabilities).height;
     image_ci.extent.depth = 1;
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
@@ -993,8 +993,8 @@ TEST_F(PositiveSyncValWsi, BindSwapchainImage2) {
     image_ci.pNext = &image_swapchain_ci;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = m_surface_formats[0].format;
-    image_ci.extent.width = m_surface_capabilities.minImageExtent.width;
-    image_ci.extent.height = m_surface_capabilities.minImageExtent.height;
+    image_ci.extent.width = GetSwapchainExtent(m_surface_capabilities).width;
+    image_ci.extent.height = GetSwapchainExtent(m_surface_capabilities).height;
     image_ci.extent.depth = 1;
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;

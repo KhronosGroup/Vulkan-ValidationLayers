@@ -1015,8 +1015,8 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilitiesKHR(Vk
     // In general just say max supported is available for requested surface
     pSurfaceCapabilities->minImageCount = 1;
     pSurfaceCapabilities->maxImageCount = 0;
-    pSurfaceCapabilities->currentExtent.width = 0xFFFFFFFF;
-    pSurfaceCapabilities->currentExtent.height = 0xFFFFFFFF;
+    pSurfaceCapabilities->currentExtent.width = 64;
+    pSurfaceCapabilities->currentExtent.height = 64;
     pSurfaceCapabilities->minImageExtent.width = 1;
     pSurfaceCapabilities->minImageExtent.height = 1;
     pSurfaceCapabilities->maxImageExtent.width = 0xFFFF;
