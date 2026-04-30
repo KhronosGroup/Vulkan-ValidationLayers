@@ -110,8 +110,8 @@ TEST_F(PositiveImageLayout, ImagelessTracking) {
     RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext));
     RETURN_IF_SKIP(InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
 
-    uint32_t attachmentWidth = m_surface_capabilities.minImageExtent.width;
-    uint32_t attachmentHeight = m_surface_capabilities.minImageExtent.height;
+    uint32_t attachmentWidth = GetSwapchainExtent(m_surface_capabilities).width;
+    uint32_t attachmentHeight = GetSwapchainExtent(m_surface_capabilities).height;
     VkFormat attachmentFormat = m_surface_formats[0].format;
 
     RenderPassSingleSubpass rp(*this);

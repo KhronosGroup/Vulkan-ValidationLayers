@@ -929,6 +929,17 @@ SurfaceInformation VkRenderFramework::GetSwapchainInfo(const VkSurfaceKHR surfac
     return info;
 }
 
+VkExtent2D VkRenderFramework::GetSwapchainExtent(const VkSurfaceCapabilitiesKHR& surface_caps) {
+    VkExtent2D swapchain_extent = surface_caps.currentExtent;
+
+    // If current extent uses special values then we are free to choose the size and just use the min extent
+    if (surface_caps.currentExtent.width == 0XFFFFFFFFu || surface_caps.currentExtent.height == 0XFFFFFFFFu) {
+        swapchain_extent = surface_caps.minImageExtent;
+    }
+
+    return swapchain_extent;
+}
+
 VkSwapchainCreateInfoKHR VkRenderFramework::GetDefaultSwapchainCreateInfo(VkSurfaceKHR surface,
                                                                           const SurfaceInformation& surface_info,
                                                                           VkImageUsageFlags image_usage) {
@@ -937,7 +948,7 @@ VkSwapchainCreateInfoKHR VkRenderFramework::GetDefaultSwapchainCreateInfo(VkSurf
     swapchain_ci.minImageCount = surface_info.surface_capabilities.minImageCount;
     swapchain_ci.imageFormat = surface_info.surface_formats[0].format;
     swapchain_ci.imageColorSpace = surface_info.surface_formats[0].colorSpace;
-    swapchain_ci.imageExtent = surface_info.surface_capabilities.minImageExtent;
+    swapchain_ci.imageExtent = GetSwapchainExtent(surface_info.surface_capabilities);
     swapchain_ci.imageArrayLayers = 1;
     swapchain_ci.imageUsage = image_usage;
     swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
