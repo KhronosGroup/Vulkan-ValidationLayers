@@ -387,7 +387,8 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
     }
 
     if (gpuav_settings.force_on_robustness &&
-        (supported_robustness2_feature.robustBufferAccess2 || supported_robustness2_feature.robustImageAccess2)) {
+        (supported_robustness2_feature.robustBufferAccess2 || supported_robustness2_feature.robustImageAccess2 ||
+         supported_robustness2_feature.nullDescriptor)) {
         const bool has_ext = IsExtensionAvailable(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, available_extensions);
         const bool has_khr = IsExtensionAvailable(VK_KHR_ROBUSTNESS_2_EXTENSION_NAME, available_extensions);
         if (has_ext || has_khr) {
@@ -408,6 +409,10 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
                     adjustment_warnings += "\tForcing VkPhysicalDeviceRobustness2FeaturesKHR::robustImageAccess2 to VK_TRUE\n";
                     robust_buffer_2_feature->robustImageAccess2 = VK_TRUE;
                 }
+                if (!robust_buffer_2_feature->nullDescriptor && supported_robustness2_feature.nullDescriptor) {
+                    adjustment_warnings += "\tForcing VkPhysicalDeviceRobustness2FeaturesKHR::nullDescriptor to VK_TRUE\n";
+                    robust_buffer_2_feature->nullDescriptor = VK_TRUE;
+                }
             } else {
                 VkPhysicalDeviceRobustness2FeaturesKHR new_robust_buffer_2_feature = vku::InitStructHelper();
                 if (supported_robustness2_feature.robustBufferAccess2) {
@@ -419,6 +424,11 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
                     adjustment_warnings +=
                         "\tAdding a VkPhysicalDeviceRobustness2FeaturesKHR to pNext with robustImageAccess2 set to VK_TRUE\n";
                     new_robust_buffer_2_feature.robustImageAccess2 = VK_TRUE;
+                }
+                if (supported_robustness2_feature.nullDescriptor) {
+                    adjustment_warnings +=
+                        "\tAdding a VkPhysicalDeviceRobustness2FeaturesKHR to pNext with nullDescriptor set to VK_TRUE\n";
+                    new_robust_buffer_2_feature.nullDescriptor = VK_TRUE;
                 }
                 vku::AddToPnext(*modified_create_info, new_robust_buffer_2_feature);
             }
