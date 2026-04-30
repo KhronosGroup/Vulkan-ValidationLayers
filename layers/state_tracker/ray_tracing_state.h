@@ -157,7 +157,7 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     VkDeviceAddressRangeKHR GetEffectiveDeviceAddressRange() const;
     vvl::range<VkDeviceAddress> GetVvlEffectiveDeviceAddressRange() const;
     uint64_t GetOpaqueHandle() const { return opaque_handle; }
-    VkDeviceAddress GetAccelerationStructureAddress() const { return acceleration_structure_address; }
+    VkDeviceAddress GetAccelerationStructureAddress() const { return acceleration_structure_address.load(); }
     void SetAccelerationStructureAddress(VkDeviceAddress addr) { acceleration_structure_address = addr; }
     const std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> &GetBuildInfo() const { return build_geometry_info; }
     void SetBuildInfo(const std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> &info) {
@@ -176,7 +176,7 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     std::variant<CreateInfo1, vku::safe_VkAccelerationStructureCreateInfo2KHR> create_info;
     VkDeviceAddressRangeKHR device_address_range{};
     uint64_t opaque_handle = 0;
-    VkDeviceAddress acceleration_structure_address = 0;
+    std::atomic<VkDeviceAddress> acceleration_structure_address = 0;
     std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> build_geometry_info;
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos{};
 };
