@@ -3363,15 +3363,30 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                     const char* vuid =
                         pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-11315" : "VUID-VkShaderCreateInfoEXT-pNext-11315";
                     const bool is_uniform = resource_variable.storage_class == spv::StorageClassUniform;
+                    const VkDescriptorType potential_descriptor_type = resource_variable.GetPotentialDescriptorType();
+                    std::ostringstream ss;
+                    ss << "(" << string_VkDescriptorMappingSourceEXT(mapping.source) << ") is used to map descriptor "
+                       << resource_variable.DescribeDescriptor() << " in " << entrypoint.Describe() << " with StorageClass "
+                       << string_SpvStorageClass(resource_variable.storage_class);
+                    // Prevent more confusion with the cases
+                    if (potential_descriptor_type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER && !resource_variable.is_buffer_block) {
+                        ss << " (likely " << string_VkDescriptorType(potential_descriptor_type) << ")";
+                    }
+                    if (is_uniform) {
+                        if (resource_variable.is_buffer_block) {
+                            ss << ", but it is decorated with BufferBlock (which is the Vulkan 1.0 way to turn the Uniform "
+                                  "StorageClass into a Storage Buffer)";
+                        } else {
+                            ss << ", but it is not decorated with Block";
+                        }
+                    } else {
+                        ss << ", but it must be StorageClass Uniform (Uniform Buffers) when using this mapping source.\nHint: Did "
+                              "you mean to use VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT instead?";
+                    }
                     skip |= LogError(
                         vuid, module_state.handle(),
                         loc.pNext(Struct::VkShaderDescriptorSetAndBindingMappingInfoEXT, Field::pMappings, i).dot(Field::source),
-                        "(%s) is used to map descriptor %s in %s with storage class %s, but it %s",
-                        string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
-                        entrypoint.Describe().c_str(), string_SpvStorageClass(resource_variable.storage_class),
-                        !is_uniform ? "must be StorageClass Uniform (Uniform Buffers)\nHint: Did you mean to use "
-                                      "VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT instead?"
-                                    : "is not decorated with Block");
+                        "%s", ss.str().c_str());
                 } else if (resource_variable.storage_class == spv::StorageClassUniform && resource_variable.IsArray()) {
                     // Additional VU because we currently mark array of Block Structs the same in |resource_variable|
                     const char* vuid =
