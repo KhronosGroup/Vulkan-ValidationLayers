@@ -295,7 +295,7 @@ class GpuAVRayQueryTest : public GpuAVTest {
 
 class GpuAVDescriptorHeap : public GpuAVTest {
   public:
-    void InitGpuAVDescriptorHeap(bool safe_mode = true);
+    void InitGpuAVDescriptorHeap(std::vector<VkLayerSettingEXT> layer_settings = {}, bool safe_mode = true);
 
     void CreateResourceHeap(VkDeviceSize app_size);
     void CreateSamplerHeap(VkDeviceSize app_size, bool use_embedded_samplers = false);

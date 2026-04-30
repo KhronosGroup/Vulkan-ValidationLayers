@@ -87,7 +87,9 @@ class Validator : public GpuShaderInstrumentor {
   private:
     void InitSettings(const Location& loc);
     void DestroySubstate();
-    void BindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize offset);
+    void BindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize offset, const Location& loc);
+    void SetMemoryWithNullDescriptor(const vvl::Buffer& buffer_state, VkDeviceMemory memory, VkDeviceSize offset,
+                                     const Location& loc);
 
     // gpuav_record.cpp
     // --------------
@@ -306,6 +308,9 @@ class Validator : public GpuShaderInstrumentor {
 
     // Make sure we call the right versions of any timeline semaphore functions.
     bool timeline_khr_ = false;
+
+    VkQueue internal_transfer_queue_handle_ = VK_NULL_HANDLE;
+    uint32_t internal_transfer_queue_family_index_ = 0;
 
   public:
     vko::GpuResourcesManager gpu_resources_manager_;

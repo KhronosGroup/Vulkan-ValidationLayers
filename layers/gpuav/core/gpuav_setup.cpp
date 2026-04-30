@@ -304,6 +304,20 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const L
             indices_ptr[offset] = i;
         }
     }
+
+    if (set_null_descriptors_) {
+        // Find the first possible queue to do internal transfer on
+        for (uint32_t i = 0; i < physical_device_state->queue_family_properties.size(); i++) {
+            const VkQueueFamilyProperties& props = physical_device_state->queue_family_properties[i];
+            if (props.queueFlags & VK_QUEUE_TRANSFER_BIT) {
+                internal_transfer_queue_family_index_ = i;
+                DispatchGetDeviceQueue(device, i, 0, &internal_transfer_queue_handle_);
+                if (internal_transfer_queue_handle_ != VK_NULL_HANDLE) {
+                    break;
+                }
+            }
+        }
+    }
 }
 
 vko::Buffer& Validator::GetGlobalDescriptorBuffer() {
