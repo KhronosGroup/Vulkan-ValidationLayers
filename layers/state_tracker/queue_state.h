@@ -206,10 +206,6 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     DeviceState& device_state_;
     const VkQueueFamilyProperties queue_family_properties_;
 
-    // TODO: made this atomic to workaround thread sanitizer.
-    // Likely not a proper solution, need to investigate how this count should be used
-    std::atomic_uint32_t timeline_wait_count_ = 0;
-
     void ThreadFunc();
     QueueSubmission *NextSubmission();
 
@@ -223,6 +219,13 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     mutable std::mutex lock_;
     // condition to wake up the queue's thread
     std::condition_variable cond_;
+
+    // This is an early-exit hint for FindTimelineWaitWithoutResolvingSignal.
+    // Concurrent updates are safe: the counter can temporarily be larger than the
+    // actual wait count, but not smaller, which is required for correctness.
+    // FindTimelineWaitWithoutResolvingSignal cannot miss unresolved timeline waits,
+    // but it can iterate a bit longer.
+    std::atomic_uint32_t timeline_wait_count_ = 0;
 };
 
 class QueueSubState {
