@@ -301,6 +301,11 @@ void RegisterTraceRayValidation(Validator& gpuav, CommandBufferSubState& cb) {
                             strm << "OpRayQueryInitializeKHR operand Ray Flags is 0x" << std::hex << value << ". ";
                             out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06891";
                         } break;
+                        case kErrorSubCode_ReportIntersection_HitKindOutOfRange: {
+                            const uint32_t hit_kind = error_record[kInst_LogError_ParameterOffset_0];
+                            strm << "OpReportIntersectionKHR operand Hit Kind is " << hit_kind << ". ";
+                            out_vuid_msg = "VUID-RuntimeSpirv-OpReportIntersectionKHR-06998";
+                        } break;
                         default:
                             error_found = false;
                             break;
