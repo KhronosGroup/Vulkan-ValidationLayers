@@ -125,6 +125,7 @@ const int kErrorSubCode_RayQuery_DirectionNaN = 37;
 const int kErrorSubCode_RayQuery_OriginFinite = 38;
 const int kErrorSubCode_RayQuery_DirectionFinite = 39;
 const int kErrorSubCode_RayQuery_TlasNotBuilt = 40;
+const int kErrorSubCode_ReportIntersection_HitKindOutOfRange = 41;
 
 // Shared Memory Data Race
 const int kErrorSubCode_SharedMemoryDataRace_RaceOnStore = 1;

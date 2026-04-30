@@ -209,6 +209,8 @@ const char* VK_LAYER_GPUAV_SHARED_MEMORY_DATA_RACE = "gpuav_shared_memory_data_r
 const char* VK_LAYER_GPUAV_MAX_INDICES_COUNT = "gpuav_max_indices_count";
 const char* VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS = "gpuav_select_instrumented_shaders";
 const char* VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT = "gpuav_shaders_to_instrument";
+// This was removed right after 1.4.350 SDK
+const char* REMOVED_VK_LAYER_GPUAV_VALIDATE_RAY_QUERY = "gpuav_validate_ray_query";
 
 const char* VK_LAYER_GPUAV_BUFFERS_VALIDATION = "gpuav_buffers_validation";
 const char* VK_LAYER_GPUAV_INDIRECT_DRAWS_BUFFERS = "gpuav_indirect_draws_buffers";
@@ -1068,6 +1070,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
                                     gpuav_settings.shader_instrumentation.trace_ray);
         }
 
+        if (vkuHasLayerSetting(layer_setting_set, REMOVED_VK_LAYER_GPUAV_VALIDATE_RAY_QUERY)) {
+            setting_warnings.emplace_back(std::string(REMOVED_VK_LAYER_GPUAV_VALIDATE_RAY_QUERY) +
+                                          " advanced setting was removed, just use " +
+                                          std::string(VK_LAYER_GPUAV_VALIDATE_TRACE_RAY) + " now.");
+        }
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHADER_SANITIZER)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SHADER_SANITIZER,
                                     gpuav_settings.shader_instrumentation.sanitizer);
