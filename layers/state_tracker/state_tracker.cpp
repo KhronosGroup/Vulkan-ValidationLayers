@@ -6606,6 +6606,9 @@ void DeviceState::PostCallRecordGetAccelerationStructureDeviceAddressKHR(VkDevic
         return;
     }
     if (auto as_state = Get<vvl::AccelerationStructureKHR>(pInfo->accelerationStructure)) {
+        if (as_state->GetAccelerationStructureAddress() != 0) {
+            return;
+        }
         as_state->SetAccelerationStructureAddress(record_obj.device_address);
         WriteLockGuard lock(as_with_addresses.array_mutex);
         if (as_with_addresses.array.capacity() <= (as_with_addresses.array.size() + 1)) {
