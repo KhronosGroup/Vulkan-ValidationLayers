@@ -16,15 +16,6 @@
 #include "../framework/buffer_helper.h"
 #include "../utils/math_utils.h"
 
-void GpuAVDescriptorHeap::InitGpuAVDescriptorHeap(bool safe_mode) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    RETURN_IF_SKIP(InitGpuAvFramework({}, safe_mode));
-    RETURN_IF_SKIP(InitState());
-    GetPhysicalDeviceProperties2(heap_props);
-}
-
 void GpuAVDescriptorHeap::CreateResourceHeap(VkDeviceSize app_size) {
     const VkDeviceSize heap_size = AlignResource(app_size) + heap_props.minResourceHeapReservedRange;
     VkBufferUsageFlags2CreateInfo buffer_usage = vku::InitStructHelper();
@@ -53,8 +44,7 @@ void GpuAVDescriptorHeap::CreateSamplerHeap(VkDeviceSize app_size, bool use_embe
 
 void GpuAVDescriptorHeap::BindResourceHeap() {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange.address = resource_heap_.Address();
-    bind_resource_info.heapRange.size = resource_heap_.CreateInfo().size;
+    bind_resource_info.heapRange = resource_heap_.AddressRange();
     bind_resource_info.reservedRangeOffset = resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
@@ -64,8 +54,7 @@ void GpuAVDescriptorHeap::BindSamplerHeap() {
     const VkDeviceSize min_reserved_range =
         embedded_samplers ? heap_props.minSamplerHeapReservedRangeWithEmbedded : heap_props.minSamplerHeapReservedRange;
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange.address = sampler_heap_.Address();
-    bind_resource_info.heapRange.size = sampler_heap_.CreateInfo().size;
+    bind_resource_info.heapRange = sampler_heap_.AddressRange();
     bind_resource_info.reservedRangeOffset = sampler_heap_.CreateInfo().size - min_reserved_range;
     bind_resource_info.reservedRangeSize = min_reserved_range;
     vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_resource_info);
@@ -243,7 +232,6 @@ TEST_F(NegativeGpuAVDescriptorHeap, NoHeapBound) {
 
 TEST_F(NegativeGpuAVDescriptorHeap, HeapBoundBeforePipeline) {
     TEST_DESCRIPTION("Validate illegal index buffer values when descriptor heap is bound before the pipeline");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
 
@@ -318,7 +306,6 @@ TEST_F(NegativeGpuAVDescriptorHeap, HeapBoundBeforePipeline) {
 
 TEST_F(NegativeGpuAVDescriptorHeap, HeapBoundAfterPipeline) {
     TEST_DESCRIPTION("Validate illegal index buffer values when descriptor heap is bound after pipeline");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
 
@@ -393,7 +380,6 @@ TEST_F(NegativeGpuAVDescriptorHeap, HeapBoundAfterPipeline) {
 
 TEST_F(NegativeGpuAVDescriptorHeap, SamplerHeapBound) {
     TEST_DESCRIPTION("Validate illegal index buffer values when sampler heap is bound");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
 
@@ -467,7 +453,6 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerHeapBound) {
 
 TEST_F(NegativeGpuAVDescriptorHeap, MappingsUsed) {
     TEST_DESCRIPTION("Validate illegal index buffer values when custom mappings are used");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
@@ -702,7 +687,6 @@ TEST_F(NegativeGpuAVDescriptorHeap, DispatchWorkgroupSize) {
 }
 
 TEST_F(NegativeGpuAVDescriptorHeap, HeapRebound) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
 
@@ -782,7 +766,6 @@ TEST_F(NegativeGpuAVDescriptorHeap, HeapRebound) {
 TEST_F(NegativeGpuAVDescriptorHeap, ShaderObjects) {
     TEST_DESCRIPTION("Validate illegal index buffer values with shader objects");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
