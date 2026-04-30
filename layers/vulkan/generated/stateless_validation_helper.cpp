@@ -24501,6 +24501,7 @@ bool Device::PreCallValidateCmdBeginPerTileExecutionQCOM(VkCommandBuffer command
             context.ValidateStructPnext(pPerTileBeginInfo_loc, pPerTileBeginInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                         "VUID-VkPerTileBeginInfoQCOM-pNext-pNext", kVUIDUndefined, true);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBeginPerTileExecutionQCOM(commandBuffer, pPerTileBeginInfo, context);
     return skip;
 }
 

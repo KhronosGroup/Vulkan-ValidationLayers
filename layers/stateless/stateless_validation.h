@@ -1374,6 +1374,9 @@ class Device : public vvl::BaseDevice {
                                                                      VkTilePropertiesQCOM* pProperties,
                                                                      const Context &context) const;
     bool ValidateTileMemorySizeInfo(const VkTileMemorySizeInfoQCOM& create_info, const Location& loc) const;
+    bool manual_PreCallValidateCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
+                                                            const VkPerTileBeginInfoQCOM *pPerTileBeginInfo,
+                                                            const Context &context) const;
 
 #include "generated/stateless_device_methods.h"
 };

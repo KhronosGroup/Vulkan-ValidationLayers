@@ -365,6 +365,8 @@ bool CoreChecks::ValidateBeginCommandBufferInheritanceInfo(const vvl::CommandBuf
         }
     }
 
+    skip |= ValidateBeginCommandBufferRenderPassTileShadingCreateInfo(cb_state, info, begin_flags, inheritance_loc);
+
     return skip;
 }
 
@@ -466,6 +468,82 @@ bool CoreChecks::ValidateBeginCommandBufferRenderingInheritanceInfo(const vvl::C
                          "(0x%" PRIx32 ") most significant bit is greater or equal to maxMultiviewViewCount (%" PRIu32 ").",
                          rendering_info.viewMask, phys_dev_props_core11.maxMultiviewViewCount);
     }
+    return skip;
+}
+
+bool CoreChecks::ValidateBeginCommandBufferRenderPassTileShadingCreateInfo(const vvl::CommandBuffer& cb_state,
+                                                                           const VkCommandBufferInheritanceInfo& info,
+                                                                           const VkCommandBufferUsageFlags begin_flags,
+                                                                           const Location& inheritance_loc) const {
+    bool skip = false;
+    const bool has_rp_continue_bit = (begin_flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) != 0;
+    const auto* rp_tile_shading_ci = vku::FindStructInPNextChain<VkRenderPassTileShadingCreateInfoQCOM>(info.pNext);
+    const bool has_rp_enable_bit = rp_tile_shading_ci ?
+                                   (rp_tile_shading_ci->flags & VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM) != 0 : false;
+    const auto rp_state = Get<vvl::RenderPass>(info.renderPass);
+    const bool rp_enabled_tile_shading = rp_state ? rp_state->has_tile_shading_enabled : false;
+
+    if (has_rp_continue_bit && rp_enabled_tile_shading && !has_rp_enable_bit) {
+        std::stringstream conditional_ss{};
+        if (rp_tile_shading_ci) {
+            conditional_ss << "(" << string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci->flags)
+                           << ")" << " doesn't contain VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit, ";
+        }
+        else {
+            conditional_ss << "doesn't include VkRenderPassTileShadingCreateInfoQCOM instance, ";
+        }
+        conditional_ss << "but VkCommandBufferBeginInfo::flags (" << string_VkCommandBufferUsageFlags(begin_flags)
+                       << ") contains VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT bit and "
+                       << "VkCommandBufferInheritanceInfo::renderPass has been created with tile shading enabled.";
+
+        const LogObjectList objlist(cb_state.Handle(), rp_state->Handle());
+        if (rp_tile_shading_ci) {
+            skip |= LogError("VUID-VkCommandBufferBeginInfo-flags-10617", objlist,
+                             inheritance_loc.pNext(Struct::VkRenderPassTileShadingCreateInfoQCOM, Field::flags),
+                             "%s", conditional_ss.str().c_str());
+        }
+        else {
+            skip |= LogError("VUID-VkCommandBufferBeginInfo-flags-10617", objlist,
+                             inheritance_loc.dot(Field::pNext),
+                             "%s", conditional_ss.str().c_str());
+        }
+    }
+
+    if (!has_rp_continue_bit && !rp_enabled_tile_shading && has_rp_enable_bit) {
+        std::stringstream conditional_ss{};
+        conditional_ss << "but VkCommandBufferBeginInfo::flags is ( " << string_VkCommandBufferUsageFlags(begin_flags) << ")";
+        if (!info.renderPass) {
+            conditional_ss << " and VkCommandBufferInheritanceInfo::renderPass is VK_NULL_HANDLE.";
+        }
+        else {
+            conditional_ss << " and VkCommandBufferInheritanceInfo::renderPass hasn't been created with tile shading enabled. "
+                              "(Can be enabled by using VkRenderPassTileShadingCreateInfoQCOM)";
+        }
+
+        skip |= LogError("VUID-VkCommandBufferBeginInfo-flags-10618", cb_state.Handle(),
+                         inheritance_loc.pNext(Struct::VkRenderPassTileShadingCreateInfoQCOM, Field::flags),
+                         "(%s) contains VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit, %s",
+                         string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci->flags).c_str(),
+                         conditional_ss.str().c_str());
+    }
+
+    if (has_rp_enable_bit && rp_enabled_tile_shading) {
+        const auto* rp_tile_shading_ci_of_rp =
+                vku::FindStructInPNextChain<VkRenderPassTileShadingCreateInfoQCOM>(rp_state->create_info.pNext);
+        if (rp_tile_shading_ci->tileApronSize.width != rp_tile_shading_ci_of_rp->tileApronSize.width ||
+            rp_tile_shading_ci->tileApronSize.height != rp_tile_shading_ci_of_rp->tileApronSize.height) {
+        const LogObjectList objlist(cb_state.Handle(), rp_state->Handle());
+        skip |= LogError("VUID-VkCommandBufferBeginInfo-flags-10619", objlist,
+                         inheritance_loc.pNext(Struct::VkRenderPassTileShadingCreateInfoQCOM, Field::flags),
+                         "(%s) contains VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit, but "
+                         "tileApronSize (%s) aren't equal to that "
+                         "tileApronSize (%s) used to create VkCommandBufferInheritanceInfo::renderPass.",
+                         string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci->flags).c_str(),
+                         string_VkExtent2D(rp_tile_shading_ci->tileApronSize).c_str(),
+                         string_VkExtent2D(rp_tile_shading_ci_of_rp->tileApronSize).c_str());
+        }
+    }
+
     return skip;
 }
 
@@ -1318,6 +1396,18 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                  "the vkBeginCommandBuffer() was called.",
                                  FormatHandle(secondary_cb).c_str());
             }
+            if (secondary_cb_state.has_inheritance) {
+                const auto* rp_tile_shading_ci =
+                        vku::FindStructInPNextChain<VkRenderPassTileShadingCreateInfoQCOM>(secondary_cb_state.inheritance_info.pNext);
+                if (rp_tile_shading_ci &&
+                    (rp_tile_shading_ci->tileApronSize.width != 0 || rp_tile_shading_ci->tileApronSize.height != 0)) {
+                    const LogObjectList objlist(commandBuffer, secondary_cb);
+                    skip |= LogError("VUID-vkCmdExecuteCommands-tileApronSize-10625", objlist, secondary_cb_loc,
+                                     "has been recorded with VkRenderPassTileShadingCreateInfoQCOM::tileApronSize "
+                                     "(%s) for non-render-pass scenario.",
+                                     string_VkExtent2D(rp_tile_shading_ci->tileApronSize).c_str());
+                }
+            }
         } else if (rp_state) {
             const vvl::RenderPass* secondary_rp_state = secondary_cb_state.active_render_pass.get();
             if (secondary_rp_state) {
@@ -1762,6 +1852,78 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::Comm
         }
     }
 
+    const auto* rp_tile_shading_ci = vku::FindStructInPNextChain<VkRenderPassTileShadingCreateInfoQCOM>(inheritance_info.pNext);
+    const bool has_rp_enable_bit = (rp_tile_shading_ci) ?
+                                   (rp_tile_shading_ci->flags & VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM) != 0 : false;
+    const bool has_rp_per_tile_exec_bit = (rp_tile_shading_ci) ?
+                                          (rp_tile_shading_ci->flags & VK_TILE_SHADING_RENDER_PASS_PER_TILE_EXECUTION_BIT_QCOM) != 0 : false;
+    if (rp_state.has_tile_shading_enabled) {
+        if (!has_rp_enable_bit) {
+            std::stringstream conditional_ss{};
+            if (rp_tile_shading_ci) {
+                conditional_ss << "has been recorded with VkRenderPassTileShadingCreateInfoQCOM::flags ("
+                               << string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci->flags)
+                               << ") doesn't include VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit, ";
+            } else {
+                conditional_ss << "hasn't been recorded with VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit since "
+                               << "VkCommandBufferInheritanceInfo::pNext doesn't include "
+                               << "VkRenderPassTileShadingCreateInfoQCOM instance, ";
+            }
+            conditional_ss << "but the render pass has tile shading enabled.";
+            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+            skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-10620", objlist, secondary_cb_loc,
+                             "%s", conditional_ss.str().c_str());
+        }
+
+        const auto *rp_tile_shading_ci_of_rp =
+                vku::FindStructInPNextChain<VkRenderPassTileShadingCreateInfoQCOM>(rp_state.create_info.pNext);
+        if (rp_tile_shading_ci &&
+            (rp_tile_shading_ci_of_rp->tileApronSize.width != rp_tile_shading_ci->tileApronSize.width ||
+             rp_tile_shading_ci_of_rp->tileApronSize.height != rp_tile_shading_ci->tileApronSize.height)) {
+            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+            skip |= LogError("VUID-vkCmdExecuteCommands-tileApronSize-10622", objlist, secondary_cb_loc,
+                             "has been recorded with VkRenderPassTileShadingCreateInfoQCOM::tileApronSize "
+                             "(%s) that isn't equal to that tileApronSize (%s) used to create the render pass.",
+                             string_VkExtent2D(rp_tile_shading_ci->tileApronSize).c_str(),
+                             string_VkExtent2D(rp_tile_shading_ci_of_rp->tileApronSize).c_str());
+        }
+    }
+
+    if (has_rp_enable_bit && !rp_state.has_tile_shading_enabled) {
+        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+        skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-10623", objlist, secondary_cb_loc,
+                         "has been recorded with VkRenderPassTileShadingCreateInfoQCOM::flags (%s) "
+                         "that includes VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit, but "
+                         "the render pass doesn't have tile shading enabled. "
+                         "(Can be enabled by using VkRenderPassTileShadingCreateInfoQCOM)",
+                         string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci->flags).c_str());
+    }
+
+    if (cb_state.per_tile_execution_model_enabled && !has_rp_per_tile_exec_bit) {
+        std::stringstream conditional_ss{};
+        if (rp_tile_shading_ci) {
+            conditional_ss << "has been recorded with VkRenderPassTileShadingCreateInfoQCOM::flags ("
+                           << string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci->flags)
+                           << ") doesn't include VK_TILE_SHADING_RENDER_PASS_PER_TILE_EXECUTION_BIT_QCOM bit, ";
+        } else {
+            conditional_ss << "hasn't been recorded with VK_TILE_SHADING_RENDER_PASS_PER_TILE_EXECUTION_BIT_QCOM "
+                           << "bit since VkCommandBufferInheritanceInfo::pNext doesn't include "
+                           << "VkRenderPassTileShadingCreateInfoQCOM instance, ";
+        }
+        conditional_ss << "but the per-tile execution model is enabled in the command buffer.";
+        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+        skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-10621", objlist, secondary_cb_loc,
+                         "%s", conditional_ss.str().c_str());
+    } else if (!cb_state.per_tile_execution_model_enabled && has_rp_per_tile_exec_bit) {
+        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+        skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-10624", objlist, secondary_cb_loc,
+                         "has been recorded with VkRenderPassTileShadingCreateInfoQCOM::flags (%s) "
+                         "includes VK_TILE_SHADING_RENDER_PASS_PER_TILE_EXECUTION_BIT_QCOM bit, but "
+                         "the per-tile execution model isn't enabled in the command buffer. "
+                         "(Can be enabled by calling vkCmdBeginPerTileExecutionQCOM)",
+                         string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci->flags).c_str());
+    }
+
     return skip;
 }
 
@@ -2113,12 +2275,28 @@ bool CoreChecks::PreCallValidateCmdEndPerTileExecutionQCOM(VkCommandBuffer comma
 bool CoreChecks::PreCallValidateCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT* pMarkerInfo,
                                                        const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    return ValidateCmd(*cb_state, error_obj.location);
+    bool skip = ValidateCmd(*cb_state, error_obj.location);
+
+    if (cb_state->per_tile_execution_model_enabled) {
+        skip |= LogError("VUID-vkCmdDebugMarkerBeginEXT-None-10614", commandBuffer, error_obj.location,
+                         "the per-tile execution model has been enabled in this command buffer. "
+                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdDebugMarkerBeginEXT)");
+    }
+
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    return ValidateCmd(*cb_state, error_obj.location);
+    bool skip = ValidateCmd(*cb_state, error_obj.location);
+
+    if (cb_state->per_tile_execution_model_enabled) {
+        skip |= LogError("VUID-vkCmdDebugMarkerEndEXT-None-10615", commandBuffer, error_obj.location,
+                         "the per-tile execution model has been enabled in this command buffer. "
+                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdDebugMarkerEndEXT)");
+    }
+
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffer,
@@ -2358,6 +2536,12 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
         }
     }
 
+    if (cb_state->per_tile_execution_model_enabled) {
+        skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-None-10656", commandBuffer, error_obj.location,
+                         "the per-tile execution model has been enabled in this command buffer. "
+                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdBeginTransformFeedbackEXT)");
+    }
+
     return skip;
 }
 
@@ -2436,6 +2620,12 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
                                  string_VkBufferUsageFlags2(buffer_state->usage).c_str());
             }
         }
+    }
+
+    if (cb_state->per_tile_execution_model_enabled) {
+        skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-None-10657", commandBuffer, error_obj.location,
+                         "the per-tile execution model has been enabled in this command buffer. "
+                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdEndTransformFeedbackEXT)");
     }
 
     return skip;

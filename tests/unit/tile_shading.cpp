@@ -12,6 +12,7 @@
  */
 
 #include "layer_validation_tests.h"
+#include "pipeline_helper.h"
 
 class NegativeTileShading : public TileShadingTest {};
 
@@ -40,6 +41,38 @@ TEST_F(NegativeTileShading, BeginPerTileExecutionWithNonTileShadingRenderPass) {
     m_command_buffer.Begin();
     vk::CmdBeginRenderPass(m_command_buffer, &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginPerTileExecutionQCOM-None-10664");
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndRenderPass(m_command_buffer);
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, BeginPerTileExecutionButTileShadingPerTileFeatureNotEnabled) {
+    TEST_DESCRIPTION("Try to launch per-tile execution model in a tile-shading render pass scope, "
+                     "but tileShadingPerTileDispatch or tileShadingPerTileDraw feature is not enabled.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_TILE_SHADING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileShading);
+    RETURN_IF_SKIP(Init());
+
+    InitTileShadingRenderTarget();
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    vk::CmdBeginRenderPass(m_command_buffer, &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginPerTileExecutionQCOM-None-10665");
     vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
     m_errorMonitor->VerifyFound();
     vk::CmdEndRenderPass(m_command_buffer);
@@ -917,5 +950,780 @@ TEST_F(NegativeTileShading, SubpassDescriptionWithZeroApronSize) {
         m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-flags-10683");
         vk::CreateRenderPass2(device(), &rpci2, nullptr, &rp);
         m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeTileShading, BeginNonTileShadingCommandBufferWithTileShadingRenderPass) {
+    TEST_DESCRIPTION("Begin a command buffer without tile-shading-enable bit, but a tile-shading render pass "
+                     "is included in the inheritance information.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    vkt::CommandBuffer secondary_command{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY};
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_ci = vku::InitStructHelper();
+    tile_shading_ci.tileApronSize = tile_shading_rp_config.tile_apron_size;
+    tile_shading_ci.flags = 0;
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&tile_shading_ci);
+    inheritance_info.renderPass = m_tile_shading_render_pass;
+    inheritance_info.subpass = 0;
+    inheritance_info.framebuffer = m_tile_shading_framebuffer;
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferBeginInfo-flags-10617");
+    vk::BeginCommandBuffer(secondary_command, &begin_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTileShading, BeginTileShadingCommandBufferWithNonTileShadingRenderPass) {
+    TEST_DESCRIPTION("Begin a command buffer with tile-shading-enable bit, but the inheritance information "
+                     "includes a non-tile-shading render pass.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitRenderTarget();
+
+    vkt::CommandBuffer secondary_command{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY};
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_ci = vku::InitStructHelper();
+    tile_shading_ci.tileApronSize = {0, 0};
+    tile_shading_ci.flags = VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM;
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&tile_shading_ci);
+    inheritance_info.renderPass = RenderPass();
+    inheritance_info.subpass = 0;
+    inheritance_info.framebuffer = Framebuffer();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.flags = 0;
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferBeginInfo-flags-10618");
+     vk::BeginCommandBuffer(secondary_command, &begin_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTileShading, BeginTileShadingCommandBufferButHasInconsistentApronSize) {
+    TEST_DESCRIPTION("Begin a command buffer with tile-shading-enable bit, but the inheritance information "
+                     "has tileApronSize that isn't equal to that tileApronSize used to create render pass.");
+    AddRequiredFeature(vkt::Feature::tileShadingApron);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    VkPhysicalDeviceTileShadingPropertiesQCOM tile_shading_props = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&tile_shading_props);
+    vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
+
+    vkt::CommandBuffer secondary_command{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY};
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_ci = vku::InitStructHelper();
+    tile_shading_ci.tileApronSize = {tile_shading_props.maxApronSize, tile_shading_props.maxApronSize};
+    tile_shading_ci.flags = VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM;
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&tile_shading_ci);
+    inheritance_info.renderPass = m_tile_shading_render_pass;
+    inheritance_info.subpass = 0;
+    inheritance_info.framebuffer = m_tile_shading_framebuffer;
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferBeginInfo-flags-10619");
+     vk::BeginCommandBuffer(secondary_command, &begin_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTileShading, ExecuteTileShadingCommandWithoutTileShadingEnableBit) {
+    TEST_DESCRIPTION("Execute a secondary command inside a tile-shading render pass scope, but that secondary "
+                     "command hasn't been recorded with tile-shading-enable bit.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    vkt::CommandBuffer secondary_command{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY};
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_ci = vku::InitStructHelper();
+    tile_shading_ci.tileApronSize = tile_shading_rp_config.tile_apron_size;
+    tile_shading_ci.flags = 0;
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&tile_shading_ci);
+    inheritance_info.renderPass = m_tile_shading_render_pass;
+    inheritance_info.subpass = 0;
+    inheritance_info.framebuffer = m_tile_shading_framebuffer;
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkCommandBufferBeginInfo-flags-10617");
+    secondary_command.Begin(&begin_info);
+    secondary_command.End();
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-10620");
+    m_command_buffer.ExecuteCommands(secondary_command);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, ExecuteTileShadingCommandInPerTileExecutionModelScope) {
+    TEST_DESCRIPTION("Execute a secondary command inside the per-tile execution model scope, but that secondary "
+                     "command only has been recorded with tile-shading-enable bit.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    vkt::CommandBuffer secondary_command{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY};
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_ci = vku::InitStructHelper();
+    tile_shading_ci.tileApronSize = tile_shading_rp_config.tile_apron_size;
+    tile_shading_ci.flags = VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM;
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&tile_shading_ci);
+    inheritance_info.renderPass = m_tile_shading_render_pass;
+    inheritance_info.subpass = 0;
+    inheritance_info.framebuffer = m_tile_shading_framebuffer;
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    secondary_command.Begin(&begin_info);
+    secondary_command.End();
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-10621");
+    m_command_buffer.ExecuteCommands(secondary_command);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, ExecuteTileShadingCommandWithInconsistentTileApronSize) {
+    TEST_DESCRIPTION("Execute a secondary command inside a tile-shading render pass scope, but that secondary "
+                     "command has been recorded with a tile-apron size inconsistent with that of the render pass.");
+    AddRequiredFeature(vkt::Feature::tileShadingApron);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    VkPhysicalDeviceTileShadingPropertiesQCOM tile_shading_props = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&tile_shading_props);
+    vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
+
+    vkt::CommandBuffer secondary_command{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY};
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_ci = vku::InitStructHelper();
+    tile_shading_ci.tileApronSize = {tile_shading_props.maxApronSize, tile_shading_props.maxApronSize};
+    tile_shading_ci.flags = VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM;
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&tile_shading_ci);
+    inheritance_info.renderPass = m_tile_shading_render_pass;
+    inheritance_info.subpass = 0;
+    inheritance_info.framebuffer = m_tile_shading_framebuffer;
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    secondary_command.Begin(&begin_info);
+    secondary_command.End();
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-tileApronSize-10622");
+    m_command_buffer.ExecuteCommands(secondary_command);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, ExecuteTileShadingCommandInNonTileShadingRenderPass) {
+    TEST_DESCRIPTION("Execute a secondary command inside a non-tile-shading render pass scope, but that secondary "
+                     "command has been recorded with tile-shading-enable bit.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitRenderTarget();
+
+    vkt::CommandBuffer secondary_command{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY};
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_ci = vku::InitStructHelper();
+    tile_shading_ci.tileApronSize = {0, 0};
+    tile_shading_ci.flags = VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM;
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&tile_shading_ci);
+    inheritance_info.renderPass = RenderPass();
+    inheritance_info.subpass = 0;
+    inheritance_info.framebuffer = Framebuffer();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = RenderPass();
+    rp_begin_info.framebuffer = Framebuffer();
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = {m_width, m_height};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    secondary_command.Begin(&begin_info);
+    secondary_command.End();
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-10623");
+    m_command_buffer.ExecuteCommands(secondary_command);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, ExecutePerTileExecutionCommandButPerTileExecutionModelNotEnabled) {
+    TEST_DESCRIPTION("Execute a secondary command that has been recorded with per-tile-execution bit, "
+                     "but the per-tile execution model isn't enabled.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    vkt::CommandBuffer secondary_command{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY};
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_ci = vku::InitStructHelper();
+    tile_shading_ci.tileApronSize = tile_shading_rp_config.tile_apron_size;
+    tile_shading_ci.flags = VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM | VK_TILE_SHADING_RENDER_PASS_PER_TILE_EXECUTION_BIT_QCOM;
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&tile_shading_ci);
+    inheritance_info.renderPass = m_tile_shading_render_pass;
+    inheritance_info.subpass = 0;
+    inheritance_info.framebuffer = m_tile_shading_framebuffer;
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    secondary_command.Begin(&begin_info);
+    secondary_command.End();
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-10624");
+    m_command_buffer.ExecuteCommands(secondary_command);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, ExecuteNonZeroTileSizeCommand) {
+    TEST_DESCRIPTION("Execute a secondary command without a render pass, but that secondary "
+                     "command has been recorded with a non-zero tile-apron size.");
+    AddRequiredFeature(vkt::Feature::tileShadingApron);
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    VkPhysicalDeviceTileShadingPropertiesQCOM tile_shading_props = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&tile_shading_props);
+    vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
+
+    vkt::CommandBuffer secondary_command{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY};
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_ci = vku::InitStructHelper();
+    tile_shading_ci.tileApronSize = {tile_shading_props.maxApronSize, tile_shading_props.maxApronSize};
+    tile_shading_ci.flags = 0;
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&tile_shading_ci);
+    inheritance_info.renderPass = nullptr;
+    inheritance_info.subpass = 0;
+    inheritance_info.framebuffer = nullptr;
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.flags = 0;
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    secondary_command.Begin(&begin_info);
+    secondary_command.End();
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-tileApronSize-10625");
+    m_command_buffer.ExecuteCommands(secondary_command);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, LaunchTileAttachmentMemoryBarrierButUseWrongStageMask) {
+    TEST_DESCRIPTION("Try to launch tile attachment memory barrier but provides a wrong stage mask.");
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    m_command_buffer.Begin();
+    {
+        VkMemoryBarrier2 barrier2 = vku::InitStructHelper();
+        barrier2.srcStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+        barrier2.srcAccessMask = VK_ACCESS_2_SHADER_TILE_ATTACHMENT_READ_BIT_QCOM;
+        barrier2.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        barrier2.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
+
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-10670");
+        m_command_buffer.Barrier(barrier2);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkMemoryBarrier2 barrier2 = vku::InitStructHelper();
+        barrier2.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+        barrier2.srcAccessMask = VK_ACCESS_2_SHADER_TILE_ATTACHMENT_WRITE_BIT_QCOM;
+        barrier2.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        barrier2.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
+
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-10671");
+        m_command_buffer.Barrier(barrier2);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkMemoryBarrier2 barrier2 = vku::InitStructHelper();
+        barrier2.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        barrier2.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        barrier2.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+        barrier2.dstAccessMask = VK_ACCESS_2_SHADER_TILE_ATTACHMENT_READ_BIT_QCOM;
+
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-10670");
+        m_command_buffer.Barrier(barrier2);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkMemoryBarrier2 barrier2 = vku::InitStructHelper();
+        barrier2.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        barrier2.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+        barrier2.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+        barrier2.dstAccessMask = VK_ACCESS_2_SHADER_TILE_ATTACHMENT_WRITE_BIT_QCOM;
+
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-10671");
+        m_command_buffer.Barrier(barrier2);
+        m_errorMonitor->VerifyFound();
+    }
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, DebugMarkerInsidePerTileExecutionModelScope) {
+    TEST_DESCRIPTION("Try to begin or end debug marker inside the per-tile execution model scope.");
+    AddRequiredExtensions(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    VkDebugMarkerMarkerInfoEXT marker_info = vku::InitStructHelper();
+    marker_info.pMarkerName = "tile-shading-marker";
+    marker_info.color[0] = 1.0f;
+    marker_info.color[1] = 0.0f;
+    marker_info.color[2] = 0.0f;
+    marker_info.color[3] = 1.0f;
+
+    {
+        m_command_buffer.Begin();
+        m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDebugMarkerBeginEXT-None-10614");
+        vk::CmdDebugMarkerBeginEXT(m_command_buffer, &marker_info);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+        m_command_buffer.Reset();
+    }
+    {
+        m_command_buffer.Begin();
+        vk::CmdDebugMarkerBeginEXT(m_command_buffer, &marker_info);
+        m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDebugMarkerEndEXT-None-10615");
+        vk::CmdDebugMarkerEndEXT(m_command_buffer);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+        m_command_buffer.EndRenderPass();
+        vk::CmdDebugMarkerEndEXT(m_command_buffer);
+        m_command_buffer.End();
+    }
+}
+
+TEST_F(NegativeTileShading, ClearAttachmentInsidePerTileExecutionModelScope) {
+    TEST_DESCRIPTION("Try to clear attachment inside the per-tile execution model scope.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    VkClearAttachment clear_attachment{};
+    clear_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clear_attachment.colorAttachment = 0;
+    clear_attachment.clearValue = clear_value;
+
+    VkClearRect clear_rect{};
+    clear_rect.rect.offset = {0, 0};
+    clear_rect.rect.extent = tile_shading_rp_config.rt_size;
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-None-10616");
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, WriteTimestampInsidePerTileExecutionModelScope) {
+    TEST_DESCRIPTION("Try to write timestamp inside the per-tile execution model scope.");
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    vkt::QueryPool query_pool{*m_device, VK_QUERY_TYPE_TIMESTAMP, 1};
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    {
+        m_command_buffer.Begin();
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+        m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp-None-10640");
+        vk::CmdWriteTimestamp(m_command_buffer,
+                              VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                              query_pool, 0);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+        m_command_buffer.Reset();
+    }
+    {
+        m_command_buffer.Begin();
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+        m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp2-None-10639");
+        vk::CmdWriteTimestamp2(m_command_buffer,
+                               VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+                               query_pool, 0);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+    }
+}
+
+TEST_F(NegativeTileShading, WaitEventsInsidePerTileExecutionModelScope) {
+    TEST_DESCRIPTION("Try to wait events inside the per-tile execution model scope.");
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    vkt::Event event{*m_device};
+    const VkEvent event_handle = event.handle();
+
+    VkClearValue clear_value = {};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    {
+        m_command_buffer.Begin();
+        m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-None-10655");
+        vk::CmdWaitEvents(m_command_buffer,
+                          1, &event_handle,
+                          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                          0, nullptr,
+                          0, nullptr,
+                          0, nullptr);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+        m_command_buffer.Reset();
+    }
+    {
+        VkMemoryBarrier2 mem_barrier2 = vku::InitStructHelper();
+        mem_barrier2.srcStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+        mem_barrier2.srcAccessMask = 0;
+        mem_barrier2.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+        mem_barrier2.dstAccessMask = VK_ACCESS_2_SHADER_TILE_ATTACHMENT_READ_BIT_QCOM;
+
+        VkDependencyInfo dependency_info = vku::InitStructHelper();
+        dependency_info.memoryBarrierCount = 1;
+        dependency_info.pMemoryBarriers = &mem_barrier2;
+
+        m_command_buffer.Begin();
+        m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-None-10654");
+        vk::CmdWaitEvents2(m_command_buffer, 1, &event_handle, &dependency_info);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+    }
+}
+
+TEST_F(NegativeTileShading, TransformFeedbackInsidePerTileExecutionModelScope) {
+    TEST_DESCRIPTION("Try to begin or end transform feedback inside the per-tile execution model scope.");
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    const char *vs_source = R"glsl(
+        #version 460
+
+        layout(xfb_buffer = 0, xfb_stride = 16) out;
+        layout(location = 0, xfb_offset = 0) out vec4 xfb_out;
+
+        vec2 positions[3] = vec2[3](
+            vec2( 0.0, -0.5),
+            vec2( 0.5,  0.5),
+            vec2(-0.5,  0.5)
+        );
+
+        void main() {
+            vec4 out_position = vec4(positions[gl_VertexIndex], 0.0, 1.0);
+            xfb_out = out_position;
+            gl_Position = out_position;
+        }
+    )glsl";
+    const char *fs_source = R"glsl(
+        #version 460
+
+        layout(location = 0) out vec4 out_color;
+
+        void main() {
+            out_color = vec4(1.0);
+        }
+    )glsl";
+
+    VkShaderObj vs{*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3};
+    VkShaderObj fs{*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3};
+
+    CreatePipelineHelper xfb_pipe{*this};
+    xfb_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    xfb_pipe.gp_ci_.renderPass = m_tile_shading_render_pass;
+    xfb_pipe.CreateGraphicsPipeline();
+
+    constexpr VkDeviceSize xfb_offset = 0;
+    constexpr VkDeviceSize xfb_size = 4096;
+    vkt::Buffer xfb_buffer{*m_device, xfb_size,
+                           VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT,
+                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+    VkBuffer xfb_handle = xfb_buffer.handle();
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    {
+        m_command_buffer.Begin();
+        m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, xfb_pipe);
+        vk::CmdBindTransformFeedbackBuffersEXT(m_command_buffer,
+                                               0, 1, &xfb_handle, &xfb_offset, &xfb_size);
+        vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-None-10656");
+        vk::CmdBeginTransformFeedbackEXT(m_command_buffer,
+                                         0,
+                                         0,
+                                         nullptr,
+                                         nullptr);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+        m_command_buffer.Reset();
+    }
+    {
+        m_command_buffer.Begin();
+        m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, xfb_pipe);
+        vk::CmdBindTransformFeedbackBuffersEXT(m_command_buffer,
+                                               0, 1, &xfb_handle, &xfb_offset, &xfb_size);
+        vk::CmdBeginTransformFeedbackEXT(m_command_buffer,
+                                         0,
+                                         0,
+                                         nullptr,
+                                         nullptr);
+        vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdEndTransformFeedbackEXT-None-10657");
+        vk::CmdEndTransformFeedbackEXT(m_command_buffer,
+                                       0,
+                                       0,
+                                       nullptr,
+                                       nullptr);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+        vk::CmdEndTransformFeedbackEXT(m_command_buffer,
+                                       0,
+                                       0,
+                                       nullptr,
+                                       nullptr);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+    }
+}
+
+TEST_F(NegativeTileShading, QueryInsidePerTileExecutionModelScope) {
+    TEST_DESCRIPTION("Try to begin or end query inside the per-tile execution model scope.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    vkt::QueryPool query_pool{*m_device, VK_QUERY_TYPE_OCCLUSION, 1};
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    {
+        m_command_buffer.Begin();
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+        m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-None-10681");
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+        m_command_buffer.Reset();
+    }
+    {
+        m_command_buffer.Begin();
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+        m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdEndQuery-None-07007");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdEndQuery-None-10682");
+        vk::CmdEndQuery(m_command_buffer, query_pool, 0);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+        m_command_buffer.EndRenderPass();
+        vk::CmdEndQuery(m_command_buffer, query_pool, 0);
+        m_command_buffer.End();
     }
 }
