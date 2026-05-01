@@ -154,7 +154,7 @@ bool SubmitTimeTracker::PropagateTimelineSignals() {
     // The caller ensures we just registered new timeline signals
     bool new_timeline_signals = true;
 
-    // Each iteration attempts to resolve pending batches using current timeline value.
+    // Each iteration uses registered timeline signals to resolve batches.
     // If a resolved batch generates new timeline signals, the loop runs again
     while (new_timeline_signals) {
         new_timeline_signals = false;
