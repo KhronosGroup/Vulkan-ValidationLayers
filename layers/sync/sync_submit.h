@@ -263,14 +263,6 @@ struct UnresolvedBatch {
     std::vector<std::string> label_stack;
 };
 
-// Helper struct to resolve wait-before-signal
-struct UnresolvedQueue {
-    QueueState* queue_state = nullptr;
-    std::vector<UnresolvedBatch> unresolved_batches;
-    // whether unresolved state should be updated for this queue
-    bool update_unresolved = false;
-};
-
 // Track the last synchronized presentation operation for each swapchain.
 // "Presentation is synchronized" means that we re-acquired previously
 // presented image and this batch context directly or indirectly waits for
@@ -298,8 +290,7 @@ class QueueState {
     BatchContextPtr LastBatch() const { return last_batch_; }
     void SetLastBatch(BatchContextPtr&& last);
 
-    const std::vector<UnresolvedBatch>& UnresolvedBatches() const { return unresolved_batches_; }
-    void SetUnresolvedBatches(std::vector<UnresolvedBatch>&& unresolved_batches);
+    std::vector<UnresolvedBatch>& UnresolvedBatches() { return unresolved_batches_; }
 
   private:
     std::shared_ptr<vvl::Queue> queue_;

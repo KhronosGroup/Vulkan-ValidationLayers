@@ -802,10 +802,6 @@ void QueueState::SetLastBatch(BatchContextPtr&& last) {
     }
 }
 
-void QueueState::SetUnresolvedBatches(std::vector<UnresolvedBatch>&& unresolved_batches) {
-    unresolved_batches_ = std::move(unresolved_batches);
-}
-
 void BatchAccessLog::Import(const BatchRecord& batch, const CommandBufferAccessContext& cb_access,
                             const std::vector<std::string>& initial_label_stack) {
     ResourceUsageRange import_range = {batch.base_tag, batch.base_tag + cb_access.GetTagCount()};

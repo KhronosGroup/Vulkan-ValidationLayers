@@ -2523,9 +2523,7 @@ bool SyncValidator::ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, cons
         queue_state.SetLastBatch(std::move(new_last_batch));
     }
     if (!new_unresolved_batches.empty() && !skip) {
-        auto unresolved_batches = queue_state.UnresolvedBatches();
-        vvl::Append(unresolved_batches, new_unresolved_batches);
-        queue_state.SetUnresolvedBatches(std::move(unresolved_batches));
+        vvl::Append(queue_state.UnresolvedBatches(), new_unresolved_batches);
     }
 
     // Check if timeline signals resolve existing wait-before-signal dependencies
@@ -2549,94 +2547,73 @@ bool SyncValidator::ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, cons
 
 bool SyncValidator::PropagateTimelineSignals(SignalsUpdate& signals_update, const ErrorObject& error_obj) {
     bool skip = false;
-    // Initialize per-queue unresolved batches state.
-    std::vector<UnresolvedQueue> queues;
-    for (QueueState& queue_state : queue_states_) {
-        if (!queue_state.UnresolvedBatches().empty()) {
-            queues.emplace_back(UnresolvedQueue{&queue_state, queue_state.UnresolvedBatches()});
-        }
-    }
 
-    // Each iteration uses registered timeline signals to resolve existing unresolved batches.
-    // Each resolved batch can generate new timeline signals which can resolve more unresolved batches on the next iteration.
-    // This finishes when all unresolved batches are resolved or when iteration does not generate new timeline signals.
-    while (ProcessUnresolvedBatches(queues, signals_update, skip, error_obj)) {
-        ;
-    }
+    // The caller ensures we just registered new timeline signals
+    bool new_timeline_signals = true;
 
-    // Update unresolved state
-    for (UnresolvedQueue& queue : queues) {
-        if (queue.update_unresolved) {
-            queue.queue_state->SetUnresolvedBatches(std::move(queue.unresolved_batches));
+    // Each iteration uses registered timeline signals to resolve batches.
+    // If a resolved batch generates new timeline signals, the loop runs again
+    while (new_timeline_signals) {
+        new_timeline_signals = false;
+
+        for (QueueState& queue_state : queue_states_) {
+            auto& unresolved_batches = queue_state.UnresolvedBatches();
+            if (unresolved_batches.empty()) {
+                continue;
+            }
+            // Resolve waits that have matching signal
+            for (UnresolvedBatch& unresolved_batch : unresolved_batches) {
+                auto it = unresolved_batch.unresolved_waits.begin();
+                while (it != unresolved_batch.unresolved_waits.end()) {
+                    const VkSemaphoreSubmitInfo& wait_info = *it;
+                    auto resolving_signal = signals_update.OnTimelineWait(wait_info.semaphore, wait_info.value);
+                    if (!resolving_signal.has_value()) {
+                        ++it;
+                        continue;  // resolving signal not found, the wait stays unresolved
+                    }
+                    if (resolving_signal->batch) {  // null for host signals
+                        unresolved_batch.batch->ResolveSubmitSemaphoreWait(*resolving_signal, wait_info.stageMask);
+                        unresolved_batch.batch->ImportTags(*resolving_signal->batch);
+                        unresolved_batch.resolved_dependencies.emplace_back(resolving_signal->batch);
+                    }
+                    it = unresolved_batch.unresolved_waits.erase(it);
+                }
+            }
+
+            BatchContextPtr last_batch = queue_state.LastBatch();
+            const BatchContextPtr initial_last_batch = last_batch;
+
+            // Process batches that do not have unresolved waits anymore.
+            // Stop when find a batch with unresolved waits or when all the batches are processed.
+            while (!unresolved_batches.empty() && unresolved_batches.front().unresolved_waits.empty()) {
+                UnresolvedBatch& ready_batch = unresolved_batches.front();
+
+                // Import the previous batch information
+                if (last_batch && !vvl::Contains(ready_batch.resolved_dependencies, last_batch)) {
+                    ready_batch.batch->ResolveLastBatch(last_batch);
+                    ready_batch.resolved_dependencies.emplace_back(std::move(last_batch));
+                }
+
+                const auto async_batches = ready_batch.batch->RegisterAsyncContexts(ready_batch.resolved_dependencies);
+
+                skip |= ready_batch.batch->ValidateSubmit(ready_batch.command_buffers, ready_batch.submit_index,
+                                                          ready_batch.batch_index, ready_batch.label_stack, error_obj);
+
+                // Process signals. New timeline signals can resolve more batches on the next iteration
+                const auto submit_signals = vvl::make_span(ready_batch.signals.data(), ready_batch.signals.size());
+                new_timeline_signals |= signals_update.RegisterSignals(ready_batch.batch, submit_signals);
+
+                last_batch = ready_batch.batch;
+                unresolved_batches.erase(unresolved_batches.begin());
+                stats.RemoveUnresolvedBatch();
+            }
+
+            if (last_batch != initial_last_batch) {
+                queue_state.SetLastBatch(std::move(last_batch));
+            }
         }
     }
     return skip;
-}
-
-bool SyncValidator::ProcessUnresolvedBatches(std::vector<UnresolvedQueue>& queues, SignalsUpdate& signals_update, bool& skip,
-                                             const ErrorObject& error_obj) const {
-    bool has_new_timeline_signals = false;
-    for (auto& queue : queues) {
-        if (queue.unresolved_batches.empty()) {
-            continue;  // all batches for this queue were resolved by previous iterations
-        }
-        // Resolve waits that have matching signal
-        for (UnresolvedBatch& unresolved_batch : queue.unresolved_batches) {
-            auto it = unresolved_batch.unresolved_waits.begin();
-            while (it != unresolved_batch.unresolved_waits.end()) {
-                const VkSemaphoreSubmitInfo& wait_info = *it;
-                auto resolving_signal = signals_update.OnTimelineWait(wait_info.semaphore, wait_info.value);
-                if (!resolving_signal.has_value()) {
-                    ++it;
-                    continue;  // resolving signal not found, the wait stays unresolved
-                }
-                if (resolving_signal->batch) {  // null for host signals
-                    unresolved_batch.batch->ResolveSubmitSemaphoreWait(*resolving_signal, wait_info.stageMask);
-                    unresolved_batch.batch->ImportTags(*resolving_signal->batch);
-                    unresolved_batch.resolved_dependencies.emplace_back(resolving_signal->batch);
-                }
-                it = unresolved_batch.unresolved_waits.erase(it);
-            }
-        }
-
-        BatchContextPtr last_batch = queue.queue_state->LastBatch();
-        const BatchContextPtr initial_last_batch = last_batch;
-
-        // Process batches that do not have unresolved waits anymore.
-        // Stop when find a batch with unresolved waits or when all the batches are processed.
-        while (!queue.unresolved_batches.empty() && queue.unresolved_batches.front().unresolved_waits.empty()) {
-            UnresolvedBatch& ready_batch = queue.unresolved_batches.front();
-
-            // Import the previous batch information
-            if (last_batch && !vvl::Contains(ready_batch.resolved_dependencies, last_batch)) {
-                ready_batch.batch->ResolveLastBatch(last_batch);
-                ready_batch.resolved_dependencies.emplace_back(std::move(last_batch));
-            }
-            last_batch = ready_batch.batch;
-
-            const auto async_batches = ready_batch.batch->RegisterAsyncContexts(ready_batch.resolved_dependencies);
-
-            skip |= ready_batch.batch->ValidateSubmit(ready_batch.command_buffers, ready_batch.submit_index,
-                                                      ready_batch.batch_index, ready_batch.label_stack, error_obj);
-
-            // Process signals. New timeline signals can resolve more batches on the next iteration
-            const auto submit_signals = vvl::make_span(ready_batch.signals.data(), ready_batch.signals.size());
-            has_new_timeline_signals |= signals_update.RegisterSignals(ready_batch.batch, submit_signals);
-
-            // Remove processed batch from the (local) unresolved list
-            queue.unresolved_batches.erase(queue.unresolved_batches.begin());
-
-            // Propagate change into the queue's (global) unresolved state
-            queue.update_unresolved = true;
-
-            stats.RemoveUnresolvedBatch();
-        }
-
-        if (last_batch != initial_last_batch) {
-            queue.queue_state->SetLastBatch(std::move(last_batch));
-        }
-    }
-    return has_new_timeline_signals;
 }
 
 void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, const RecordObject& record_obj) {
