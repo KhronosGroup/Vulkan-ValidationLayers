@@ -665,10 +665,11 @@ bool CoreChecks::ValidateDrawShaderObjectBoundShader(const LastBound& last_bound
                          "be bound with VK_NULL_HANDLE)");
     }
     if (!last_bound_state.IsValidShaderObjectOrNullBound(ShaderObjectStage::FRAGMENT)) {
-        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::FRAGMENT_SHADER_08688), cb_state.Handle(), loc,
-                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
-                         "VK_SHADER_STAGE_FRAGMENT_BIT (Even if you are trying to a vertex/mesh only draw, a VK_NULL_HANDLE must "
-                         "be bound to the fragment stage)");
+        skip |=
+            LogError(CreateActionVuid(loc.function, vvl::ActionVUID::FRAGMENT_SHADER_08688), cb_state.Handle(), loc,
+                     "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                     "VK_SHADER_STAGE_FRAGMENT_BIT (Even if you are trying to do a vertex/mesh only draw, a VK_NULL_HANDLE must "
+                     "be bound to the fragment stage)");
     }
     if (enabled_features.taskShader && !last_bound_state.IsValidShaderObjectOrNullBound(ShaderObjectStage::TASK)) {
         skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::TASK_SHADER_08689), cb_state.Handle(), loc,
