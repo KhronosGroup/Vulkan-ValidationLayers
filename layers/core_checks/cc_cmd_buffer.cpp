@@ -2476,6 +2476,15 @@ bool CoreChecks::ValidateCmdBeginTransformFeedback(const vvl::CommandBuffer& cb_
         }
     }
 
+    if (cb_state.per_tile_execution_model_enabled) {
+        const char* vuid =
+            is_xfb_2 ? "VUID-vkCmdBeginTransformFeedback2EXT-None-10656" : "VUID-vkCmdBeginTransformFeedbackEXT-None-10656";
+        skip |= LogError(vuid, cb_state.VkHandle(), error_obj.location,
+                         "the per-tile execution model has been enabled in this command buffer. "
+                         "(Don't call vkCmdBeginPerTileExecutionQCOM before %s)",
+                         String(error_obj.location.function));
+    }
+
     return skip;
 }
 
@@ -2532,12 +2541,6 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
         }
     }
 
-    if (cb_state->per_tile_execution_model_enabled) {
-        skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-None-10656", commandBuffer, error_obj.location,
-                         "the per-tile execution model has been enabled in this command buffer. "
-                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdBeginTransformFeedbackEXT)");
-    }
-
     return skip;
 }
 
@@ -2581,6 +2584,16 @@ bool CoreChecks::ValidateCmdEndTransformFeedback(const vvl::CommandBuffer& cb_st
         skip |= LogError(vuid, cb_state.VkHandle(), error_obj.location, "transform feedback is not active.");
     }
 
+    if (cb_state.per_tile_execution_model_enabled) {
+        const char* vuid =
+            is_xfb_2 ? "VUID-vkCmdEndTransformFeedback2EXT-None-10657" : "VUID-vkCmdEndTransformFeedbackEXT-None-10657";
+
+        skip |= LogError(vuid, cb_state.VkHandle(), error_obj.location,
+                         "the per-tile execution model has been enabled in this command buffer. "
+                         "(Don't call vkCmdBeginPerTileExecutionQCOM before %s)",
+                         String(error_obj.location.function));
+    }
+
     return skip;
 }
 
@@ -2616,12 +2629,6 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
                                  string_VkBufferUsageFlags2(buffer_state->usage).c_str());
             }
         }
-    }
-
-    if (cb_state->per_tile_execution_model_enabled) {
-        skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-None-10657", commandBuffer, error_obj.location,
-                         "the per-tile execution model has been enabled in this command buffer. "
-                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdEndTransformFeedbackEXT)");
     }
 
     return skip;
