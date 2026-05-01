@@ -524,25 +524,13 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingsUsed) {
     pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
-    mappings[0] = vku::InitStructHelper();
-    mappings[0].descriptorSet = 0u;
-    mappings[0].firstBinding = 0u;
-    mappings[0].bindingCount = 1u;
-    mappings[0].resourceMask = VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT;
+    mappings[0] = MakeSetAndBindingMapping(0u, 0u, 1u, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0;
-    mappings[1] = vku::InitStructHelper();
-    mappings[1].descriptorSet = 0u;
-    mappings[1].firstBinding = 1u;
-    mappings[1].bindingCount = 1u;
-    mappings[1].resourceMask = VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT;
+    mappings[1] = MakeSetAndBindingMapping(0u, 1u, 1u, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset.heapOffset = static_cast<uint32_t>(heap_props.bufferDescriptorAlignment);
-    mappings[2] = vku::InitStructHelper();
-    mappings[2].descriptorSet = 1u;
-    mappings[2].firstBinding = 2u;
-    mappings[2].bindingCount = 1u;
-    mappings[2].resourceMask = VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT;
+    mappings[2] = MakeSetAndBindingMapping(1u, 2u, 1u, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT);
     mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[2].sourceData.constantOffset.heapOffset = static_cast<uint32_t>(heap_props.bufferDescriptorAlignment * 2u);
 

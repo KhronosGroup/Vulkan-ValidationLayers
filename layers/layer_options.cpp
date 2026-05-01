@@ -254,6 +254,7 @@ const char* VK_LAYER_GPU_DUMP_COPY_MEMORY_INDIRECT = "gpu_dump_copy_memory_indir
 const char* VK_LAYER_GPU_DUMP_DEVICE_GENERATED_COMMANDS = "gpu_dump_device_generated_commands";
 // Print to stdout
 const char* VK_LAYER_GPU_DUMP_TO_STDOUT = "gpu_dump_to_stdout";
+const char* VK_LAYER_GPU_DUMP_DEVICE_COPY = "gpu_dump_device_copy";
 
 // Don't need any setting helper when using self vvl and don't want unused function warnings
 #if !defined(BUILD_SELF_VVL)
@@ -759,21 +760,31 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings* settings_data, VkuL
     }
 
     if (settings_data->enabled[gpu_dump]) {
-        if (settings_data->gpu_dump_settings->to_stdout && (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG)) {
-            if (is_stdout) {
-                setting_warnings.emplace_back(
-                    "The debug callback is already logging to stdout, but " + std::string(VK_LAYER_GPU_DUMP_TO_STDOUT) +
-                    " is also enabled. GPU Dump will skip the debug callback in favor of a direct stdout write.");
-            } else {
-                setting_warnings.emplace_back("The logging to " + log_filename + " will not contain any GPU Dump info because " +
-                                              std::string(VK_LAYER_GPU_DUMP_TO_STDOUT) + " is enabled.");
+        if (settings_data->gpu_dump_settings->to_stdout) {
+            if ((debug_action & VK_DBG_LAYER_ACTION_LOG_MSG)) {
+                if (is_stdout) {
+                    setting_warnings.emplace_back(
+                        "The debug callback is already logging to stdout, but " + std::string(VK_LAYER_GPU_DUMP_TO_STDOUT) +
+                        " is also enabled. GPU Dump will skip the debug callback in favor of a direct stdout write.");
+                } else {
+                    setting_warnings.emplace_back("The logging to " + log_filename +
+                                                  " will not contain any GPU Dump info because " +
+                                                  std::string(VK_LAYER_GPU_DUMP_TO_STDOUT) + " is enabled.");
+                }
             }
-        }
-        if (!settings_data->gpu_dump_settings->to_stdout && ((report_flags & kInformationBit) == 0)) {
-            setting_warnings.emplace_back(
-                "GPU Dump logs to the Information message severity, enabling Information level logging otherwise the message "
-                "will not be seen.");
-            report_flags |= kInformationBit;
+        } else if (!settings_data->gpu_dump_settings->to_stdout) {
+            if ((report_flags & kInformationBit) == 0) {
+                setting_warnings.emplace_back(
+                    "GPU Dump logs to the Information message severity, enabling Information level logging otherwise the message "
+                    "will not be seen.");
+                report_flags |= kInformationBit;
+            }
+            if ((report_flags & kWarningBit) == 0) {
+                setting_warnings.emplace_back(
+                    "GPU Dump can log to the Warning message severity, enabling Warning level logging otherwise the message "
+                    "will not be seen.");
+                report_flags |= kWarningBit;
+            }
         }
     }
 
@@ -1245,6 +1256,10 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPU_DUMP_TO_STDOUT)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPU_DUMP_TO_STDOUT, gpu_dump_settings.to_stdout);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPU_DUMP_DEVICE_COPY)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPU_DUMP_DEVICE_COPY, gpu_dump_settings.device_copy);
     }
 
     const char* REMOVED_VK_LAYER_SYNCVAL_MESSAGE_EXTRA_PROPERTIES_PRETTY_PRINT = "syncval_message_extra_properties_pretty_print";

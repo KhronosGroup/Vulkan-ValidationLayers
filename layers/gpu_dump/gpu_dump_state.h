@@ -21,6 +21,7 @@
 
 namespace gpudump {
 class GpuDump;
+struct MappingInfo;
 
 class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
@@ -40,10 +41,11 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
   private:
     void DumpDescriptors(const LastBound& last_bound, const Location& loc) const;
-    void DumpDescriptorBuffer(std::ostringstream& ss, const LastBound& last_bound) const;
-    void DumpDescriptorHeap(std::ostringstream& ss, const LastBound& last_bound) const;
+    bool DumpDescriptorBuffer(std::ostringstream& ss, const LastBound& last_bound) const;
+    bool DumpDescriptorHeap(std::ostringstream& ss, const LastBound& last_bound) const;
+    bool DumpDescriptorHeapMapping(std::ostringstream& ss, const MappingInfo& mapping_info) const;
 
-    void DumpCopyMemoryIndirectCommon(std::ostringstream& ss, uint32_t copy_count,
+    bool DumpCopyMemoryIndirectCommon(std::ostringstream& ss, uint32_t copy_count,
                                       VkStridedDeviceAddressRangeKHR copy_address_range) const;
     void DumpCopyMemoryIndirect(const VkCopyMemoryIndirectInfoKHR& info, const Location& loc) const;
     void DumpCopyMemoryToImageIndirect(const VkCopyMemoryToImageIndirectInfoKHR& info, const Location& loc) const;

@@ -22,8 +22,17 @@ constexpr uint32_t kMaxSSBO = 128;  // max bufferDescriptorSize is allowed to be
 
 class PositiveDescriptorHeap : public DescriptorHeapTest {};
 
-TEST_F(PositiveDescriptorHeap, Basic) {
+void DescriptorHeapTest::InitBasicDescriptorHeap() {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    RETURN_IF_SKIP(Init());
+    heap_props.pNext = &tensor_heap_props;
+    GetPhysicalDeviceProperties2(heap_props);
+}
+
+TEST_F(PositiveDescriptorHeap, Basic) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
@@ -146,7 +155,6 @@ TEST_F(PositiveDescriptorHeap, NormalUsageWithFeature) {
 
 TEST_F(PositiveDescriptorHeap, ComputeBuffer) {
     TEST_DESCRIPTION("Basic descriptor heap test with compute pipeline and storage buffer");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const uint32_t expected_value = 0x42424242;
@@ -224,7 +232,6 @@ TEST_F(PositiveDescriptorHeap, ComputeBuffer) {
 
 TEST_F(PositiveDescriptorHeap, GraphicsPushData) {
     TEST_DESCRIPTION("Basic descriptor heap test with graphics pipeline and push data");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -336,8 +343,6 @@ TEST_F(PositiveDescriptorHeap, ResourceParameterDataNull) {
 
 TEST_F(PositiveDescriptorHeap, ResetCommandBufferOverlappingResource) {
     TEST_DESCRIPTION("Validate reservedRangeOffset improperly bind to resource heap");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     if (heap_props.minResourceHeapReservedRange == 0) {
@@ -375,8 +380,6 @@ TEST_F(PositiveDescriptorHeap, ResetCommandBufferTypeChange) {
     TEST_DESCRIPTION(
         "Validate that command buffer reset also resets descriptor heap binding as a sampler descriptor heap and buffer can be "
         "bound as a resource descriptor heap");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     if (heap_props.minResourceHeapReservedRange == 0) {
@@ -415,7 +418,6 @@ TEST_F(PositiveDescriptorHeap, ResetCommandBufferTypeChange) {
 
 TEST_F(PositiveDescriptorHeap, PushData) {
     TEST_DESCRIPTION("Descriptor heap with VkPushDataInfoEXT, but vkCmdPushConstants() is called before and invalidated later");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
@@ -490,7 +492,6 @@ TEST_F(PositiveDescriptorHeap, PushData) {
 }
 
 TEST_F(PositiveDescriptorHeap, MixedDraws) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -594,8 +595,6 @@ TEST_F(PositiveDescriptorHeap, MixedDraws) {
 
 TEST_F(PositiveDescriptorHeap, SamplerInheritance) {
     TEST_DESCRIPTION("Validate that inherited ranges match primary buffer");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     CreateSamplerHeap(heap_props.samplerDescriptorSize * 2);
@@ -625,8 +624,6 @@ TEST_F(PositiveDescriptorHeap, SamplerInheritance) {
 
 TEST_F(PositiveDescriptorHeap, ResourceInheritance) {
     TEST_DESCRIPTION("Validate that inherited ranges match primary buffer");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
@@ -657,8 +654,6 @@ TEST_F(PositiveDescriptorHeap, ResourceInheritance) {
 }
 
 TEST_F(PositiveDescriptorHeap, Sampler) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
@@ -800,8 +795,6 @@ TEST_F(PositiveDescriptorHeap, Sampler) {
 }
 
 TEST_F(PositiveDescriptorHeap, CombinedImageSampler) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
@@ -919,8 +912,6 @@ TEST_F(PositiveDescriptorHeap, CombinedImageSampler) {
 }
 
 TEST_F(PositiveDescriptorHeap, EmbeddedSampler) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
@@ -1041,7 +1032,6 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSampler) {
 
 TEST_F(PositiveDescriptorHeap, EmbeddedSamplerNoBoundHeap) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11558");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     // Resource descriptor heap buffer
@@ -1126,7 +1116,6 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSamplerNoBoundHeap) {
 }
 
 TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithPushIndex) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -1215,7 +1204,6 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithPushIndex) {
 }
 
 TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndex) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -1312,7 +1300,6 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndex) {
 }
 
 TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndexArray) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -1408,7 +1395,6 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndexArray) {
 }
 
 TEST_F(PositiveDescriptorHeap, MappingSourceHeapData) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -1513,7 +1499,6 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapData) {
 }
 
 TEST_F(PositiveDescriptorHeap, MappingSourcePushData) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -1614,7 +1599,6 @@ TEST_F(PositiveDescriptorHeap, MappingSourcePushData) {
 }
 
 TEST_F(PositiveDescriptorHeap, MappingSourcePushAddress) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -1716,7 +1700,6 @@ TEST_F(PositiveDescriptorHeap, MappingSourcePushAddress) {
 }
 
 TEST_F(PositiveDescriptorHeap, MappingSourceIndirectAddress) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -1730,7 +1713,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceIndirectAddress) {
         read_data[i] = i + 1;
     }
     vkt::Buffer write_buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    vkt::Buffer indirect_buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, 512, VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT_KHR, vkt::device_address);
     uint8_t* indirect_data = static_cast<uint8_t*>(indirect_buffer.Memory().Map());
     VkDeviceAddress* indirect_data_address = reinterpret_cast<VkDeviceAddress*>(indirect_data + indirect_offset);
     *indirect_data_address = read_buffer.Address();
@@ -1825,7 +1808,6 @@ TEST_F(PositiveDescriptorHeap, MappingSourceIndirectAddress) {
 }
 
 TEST_F(PositiveDescriptorHeap, UntypedPointerBuffer) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -1905,9 +1887,7 @@ TEST_F(PositiveDescriptorHeap, UntypedPointerBuffer) {
 
 TEST_F(PositiveDescriptorHeap, NestedResourceInheritance) {
     TEST_DESCRIPTION("Validate that inherited ranges match primary buffer");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::nestedCommandBuffer);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -1991,7 +1971,6 @@ TEST_F(PositiveDescriptorHeap, ConstantMemoryAccess) {
 }
 
 TEST_F(PositiveDescriptorHeap, ConstantImageMemoryAccess) {
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
@@ -2060,7 +2039,6 @@ TEST_F(PositiveDescriptorHeap, CmdPushData) {
 }
 
 TEST_F(PositiveDescriptorHeap, ResourceMask) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     uint32_t resource_offset = 0;
@@ -2231,7 +2209,6 @@ TEST_F(PositiveDescriptorHeap, ResourceMask) {
 }
 
 TEST_F(PositiveDescriptorHeap, ResourceMaskSameBinding) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     uint32_t resource_offset = 0;
@@ -2657,7 +2634,6 @@ TEST_F(PositiveDescriptorHeap, OffsetIdEXT) {
 TEST_F(PositiveDescriptorHeap, LayoutDescriptorHeap) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
@@ -2724,9 +2700,7 @@ TEST_F(PositiveDescriptorHeap, LayoutDescriptorHeap) {
 }
 
 TEST_F(PositiveDescriptorHeap, UntypedImageAndSampler) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -2996,9 +2970,7 @@ TEST_F(PositiveDescriptorHeap, NonConstantMemoryAccess) {
 }
 
 TEST_F(PositiveDescriptorHeap, UntypedStorageImage) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -3108,7 +3080,6 @@ TEST_F(PositiveDescriptorHeap, UntypedStorageImage) {
 TEST_F(PositiveDescriptorHeap, DISABLED_SecondaryCmdBufferCompute) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
@@ -3197,7 +3168,6 @@ TEST_F(PositiveDescriptorHeap, DISABLED_SecondaryCmdBufferCompute) {
 TEST_F(PositiveDescriptorHeap, SecondaryCmdBufferGraphics) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
@@ -3295,7 +3265,6 @@ TEST_F(PositiveDescriptorHeap, SecondaryCmdBufferGraphics) {
 TEST_F(PositiveDescriptorHeap, HardcodedOffsetIntoStruct) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
@@ -3428,7 +3397,6 @@ TEST_F(PositiveDescriptorHeap, SingleElementNoArray) {
     TEST_DESCRIPTION("GLSL only allows arrays of descriptor, force it to be a single element");
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
@@ -3534,7 +3502,6 @@ TEST_F(PositiveDescriptorHeap, PartitionedAccelerationStructure) {
     AddRequiredExtensions(VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::partitionedAccelerationStructure);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -3563,7 +3530,6 @@ TEST_F(PositiveDescriptorHeap, ComputeTensor) {
     AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tensors);
     AddRequiredFeature(vkt::Feature::shaderTensorAccess);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     // the shader uses 1 tensor and 1 buffer
@@ -3662,7 +3628,6 @@ TEST_F(PositiveDescriptorHeap, ComputeTensor) {
 }
 
 TEST_F(PositiveDescriptorHeap, MappingSourceWithoutHeap) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -3738,7 +3703,6 @@ TEST_F(PositiveDescriptorHeap, MappingSourceWithoutHeap) {
 
 TEST_F(PositiveDescriptorHeap, ReadOnlyStorageBufferHlsl) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12100");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
@@ -3784,9 +3748,9 @@ TEST_F(PositiveDescriptorHeap, ReadOnlyStorageBufferHlsl) {
                OpFunctionEnd
     )asm";
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping =
+        MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-    mapping.resourceMask = VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
@@ -3808,8 +3772,6 @@ TEST_F(PositiveDescriptorHeap, ReadOnlyStorageBufferHlsl) {
 }
 
 TEST_F(PositiveDescriptorHeap, YcbcrImage) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -3921,8 +3883,6 @@ TEST_F(PositiveDescriptorHeap, YcbcrImage) {
 
 TEST_F(PositiveDescriptorHeap, YcbcrImageDifferentMapping) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12108");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -4026,9 +3986,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageDifferentMapping) {
 
 TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderObject);
@@ -4155,8 +4113,6 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
 }
 
 TEST_F(PositiveDescriptorHeap, ResetInheritanceDescriptorHeapInfo) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize heap_size = heap_props.minSamplerHeapReservedRange + 2 * heap_props.samplerDescriptorSize;
@@ -4193,7 +4149,6 @@ TEST_F(PositiveDescriptorHeap, ResetInheritanceDescriptorHeapInfo) {
 }
 
 TEST_F(PositiveDescriptorHeap, NullDescriptorBuffer) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -4255,4 +4210,188 @@ TEST_F(PositiveDescriptorHeap, NullDescriptorBuffer) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveDescriptorHeap, DescriptorIndexing) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    const VkDeviceSize ubo_offset = physDevProps_.limits.minUniformBufferOffsetAlignment;
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    // [SSBO, UBO(0), UBO(1), UBO(2), .... UBO(15)]
+    // Where SSBO is the output
+    CreateResourceHeap(resource_stride * 17);
+
+    vkt::Buffer ubo_buffer(*m_device, (ubo_offset * 16) + 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer ssbo_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    uint8_t* ubo_data = (uint8_t*)ubo_buffer.Memory().Map();
+    // Make UBO look like
+    // [0, ....., 1 ......, 2, ...... 3]
+    // where we set the index of the UBO to its single uint
+    memset(ubo_data, 0, ubo_buffer.CreateInfo().size);
+    for (uint32_t i = 0; i < 16; i++) {
+        *(uint32_t*)(ubo_data + (ubo_offset * i)) = i;
+    }
+    // The final 32 bytes of the buffer will look like
+    // [..., 0, ubo_offset * 2, ubo_offset * 4, ubo_offset * 3]
+    VkDeviceSize indirect_array_offset = ubo_offset * 16;
+    uint32_t* indirect_array_data = (uint32_t*)(ubo_data + (indirect_array_offset));
+    indirect_array_data[0] = 0;
+    indirect_array_data[1] = (uint32_t)(ubo_offset * 2);
+    indirect_array_data[2] = (uint32_t)(ubo_offset * 4);
+    indirect_array_data[3] = (uint32_t)(ubo_offset * 3);
+
+    uint32_t push_data_uint[8] = {0, 1, 2, 4, 8, 16, 32, 64};
+    VkDeviceAddress indirect_ubo = ubo_buffer.Address();
+    VkPushDataInfoEXT push_uint_info = vku::InitStructHelper();
+    push_uint_info.offset = 0;
+    push_uint_info.data.size = 32;
+    push_uint_info.data.address = push_data_uint;
+    VkPushDataInfoEXT push_ubo_info = vku::InitStructHelper();
+    push_ubo_info.offset = 32;
+    push_ubo_info.data.size = sizeof(VkDeviceAddress);
+    push_ubo_info.data.address = &indirect_ubo;
+
+    {
+        VkHostAddressRangeEXT descriptor_host{resource_heap_data_, static_cast<size_t>(resource_stride)};
+        VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
+        VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+        descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptor_info.data.pAddressRange = &device_range;
+        vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+    }
+
+    // One descriptor for each uint inside the UBO buffer
+    {
+        VkHostAddressRangeEXT descriptor_host[16];
+        VkDeviceAddressRangeEXT device_range[16];
+        VkResourceDescriptorInfoEXT descriptor_info[16];
+        for (uint32_t i = 0; i < 16; i++) {
+            descriptor_host[i].address = resource_heap_data_ + (resource_stride * (i + 1));
+            descriptor_host[i].size = static_cast<size_t>(resource_stride);
+            device_range[i].address = ubo_buffer.Address() + (ubo_offset * i);
+            device_range[i].size = ubo_offset;
+            descriptor_info[i] = vku::InitStructHelper();
+            descriptor_info[i].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptor_info[i].data.pAddressRange = &device_range[i];
+        }
+        vk::WriteResourceDescriptorsEXT(*m_device, 16, descriptor_info, descriptor_host);
+    }
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout (set = 0, binding = 0) buffer SSBO_0 {
+            uint ssbo[16];
+        };
+
+        layout (set = 0, binding = 1) buffer UBO1 {
+            uint data;
+        } constant_offset[16];
+
+        layout (set = 0, binding = 2) buffer UBO2 {
+            uint data;
+        } push_index[16];
+
+        layout (set = 0, binding = 3) buffer UBO3 {
+            uint data;
+        } indirect_index[16];
+
+        layout (set = 0, binding = 4) buffer UBO4 {
+            uint data;
+        } indirect_index_array[16];
+
+        void main() {
+            ssbo[0] = constant_offset[4].data;
+            ssbo[1] = constant_offset[8].data;
+            ssbo[2] = constant_offset[15].data;
+
+            ssbo[3] = push_index[0].data;
+            ssbo[4] = push_index[1].data;
+            ssbo[5] = push_index[2].data;
+
+            ssbo[6] = indirect_index[0].data;
+            ssbo[7] = indirect_index[1].data;
+            ssbo[8] = indirect_index[2].data;
+
+            ssbo[9] = indirect_index_array[0].data;
+            ssbo[10] = indirect_index_array[1].data;
+            ssbo[11] = indirect_index_array[2].data;
+            ssbo[12] = indirect_index_array[3].data;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[5];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);  // SSBO
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[0].sourceData.constantOffset.heapArrayStride = 0;
+    // Start at UBO[0] and each index is one UBO
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)resource_stride;
+    mappings[1].sourceData.constantOffset.heapArrayStride = (uint32_t)resource_stride;
+    // Start at UBO[4] and each index is 2 UBO
+    mappings[2] = MakeSetAndBindingMapping(0, 2);
+    mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
+    mappings[2].sourceData.pushIndex.heapOffset = (uint32_t)resource_stride;
+    mappings[2].sourceData.pushIndex.heapArrayStride = (uint32_t)resource_stride * 2;
+    mappings[2].sourceData.pushIndex.heapIndexStride = (uint32_t)resource_stride * 2;
+    mappings[2].sourceData.pushIndex.pushOffset = 8;  // value = 2
+    // Start at UBO[8] and each index is 3 UBO
+    mappings[3] = MakeSetAndBindingMapping(0, 3);
+    mappings[3].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
+    mappings[3].sourceData.indirectIndex.heapOffset = (uint32_t)resource_stride;
+    mappings[3].sourceData.indirectIndex.heapArrayStride = (uint32_t)resource_stride * 3;
+    mappings[3].sourceData.indirectIndex.heapIndexStride = (uint32_t)resource_stride * 4;
+    mappings[3].sourceData.indirectIndex.pushOffset = 32;
+    mappings[3].sourceData.indirectIndex.addressOffset = (uint32_t)ubo_offset * 2;  // value 2
+    // Start at UBO[2], and using the final 16 bytes of the UBO we index at
+    // [+0, +2, +4, +3]
+    mappings[4] = MakeSetAndBindingMapping(0, 4);
+    mappings[4].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT;
+    mappings[4].sourceData.indirectIndexArray.heapOffset = (uint32_t)resource_stride * 3;
+    mappings[4].sourceData.indirectIndexArray.pushOffset = 32;
+    mappings[4].sourceData.indirectIndexArray.addressOffset = (uint32_t)indirect_array_offset;
+    mappings[4].sourceData.indirectIndexArray.heapIndexStride = 1;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 5u;
+    mapping_info.pMappings = mappings;
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdPushDataEXT(m_command_buffer, &push_uint_info);
+    vk::CmdPushDataEXT(m_command_buffer, &push_ubo_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    uint32_t* ssbo_data = (uint32_t*)ssbo_buffer.Memory().Map();
+    if (!IsPlatformMockICD()) {
+        ASSERT_TRUE(ssbo_data[0] == 0x4);
+        ASSERT_TRUE(ssbo_data[1] == 0x8);
+        ASSERT_TRUE(ssbo_data[2] == 0xf);
+
+        ASSERT_TRUE(ssbo_data[3] == 0x4);
+        ASSERT_TRUE(ssbo_data[4] == 0x6);
+        ASSERT_TRUE(ssbo_data[5] == 0x8);
+
+        ASSERT_TRUE(ssbo_data[6] == 0x8);
+        ASSERT_TRUE(ssbo_data[7] == 0xb);
+        ASSERT_TRUE(ssbo_data[8] == 0xe);
+
+        ASSERT_TRUE(ssbo_data[9] == 0x2);
+        ASSERT_TRUE(ssbo_data[10] == 0x4);
+        ASSERT_TRUE(ssbo_data[11] == 0x6);
+        ASSERT_TRUE(ssbo_data[12] == 0x5);
+    }
 }

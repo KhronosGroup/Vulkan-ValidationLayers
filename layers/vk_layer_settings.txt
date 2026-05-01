@@ -62,8 +62,13 @@ khronos_validation.gpu_dump_copy_memory_indirect = false
 
 # Dump Descriptors
 # =====================
-# Dump VK_EXT_descriptor_buffer/VK_EXT_descriptor_heap descriptor information for draw/dispatch/traceRays
+# Dump VK_EXT_descriptor_buffer and VK_EXT_descriptor_heap
 khronos_validation.gpu_dump_descriptors = false
+
+# Force Device Copy
+# =====================
+# [Very experimental] For non-host visible memory, try and do a device copy during command recording to view the data inside a buffer.
+khronos_validation.gpu_dump_device_copy = false
 
 # Dump VK_EXT_device_generated_commands
 # =====================

@@ -243,18 +243,10 @@ TEST_F(PositiveGpuAVDescriptorHeap, PushAddress) {
     vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = vku::InitStructHelper();
-    mappings[0].descriptorSet = 2u;
-    mappings[0].firstBinding = 3u;
-    mappings[0].bindingCount = 1u;
-    mappings[0].resourceMask = VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT;
+    mappings[0] = MakeSetAndBindingMapping(2, 3, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
     mappings[0].sourceData.pushAddressOffset = static_cast<uint32_t>(read_offset);
-    mappings[1] = vku::InitStructHelper();
-    mappings[1].descriptorSet = 1u;
-    mappings[1].firstBinding = 0u;
-    mappings[1].bindingCount = 1u;
-    mappings[1].resourceMask = VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT;
+    mappings[1] = MakeSetAndBindingMapping(1, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset.heapOffset = static_cast<uint32_t>(write_offset);
     mappings[1].sourceData.constantOffset.heapArrayStride = 0u;
