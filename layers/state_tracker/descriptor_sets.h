@@ -177,6 +177,8 @@ class DescriptorSetLayoutDef {
     uint32_t GetDynamicDescriptorCount() const { return dynamic_descriptor_count_; };
     bool HasImmutableSamplers() const { return !immutable_sampler_create_infos_.empty(); };
     bool HasYcbcrSamplers() const { return has_ycbcr_samplers_; };
+    bool HasTaskMesh() const { return has_task_mask_; };
+    bool HasNonMeshPreRaster() const { return has_non_mesh_pre_raster_; };
     VkDescriptorSetLayoutCreateFlags GetCreateFlags() const { return flags_; }
     // For a given binding, return the number of descriptors in that binding and all successive bindings
     uint32_t GetBindingCount() const { return binding_count_; };
@@ -267,6 +269,11 @@ class DescriptorSetLayoutDef {
     // Help detect if any of the the immutable samplers used are YCbCr
     bool has_ycbcr_samplers_;
 
+    // Track if task/mesh shader in the set (saves looking at draw time)
+    bool has_task_mask_;
+    // Track if vertex/geom/tess shader in the set (saves looking at draw time)
+    bool has_non_mesh_pre_raster_;
+
     struct MutableBindingCreation {
         uint32_t original_index;  // into VkDescriptorSetLayoutCreateInfo::pBindings
         std::vector<VkDescriptorType> types;
@@ -325,6 +332,8 @@ class DescriptorSetLayout : public StateObject {
     uint32_t GetBindingCount() const { return layout_id_->GetBindingCount(); };
     bool HasImmutableSamplers() const { return layout_id_->HasImmutableSamplers(); };
     bool HasYcbcrSamplers() const { return layout_id_->HasYcbcrSamplers(); };
+    bool HasTaskMesh() const { return layout_id_->HasTaskMesh(); };
+    bool HasNonMeshPreRaster() const { return layout_id_->HasNonMeshPreRaster(); };
     VkDescriptorSetLayoutCreateFlags GetCreateFlags() const { return layout_id_->GetCreateFlags(); }
     uint32_t GetIndexFromBinding(uint32_t binding) const { return layout_id_->GetIndexFromBinding(binding); }
     // Various Get functions that can either be passed a binding#, which will

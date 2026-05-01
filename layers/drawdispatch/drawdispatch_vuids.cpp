@@ -774,6 +774,16 @@ std::string CreateActionVuid(vvl::Func function, const ActionVUID id) {
 
         // ### VUID-vkCmdDraw-None-08601
         case ActionVUID::PUSH_CONSTANT_08601: suffix = "None-08601"; break;
+        // ### VUID-vkCmdDraw-flags-13361
+        case ActionVUID::INDEPENDENT_SETS_13361: suffix = "flags-13361"; break;
+        // ### VUID-vkCmdDraw-flags-13362
+        case ActionVUID::INDEPENDENT_SETS_13362: suffix = "flags-13362"; break;
+        // ### VUID-vkCmdDraw-flags-13363
+        case ActionVUID::INDEPENDENT_SETS_13363: suffix = "flags-13363"; break;
+        // ### VUID-vkCmdDraw-flags-13364
+        case ActionVUID::INDEPENDENT_SETS_13364: suffix = "flags-13364"; break;
+        // ### VUID-vkCmdDraw-flags-13365
+        case ActionVUID::INDEPENDENT_SETS_13365: suffix = "flags-13365"; break;
 
         // ### VUID-vkCmdDraw-None-08608
         case ActionVUID::DYNAMIC_STATE_ALL_SET_08608: suffix = "None-08608"; break;

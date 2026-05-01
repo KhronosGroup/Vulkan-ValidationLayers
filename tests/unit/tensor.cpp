@@ -35,6 +35,25 @@ TEST_F(NegativeTensor, ConcurrentTensor) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeTensor, ConcurrentTensorMaintenance11) {
+    TEST_DESCRIPTION(
+        "Try to create a tensor when sharingMode is VK_SHARING_MODE_CONCURRENT but queueFamilyIndexCount is 0 and "
+        "pQueueFamilyIndices is nullptr");
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    VkTensorDescriptionARM desc = DefaultDesc();
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+
+    info.sharingMode = VK_SHARING_MODE_CONCURRENT;
+
+    m_errorMonitor->SetDesiredError("VUID-VkTensorCreateInfoARM-maintenance11-13358");
+    m_errorMonitor->SetDesiredError("VUID-VkTensorCreateInfoARM-sharingMode-09722");
+    vkt::Tensor tensor(*m_device, info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeTensor, ConcurrentTensorNonUniqueIdx) {
     TEST_DESCRIPTION(
         "Try to create a tensor when sharingMode is VK_SHARING_MODE_CONCURRENT but pQueueFamilyIndices are not unique");

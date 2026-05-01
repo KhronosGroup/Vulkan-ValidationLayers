@@ -17,6 +17,7 @@
 #include "../framework/render_pass_helper.h"
 #include "../framework/shader_helper.h"
 #include "../framework/pipeline_helper.h"
+#include "binding.h"
 #include "generated/vk_function_pointers.h"
 #include "shader_templates.h"
 #include "utils/math_utils.h"
@@ -7982,4 +7983,287 @@ TEST_F(NegativeShaderObject, ResetShaderObjectBinding) {
 
     m_command_buffer.EndRendering();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, NotAllShadersWithIndependentSetFlag) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    const auto vert_spv = GLSLToSPV(stages[0], kVertexMinimalGlsl);
+    const auto frag_spv = GLSLToSPV(stages[1], kFragmentMinimalGlsl);
+
+    VkShaderCreateInfoEXT create_infos[2];
+    create_infos[0] = ShaderCreateInfo(vert_spv, stages[0]);
+    create_infos[0].flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    create_infos[1] = ShaderCreateInfo(frag_spv, stages[1]);
+
+    const vkt::Shader vert_shader(*m_device, create_infos[0]);
+    const vkt::Shader frag_shader(*m_device, create_infos[1]);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    m_command_buffer.BindShaders(vert_shader, frag_shader);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-flags-13361");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, PipelineLayoutNoMissingIndependentSetFlag) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    const vkt::Shader vert_shader(*m_device, create_info);
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                                 });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    VkShaderEXT shaders[] = {vert_shader, VK_NULL_HANDLE};
+    vk::CmdBindShadersEXT(m_command_buffer, 2u, stages, shaders);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 1u, &descriptor_set.set_, 0u,
+                              nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-flags-13362");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, PipelineLayoutIndependentSetsTaskStage) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::taskShader);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const auto task_spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, SPV_ENV_VULKAN_1_3);
+    VkShaderCreateInfoEXT task_create_info = ShaderCreateInfo(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT);
+    task_create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    const vkt::Shader task_shader(*m_device, task_create_info);
+
+    const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
+    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    mesh_create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    const vkt::Shader mesh_shader(*m_device, mesh_create_info);
+
+    OneOffDescriptorSet descriptor_set(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_MESH_BIT_EXT, nullptr},
+                      {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TASK_BIT_EXT, nullptr},
+                  });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {},
+                                        VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_STAGE_TASK_BIT_EXT,
+                                            VK_SHADER_STAGE_MESH_BIT_EXT};
+    VkShaderEXT shaders[] = {VK_NULL_HANDLE, VK_NULL_HANDLE, task_shader, mesh_shader};
+    vk::CmdBindShadersEXT(m_command_buffer, 4u, stages, shaders);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 1u, &descriptor_set.set_, 0u,
+                              nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-flags-13363");
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, PipelineLayoutIndependentSetsTaskStageDifferentSets) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::taskShader);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const auto task_spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, SPV_ENV_VULKAN_1_3);
+    VkShaderCreateInfoEXT task_create_info = ShaderCreateInfo(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT);
+    task_create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    const vkt::Shader task_shader(*m_device, task_create_info);
+
+    const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
+    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    mesh_create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    const vkt::Shader mesh_shader(*m_device, mesh_create_info);
+
+    OneOffDescriptorSet descriptor_set1(m_device,
+                                        {
+                                            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_MESH_BIT_EXT, nullptr},
+                                        });
+    OneOffDescriptorSet descriptor_set2(m_device,
+                                        {
+                                            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                        });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set1.layout_, &descriptor_set2.layout_}, {},
+                                        VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_STAGE_TASK_BIT_EXT,
+                                            VK_SHADER_STAGE_MESH_BIT_EXT};
+    VkShaderEXT shaders[] = {VK_NULL_HANDLE, VK_NULL_HANDLE, task_shader, mesh_shader};
+    vk::CmdBindShadersEXT(m_command_buffer, 4u, stages, shaders);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 1u, &descriptor_set1.set_, 0u,
+                              nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 1u, 1u, &descriptor_set2.set_, 0u,
+                              nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-flags-13363");
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, PipelineLayoutIndependentSetsMissingNoTaskShaderFlag) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
+    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    mesh_create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR | VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
+    const vkt::Shader mesh_shader(*m_device, mesh_create_info);
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_MESH_BIT_EXT, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_TASK_BIT_EXT, nullptr},
+                                       });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {},
+                                        VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_STAGE_MESH_BIT_EXT};
+    VkShaderEXT shaders[] = {VK_NULL_HANDLE, VK_NULL_HANDLE, mesh_shader};
+    vk::CmdBindShadersEXT(m_command_buffer, 3u, stages, shaders);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 1u, &descriptor_set.set_, 0u,
+                              nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-flags-13364");
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, MeshWithIndeSetAndNoTaskFlapsButBoundTaskShader) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::taskShader);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const auto task_spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, SPV_ENV_VULKAN_1_3);
+    VkShaderCreateInfoEXT task_create_info = ShaderCreateInfo(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT);
+    task_create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    const vkt::Shader task_shader(*m_device, task_create_info);
+
+    const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
+    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    mesh_create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR | VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
+    const vkt::Shader mesh_shader(*m_device, mesh_create_info);
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_MESH_BIT_EXT, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_TASK_BIT_EXT, nullptr},
+                                       });
+    vkt::PipelineLayout pipeline_layout(
+        *m_device, {&descriptor_set.layout_}, {},
+        VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT | VK_PIPELINE_LAYOUT_CREATE_NO_TASK_SHADER_BIT_KHR);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_STAGE_TASK_BIT_EXT,
+                                            VK_SHADER_STAGE_MESH_BIT_EXT};
+    VkShaderEXT shaders[] = {VK_NULL_HANDLE, VK_NULL_HANDLE, task_shader, mesh_shader};
+    vk::CmdBindShadersEXT(m_command_buffer, 4u, stages, shaders);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 1u, &descriptor_set.set_, 0u,
+                              nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-None-08695");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-flags-13365");
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, NoIndependentSetFlagAndNullSetLayout) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const VkDescriptorSetLayout null_set_layout = VK_NULL_HANDLE;
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, &null_set_layout);
+
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-setLayoutCount-13359");
+    const vkt::Shader vert_shader(*m_device, create_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, NoIndependentSetFlagAndInvalidSetLayout) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const VkDescriptorSetLayout invalid_set_layout = CastToHandle<VkDescriptorSetLayout>(0xdeadbeef);
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, &invalid_set_layout);
+    create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-setLayoutCount-13360");
+    const vkt::Shader vert_shader(*m_device, create_info);
+    m_errorMonitor->VerifyFound();
 }

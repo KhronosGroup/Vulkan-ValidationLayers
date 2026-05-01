@@ -169,6 +169,7 @@ struct LastBound {
         descriptor_mode = new_mode;
         set_descriptor_mode = function;
     };
+    vvl::Func GetDescriptorModeFunc() const { return set_descriptor_mode; }
     std::string DescribeInvalidDescriptorMode() const;
 
   private:

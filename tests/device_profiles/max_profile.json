@@ -249,6 +249,9 @@
                 "VkPhysicalDeviceMaintenance10FeaturesKHR": {
                     "maintenance10": true
                 },
+                "VkPhysicalDeviceMaintenance11FeaturesKHR": {
+                    "maintenance11": true
+                },
                 "VkPhysicalDeviceShaderDrawParametersFeatures": {
                     "shaderDrawParameters": true
                 },
@@ -2612,6 +2615,7 @@
                 "VK_KHR_maintenance8": 1,
                 "VK_KHR_maintenance9": 1,
                 "VK_KHR_maintenance10": 1,
+                "VK_KHR_maintenance11": 1,
                 "VK_KHR_multiview": 1,
                 "VK_KHR_performance_query": 1,
                 "VK_KHR_pipeline_binary": 1,

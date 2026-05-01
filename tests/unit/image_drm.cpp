@@ -399,7 +399,11 @@ TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfo) {
 
     VkImageFormatProperties2 image_properties = vku::InitStructHelper();
 
-    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315");
+    if (DeviceExtensionSupported(VK_KHR_MAINTENANCE_11_EXTENSION_NAME)) {
+        m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-maintenance11-13351");
+    } else {
+        m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315");
+    }
     vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_info, &image_properties);
     m_errorMonitor->VerifyFound();
 

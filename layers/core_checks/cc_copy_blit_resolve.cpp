@@ -766,14 +766,16 @@ bool CoreChecks::ValidateBufferImageCopyData(const vvl::CommandBuffer& cb_state,
         }
     }
 
-    if (!IsIntegerMultipleOf(region.bufferOffset, 4)) {
+    if (!enabled_features.maintenance11 && !IsIntegerMultipleOf(region.bufferOffset, 4)) {
         const VkQueueFlags required_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         if (!HasRequiredQueueFlags(cb_state, *physical_device_state, required_flags)) {
             const char* vuid = GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::BufferOffset_07737).c_str();
             const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool->Handle());
-            skip |=
-                LogError(vuid, objlist, region_loc.dot(Field::bufferOffset), "(%" PRIu64 ") is not a multiple of 4, but is %s",
-                         region.bufferOffset, DescribeRequiredQueueFlag(cb_state, *physical_device_state, required_flags).c_str());
+            skip |= LogError(
+                vuid, objlist, region_loc.dot(Field::bufferOffset),
+                "(%" PRIu64
+                ") is not a multiple of 4, but is %s\nHint: This can be allowed in some cases if maintenance11 feature is enabled.",
+                region.bufferOffset, DescribeRequiredQueueFlag(cb_state, *physical_device_state, required_flags).c_str());
         }
     }
 

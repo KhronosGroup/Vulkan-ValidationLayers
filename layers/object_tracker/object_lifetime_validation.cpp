@@ -1952,4 +1952,32 @@ bool Device::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uint32_
 
     return skip;
 }
+
+bool Device::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
+                                             const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
+                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkCreateShadersEXT-device-parameter"
+    if (pCreateInfos) {
+        for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+            [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
+
+            const bool has_independent_set_flags = pCreateInfos[index0].flags & VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+            // VK_KHR_maintenance11 added flag to allow null objects
+            bool null_allowed = has_independent_set_flags;
+            const char* vuid = null_allowed ? "VUID-VkShaderCreateInfoEXT-setLayoutCount-13360"
+                                            : "VUID-VkShaderCreateInfoEXT-setLayoutCount-13359";
+            if ((pCreateInfos[index0].setLayoutCount > 0) && (pCreateInfos[index0].pSetLayouts)) {
+                for (uint32_t index1 = 0; index1 < pCreateInfos[index0].setLayoutCount; ++index1) {
+                    skip |= ValidateObject(pCreateInfos[index0].pSetLayouts[index1], kVulkanObjectTypeDescriptorSetLayout,
+                                           null_allowed, vuid, "UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-parent",
+                                           index0_loc.dot(Field::pSetLayouts, index1));
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
 }  // namespace object_lifetimes

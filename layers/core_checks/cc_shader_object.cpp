@@ -16,6 +16,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include <spirv/unified1/spirv.hpp>
+#include <sstream>
 #include "chassis/chassis_modification_state.h"
 #include "core_validation.h"
 #include "error_message/logging.h"
@@ -686,6 +687,133 @@ bool CoreChecks::ValidateDrawShaderObjectBoundShader(const LastBound& last_bound
     return skip;
 }
 
+bool CoreChecks::ValidateDrawShaderObjectFlags(const LastBound& last_bound_state, const Location& loc) const {
+    bool skip = false;
+
+    const vvl::ShaderObject* shader_with_independent_sets{};
+    const vvl::ShaderObject* shader_without_independent_sets{};
+    for (const vvl::ShaderObject* shader : last_bound_state.shader_object_states) {
+        if (!shader || !shader->stage.HasSpirv()) {
+            continue;
+        }
+
+        if (shader->safe_create_info.flags & VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR) {
+            shader_with_independent_sets = shader;
+        } else {
+            shader_without_independent_sets = shader;
+        }
+
+        constexpr VkShaderCreateFlagsEXT independent_and_no_task =
+            VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR | VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
+        if ((shader->safe_create_info.flags & independent_and_no_task) == independent_and_no_task) {
+            if (!(last_bound_state.desc_set_pipeline_layout->create_flags & VK_PIPELINE_LAYOUT_CREATE_NO_TASK_SHADER_BIT_KHR)) {
+                const LogObjectList objlist(last_bound_state.cb_state.Handle(),
+                                            last_bound_state.desc_set_pipeline_layout->VkHandle(),
+                                            shader_with_independent_sets->VkHandle());
+                skip |=
+                    LogError(CreateActionVuid(loc.function, vvl::ActionVUID::INDEPENDENT_SETS_13364), objlist, loc,
+                             "Shader object bound at stage %s has both VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR and "
+                             "VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT but the VkPipelineLayout (bound with %s) was created without "
+                             "VK_PIPELINE_LAYOUT_CREATE_NO_TASK_SHADER_BIT_KHR.\nVkShaderEXT create flags: %s\nVkPipelineLayout "
+                             "create flags: %s",
+                             string_VkShaderStageFlagBits(shader->safe_create_info.stage),
+                             vvl::String(last_bound_state.GetDescriptorModeFunc()),
+                             string_VkShaderCreateFlagsEXT(shader->safe_create_info.flags).c_str(),
+                             string_VkPipelineLayoutCreateFlags(last_bound_state.desc_set_pipeline_layout->create_flags).c_str());
+            }
+
+            if (last_bound_state.IsValidShaderObjectBound(ShaderObjectStage::TASK)) {
+                const LogObjectList objlist(last_bound_state.cb_state.Handle());
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::INDEPENDENT_SETS_13365), objlist, loc,
+                                 "A shader object bound with VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT is bound, but a task "
+                                 "stage shader object is also bound.");
+            }
+        }
+    }
+
+    if (shader_with_independent_sets && shader_without_independent_sets) {
+        const LogObjectList objlist(last_bound_state.cb_state.Handle(), shader_with_independent_sets->VkHandle(),
+                                    shader_without_independent_sets->VkHandle());
+        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::INDEPENDENT_SETS_13361), objlist, loc,
+                         "Shader object bound at stage %s has flag VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR but shader object "
+                         "bound at stage %s does not.",
+                         string_VkShaderStageFlagBits(shader_with_independent_sets->safe_create_info.stage),
+                         string_VkShaderStageFlagBits(shader_without_independent_sets->safe_create_info.stage));
+    }
+
+    if (shader_with_independent_sets && last_bound_state.desc_set_pipeline_layout) {
+        if (!(last_bound_state.desc_set_pipeline_layout->create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT)) {
+            const LogObjectList objlist(last_bound_state.cb_state.Handle(), last_bound_state.desc_set_pipeline_layout->VkHandle(),
+                                        shader_with_independent_sets->VkHandle());
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::INDEPENDENT_SETS_13362), objlist, loc,
+                             "Shader object bound at stage %s has flag VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR but the "
+                             "VkPipelineLayout (bound with %s) "
+                             "was created without the INDEPENDENT_SETS flag\nCreate flags: %s.",
+                             string_VkShaderStageFlagBits(shader_with_independent_sets->safe_create_info.stage),
+                             vvl::String(last_bound_state.GetDescriptorModeFunc()),
+                             string_VkPipelineLayoutCreateFlags(last_bound_state.desc_set_pipeline_layout->create_flags).c_str());
+        }
+
+        std::optional<std::pair<uint32_t, uint32_t>> binding_with_pre_rast_stage;
+        std::optional<std::pair<uint32_t, uint32_t>> binding_with_mesh_stage;
+        const auto& set_layouts_list = last_bound_state.desc_set_pipeline_layout->set_layouts.list;
+        for (auto [dsl_i, dsl] : vvl::enumerate(set_layouts_list)) {
+            if (!dsl) {
+                continue;
+            }
+            if (binding_with_pre_rast_stage.has_value() && binding_with_mesh_stage.has_value()) {
+                break;
+            }
+
+            // While there are few sets, the binding lists may be large
+            // The goal is to only search the binding list if we can detect possible mixing of mesh/non-mesh pre-raster stages
+            if ((dsl->HasTaskMesh() && !binding_with_mesh_stage.has_value()) ||
+                (dsl->HasNonMeshPreRaster() && !binding_with_pre_rast_stage.has_value())) {
+                for (uint32_t binding_idx = 0; binding_idx < dsl->GetBindingCount(); binding_idx++) {
+                    const VkDescriptorSetLayoutBinding* binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(binding_idx);
+                    if (binding->stageFlags & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                                               VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) {
+                        binding_with_pre_rast_stage = std::make_pair((uint32_t)dsl_i, binding->binding);
+                    }
+                    if (binding->stageFlags & (VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
+                        binding_with_mesh_stage = std::make_pair((uint32_t)dsl_i, binding->binding);
+                    }
+                }
+            }
+        }
+
+        if (binding_with_pre_rast_stage.has_value() && binding_with_mesh_stage.has_value()) {
+            const auto pre_raster_dsl = set_layouts_list[binding_with_pre_rast_stage->first];
+            const auto mesh_dsl = set_layouts_list[binding_with_mesh_stage->first];
+
+            std::ostringstream ss;
+            ss << "Shader object bound at stage "
+               << string_VkShaderStageFlagBits(shader_with_independent_sets->safe_create_info.stage)
+               << " has flag VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR but the VkPipelineLayout (bound with ";
+            ss << vvl::String(last_bound_state.GetDescriptorModeFunc())
+               << ") is mixing mesh and non-mesh pre-rasterization shader stages\n";
+            ss << FormatHandle(pre_raster_dsl->VkHandle()) << " at set " << binding_with_pre_rast_stage->first << ", binding "
+               << binding_with_pre_rast_stage->second << " has stageFlags "
+               << string_VkShaderStageFlags(
+                      pre_raster_dsl->GetDescriptorSetLayoutBindingPtrFromBinding(binding_with_pre_rast_stage->second)->stageFlags)
+               << '\n';
+            if (pre_raster_dsl != mesh_dsl) {
+                ss << FormatHandle(mesh_dsl->VkHandle()) << " at set " << binding_with_mesh_stage->first << ", binding "
+                   << binding_with_mesh_stage->second << " has stageFlags "
+                   << string_VkShaderStageFlags(
+                          mesh_dsl->GetDescriptorSetLayoutBindingPtrFromBinding(binding_with_mesh_stage->second)->stageFlags)
+                   << '\n';
+            }
+            const LogObjectList objlist(last_bound_state.cb_state.Handle(), last_bound_state.desc_set_pipeline_layout->VkHandle(),
+                                        pre_raster_dsl->VkHandle(), mesh_dsl->VkHandle(), shader_with_independent_sets->VkHandle());
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::INDEPENDENT_SETS_13363), objlist, loc, "%s",
+                             ss.str().c_str());
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateDrawShaderObject(const LastBound& last_bound_state, const Location& loc) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
@@ -706,6 +834,7 @@ bool CoreChecks::ValidateDrawShaderObject(const LastBound& last_bound_state, con
 
     skip |= ValidateDrawShaderObjectNextStage(last_bound_state, loc);
     skip |= ValidateDrawShaderObjectBoundShader(last_bound_state, loc);
+    skip |= ValidateDrawShaderObjectFlags(last_bound_state, loc);
     skip |= ValidateDrawShaderObjectLinking(last_bound_state, loc);
     skip |= ValidateDrawShaderObjectPushConstantAndLayout(last_bound_state, loc);
     skip |= ValidateDrawShaderObjectMesh(last_bound_state, loc);
