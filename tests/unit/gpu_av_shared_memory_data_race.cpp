@@ -20,7 +20,35 @@ class NegativeGpuAVSharedMemoryDataRace : public GpuAVSharedMemoryDataRaceTest {
   protected:
     void TestHelper(const char* source, int source_type, uint32_t count, VkScopeKHR coopmat_scope = VK_SCOPE_DEVICE_KHR,
                     const char* error = "SharedMemoryDataRace");
+    // Runs a compute pipeline built from `shader_source` and asserts the race error matches
+    // `full_regex`. The pipeline/buffer are kept alive on the stack here so they outlive
+    // SubmitAndWait.
+    void RunAndAssertErrorRegex(const char* shader_source, const std::string& full_regex,
+                                SpvSourceType source_type = SPV_SOURCE_GLSL);
 };
+
+void NegativeGpuAVSharedMemoryDataRace::RunAndAssertErrorRegex(const char* shader_source, const std::string& full_regex,
+                                                               SpvSourceType source_type) {
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, source_type);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredErrorRegex("", full_regex);
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
 
 void NegativeGpuAVSharedMemoryDataRace::TestHelper(const char* shader_source, int source_type, uint32_t count,
                                                    VkScopeKHR coopmat_scope, const char* error) {
@@ -1164,4 +1192,227 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreOverlapUint8Col
     )glsl";
 
     TestHelper(shader_source, SPV_SOURCE_GLSL, 1, VK_SCOPE_SUBGROUP_KHR);
+}
+
+// Race between atomicAdd and coopMatStore on overlapping shared memory. Both paths
+// write THREAD_ID_MASK as the offender's thread_id, so the message should say
+// "unknown invocation" regardless of which side detects the race.
+TEST_F(NegativeGpuAVSharedMemoryDataRace, AtomicVsCoopMatStore) {
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSharedMemoryDataRace());
+    CooperativeMatrixHelper helper(*this);
+    if (!helper.HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 16, 16, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+        GTEST_SKIP() << "16x16 float16 Property not found";
+    }
+
+    // 16x16 f16 coopmat over a uint backing: each uint holds 2 f16s, so the matrix
+    // covers 128 uints with stride 8 uints/row. atomicAdd targets a uint that the
+    // coopMatStore also writes.
+    const char* shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+
+        layout(local_size_x = 128) in;
+        shared uint arr[16*16/2];
+        coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
+        void main() {
+            if (gl_LocalInvocationIndex == 40) {
+                atomicAdd(arr[5], 1);
+            }
+            if (gl_SubgroupID == 0) {
+                coopMatStore(mat, arr, 0, 16/2, gl_CooperativeMatrixLayoutRowMajor);
+            }
+        }
+    )glsl";
+
+    RunAndAssertErrorRegex(shader_source, R"((?=[\s\S]*SharedMemoryDataRace))"
+                                          R"((?=[\s\S]*Likely against unknown invocation))"
+                                          R"((?=[\s\S]*The other access in this race was at:))");
+}
+
+// The next few tests verify the offender's SPIR-V op kind is reported correctly.
+// They use GLSL without debug info so the offender renders as "SPIR-V Instruction:
+// Op<Kind>", which is easy to grep for.
+
+// Two invocations execute the same OpStore. The detector's and offender's inst_offset
+// match, so the message should call out the same-instruction case instead of repeating
+// the source line.
+TEST_F(NegativeGpuAVSharedMemoryDataRace, SelfRaceSameInstruction) {
+    RETURN_IF_SKIP(InitSharedMemoryDataRace());
+
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 2) in;
+        shared uint temp;
+        void main() {
+            temp = 0;
+        }
+    )glsl";
+
+    RunAndAssertErrorRegex(shader_source, R"((?=[\s\S]*SharedMemoryDataRace-RaceOnStore))"
+                                          R"((?=[\s\S]*This race is between two invocations executing the same instruction))");
+}
+
+// Concurrent loaders racing one store. Either side can win: if the loaders go first the
+// offender is OpLoad (multi-load atomicOr path), if the store goes first it's OpStore.
+// The point is that whichever wins, inst_offset survived through the atomicOr.
+TEST_F(NegativeGpuAVSharedMemoryDataRace, OffenderIsOpLoadFromMultipleLoaders) {
+    RETURN_IF_SKIP(InitSharedMemoryDataRace());
+
+    // 15 loaders + 1 storer reliably exercises the multi-load promotion path.
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 16) in;
+        shared uint temp;
+        layout(set = 0, binding = 0) buffer SSBO { uint out_val; } ssbo;
+        void main() {
+            if (gl_LocalInvocationIndex > 0) {
+                ssbo.out_val = temp;
+            }
+            if (gl_LocalInvocationIndex == 0) {
+                temp = 42;
+            }
+        }
+    )glsl";
+
+    // OpLoad produces a result id ("%<n> = OpLoad ..."); OpStore does not.
+    RunAndAssertErrorRegex(shader_source,
+                           R"((?=[\s\S]*SharedMemoryDataRace))"
+                           R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: (?:%\d+ = OpLoad|OpStore)))");
+}
+
+// Atomic vs store race. The offender is OpAtomicIAdd or OpStore depending on which side
+// wins; the regex accepts either.
+TEST_F(NegativeGpuAVSharedMemoryDataRace, OffenderIsOpAtomic) {
+    RETURN_IF_SKIP(InitSharedMemoryDataRace());
+
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 2) in;
+        shared uint temp;
+        void main() {
+            if (gl_LocalInvocationIndex == 0) {
+                atomicAdd(temp, 1);
+            } else {
+                temp = 0;
+            }
+        }
+    )glsl";
+
+    // OpAtomicIAdd has a result id ("%<n> = OpAtomicIAdd ..."); OpStore does not.
+    RunAndAssertErrorRegex(
+        shader_source, R"((?=[\s\S]*SharedMemoryDataRace-RaceOnLoadStoreVsAtomic))"
+                       R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: (?:%\d+ = OpAtomicIAdd|OpStore)))");
+}
+
+// Race that straddles a function boundary: one store in main, the other in a helper.
+// Verifies the offender's source location is resolved regardless of which function it's in.
+TEST_F(NegativeGpuAVSharedMemoryDataRace, RaceAcrossFunctions) {
+    RETURN_IF_SKIP(InitSharedMemoryDataRace());
+
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 2) in;
+        shared uint temp;
+        void helper() {
+            if (gl_LocalInvocationIndex == 1) {
+                temp = 1;
+            }
+        }
+        void main() {
+            if (gl_LocalInvocationIndex == 0) {
+                temp = 0;
+            }
+            helper();
+        }
+    )glsl";
+
+    // Without debug info both render as "OpStore"; we just need the offender to resolve
+    // to a real instruction, not the "not recorded" fallback.
+    RunAndAssertErrorRegex(shader_source, R"((?=[\s\S]*SharedMemoryDataRace-RaceOnStore))"
+                                          R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: OpStore))");
+}
+
+// Hand-written SPIR-V with DebugLine on both the store and the load, racing on two
+// distinct source lines. Verifies both halves of the race render with the correct
+// "Shader validation error occurred at <file>:<line>" snippet (the existing
+// ShaderDebugInfo test is a self-race, so it only ever exercises one line).
+TEST_F(NegativeGpuAVSharedMemoryDataRace, DebugInfoTwoSourceLines) {
+    RETURN_IF_SKIP(InitSharedMemoryDataRace());
+
+    const char* shader_source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+          %2 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %temp %gl_LocalInvocationID
+               OpExecutionMode %main LocalSize 2 1 1
+        %src = OpString "void main() {
+    if (gl_LocalInvocationIndex == 0) { temp = 0; }
+    if (gl_LocalInvocationIndex == 1) { uint x = temp; }
+}
+"
+       %file = OpString "race_negative_debug.glsl"
+               OpDecorate %gl_LocalInvocationID BuiltIn LocalInvocationId
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+       %bool = OpTypeBool
+     %v3uint = OpTypeVector %uint 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+%gl_LocalInvocationID = OpVariable %_ptr_Input_v3uint Input
+       %temp = OpVariable %_ptr_Workgroup_uint Workgroup
+     %uint_0 = OpConstant %uint 0
+     %uint_1 = OpConstant %uint 1
+     %uint_2 = OpConstant %uint 2
+     %uint_3 = OpConstant %uint 3
+     %uint_5 = OpConstant %uint 5
+    %uint_11 = OpConstant %uint 11
+   %uint_100 = OpConstant %uint 100
+   %d_source = OpExtInst %void %2 DebugSource %file %src
+     %d_unit = OpExtInst %void %2 DebugCompilationUnit %uint_100 %uint_5 %d_source %uint_11
+       %main = OpFunction %void None %3
+      %entry = OpLabel
+       %tidv = OpLoad %v3uint %gl_LocalInvocationID
+        %tid = OpCompositeExtract %uint %tidv 0
+    %is_zero = OpIEqual %bool %tid %uint_0
+               OpSelectionMerge %after_store None
+               OpBranchConditional %is_zero %do_store %after_store
+   %do_store = OpLabel
+        %dls = OpExtInst %void %2 DebugLine %d_source %uint_2 %uint_2 %uint_0 %uint_0
+               OpStore %temp %uint_0
+               OpBranch %after_store
+%after_store = OpLabel
+     %is_one = OpIEqual %bool %tid %uint_1
+               OpSelectionMerge %after_load None
+               OpBranchConditional %is_one %do_load %after_load
+    %do_load = OpLabel
+        %dll = OpExtInst %void %2 DebugLine %d_source %uint_3 %uint_3 %uint_0 %uint_0
+        %val = OpLoad %uint %temp
+               OpBranch %after_load
+ %after_load = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    // The offender's line follows the "other access" header in the per-pass body, then
+    // the framework's wrapper appends the detector's line at the end of the message.
+    // Order of which side detects is non-deterministic, so accept either pairing - but
+    // require the two lines to actually differ.
+    RunAndAssertErrorRegex(
+        shader_source,
+        R"((?=[\s\S]*SharedMemoryDataRace))"
+        R"((?:)"
+        R"((?=[\s\S]*The other access in this race was at:\s*Shader validation error occurred at race_negative_debug\.glsl:2[\s\S]*Shader validation error occurred at race_negative_debug\.glsl:3))"
+        R"(|)"
+        R"((?=[\s\S]*The other access in this race was at:\s*Shader validation error occurred at race_negative_debug\.glsl:3[\s\S]*Shader validation error occurred at race_negative_debug\.glsl:2))"
+        R"())",
+        SPV_SOURCE_ASM);
 }

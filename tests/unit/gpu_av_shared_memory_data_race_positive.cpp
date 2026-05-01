@@ -368,7 +368,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangBasic) {
             }
             GroupMemoryBarrierWithGroupSync();
 
-            if (groupThreadID.x == 0) {
+            if (groupThreadID.x == 1) {
                 outputBuffer[0] = temp;
             }
         }
@@ -400,7 +400,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangNestedStruct) {
             }
             GroupMemoryBarrierWithGroupSync();
 
-            if (groupThreadID.x == 0) {
+            if (groupThreadID.x == 1) {
                 outputBuffer[0] = temp.z[1].b;
             }
         }
