@@ -98,13 +98,22 @@ void RegisterSharedMemoryDataRaceValidation(Validator& gpuav, CommandBufferSubSt
                     // happens on huge shaders) and kInstOffsetBits (slot was still SENTINEL
                     // when an atomicOr-path access ran, so its offset wasn't recorded).
                     if (instrumented_shader) {
-                        strm << "\nThe other access in this race was at:\n";
+                        // Byte offset of the detector's own instruction in the SPIR-V module, used
+                        // to recognize the case where the offending access is this same instruction
+                        // executed by another invocation.
+                        const uint32_t self_inst_offset = error_record[kHeader_StageInstructionIdOffset] & kInstructionId_Mask;
                         const bool have_offset = collide_inst_offset != 0 && collide_inst_offset != kInstOffsetBits &&
                                                  collide_inst_offset < instrumented_shader->original_spirv.size();
-                        if (have_offset) {
+                        if (have_offset && collide_inst_offset == self_inst_offset) {
+                            // Same instruction racing against itself across invocations. Repeating
+                            // the source line would just print the detector's location twice.
+                            strm << "\nThis race is between two invocations executing the same instruction.\n";
+                        } else if (have_offset) {
+                            strm << "\nThe other access in this race was at:\n";
                             ::spirv::FindShaderSource(strm, instrumented_shader->original_spirv, collide_inst_offset,
                                                       gpuav.gpuav_settings.debug_printf_only);
                         } else {
+                            strm << "\nThe other access in this race was at:\n";
                             strm << "(specific conflicting instruction not recorded)\n";
                         }
                     }
