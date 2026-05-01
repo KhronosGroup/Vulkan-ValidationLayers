@@ -696,6 +696,15 @@ void Validator::PreCallRecordCmdBuildAccelerationStructuresKHR(
     valcmd::BLAS(*this, record_obj.location, cb_sub_state, last_bound, infoCount, pInfos, ppBuildRangeInfos);
 }
 
+void Validator::PostCallRecordCmdBuildAccelerationStructuresKHR(
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const RecordObject& record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+
+    auto& cb_sub_state = SubState(*cb_state);
+    UpdateAccelerationStructureGpuState(*this, cb_sub_state, record_obj.location, infoCount, pInfos);
+}
+
 void Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
                                             VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
                                             VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
