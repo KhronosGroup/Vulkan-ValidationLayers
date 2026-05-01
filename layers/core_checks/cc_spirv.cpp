@@ -3247,9 +3247,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                 } info;
 
                 if (base_opcode == spv::OpTypeSampledImage) {
-                    // VUID being added in
-                    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8242
-                    info.vuid = "UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-combined-image";
+                    info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-12406";
                     info.align = phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment;
                     info.align_field = Field::imageDescriptorAlignment;
                 } else if (base_opcode == spv::OpTypeImage) {

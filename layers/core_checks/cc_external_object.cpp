@@ -110,6 +110,7 @@ bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemap
 
     if (sem_state->ImportedHandleType().has_value() &&
         !CanSemaphoreExportFromImported(pGetFdInfo->handleType, sem_state->ImportedHandleType().value())) {
+        // See https://gitlab.khronos.org/vulkan/vulkan/-/issues/3670 for more details
         skip |= LogError("VUID-VkSemaphoreGetFdInfoKHR-semaphore-01133", sem_state->Handle(), info_loc.dot(Field::handleType),
                          "(%s) cannot be exported from semaphore with imported payload with handle type %s",
                          string_VkExternalSemaphoreHandleTypeFlagBits(pGetFdInfo->handleType),

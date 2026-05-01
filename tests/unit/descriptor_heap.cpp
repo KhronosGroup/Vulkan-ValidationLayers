@@ -3563,7 +3563,7 @@ TEST_F(NegativeDescriptorHeap, OpTypeSampledImageAlignedImage) {
     mappings[1].sourceData.constantOffset.heapOffset = 1;
     mappings[1].sourceData.constantOffset.heapArrayStride = 0;
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-combined-image");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12406");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 }

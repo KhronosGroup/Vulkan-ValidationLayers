@@ -772,8 +772,8 @@ std::string CreateActionVuid(vvl::Func function, const ActionVUID id) {
         // ### VUID-vkCmdDraw-imageLayout-00344
         case ActionVUID::IMAGE_LAYOUT_00344: suffix = "imageLayout-00344"; break;
 
-        // ### VUID-vkCmdDraw-maintenance4-08602
-        case ActionVUID::PUSH_CONSTANT_08602: suffix = "maintenance4-08602"; break;
+        // ### VUID-vkCmdDraw-None-08601
+        case ActionVUID::PUSH_CONSTANT_08601: suffix = "None-08601"; break;
 
         // ### VUID-vkCmdDraw-None-08608
         case ActionVUID::DYNAMIC_STATE_ALL_SET_08608: suffix = "None-08608"; break;

@@ -2315,7 +2315,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteSequenceCountBufferUsage) {
         generated_commands_info.sequenceCountAddress = bad_buffer.Address();
         generated_commands_info.indirectAddress = bad_buffer.Address();
         m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-11072");
-        m_errorMonitor->SetDesiredError("UNASSIGNED-VkGeneratedCommandsInfoEXT-indirectAddress-usage");
+        m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-indirectAddress-12407");
         vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
         m_errorMonitor->VerifyFound();
     }

@@ -668,9 +668,8 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
     }
 
     {
-        // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8220
         BufferAddressValidation<1> buffer_address_validator = {
-            {{{"UNASSIGNED-VkGeneratedCommandsInfoEXT-indirectAddress-usage",
+            {{{"VUID-VkGeneratedCommandsInfoEXT-indirectAddress-12407",
                [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT) == 0; },
                []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; }, kUsageErrorMsgBuffer}}}};
 
