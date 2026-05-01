@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 
+#include <vulkan/vulkan_core.h>
 #include "chassis/chassis_modification_state.h"
+#include "generated/dispatch_functions.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
 #include "gpuav/debug_descriptor/debug_descriptor.h"
@@ -31,9 +33,12 @@
 #include "gpuav/validation_cmd/gpuav_dispatch.h"
 #include "gpuav/validation_cmd/gpuav_draw.h"
 #include "gpuav/validation_cmd/gpuav_ray_tracing.h"
+#include "state_tracker/device_memory_state.h"
+#include "utils/assert_utils.h"
 #include "utils/math_utils.h"
 
 #include <cstdint>
+#include <algorithm>
 #include <vulkan/utility/vk_safe_struct.hpp>
 
 namespace gpuav {
@@ -82,6 +87,18 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
         chassis_state.modified_create_info.size = Align<VkDeviceSize>(chassis_state.modified_create_info.size, 4);
     }
 
+    // Might need to call vkCmdFillBuffer to set the memory
+    if (set_null_descriptors_) {
+        if ((in_usage & (VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
+                         VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT)) != 0) {
+            if (flags2) {
+                const_cast<VkBufferUsageFlags2CreateInfo*>(flags2)->usage |= VK_BUFFER_USAGE_2_TRANSFER_DST_BIT;
+            } else {
+                chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            }
+        }
+    }
+
     chassis_state.create_info_copy = chassis_state.modified_create_info.ptr();
 }
 
@@ -108,21 +125,88 @@ void Validator::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, 
     }
 }
 
-void Validator::BindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize offset) {
+void Validator::SetMemoryWithNullDescriptor(const vvl::Buffer& buffer_state, VkDeviceMemory memory, VkDeviceSize offset,
+                                            const Location& loc) {
+    auto device_memory_state = Get<vvl::DeviceMemory>(memory);
+    ASSERT_AND_RETURN(device_memory_state);
+
+    // Printing out the nullDescriptor (and confirm with driver dev) both NVIDIA and AMD use zero as a null descriptor
+    uint32_t null_dword = 0;
+    if (phys_dev_props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU && phys_dev_props.vendorID == 0x8086) {
+        // For Intel Integrated GPUs (from Metorlake+ which support heaps) they have a special null descriptor
+        null_dword = 0xe0000000;
+    }
+
+    const VkDeviceSize bound_size = buffer_state.GetSize();
+    if (device_memory_state->mappable) {
+        uint32_t* data_ptr = (uint32_t*)device_memory_state->p_driver_data;
+
+        if (!device_memory_state->p_driver_data) {
+            DispatchMapMemory(device, memory, offset, bound_size, 0, (void**)&data_ptr);
+        }
+
+        const VkDeviceSize dword_count = bound_size / sizeof(uint32_t);
+        std::fill(data_ptr, data_ptr + dword_count, null_dword);
+
+        if (!device_memory_state->p_driver_data) {
+            // Flush regardless to not need to check if coherent (safe to flush regardless)
+            VkMappedMemoryRange memory_range = vku::InitStructHelper();
+            memory_range.memory = memory;
+            memory_range.offset = offset;
+            memory_range.size = bound_size;
+            DispatchFlushMappedMemoryRanges(device, 1, &memory_range);
+
+            DispatchUnmapMemory(device, memory);
+        }
+    } else {
+        vko::CommandPool& cb_pool =
+            shared_resources_cache.GetOrCreate<vko::CommandPool>(*this, internal_transfer_queue_family_index_, loc);
+        auto [cb_handle, fence_handle] = cb_pool.GetCommandBuffer();
+        assert(cb_handle != VK_NULL_HANDLE);
+
+        DispatchResetCommandBuffer(cb_handle, 0);
+        VkCommandBufferBeginInfo cb_bi = vku::InitStructHelper();
+        cb_bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        DispatchBeginCommandBuffer(cb_handle, &cb_bi);
+        DispatchCmdFillBuffer(cb_handle, buffer_state.VkHandle(), 0, VK_WHOLE_SIZE, null_dword);
+        DispatchEndCommandBuffer(cb_handle);
+
+        VkSubmitInfo submit_info = vku::InitStructHelper();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &cb_handle;
+        DispatchQueueSubmit(internal_transfer_queue_handle_, 1, &submit_info, fence_handle);
+        DispatchWaitForFences(device, 1, &fence_handle, VK_TRUE, UINT64_MAX);
+        DispatchResetFences(device, 1, &fence_handle);
+    }
+}
+
+void Validator::BindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize offset, const Location& loc) {
     if (descriptor_buffer.resource_handles_.find(buffer) != descriptor_buffer.resource_handles_.end()) {
         descriptor_buffer.resource_memory_handles_.emplace(memory);
+    }
+
+    // This is where we will try and "memset" the Descriptor Heap/Buffer to be a "safe" value by default
+    // Only want to do the buffer state lookup when actually needed
+    if (set_null_descriptors_) {
+        if (auto buffer_state = Get<vvl::Buffer>(buffer)) {
+            if ((buffer_state->usage &
+                 (VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
+                  VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT)) != 0) {
+                SetMemoryWithNullDescriptor(*buffer_state, memory, offset, loc);
+            }
+        }
     }
 }
 
 void Validator::PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset,
                                                const RecordObject& record_obj) {
-    BindBufferMemory(buffer, memory, memoryOffset);
+    BindBufferMemory(buffer, memory, memoryOffset, record_obj.location);
 }
 
 void Validator::PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
                                                 const RecordObject& record_obj) {
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        BindBufferMemory(pBindInfos->buffer, pBindInfos->memory, pBindInfos->memoryOffset);
+        BindBufferMemory(pBindInfos->buffer, pBindInfos->memory, pBindInfos->memoryOffset, record_obj.location);
     }
 }
 
@@ -856,6 +940,25 @@ bool Validator::PreCallValidateCmdPushDataEXT(VkCommandBuffer commandBuffer, con
                      static_cast<uint32_t>(push_data_offset_ + sizeof(VkDeviceAddress)), push_data_offset_);
     }
     return skip;
+}
+
+void Validator::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue,
+                                             const RecordObject& record_obj) {
+    if (internal_transfer_queue_handle_ != VK_NULL_HANDLE || record_obj.result != VK_SUCCESS) {
+        return;
+    }
+    // TODO - Currently any queue should be fine, but this feels a bit hacky
+    internal_transfer_queue_family_index_ = queueFamilyIndex;
+    internal_transfer_queue_handle_ = *pQueue;
+}
+void Validator::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue,
+                                              const RecordObject& record_obj) {
+    if (internal_transfer_queue_handle_ != VK_NULL_HANDLE || record_obj.result != VK_SUCCESS) {
+        return;
+    }
+    // TODO - Currently any queue should be fine, but this feels a bit hacky
+    internal_transfer_queue_family_index_ = pQueueInfo->queueFamilyIndex;
+    internal_transfer_queue_handle_ = *pQueue;
 }
 
 // Validates the buffer is allowed to be protected

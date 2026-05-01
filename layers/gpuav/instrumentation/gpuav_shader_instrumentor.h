@@ -245,6 +245,9 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     DeviceExtensions modified_extensions;
     DeviceFeatures modified_features;
 
+    // If we should be setting null descriptors for the app (for Descriptor Buffer/Heap)
+    bool set_null_descriptors_ = false;
+
   private:
     bool IsPipelineSelectedForInstrumentation(VkPipeline pipeline, const Location &loc);
     bool IsShaderSelectedForInstrumentation(vku::safe_VkShaderModuleCreateInfo *modified_shader_module_ci,
