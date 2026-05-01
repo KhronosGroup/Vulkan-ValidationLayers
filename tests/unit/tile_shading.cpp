@@ -1001,7 +1001,7 @@ TEST_F(NegativeTileShading, BeginTileShadingCommandBufferWithNonTileShadingRende
     begin_info.pInheritanceInfo = &inheritance_info;
 
     m_errorMonitor->SetDesiredError("VUID-VkCommandBufferBeginInfo-flags-10618");
-     vk::BeginCommandBuffer(secondary_command, &begin_info);
+    vk::BeginCommandBuffer(secondary_command, &begin_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1032,7 +1032,7 @@ TEST_F(NegativeTileShading, BeginTileShadingCommandBufferButHasInconsistentApron
     begin_info.pInheritanceInfo = &inheritance_info;
 
     m_errorMonitor->SetDesiredError("VUID-VkCommandBufferBeginInfo-flags-10619");
-     vk::BeginCommandBuffer(secondary_command, &begin_info);
+    vk::BeginCommandBuffer(secondary_command, &begin_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1133,11 +1133,55 @@ TEST_F(NegativeTileShading, ExecuteTileShadingCommandWithInconsistentTileApronSi
                      "command has been recorded with a tile-apron size inconsistent with that of the render pass.");
     AddRequiredFeature(vkt::Feature::tileShadingApron);
     RETURN_IF_SKIP(InitBasicTileShading());
-    InitTileShadingRenderTarget();
 
     VkPhysicalDeviceTileShadingPropertiesQCOM tile_shading_props = vku::InitStructHelper();
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&tile_shading_props);
     vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
+
+    tile_shading_rp_config.tile_apron_size = {tile_shading_props.maxApronSize, tile_shading_props.maxApronSize};
+    InitTileShadingRenderTarget();
+
+    VkAttachmentDescription attachment_desc{};
+    attachment_desc.format = tile_shading_rp_config.format;
+    attachment_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment_desc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference color_ref{};
+    color_ref.attachment = 0;
+    color_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass_desc{};
+    subpass_desc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass_desc.colorAttachmentCount = 1;
+    subpass_desc.pColorAttachments = &color_ref;
+
+    VkSubpassDependency subpass_dependency{};
+    subpass_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    subpass_dependency.dstSubpass = 0;
+    subpass_dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dependency.srcAccessMask = 0;
+    subpass_dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    subpass_dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_ci_primary = vku::InitStructHelper();
+    tile_shading_ci_primary.flags = VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM;
+    tile_shading_ci_primary.tileApronSize = {0, 0};
+
+    VkRenderPassCreateInfo rp_ci = vku::InitStructHelper(&tile_shading_ci_primary);
+    rp_ci.attachmentCount = 1;
+    rp_ci.pAttachments = &attachment_desc;
+    rp_ci.subpassCount = 1;
+    rp_ci.pSubpasses = &subpass_desc;
+    rp_ci.dependencyCount = 1;
+    rp_ci.pDependencies = &subpass_dependency;
+
+    vkt::RenderPass zero_apron_rp{*m_device, rp_ci};
 
     vkt::CommandBuffer secondary_command{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY};
 
@@ -1158,7 +1202,7 @@ TEST_F(NegativeTileShading, ExecuteTileShadingCommandWithInconsistentTileApronSi
     clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
 
     VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
-    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.renderPass = zero_apron_rp;
     rp_begin_info.framebuffer = m_tile_shading_framebuffer;
     rp_begin_info.renderArea.offset = {0, 0};
     rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
@@ -1475,9 +1519,7 @@ TEST_F(NegativeTileShading, WriteTimestampInsidePerTileExecutionModelScope) {
         m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
         m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp-None-10640");
-        vk::CmdWriteTimestamp(m_command_buffer,
-                              VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                              query_pool, 0);
+        vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
         m_errorMonitor->VerifyFound();
         vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
         m_command_buffer.EndRenderPass();
@@ -1490,9 +1532,7 @@ TEST_F(NegativeTileShading, WriteTimestampInsidePerTileExecutionModelScope) {
         m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
         m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp2-None-10639");
-        vk::CmdWriteTimestamp2(m_command_buffer,
-                               VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
-                               query_pool, 0);
+        vk::CmdWriteTimestamp2(m_command_buffer, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, query_pool, 0);
         m_errorMonitor->VerifyFound();
         vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
         m_command_buffer.EndRenderPass();
@@ -1632,15 +1672,10 @@ TEST_F(NegativeTileShading, TransformFeedbackInsidePerTileExecutionModelScope) {
         m_command_buffer.Begin();
         m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, xfb_pipe);
-        vk::CmdBindTransformFeedbackBuffersEXT(m_command_buffer,
-                                               0, 1, &xfb_handle, &xfb_offset, &xfb_size);
+        vk::CmdBindTransformFeedbackBuffersEXT(m_command_buffer, 0, 1, &xfb_handle, &xfb_offset, &xfb_size);
         vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-None-10656");
-        vk::CmdBeginTransformFeedbackEXT(m_command_buffer,
-                                         0,
-                                         0,
-                                         nullptr,
-                                         nullptr);
+        vk::CmdBeginTransformFeedbackEXT(m_command_buffer, 0, 0, nullptr, nullptr);
         m_errorMonitor->VerifyFound();
         vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
         m_command_buffer.EndRenderPass();
@@ -1651,27 +1686,14 @@ TEST_F(NegativeTileShading, TransformFeedbackInsidePerTileExecutionModelScope) {
         m_command_buffer.Begin();
         m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, xfb_pipe);
-        vk::CmdBindTransformFeedbackBuffersEXT(m_command_buffer,
-                                               0, 1, &xfb_handle, &xfb_offset, &xfb_size);
-        vk::CmdBeginTransformFeedbackEXT(m_command_buffer,
-                                         0,
-                                         0,
-                                         nullptr,
-                                         nullptr);
+        vk::CmdBindTransformFeedbackBuffersEXT(m_command_buffer, 0, 1, &xfb_handle, &xfb_offset, &xfb_size);
+        vk::CmdBeginTransformFeedbackEXT(m_command_buffer, 0, 0, nullptr, nullptr);
         vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
         m_errorMonitor->SetDesiredError("VUID-vkCmdEndTransformFeedbackEXT-None-10657");
-        vk::CmdEndTransformFeedbackEXT(m_command_buffer,
-                                       0,
-                                       0,
-                                       nullptr,
-                                       nullptr);
+        vk::CmdEndTransformFeedbackEXT(m_command_buffer, 0, 0, nullptr, nullptr);
         m_errorMonitor->VerifyFound();
         vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
-        vk::CmdEndTransformFeedbackEXT(m_command_buffer,
-                                       0,
-                                       0,
-                                       nullptr,
-                                       nullptr);
+        vk::CmdEndTransformFeedbackEXT(m_command_buffer, 0, 0, nullptr, nullptr);
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
     }

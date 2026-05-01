@@ -28,6 +28,7 @@ from base_generator import BaseGenerator
 from dataclasses import dataclass
 from string import Template
 
+# Todo: move to vulkan object
 @dataclass
 class ExtendedFlag:
     struct: str

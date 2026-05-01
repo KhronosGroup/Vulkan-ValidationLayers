@@ -365,7 +365,9 @@ bool CoreChecks::ValidateBeginCommandBufferInheritanceInfo(const vvl::CommandBuf
         }
     }
 
-    skip |= ValidateBeginCommandBufferRenderPassTileShadingCreateInfo(cb_state, info, begin_flags, inheritance_loc);
+    if (enabled_features.tileShading) {
+        skip |= ValidateBeginCommandBufferRenderPassTileShadingCreateInfo(cb_state, info, begin_flags, inheritance_loc);
+    }
 
     return skip;
 }
@@ -497,16 +499,10 @@ bool CoreChecks::ValidateBeginCommandBufferRenderPassTileShadingCreateInfo(const
                        << "VkCommandBufferInheritanceInfo::renderPass has been created with tile shading enabled.";
 
         const LogObjectList objlist(cb_state.Handle(), rp_state->Handle());
-        if (rp_tile_shading_ci) {
-            skip |= LogError("VUID-VkCommandBufferBeginInfo-flags-10617", objlist,
-                             inheritance_loc.pNext(Struct::VkRenderPassTileShadingCreateInfoQCOM, Field::flags),
-                             "%s", conditional_ss.str().c_str());
-        }
-        else {
-            skip |= LogError("VUID-VkCommandBufferBeginInfo-flags-10617", objlist,
-                             inheritance_loc.dot(Field::pNext),
-                             "%s", conditional_ss.str().c_str());
-        }
+        const Location error_loc = rp_tile_shading_ci ?
+                inheritance_loc.pNext(Struct::VkRenderPassTileShadingCreateInfoQCOM, Field::flags) : inheritance_loc.dot(Field::pNext);
+        skip |= LogError("VUID-VkCommandBufferBeginInfo-flags-10617", objlist, error_loc,
+                         "%s", conditional_ss.str().c_str());
     }
 
     if (!has_rp_continue_bit && !rp_enabled_tile_shading && has_rp_enable_bit) {

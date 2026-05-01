@@ -569,9 +569,7 @@ TEST_F(PositiveTileShading, WriteTimestampOutsidePerTileExecutionModelScope) {
     {
         m_command_buffer.Begin();
         vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
-        vk::CmdWriteTimestamp(m_command_buffer,
-                              VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                              query_pool, 0);
+        vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
         m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
         vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
@@ -582,9 +580,7 @@ TEST_F(PositiveTileShading, WriteTimestampOutsidePerTileExecutionModelScope) {
     {
         m_command_buffer.Begin();
         vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
-        vk::CmdWriteTimestamp2(m_command_buffer,
-                               VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
-                               query_pool, 0);
+        vk::CmdWriteTimestamp2(m_command_buffer, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, query_pool, 0);
         m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
         vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
@@ -660,20 +656,11 @@ TEST_F(PositiveTileShading, LaunchTransformFeedbackOutsidePerTileExecutionModelS
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, xfb_pipe);
-    vk::CmdBindTransformFeedbackBuffersEXT(m_command_buffer,
-                                            0, 1, &xfb_handle, &xfb_offset, &xfb_size);
-    vk::CmdBeginTransformFeedbackEXT(m_command_buffer,
-                                        0,
-                                        0,
-                                        nullptr,
-                                        nullptr);
+    vk::CmdBindTransformFeedbackBuffersEXT(m_command_buffer, 0, 1, &xfb_handle, &xfb_offset, &xfb_size);
+    vk::CmdBeginTransformFeedbackEXT(m_command_buffer, 0, 0, nullptr, nullptr);
     vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
     vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
-    vk::CmdEndTransformFeedbackEXT(m_command_buffer,
-                                    0,
-                                    0,
-                                    nullptr,
-                                    nullptr);
+    vk::CmdEndTransformFeedbackEXT(m_command_buffer, 0, 0, nullptr, nullptr);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
