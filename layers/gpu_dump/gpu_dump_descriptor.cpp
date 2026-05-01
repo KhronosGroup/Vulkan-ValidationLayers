@@ -379,58 +379,140 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
                 }
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
                 const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping->sourceData.indirectIndex;
-                uint64_t indirect_address = *((uint64_t*)&cb_sub_state.push_data_value[map_data.pushOffset]);
+                uint64_t push_indirect_address = *((uint64_t*)&cb_sub_state.push_data_value[map_data.pushOffset]);
+                uint64_t final_indirect_address = push_indirect_address + map_data.addressOffset;
+
+                std::vector<uint8_t> indirect_index_data = cb_sub_state.dev_data.CopyDataFromMemory(final_indirect_address, 4);
+                uint32_t indirect_index = indirect_index_data.empty() ? 0 : *((uint32_t*)indirect_index_data.data());
 
                 map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset
                        << ", heapOffset: 0x" << map_data.heapOffset << ", heapIndexStride: 0x" << map_data.heapIndexStride
                        << ", heapArrayStride: 0x" << map_data.heapArrayStride;
-                map_ss << "\n        indirectAddress: 0x" << indirect_address;
+                map_ss << "\n        indirectAddress: 0x" << final_indirect_address << " (0x" << push_indirect_address << " + 0x"
+                       << map_data.addressOffset << ")";
+                if (!indirect_index_data.empty()) {
+                    map_ss << "\n        indirectIndex: 0x" << indirect_index;
+                }
                 map_ss << "\n        " << main_heap_type << " Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset
-                       << " + (indirectIndex * 0x" << map_data.heapIndexStride << ")";
+                       << " + (";
+                if (!indirect_index_data.empty()) {
+                    map_ss << "0x" << indirect_index;
+                } else {
+                    map_ss << "indirectIndex";
+                }
+                map_ss << " * 0x" << map_data.heapIndexStride << ")";
                 if (is_array) {
                     map_ss << " + (descriptor_index * 0x" << map_data.heapArrayStride << ")";
                     if (array_length != 0) {
                         warn_index_oob = ((map_data.heapOffset + ((array_length - 1) * map_data.heapArrayStride) +
                                            descriptor_size) > heap.resource_range.size());
                     }
+                } else if (!indirect_index_data.empty()) {
+                    uint64_t final_offset = map_data.heapOffset + (indirect_index * map_data.heapIndexStride);
+                    map_ss << " [final address 0x" << (heap.resource_range.begin + final_offset) << "]";
+                    warn_oob |= (final_offset + descriptor_size > heap.resource_range.size());
                 }
                 warn_oob |= (map_data.heapOffset + descriptor_size > heap.resource_range.size());
 
                 if (is_combined_image_sampler) {
-                    map_ss << "\n        pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x"
-                           << map_data.addressOffset << ", samplerHeapOffset: 0x" << map_data.samplerHeapOffset
-                           << ", samplerHeapIndexStride: 0x" << map_data.samplerHeapIndexStride << ", samplerHeapArrayStride: 0x"
-                           << map_data.samplerHeapArrayStride;
-                    map_ss << "\n        indirectAddress: 0x" << indirect_address;
+                    push_indirect_address = *((uint64_t*)&cb_sub_state.push_data_value[map_data.samplerPushOffset]);
+                    final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
+
+                    indirect_index_data = cb_sub_state.dev_data.CopyDataFromMemory(final_indirect_address, 4);
+                    indirect_index = indirect_index_data.empty() ? 0 : *((uint32_t*)indirect_index_data.data());
+
+                    map_ss << "\n        samplerPushOffset: 0x" << std::hex << map_data.samplerPushOffset
+                           << ", samplerAddressOffset: 0x" << map_data.samplerAddressOffset << ", samplerHeapOffset: 0x"
+                           << map_data.samplerHeapOffset << ", samplerHeapIndexStride: 0x" << map_data.samplerHeapIndexStride
+                           << ", samplerHeapArrayStride: 0x" << map_data.samplerHeapArrayStride;
+                    map_ss << "\n        indirectAddress: 0x" << final_indirect_address << " (0x" << push_indirect_address
+                           << " + 0x" << map_data.samplerAddressOffset << ")";
+                    if (!indirect_index_data.empty()) {
+                        map_ss << "\n        indirectIndex: 0x" << indirect_index;
+                    }
                     map_ss << "\n        Sampler Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset
-                           << " + (indirectIndex * 0x" << map_data.samplerHeapIndexStride << ")";
+                           << " + (";
+                    if (!indirect_index_data.empty()) {
+                        map_ss << "0x" << indirect_index;
+                    } else {
+                        map_ss << "indirectIndex";
+                    }
+                    map_ss << " * 0x" << map_data.samplerHeapIndexStride << ")";
                     if (is_array) {
                         map_ss << " + (descriptor_index * 0x" << map_data.samplerHeapArrayStride << ")";
                         if (array_length != 0) {
                             warn_index_oob = ((map_data.samplerHeapOffset + ((array_length - 1) * map_data.samplerHeapArrayStride) +
                                                descriptor_size) > heap.sampler_range.size());
                         }
+                    } else if (!indirect_index_data.empty()) {
+                        uint64_t final_offset = map_data.samplerHeapOffset + (indirect_index * map_data.samplerHeapIndexStride);
+                        map_ss << " [final address 0x" << (heap.sampler_range.begin + final_offset) << "]";
+                        warn_oob |= (final_offset + descriptor_size > heap.sampler_range.size());
                     }
                     warn_oob |= (map_data.samplerHeapOffset + descriptor_size > heap.sampler_range.size());
                 }
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
                 const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data = mapping->sourceData.indirectIndexArray;
-                uint64_t indirect_address = *((uint64_t*)&cb_sub_state.push_data_value[map_data.pushOffset]);
+                uint64_t push_indirect_address = *((uint64_t*)&cb_sub_state.push_data_value[map_data.pushOffset]);
+                uint64_t final_indirect_address = push_indirect_address + map_data.addressOffset;
+
+                std::vector<uint8_t> indirect_index_data = cb_sub_state.dev_data.CopyDataFromMemory(final_indirect_address, 4);
+                uint32_t indirect_index = indirect_index_data.empty() ? 0 : *((uint32_t*)indirect_index_data.data());
 
                 map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset
                        << ", heapOffset: 0x" << map_data.heapOffset << ", heapIndexStride: 0x" << map_data.heapIndexStride;
-                map_ss << "\n        indirectAddress: 0x" << indirect_address;
+                map_ss << "\n        indirectAddress: 0x" << final_indirect_address << " (0x" << push_indirect_address << " + 0x"
+                       << map_data.addressOffset << ")";
+                if (!indirect_index_data.empty()) {
+                    map_ss << "\n        indirectIndex: 0x" << indirect_index;
+                }
                 map_ss << "\n        " << main_heap_type << " Heap address: 0x" << heap.resource_range.begin + map_data.heapOffset
-                       << " + (indirectIndex * 0x" << map_data.heapIndexStride << ")";
+                       << " + (";
+                if (!indirect_index_data.empty()) {
+                    map_ss << "0x" << indirect_index;
+                } else {
+                    map_ss << "indirectIndex";
+                }
+                map_ss << " * 0x" << map_data.heapIndexStride << ")";
+                if (is_array) {
+                    // TODO
+                } else if (!indirect_index_data.empty()) {
+                    uint64_t final_offset = map_data.heapOffset + (indirect_index * map_data.heapIndexStride);
+                    map_ss << " [final address 0x" << (heap.resource_range.begin + final_offset) << "]";
+                    warn_oob |= (final_offset + descriptor_size > heap.resource_range.size());
+                }
                 warn_oob |= (map_data.heapOffset + descriptor_size > heap.resource_range.size());
 
                 if (is_combined_image_sampler) {
-                    map_ss << "\n        pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x"
-                           << map_data.addressOffset << ", samplerHeapOffset: 0x" << map_data.samplerHeapOffset
-                           << ", samplerHeapIndexStride: 0x" << map_data.samplerHeapIndexStride;
-                    map_ss << "\n        indirectAddress: 0x" << indirect_address;
+                    push_indirect_address = *((uint64_t*)&cb_sub_state.push_data_value[map_data.samplerPushOffset]);
+                    final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
+
+                    indirect_index_data = cb_sub_state.dev_data.CopyDataFromMemory(final_indirect_address, 4);
+                    // indirect_index = indirect_index_data.empty() ? 0 : *((uint32_t*)indirect_index_data.data());
+
+                    map_ss << "\n        samplerPushOffset: 0x" << std::hex << map_data.samplerPushOffset
+                           << ", samplerAddressOffset: 0x" << map_data.samplerAddressOffset << ", samplerHeapOffset: 0x"
+                           << map_data.samplerHeapOffset << ", samplerHeapIndexStride: 0x" << map_data.samplerHeapIndexStride;
+                    map_ss << "\n        indirectAddress: 0x" << final_indirect_address << " (0x" << push_indirect_address
+                           << " + 0x" << map_data.samplerAddressOffset << ")";
+                    if (!indirect_index_data.empty()) {
+                        map_ss << "\n        indirectIndex: 0x" << indirect_index;
+                    }
                     map_ss << "\n        Sampler Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset
-                           << " + (indirectIndex * 0x" << map_data.samplerHeapIndexStride << ")";
+                           << " + (";
+                    if (!indirect_index_data.empty()) {
+                        map_ss << "0x" << indirect_index;
+                    } else {
+                        map_ss << "indirectIndex";
+                    }
+                    map_ss << " * 0x" << map_data.samplerHeapIndexStride << ")";
+                    if (is_array) {
+                        // TODO
+                    } else if (!indirect_index_data.empty()) {
+                        uint64_t final_offset = map_data.samplerHeapOffset + (indirect_index * map_data.samplerHeapIndexStride);
+                        map_ss << " [final address 0x" << (heap.sampler_range.begin + final_offset) << "]";
+                        warn_oob |= (final_offset + descriptor_size > heap.sampler_range.size());
+                    }
                     warn_oob |= (map_data.samplerHeapOffset + descriptor_size > heap.sampler_range.size());
                 }
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
@@ -452,9 +534,17 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
                 map_ss << "\n        Indirect Adresss 0x" << indirect_address;
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
                 const VkDescriptorMappingSourceIndirectAddressEXT& map_data = mapping->sourceData.indirectAddress;
-                uint64_t indirect_address = *((uint64_t*)&cb_sub_state.push_data_value[map_data.pushOffset]);
+                uint64_t push_indirect_address = *((uint64_t*)&cb_sub_state.push_data_value[map_data.pushOffset]);
+                uint64_t final_indirect_address = push_indirect_address + map_data.addressOffset;
+
                 map_ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset;
-                map_ss << "\n        Indirect Adresss 0x" << indirect_address;
+                map_ss << "\n        Indirect Address: 0x" << final_indirect_address << " (0x" << push_indirect_address << " + 0x"
+                       << map_data.addressOffset << ")";
+
+                std::vector<uint8_t> indirect_address_data = cb_sub_state.dev_data.CopyDataFromMemory(final_indirect_address, 8);
+                if (!indirect_address_data.empty()) {
+                    map_ss << "\n        Resource Adresss 0x" << *((VkDeviceAddress*)indirect_address_data.data());
+                }
             } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
                 // TODO - Add address for RTX
                 const VkDescriptorMappingSourceShaderRecordIndexEXT& map_data = mapping->sourceData.shaderRecordIndex;
