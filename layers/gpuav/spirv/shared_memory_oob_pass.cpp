@@ -204,7 +204,7 @@ bool SharedMemoryOobPass::Instrument() {
                     continue;
                 }
 
-                if (IsMaxInstrumentationsCount()) {
+                if (MaxInstrumentationsCountReached()) {
                     continue;
                 }
                 instrumentations_count_++;
