@@ -766,6 +766,14 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
     QueryObject query_obj = {queryPool, slot};
     skip |= ValidateBeginQuery(*cb_state, query_obj, flags, 0, error_obj.location);
     skip |= ValidateCmd(*cb_state, error_obj.location);
+
+    if (cb_state->per_tile_execution_model_enabled) {
+        const LogObjectList objlist(commandBuffer, queryPool);
+        skip |= LogError("VUID-vkCmdBeginQuery-None-10681", objlist, error_obj.location,
+                         "the per-tile execution model has been enabled in this command buffer. "
+                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdBeginQuery)");
+    }
+
     return skip;
 }
 
@@ -962,6 +970,14 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
         skip |= ValidateCmdEndQuery(*cb_state, queryPool, slot, 0, error_obj.location);
         skip |= ValidateCmd(*cb_state, error_obj.location);
     }
+
+    if (cb_state->per_tile_execution_model_enabled) {
+        const LogObjectList objlist(commandBuffer, queryPool);
+        skip |= LogError("VUID-vkCmdEndQuery-None-10682", objlist, error_obj.location,
+                         "the per-tile execution model has been enabled in this command buffer. "
+                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdEndQuery)");
+    }
+
     return skip;
 }
 
@@ -1293,6 +1309,14 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer,
 
     const Location stage_loc = error_obj.location.dot(Field::pipelineStage);
     skip |= ValidatePipelineStage(LogObjectList(commandBuffer), stage_loc, cb_state->GetQueueFlags(), pipelineStage);
+
+    if (cb_state->per_tile_execution_model_enabled) {
+        const LogObjectList objlist(commandBuffer, queryPool);
+        skip |= LogError("VUID-vkCmdWriteTimestamp-None-10640", objlist, error_obj.location,
+                         "the per-tile execution model has been enabled in this command buffer. "
+                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdWriteTimestamp)");
+    }
+
     return skip;
 }
 
@@ -1314,6 +1338,14 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer
                          "(%s) must only set a single pipeline stage.", string_VkPipelineStageFlags2(stage).c_str());
     }
     skip |= ValidatePipelineStage(LogObjectList(commandBuffer), stage_loc, cb_state->GetQueueFlags(), stage);
+
+    if (cb_state->per_tile_execution_model_enabled) {
+        const LogObjectList objlist(commandBuffer, queryPool);
+        skip |= LogError("VUID-vkCmdWriteTimestamp2-None-10639", objlist, error_obj.location,
+                         "the per-tile execution model has been enabled in this command buffer. "
+                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdWriteTimestamp2)");
+    }
+
     return skip;
 }
 

@@ -1449,6 +1449,13 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
         skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-07308", objlist, error_obj.location.dot(Field::srcStageMask), "is %s.",
                          sync_utils::StringPipelineStageFlags(srcStageMask).c_str());
     }
+
+    if (cb_state->per_tile_execution_model_enabled) {
+        skip |= LogError("VUID-vkCmdWaitEvents-None-10655", objlist, error_obj.location,
+                         "the per-tile execution model has been enabled in this command buffer. "
+                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdWaitEvents)");
+    }
+
     return skip;
 }
 
@@ -1491,6 +1498,13 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
         skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, pDependencyInfos[i]);
     }
     skip |= ValidateCmd(*cb_state, error_obj.location);
+
+    if (cb_state->per_tile_execution_model_enabled) {
+        skip |= LogError("VUID-vkCmdWaitEvents2-None-10654", commandBuffer, error_obj.location,
+                         "the per-tile execution model has been enabled in this command buffer. "
+                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdWaitEvents2)");
+    }
+
     return skip;
 }
 

@@ -1343,6 +1343,13 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             }
         }
     }
+
+    if (cb_state.per_tile_execution_model_enabled) {
+        skip |= LogError("VUID-vkCmdClearAttachments-None-10616", commandBuffer, error_obj.location,
+                         "the per-tile execution model has been enabled in this command buffer. "
+                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdClearAttachments)");
+    }
+
     return skip;
 }
 

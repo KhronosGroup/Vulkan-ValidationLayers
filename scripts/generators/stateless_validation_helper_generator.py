@@ -28,6 +28,12 @@ from base_generator import BaseGenerator
 from dataclasses import dataclass
 from string import Template
 
+# Todo: move to vulkan object
+@dataclass
+class ExtendedFlag:
+    struct: str
+    member: Member
+
 # The way we generate this code is "clever" (aka not fun to debug)
 #
 # We create each struct's code inject string templates (like "${funcName}") and when we loop
@@ -280,6 +286,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdBindIndexBuffer3KHR',
             'vkCreateAccelerationStructure2KHR',
             'vkCmdBeginTransformFeedback2EXT',
+            'vkCmdBeginPerTileExecutionQCOM',
         ]
 
         # Commands to ignore
@@ -394,13 +401,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             * limitations under the License.
             ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
-
-        # Todo: move to vulkan object
-        from dataclasses import dataclass
-        @dataclass
-        class ExtendedFlag:
-            struct: str
-            member: Member
 
         for member in (m for s in self.vk.structs.values() for m in s.members):
                 member.extendedFlag = None

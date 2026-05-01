@@ -1699,6 +1699,10 @@ class CoreChecks : public vvl::DeviceProxy {
                                                             const VkCommandBufferInheritanceInfo& info,
                                                             const VkCommandBufferInheritanceRenderingInfo& rendering_info,
                                                             const Location& inheritance_loc) const;
+    bool ValidateBeginCommandBufferRenderPassTileShadingCreateInfo(const vvl::CommandBuffer& cb_state,
+                                                                   const VkCommandBufferInheritanceInfo& info,
+                                                                   const VkCommandBufferUsageFlags begin_flags,
+                                                                   const Location& inheritance_loc) const;
     bool ValidateRenderingInfoAttachmentDeviceGroup(const vvl::Image& image_state, const VkRenderingInfo& rendering_info,
                                                     const LogObjectList& objlist, const Location& loc) const;
     bool ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,

@@ -1497,4 +1497,19 @@ bool Device::manual_PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommand
     return skip;
 }
 
+bool Device::manual_PreCallValidateCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
+                                                                const VkPerTileBeginInfoQCOM *pPerTileBeginInfo,
+                                                                const Context &context) const {
+    bool skip = false;
+
+    if (!enabled_features.tileShadingPerTileDispatch && !enabled_features.tileShadingPerTileDraw) {
+        skip |= LogError("VUID-vkCmdBeginPerTileExecutionQCOM-None-10665",
+                         commandBuffer, context.error_obj.location,
+                         "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingPerTileDispatch and "
+                         "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingPerTileDraw features are not enabled.");
+    }
+
+    return skip;
+}
+
 }  // namespace stateless

@@ -13,6 +13,7 @@
 
 #include "binding.h"
 #include "layer_validation_tests.h"
+#include "pipeline_helper.h"
 
 class PositiveTileShading : public TileShadingTest {};
 
@@ -172,16 +173,15 @@ TEST_F(PositiveTileShading, ExecutePerTileExecutionModel) {
     rp_begin_info.clearValueCount = 1;
     rp_begin_info.pClearValues = &clear_value;
 
-    VkCommandBuffer secondary_handle = secondary_command.handle();
     VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
     VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
 
     m_command_buffer.Begin();
-    vk::CmdBeginRenderPass(m_command_buffer, &rp_begin_info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
-    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_handle);
+    m_command_buffer.ExecuteCommands(secondary_command);
     vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
-    vk::CmdEndRenderPass(m_command_buffer);
+    m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
 
@@ -414,5 +414,329 @@ TEST_F(PositiveTileShading, DynamicRendering) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
     m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveTileShading, LaunchTileAttachmentMemoryBarrier) {
+    TEST_DESCRIPTION("Launch correct tile attachment memory barrier.");
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    m_command_buffer.Begin();
+    {
+        VkMemoryBarrier2 barrier2 = vku::InitStructHelper();
+        barrier2.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+        barrier2.srcAccessMask = VK_ACCESS_2_SHADER_TILE_ATTACHMENT_READ_BIT_QCOM;
+        barrier2.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        barrier2.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
+        m_command_buffer.Barrier(barrier2);
+    }
+    {
+        VkMemoryBarrier2 barrier2 = vku::InitStructHelper();
+        barrier2.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+        barrier2.srcAccessMask = VK_ACCESS_2_SHADER_TILE_ATTACHMENT_WRITE_BIT_QCOM;
+        barrier2.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        barrier2.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
+        m_command_buffer.Barrier(barrier2);
+    }
+    {
+        VkMemoryBarrier2 barrier2 = vku::InitStructHelper();
+        barrier2.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        barrier2.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        barrier2.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+        barrier2.dstAccessMask = VK_ACCESS_2_SHADER_TILE_ATTACHMENT_READ_BIT_QCOM;
+        m_command_buffer.Barrier(barrier2);
+    }
+    {
+        VkMemoryBarrier2 barrier2 = vku::InitStructHelper();
+        barrier2.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        barrier2.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+        barrier2.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+        barrier2.dstAccessMask = VK_ACCESS_2_SHADER_TILE_ATTACHMENT_WRITE_BIT_QCOM;
+        m_command_buffer.Barrier(barrier2);
+    }
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveTileShading, LaunchQueryOutsidePerTileExecutionModelScope) {
+    TEST_DESCRIPTION("Launch query outside the per-tile execution model scope.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    vkt::QueryPool query_pool{*m_device, VK_QUERY_TYPE_OCCLUSION, 1};
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveTileShading, WaitEventsOutsidePerTileExecutionModelScope) {
+    TEST_DESCRIPTION("Wait events outside the per-tile execution model scope.");
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    vkt::Event event{*m_device};
+    const VkEvent event_handle = event.handle();
+
+    VkClearValue clear_value = {};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    {
+        m_command_buffer.Begin();
+        m_command_buffer.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                    0, nullptr, 0, nullptr, 0, nullptr);
+        m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+        vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+        m_command_buffer.Reset();
+    }
+    {
+        VkMemoryBarrier2 mem_barrier2 = vku::InitStructHelper();
+        mem_barrier2.srcStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+        mem_barrier2.srcAccessMask = 0;
+        mem_barrier2.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+        mem_barrier2.dstAccessMask = VK_ACCESS_2_SHADER_TILE_ATTACHMENT_READ_BIT_QCOM;
+
+        VkDependencyInfo dependency_info = vku::InitStructHelper();
+        dependency_info.memoryBarrierCount = 1;
+        dependency_info.pMemoryBarriers = &mem_barrier2;
+
+        m_command_buffer.Begin();
+        vk::CmdWaitEvents2(m_command_buffer, 1, &event_handle, &dependency_info);
+        m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+        vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+    }
+}
+
+TEST_F(PositiveTileShading, WriteTimestampOutsidePerTileExecutionModelScope) {
+    TEST_DESCRIPTION("Write timestamp outside the per-tile execution model scope.");
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    vkt::QueryPool query_pool{*m_device, VK_QUERY_TYPE_TIMESTAMP, 1};
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    {
+        m_command_buffer.Begin();
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+        vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
+        m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+        vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+        m_command_buffer.Reset();
+    }
+    {
+        m_command_buffer.Begin();
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+        vk::CmdWriteTimestamp2(m_command_buffer, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, query_pool, 0);
+        m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+        vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+    }
+}
+
+TEST_F(PositiveTileShading, LaunchTransformFeedbackOutsidePerTileExecutionModelScope) {
+    TEST_DESCRIPTION("Launch transform feedback outside the per-tile execution model scope.");
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    const char *vs_source = R"glsl(
+        #version 460
+
+        layout(xfb_buffer = 0, xfb_stride = 16) out;
+        layout(location = 0, xfb_offset = 0) out vec4 xfb_out;
+
+        vec2 positions[3] = vec2[3](
+            vec2( 0.0, -0.5),
+            vec2( 0.5,  0.5),
+            vec2(-0.5,  0.5)
+        );
+
+        void main() {
+            vec4 out_position = vec4(positions[gl_VertexIndex], 0.0, 1.0);
+            xfb_out = out_position;
+            gl_Position = out_position;
+        }
+    )glsl";
+    const char *fs_source = R"glsl(
+        #version 460
+
+        layout(location = 0) out vec4 out_color;
+
+        void main() {
+            out_color = vec4(1.0);
+        }
+    )glsl";
+
+    VkShaderObj vs{*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3};
+    VkShaderObj fs{*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3};
+
+    CreatePipelineHelper xfb_pipe{*this};
+    xfb_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    xfb_pipe.gp_ci_.renderPass = m_tile_shading_render_pass;
+    xfb_pipe.CreateGraphicsPipeline();
+
+    constexpr VkDeviceSize xfb_offset = 0;
+    constexpr VkDeviceSize xfb_size = 4096;
+    vkt::Buffer xfb_buffer{*m_device, xfb_size,
+                           VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT,
+                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+    VkBuffer xfb_handle = xfb_buffer.handle();
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, xfb_pipe);
+    vk::CmdBindTransformFeedbackBuffersEXT(m_command_buffer, 0, 1, &xfb_handle, &xfb_offset, &xfb_size);
+    vk::CmdBeginTransformFeedbackEXT(m_command_buffer, 0, 0, nullptr, nullptr);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    vk::CmdEndTransformFeedbackEXT(m_command_buffer, 0, 0, nullptr, nullptr);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveTileShading, ClearAttachmentOutsidePerTileExecutionModelScope) {
+    TEST_DESCRIPTION("Clear attachment outside the per-tile execution model scope.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    VkClearAttachment clear_attachment{};
+    clear_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clear_attachment.colorAttachment = 0;
+    clear_attachment.clearValue = clear_value;
+
+    VkClearRect clear_rect{};
+    clear_rect.rect.offset = {0, 0};
+    clear_rect.rect.extent = tile_shading_rp_config.rt_size;
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveTileShading, LaunchDebugMarkerOutsidePerTileExecutionModelScope) {
+    TEST_DESCRIPTION("Launch debug marker outside the per-tile execution model scope.");
+    AddRequiredExtensions(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    VkClearValue clear_value{};
+    clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea.offset = {0, 0};
+    rp_begin_info.renderArea.extent = tile_shading_rp_config.rt_size;
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_value;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    VkDebugMarkerMarkerInfoEXT marker_info = vku::InitStructHelper();
+    marker_info.pMarkerName = "tile-shading-marker";
+    marker_info.color[0] = 1.0f;
+    marker_info.color[1] = 0.0f;
+    marker_info.color[2] = 0.0f;
+    marker_info.color[3] = 1.0f;
+
+    m_command_buffer.Begin();
+    vk::CmdDebugMarkerBeginEXT(m_command_buffer, &marker_info);
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRenderPass();
+    vk::CmdDebugMarkerEndEXT(m_command_buffer);
     m_command_buffer.End();
 }
