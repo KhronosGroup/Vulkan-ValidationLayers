@@ -372,8 +372,8 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");  // vertex
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");  // fragment
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08601");  // vertex
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08601");  // fragment
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_, 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
@@ -386,13 +386,13 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     //       See https://gitlab.khronos.org/vulkan/vulkan/-/issues/2602 and
     //       https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2689
     //       for more details.
-    // m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");
+    // m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08601");
     // vk::CmdPushConstants(m_command_buffer, g_pipe.pipeline_layout_,
     //                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 96, dummy_values);
     // vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     // m_errorMonitor->VerifyFound();
 
-    // m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");
+    // m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08601");
     // vk::CmdPushConstants(m_command_buffer, pipeline_layout_small, VK_SHADER_STAGE_VERTEX_BIT, 4, 4, dummy_values);
     // vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     // m_errorMonitor->VerifyFound();

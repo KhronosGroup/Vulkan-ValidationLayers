@@ -2189,7 +2189,7 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound& last_bound_sta
                     // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
                     if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
                         const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle(), pipeline->Handle());
-                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PUSH_CONSTANT_08602), objlist, loc,
+                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PUSH_CONSTANT_08601), objlist, loc,
                                          "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
                                          "%s bound by vkCmdBindPipeline.",
                                          string_VkShaderStageFlags(stage.GetStage()).c_str(),
@@ -2212,7 +2212,7 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound& last_bound_sta
                     // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
                     if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
                         const LogObjectList objlist(cb_state.Handle(), shader_object->Handle());
-                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PUSH_CONSTANT_08602), objlist, loc,
+                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PUSH_CONSTANT_08601), objlist, loc,
                                          "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet.",
                                          string_VkShaderStageFlags(shader_object->create_info.stage).c_str());
                     }

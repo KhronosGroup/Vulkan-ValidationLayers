@@ -360,7 +360,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08601");
         vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
@@ -371,7 +371,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
             m_command_buffer.NextSubpass();
             vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[i]);
 
-            m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08601");
             vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
             m_errorMonitor->VerifyFound();
         }

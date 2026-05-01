@@ -3671,7 +3671,7 @@ TEST_F(NegativeShaderObject, ComputeShaderMissingPushConst) {
                               nullptr);
     m_command_buffer.BindCompShader(comp_shader);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-maintenance4-08602");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08601");
     vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
     m_errorMonitor->VerifyFound();
 
