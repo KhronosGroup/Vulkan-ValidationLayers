@@ -6600,7 +6600,7 @@ TEST_F(NegativeDescriptorHeap, ResetPushConstsWithPushData) {
     vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08601");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
