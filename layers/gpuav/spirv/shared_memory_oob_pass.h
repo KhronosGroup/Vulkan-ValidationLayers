@@ -47,6 +47,7 @@ class SharedMemoryOobPass : public Pass {
     bool RequiresInstrumentation(const Function& function, BasicBlock& block, InstructionIt& inst_it, const Instruction& inst,
                                  InstructionMeta& meta);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
+    bool IsTrackedPointerStorageClass(const Instruction* inst) const;
 
     uint32_t link_function_id_ = 0;
 };

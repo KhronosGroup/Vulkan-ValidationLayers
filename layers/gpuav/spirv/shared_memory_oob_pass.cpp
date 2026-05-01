@@ -31,6 +31,22 @@ const static OfflineModule kOfflineModule = {instrumentation_shared_memory_oob_c
 const static OfflineFunction kOfflineFunction = {"inst_shared_memory_oob",
                                                  instrumentation_shared_memory_oob_comp_function_0_offset};
 
+static bool IsTrackedStorageClass(spv::StorageClass sc) {
+    return sc == spv::StorageClassWorkgroup || sc == spv::StorageClassPrivate || sc == spv::StorageClassFunction;
+}
+
+bool SharedMemoryOobPass::IsTrackedPointerStorageClass(const Instruction* inst) const {
+    if (!inst) return false;
+    spv::StorageClass sc = inst->StorageClass();  // OpVariable
+    if (sc == spv::StorageClassMax) {
+        const Type* ptr_type = type_manager_.FindTypeById(inst->TypeId());
+        if (ptr_type && ptr_type->spv_type_ == SpvType::kPointer) {
+            sc = ptr_type->inst_.StorageClass();
+        }
+    }
+    return IsTrackedStorageClass(sc);
+}
+
 SharedMemoryOobPass::SharedMemoryOobPass(Module& module) : Pass(module, kOfflineModule) {}
 
 uint32_t SharedMemoryOobPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
@@ -63,28 +79,31 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
         const uint32_t vector_id = inst.Operand(0);
         const Instruction* vector_inst = function.FindInstruction(vector_id);
         // OpVectorExtract/InsertDynamic operate on values, not pointers, so the vector operand
-        // will be an OpLoad from the shared memory variable. We trace through the OpLoad to find
-        // the source pointer and verify it originates from workgroup storage. Even though the OOB
-        // occurs on the loaded value, we still report it because the vector's bounds are determined
-        // by the shared memory declaration and the index is checked before the access.
+        // will be an OpLoad from the variable. We trace through the OpLoad to find the source
+        // pointer. Even though the OOB occurs on the loaded value, we still report it because
+        // the vector's bounds are determined by the variable's declaration and the index is
+        // checked before the access.
         if (!vector_inst || vector_inst->Opcode() != spv::OpLoad) {
             return false;
         }
 
         const uint32_t ptr_id = vector_inst->Operand(0);
 
-        // Walk access chains to find the base variable
+        // Walk back through chained access chains to a stable base. Module-scope variables are
+        // tracked by the type manager; function-scope OpVariables (and other pointer-producing
+        // instructions) are reachable via Function::FindInstruction.
         const Variable* variable = type_manager_.FindVariableById(ptr_id);
-        const Instruction* access_chain_inst = function.FindInstruction(ptr_id);
-        while (access_chain_inst && access_chain_inst->IsNonPtrAccessChain()) {
-            const uint32_t base_id = access_chain_inst->Operand(0);
+        const Instruction* base_inst = function.FindInstruction(ptr_id);
+        while (base_inst && base_inst->IsNonPtrAccessChain()) {
+            const uint32_t base_id = base_inst->Operand(0);
             variable = type_manager_.FindVariableById(base_id);
             if (variable) {
                 break;
             }
-            access_chain_inst = function.FindInstruction(base_id);
+            base_inst = function.FindInstruction(base_id);
         }
-        if (!variable || variable->StorageClass() != spv::StorageClassWorkgroup) {
+        const Instruction* leaf_inst = variable ? &variable->inst_ : base_inst;
+        if (!leaf_inst || !IsTrackedPointerStorageClass(leaf_inst)) {
             return false;
         }
 
@@ -97,14 +116,15 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
         index_id = CastToUint32(index_id, block, &inst_it);
 
         meta.target_instruction = &inst;
-        meta.variable_id = variable->Id();
+        meta.variable_id = leaf_inst->ResultId();
         meta.checks.push_back({index_id, vector_type->meta_.vector.component_count, 1, 0});
         return true;
     } else if (!inst.IsNonPtrAccessChain()) {
         return false;
     }
 
-    // Walk chained access chains to find the base OpVariable
+    // Walk back through chained access chains to a stable base. See the dynamic-vector branch
+    // above for the module-scope vs. function-scope lookup pattern.
     const uint32_t base_id = inst.Operand(0);
     const Variable* variable = type_manager_.FindVariableById(base_id);
     const Instruction* chain_inst = function.FindInstruction(base_id);
@@ -116,11 +136,11 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
         }
         chain_inst = function.FindInstruction(chain_base_id);
     }
-
-    if (!variable || variable->StorageClass() != spv::StorageClassWorkgroup) {
+    const Instruction* leaf_inst = variable ? &variable->inst_ : chain_inst;
+    if (!leaf_inst || !IsTrackedPointerStorageClass(leaf_inst)) {
         return false;
     }
-    meta.variable_id = variable->Id();
+    meta.variable_id = leaf_inst->ResultId();
     meta.target_instruction = &inst;
 
     // Start the type walk from the direct base operand's pointee type, not the root variable's type,
@@ -128,8 +148,8 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
     const Instruction* base_inst = function.FindInstruction(base_id);
     const Type* base_ptr_type = base_inst ? type_manager_.FindTypeById(base_inst->TypeId()) : nullptr;
     if (!base_ptr_type) {
-        assert(variable->Id() == base_id);
-        base_ptr_type = type_manager_.FindTypeById(variable->inst_.TypeId());
+        assert(leaf_inst->ResultId() == base_id);
+        base_ptr_type = type_manager_.FindTypeById(leaf_inst->TypeId());
     }
     assert(base_ptr_type);
     const Type* pointee_type = type_manager_.FindChildType(*base_ptr_type, 0);
@@ -170,15 +190,6 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
 }
 
 bool SharedMemoryOobPass::Instrument() {
-    if (!IsValueIn(module_.interface_.entry_point_stage, {VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_MESH_BIT_EXT})) {
-        return false;
-    }
-
-    const std::vector<const Variable*>& shmem_vars = type_manager_.GetSharedMemoryVariables();
-    if (shmem_vars.empty()) {
-        return false;
-    }
-
     for (Function& function : module_.functions_) {
         if (!function.called_from_target_) {
             continue;

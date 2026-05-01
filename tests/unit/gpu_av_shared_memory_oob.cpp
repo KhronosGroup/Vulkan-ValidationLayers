@@ -17,11 +17,12 @@ class NegativeGpuAVSharedMemoryOob : public GpuAVSharedMemoryOobTest {
   protected:
     void TestHelper(const char* source, uint32_t expected_index, uint32_t expected_bound,
                     const char* vuid = "SPIRV-SharedMemoryOob-OpAccessChain", SpvSourceType source_type = SPV_SOURCE_GLSL,
-                    VkSpecializationInfo* spec_info = nullptr);
+                    VkSpecializationInfo* spec_info = nullptr, const char* expected_variable_name = nullptr);
 };
 
 void NegativeGpuAVSharedMemoryOob::TestHelper(const char* shader_source, uint32_t expected_index, uint32_t expected_bound,
-                                              const char* vuid, SpvSourceType source_type, VkSpecializationInfo* spec_info) {
+                                              const char* vuid, SpvSourceType source_type, VkSpecializationInfo* spec_info,
+                                              const char* expected_variable_name) {
     RETURN_IF_SKIP(InitSharedMemoryOob());
 
     CreateComputePipelineHelper pipe(*this);
@@ -45,7 +46,11 @@ void NegativeGpuAVSharedMemoryOob::TestHelper(const char* shader_source, uint32_
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    const std::string regex = std::to_string(expected_index) + " is >= .* " + std::to_string(expected_bound);
+    std::string regex;
+    if (expected_variable_name) {
+        regex = std::string("\"") + expected_variable_name + "\".*";
+    }
+    regex += std::to_string(expected_index) + " is >= .* " + std::to_string(expected_bound);
     m_errorMonitor->SetDesiredErrorRegex(vuid, regex.c_str());
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -93,6 +98,40 @@ TEST_F(NegativeGpuAVSharedMemoryOob, Array2DOuter) {
         void main() {
             uint i = ssbo.data[0] + 2;
             arr[i][0] = 0;
+        }
+    )glsl";
+
+    TestHelper(shader_source, 2, 2);
+}
+
+// Outer index is a constant in bounds, inner is dynamic and OOB. Spot check that the inner
+// check fires correctly when the outer is a constant.
+TEST_F(NegativeGpuAVSharedMemoryOob, Array2DConstantOuterDynamicInner) {
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } ssbo;
+        shared uint arr[2][4];
+        void main() {
+            uint i = ssbo.data[0] + 4;
+            arr[1][i] = 0;
+        }
+    )glsl";
+
+    TestHelper(shader_source, 4, 4);
+}
+
+// Outer is dynamic and OOB, inner is a constant in bounds. Spot check that the outer check
+// fires correctly when the inner is a constant.
+TEST_F(NegativeGpuAVSharedMemoryOob, Array2DDynamicOuterConstantInner) {
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } ssbo;
+        shared uint arr[2][4];
+        void main() {
+            uint i = ssbo.data[0] + 2;
+            arr[i][3] = 0;
         }
     )glsl";
 
@@ -421,4 +460,96 @@ TEST_F(NegativeGpuAVSharedMemoryOob, MeshShader) {
     m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", "4 is >= array size 4");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
+}
+
+// Function-scope local array. Dynamic indexing keeps glslang/spirv-opt from promoting it
+// to SSA, so it stays as a Function-storage OpVariable.
+TEST_F(NegativeGpuAVSharedMemoryOob, FunctionStorageArrayOob) {
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } ssbo;
+        void main() {
+            uint arr[4];
+            arr[0] = 1;
+            arr[1] = 2;
+            arr[2] = 3;
+            arr[3] = 4;
+            uint i = ssbo.data[0] + 4;
+            arr[i] = 99;
+            ssbo.data[0] = arr[ssbo.data[0] & 3u];
+        }
+    )glsl";
+
+    TestHelper(shader_source, 4, 4);
+}
+
+// File-scope global array, which glslang lowers to Private storage.
+TEST_F(NegativeGpuAVSharedMemoryOob, PrivateStorageArrayOob) {
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } ssbo;
+        uint privateArr[4];
+        void main() {
+            privateArr[0] = 1;
+            privateArr[1] = 2;
+            privateArr[2] = 3;
+            privateArr[3] = 4;
+            uint i = ssbo.data[0] + 4;
+            privateArr[i] = 99;
+            ssbo.data[0] = privateArr[ssbo.data[0] & 3u];
+        }
+    )glsl";
+
+    TestHelper(shader_source, 4, 4);
+}
+
+// Verify the host logger prints the variable name in the error message for each tracked
+// storage class.
+TEST_F(NegativeGpuAVSharedMemoryOob, VariableNameInMessageWorkgroup) {
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } ssbo;
+        shared uint workgroupArr[4];
+        void main() {
+            workgroupArr[ssbo.data[0] + 4] = 0;
+        }
+    )glsl";
+
+    TestHelper(shader_source, 4, 4, "SPIRV-SharedMemoryOob-OpAccessChain", SPV_SOURCE_GLSL, nullptr, "workgroupArr");
+}
+
+TEST_F(NegativeGpuAVSharedMemoryOob, VariableNameInMessagePrivate) {
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } ssbo;
+        uint privateArr[4];
+        void main() {
+            privateArr[ssbo.data[0] + 4] = 0;
+        }
+    )glsl";
+
+    TestHelper(shader_source, 4, 4, "SPIRV-SharedMemoryOob-OpAccessChain", SPV_SOURCE_GLSL, nullptr, "privateArr");
+}
+
+TEST_F(NegativeGpuAVSharedMemoryOob, VariableNameInMessageFunction) {
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } ssbo;
+        void main() {
+            uint functionArr[4];
+            functionArr[0] = 1;
+            functionArr[1] = 2;
+            functionArr[2] = 3;
+            functionArr[3] = 4;
+            functionArr[ssbo.data[0] + 4] = 99;
+            ssbo.data[0] = functionArr[ssbo.data[0] & 3u];
+        }
+    )glsl";
+
+    TestHelper(shader_source, 4, 4, "SPIRV-SharedMemoryOob-OpAccessChain", SPV_SOURCE_GLSL, nullptr, "functionArr");
 }
