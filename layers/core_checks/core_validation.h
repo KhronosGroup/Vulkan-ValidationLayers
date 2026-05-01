@@ -741,6 +741,7 @@ class CoreChecks : public vvl::DeviceProxy {
                               const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawShaderObjectNextStage(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawShaderObjectBoundShader(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateDrawShaderObjectFlags(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawShaderObject(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawShaderObjectLinking(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& last_bound_state, const Location& loc) const;

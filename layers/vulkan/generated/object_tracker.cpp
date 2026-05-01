@@ -7939,28 +7939,6 @@ bool Device::PreCallValidateCmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffe
 // vkAntiLagUpdateAMD:
 // Checked by chassis: device: "VUID-vkAntiLagUpdateAMD-device-parameter"
 
-bool Device::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
-                                             const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
-                                             const ErrorObject& error_obj) const {
-    bool skip = false;
-    // Checked by chassis: device: "VUID-vkCreateShadersEXT-device-parameter"
-    if (pCreateInfos) {
-        for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
-            [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
-
-            if ((pCreateInfos[index0].setLayoutCount > 0) && (pCreateInfos[index0].pSetLayouts)) {
-                for (uint32_t index1 = 0; index1 < pCreateInfos[index0].setLayoutCount; ++index1) {
-                    skip |= ValidateObject(pCreateInfos[index0].pSetLayouts[index1], kVulkanObjectTypeDescriptorSetLayout, true,
-                                           kVUIDUndefined, "UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-parent",
-                                           index0_loc.dot(Field::pSetLayouts, index1));
-                }
-            }
-        }
-    }
-
-    return skip;
-}
-
 void Device::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                             const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                             const RecordObject& record_obj) {

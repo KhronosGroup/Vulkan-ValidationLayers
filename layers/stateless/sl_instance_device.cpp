@@ -905,12 +905,28 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
                                  PrintPNextChain(Struct::VkPhysicalDeviceImageFormatInfo2, pImageFormatInfo->pNext).c_str());
             }
             if (image_drm_format->sharingMode == VK_SHARING_MODE_CONCURRENT) {
+                // TODO - We should not need to have to spam a dispatch call here, until then, only call when possible chance of an
+                // error
                 if (image_drm_format->queueFamilyIndexCount <= 1) {
-                    skip |=
-                        LogError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315", physicalDevice,
-                                 format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT, Field::sharingMode),
-                                 "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32 ".",
-                                 image_drm_format->queueFamilyIndexCount);
+                    VkPhysicalDeviceMaintenance11FeaturesKHR m11_features = vku::InitStructHelper();
+                    VkPhysicalDeviceProperties2 phys_dev_props = vku::InitStructHelper(&m11_features);
+                    DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &phys_dev_props);
+                    if (m11_features.maintenance11) {
+                        if (image_drm_format->queueFamilyIndexCount == 0) {
+                            skip |= LogError(
+                                "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-maintenance11-13351", physicalDevice,
+                                format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT, Field::sharingMode),
+                                "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is 0 (needs to be at least 1).");
+                        }
+                    } else if (image_drm_format->queueFamilyIndexCount <= 1) {
+                        skip |= LogError(
+                            "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315", physicalDevice,
+                            format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT, Field::sharingMode),
+                            "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32
+                            " (Needs to be at least 2)\nHint: queueFamilyIndexCount can be 1 if the maintenance11 feature is "
+                            "enabled.",
+                            image_drm_format->queueFamilyIndexCount);
+                    }
                 } else if (!image_drm_format->pQueueFamilyIndices) {
                     skip |= LogError(
                         "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02314", physicalDevice,

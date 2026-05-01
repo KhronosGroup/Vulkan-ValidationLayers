@@ -69,6 +69,13 @@ bool Device::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const V
         }
     }
 
+    if (pCreateInfo->flags & VK_PIPELINE_LAYOUT_CREATE_NO_TASK_SHADER_BIT_KHR &&
+        !(pCreateInfo->flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT)) {
+        skip |= LogError("VUID-VkPipelineLayoutCreateInfo-flags-13352", device, create_info_loc.dot(Field::flags),
+                         "is %s and does not include VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.",
+                         string_VkPipelineLayoutCreateFlags(pCreateInfo->flags).c_str());
+    }
+
     skip |= ValidatePushConstantRange(pCreateInfo->pushConstantRangeCount, pCreateInfo->pPushConstantRanges, create_info_loc);
 
     return skip;

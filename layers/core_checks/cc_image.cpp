@@ -2008,10 +2008,19 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
     }
 
     const bool multiplane_image = vkuFormatIsMultiplane(image_format);
-    if (multiplane_image && IsMultiplePlaneAspect(aspect_mask)) {
-        skip |= LogError("VUID-VkImageViewCreateInfo-subresourceRange-07818", create_info.image,
-                         create_info_loc.dot(Field::subresourceRange).dot(Field::aspectMask), "(%s) is invalid for %s.",
-                         string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_format));
+    if (multiplane_image) {
+        if (IsMultiplePlaneAspect(aspect_mask)) {
+            skip |= LogError("VUID-VkImageViewCreateInfo-subresourceRange-07818", create_info.image,
+                             create_info_loc.dot(Field::subresourceRange).dot(Field::aspectMask), "(%s) is invalid for %s.",
+                             string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_format));
+        }
+
+        if (image_flags & VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR) {
+            skip |= LogError("VUID-VkImageViewCreateInfo-image-13357", create_info.image, create_info_loc.dot(Field::format),
+                             "(%s) is a multiplane format, but the image was created with flag "
+                             "VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR. (image flags: %s).",
+                             string_VkFormat(view_format), string_VkImageCreateFlags(image_flags).c_str());
+        }
     }
 
     if ((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) && (image_format != view_format)) {

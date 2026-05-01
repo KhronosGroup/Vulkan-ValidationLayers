@@ -277,6 +277,8 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(vvl::DeviceState& device_sta
                                                     const VkDescriptorSetLayoutCreateInfo* p_create_info)
     : flags_(p_create_info->flags),
       has_ycbcr_samplers_(false),
+      has_task_mask_(false),
+      has_non_mesh_pre_raster_(false),
       binding_count_(0),
       descriptor_count_(0),
       non_inline_descriptor_count_(0),
@@ -330,6 +332,15 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(vvl::DeviceState& device_sta
                 binding_type_stats_.non_dynamic_buffer_count++;
             }
         }
+
+        if (binding_info.stageFlags & (VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
+            has_task_mask_ = true;
+        }
+        if (binding_info.stageFlags & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                                       VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) {
+            has_non_mesh_pre_raster_ = true;
+        }
+
         // Get immutable samplers info
         if (binding_info.pImmutableSamplers != nullptr) {
             // Lazy allocation to avoid allocating array for layouts that don't use immutable samplers.

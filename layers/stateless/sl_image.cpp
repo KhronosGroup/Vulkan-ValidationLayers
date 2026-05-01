@@ -47,9 +47,16 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {
         auto const queue_family_index_count = pCreateInfo->queueFamilyIndexCount;
-        if (queue_family_index_count <= 1) {
+        if (enabled_features.maintenance11) {
+            if (queue_family_index_count == 0) {
+                skip |= LogError("VUID-VkImageCreateInfo-maintenance11-13354", device, create_info_loc.dot(Field::sharingMode),
+                                 "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is 0 (must be at least 1).");
+            }
+        } else if (queue_family_index_count <= 1) {
             skip |= LogError("VUID-VkImageCreateInfo-sharingMode-00942", device, create_info_loc.dot(Field::queueFamilyIndexCount),
-                             "is %" PRIu32 ".", queue_family_index_count);
+                             "is %" PRIu32
+                             " (must be at least 2)\nHint: queueFamilyIndexCount can be 1 if the maintenance11 feature is enabled.",
+                             queue_family_index_count);
         }
 
         if (pCreateInfo->pQueueFamilyIndices == nullptr) {
@@ -329,6 +336,18 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
                          "contains VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT but neither descriptorHeapCaptureReplay "
                          "nor descriptorBufferCaptureReplay "
                          "feature is not enabled.");
+    }
+
+    if (create_flags & VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR) {
+        if (!enabled_features.maintenance11) {
+            skip |= LogError("VUID-VkImageCreateInfo-flags-13355", device, create_info_loc.dot(Field::flags),
+                             "is %s but maintenance11 feature is not enabled.", string_VkImageCreateFlags(create_flags).c_str());
+        }
+        if (!IsValueIn(pCreateInfo->imageType, {VK_IMAGE_TYPE_1D, VK_IMAGE_TYPE_2D})) {
+            skip |= LogError("VUID-VkImageCreateInfo-flags-13356", device, create_info_loc.dot(Field::flags),
+                             "is %s but imageType is %s.", string_VkImageCreateFlags(create_flags).c_str(),
+                             string_VkImageType(pCreateInfo->imageType));
+        }
     }
 
     auto opaque_capture_descriptor_buffer =

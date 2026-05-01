@@ -334,7 +334,6 @@ const char* unimplementable_validation[] = {
     "VUID-VkAccelerationStructureTrianglesOpacityMicromapEXT-ppUsageCounts-parameter",
     "VUID-VkAccelerationStructureTrianglesDisplacementMicromapNV-pUsageCounts-parameter",
     "VUID-VkAccelerationStructureTrianglesDisplacementMicromapNV-ppUsageCounts-parameter",
-    "VUID-VkShaderCreateInfoEXT-pSetLayouts-parameter",
     "VUID-VkShaderCreateInfoEXT-pPushConstantRanges-parameter",
     "VUID-VkLatencySurfaceCapabilitiesNV-pPresentModes-parameter",
     "VUID-vkCmdBeginTransformFeedbackEXT-pCounterBufferOffsets-parameter",

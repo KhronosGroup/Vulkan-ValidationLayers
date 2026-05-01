@@ -36,9 +36,15 @@ bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
     skip |= context.ValidateNotZero(pCreateInfo->size == 0, "VUID-VkBufferCreateInfo-size-00912", create_info_loc.dot(Field::size));
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {
-        if (pCreateInfo->queueFamilyIndexCount <= 1) {
+        if (enabled_features.maintenance11) {
+            if (pCreateInfo->queueFamilyIndexCount == 0) {
+                skip |= LogError("VUID-VkBufferCreateInfo-maintenance11-13353", device, create_info_loc.dot(Field::sharingMode),
+                                 "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is 0 (must be at least 1).");
+            }
+        } else if (pCreateInfo->queueFamilyIndexCount <= 1) {
             skip |= LogError("VUID-VkBufferCreateInfo-sharingMode-00914", device, create_info_loc.dot(Field::sharingMode),
-                             "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32 ".",
+                             "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32
+                             " (must be at least 2)\nHint: queueFamilyIndexCount can be 1 if the maintenance11 feature is enabled",
                              pCreateInfo->queueFamilyIndexCount);
         }
 

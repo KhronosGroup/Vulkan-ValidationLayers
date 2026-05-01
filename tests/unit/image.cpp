@@ -4792,6 +4792,68 @@ TEST_F(NegativeImage, Ycbcr2plane444Formats) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeImage, ZeroQueueFamilyIndexCountMaintenance11) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(Init());
+
+    const uint32_t index = 0;
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {32, 32, 2};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_ci.sharingMode = VK_SHARING_MODE_CONCURRENT;
+    image_ci.pQueueFamilyIndices = &index;
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-maintenance11-13354");
+    vkt::Image image(*m_device, image_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImage, SingleLayerFlagNoMaintenance11Feature) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.flags = VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR;
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {32, 32, 2};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-flags-13355");
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-flags-13356");
+    vkt::Image image(*m_device, image_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImage, ImageSingleLayerDescriptorFlagButMultiplanarImageView) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(Init());
+
+    auto image_ci =
+        vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.flags |= VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR;
+
+    vkt::Image image(*m_device, image_ci);
+    m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-13357");
+    image.CreateView(VK_IMAGE_VIEW_TYPE_2D);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeImage, ArrayFrom3dImage) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 

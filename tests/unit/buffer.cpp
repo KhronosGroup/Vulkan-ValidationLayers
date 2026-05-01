@@ -973,3 +973,21 @@ TEST_F(NegativeBuffer, DescriptorHeapProtected) {
         CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-flags-11277");
     }
 }
+
+TEST_F(NegativeBuffer, ZeroQueueFamilyIndexCountMaintenance11) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(Init());
+
+    uint32_t index = 0;
+    VkBufferCreateInfo buff_ci = vku::InitStructHelper();
+    buff_ci.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    buff_ci.sharingMode = VK_SHARING_MODE_CONCURRENT;
+    buff_ci.queueFamilyIndexCount = 0;
+    buff_ci.pQueueFamilyIndices = &index;
+    buff_ci.size = 256u;
+    m_errorMonitor->SetDesiredError("VUID-VkBufferCreateInfo-maintenance11-13353");
+    vkt::Buffer buffer(*m_device, buff_ci, vkt::no_mem);
+    m_errorMonitor->VerifyFound();
+}
