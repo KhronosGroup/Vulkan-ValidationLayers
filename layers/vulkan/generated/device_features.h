@@ -168,6 +168,8 @@ struct DeviceFeatures {
     bool dataGraphUpdateAfterBind;
     // VkPhysicalDeviceDataGraphModelFeaturesQCOM
     bool dataGraphModel;
+    // VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM
+    bool dataGraphNeuralAcceleratorStatistics;
     // VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM
     bool dataGraphOpticalFlow;
     // VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV
@@ -576,6 +578,8 @@ struct DeviceFeatures {
     bool linearColorAttachment;
     // VkPhysicalDeviceMaintenance10FeaturesKHR
     bool maintenance10;
+    // VkPhysicalDeviceMaintenance11FeaturesKHR
+    bool maintenance11;
     // VkPhysicalDeviceMaintenance4Features, VkPhysicalDeviceVulkan13Features
     bool maintenance4;
     // VkPhysicalDeviceMaintenance5Features, VkPhysicalDeviceVulkan14Features
@@ -998,6 +1002,8 @@ struct DeviceFeatures {
     bool textureCompressionASTC_3D;
     // VkPhysicalDeviceTextureCompressionASTCHDRFeatures, VkPhysicalDeviceVulkan13Features
     bool textureCompressionASTC_HDR;
+    // VkPhysicalDeviceThrottleHintFeaturesSEC
+    bool throttleHint;
     // VkPhysicalDeviceTileMemoryHeapFeaturesQCOM
     bool tileMemoryHeap;
     // VkPhysicalDeviceTilePropertiesFeaturesQCOM

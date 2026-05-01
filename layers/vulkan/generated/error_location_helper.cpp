@@ -1051,6 +1051,7 @@ const char* String(Struct structure) {
     {"VkDataGraphPipelineDispatchInfoARM", 35},
     {"VkDataGraphPipelineIdentifierCreateInfoARM", 43},
     {"VkDataGraphPipelineInfoARM", 27},
+    {"VkDataGraphPipelineNeuralStatisticsCreateInfoARM", 49},
     {"VkDataGraphPipelineOpticalFlowCreateInfoARM", 44},
     {"VkDataGraphPipelineOpticalFlowDispatchInfoARM", 46},
     {"VkDataGraphPipelinePropertyQueryResultARM", 42},
@@ -1060,6 +1061,7 @@ const char* String(Struct structure) {
     {"VkDataGraphPipelineSessionBindPointRequirementsInfoARM", 55},
     {"VkDataGraphPipelineSessionCreateInfoARM", 40},
     {"VkDataGraphPipelineSessionMemoryRequirementsInfoARM", 52},
+    {"VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM", 56},
     {"VkDataGraphPipelineShaderModuleCreateInfoARM", 45},
     {"VkDataGraphPipelineSingleNodeConnectionARM", 43},
     {"VkDataGraphPipelineSingleNodeCreateInfoARM", 43},
@@ -1497,6 +1499,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceCustomResolveFeaturesEXT", 41},
     {"VkPhysicalDeviceDataGraphFeaturesARM", 37},
     {"VkPhysicalDeviceDataGraphModelFeaturesQCOM", 43},
+    {"VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM", 64},
     {"VkPhysicalDeviceDataGraphOperationSupportARM", 45},
     {"VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM", 48},
     {"VkPhysicalDeviceDataGraphProcessingEngineARM", 45},
@@ -1622,6 +1625,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceLinearColorAttachmentFeaturesNV", 48},
     {"VkPhysicalDeviceMaintenance10FeaturesKHR", 41},
     {"VkPhysicalDeviceMaintenance10PropertiesKHR", 43},
+    {"VkPhysicalDeviceMaintenance11FeaturesKHR", 41},
     {"VkPhysicalDeviceMaintenance3Properties", 39},
     {"VkPhysicalDeviceMaintenance4Features", 37},
     {"VkPhysicalDeviceMaintenance4Properties", 39},
@@ -1812,6 +1816,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceTexelBufferAlignmentProperties", 47},
     {"VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT", 52},
     {"VkPhysicalDeviceTextureCompressionASTCHDRFeatures", 50},
+    {"VkPhysicalDeviceThrottleHintFeaturesSEC", 40},
     {"VkPhysicalDeviceTileMemoryHeapFeaturesQCOM", 43},
     {"VkPhysicalDeviceTileMemoryHeapPropertiesQCOM", 45},
     {"VkPhysicalDeviceTilePropertiesFeaturesQCOM", 43},
@@ -1954,6 +1959,7 @@ const char* String(Struct structure) {
     {"VkQueueFamilyDataGraphPropertiesARM", 36},
     {"VkQueueFamilyDataGraphTOSAPropertiesARM", 40},
     {"VkQueueFamilyGlobalPriorityProperties", 38},
+    {"VkQueueFamilyOptimalImageTransferGranularityPropertiesKHR", 58},
     {"VkQueueFamilyOwnershipTransferPropertiesKHR", 44},
     {"VkQueueFamilyProperties", 24},
     {"VkQueueFamilyProperties2", 25},
@@ -2118,6 +2124,7 @@ const char* String(Struct structure) {
     {"VkTensorViewCreateInfoARM", 26},
     {"VkTexelBufferDescriptorInfoEXT", 31},
     {"VkTextureLODGatherFormatPropertiesAMD", 38},
+    {"VkThrottleHintSubmitInfoSEC", 28},
     {"VkTileMemoryBindInfoQCOM", 25},
     {"VkTileMemoryRequirementsQCOM", 29},
     {"VkTileMemorySizeInfoQCOM", 25},
@@ -2324,6 +2331,7 @@ const char* String(Field field) {
     {"allocationSize", 15},
     {"allowClusterAccelerationStructure", 34},
     {"allowCommandBufferQueryCopies", 30},
+    {"allowNeuralStatistics", 22},
     {"allowSamplerImageViewPostSubmitCreation", 40},
     {"alphaBlendOp", 13},
     {"alphaMode", 10},
@@ -2601,6 +2609,7 @@ const char* String(Field field) {
     {"dataGraph", 10},
     {"dataGraphDescriptorBuffer", 26},
     {"dataGraphModel", 15},
+    {"dataGraphNeuralAcceleratorStatistics", 37},
     {"dataGraphOpticalFlow", 21},
     {"dataGraphPipeline", 18},
     {"dataGraphShaderModule", 22},
@@ -3312,6 +3321,7 @@ const char* String(Field field) {
     {"lumaBitDepth", 13},
     {"magFilter", 10},
     {"maintenance10", 14},
+    {"maintenance11", 14},
     {"maintenance4", 13},
     {"maintenance5", 13},
     {"maintenance6", 13},
@@ -3861,6 +3871,7 @@ const char* String(Field field) {
     {"optimalBufferCopyOffsetAlignment", 33},
     {"optimalBufferCopyRowPitchAlignment", 35},
     {"optimalDeviceAccess", 20},
+    {"optimalImageTransferGranularity", 32},
     {"optimalImageTransferToQueueFamilies", 36},
     {"optimalTilingFeatures", 22},
     {"optimalTilingLayoutUUID", 24},
@@ -5362,6 +5373,7 @@ const char* String(Field field) {
     {"textureCompressionBC", 21},
     {"textureCompressionETC2", 23},
     {"textureSampleWeighted", 22},
+    {"throttleHint", 13},
     {"tileApronSize", 14},
     {"tileBufferTransfers", 20},
     {"tileCount", 10},
@@ -5670,6 +5682,7 @@ const char* String(Enum value) {
     {"VkLogicOp", 10},
     {"VkMemoryOverallocationBehaviorAMD", 34},
     {"VkMicromapTypeEXT", 18},
+    {"VkNeuralAcceleratorStatisticsModeARM", 37},
     {"VkObjectType", 13},
     {"VkOpacityMicromapFormatEXT", 27},
     {"VkOpacityMicromapSpecialIndexEXT", 33},
@@ -5729,6 +5742,7 @@ const char* String(Enum value) {
     {"VkSystemAllocationScope", 24},
     {"VkTensorTilingARM", 18},
     {"VkTessellationDomainOrigin", 27},
+    {"VkThrottleHintTypeSEC", 22},
     {"VkTimeDomainKHR", 16},
     {"VkValidationCacheHeaderVersionEXT", 34},
     {"VkValidationCheckEXT", 21},
@@ -5955,6 +5969,7 @@ const char* String(Extension extension) {
     {"VK_ANDROID_external_memory_android_hardware_buffer", 51},
     {"VK_ARM_data_graph", 18},
     {"VK_ARM_data_graph_instruction_set_tosa", 39},
+    {"VK_ARM_data_graph_neural_accelerator_statistics", 48},
     {"VK_ARM_data_graph_optical_flow", 31},
     {"VK_ARM_format_pack", 19},
     {"VK_ARM_performance_counters_by_region", 38},
@@ -6189,6 +6204,7 @@ const char* String(Extension extension) {
     {"VK_KHR_load_store_op_none", 26},
     {"VK_KHR_maintenance1", 20},
     {"VK_KHR_maintenance10", 21},
+    {"VK_KHR_maintenance11", 21},
     {"VK_KHR_maintenance2", 20},
     {"VK_KHR_maintenance3", 20},
     {"VK_KHR_maintenance4", 20},
@@ -6375,6 +6391,7 @@ const char* String(Extension extension) {
     {"VK_QNX_screen_surface", 22},
     {"VK_SEC_amigo_profiling", 23},
     {"VK_SEC_pipeline_cache_incremental_mode", 39},
+    {"VK_SEC_throttle_hint", 21},
     {"VK_SEC_ubm_surface", 19},
     {"VK_VALVE_descriptor_set_host_mapping", 37},
     {"VK_VALVE_fragment_density_map_layered", 38},
@@ -8118,6 +8135,10 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkRenderingAttachmentFlagsInfoKHR;
     case VK_STRUCTURE_TYPE_RESOLVE_IMAGE_MODE_INFO_KHR:
        return Struct::VkResolveImageModeInfoKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_11_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceMaintenance11FeaturesKHR;
+    case VK_STRUCTURE_TYPE_QUEUE_FAMILY_OPTIMAL_IMAGE_TRANSFER_GRANULARITY_PROPERTIES_KHR:
+       return Struct::VkQueueFamilyOptimalImageTransferGranularityPropertiesKHR;
     case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT:
        return Struct::VkDebugReportCallbackCreateInfoEXT;
     case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_RASTERIZATION_ORDER_AMD:
@@ -9402,6 +9423,16 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkUbmSurfaceCreateInfoSEC;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE:
        return Struct::VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE;
+    case VK_STRUCTURE_TYPE_THROTTLE_HINT_SUBMIT_INFO_SEC:
+       return Struct::VkThrottleHintSubmitInfoSEC;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_THROTTLE_HINT_FEATURES_SEC:
+       return Struct::VkPhysicalDeviceThrottleHintFeaturesSEC;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_NEURAL_ACCELERATOR_STATISTICS_FEATURES_ARM:
+       return Struct::VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_NEURAL_STATISTICS_CREATE_INFO_ARM:
+       return Struct::VkDataGraphPipelineNeuralStatisticsCreateInfoARM;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_NEURAL_STATISTICS_CREATE_INFO_ARM:
+       return Struct::VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT:
        return Struct::VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:

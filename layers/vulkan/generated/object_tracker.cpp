@@ -7950,9 +7950,8 @@ bool Device::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInf
 
             if ((pCreateInfos[index0].setLayoutCount > 0) && (pCreateInfos[index0].pSetLayouts)) {
                 for (uint32_t index1 = 0; index1 < pCreateInfos[index0].setLayoutCount; ++index1) {
-                    skip |= ValidateObject(pCreateInfos[index0].pSetLayouts[index1], kVulkanObjectTypeDescriptorSetLayout, false,
-                                           "VUID-VkShaderCreateInfoEXT-pSetLayouts-parameter",
-                                           "UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-parent",
+                    skip |= ValidateObject(pCreateInfos[index0].pSetLayouts[index1], kVulkanObjectTypeDescriptorSetLayout, true,
+                                           kVUIDUndefined, "UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-parent",
                                            index0_loc.dot(Field::pSetLayouts, index1));
                 }
             }

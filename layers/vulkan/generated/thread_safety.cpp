@@ -5246,9 +5246,10 @@ void Device::PreCallRecordSetHdrMetadataEXT(VkDevice device, uint32_t swapchainC
 
     if (pSwapchains) {
         for (uint32_t index = 0; index < swapchainCount; index++) {
-            StartReadObject(pSwapchains[index], record_obj.location);
+            StartWriteObject(pSwapchains[index], record_obj.location);
         }
     }
+    // Host access to each member of pSwapchains must be externally synchronized
 }
 
 void Device::PostCallRecordSetHdrMetadataEXT(VkDevice device, uint32_t swapchainCount, const VkSwapchainKHR* pSwapchains,
@@ -5257,9 +5258,10 @@ void Device::PostCallRecordSetHdrMetadataEXT(VkDevice device, uint32_t swapchain
 
     if (pSwapchains) {
         for (uint32_t index = 0; index < swapchainCount; index++) {
-            FinishReadObject(pSwapchains[index], record_obj.location);
+            FinishWriteObject(pSwapchains[index], record_obj.location);
         }
     }
+    // Host access to each member of pSwapchains must be externally synchronized
 }
 
 #ifdef VK_USE_PLATFORM_IOS_MVK

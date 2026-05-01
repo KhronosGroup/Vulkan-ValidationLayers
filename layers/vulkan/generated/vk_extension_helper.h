@@ -282,6 +282,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_robustness2{kNotSupported};
     ExtEnabled vk_khr_present_mode_fifo_latest_ready{kNotSupported};
     ExtEnabled vk_khr_maintenance10{kNotSupported};
+    ExtEnabled vk_khr_maintenance11{kNotSupported};
     ExtEnabled vk_nv_glsl_shader{kNotSupported};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotSupported};
     ExtEnabled vk_img_filter_cubic{kNotSupported};
@@ -564,6 +565,8 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_compute_occupancy_priority{kNotSupported};
     ExtEnabled vk_ext_shader_subgroup_partitioned{kNotSupported};
     ExtEnabled vk_valve_shader_mixed_float_dot_product{kNotSupported};
+    ExtEnabled vk_sec_throttle_hint{kNotSupported};
+    ExtEnabled vk_arm_data_graph_neural_accelerator_statistics{kNotSupported};
     ExtEnabled vk_ext_primitive_restart_index{kNotSupported};
     ExtEnabled vk_khr_acceleration_structure{kNotSupported};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotSupported};
@@ -774,6 +777,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_robustness2:
         case vvl::Extension::_VK_KHR_present_mode_fifo_latest_ready:
         case vvl::Extension::_VK_KHR_maintenance10:
+        case vvl::Extension::_VK_KHR_maintenance11:
         case vvl::Extension::_VK_NV_glsl_shader:
         case vvl::Extension::_VK_EXT_depth_range_unrestricted:
         case vvl::Extension::_VK_IMG_filter_cubic:
@@ -1056,6 +1060,8 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_compute_occupancy_priority:
         case vvl::Extension::_VK_EXT_shader_subgroup_partitioned:
         case vvl::Extension::_VK_VALVE_shader_mixed_float_dot_product:
+        case vvl::Extension::_VK_SEC_throttle_hint:
+        case vvl::Extension::_VK_ARM_data_graph_neural_accelerator_statistics:
         case vvl::Extension::_VK_EXT_primitive_restart_index:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:

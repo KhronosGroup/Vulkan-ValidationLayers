@@ -180,6 +180,12 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                             vvl::Extension::_VK_EXT_fragment_density_map_offset};
                 }
             }
+            if (value & (VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR)) {
+                if ((instance_function && !IsExtSupported(extensions.vk_khr_maintenance11)) ||
+                    (!instance_function && !IsExtEnabled(extensions.vk_khr_maintenance11))) {
+                    return {vvl::Extension::_VK_KHR_maintenance11};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkImageUsageFlagBits:
             if (value & (VK_IMAGE_USAGE_HOST_TRANSFER_BIT)) {
@@ -773,6 +779,12 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_EXT_graphics_pipeline_library};
                 }
             }
+            if (value & (VK_PIPELINE_LAYOUT_CREATE_NO_TASK_SHADER_BIT_KHR)) {
+                if ((instance_function && !IsExtSupported(extensions.vk_khr_maintenance11)) ||
+                    (!instance_function && !IsExtEnabled(extensions.vk_khr_maintenance11))) {
+                    return {vvl::Extension::_VK_KHR_maintenance11};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkPipelineShaderStageCreateFlagBits:
             if (value & (VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT |
@@ -1285,6 +1297,12 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                 if ((instance_function && !IsExtSupported(extensions.vk_ext_shader_64bit_indexing)) ||
                     (!instance_function && !IsExtEnabled(extensions.vk_ext_shader_64bit_indexing))) {
                     return {vvl::Extension::_VK_EXT_shader_64bit_indexing};
+                }
+            }
+            if (value & (VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR)) {
+                if ((instance_function && !IsExtSupported(extensions.vk_khr_maintenance11)) ||
+                    (!instance_function && !IsExtEnabled(extensions.vk_khr_maintenance11))) {
+                    return {vvl::Extension::_VK_KHR_maintenance11};
                 }
             }
             return {};
