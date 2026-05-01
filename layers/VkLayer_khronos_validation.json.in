@@ -1280,7 +1280,7 @@
                             "key": "gpu_dump_descriptors",
                             "label": "Dump Descriptors",
                             "view": "DEBUG",
-                            "description": "Dump VK_EXT_descriptor_buffer/VK_EXT_descriptor_heap descriptor information for draw/dispatch/traceRays",
+                            "description": "Dump VK_EXT_descriptor_buffer and VK_EXT_descriptor_heap",
                             "type": "BOOL",
                             "default": false
                         },
@@ -1305,6 +1305,14 @@
                             "label": "Redirect all GPU Dump to stdout",
                             "view": "DEBUG",
                             "description": "Instead of using the debug callback with information severity, redirect to stdout instead.",
+                            "type": "BOOL",
+                            "default": false
+                        },
+                        {
+                            "key": "gpu_dump_device_copy",
+                            "label": "Force Device Copy",
+                            "view": "DEBUG",
+                            "description": "[Very experimental] For non-host visible memory, try and do a device copy during command recording to view the data inside a buffer.",
                             "type": "BOOL",
                             "default": false
                         }

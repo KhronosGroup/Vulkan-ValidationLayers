@@ -16,15 +16,6 @@
 #include <cstdint>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
-void DescriptorHeapTest::InitBasicDescriptorHeap() {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    RETURN_IF_SKIP(Init());
-    heap_props.pNext = &tensor_heap_props;
-    GetPhysicalDeviceProperties2(heap_props);
-}
-
 void DescriptorHeapTest::CreateResourceHeap(VkDeviceSize app_size) {
     const VkDeviceSize heap_size = AlignResource(app_size + heap_props.minResourceHeapReservedRange);
 
@@ -534,7 +525,6 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDataNullTensor) {
 
 TEST_F(NegativeDescriptorHeap, ResourceParameterDebugUtilsObjectName) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with DebugUilsObjectName");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize resource_size = vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -561,7 +551,6 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDebugUtilsObjectName) {
 
 TEST_F(NegativeDescriptorHeap, ResourceParameterDataAddressZero) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT case when address is 0, but size is not");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     {
@@ -600,7 +589,6 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDataAddressZero) {
 
 TEST_F(NegativeDescriptorHeap, ResourceParameterDataSizeZero) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT case when size is 0");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     auto types = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
@@ -627,8 +615,6 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDataSizeZero) {
 
 TEST_F(NegativeDescriptorHeap, ResourceParameterUniformAlign) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT for VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize align = m_device->Physical().limits_.minUniformBufferOffsetAlignment;
@@ -661,8 +647,6 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterUniformAlign) {
 
 TEST_F(NegativeDescriptorHeap, ResourceParameterStorageAlign) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT for VK_DESCRIPTOR_TYPE_STORAGE_BUFFER");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize align = m_device->Physical().limits_.minStorageBufferOffsetAlignment;
@@ -694,8 +678,6 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterStorageAlign) {
 
 TEST_F(NegativeDescriptorHeap, ResourceParameterAccelerationStructureAlign) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT for VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -725,8 +707,6 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterAccelerationStructureAlign) {
 
 TEST_F(NegativeDescriptorHeap, UniformTexelBufferOffsetSingleTexelAlignmentFalse) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with uniformTexelBufferOffsetSingleTexelAlignment == VK_FALSE");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT align_props = vku::InitStructHelper();
@@ -766,8 +746,6 @@ TEST_F(NegativeDescriptorHeap, UniformTexelBufferOffsetSingleTexelAlignmentFalse
 
 TEST_F(NegativeDescriptorHeap, UniformTexelBufferOffsetSingleTexelAlignmentTrue) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with uniformTexelBufferOffsetSingleTexelAlignment == VK_TRUE");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT align_props = vku::InitStructHelper();
@@ -809,8 +787,6 @@ TEST_F(NegativeDescriptorHeap, UniformTexelBufferOffsetSingleTexelAlignmentTrue)
 
 TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentFalse) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with storageTexelBufferOffsetSingleTexelAlignment == VK_FALSE");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT align_props = vku::InitStructHelper();
@@ -850,8 +826,6 @@ TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentFalse
 
 TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentTrue) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with storageTexelBufferOffsetSingleTexelAlignment == VK_TRUE");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT align_props = vku::InitStructHelper();
@@ -1148,8 +1122,6 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterPView) {
 
 TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeap) {
     TEST_DESCRIPTION("Validate vkCmdBindSamplerHeapEXT");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize descriptor_size = AlignSampler(2 * heap_props.samplerDescriptorSize);
@@ -1215,8 +1187,6 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeap) {
 
 TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapReservedRangeSize) {
     TEST_DESCRIPTION("Validate vkCmdBindSamplerHeapEXT ReservedRangeSize is greater or equal minSamplerHeapReservedRange");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     if (heap_props.minSamplerHeapReservedRange == 0) {
@@ -1239,8 +1209,6 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapReservedRangeSize) {
 
 TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapAlign) {
     TEST_DESCRIPTION("Validate vkCmdBindSamplerHeapEXT addr alignement");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize heap_size = 2 * heap_props.samplerDescriptorSize + heap_props.minSamplerHeapReservedRange;
@@ -1266,8 +1234,6 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapAlign) {
 
 TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapReservedRangeAlign) {
     TEST_DESCRIPTION("Validate vkCmdBindSamplerHeapEXT reservedRange alignement");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize heap_size = 2 * std::max(heap_props.samplerDescriptorSize, heap_props.minSamplerHeapReservedRange);
@@ -1288,8 +1254,6 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapReservedRangeAlign) {
 
 TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapSecondaryBuffer) {
     TEST_DESCRIPTION("Validate vkCmdBindSamplerHeapEXT command written to secondary buffer");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize heap_size = heap_props.samplerDescriptorSize + heap_props.minSamplerHeapReservedRange;
@@ -1324,8 +1288,6 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapSecondaryBuffer) {
 }
 
 TEST_F(NegativeDescriptorHeap, CmdBindResourceHeap) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize app_size = AlignResource(heap_props.bufferDescriptorSize);
@@ -1399,8 +1361,6 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeap) {
 
 TEST_F(NegativeDescriptorHeap, SamplerInheritance) {
     TEST_DESCRIPTION("Validate that inherited ranges match primary buffer");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize heap_size = heap_props.minSamplerHeapReservedRange + 2 * heap_props.samplerDescriptorSize;
@@ -1442,8 +1402,6 @@ TEST_F(NegativeDescriptorHeap, SamplerInheritance) {
 
 TEST_F(NegativeDescriptorHeap, ResourceInheritance) {
     TEST_DESCRIPTION("Validate that inherited ranges match primary buffer");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize heap_size = heap_props.minResourceHeapReservedRange + 2 * heap_props.bufferDescriptorSize;
@@ -1484,8 +1442,6 @@ TEST_F(NegativeDescriptorHeap, ResourceInheritance) {
 }
 
 TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapAlign) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     EXPECT_GT(heap_props.resourceHeapAlignment, 0u);
@@ -1513,8 +1469,6 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapAlign) {
 
 TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapReservedRangeAlign) {
     TEST_DESCRIPTION("Validate vkCmdBindResourceHeapEXT reservedRangeOffset alignment");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize buf_img_size = std::max(heap_props.bufferDescriptorAlignment, heap_props.imageDescriptorAlignment);
@@ -1537,8 +1491,6 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapReservedRangeAlign) {
 
 TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapSecondaryBuffer) {
     TEST_DESCRIPTION("Validate vkCmdBindResourceHeapEXT command written to secondary buffer");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize descriptor_size = AlignResource(heap_props.bufferDescriptorSize);
@@ -1571,8 +1523,6 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapSecondaryBuffer) {
 
 TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapSecondaryBufferMemoryTests) {
     TEST_DESCRIPTION("Validate memory overflow corruption and binding written to secondary buffer");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -1659,8 +1609,6 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapSecondaryBufferMemoryTests) {
 }
 
 TEST_F(NegativeDescriptorHeap, CmdPushData) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     std::vector<uint8_t> payload(static_cast<size_t>(4 * heap_props.maxPushDataSize));
@@ -2448,7 +2396,6 @@ TEST_F(NegativeDescriptorHeap, OpaqueCaptureDataCreateInfoSize) {
 TEST_F(NegativeDescriptorHeap, GetImageOpaqueCaptureData) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::descriptorHeapCaptureReplay);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddressCaptureReplay);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -2484,7 +2431,6 @@ TEST_F(NegativeDescriptorHeap, GetImageOpaqueCaptureData) {
 TEST_F(NegativeDescriptorHeap, GetImageOpaqueCaptureDataMissingFlag) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::descriptorHeapCaptureReplay);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddressCaptureReplay);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -2766,8 +2712,6 @@ TEST_F(NegativeDescriptorHeap, DescriptorType) {
 
 TEST_F(NegativeDescriptorHeap, BindHeapInfoBufferHeapUsage) {
     TEST_DESCRIPTION("Validate VkBindHeapInfoEXT uses buffer address from buffer with heap usage and memory usage for the command");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     {
@@ -2864,8 +2808,6 @@ TEST_F(NegativeDescriptorHeap, BindHeapInfoBufferHeapUsage) {
 }
 
 TEST_F(NegativeDescriptorHeap, BindOverlappingRangesSampler) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     // std::max allows the test to run when minSamplerHeapReservedRange is zero or smaller than samplerDescriptorSize
@@ -2919,8 +2861,6 @@ TEST_F(NegativeDescriptorHeap, BindOverlappingRangesSampler) {
 }
 
 TEST_F(NegativeDescriptorHeap, BindOverlappingRangesResource) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     // std::max allows the test to run when minResourceHeapReservedRange is zero or smaller than bufferDescriptorSize
@@ -2979,8 +2919,6 @@ TEST_F(NegativeDescriptorHeap, BindOverlappingRangesResource) {
 }
 
 TEST_F(NegativeDescriptorHeap, WriteResourceDescriptorsMemoryTests) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT align_props = vku::InitStructHelper();
@@ -3026,8 +2964,6 @@ TEST_F(NegativeDescriptorHeap, WriteResourceDescriptorsMemoryTests) {
 }
 
 TEST_F(NegativeDescriptorHeap, WriteResourceDescriptorsMemoryTestsAS) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -3087,7 +3023,6 @@ TEST_F(NegativeDescriptorHeap, WriteResourceDescriptorsMemoryTestsAS) {
 }
 
 TEST_F(NegativeDescriptorHeap, OpTypeImage) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
 
@@ -3154,7 +3089,6 @@ TEST_F(NegativeDescriptorHeap, OpTypeImage) {
 
 TEST_F(NegativeDescriptorHeap, MappedPushIsBlockUniform) {
     TEST_DESCRIPTION("Validate that mapped push data is backed by block uniform");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
 
@@ -3210,7 +3144,6 @@ TEST_F(NegativeDescriptorHeap, MappedPushIsBlockUniform) {
 
 TEST_F(NegativeDescriptorHeap, MappedStructLessThanMaxPushDataSize) {
     TEST_DESCRIPTION("Validate that mapped structure is less than maxPushDataSize");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
 
@@ -3282,7 +3215,6 @@ TEST_F(NegativeDescriptorHeap, MappedStructLessThanMaxPushDataSize) {
 }
 
 TEST_F(NegativeDescriptorHeap, OpTypeStruct) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
 
@@ -3340,9 +3272,9 @@ TEST_F(NegativeDescriptorHeap, OpTypeStruct) {
 }
 
 TEST_F(NegativeDescriptorHeap, OpTypeSampler) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::computeDerivativeGroupQuads);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
@@ -3454,7 +3386,6 @@ TEST_F(NegativeDescriptorHeap, OpTypeSampler) {
 }
 
 TEST_F(NegativeDescriptorHeap, OpTypeSampledImageAlignedSampler) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
 
@@ -3520,7 +3451,6 @@ TEST_F(NegativeDescriptorHeap, OpTypeSampledImageAlignedSampler) {
 }
 
 TEST_F(NegativeDescriptorHeap, OpTypeSampledImageAlignedImage) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     if (heap_props.imageDescriptorAlignment < 2) {
@@ -3569,7 +3499,7 @@ TEST_F(NegativeDescriptorHeap, OpTypeSampledImageAlignedImage) {
 }
 
 TEST_F(NegativeDescriptorHeap, NoMappingStruct) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -3629,7 +3559,6 @@ TEST_F(NegativeDescriptorHeap, NoMappingShaderObject) {
     TEST_DESCRIPTION("Check that descriptor set bindings have a mappings when using VkShaderCreateFlagsEXT");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     char const* cs_source = R"glsl(
@@ -3662,7 +3591,7 @@ TEST_F(NegativeDescriptorHeap, NoMappingShaderObject) {
 
 TEST_F(NegativeDescriptorHeap, NoMappingComputePipeline) {
     TEST_DESCRIPTION("Check that descriptor set bindings have a mappings");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
@@ -3718,8 +3647,6 @@ TEST_F(NegativeDescriptorHeap, NoMappingComputePipeline) {
 }
 
 TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappings) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[5];
@@ -3769,8 +3696,6 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappings) {
 }
 
 TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsAllUsed) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
@@ -3812,8 +3737,6 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsAllUsed) {
 }
 
 TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsMostUsed) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[9];
@@ -3865,8 +3788,6 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsMostUsed) {
 }
 
 TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsMany) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[512];
@@ -3919,9 +3840,7 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsMany) {
 
 TEST_F(NegativeDescriptorHeap, EmbeddedSamplerReservedArea) {
     TEST_DESCRIPTION("Validate that embedded sampler mapping have reserved area");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::computeDerivativeGroupQuads);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
@@ -4063,8 +3982,6 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerArray) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::computeDerivativeGroupQuads);
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
@@ -4158,7 +4075,6 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerArray) {
 
 TEST_F(NegativeDescriptorHeap, PushDataAssignedPipeline) {
     TEST_DESCRIPTION("Check that push data used in shader code has been set for pipeline based shaders");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const char* cs_source = R"glsl(
@@ -4241,7 +4157,6 @@ TEST_F(NegativeDescriptorHeap, PushDataAssignedShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     static const char cs_source[] = R"glsl(
@@ -4333,8 +4248,6 @@ TEST_F(NegativeDescriptorHeap, DuplicatedPushDataSequenceIndex) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::deviceGeneratedCommands);
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkIndirectCommandsPushConstantTokenEXT pc_token_0;
@@ -4677,7 +4590,6 @@ TEST_F(NegativeDescriptorHeap, ImageTypeDepthStencilAttachment) {
 
 TEST_F(NegativeDescriptorHeap, PushDataRange) {
     TEST_DESCRIPTION("Descriptor heap with VkPushDataInfoEXT but part of the range is missing");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
@@ -4825,6 +4737,7 @@ TEST_F(NegativeDescriptorHeap, PushDataRange) {
 
 TEST_F(NegativeDescriptorHeap, NonConstantImageMemoryAccess) {
     TEST_DESCRIPTION("Non constant image memory access with incompatible mapping source");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -5202,6 +5115,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationTotalCountShaderObject) {
 }
 
 TEST_F(NegativeDescriptorHeap, NonConstantMemoryAccess) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -5265,7 +5179,6 @@ TEST_F(NegativeDescriptorHeap, NonConstantMemoryAccess) {
 TEST_F(NegativeDescriptorHeap, ResourceHeapNotBound) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     vkt::Buffer buffer_a(*m_device, 32, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -5307,9 +5220,7 @@ TEST_F(NegativeDescriptorHeap, ResourceHeapNotBound) {
 }
 
 TEST_F(NegativeDescriptorHeap, SamplerHeapNotBound) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -5423,7 +5334,6 @@ TEST_F(NegativeDescriptorHeap, SamplerHeapNotBound) {
 
 TEST_F(NegativeDescriptorHeap, UsagesValidation) {
     TEST_DESCRIPTION("Tests that buffers and images were created with appropriate usage flags");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     {
@@ -5510,6 +5420,7 @@ TEST_F(NegativeDescriptorHeap, UsagesValidation) {
 
 TEST_F(NegativeDescriptorHeap, InputAttachmentIsNotNull) {
     TEST_DESCRIPTION("Validate VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT cannot be nullDescriptor");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -5530,7 +5441,6 @@ TEST_F(NegativeDescriptorHeap, InputAttachmentIsNotNull) {
 
 TEST_F(NegativeDescriptorHeap, MappedPushIsBlockUniformArray) {
     TEST_DESCRIPTION("Validate that mapped push data is backed by block uniform");
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
@@ -5567,8 +5477,6 @@ TEST_F(NegativeDescriptorHeap, MappedPushIsBlockUniformArray) {
 
 TEST_F(NegativeDescriptorHeap, InvalidateComputeBoundDescriptorSetsBindDescriptorSets) {
     TEST_DESCRIPTION("Descriptor heap cmd functions do reset previously bound with CmdBindDescriptorSets descriptor sets");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const char* cs_source = R"glsl(
@@ -5628,8 +5536,6 @@ TEST_F(NegativeDescriptorHeap, InvalidateComputeBoundDescriptorSetsBindDescripto
 
 TEST_F(NegativeDescriptorHeap, InvalidateComputeBoundDescriptorSetsPushDescriptor) {
     TEST_DESCRIPTION("Descriptor heap cmd functions do reset previously bound with CmdPushDataEXT descriptor sets");
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -5690,7 +5596,6 @@ TEST_F(NegativeDescriptorHeap, InvalidateComputeBoundDescriptorSetsPushDescripto
 TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferHeapMissingInheritance) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
@@ -5771,7 +5676,6 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferHeapMissingInheritance) {
 TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferResourceHeapUnbound) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
@@ -5862,8 +5766,6 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferResourceHeapUnbound) {
 }
 
 TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferSamplerHeapUnbound) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDeviceSize resource_heap_tracker = 0u;
@@ -6197,7 +6099,6 @@ TEST_F(NegativeDescriptorHeap, OffsetIdNotAlignedSpecConstantDefault) {
 }
 
 TEST_F(NegativeDescriptorHeap, UnboundResourceHeap) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
@@ -6284,7 +6185,6 @@ TEST_F(NegativeDescriptorHeap, UnboundResourceHeap) {
 
 TEST_F(NegativeDescriptorHeap, PushDescriptorSet) {
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize heap_size = heap_props.samplerDescriptorSize + heap_props.minSamplerHeapReservedRange;
@@ -6325,7 +6225,6 @@ TEST_F(NegativeDescriptorHeap, PushDescriptorSet) {
 TEST_F(NegativeDescriptorHeap, DescriptorBufferInvalidatingHeap) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBuffer);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     vkt::Buffer descriptor_buffer(*m_device, 256u, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
@@ -6410,7 +6309,6 @@ TEST_F(NegativeDescriptorHeap, DescriptorBufferInvalidatingHeap) {
 }
 
 TEST_F(NegativeDescriptorHeap, ImageDescriptorLayout) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -6441,7 +6339,6 @@ TEST_F(NegativeDescriptorHeap, ImageDescriptorLayout) {
 }
 
 TEST_F(NegativeDescriptorHeap, ImageDescriptorAspect) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkFormat depth_format = FindSupportedDepthStencilFormat(gpu_);
@@ -6473,9 +6370,7 @@ TEST_F(NegativeDescriptorHeap, ImageDescriptorAspect) {
 }
 
 TEST_F(NegativeDescriptorHeap, SamplerHeapBoundResourceHeapNotBound) {
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -6559,7 +6454,6 @@ TEST_F(NegativeDescriptorHeap, SamplerHeapBoundResourceHeapNotBound) {
 }
 
 TEST_F(NegativeDescriptorHeap, ResetPushConstsWithPushData) {
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();

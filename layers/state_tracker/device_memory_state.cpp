@@ -98,6 +98,7 @@ DeviceMemory::DeviceMemory(VkDeviceMemory handle, const VkMemoryAllocateInfo* in
       allocate_info(*safe_allocate_info.ptr()),
       export_handle_types(GetExportHandleTypes(allocate_info)),
       import_handle_type(GetImportHandleType(allocate_info)),
+      mappable((memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0),
       unprotected((memory_type.propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) == 0),
       multi_instance(IsMultiInstance(allocate_info, memory_heap, physical_device_count)),
       dedicated(dedicated_binding),
