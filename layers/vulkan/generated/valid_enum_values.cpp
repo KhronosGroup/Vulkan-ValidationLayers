@@ -2205,6 +2205,9 @@ ValidValue stateless::Context::IsValidEnumValue(VkDataGraphPipelineSessionBindPo
             return ValidValue::Valid;
         case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_OPTICAL_FLOW_CACHE_ARM:
             return IsExtEnabled(extensions.vk_arm_data_graph_optical_flow) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_NEURAL_ACCELERATOR_STATISTICS_ARM:
+            return IsExtEnabled(extensions.vk_arm_data_graph_neural_accelerator_statistics) ? ValidValue::Valid
+                                                                                            : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2216,6 +2219,10 @@ ValidValue stateless::Context::IsValidEnumValue(VkDataGraphPipelinePropertyARM v
         case VK_DATA_GRAPH_PIPELINE_PROPERTY_CREATION_LOG_ARM:
         case VK_DATA_GRAPH_PIPELINE_PROPERTY_IDENTIFIER_ARM:
             return ValidValue::Valid;
+        case VK_DATA_GRAPH_PIPELINE_PROPERTY_NEURAL_ACCELERATOR_DEBUG_DATABASE_ARM:
+        case VK_DATA_GRAPH_PIPELINE_PROPERTY_NEURAL_ACCELERATOR_STATISTICS_INFO_ARM:
+            return IsExtEnabled(extensions.vk_arm_data_graph_neural_accelerator_statistics) ? ValidValue::Valid
+                                                                                            : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2419,6 +2426,30 @@ ValidValue stateless::Context::IsValidEnumValue(VkDataGraphPipelineNodeConnectio
         case VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_HINT_ARM:
         case VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_FLOW_VECTOR_ARM:
         case VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_COST_ARM:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkThrottleHintTypeSEC value) const {
+    switch (value) {
+        case VK_THROTTLE_HINT_TYPE_DEFAULT_SEC:
+        case VK_THROTTLE_HINT_TYPE_LOW_SEC:
+        case VK_THROTTLE_HINT_TYPE_HIGH_SEC:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkNeuralAcceleratorStatisticsModeARM value) const {
+    switch (value) {
+        case VK_NEURAL_ACCELERATOR_STATISTICS_MODE_DISABLED_ARM:
+        case VK_NEURAL_ACCELERATOR_STATISTICS_MODE_STATISTICS0_ARM:
+        case VK_NEURAL_ACCELERATOR_STATISTICS_MODE_STATISTICS1_ARM:
             return ValidValue::Valid;
         default:
             return ValidValue::NotFound;
@@ -3996,6 +4027,8 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkDataGraphPipelineSession
     switch (value) {
         case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_OPTICAL_FLOW_CACHE_ARM:
             return {vvl::Extension::_VK_ARM_data_graph_optical_flow};
+        case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_NEURAL_ACCELERATOR_STATISTICS_ARM:
+            return {vvl::Extension::_VK_ARM_data_graph_neural_accelerator_statistics};
         default:
             return {};
     };
@@ -4007,11 +4040,17 @@ const char* stateless::Context::DescribeEnum(VkDataGraphPipelineSessionBindPoint
 
 template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkDataGraphPipelinePropertyARM value) const {
-    return {};
+    switch (value) {
+        case VK_DATA_GRAPH_PIPELINE_PROPERTY_NEURAL_ACCELERATOR_DEBUG_DATABASE_ARM:
+        case VK_DATA_GRAPH_PIPELINE_PROPERTY_NEURAL_ACCELERATOR_STATISTICS_INFO_ARM:
+            return {vvl::Extension::_VK_ARM_data_graph_neural_accelerator_statistics};
+        default:
+            return {};
+    };
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkDataGraphPipelinePropertyARM value) const {
-    return nullptr;
+    return string_VkDataGraphPipelinePropertyARM(value);
 }
 
 template <>
@@ -4174,6 +4213,24 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkDataGraphPipelineNodeCon
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkDataGraphPipelineNodeConnectionTypeARM value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkThrottleHintTypeSEC value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkThrottleHintTypeSEC value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkNeuralAcceleratorStatisticsModeARM value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkNeuralAcceleratorStatisticsModeARM value) const {
     return nullptr;
 }
 

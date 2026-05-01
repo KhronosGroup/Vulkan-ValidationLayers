@@ -276,6 +276,10 @@ ValidValue stateless::Context::IsValidEnumValue(VkDataGraphPipelineNodeTypeARM v
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDataGraphPipelineNodeConnectionTypeARM value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkThrottleHintTypeSEC value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkNeuralAcceleratorStatisticsModeARM value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkBuildAccelerationStructureModeKHR value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkShaderGroupShaderKHR value) const;

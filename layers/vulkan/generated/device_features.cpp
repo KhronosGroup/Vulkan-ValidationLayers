@@ -862,6 +862,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->maintenance10 |= enabled->maintenance10 == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_11_FEATURES_KHR: {
+                const VkPhysicalDeviceMaintenance11FeaturesKHR* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance11FeaturesKHR*>(pNext);
+                features->maintenance11 |= enabled->maintenance11 == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT: {
                 const VkPhysicalDeviceTransformFeedbackFeaturesEXT* enabled =
                     reinterpret_cast<const VkPhysicalDeviceTransformFeedbackFeaturesEXT*>(pNext);
@@ -2010,6 +2016,18 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->shaderMixedFloatDotProductBFloat16Acc |= enabled->shaderMixedFloatDotProductBFloat16Acc == VK_TRUE;
                 features->shaderMixedFloatDotProductFloat8AccFloat32 |=
                     enabled->shaderMixedFloatDotProductFloat8AccFloat32 == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_THROTTLE_HINT_FEATURES_SEC: {
+                const VkPhysicalDeviceThrottleHintFeaturesSEC* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceThrottleHintFeaturesSEC*>(pNext);
+                features->throttleHint |= enabled->throttleHint == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_NEURAL_ACCELERATOR_STATISTICS_FEATURES_ARM: {
+                const VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM*>(pNext);
+                features->dataGraphNeuralAcceleratorStatistics |= enabled->dataGraphNeuralAcceleratorStatistics == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT: {

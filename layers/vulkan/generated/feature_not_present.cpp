@@ -730,6 +730,18 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_NEURAL_ACCELERATOR_STATISTICS_FEATURES_ARM: {
+                VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM*>(current);
+                if (enabling->dataGraphNeuralAcceleratorStatistics && !supported.dataGraphNeuralAcceleratorStatistics) {
+                    ss << "VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM::dataGraphNeuralAcceleratorStatistics "
+                          "is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_OPTICAL_FLOW_FEATURES_ARM: {
                 VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
@@ -1819,6 +1831,17 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                     reinterpret_cast<const VkPhysicalDeviceMaintenance10FeaturesKHR*>(current);
                 if (enabling->maintenance10 && !supported.maintenance10) {
                     ss << "VkPhysicalDeviceMaintenance10FeaturesKHR::maintenance10 is not supported\n";
+                }
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_11_FEATURES_KHR: {
+                VkPhysicalDeviceMaintenance11FeaturesKHR supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceMaintenance11FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance11FeaturesKHR*>(current);
+                if (enabling->maintenance11 && !supported.maintenance11) {
+                    ss << "VkPhysicalDeviceMaintenance11FeaturesKHR::maintenance11 is not supported\n";
                 }
                 break;
             }
@@ -3480,6 +3503,17 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                     reinterpret_cast<const VkPhysicalDeviceTextureCompressionASTCHDRFeatures*>(current);
                 if (enabling->textureCompressionASTC_HDR && !supported.textureCompressionASTC_HDR) {
                     ss << "VkPhysicalDeviceTextureCompressionASTCHDRFeatures::textureCompressionASTC_HDR is not supported\n";
+                }
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_THROTTLE_HINT_FEATURES_SEC: {
+                VkPhysicalDeviceThrottleHintFeaturesSEC supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceThrottleHintFeaturesSEC* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceThrottleHintFeaturesSEC*>(current);
+                if (enabling->throttleHint && !supported.throttleHint) {
+                    ss << "VkPhysicalDeviceThrottleHintFeaturesSEC::throttleHint is not supported\n";
                 }
                 break;
             }

@@ -160,6 +160,8 @@ enum class Feature {
     dataGraphUpdateAfterBind,
     // VkPhysicalDeviceDataGraphModelFeaturesQCOM
     dataGraphModel,
+    // VkPhysicalDeviceDataGraphNeuralAcceleratorStatisticsFeaturesARM
+    dataGraphNeuralAcceleratorStatistics,
     // VkPhysicalDeviceDataGraphOpticalFlowFeaturesARM
     dataGraphOpticalFlow,
     // VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV
@@ -566,6 +568,8 @@ enum class Feature {
     linearColorAttachment,
     // VkPhysicalDeviceMaintenance10FeaturesKHR
     maintenance10,
+    // VkPhysicalDeviceMaintenance11FeaturesKHR
+    maintenance11,
     // VkPhysicalDeviceMaintenance4Features, VkPhysicalDeviceVulkan13Features
     maintenance4,
     // VkPhysicalDeviceMaintenance5Features, VkPhysicalDeviceVulkan14Features
@@ -988,6 +992,8 @@ enum class Feature {
     textureCompressionASTC_3D,
     // VkPhysicalDeviceTextureCompressionASTCHDRFeatures, VkPhysicalDeviceVulkan13Features
     textureCompressionASTC_HDR,
+    // VkPhysicalDeviceThrottleHintFeaturesSEC
+    throttleHint,
     // VkPhysicalDeviceTileMemoryHeapFeaturesQCOM
     tileMemoryHeap,
     // VkPhysicalDeviceTilePropertiesFeaturesQCOM
