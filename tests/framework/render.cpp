@@ -511,10 +511,7 @@ bool VkRenderFramework::CanEnableDeviceExtension(const std::string& dev_ext_name
                        [&dev_ext_name](const char* ext) { return dev_ext_name == ext; });
 }
 
-void VkRenderFramework::ShutdownFramework() {
-    // Nothing to shut down without a VkInstance
-    if (!instance_) return;
-
+void VkRenderFramework::DestroyFrameworkTransientObjects() {
     if (m_device && m_device->handle() != VK_NULL_HANDLE) {
         m_device->Wait();
     }
@@ -542,15 +539,94 @@ void VkRenderFramework::ShutdownFramework() {
     m_depthStencil = nullptr;
 
     DestroySwapchain();
+    m_surface.Destroy();
+    m_surface_context.Destroy();
+}
+
+void VkRenderFramework::BorrowFramework(VkRenderFramework& shared, VkCommandPoolCreateFlags flags) {
+    ASSERT_EQ((VkInstance)0, instance_);
+    ASSERT_FALSE(borrowed_framework_);
+    ASSERT_FALSE(shared.borrowed_framework_);
+    ASSERT_TRUE(shared.instance_);
+    ASSERT_TRUE(shared.m_device);
+
+    m_instance_api_version = shared.m_instance_api_version;
+    m_target_api_version = shared.m_target_api_version;
+    m_attempted_api_version = shared.m_attempted_api_version;
+    available_layers_ = shared.available_layers_;
+    available_extensions_ = shared.available_extensions_;
+    allow_promoted_extensions_ = shared.allow_promoted_extensions_;
+    app_info_ = shared.app_info_;
+    instance_layers_ = shared.instance_layers_;
+    m_instance_extension_names = shared.m_instance_extension_names;
+    instance_ = shared.instance_;
+    gpu_ = shared.gpu_;
+    physDevProps_ = shared.physDevProps_;
+    all_queue_count_ = shared.all_queue_count_;
+    m_gpu_index = shared.m_gpu_index;
+    m_device = shared.m_device;
+    m_width = shared.m_width;
+    m_height = shared.m_height;
+    m_render_target_fmt = shared.m_render_target_fmt;
+    m_depth_stencil_fmt = shared.m_depth_stencil_fmt;
+    m_default_queue = shared.m_default_queue;
+    m_default_queue_caps = shared.m_default_queue_caps;
+    m_second_queue = shared.m_second_queue;
+    m_second_queue_caps = shared.m_second_queue_caps;
+    m_third_queue = shared.m_third_queue;
+    m_third_queue_caps = shared.m_third_queue_caps;
+    m_fourth_queue = shared.m_fourth_queue;
+    m_fourth_queue_caps = shared.m_fourth_queue_caps;
+    m_required_extensions = shared.m_required_extensions;
+    m_optional_extensions = shared.m_optional_extensions;
+    m_wsi_extensions = shared.m_wsi_extensions;
+    m_device_extension_names = shared.m_device_extension_names;
+    borrowed_framework_ = true;
+
+    m_errorMonitor->CreateCallback(instance_);
+
+    m_depthStencil = new vkt::Image();
+    m_command_pool.Init(*m_device, m_device->graphics_queue_node_index_, flags);
+    m_command_buffer.Init(*m_device, m_command_pool);
+
+    if (m_second_queue) {
+        m_second_command_pool.Init(*m_device, m_second_queue->family_index, flags);
+        m_second_command_buffer.Init(*m_device, m_second_command_pool);
+    }
+}
+
+void VkRenderFramework::DestroyDebugCallbackForBorrowing() { m_errorMonitor->DestroyCallback(instance_); }
+
+bool VkRenderFramework::SharedFrameworkEnabled() {
+    const std::string setting = GetEnvironment("VK_LAYER_TESTS_SHARED_INIT");
+    return setting.empty() || (setting != "0" && setting != "false" && setting != "FALSE" && setting != "off" &&
+                               setting != "OFF" && setting != "no" && setting != "NO");
+}
+
+void VkRenderFramework::ShutdownFramework() {
+    // Nothing to shut down without a VkInstance
+    if (!instance_) return;
+
+    DestroyFrameworkTransientObjects();
+
+    if (borrowed_framework_) {
+        m_errorMonitor->DestroyCallback(instance_);
+        instance_ = VK_NULL_HANDLE;
+        gpu_ = VK_NULL_HANDLE;
+        m_device = nullptr;
+        m_default_queue = nullptr;
+        m_second_queue = nullptr;
+        m_third_queue = nullptr;
+        m_fourth_queue = nullptr;
+        borrowed_framework_ = false;
+        return;
+    }
 
     // reset the driver
     delete m_device;
     m_device = nullptr;
 
     m_errorMonitor->DestroyCallback(instance_);
-
-    m_surface.Destroy();
-    m_surface_context.Destroy();
 
     vk::DestroyInstance(instance_, nullptr);
     instance_ = NULL;  // In case we want to re-initialize

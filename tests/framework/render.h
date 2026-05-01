@@ -97,6 +97,10 @@ class VkRenderFramework : public VkTestFramework {
 
     VkInstanceCreateInfo GetInstanceCreateInfo() const;
     void InitFramework(void *instance_pnext = NULL);
+    void BorrowFramework(VkRenderFramework &shared,
+                         VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    void DestroyDebugCallbackForBorrowing();
+    static bool SharedFrameworkEnabled();
     void ShutdownFramework();
 
     // Functions to modify the VkRenderFramework surface & swapchain variables
@@ -212,6 +216,7 @@ class VkRenderFramework : public VkTestFramework {
     // Then all required features and supported optional features are used for device creation.
     vkt::FeatureRequirements requested_features_;
     bool all_queue_count_ = false;
+    bool borrowed_framework_ = false;
 
     uint32_t m_gpu_index;
     vkt::Device *m_device;
@@ -306,4 +311,6 @@ class VkRenderFramework : public VkTestFramework {
     // This function also returns true if the device extension is implicitly supported by the API version supported
     // by the device, as queriable using DeviceValidationVersion().
     bool CanEnableDeviceExtension(const std::string &dev_ext_name) const;
+
+    void DestroyFrameworkTransientObjects();
 };

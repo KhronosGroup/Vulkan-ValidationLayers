@@ -147,7 +147,9 @@ void ErrorMonitor::CreateCallback(VkInstance instance) noexcept {
 
 void ErrorMonitor::DestroyCallback(VkInstance instance) noexcept {
     assert(instance);
-    assert(debug_obj_);  // valid to call with null object, but probably bug
+    if (debug_obj_ == VK_NULL_HANDLE) {
+        return;
+    }
 
     vk::DestroyDebugUtilsMessengerEXT(instance, debug_obj_, nullptr);
     debug_obj_ = VK_NULL_HANDLE;

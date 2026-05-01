@@ -40,6 +40,7 @@
 
 #include <vector>
 #include <array> // Required for Windows in many tests
+#include <memory>
 
 // MSVC and GCC define __SANITIZE_ADDRESS__ when compiling with address sanitization
 // However, clang doesn't. Instead you have to use __has_feature to check.
@@ -217,6 +218,40 @@ class VkLayerTest : public VkLayerTestBase {
     bool LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT &fpvkSetPhysicalDeviceProperties2EXT);
 
     VkLayerTest();
+};
+
+template <typename TestBase>
+class SharedVkLayerTest : public TestBase {
+  private:
+    class SharedOwner : public TestBase {
+        void TestBody() override {}
+    };
+
+    static inline std::unique_ptr<SharedOwner> shared_;
+
+  public:
+    static void SetUpTestSuite() {
+        if (!TestBase::SharedFrameworkEnabled()) {
+            return;
+        }
+        shared_ = std::make_unique<SharedOwner>();
+        RETURN_IF_SKIP(shared_->Init());
+        shared_->DestroyDebugCallbackForBorrowing();
+    }
+
+    static void TearDownTestSuite() { shared_.reset(); }
+
+  protected:
+    void SetUp() override {
+        if (TestBase::SharedFrameworkEnabled()) {
+            ASSERT_NE(nullptr, shared_);
+            this->BorrowFramework(*shared_);
+        } else {
+            RETURN_IF_SKIP(this->Init());
+        }
+    }
+
+    void TearDown() override { this->ShutdownFramework(); }
 };
 
 template <>
