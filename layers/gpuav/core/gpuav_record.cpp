@@ -164,7 +164,6 @@ void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, c
     RegisterBufferDeviceAddressValidation(*this, gpuav_cb_state);
     RegisterVertexAttributeFetchOobValidation(*this, gpuav_cb_state);
     RegisterMeshShadingValidation(*this, gpuav_cb_state);
-    RegisterRayQueryValidation(*this, gpuav_cb_state);
     RegisterSharedMemoryDataRaceValidation(*this, gpuav_cb_state);
     RegisterSanitizer(*this, gpuav_cb_state);
     RegisterTraceRayValidation(*this, gpuav_cb_state);
@@ -694,6 +693,15 @@ void Validator::PreCallRecordCmdBuildAccelerationStructuresKHR(
     const LastBound& last_bound = cb_state->GetLastBoundRayTracing();
     valcmd::TLAS(*this, record_obj.location, cb_sub_state, last_bound, infoCount, pInfos, ppBuildRangeInfos);
     valcmd::BLAS(*this, record_obj.location, cb_sub_state, last_bound, infoCount, pInfos, ppBuildRangeInfos);
+}
+
+void Validator::PostCallRecordCmdBuildAccelerationStructuresKHR(
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const RecordObject& record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+
+    auto& cb_sub_state = SubState(*cb_state);
+    UpdateAccelerationStructureGpuState(*this, cb_sub_state, record_obj.location, infoCount, pInfos);
 }
 
 void Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,

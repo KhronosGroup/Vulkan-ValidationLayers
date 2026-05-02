@@ -317,7 +317,7 @@ static inline const AccelerationStructureNVSubState &SubState(const vvl::Acceler
 }
 class AccelerationStructureKHRSubState : public vvl::AccelerationStructureKHRSubState {
   public:
-    AccelerationStructureKHRSubState(vvl::AccelerationStructureKHR &obj, DescriptorHeap &heap);
+    AccelerationStructureKHRSubState(Validator& validator, vvl::AccelerationStructureKHR& obj, DescriptorHeap& heap);
     void Destroy() override;
     void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
 
@@ -330,6 +330,10 @@ class AccelerationStructureKHRSubState : public vvl::AccelerationStructureKHRSub
         VkDeviceSize stride{};
     };
     std::vector<GeometryBufferRange> geometry_buffer_copies{};
+    vko::BufferRange gpu_state;
+
+  private:
+    Validator& validator;
 };
 static inline AccelerationStructureKHRSubState &SubState(vvl::AccelerationStructureKHR &obj) {
     return *static_cast<AccelerationStructureKHRSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));

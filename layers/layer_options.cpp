@@ -200,7 +200,6 @@ const char* VK_LAYER_GPUAV_SAFE_MODE = "gpuav_safe_mode";
 const char* VK_LAYER_GPUAV_SHADER_INSTRUMENTATION = "gpuav_shader_instrumentation";
 const char* VK_LAYER_GPUAV_DESCRIPTOR_CHECKS = "gpuav_descriptor_checks";
 const char* VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB = "gpuav_buffer_address_oob";
-const char* VK_LAYER_GPUAV_VALIDATE_RAY_QUERY = "gpuav_validate_ray_query";
 const char* VK_LAYER_GPUAV_VALIDATE_TRACE_RAY = "gpuav_validate_trace_ray";
 const char* VK_LAYER_GPUAV_MESH_SHADING = "gpuav_mesh_shading";
 const char* VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING = "gpuav_post_process_descriptor_indexing";
@@ -1050,11 +1049,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB,
                                     gpuav_settings.shader_instrumentation.buffer_device_address);
-        }
-
-        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_RAY_QUERY)) {
-            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_RAY_QUERY,
-                                    gpuav_settings.shader_instrumentation.ray_query);
         }
 
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_TRACE_RAY)) {

@@ -20,13 +20,10 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "common_descriptor_sets.h"
 #include "error_payload.h"
+#include "descriptor_encoding.h"
 
 layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorEncodings {
-    // struct glsl::DescriptorState {
-    //   x: id
-    //   y: extra data depending on the descriptor type
-    // }
-    uvec2 data[];
+    DescriptorEncoding data[];
 };
 
 layout(buffer_reference, buffer_reference_align = 8, scalar) buffer InitializedStatus {
@@ -72,7 +69,7 @@ bool inst_descriptor_indexing_oob_bindless(const uint inst_offset, const uint de
 
         // check if the descriptor was ever initialized
         const uint global_descriptor_index = binding_layout_offset + desc_index;
-        uint desc_id = descriptor_encodings.data[global_descriptor_index].x & kNullDescriptor;
+        uint desc_id = descriptor_encodings.data[global_descriptor_index].id & kNullDescriptor;
         if (desc_id == 0u) {
             error = kErrorSubCode_DescriptorIndexing_Uninitialized;
         } else if (desc_id != kNullDescriptor) {
@@ -111,8 +108,8 @@ bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint ins
 
         // check if the descriptor was ever initialized
         const uint global_descriptor_index = binding_layout_offset + desc_index;
-        uvec2 descriptor_encoding = descriptor_encodings.data[global_descriptor_index];
-        uint desc_id = descriptor_encoding.x & kNullDescriptor;
+        DescriptorEncoding descriptor_encoding = descriptor_encodings.data[global_descriptor_index];
+        uint desc_id = descriptor_encoding.id & kNullDescriptor;
         if (desc_id == 0u) {
             error = kErrorSubCode_DescriptorIndexing_Uninitialized;
         } else if (desc_id != kNullDescriptor) {
@@ -125,10 +122,10 @@ bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint ins
         }
 
         // If dealing with a combined image sampler, need to check the sampler as well
-        uint desc_type = (descriptor_encoding.x & ~kNullDescriptor) >> kDescBitShift;
+        uint desc_type = (descriptor_encoding.id & ~kNullDescriptor) >> kDescBitShift;
         if (desc_type == kImageSamplerDesc && error == 0) {
             // check sampler
-            desc_id = descriptor_encoding.y;
+            desc_id = descriptor_encoding.dword_0;
             if (desc_id == 0u) {
                 error = kErrorSubCode_DescriptorIndexing_Uninitialized;
             } else if (desc_id != kNullDescriptor) {

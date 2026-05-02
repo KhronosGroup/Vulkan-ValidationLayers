@@ -18,8 +18,22 @@
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
+
 #include "common_descriptor_sets.h"
 #include "error_payload.h"
+#include "descriptor_encoding.h"
+#include "../setup/acceleration_structure_gpu_state_update.h"
+
+layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorEncodings {
+    DescriptorEncoding data[];
+};
+
+layout(buffer_reference) buffer UnusedInitializedStatus;
+
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, scalar) buffer BoundDescriptorSetsSSBO {
+    UnusedInitializedStatus unused_initialized_status;
+    DescriptorEncodings descriptor_encodings[kDebugInputBindlessMaxDescSets];
+} gpuav;
 
 // from RayFlagsMask in spirv.hpp
 const uint SpvRayFlags_OpaqueKHR = 0x00000001;
@@ -38,6 +52,44 @@ const uint SpvRayFlags_ForceOpacityMicromap2StateEXTMask = 0x00000400;
 #define has_multiple_flags(masked_flags) (((masked_flags) & ((masked_flags) - 1)) != 0)
 #define is_nan_or_inf(x) (isnan(x) || isinf(x))
 
+bool inst_trace_ray_acceleration_structure(const uint inst_offset,
+                                           const uint desc_set,
+                                           const uint desc_index,
+                                           const uint binding_layout_offset,
+                                           const uint error_sub_code)
+{
+    uint param_0 = 0u;
+    uint param_1 = 0u;
+
+    DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
+    const uint global_descriptor_index = binding_layout_offset + desc_index;
+
+    // dwords_1_2 holds the AS gpu_state device address; can be zero when using VK_EXT_descriptor_buffer for instance,
+    // BoundDescriptorSetsSSBO is only populated for classic descriptor sets
+    const uvec2 raw_gpu_state_ptr = descriptor_encodings.data[global_descriptor_index].dwords_1_2;
+    if (raw_gpu_state_ptr != uvec2(0)) {
+        GpuStatePtr gpu_state_ptr = GpuStatePtr(raw_gpu_state_ptr);
+        const uint gpu_state = gpu_state_ptr.state;
+        if (((gpu_state & kAsGpuStateValidMask) >> kAsGpuStateValidShift) == 0) {
+            param_0 = (desc_set << kInst_DescriptorIndexing_SetShift) | global_descriptor_index;
+            param_1 = gpu_state;
+            error_payload = ErrorPayload(
+                inst_offset,
+                SpecConstantLinkShaderId | (kErrorGroup_TraceRay << kErrorGroup_Shift) | (error_sub_code << kErrorSubCode_Shift),
+                param_0,
+                param_1,
+                0
+            );
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// Pipeline flags
+const uint kPipelineHasSkipAABBs = 0x1;
+const uint kPipelineHasSkipTriangles = 0x2;
 
 bool inst_trace_ray(const uint inst_offset,
                     const uint ray_flags,
@@ -48,7 +100,8 @@ bool inst_trace_ray(const uint inst_offset,
                     const vec3 origin,
                     const float t_min,
                     const vec3 direction,
-                    const float t_max)
+                    const float t_max,
+                    const uint pipeline_flags)
 {
     uint error = 0u;
     uint param_0 = 0u;
@@ -90,6 +143,12 @@ bool inst_trace_ray(const uint inst_offset,
         error = kErrorSubCode_TraceRay_TMaxLessThanTMin;
         param_0 = floatBitsToUint(t_min);
         param_1 = floatBitsToUint(t_max);
+    } else if ((ray_flags & SpvRayFlags_SkipTrianglesKHR) != 0 && (pipeline_flags & kPipelineHasSkipAABBs) != 0) {
+        error = kErrorSubCode_TraceRay_SkipTrianglesWithPipelineSkipAABBs;
+        param_0 = ray_flags;
+    } else if ((ray_flags & SpvRayFlags_SkipAABBsKHR) != 0 && (pipeline_flags & kPipelineHasSkipTriangles) != 0) {
+        error = kErrorSubCode_TraceRay_SkipAABBsWithPipelineSkipTriangles;
+        param_0 = ray_flags;
     }
 
     if (0u != error) {
@@ -111,10 +170,6 @@ const uint OpHitObjectTraceReorderExecuteEXT = 5311;
 const uint OpHitObjectTraceMotionReorderExecuteEXT = 5312;
 const uint OpHitObjectTraceRayEXT = 5316;
 const uint OpHitObjectTraceRayMotionEXT = 5317;
-
-// Pipeline flags
-const uint kPipelineHasSkipAABBs = 0x1;
-const uint kPipelineHasSkipTriangles = 0x2;
 
 
 // Validation for VK_EXT_ray_tracing_invocation_reorder hit object operations:
@@ -217,5 +272,104 @@ bool inst_ray_hit_object_sbt_index_check(const uint inst_offset,
         );
         return false;
     }
+    return true;
+}
+
+bool inst_ray_query_comp(const uint inst_offset,
+                         const uint ray_flags,
+                         const vec3 ray_origin,
+                         const float ray_tmin,
+                         const vec3 ray_direction,
+                         const float ray_tmax)
+{
+    uint error = 0u;
+    uint param_0 = 0u;
+    uint param_1 = 0u;
+
+    if (isnan(ray_tmin)) {
+        error = kErrorSubCode_RayQuery_MinNaN;
+    } else if (isnan(ray_tmax)) {
+        error = kErrorSubCode_RayQuery_MaxNaN;
+    } else if (isnan(ray_origin.x) || isnan(ray_origin.y) || isnan(ray_origin.z)) {
+        error = kErrorSubCode_RayQuery_OriginNaN;
+    } else if (isnan(ray_direction.x) || isnan(ray_direction.y) || isnan(ray_direction.z)) {
+        error = kErrorSubCode_RayQuery_DirectionNaN;
+    } else if (isinf(ray_origin.x) || isinf(ray_origin.y) || isinf(ray_origin.z)) {
+        error = kErrorSubCode_RayQuery_OriginFinite;
+    } else if (isinf(ray_direction.x) || isinf(ray_direction.y) || isinf(ray_direction.z)) {
+        error = kErrorSubCode_RayQuery_DirectionFinite;
+    } else if (ray_tmin < 0.0f) {
+        error = kErrorSubCode_RayQuery_NegativeMin;
+        param_0 = floatBitsToUint(ray_tmin);
+    } else if (ray_tmax < 0.0f) {
+        error = kErrorSubCode_RayQuery_NegativeMax;
+        param_0 = floatBitsToUint(ray_tmax);
+    } else if (ray_tmax < ray_tmin) {
+        error = kErrorSubCode_RayQuery_MinMax;
+        param_0 = floatBitsToUint(ray_tmin);
+        param_1 = floatBitsToUint(ray_tmax);
+    } else {
+        // From SPIRV-Headers
+        const uint OpaqueKHR = 0x00000001;
+        const uint NoOpaqueKHR = 0x00000002;
+        const uint CullBackFacingTrianglesKHR = 0x00000010;
+        const uint CullFrontFacingTrianglesKHR = 0x00000020;
+        const uint CullOpaqueKHR = 0x00000040;
+        const uint CullNoOpaqueKHR = 0x00000080;
+        const uint SkipTrianglesKHR = 0x00000100;
+        const uint SkipAABBsKHR = 0x00000200;
+
+        const uint both_skip = SkipTrianglesKHR | SkipAABBsKHR;
+        uint skip_cull_mask = ray_flags & (SkipTrianglesKHR | CullBackFacingTrianglesKHR | CullFrontFacingTrianglesKHR);
+        uint opaque_mask = ray_flags & (OpaqueKHR | NoOpaqueKHR | CullOpaqueKHR | CullNoOpaqueKHR);
+
+        if ((ray_flags & both_skip) == both_skip) {
+            error = kErrorSubCode_RayQuery_BothSkip;
+            param_0 = ray_flags;
+        } else if (skip_cull_mask != 0 && ((skip_cull_mask & (skip_cull_mask - 1)) != 0)) {
+            error = kErrorSubCode_RayQuery_SkipCull;
+            param_0 = ray_flags;
+        } else if (opaque_mask != 0 && ((opaque_mask & (opaque_mask - 1)) != 0)) {
+            error = kErrorSubCode_RayQuery_Opaque;
+            param_0 = ray_flags;
+        }
+    }
+
+    if (0u != error) {
+        error_payload = ErrorPayload(
+            inst_offset,
+            SpecConstantLinkShaderId | (kErrorGroup_TraceRay << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
+            param_0,
+            param_1,
+            0
+        );
+        return false;
+    }
+
+    return true;
+}
+
+bool inst_report_intersection_comp(const uint inst_offset,
+                                   const uint hit_kind)
+{
+    uint error = 0u;
+    uint param_0 = 0u;
+
+    if (hit_kind > 127) {
+        error = kErrorSubCode_ReportIntersection_HitKindOutOfRange;
+        param_0 = hit_kind;
+    }
+
+    if (0u != error) {
+        error_payload = ErrorPayload(
+            inst_offset,
+            SpecConstantLinkShaderId | (kErrorGroup_TraceRay << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
+            param_0,
+            0,
+            0
+        );
+        return false;
+    }
+
     return true;
 }

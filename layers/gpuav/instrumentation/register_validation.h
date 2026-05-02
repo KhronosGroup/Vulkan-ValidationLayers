@@ -20,11 +20,12 @@ class CommandBufferSubState;
 
 void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& cb);
-void RegisterRayQueryValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterMeshShadingValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterVertexAttributeFetchOobValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterSharedMemoryDataRaceValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterTraceRayValidation(Validator& gpuav, CommandBufferSubState& cb);
+void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState& cb, const Location& loc, uint32_t info_count,
+                                         const VkAccelerationStructureBuildGeometryInfoKHR* infos);
 
 }  // namespace gpuav

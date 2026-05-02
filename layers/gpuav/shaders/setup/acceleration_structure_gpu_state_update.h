@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DESCRIPTOR_ENCODING_UPDATE_H
-#define DESCRIPTOR_ENCODING_UPDATE_H
+#ifndef ACCELERATION_STRUCTURE_GPU_STATE_UPDATE_H
+#define ACCELERATION_STRUCTURE_GPU_STATE_UPDATE_H
 
 #ifdef __cplusplus
 
@@ -34,18 +34,28 @@ using uint = uint32_t;
 #endif
 
 #ifdef __cplusplus
-using DescriptorEncodingsPtr = uint64_t;
+using GpuStatePtr = uint64_t;
 #else
 
-#include "../instrumentation/descriptor_encoding.h"
-layout(buffer_reference, scalar) buffer DescriptorEncodingsPtr { DescriptorEncoding array[]; };
-
+layout(buffer_reference, scalar) buffer GpuStatePtr { uint state; };
 #endif
 
-struct DescriptorEncodingUpdateShaderPushData {
-    DescriptorEncodingsPtr cb_desc_encodings_ptr;
-    DescriptorEncodingsPtr staged_desc_encodings_ptr;
-    uint start_binding;
+// Bits layout for AccelerationStructureGpuStateUpdateShaderPushData::state
+// [0]   Valid state or not (1 if valid)
+// [1]   build mode (VkBuildAccelerationStructureModeKHR)
+// [2:3] AS type (VkAccelerationStructureTypeKHR)
+const uint kAsGpuStateValidShift = 0;
+const uint kAsGpuStateValidMask = 0x1;
+
+const uint kBuildModeShift = 1;
+const uint kBuildModeMask = 0x1;
+
+const uint kAsTypeShift = 2;
+const uint kAsTypeMask = 0x3 << kAsTypeShift;
+
+struct AccelerationStructureGpuStateUpdateShaderPushData {
+    GpuStatePtr gpu_state_ptr;
+    uint state;
 };
 
 #ifdef __cplusplus
