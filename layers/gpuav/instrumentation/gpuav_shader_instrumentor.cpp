@@ -1678,13 +1678,15 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
         modified |= pass.Run();
     }
 
-    if (gpuav_settings.shader_instrumentation.shared_memory_data_race) {
-        spirv::SharedMemoryDataRacePass pass(module);
+    // Array OOB must run before shared-memory race instrumentation so guarded stores/loads are not
+    // treated as races on OOB paths, and so cooperative-matrix + OOB cases get consistent errors.
+    if (gpuav_settings.shader_instrumentation.array_oob) {
+        spirv::ArrayOobPass pass(module);
         modified |= pass.Run();
     }
 
-    if (gpuav_settings.shader_instrumentation.array_oob) {
-        spirv::ArrayOobPass pass(module);
+    if (gpuav_settings.shader_instrumentation.shared_memory_data_race) {
+        spirv::SharedMemoryDataRacePass pass(module);
         modified |= pass.Run();
     }
 
