@@ -43,7 +43,7 @@ const int kErrorGroup_GpuPreBuildAccelerationStructures = 12;
 const int kErrorGroup_InstMeshShading = 13;
 const int kErrorGroup_SharedMemoryDataRace = 15;
 const int kErrorGroup_TraceRay = 16;
-const int kErrorGroup_SharedMemoryOob = 17;
+const int kErrorGroup_ArrayOob = 17;
 
 // We just take ExecutionModel and normalize it so we only use 5 bits to store it
 const int kExecutionModel_Vertex = 0;

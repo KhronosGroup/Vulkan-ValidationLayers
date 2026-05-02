@@ -34,7 +34,7 @@ bool GpuAVSettings::IsShaderInstrumentationEnabled() const {
            shader_instrumentation.ray_query || shader_instrumentation.trace_ray || shader_instrumentation.mesh_shading ||
            shader_instrumentation.post_process_descriptor_indexing || shader_instrumentation.vertex_attribute_fetch_oob ||
            shader_instrumentation.sanitizer || shader_instrumentation.shared_memory_data_race ||
-           shader_instrumentation.shared_memory_oob;
+           shader_instrumentation.array_oob;
 }
 bool GpuAVSettings::IsSpirvModified() const {
     return IsShaderInstrumentationEnabled() || debug_printf_enabled || debug_descriptor_enabled;
@@ -51,7 +51,7 @@ void GpuAVSettings::DisableShaderInstrumentationAndOptions() {
     shader_instrumentation.vertex_attribute_fetch_oob = false;
     shader_instrumentation.sanitizer = false;
     shader_instrumentation.shared_memory_data_race = false;
-    shader_instrumentation.shared_memory_oob = false;
+    shader_instrumentation.array_oob = false;
     // Because of this setting, cannot really have an "enabled" parameter to pass to this method
     select_instrumented_shaders = false;
 }
@@ -136,7 +136,7 @@ void GpuAVSettings::TracyLogSettings() const {
     VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(vertex_attribute_fetch_oob);
     VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(sanitizer);
     VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(shared_memory_data_race);
-    VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(shared_memory_oob);
+    VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(array_oob);
     VVL_TRACY_PRINT_GPUAV_SETTING(debug_printf_only);
     VVL_TRACY_PRINT_GPUAV_SETTING(debug_printf_enabled);
     VVL_TRACY_PRINT_GPUAV_SETTING(debug_printf_to_stdout);

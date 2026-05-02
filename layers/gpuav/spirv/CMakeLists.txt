@@ -17,6 +17,8 @@
 add_library(gpu_av_spirv STATIC)
 target_sources(gpu_av_spirv PRIVATE
     # Passes
+    array_oob_pass.h
+    array_oob_pass.cpp
     descriptor_indexing_oob_pass.h
     descriptor_indexing_oob_pass.cpp
     descriptor_class_general_buffer_pass.h
@@ -31,8 +33,6 @@ target_sources(gpu_av_spirv PRIVATE
     sanitizer_pass.cpp
     shared_memory_data_race_pass.h
     shared_memory_data_race_pass.cpp
-    shared_memory_oob_pass.h
-    shared_memory_oob_pass.cpp
     debug_descriptor_pass.h
     debug_descriptor_pass.cpp
     trace_ray_pass.h

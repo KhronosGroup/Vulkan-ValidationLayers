@@ -934,9 +934,9 @@
                                             }
                                         },
                                         {
-                                            "key": "gpuav_shared_memory_oob",
-                                            "label": "Shared Memory Out of Bounds Detection",
-                                            "description": "Detects out-of-bounds accesses on shared memory arrays and vectors in Compute, Task, and Mesh shaders.",
+                                            "key": "gpuav_array_oob",
+                                            "label": "Array Out of Bounds Detection",
+                                            "description": "Detects out-of-bounds accesses on arrays and vectors in Workgroup, Private, and Function storage during GPU-AV shader instrumentation.",
                                             "type": "BOOL",
                                             "view": "DEBUG",
                                             "default": true,

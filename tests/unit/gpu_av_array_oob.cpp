@@ -13,17 +13,17 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/shader_helper.h"
 
-class NegativeGpuAVSharedMemoryOob : public GpuAVSharedMemoryOobTest {
+class NegativeGpuAVArrayOob : public GpuAVArrayOobTest {
   protected:
     void TestHelper(const char* source, uint32_t expected_index, uint32_t expected_bound,
-                    const char* vuid = "SPIRV-SharedMemoryOob-OpAccessChain", SpvSourceType source_type = SPV_SOURCE_GLSL,
+                    const char* vuid = "SPIRV-ArrayOob-OpAccessChain", SpvSourceType source_type = SPV_SOURCE_GLSL,
                     VkSpecializationInfo* spec_info = nullptr, const char* expected_variable_name = nullptr);
 };
 
-void NegativeGpuAVSharedMemoryOob::TestHelper(const char* shader_source, uint32_t expected_index, uint32_t expected_bound,
+void NegativeGpuAVArrayOob::TestHelper(const char* shader_source, uint32_t expected_index, uint32_t expected_bound,
                                               const char* vuid, SpvSourceType source_type, VkSpecializationInfo* spec_info,
                                               const char* expected_variable_name) {
-    RETURN_IF_SKIP(InitSharedMemoryOob());
+    RETURN_IF_SKIP(InitArrayOob());
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -56,7 +56,7 @@ void NegativeGpuAVSharedMemoryOob::TestHelper(const char* shader_source, uint32_
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVSharedMemoryOob, Simple1DArray) {
+TEST_F(NegativeGpuAVArrayOob, Simple1DArray) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -74,7 +74,7 @@ TEST_F(NegativeGpuAVSharedMemoryOob, Simple1DArray) {
     TestHelper(shader_source, 4, 4);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryOob, Array2DInner) {
+TEST_F(NegativeGpuAVArrayOob, Array2DInner) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -89,7 +89,7 @@ TEST_F(NegativeGpuAVSharedMemoryOob, Array2DInner) {
     TestHelper(shader_source, 4, 4);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryOob, Array2DOuter) {
+TEST_F(NegativeGpuAVArrayOob, Array2DOuter) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -106,7 +106,7 @@ TEST_F(NegativeGpuAVSharedMemoryOob, Array2DOuter) {
 
 // Outer index is a constant in bounds, inner is dynamic and OOB. Spot check that the inner
 // check fires correctly when the outer is a constant.
-TEST_F(NegativeGpuAVSharedMemoryOob, Array2DConstantOuterDynamicInner) {
+TEST_F(NegativeGpuAVArrayOob, Array2DConstantOuterDynamicInner) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -123,7 +123,7 @@ TEST_F(NegativeGpuAVSharedMemoryOob, Array2DConstantOuterDynamicInner) {
 
 // Outer is dynamic and OOB, inner is a constant in bounds. Spot check that the outer check
 // fires correctly when the inner is a constant.
-TEST_F(NegativeGpuAVSharedMemoryOob, Array2DDynamicOuterConstantInner) {
+TEST_F(NegativeGpuAVArrayOob, Array2DDynamicOuterConstantInner) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -138,7 +138,7 @@ TEST_F(NegativeGpuAVSharedMemoryOob, Array2DDynamicOuterConstantInner) {
     TestHelper(shader_source, 2, 2);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryOob, StructWithArray) {
+TEST_F(NegativeGpuAVArrayOob, StructWithArray) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -154,7 +154,7 @@ TEST_F(NegativeGpuAVSharedMemoryOob, StructWithArray) {
     TestHelper(shader_source, 4, 4);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryOob, ArrayOfStructs) {
+TEST_F(NegativeGpuAVArrayOob, ArrayOfStructs) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -170,7 +170,7 @@ TEST_F(NegativeGpuAVSharedMemoryOob, ArrayOfStructs) {
     TestHelper(shader_source, 2, 2);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryOob, VectorExtractDynamic) {
+TEST_F(NegativeGpuAVArrayOob, VectorExtractDynamic) {
     const char* shader_source = R"spirv(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
@@ -211,10 +211,10 @@ TEST_F(NegativeGpuAVSharedMemoryOob, VectorExtractDynamic) {
                OpFunctionEnd
     )spirv";
 
-    TestHelper(shader_source, 4, 4, "SPIRV-SharedMemoryOob-OpVectorExtractDynamic", SPV_SOURCE_ASM);
+    TestHelper(shader_source, 4, 4, "SPIRV-ArrayOob-OpVectorExtractDynamic", SPV_SOURCE_ASM);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryOob, VectorInsertDynamic) {
+TEST_F(NegativeGpuAVArrayOob, VectorInsertDynamic) {
     const char* shader_source = R"spirv(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
@@ -257,10 +257,10 @@ TEST_F(NegativeGpuAVSharedMemoryOob, VectorInsertDynamic) {
                OpFunctionEnd
     )spirv";
 
-    TestHelper(shader_source, 4, 4, "SPIRV-SharedMemoryOob-OpVectorInsertDynamic", SPV_SOURCE_ASM);
+    TestHelper(shader_source, 4, 4, "SPIRV-ArrayOob-OpVectorInsertDynamic", SPV_SOURCE_ASM);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryOob, LongVectorOob) {
+TEST_F(NegativeGpuAVArrayOob, LongVectorOob) {
     AddRequiredFeature(vkt::Feature::longVector);
     AddRequiredExtensions(VK_EXT_SHADER_LONG_VECTOR_EXTENSION_NAME);
 
@@ -280,8 +280,8 @@ TEST_F(NegativeGpuAVSharedMemoryOob, LongVectorOob) {
     TestHelper(shader_source, 5, 5);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryOob, SlangNestedStruct) {
-    RETURN_IF_SKIP(InitSharedMemoryOob());
+TEST_F(NegativeGpuAVArrayOob, SlangNestedStruct) {
+    RETURN_IF_SKIP(InitArrayOob());
     RETURN_IF_SKIP(CheckSlangSupport());
 
     const char* shader_source = R"slang(
@@ -328,12 +328,12 @@ TEST_F(NegativeGpuAVSharedMemoryOob, SlangNestedStruct) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", "2 is >= array size 2");
+    m_errorMonitor->SetDesiredErrorRegex("SPIRV-ArrayOob-OpAccessChain", "2 is >= array size 2");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVSharedMemoryOob, SpecConstantArraySize) {
+TEST_F(NegativeGpuAVArrayOob, SpecConstantArraySize) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -349,10 +349,10 @@ TEST_F(NegativeGpuAVSharedMemoryOob, SpecConstantArraySize) {
     uint32_t spec_value = 3;
     VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
     VkSpecializationInfo spec_info = {1, &entry, sizeof(uint32_t), &spec_value};
-    TestHelper(shader_source, 3, 3, "SPIRV-SharedMemoryOob-OpAccessChain", SPV_SOURCE_GLSL, &spec_info);
+    TestHelper(shader_source, 3, 3, "SPIRV-ArrayOob-OpAccessChain", SPV_SOURCE_GLSL, &spec_info);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryOob, MaxSharedMemorySize) {
+TEST_F(NegativeGpuAVArrayOob, MaxSharedMemorySize) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitGpuAvFramework(
         {{OBJECT_LAYER_NAME, "gpuav_shared_memory_data_race", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse}}, false));
@@ -399,12 +399,12 @@ TEST_F(NegativeGpuAVSharedMemoryOob, MaxSharedMemorySize) {
     m_command_buffer.End();
 
     const std::string regex = std::to_string(array_size) + " is >= array size " + std::to_string(array_size);
-    m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", regex.c_str());
+    m_errorMonitor->SetDesiredErrorRegex("SPIRV-ArrayOob-OpAccessChain", regex.c_str());
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVSharedMemoryOob, MeshShader) {
+TEST_F(NegativeGpuAVArrayOob, MeshShader) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::meshShader);
@@ -457,14 +457,14 @@ TEST_F(NegativeGpuAVSharedMemoryOob, MeshShader) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", "4 is >= array size 4");
+    m_errorMonitor->SetDesiredErrorRegex("SPIRV-ArrayOob-OpAccessChain", "4 is >= array size 4");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
 // Function-scope local array. Dynamic indexing keeps glslang/spirv-opt from promoting it
 // to SSA, so it stays as a Function-storage OpVariable.
-TEST_F(NegativeGpuAVSharedMemoryOob, FunctionStorageArrayOob) {
+TEST_F(NegativeGpuAVArrayOob, FunctionStorageArrayOob) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -485,7 +485,7 @@ TEST_F(NegativeGpuAVSharedMemoryOob, FunctionStorageArrayOob) {
 }
 
 // File-scope global array, which glslang lowers to Private storage.
-TEST_F(NegativeGpuAVSharedMemoryOob, PrivateStorageArrayOob) {
+TEST_F(NegativeGpuAVArrayOob, PrivateStorageArrayOob) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -507,7 +507,7 @@ TEST_F(NegativeGpuAVSharedMemoryOob, PrivateStorageArrayOob) {
 
 // Verify the host logger prints the variable name in the error message for each tracked
 // storage class.
-TEST_F(NegativeGpuAVSharedMemoryOob, VariableNameInMessageWorkgroup) {
+TEST_F(NegativeGpuAVArrayOob, VariableNameInMessageWorkgroup) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -518,10 +518,10 @@ TEST_F(NegativeGpuAVSharedMemoryOob, VariableNameInMessageWorkgroup) {
         }
     )glsl";
 
-    TestHelper(shader_source, 4, 4, "SPIRV-SharedMemoryOob-OpAccessChain", SPV_SOURCE_GLSL, nullptr, "workgroupArr");
+    TestHelper(shader_source, 4, 4, "SPIRV-ArrayOob-OpAccessChain", SPV_SOURCE_GLSL, nullptr, "workgroupArr");
 }
 
-TEST_F(NegativeGpuAVSharedMemoryOob, VariableNameInMessagePrivate) {
+TEST_F(NegativeGpuAVArrayOob, VariableNameInMessagePrivate) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -532,10 +532,10 @@ TEST_F(NegativeGpuAVSharedMemoryOob, VariableNameInMessagePrivate) {
         }
     )glsl";
 
-    TestHelper(shader_source, 4, 4, "SPIRV-SharedMemoryOob-OpAccessChain", SPV_SOURCE_GLSL, nullptr, "privateArr");
+    TestHelper(shader_source, 4, 4, "SPIRV-ArrayOob-OpAccessChain", SPV_SOURCE_GLSL, nullptr, "privateArr");
 }
 
-TEST_F(NegativeGpuAVSharedMemoryOob, VariableNameInMessageFunction) {
+TEST_F(NegativeGpuAVArrayOob, VariableNameInMessageFunction) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -551,5 +551,5 @@ TEST_F(NegativeGpuAVSharedMemoryOob, VariableNameInMessageFunction) {
         }
     )glsl";
 
-    TestHelper(shader_source, 4, 4, "SPIRV-SharedMemoryOob-OpAccessChain", SPV_SOURCE_GLSL, nullptr, "functionArr");
+    TestHelper(shader_source, 4, 4, "SPIRV-ArrayOob-OpAccessChain", SPV_SOURCE_GLSL, nullptr, "functionArr");
 }

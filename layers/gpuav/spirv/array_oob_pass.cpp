@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "shared_memory_oob_pass.h"
+#include "array_oob_pass.h"
 #include "containers/container_utils.h"
 #include "module.h"
 #include <iostream>
@@ -25,17 +25,16 @@
 namespace gpuav {
 namespace spirv {
 
-const static OfflineModule kOfflineModule = {instrumentation_shared_memory_oob_comp, instrumentation_shared_memory_oob_comp_size,
+const static OfflineModule kOfflineModule = {instrumentation_array_oob_comp, instrumentation_array_oob_comp_size,
                                              UseErrorPayloadVariable};
 
-const static OfflineFunction kOfflineFunction = {"inst_shared_memory_oob",
-                                                 instrumentation_shared_memory_oob_comp_function_0_offset};
+const static OfflineFunction kOfflineFunction = {"inst_array_oob", instrumentation_array_oob_comp_function_0_offset};
 
 static bool IsTrackedStorageClass(spv::StorageClass sc) {
     return sc == spv::StorageClassWorkgroup || sc == spv::StorageClassPrivate || sc == spv::StorageClassFunction;
 }
 
-bool SharedMemoryOobPass::IsTrackedPointerStorageClass(const Instruction* inst) const {
+bool ArrayOobPass::IsTrackedPointerStorageClass(const Instruction* inst) const {
     if (!inst) return false;
     spv::StorageClass sc = inst->StorageClass();  // OpVariable
     if (sc == spv::StorageClassMax) {
@@ -47,9 +46,9 @@ bool SharedMemoryOobPass::IsTrackedPointerStorageClass(const Instruction* inst) 
     return IsTrackedStorageClass(sc);
 }
 
-SharedMemoryOobPass::SharedMemoryOobPass(Module& module) : Pass(module, kOfflineModule) {}
+ArrayOobPass::ArrayOobPass(Module& module) : Pass(module, kOfflineModule) {}
 
-uint32_t SharedMemoryOobPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
+uint32_t ArrayOobPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const uint32_t function_def = GetLinkFunction(link_function_id_, kOfflineFunction);
     const uint32_t bool_type = type_manager_.GetTypeBool().Id();
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
@@ -71,8 +70,8 @@ uint32_t SharedMemoryOobPass::CreateFunctionCall(BasicBlock& block, InstructionI
     return function_result;
 }
 
-bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, BasicBlock& block, InstructionIt& inst_it,
-                                                  const Instruction& inst, InstructionMeta& meta) {
+bool ArrayOobPass::RequiresInstrumentation(const Function& function, BasicBlock& block, InstructionIt& inst_it,
+                                           const Instruction& inst, InstructionMeta& meta) {
     const spv::Op opcode = (spv::Op)inst.Opcode();
 
     if (opcode == spv::OpVectorExtractDynamic || opcode == spv::OpVectorInsertDynamic) {
@@ -89,9 +88,6 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
 
         const uint32_t ptr_id = vector_inst->Operand(0);
 
-        // Walk back through chained access chains to a stable base. Module-scope variables are
-        // tracked by the type manager; function-scope OpVariables (and other pointer-producing
-        // instructions) are reachable via Function::FindInstruction.
         const Variable* variable = type_manager_.FindVariableById(ptr_id);
         const Instruction* base_inst = function.FindInstruction(ptr_id);
         while (base_inst && base_inst->IsNonPtrAccessChain()) {
@@ -123,8 +119,6 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
         return false;
     }
 
-    // Walk back through chained access chains to a stable base. See the dynamic-vector branch
-    // above for the module-scope vs. function-scope lookup pattern.
     const uint32_t base_id = inst.Operand(0);
     const Variable* variable = type_manager_.FindVariableById(base_id);
     const Instruction* chain_inst = function.FindInstruction(base_id);
@@ -143,8 +137,6 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
     meta.variable_id = leaf_inst->ResultId();
     meta.target_instruction = &inst;
 
-    // Start the type walk from the direct base operand's pointee type, not the root variable's type,
-    // because Slang (and potentially other compilers) can chain access chains.
     const Instruction* base_inst = function.FindInstruction(base_id);
     const Type* base_ptr_type = base_inst ? type_manager_.FindTypeById(base_inst->TypeId()) : nullptr;
     if (!base_ptr_type) {
@@ -154,7 +146,6 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
     assert(base_ptr_type);
     const Type* pointee_type = type_manager_.FindChildType(*base_ptr_type, 0);
 
-    // Word(3) is the base pointer, Word(4..Length()-1) are indices
     uint32_t dim_index = 0;
     for (uint32_t i = 4; i < inst.Length(); ++i) {
         uint32_t idx_id = inst.Word(i);
@@ -189,7 +180,7 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
     return !meta.checks.empty();
 }
 
-bool SharedMemoryOobPass::Instrument() {
+bool ArrayOobPass::Instrument() {
     for (Function& function : module_.functions_) {
         if (!function.called_from_target_) {
             continue;
@@ -228,8 +219,8 @@ bool SharedMemoryOobPass::Instrument() {
     return instrumentations_count_ != 0;
 }
 
-void SharedMemoryOobPass::PrintDebugInfo() const {
-    std::cout << "SharedMemoryOobPass instrumentation count: " << instrumentations_count_ << '\n';
+void ArrayOobPass::PrintDebugInfo() const {
+    std::cout << "ArrayOobPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 
 }  // namespace spirv

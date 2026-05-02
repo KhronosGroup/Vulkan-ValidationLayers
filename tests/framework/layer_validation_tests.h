@@ -328,9 +328,9 @@ class GpuAVSharedMemoryDataRaceTest : public GpuAVTest {
     void InitSharedMemoryDataRace(uint32_t message_limit = 1);
 };
 
-class GpuAVSharedMemoryOobTest : public GpuAVTest {
+class GpuAVArrayOobTest : public GpuAVTest {
   public:
-    void InitSharedMemoryOob();
+    void InitArrayOob();
 };
 
 class DebugPrintfTests : public VkLayerTest {

@@ -335,6 +335,7 @@ target_sources(vvl PRIVATE
     gpuav/instrumentation/gpuav_shader_instrumentor.h
     gpuav/instrumentation/gpuav_instrumentation.h
     gpuav/instrumentation/gpuav_instrumentation.cpp
+    gpuav/instrumentation/array_oob.cpp
     gpuav/instrumentation/buffer_device_address.cpp
     gpuav/instrumentation/descriptor_checks.h
     gpuav/instrumentation/descriptor_checks.cpp
@@ -344,7 +345,6 @@ target_sources(vvl PRIVATE
     gpuav/instrumentation/register_validation.h
     gpuav/instrumentation/sanitizer.cpp
     gpuav/instrumentation/shared_memory_data_race.cpp
-    gpuav/instrumentation/shared_memory_oob.cpp
     gpuav/instrumentation/trace_ray.cpp
     gpuav/instrumentation/vertex_attribute_fetch_oob.cpp
     gpuav/resources/gpuav_state_trackers.cpp

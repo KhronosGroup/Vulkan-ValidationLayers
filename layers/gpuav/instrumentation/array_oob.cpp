@@ -22,8 +22,8 @@
 
 namespace gpuav {
 
-void RegisterSharedMemoryOobValidation(Validator& gpuav, CommandBufferSubState& cb) {
-    if (!gpuav.gpuav_settings.shader_instrumentation.shared_memory_oob) {
+void RegisterArrayOobValidation(Validator& gpuav, CommandBufferSubState& cb) {
+    if (!gpuav.gpuav_settings.shader_instrumentation.array_oob) {
         return;
     }
 
@@ -34,7 +34,7 @@ void RegisterSharedMemoryOobValidation(Validator& gpuav, CommandBufferSubState& 
                std::string& out_error_msg, std::string& out_vuid_msg) {
                 using namespace glsl;
                 bool error_found = false;
-                if (GetErrorGroup(error_record) != kErrorGroup_SharedMemoryOob) {
+                if (GetErrorGroup(error_record) != kErrorGroup_ArrayOob) {
                     return error_found;
                 }
                 error_found = true;
@@ -50,7 +50,7 @@ void RegisterSharedMemoryOobValidation(Validator& gpuav, CommandBufferSubState& 
                 const uint32_t instruction_position_offset = error_record[kHeader_StageInstructionIdOffset] & kInstructionId_Mask;
 
                 std::ostringstream strm;
-                strm << "Shared memory variable \"";
+                strm << "Variable \"";
                 if (instrumented_shader) {
                     ::spirv::FindGlobalName(strm, instrumented_shader->original_spirv, (uint32_t)spv::OpVariable, variable_id);
                 } else {
@@ -73,7 +73,7 @@ void RegisterSharedMemoryOobValidation(Validator& gpuav, CommandBufferSubState& 
                 }
                 strm << GetSpirvSpecLink(opcode);
 
-                out_vuid_msg = std::string("SPIRV-SharedMemoryOob-") + string_SpvOpcode(opcode);
+                out_vuid_msg = std::string("SPIRV-ArrayOob-") + string_SpvOpcode(opcode);
 
                 out_error_msg += strm.str();
                 return error_found;

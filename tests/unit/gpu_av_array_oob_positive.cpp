@@ -13,19 +13,19 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/shader_helper.h"
 
-void GpuAVSharedMemoryOobTest::InitSharedMemoryOob() {
+void GpuAVArrayOobTest::InitArrayOob() {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 }
 
-class PositiveGpuAVSharedMemoryOob : public GpuAVSharedMemoryOobTest {
+class PositiveGpuAVArrayOob : public GpuAVArrayOobTest {
   protected:
     void TestHelper(const char* source);
 };
 
-void PositiveGpuAVSharedMemoryOob::TestHelper(const char* shader_source) {
-    RETURN_IF_SKIP(InitSharedMemoryOob());
+void PositiveGpuAVArrayOob::TestHelper(const char* shader_source) {
+    RETURN_IF_SKIP(InitArrayOob());
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -46,7 +46,7 @@ void PositiveGpuAVSharedMemoryOob::TestHelper(const char* shader_source) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveGpuAVSharedMemoryOob, Simple1DInBounds) {
+TEST_F(PositiveGpuAVArrayOob, Simple1DInBounds) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 4) in;
@@ -62,7 +62,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, Simple1DInBounds) {
     TestHelper(shader_source);
 }
 
-TEST_F(PositiveGpuAVSharedMemoryOob, Array2DInBounds) {
+TEST_F(PositiveGpuAVArrayOob, Array2DInBounds) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -78,7 +78,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, Array2DInBounds) {
     TestHelper(shader_source);
 }
 
-TEST_F(PositiveGpuAVSharedMemoryOob, StructArrayInBounds) {
+TEST_F(PositiveGpuAVArrayOob, StructArrayInBounds) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -95,7 +95,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, StructArrayInBounds) {
     TestHelper(shader_source);
 }
 
-TEST_F(PositiveGpuAVSharedMemoryOob, BoundaryIndex) {
+TEST_F(PositiveGpuAVArrayOob, BoundaryIndex) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -110,7 +110,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, BoundaryIndex) {
     TestHelper(shader_source);
 }
 
-TEST_F(PositiveGpuAVSharedMemoryOob, VectorExtractInBounds) {
+TEST_F(PositiveGpuAVArrayOob, VectorExtractInBounds) {
     const char* shader_source = R"spirv(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
@@ -149,7 +149,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, VectorExtractInBounds) {
                OpFunctionEnd
     )spirv";
 
-    RETURN_IF_SKIP(InitSharedMemoryOob());
+    RETURN_IF_SKIP(InitArrayOob());
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -170,7 +170,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, VectorExtractInBounds) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveGpuAVSharedMemoryOob, LongVectorInBounds) {
+TEST_F(PositiveGpuAVArrayOob, LongVectorInBounds) {
     AddRequiredFeature(vkt::Feature::longVector);
     AddRequiredExtensions(VK_EXT_SHADER_LONG_VECTOR_EXTENSION_NAME);
 
@@ -191,8 +191,8 @@ TEST_F(PositiveGpuAVSharedMemoryOob, LongVectorInBounds) {
     TestHelper(shader_source);
 }
 
-TEST_F(PositiveGpuAVSharedMemoryOob, SlangNestedStruct) {
-    RETURN_IF_SKIP(InitSharedMemoryOob());
+TEST_F(PositiveGpuAVArrayOob, SlangNestedStruct) {
+    RETURN_IF_SKIP(InitArrayOob());
     RETURN_IF_SKIP(CheckSlangSupport());
 
     const char* shader_source = R"slang(
@@ -237,7 +237,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, SlangNestedStruct) {
 }
 
 // Mixed constant + dynamic indexing on a 2D array, both in bounds.
-TEST_F(PositiveGpuAVSharedMemoryOob, MixedConstantDynamicArray2D) {
+TEST_F(PositiveGpuAVArrayOob, MixedConstantDynamicArray2D) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -257,7 +257,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, MixedConstantDynamicArray2D) {
 
 // Vector accessed by OpAccessChain with a constant index (the GLSL .x writes an access chain
 // with a literal 0 index).
-TEST_F(PositiveGpuAVSharedMemoryOob, VectorAccessChainConstantIndex) {
+TEST_F(PositiveGpuAVArrayOob, VectorAccessChainConstantIndex) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -275,7 +275,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, VectorAccessChainConstantIndex) {
 
 // OpCompositeExtract is not matched by the pass; this just confirms a pattern that lowers
 // to OpCompositeExtract doesn't break anything.
-TEST_F(PositiveGpuAVSharedMemoryOob, CompositeExtractConstantIndex) {
+TEST_F(PositiveGpuAVArrayOob, CompositeExtractConstantIndex) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -292,7 +292,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, CompositeExtractConstantIndex) {
 }
 
 // OpVectorExtractDynamic with a literal constant index, in bounds.
-TEST_F(PositiveGpuAVSharedMemoryOob, VectorExtractDynamicConstantIndex) {
+TEST_F(PositiveGpuAVArrayOob, VectorExtractDynamicConstantIndex) {
     const char* shader_source = R"spirv(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
@@ -331,7 +331,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, VectorExtractDynamicConstantIndex) {
                OpFunctionEnd
     )spirv";
 
-    RETURN_IF_SKIP(InitSharedMemoryOob());
+    RETURN_IF_SKIP(InitArrayOob());
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -353,7 +353,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, VectorExtractDynamicConstantIndex) {
 }
 
 // Function-scope local array, dynamic index always in bounds.
-TEST_F(PositiveGpuAVSharedMemoryOob, FunctionStorageArrayInBounds) {
+TEST_F(PositiveGpuAVArrayOob, FunctionStorageArrayInBounds) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -370,7 +370,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, FunctionStorageArrayInBounds) {
 }
 
 // File-scope global array, which glslang lowers to Private storage. Dynamic index in bounds.
-TEST_F(PositiveGpuAVSharedMemoryOob, PrivateStorageArrayInBounds) {
+TEST_F(PositiveGpuAVArrayOob, PrivateStorageArrayInBounds) {
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -386,7 +386,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, PrivateStorageArrayInBounds) {
     TestHelper(shader_source);
 }
 
-TEST_F(PositiveGpuAVSharedMemoryOob, VectorInsertInBounds) {
+TEST_F(PositiveGpuAVArrayOob, VectorInsertInBounds) {
     const char* shader_source = R"spirv(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
@@ -427,7 +427,7 @@ TEST_F(PositiveGpuAVSharedMemoryOob, VectorInsertInBounds) {
                OpFunctionEnd
     )spirv";
 
-    RETURN_IF_SKIP(InitSharedMemoryOob());
+    RETURN_IF_SKIP(InitArrayOob());
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};

@@ -27,6 +27,11 @@
 
 // We have found having spirv code defined the header can lead to MSVC not recognizing changes
 
+extern const uint32_t instrumentation_array_oob_comp_size;
+extern const uint32_t instrumentation_array_oob_comp[];
+// These offset match the function in the order they are declared in the GLSL source
+extern const uint32_t instrumentation_array_oob_comp_function_0_offset;
+
 extern const uint32_t instrumentation_buffer_device_address_comp_size;
 extern const uint32_t instrumentation_buffer_device_address_comp[];
 // These offset match the function in the order they are declared in the GLSL source
@@ -91,11 +96,6 @@ extern const uint32_t instrumentation_shared_memory_data_race_comp_function_2_of
 extern const uint32_t instrumentation_shared_memory_data_race_comp_function_3_offset;
 extern const uint32_t instrumentation_shared_memory_data_race_comp_function_4_offset;
 extern const uint32_t instrumentation_shared_memory_data_race_comp_function_5_offset;
-
-extern const uint32_t instrumentation_shared_memory_oob_comp_size;
-extern const uint32_t instrumentation_shared_memory_oob_comp[];
-// These offset match the function in the order they are declared in the GLSL source
-extern const uint32_t instrumentation_shared_memory_oob_comp_function_0_offset;
 
 extern const uint32_t instrumentation_trace_ray_comp_size;
 extern const uint32_t instrumentation_trace_ray_comp[];

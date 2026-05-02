@@ -25,7 +25,7 @@ void RegisterMeshShadingValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterVertexAttributeFetchOobValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterSharedMemoryDataRaceValidation(Validator& gpuav, CommandBufferSubState& cb);
-void RegisterSharedMemoryOobValidation(Validator& gpuav, CommandBufferSubState& cb);
+void RegisterArrayOobValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterTraceRayValidation(Validator& gpuav, CommandBufferSubState& cb);
 
 }  // namespace gpuav

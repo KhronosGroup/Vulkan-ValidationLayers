@@ -80,6 +80,11 @@ khronos_validation.gpu_dump_to_stdout = false
 # Validate acceleration structures references in TLAS build commands.
 khronos_validation.gpuav_acceleration_structures_builds = true
 
+# Array Out of Bounds Detection
+# =====================
+# Detects out-of-bounds accesses on arrays and vectors in Workgroup, Private, and Function storage during GPU-AV shader instrumentation.
+khronos_validation.gpuav_array_oob = true
+
 # Out of bounds buffer device addresses
 # =====================
 # Check for invalid access using buffer device address
@@ -184,11 +189,6 @@ khronos_validation.gpuav_shaders_to_instrument =
 # =====================
 # Detects data races on shared memory (Compute shaders only). Limitations: This does not handle mixing atomics and non-atomics on the same locations without a barrier in between, this could lead to false positives. This assumes barrier() is used for all shared memory synchronization.
 khronos_validation.gpuav_shared_memory_data_race = true
-
-# Shared Memory Out of Bounds Detection
-# =====================
-# Detects out-of-bounds accesses on shared memory arrays and vectors in Compute, Task, and Mesh shaders.
-khronos_validation.gpuav_shared_memory_oob = true
 
 # RayQuery SPIR-V instructions
 # =====================

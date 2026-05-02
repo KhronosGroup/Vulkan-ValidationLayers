@@ -22,11 +22,13 @@
 namespace gpuav {
 namespace spirv {
 
-// Note - what makes SharedMemory OOB tracking much simpler than the SSBO/UBO OOB check is there is no "bounding" of memory to shared memory. We can statically determine the size of an array and know exactly how many elements it has, unlike a SSBO where you are allowed to only bound half an array with memory
-class SharedMemoryOobPass : public Pass {
+// Bound checks for array/vector accesses to variables in storage classes whose size is
+// statically determined by the SPIR-V type (Workgroup, Private, Function), unlike SSBO/UBO
+// where the descriptor binding controls the actual memory bound.
+class ArrayOobPass : public Pass {
   public:
-    SharedMemoryOobPass(Module& module);
-    const char* Name() const final { return "SharedMemoryOobPass"; }
+    ArrayOobPass(Module& module);
+    const char* Name() const final { return "ArrayOobPass"; }
     bool Instrument() final;
     void PrintDebugInfo() const final;
 
