@@ -38,17 +38,20 @@ class ArrayOobPass : public Pass {
         uint32_t bound;
         uint32_t access_type;  // 0 = array, 1 = vector, 2 = matrix
         uint32_t dim_index;    // which dimension in a multi-dimensional access
+        // Word index in the target instruction (OpAccessChain / vector dynamic op) holding index_id.
+        uint32_t index_spirv_word;
     };
 
     struct InstructionMeta {
-        const Instruction* target_instruction = nullptr;
+        uint32_t inst_position_offset = 0;
         uint32_t variable_id = 0;
         std::vector<IndexCheck> checks;
     };
 
     bool RequiresInstrumentation(const Function& function, BasicBlock& block, InstructionIt& inst_it, const Instruction& inst,
                                  InstructionMeta& meta);
-    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
+    // Unsafe: emit inst_array_oob only. Safe: emit inst_array_oob then OpSelect (in-bounds ? index : 0) and patch the target.
+    void EmitBoundsChecks(BasicBlock& block, InstructionIt* inst_it, Instruction& target_inst, const InstructionMeta& meta);
     bool IsTrackedPointerStorageClass(const Instruction* inst) const;
 
     uint32_t link_function_id_ = 0;

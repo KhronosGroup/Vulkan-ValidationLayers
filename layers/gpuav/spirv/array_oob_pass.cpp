@@ -16,8 +16,10 @@
 #include "array_oob_pass.h"
 #include "containers/container_utils.h"
 #include "module.h"
+#include <cassert>
 #include <iostream>
 #include <spirv/unified1/spirv.hpp>
+#include <vector>
 
 #include "generated/gpuav_offline_spirv.h"
 #include "type_manager.h"
@@ -48,26 +50,50 @@ bool ArrayOobPass::IsTrackedPointerStorageClass(const Instruction* inst) const {
 
 ArrayOobPass::ArrayOobPass(Module& module) : Pass(module, kOfflineModule) {}
 
-uint32_t ArrayOobPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
+void ArrayOobPass::EmitBoundsChecks(BasicBlock& block, InstructionIt* inst_it, Instruction& target_inst,
+                                    const InstructionMeta& meta) {
     const uint32_t function_def = GetLinkFunction(link_function_id_, kOfflineFunction);
     const uint32_t bool_type = type_manager_.GetTypeBool().Id();
-    const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
-    const uint32_t inst_position_id = type_manager_.GetConstantUInt32(inst_position).Id();
+    const uint32_t inst_position_id = type_manager_.GetConstantUInt32(meta.inst_position_offset).Id();
     const uint32_t variable_id_const = type_manager_.GetConstantUInt32(meta.variable_id).Id();
 
-    uint32_t function_result = 0;
+    // Operand ids still on the access chain / vector op (before any UpdateWord). `check.index_id` may be a CastToUint32
+    // rewriting for inst_array_oob; OpSelect must use the original integer type the consumer instruction expects.
+    std::vector<uint32_t> orig_index_ids;
+    orig_index_ids.reserve(meta.checks.size());
     for (const auto& check : meta.checks) {
-        function_result = module_.TakeNextId();
-        const uint32_t encoded_bound = check.bound | (check.access_type << 24) | (check.dim_index << 26);
-        const uint32_t bound_id = type_manager_.GetConstantUInt32(encoded_bound).Id();
-
-        block.CreateInstruction(
-            spv::OpFunctionCall,
-            {bool_type, function_result, function_def, check.index_id, bound_id, inst_position_id, variable_id_const}, inst_it);
+        orig_index_ids.push_back(target_inst.Word(check.index_spirv_word));
     }
 
-    module_.need_log_error_ = true;
-    return function_result;
+    for (size_t ci = 0; ci < meta.checks.size(); ++ci) {
+        const auto& check = meta.checks[ci];
+        const uint32_t orig_index_id = orig_index_ids[ci];
+        const uint32_t encoded_bound = check.bound | (check.access_type << 24) | (check.dim_index << 26);
+        const uint32_t bound_id = type_manager_.GetConstantUInt32(encoded_bound).Id();
+        const uint32_t ok_id = module_.TakeNextId();
+        block.CreateInstruction(spv::OpFunctionCall,
+                                {bool_type, ok_id, function_def, check.index_id, bound_id, inst_position_id, variable_id_const},
+                                inst_it);
+        module_.need_log_error_ = true;
+
+        if (module_.settings_.safe_mode) {
+            const Instruction* orig_def = block.function_->FindInstruction(orig_index_id);
+            const Constant* orig_const = type_manager_.FindConstantById(orig_index_id);
+            const Type* select_type = nullptr;
+            if (orig_def) {
+                select_type = type_manager_.FindTypeById(orig_def->TypeId());
+            } else if (orig_const) {
+                select_type = &orig_const->type_;
+            }
+            assert(select_type);
+            const uint32_t select_type_id = select_type->Id();
+            const uint32_t zero_id = type_manager_.CreateConstantScalar(0, *select_type).Id();
+            // inst_array_oob returns true iff index is in bounds. Force index to 0 when OOB (no CFG split).
+            const uint32_t safe_id = module_.TakeNextId();
+            block.CreateInstruction(spv::OpSelect, {select_type_id, safe_id, ok_id, orig_index_id, zero_id}, inst_it);
+            target_inst.UpdateWord(check.index_spirv_word, safe_id);
+        }
+    }
 }
 
 bool ArrayOobPass::RequiresInstrumentation(const Function& function, BasicBlock& block, InstructionIt& inst_it,
@@ -111,9 +137,11 @@ bool ArrayOobPass::RequiresInstrumentation(const Function& function, BasicBlock&
         uint32_t index_id = (opcode == spv::OpVectorExtractDynamic) ? inst.Operand(1) : inst.Operand(2);
         index_id = CastToUint32(index_id, block, &inst_it);
 
-        meta.target_instruction = &inst;
+        meta.inst_position_offset = inst.GetPositionOffset();
         meta.variable_id = leaf_inst->ResultId();
-        meta.checks.push_back({index_id, vector_type->meta_.vector.component_count, 1, 0});
+        // OpVectorExtractDynamic: Index is word 4. OpVectorInsertDynamic: Index is word 5 (Component is word 4).
+        const uint32_t index_word = (opcode == spv::OpVectorExtractDynamic) ? 4u : 5u;
+        meta.checks.push_back({index_id, vector_type->meta_.vector.component_count, 1, 0, index_word});
         return true;
     } else if (!inst.IsNonPtrAccessChain()) {
         return false;
@@ -135,7 +163,7 @@ bool ArrayOobPass::RequiresInstrumentation(const Function& function, BasicBlock&
         return false;
     }
     meta.variable_id = leaf_inst->ResultId();
-    meta.target_instruction = &inst;
+    meta.inst_position_offset = inst.GetPositionOffset();
 
     const Instruction* base_inst = function.FindInstruction(base_id);
     const Type* base_ptr_type = base_inst ? type_manager_.FindTypeById(base_inst->TypeId()) : nullptr;
@@ -158,7 +186,7 @@ bool ArrayOobPass::RequiresInstrumentation(const Function& function, BasicBlock&
                 const bool is_array = (pointee_type->spv_type_ == SpvType::kArray);
                 const uint32_t bound = is_array ? pointee_type->meta_.array.length : pointee_type->meta_.vector.component_count;
                 const uint32_t access_type = is_array ? 0 : 1;
-                meta.checks.push_back({idx_id, bound, access_type, dim_index});
+                meta.checks.push_back({idx_id, bound, access_type, dim_index, i});
                 dim_index++;
                 pointee_type = type_manager_.FindChildType(*pointee_type, 0);
             } break;
@@ -185,6 +213,7 @@ bool ArrayOobPass::Instrument() {
         if (!function.called_from_target_) {
             continue;
         }
+
         for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 
@@ -199,7 +228,7 @@ bool ArrayOobPass::Instrument() {
 
             auto& block_instructions = current_block.instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                const Instruction& inst = *(inst_it->get());
+                Instruction& inst = *inst_it->get();
 
                 InstructionMeta meta;
                 if (!RequiresInstrumentation(function, current_block, inst_it, inst, meta)) {
@@ -211,7 +240,7 @@ bool ArrayOobPass::Instrument() {
                 }
                 instrumentations_count_++;
 
-                CreateFunctionCall(current_block, &inst_it, meta);
+                EmitBoundsChecks(current_block, &inst_it, inst, meta);
             }
         }
     }

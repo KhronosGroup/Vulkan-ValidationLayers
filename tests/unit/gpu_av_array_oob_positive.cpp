@@ -62,6 +62,26 @@ TEST_F(PositiveGpuAVArrayOob, Simple1DInBounds) {
     TestHelper(shader_source);
 }
 
+// Safe mode uses OpSelect with the access chain's original index type; this uses a signed 32-bit index (CastToUint32 feeds
+// inst_array_oob, but the chain keeps OpTypeInt signed).
+TEST_F(PositiveGpuAVArrayOob, WorkgroupArraySignedIndexFromSsboInBounds) {
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer StorageBuffer {
+            int idx;
+            uint data[];
+        } ssbo;
+        shared uint arr[4];
+        void main() {
+            arr[ssbo.idx] = 7u;
+            ssbo.data[0] = arr[0];
+        }
+    )glsl";
+
+    TestHelper(shader_source);
+}
+
 TEST_F(PositiveGpuAVArrayOob, Array2DInBounds) {
     const char* shader_source = R"glsl(
         #version 450
