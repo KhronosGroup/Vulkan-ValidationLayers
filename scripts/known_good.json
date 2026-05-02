@@ -43,7 +43,7 @@
                 "-DSPIRV_SKIP_TESTS=ON",
                 "-DSPIRV_SKIP_EXECUTABLES=OFF"
             ],
-            "commit": "6c0666ec2000ba74ed12df5f6e807a7f721402a1"
+            "commit": "0539c81f69a3daeb706fd3477dca61435b475156"
         },
         {
             "name": "mimalloc",
@@ -84,7 +84,7 @@
             "sub_dir": "glslang",
             "build_dir": "glslang/build",
             "install_dir": "glslang/build/install",
-            "commit": "aa8e19e05f8b30d14b894fb2d94875bb6c8be3c6",
+            "commit": "275822a6261ee689aadb1da5f09a0ec2f058685c",
             "cmake_options": [
                 "-DENABLE_OPT=OFF"
             ],
