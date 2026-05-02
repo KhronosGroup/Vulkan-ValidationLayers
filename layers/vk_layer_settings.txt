@@ -80,6 +80,11 @@ khronos_validation.gpu_dump_to_stdout = false
 # Validate acceleration structures references in TLAS build commands.
 khronos_validation.gpuav_acceleration_structures_builds = true
 
+# Array Out of Bounds Detection
+# =====================
+# Detects out-of-bounds accesses on arrays and vectors in Workgroup, Private, and Function storage during GPU-AV shader instrumentation.
+khronos_validation.gpuav_array_oob = true
+
 # Out of bounds buffer device addresses
 # =====================
 # Check for invalid access using buffer device address
