@@ -22,13 +22,6 @@
 
 namespace gpuav {
 
-static std::string GetSpirvSpecLink(const uint32_t opcode) {
-    // Currently the Working Group decided to not provide "real" VUIDs as it would become duplicating the SPIR-V spec
-    // So these are not "UNASSIGNED", but instead are "SPIRV" VUs because we can point to the instruction in the SPIR-V spec
-    // (https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7853)
-    return "\nSee more at https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#" + std::string(string_SpvOpcode(opcode));
-}
-
 void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
     if (!gpuav.gpuav_settings.shader_instrumentation.sanitizer) {
         return;
