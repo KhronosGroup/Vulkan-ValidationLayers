@@ -683,8 +683,6 @@ bool Device::manual_PreCallValidateCmdBindVertexBuffers3KHR(VkCommandBuffer comm
     bool skip = false;
 
     const auto& error_obj = context.error_obj;
-    skip |= context.ValidateDeviceAddressFlags(error_obj.location.dot(Field::pBindingInfos).dot(Field::addressFlags),
-                                               pBindingInfos->addressFlags);
 
     if (firstBinding >= phys_dev_props.limits.maxVertexInputBindings) {
         skip |= LogError("VUID-vkCmdBindVertexBuffers3KHR-firstBinding-13070", commandBuffer,
@@ -701,6 +699,8 @@ bool Device::manual_PreCallValidateCmdBindVertexBuffers3KHR(VkCommandBuffer comm
         const Location binding_info_loc = error_obj.location.dot(Field::pBindingInfos, i);
         const VkBindVertexBuffer3InfoKHR& info = pBindingInfos[i];
         const VkStridedDeviceAddressRangeKHR& address_range = info.addressRange;
+
+        skip |= context.ValidateDeviceAddressFlags(binding_info_loc.dot(Field::addressFlags), info.addressFlags);
 
         if (address_range.size == 0) {
             if (!enabled_features.nullDescriptor) {
