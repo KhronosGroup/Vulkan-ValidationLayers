@@ -4232,13 +4232,13 @@ TEST_F(PositiveDescriptorHeap, DescriptorIndexing) {
         *(uint32_t*)(ubo_data + (ubo_offset * i)) = i;
     }
     // The final 32 bytes of the buffer will look like
-    // [..., 0, ubo_offset * 2, ubo_offset * 4, ubo_offset * 3]
+    // [..., 0, resource_stride * 2, resource_stride * 4, resource_stride * 3]
     VkDeviceSize indirect_array_offset = ubo_offset * 16;
     uint32_t* indirect_array_data = (uint32_t*)(ubo_data + (indirect_array_offset));
     indirect_array_data[0] = 0;
-    indirect_array_data[1] = (uint32_t)(ubo_offset * 2);
-    indirect_array_data[2] = (uint32_t)(ubo_offset * 4);
-    indirect_array_data[3] = (uint32_t)(ubo_offset * 3);
+    indirect_array_data[1] = (uint32_t)(resource_stride * 2);
+    indirect_array_data[2] = (uint32_t)(resource_stride * 4);
+    indirect_array_data[3] = (uint32_t)(resource_stride * 3);
 
     uint32_t push_data_uint[8] = {0, 1, 2, 4, 8, 16, 32, 64};
     VkDeviceAddress indirect_ubo = ubo_buffer.Address();
@@ -4283,19 +4283,19 @@ TEST_F(PositiveDescriptorHeap, DescriptorIndexing) {
             uint ssbo[16];
         };
 
-        layout (set = 0, binding = 1) buffer UBO1 {
+        layout (set = 0, binding = 1) uniform UBO1 {
             uint data;
         } constant_offset[16];
 
-        layout (set = 0, binding = 2) buffer UBO2 {
+        layout (set = 0, binding = 2) uniform UBO2 {
             uint data;
         } push_index[16];
 
-        layout (set = 0, binding = 3) buffer UBO3 {
+        layout (set = 0, binding = 3) uniform UBO3 {
             uint data;
         } indirect_index[16];
 
-        layout (set = 0, binding = 4) buffer UBO4 {
+        layout (set = 0, binding = 4) uniform UBO4 {
             uint data;
         } indirect_index_array[16];
 
