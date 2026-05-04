@@ -4509,7 +4509,8 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
             present_id = present_id_info->pPresentIds[i];
         }
 
-        if (present_timings_info && present_timings_info->pTimingInfos[i].presentStageQueries) {
+        if (present_timings_info && present_timings_info->pTimingInfos &&
+            present_timings_info->pTimingInfos[i].presentStageQueries) {
             const Swapchain::PresentTimingInfo presentTimingInfo{
                 CountSetBits(present_timings_info->pTimingInfos[i].presentStageQueries), present_submission_ref};
             swapchain_data->present_timing_stage_queries.push_back({present_id, presentTimingInfo});
