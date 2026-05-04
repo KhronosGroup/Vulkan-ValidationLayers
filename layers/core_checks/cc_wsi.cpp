@@ -1031,6 +1031,10 @@ bool CoreChecks::ValidatePresentTimingsInfo(VkQueue queue, const vvl::Swapchain&
                                             const Location& present_info_loc) const {
     bool skip = false;
 
+    if (!present_timings_info.pTimingInfos) {
+        return skip;
+    }
+
     const VkPresentTimingInfoEXT& timing_info = present_timings_info.pTimingInfos[index];
     if (timing_info.presentStageQueries > 0 && swapchain_state.present_timing_queue_size == 0) {
         // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4623
