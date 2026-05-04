@@ -707,8 +707,7 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
         }
     }
     if (!cb_state.descriptor_heap.sampler_range.empty()) {
-        ss << "vkCmdBindSamplerHeapEXT last bound the sampler heap to "
-           << string_range_hex(cb_state.descriptor_heap.resource_range);
+        ss << "vkCmdBindSamplerHeapEXT last bound the sampler heap to " << string_range_hex(cb_state.descriptor_heap.sampler_range);
         if (!cb_state.descriptor_heap.sampler_reserved.empty()) {
             ss << " (reserved range " << string_range_hex(cb_state.descriptor_heap.sampler_reserved) << ")";
         } else {
