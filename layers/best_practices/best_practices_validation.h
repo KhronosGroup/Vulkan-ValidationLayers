@@ -228,6 +228,8 @@ class BestPractices : public vvl::DeviceProxy {
                                      const ErrorObject& error_obj) const override;
     bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
                                            const ErrorObject& error_obj) const override;
+    void PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
+                                   const RecordObject& record_obj) override;
     bool CheckEventSignalingState(const bp_state::CommandBufferSubState& command_buffer, VkEvent event,
                                   const Location& cb_loc) const;
     bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,

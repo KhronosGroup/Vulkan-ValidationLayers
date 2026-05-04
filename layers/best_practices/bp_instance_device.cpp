@@ -244,14 +244,11 @@ struct EventValidator {
             if (info.first_state_change_is_signal) {
                 bool signaled = false;
                 if (auto* p_signaled = vvl::Find(signaling_state, event)) {
-                    // check local tracking map
+                    // at first check local tracking map
                     signaled = *p_signaled;
-                } else {
-                    // check global event state
-                    auto event_state = bp.Get<vvl::Event>(event);
-                    if (event_state) {
-                        signaled = event_state->signaled;
-                    }
+                } else if (auto event_state = bp.Get<vvl::Event>(event)) {
+                    // then check global event state
+                    signaled = event_state->signaled;
                 }
                 if (signaled) {
                     const LogObjectList objlist(cb.VkHandle(), event);

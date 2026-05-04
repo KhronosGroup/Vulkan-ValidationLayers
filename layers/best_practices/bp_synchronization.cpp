@@ -42,6 +42,14 @@ bool BestPractices::CheckDependencyInfo(const LogObjectList& objlist, const Loca
     return skip;
 }
 
+void BestPractices::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
+                                              const RecordObject& record_obj) {
+    device_state->ForEachShared<vvl::CommandBuffer>([event](const std::shared_ptr<vvl::CommandBuffer>& command_buffer) {
+        auto& sub_state = bp_state::SubState(*command_buffer.get());
+        sub_state.event_signaling_state.erase(event);
+    });
+}
+
 bool BestPractices::CheckEventSignalingState(const bp_state::CommandBufferSubState& command_buffer, VkEvent event,
                                              const Location& cb_loc) const {
     bool skip = false;
