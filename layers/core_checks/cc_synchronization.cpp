@@ -1274,14 +1274,22 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList& objlist, const Location
     const VkPipelineStageFlags2 expanded_pipeline_stages = sync_utils::ExpandPipelineStages(stage_mask, queue_flags);
 
     if (!enabled_features.rayQuery && (access_mask & VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR)) {
-        const VkPipelineStageFlags2 illegal_pipeline_stages =
-            AllVkPipelineShaderStageBits2 & ~VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
-        if (stage_mask & illegal_pipeline_stages) {
+        const bool is_sync2 = IsValueIn(stage_mask_loc.structure, {Struct::VkMemoryBarrier2, Struct::VkBufferMemoryBarrier2,
+                                                                   Struct::VkImageMemoryBarrier2, Struct::VkMemoryRangeBarrierKHR});
+        VkPipelineStageFlags2 must_include_stages = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR |
+                                                    VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
+                                                    VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        if (is_sync2) {
+            must_include_stages |= VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR;
+        }
+        if ((stage_mask & must_include_stages) == 0) {
             // Select right vuid based on enabled extensions
             const auto& vuid = vvl::GetAccessMaskRayQueryVUIDSelector(access_mask_loc, extensions);
-            skip |= LogError(vuid, objlist, stage_mask_loc, "contains pipeline stages %s.",
-                             sync_utils::StringPipelineStageFlags(stage_mask).c_str());
+            skip |= LogError(vuid, objlist, stage_mask_loc,
+                             "(%s) is missing a required stage for VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR in %s.",
+                             sync_utils::StringPipelineStageFlags(stage_mask).c_str(), access_mask_loc.Fields().c_str());
         }
+        access_mask &= ~VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     }
 
     // or if only generic memory accesses are specified (or we got a 0 mask)
