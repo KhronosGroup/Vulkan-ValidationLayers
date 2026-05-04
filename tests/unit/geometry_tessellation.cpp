@@ -1317,42 +1317,39 @@ TEST_F(NegativeGeometryTessellation, MismatchedTessellationExecutionModes) {
         GTEST_SKIP() << "Tessellation shaders not supported";
     }
 
-    std::string vuids[4] = {
-        "VUID-VkGraphicsPipelineCreateInfo-pStages-00732",
-        "VUID-VkGraphicsPipelineCreateInfo-pStages-00733",
-        "VUID-VkGraphicsPipelineCreateInfo-pStages-00734",
-        "VUID-VkGraphicsPipelineCreateInfo-pStages-00735",
+    std::string vuids[6] = {
+        "VUID-VkGraphicsPipelineCreateInfo-pStages-00732",  "VUID-VkGraphicsPipelineCreateInfo-pStages-00733",
+        "VUID-VkGraphicsPipelineCreateInfo-pStages-00734",  "VUID-VkGraphicsPipelineCreateInfo-pStages-00735",
+        "VUID-VkPipelineShaderStageCreateInfo-stage-00713", "VUID-VkPipelineShaderStageCreateInfo-stage-00713",
     };
 
-    std::string tesc_subdivision[4] = {
-        "",
-        "OpExecutionMode %main Quads",
-        "",
-        "",
+    std::string tesc_subdivision[6] = {
+        "", "OpExecutionMode %main Quads", "", "", "", "",
     };
 
-    std::string tese_subdivision[4] = {
+    std::string tese_subdivision[6] = {
         "",
         "OpExecutionMode %main Triangles",
         "OpExecutionMode %main Triangles",
         "OpExecutionMode %main Triangles",
+        "OpExecutionMode %main Triangles",
+        "OpExecutionMode %main Triangles",
     };
 
-    std::string tesc_output_vertices[4] = {
+    std::string tesc_output_vertices[6] = {
         "OpExecutionMode %main OutputVertices 4",
         "OpExecutionMode %main OutputVertices 4",
         "",
         "OpExecutionMode %main OutputVertices 4",
+        "OpExecutionMode %main OutputVertices 4096",
+        "OpExecutionMode %main OutputVertices 4096",
     };
 
-    std::string tese_output_vertices[4] = {
-        "",
-        "",
-        "",
-        "OpExecutionMode %main OutputVertices 3",
+    std::string tese_output_vertices[6] = {
+        "", "", "", "OpExecutionMode %main OutputVertices 3", "OpExecutionMode %main OutputVertices 4096", "",
     };
 
-    for (uint32_t i = 0; i < 4; ++i) {
+    for (uint32_t i = 0; i < 6; ++i) {
         std::string tesc_source = R"(
                OpCapability Tessellation
           %1 = OpExtInstImport "GLSL.std.450"
