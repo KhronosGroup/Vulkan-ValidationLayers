@@ -5781,7 +5781,7 @@ bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffe
 }
 
 bool CoreChecks::ValidateInheritanceInfoFramebuffer(const vvl::CommandBuffer& cb_state,
-                                                    const vvl::CommandBuffer& secondary_cb_state,
+                                                    const core::CommandBufferSubState& secondary_cb_state,
                                                     const VkCommandBufferInheritanceInfo& secondary_inheritance_info,
                                                     const Location& loc) const {
     bool skip = false;

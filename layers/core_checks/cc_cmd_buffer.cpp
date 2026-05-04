@@ -866,58 +866,99 @@ bool CoreChecks::ValidateSecondaryCommandBufferDescriptorHeapInheritance(const v
     return skip;
 }
 
+bool CoreChecks::ValidateSecondaryCommandBufferCustomResolve(const core::CommandBufferSubState& cb_sub_state,
+                                                             const core::CommandBufferSubState& secondary_sub_state,
+                                                             const vvl::RenderPass& rp_state,
+                                                             const Location& secondary_cb_loc) const {
+    bool skip = false;
+    if (!rp_state.UsesDynamicRendering()) {
+        return skip;
+    }
+    const bool rp_has_custom_resolve = (rp_state.GetRenderingFlags() & VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT) != 0;
+    if (rp_has_custom_resolve) {
+        if (!secondary_sub_state.custom_resolve.inherited_struct) {
+            const LogObjectList objlist(cb_sub_state.Handle(), secondary_sub_state.Handle());
+            skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-11500", objlist, secondary_cb_loc,
+                             "%s was not recorded with VkCustomResolveCreateInfoEXT chained in "
+                             "VkCommandBufferInheritanceInfo::pNext, but this render pass instance begin with "
+                             "VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT in VkRenderingInfo::flags.",
+                             FormatHandle(secondary_sub_state.base).c_str());
+        } else if (cb_sub_state.custom_resolve.started && !secondary_sub_state.custom_resolve.inherited_resolve) {
+            const LogObjectList objlist(cb_sub_state.Handle(), secondary_sub_state.Handle());
+            skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-11502", objlist, secondary_cb_loc,
+                             "%s was recorded with VkCustomResolveCreateInfoEXT::customResolve as VK_FALSE chained in "
+                             "VkCommandBufferInheritanceInfo::pNext but vkCmdBeginCustomResolveEXT has been called so it "
+                             "must be VK_TRUE.",
+                             FormatHandle(secondary_sub_state.base).c_str());
+        } else if (!cb_sub_state.custom_resolve.started && secondary_sub_state.custom_resolve.inherited_resolve) {
+            const LogObjectList objlist(cb_sub_state.Handle(), secondary_sub_state.Handle());
+            skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-11503", objlist, secondary_cb_loc,
+                             "%s was recorded with VkCustomResolveCreateInfoEXT::customResolve as VK_TRUE chained in "
+                             "VkCommandBufferInheritanceInfo::pNext but vkCmdBeginCustomResolveEXT has not been called so "
+                             "it must be VK_FALSE.",
+                             FormatHandle(secondary_sub_state.base).c_str());
+        }
+    } else if (secondary_sub_state.custom_resolve.inherited_struct) {
+        const LogObjectList objlist(cb_sub_state.Handle(), secondary_sub_state.Handle());
+        skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-11501", objlist, secondary_cb_loc,
+                         "%s was recorded with VkCustomResolveCreateInfoEXT chained in "
+                         "VkCommandBufferInheritanceInfo::pNext, but this render pass instance did not begin with "
+                         "VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT in VkRenderingInfo::flags.",
+                         FormatHandle(secondary_sub_state.base).c_str());
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidateSecondaryCommandBufferState(const vvl::CommandBuffer& cb_state,
-                                                     const vvl::CommandBuffer& secondary_cb_state,
+                                                     const core::CommandBufferSubState& secondary_sub_state,
                                                      const Location& secondary_cb_loc) const {
     bool skip = false;
     const auto primary_pool = cb_state.command_pool;
-    const auto secondary_pool = secondary_cb_state.command_pool;
+    const auto secondary_pool = secondary_sub_state.base.command_pool;
     if (primary_pool && secondary_pool && (primary_pool->queueFamilyIndex != secondary_pool->queueFamilyIndex)) {
-        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
+        const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00094", objlist, secondary_cb_loc,
                          "(%s) was created in queue family %" PRIu32
                          " but the primary command buffer (%s) was created in queue family %" PRIu32 ".",
-                         FormatHandle(secondary_cb_state).c_str(), secondary_pool->queueFamilyIndex, FormatHandle(cb_state).c_str(),
-                         primary_pool->queueFamilyIndex);
+                         FormatHandle(secondary_sub_state.base).c_str(), secondary_pool->queueFamilyIndex,
+                         FormatHandle(cb_state).c_str(), primary_pool->queueFamilyIndex);
     }
 
     // All commands buffers involved must be protected or unprotected
-    if ((cb_state.unprotected == false) && (secondary_cb_state.unprotected == true)) {
-        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
+    if ((cb_state.unprotected == false) && (secondary_sub_state.base.unprotected == true)) {
+        const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-01820", objlist, secondary_cb_loc,
                          "(%s) is a unprotected while primary command buffer (%s) is protected.",
-                         FormatHandle(secondary_cb_state.Handle()).c_str(), FormatHandle(cb_state.Handle()).c_str());
-    } else if ((cb_state.unprotected == true) && (secondary_cb_state.unprotected == false)) {
-        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
+                         FormatHandle(secondary_sub_state.Handle()).c_str(), FormatHandle(cb_state.Handle()).c_str());
+    } else if ((cb_state.unprotected == true) && (secondary_sub_state.base.unprotected == false)) {
+        const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-01821", objlist, secondary_cb_loc,
                          "(%s) is a protected while primary command buffer (%s) is unprotected.",
-                         FormatHandle(secondary_cb_state.Handle()).c_str(), FormatHandle(cb_state.Handle()).c_str());
+                         FormatHandle(secondary_sub_state.Handle()).c_str(), FormatHandle(cb_state.Handle()).c_str());
     }
 
     if (cb_state.IsSecondary()) {
-        const auto& secondary_cb_sub_state = core::SubState(secondary_cb_state);
         // spec: "A maxCommandBufferNestingLevel of UINT32_MAX means there is no limit to the nesting level"
         if (enabled_features.nestedCommandBuffer &&
             phys_dev_ext_props.nested_command_buffer_props.maxCommandBufferNestingLevel != UINT32_MAX) {
-            if (secondary_cb_sub_state.nesting_level >=
-                phys_dev_ext_props.nested_command_buffer_props.maxCommandBufferNestingLevel) {
-                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
+            if (secondary_sub_state.nesting_level >= phys_dev_ext_props.nested_command_buffer_props.maxCommandBufferNestingLevel) {
+                const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle());
                 skip |= LogError("VUID-vkCmdExecuteCommands-nestedCommandBuffer-09376", objlist, secondary_cb_loc,
                                  "(%s) has a nesting level of %" PRIu32
                                  " which is not less than maxCommandBufferNestingLevel (%" PRIu32 ").",
-                                 FormatHandle(secondary_cb_state.Handle()).c_str(), secondary_cb_sub_state.nesting_level,
+                                 FormatHandle(secondary_sub_state.Handle()).c_str(), secondary_sub_state.nesting_level,
                                  phys_dev_ext_props.nested_command_buffer_props.maxCommandBufferNestingLevel);
             }
         }
 
-        if ((secondary_cb_state.begin_info_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) &&
+        if ((secondary_sub_state.base.begin_info_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) &&
             !enabled_features.nestedCommandBufferSimultaneousUse) {
-            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
+            const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle());
             skip |= LogError("VUID-vkCmdExecuteCommands-nestedCommandBufferSimultaneousUse-09378", objlist, secondary_cb_loc,
                              "(%s) was recorded with VkCommandBufferBeginInfo::flag including "
                              "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, but the nestedCommandBufferSimultaneousUse feature "
                              "was not enabled.",
-                             FormatHandle(secondary_cb_state.Handle()).c_str());
+                             FormatHandle(secondary_sub_state.Handle()).c_str());
         }
     }
 
@@ -1416,48 +1457,15 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
             if (secondary_cb_state.has_inheritance) {
                 skip |= ValidateCmdExecuteCommandsRenderPassInheritance(
-                    cb_state, *rp_state, secondary_cb_state, *secondary_cb_state.inheritance_info.ptr(), secondary_cb_loc);
+                    cb_state, *rp_state, secondary_sub_state, *secondary_cb_state.inheritance_info.ptr(), secondary_cb_loc);
 
                 if (rp_state->use_dynamic_rendering && secondary_rp_state && secondary_rp_state->use_dynamic_rendering_inherited) {
-                    skip |= ValidateCmdExecuteCommandsDynamicRenderingInherited(cb_state, *rp_state, secondary_cb_state,
+                    skip |= ValidateCmdExecuteCommandsDynamicRenderingInherited(cb_sub_state, *rp_state, secondary_cb_state,
                                                                                 *secondary_rp_state, secondary_cb_loc);
                 }
             }
-        }
 
-        if (rp_state && rp_state->UsesDynamicRendering()) {
-            const bool rp_has_custom_resolve = (rp_state->GetRenderingFlags() & VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT) != 0;
-            if (rp_has_custom_resolve) {
-                if (!secondary_sub_state.custom_resolve.inherited_struct) {
-                    const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                    skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-11500", objlist, secondary_cb_loc,
-                                     "%s was not recorded with VkCustomResolveCreateInfoEXT chained in "
-                                     "VkCommandBufferInheritanceInfo::pNext, but this render pass instance begin with "
-                                     "VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT in VkRenderingInfo::flags.",
-                                     FormatHandle(pCommandBuffers[i]).c_str());
-                } else if (cb_sub_state.custom_resolve.started && !secondary_sub_state.custom_resolve.inherited_resolve) {
-                    const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                    skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-11502", objlist, secondary_cb_loc,
-                                     "%s was recorded with VkCustomResolveCreateInfoEXT::customResolve as VK_FALSE chained in "
-                                     "VkCommandBufferInheritanceInfo::pNext but vkCmdBeginCustomResolveEXT has been called so it "
-                                     "must be VK_TRUE.",
-                                     FormatHandle(pCommandBuffers[i]).c_str());
-                } else if (!cb_sub_state.custom_resolve.started && secondary_sub_state.custom_resolve.inherited_resolve) {
-                    const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                    skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-11503", objlist, secondary_cb_loc,
-                                     "%s was recorded with VkCustomResolveCreateInfoEXT::customResolve as VK_TRUE chained in "
-                                     "VkCommandBufferInheritanceInfo::pNext but vkCmdBeginCustomResolveEXT has not been called so "
-                                     "it must be VK_FALSE.",
-                                     FormatHandle(pCommandBuffers[i]).c_str());
-                }
-            } else if (secondary_sub_state.custom_resolve.inherited_struct) {
-                const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-11501", objlist, secondary_cb_loc,
-                                 "%s was recorded with VkCustomResolveCreateInfoEXT chained in "
-                                 "VkCommandBufferInheritanceInfo::pNext, but this render pass instance did not begin with "
-                                 "VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT in VkRenderingInfo::flags.",
-                                 FormatHandle(pCommandBuffers[i]).c_str());
-            }
+            skip |= ValidateSecondaryCommandBufferCustomResolve(cb_sub_state, secondary_sub_state, *rp_state, secondary_cb_loc);
         }
 
         if (!(secondary_cb_state.begin_info_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
@@ -1513,7 +1521,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         }
 
         skip |= ValidateSecondaryCommandBufferDescriptorHeapInheritance(cb_state, secondary_cb_state, secondary_cb_loc);
-        skip |= ValidateSecondaryCommandBufferState(cb_state, secondary_cb_state, secondary_cb_loc);
+        skip |= ValidateSecondaryCommandBufferState(cb_state, secondary_sub_state, secondary_cb_loc);
         skip |= ValidateSecondaryCommandBufferQuery(cb_state, secondary_cb_state, secondary_cb_loc);
         skip |= ValidateSecondaryCommandBufferLayout(cb_state, secondary_cb_state, secondary_cb_loc);
         skip |=
@@ -1658,21 +1666,21 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingSecondary(const vvl::
 
 bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::CommandBuffer& cb_state,
                                                                  const vvl::RenderPass& rp_state,
-                                                                 const vvl::CommandBuffer& secondary_cb_state,
+                                                                 const core::CommandBufferSubState& secondary_sub_state,
                                                                  const VkCommandBufferInheritanceInfo& inheritance_info,
                                                                  const Location& secondary_cb_loc) const {
     bool skip = false;
     bool is_dynamic_rendering = rp_state.UsesDynamicRendering();
-    auto& secondary_sub_state = core::SubState(secondary_cb_state);
 
-    if (!(secondary_cb_state.begin_info_flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+    const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle(), rp_state.Handle());
+
+    if (!(secondary_sub_state.base.begin_info_flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
         skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00096", objlist, secondary_cb_loc,
                          "(%s) is executed within a %s "
                          "instance scope, but the Secondary Command Buffer was not recorded with "
                          "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT set in VkCommandBufferBeginInfo::flags when "
                          "the vkBeginCommandBuffer() was called.",
-                         FormatHandle(secondary_cb_state.Handle()).c_str(), FormatHandle(rp_state.Handle()).c_str());
+                         FormatHandle(secondary_sub_state.Handle()).c_str(), FormatHandle(rp_state.Handle()).c_str());
     } else {
         if (!is_dynamic_rendering) {
             // Make sure render pass is compatible with parent command buffer pass if secondary command buffer has
@@ -1683,147 +1691,163 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::Comm
                                                         *inherit_rp_state.get(), secondary_cb_loc);
             }
             //  If framebuffer for secondary CB is not NULL, then it must match active FB from primaryCB
-            skip |= ValidateInheritanceInfoFramebuffer(cb_state, secondary_cb_state, inheritance_info, secondary_cb_loc);
+            skip |= ValidateInheritanceInfoFramebuffer(cb_state, secondary_sub_state, inheritance_info, secondary_cb_loc);
         }
         // Inherit primary's activeFramebuffer, or null if using dynamic rendering,
         // and while running validate functions
         for (auto& function : secondary_sub_state.cmd_execute_commands_functions) {
-            skip |= function(secondary_cb_state, &cb_state, cb_state.active_framebuffer.get());
+            skip |= function(secondary_sub_state.base, &cb_state, cb_state.active_framebuffer.get());
         }
     }
 
     if (!is_dynamic_rendering && (cb_state.GetActiveSubpass() != inheritance_info.subpass)) {
-        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-06019", objlist, secondary_cb_loc,
                          "(%s) is executed within a %s "
                          "instance scope begun by vkCmdBeginRenderPass(), but "
                          "VkCommandBufferInheritanceInfo::subpass (%" PRIu32
                          ") does not "
                          "match the current subpass (%" PRIu32 ").",
-                         FormatHandle(secondary_cb_state.Handle()).c_str(), FormatHandle(rp_state.Handle()).c_str(),
+                         FormatHandle(secondary_sub_state.Handle()).c_str(), FormatHandle(rp_state.Handle()).c_str(),
                          inheritance_info.subpass, cb_state.GetActiveSubpass());
     } else if (is_dynamic_rendering) {
         if (inheritance_info.renderPass != VK_NULL_HANDLE) {
-            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
             skip |= LogError("VUID-vkCmdExecuteCommands-pBeginInfo-06025", objlist, secondary_cb_loc,
                              "(%s) is executed within a dynamic renderpass instance scope begun "
                              "by vkCmdBeginRendering(), but "
                              "VkCommandBufferInheritanceInfo::pInheritanceInfo::renderPass is not VK_NULL_HANDLE.",
-                             FormatHandle(secondary_cb_state.Handle()).c_str());
+                             FormatHandle(secondary_sub_state.Handle()).c_str());
         }
     }
+
+    skip |= ValidateCmdExecuteCommandsRenderPassInheritanceCustomResolve(objlist, rp_state, secondary_sub_state, inheritance_info,
+                                                                         secondary_cb_loc);
+    skip |= ValidateCmdExecuteCommandsRenderPassInheritanceTileShading(cb_state, rp_state, secondary_sub_state, inheritance_info,
+                                                                       secondary_cb_loc);
+
+    return skip;
+}
+
+bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritanceCustomResolve(
+    const LogObjectList& objlist, const vvl::RenderPass& rp_state, const core::CommandBufferSubState& secondary_sub_state,
+    const VkCommandBufferInheritanceInfo& inheritance_info, const Location& secondary_cb_loc) const {
+    bool skip = false;
 
     const bool rp_has_custom_resolve = (rp_state.GetRenderingFlags() & VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT) != 0;
-    if (rp_has_custom_resolve && secondary_sub_state.custom_resolve.inherited_struct) {
-        const auto rendering_info = rp_state.dynamic_rendering_begin_rendering_info;
-        if (const auto inheritance_cr_info = vku::FindStructInPNextChain<VkCustomResolveCreateInfoEXT>(inheritance_info.pNext)) {
-            if (rendering_info.colorAttachmentCount != inheritance_cr_info->colorAttachmentCount) {
-                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
-                skip |= LogError(
-                    "VUID-vkCmdExecuteCommands-colorAttachmentCount-11532", objlist, secondary_cb_loc,
-                    "(%s) is executed within a dynamic renderpass instance with VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but "
-                    "VkRenderingInfo::colorAttachmentCount (%" PRIu32
-                    ") that doesn't match the pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::colorAttachmentCount (%" PRIu32
-                    ")",
-                    FormatHandle(secondary_cb_state.Handle()).c_str(), rendering_info.colorAttachmentCount,
-                    inheritance_cr_info->colorAttachmentCount);
-            } else if (rendering_info.colorAttachmentCount > 0) {
-                for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; i++) {
-                    const VkImageView resolve_image_view = rendering_info.pColorAttachments[i].resolveImageView;
-                    if (resolve_image_view != VK_NULL_HANDLE) {
-                        auto resolve_image_view_state = Get<vvl::ImageView>(resolve_image_view);
-                        ASSERT_AND_RETURN_SKIP(resolve_image_view_state);
-                        if (inheritance_cr_info->pColorAttachmentFormats[i] != resolve_image_view_state->create_info.format) {
-                            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
-                            skip |= LogError(
-                                "VUID-vkCmdExecuteCommands-resolveImageView-11533", objlist, secondary_cb_loc,
-                                "(%s) is executed within a dynamic renderpass instance with VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
-                                "but VkRenderingInfo::pColorAttachments[%" PRIu32
-                                "]->resolveImageView (%s) created with %s doesn't match the "
-                                "pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::pColorAttachmentFormats[%" PRIu32 "] (%s)",
-                                FormatHandle(secondary_cb_state.Handle()).c_str(), i,
-                                FormatHandle(resolve_image_view_state->Handle()).c_str(),
-                                string_VkFormat(resolve_image_view_state->create_info.format), i,
-                                string_VkFormat(inheritance_cr_info->pColorAttachmentFormats[i]));
-                        }
-                    } else if (inheritance_cr_info->pColorAttachmentFormats[i] != VK_FORMAT_UNDEFINED) {
-                        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+    if (!rp_has_custom_resolve || !secondary_sub_state.custom_resolve.inherited_struct) {
+        return skip;
+    }
+
+    const auto rendering_info = rp_state.dynamic_rendering_begin_rendering_info;
+    if (const auto inheritance_cr_info = vku::FindStructInPNextChain<VkCustomResolveCreateInfoEXT>(inheritance_info.pNext)) {
+        if (rendering_info.colorAttachmentCount != inheritance_cr_info->colorAttachmentCount) {
+            skip |= LogError(
+                "VUID-vkCmdExecuteCommands-colorAttachmentCount-11532", objlist, secondary_cb_loc,
+                "(%s) is executed within a dynamic renderpass instance with VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but "
+                "VkRenderingInfo::colorAttachmentCount (%" PRIu32
+                ") that doesn't match the pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::colorAttachmentCount (%" PRIu32
+                ")",
+                FormatHandle(secondary_sub_state.Handle()).c_str(), rendering_info.colorAttachmentCount,
+                inheritance_cr_info->colorAttachmentCount);
+        } else if (rendering_info.colorAttachmentCount > 0) {
+            for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; i++) {
+                const VkImageView resolve_image_view = rendering_info.pColorAttachments[i].resolveImageView;
+                if (resolve_image_view != VK_NULL_HANDLE) {
+                    auto resolve_image_view_state = Get<vvl::ImageView>(resolve_image_view);
+                    ASSERT_AND_RETURN_SKIP(resolve_image_view_state);
+                    if (inheritance_cr_info->pColorAttachmentFormats[i] != resolve_image_view_state->create_info.format) {
                         skip |= LogError(
-                            "VUID-vkCmdExecuteCommands-resolveImageView-11534", objlist, secondary_cb_loc,
+                            "VUID-vkCmdExecuteCommands-resolveImageView-11533", objlist, secondary_cb_loc,
                             "(%s) is executed within a dynamic renderpass instance with VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
                             "but VkRenderingInfo::pColorAttachments[%" PRIu32
-                            "]->resolveImageView is VK_NULL_HANDLE and the "
-                            "pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::pColorAttachmentFormats[%" PRIu32
-                            "] (%s) is not VK_FORMAT_UNDEFINED",
-                            FormatHandle(secondary_cb_state.Handle()).c_str(), i, i,
+                            "]->resolveImageView (%s) created with %s doesn't match the "
+                            "pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::pColorAttachmentFormats[%" PRIu32 "] (%s)",
+                            FormatHandle(secondary_sub_state.Handle()).c_str(), i,
+                            FormatHandle(resolve_image_view_state->Handle()).c_str(),
+                            string_VkFormat(resolve_image_view_state->create_info.format), i,
                             string_VkFormat(inheritance_cr_info->pColorAttachmentFormats[i]));
                     }
+                } else if (inheritance_cr_info->pColorAttachmentFormats[i] != VK_FORMAT_UNDEFINED) {
+                    skip |=
+                        LogError("VUID-vkCmdExecuteCommands-resolveImageView-11534", objlist, secondary_cb_loc,
+                                 "(%s) is executed within a dynamic renderpass instance with VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
+                                 "but VkRenderingInfo::pColorAttachments[%" PRIu32
+                                 "]->resolveImageView is VK_NULL_HANDLE and the "
+                                 "pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::pColorAttachmentFormats[%" PRIu32
+                                 "] (%s) is not VK_FORMAT_UNDEFINED",
+                                 FormatHandle(secondary_sub_state.Handle()).c_str(), i, i,
+                                 string_VkFormat(inheritance_cr_info->pColorAttachmentFormats[i]));
                 }
             }
+        }
 
-            if (rendering_info.pDepthAttachment) {
-                VkImageView resolve_image_view = rendering_info.pDepthAttachment->resolveImageView;
-                if (resolve_image_view != VK_NULL_HANDLE) {
-                    auto resolve_image_view_state = Get<vvl::ImageView>(resolve_image_view);
-                    ASSERT_AND_RETURN_SKIP(resolve_image_view_state);
-                    if (inheritance_cr_info->depthAttachmentFormat != resolve_image_view_state->create_info.format) {
-                        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
-                        skip |= LogError(
-                            "VUID-vkCmdExecuteCommands-pDepthAttachment-11535", objlist, secondary_cb_loc,
-                            "(%s) is executed within a dynamic renderpass instance with VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
-                            "but VkRenderingInfo::pDepthAttachment->resolveImageView (%s) created with %s doesn't match the "
-                            "pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::depthAttachmentFormat (%s)",
-                            FormatHandle(secondary_cb_state.Handle()).c_str(), FormatHandle(resolve_image_view).c_str(),
-                            string_VkFormat(resolve_image_view_state->create_info.format),
-                            string_VkFormat(inheritance_cr_info->depthAttachmentFormat));
-                    }
-                } else {
-                    if (inheritance_cr_info->depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
-                        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
-                        skip |= LogError(
-                            "VUID-vkCmdExecuteCommands-pDepthAttachment-11537", objlist, secondary_cb_loc,
-                            "(%s) is executed within a dynamic renderpass instance with VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
-                            "but VkRenderingInfo::pDepthAttachment->resolveImageView is VK_NULL_HANDLE and the "
-                            "pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::depthAttachmentFormat (%s) is not "
-                            "VK_FORMAT_UNDEFINED",
-                            FormatHandle(secondary_cb_state.Handle()).c_str(),
-                            string_VkFormat(inheritance_cr_info->depthAttachmentFormat));
-                    }
+        if (rendering_info.pDepthAttachment) {
+            VkImageView resolve_image_view = rendering_info.pDepthAttachment->resolveImageView;
+            if (resolve_image_view != VK_NULL_HANDLE) {
+                auto resolve_image_view_state = Get<vvl::ImageView>(resolve_image_view);
+                ASSERT_AND_RETURN_SKIP(resolve_image_view_state);
+                if (inheritance_cr_info->depthAttachmentFormat != resolve_image_view_state->create_info.format) {
+                    skip |=
+                        LogError("VUID-vkCmdExecuteCommands-pDepthAttachment-11535", objlist, secondary_cb_loc,
+                                 "(%s) is executed within a dynamic renderpass instance with VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
+                                 "but VkRenderingInfo::pDepthAttachment->resolveImageView (%s) created with %s doesn't match the "
+                                 "pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::depthAttachmentFormat (%s)",
+                                 FormatHandle(secondary_sub_state.Handle()).c_str(), FormatHandle(resolve_image_view).c_str(),
+                                 string_VkFormat(resolve_image_view_state->create_info.format),
+                                 string_VkFormat(inheritance_cr_info->depthAttachmentFormat));
+                }
+            } else {
+                if (inheritance_cr_info->depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
+                    skip |=
+                        LogError("VUID-vkCmdExecuteCommands-pDepthAttachment-11537", objlist, secondary_cb_loc,
+                                 "(%s) is executed within a dynamic renderpass instance with VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
+                                 "but VkRenderingInfo::pDepthAttachment->resolveImageView is VK_NULL_HANDLE and the "
+                                 "pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::depthAttachmentFormat (%s) is not "
+                                 "VK_FORMAT_UNDEFINED",
+                                 FormatHandle(secondary_sub_state.Handle()).c_str(),
+                                 string_VkFormat(inheritance_cr_info->depthAttachmentFormat));
                 }
             }
+        }
 
-            if (rendering_info.pStencilAttachment) {
-                VkImageView resolve_image_view = rendering_info.pStencilAttachment->resolveImageView;
-                if (resolve_image_view != VK_NULL_HANDLE) {
-                    auto resolve_image_view_state = Get<vvl::ImageView>(resolve_image_view);
-                    ASSERT_AND_RETURN_SKIP(resolve_image_view_state);
-                    if (inheritance_cr_info->stencilAttachmentFormat != resolve_image_view_state->create_info.format) {
-                        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
-                        skip |= LogError(
-                            "VUID-vkCmdExecuteCommands-pStencilAttachment-11536", objlist, secondary_cb_loc,
-                            "(%s) is executed within a dynamic renderpass instance with VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
-                            "but VkRenderingInfo::pStencilAttachment->resolveImageView (%s) created with %s doesn't match the "
-                            "pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::stencilAttachmentFormat (%s)",
-                            FormatHandle(secondary_cb_state.Handle()).c_str(), FormatHandle(resolve_image_view).c_str(),
-                            string_VkFormat(resolve_image_view_state->create_info.format),
-                            string_VkFormat(inheritance_cr_info->stencilAttachmentFormat));
-                    }
-                } else {
-                    if (inheritance_cr_info->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
-                        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
-                        skip |= LogError(
-                            "VUID-vkCmdExecuteCommands-pStencilAttachment-11538", objlist, secondary_cb_loc,
-                            "(%s) is executed within a dynamic renderpass instance with VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
-                            "but VkRenderingInfo::pStencilAttachment->resolveImageView is VK_NULL_HANDLE and the "
-                            "pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::stencilAttachmentFormat (%s) is not "
-                            "VK_FORMAT_UNDEFINED",
-                            FormatHandle(secondary_cb_state.Handle()).c_str(),
-                            string_VkFormat(inheritance_cr_info->stencilAttachmentFormat));
-                    }
+        if (rendering_info.pStencilAttachment) {
+            VkImageView resolve_image_view = rendering_info.pStencilAttachment->resolveImageView;
+            if (resolve_image_view != VK_NULL_HANDLE) {
+                auto resolve_image_view_state = Get<vvl::ImageView>(resolve_image_view);
+                ASSERT_AND_RETURN_SKIP(resolve_image_view_state);
+                if (inheritance_cr_info->stencilAttachmentFormat != resolve_image_view_state->create_info.format) {
+                    skip |=
+                        LogError("VUID-vkCmdExecuteCommands-pStencilAttachment-11536", objlist, secondary_cb_loc,
+                                 "(%s) is executed within a dynamic renderpass instance with VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
+                                 "but VkRenderingInfo::pStencilAttachment->resolveImageView (%s) created with %s doesn't match the "
+                                 "pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::stencilAttachmentFormat (%s)",
+                                 FormatHandle(secondary_sub_state.Handle()).c_str(), FormatHandle(resolve_image_view).c_str(),
+                                 string_VkFormat(resolve_image_view_state->create_info.format),
+                                 string_VkFormat(inheritance_cr_info->stencilAttachmentFormat));
+                }
+            } else {
+                if (inheritance_cr_info->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
+                    skip |=
+                        LogError("VUID-vkCmdExecuteCommands-pStencilAttachment-11538", objlist, secondary_cb_loc,
+                                 "(%s) is executed within a dynamic renderpass instance with VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
+                                 "but VkRenderingInfo::pStencilAttachment->resolveImageView is VK_NULL_HANDLE and the "
+                                 "pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::stencilAttachmentFormat (%s) is not "
+                                 "VK_FORMAT_UNDEFINED",
+                                 FormatHandle(secondary_sub_state.Handle()).c_str(),
+                                 string_VkFormat(inheritance_cr_info->stencilAttachmentFormat));
                 }
             }
         }
     }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritanceTileShading(const vvl::CommandBuffer& cb_state,
+                                                                            const vvl::RenderPass& rp_state,
+                                                                            const core::CommandBufferSubState& secondary_sub_state,
+                                                                            const VkCommandBufferInheritanceInfo& inheritance_info,
+                                                                            const Location& secondary_cb_loc) const {
+    bool skip = false;
 
     if (auto* tile_mem_bind_info = vku::FindStructInPNextChain<VkTileMemoryBindInfoQCOM>(inheritance_info.pNext)) {
         VulkanTypedHandle active_tile_memory_handle = {};
@@ -1836,8 +1860,8 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::Comm
         const VkDeviceSize tile_mem_bind_size = tile_mem_bind_mem->allocate_info.allocationSize;
 
         if (active_tile_mem_size != tile_mem_bind_size) {
-            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), active_tile_memory_handle,
-                                        tile_mem_bind_mem->Handle());
+            const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle(), rp_state.Handle(),
+                                        active_tile_memory_handle, tile_mem_bind_mem->Handle());
             skip |= LogError("VUID-vkCmdExecuteCommands-memory-10724", objlist, secondary_cb_loc,
                              "began recording with a VkTileMemoryBindInfoQCOM::memory of size (%" PRIu64
                              ") which"
@@ -1866,7 +1890,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::Comm
                                << "VkRenderPassTileShadingCreateInfoQCOM instance, ";
             }
             conditional_ss << "but the render pass has tile shading enabled.";
-            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+            const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle(), rp_state.Handle());
             skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-10620", objlist, secondary_cb_loc,
                              "%s", conditional_ss.str().c_str());
         }
@@ -1876,7 +1900,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::Comm
         if (rp_tile_shading_ci &&
             (rp_tile_shading_ci_of_rp->tileApronSize.width != rp_tile_shading_ci->tileApronSize.width ||
              rp_tile_shading_ci_of_rp->tileApronSize.height != rp_tile_shading_ci->tileApronSize.height)) {
-            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+            const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle(), rp_state.Handle());
             skip |= LogError("VUID-vkCmdExecuteCommands-tileApronSize-10622", objlist, secondary_cb_loc,
                              "has been recorded with VkRenderPassTileShadingCreateInfoQCOM::tileApronSize "
                              "(%s) that isn't equal to that tileApronSize (%s) used to create the render pass.",
@@ -1886,7 +1910,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::Comm
     }
 
     if (has_rp_enable_bit && !rp_state.has_tile_shading_enabled) {
-        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+        const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle(), rp_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-10623", objlist, secondary_cb_loc,
                          "has been recorded with VkRenderPassTileShadingCreateInfoQCOM::flags (%s) "
                          "that includes VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit, but "
@@ -1907,11 +1931,11 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::Comm
                            << "VkRenderPassTileShadingCreateInfoQCOM instance, ";
         }
         conditional_ss << "but the per-tile execution model is enabled in the command buffer.";
-        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+        const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle(), rp_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-10621", objlist, secondary_cb_loc,
                          "%s", conditional_ss.str().c_str());
     } else if (!cb_state.per_tile_execution_model_enabled && has_rp_per_tile_exec_bit) {
-        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+        const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle(), rp_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-10624", objlist, secondary_cb_loc,
                          "has been recorded with VkRenderPassTileShadingCreateInfoQCOM::flags (%s) "
                          "includes VK_TILE_SHADING_RENDER_PASS_PER_TILE_EXECUTION_BIT_QCOM bit, but "
@@ -1923,7 +1947,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::Comm
     return skip;
 }
 
-bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::CommandBuffer& cb_state,
+bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const core::CommandBufferSubState& cb_sub_state,
                                                                      const vvl::RenderPass& rp_state,
                                                                      const vvl::CommandBuffer& secondary_cb_state,
                                                                      const vvl::RenderPass& secondary_rp_state,
@@ -1935,7 +1959,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
     if ((inheritance_rendering_info.flags &
          ~(VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT | VK_RENDERING_CONTENTS_INLINE_BIT_KHR)) !=
         (rendering_info.flags & ~(VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT | VK_RENDERING_CONTENTS_INLINE_BIT_KHR))) {
-        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+        const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-flags-06026", objlist, secondary_cb_loc,
                          "(%s) is executed within a dynamic renderpass instance scope begun "
                          "by vkCmdBeginRendering(), but VkCommandBufferInheritanceRenderingInfo::flags (%s) does "
@@ -1948,7 +1972,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
     }
 
     if (inheritance_rendering_info.colorAttachmentCount != rendering_info.colorAttachmentCount) {
-        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+        const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-colorAttachmentCount-06027", objlist, secondary_cb_loc,
                          "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::colorAttachmentCount (%" PRIu32
                          ") which does not match the current render pass that called vkCmdBeginRendering with "
@@ -1963,7 +1987,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
         const VkImageView color_image_view = rendering_info.pColorAttachments[color_i].imageView;
         if (color_image_view == VK_NULL_HANDLE) {
             if (inheritance_rendering_info.pColorAttachmentFormats[color_i] != VK_FORMAT_UNDEFINED) {
-                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+                const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
                 skip |= LogError("VUID-vkCmdExecuteCommands-imageView-07606", objlist, secondary_cb_loc,
                                  "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats[%" PRIu32
                                  "] (%s) which does not match the current render pass that called vkCmdBeginRendering with "
@@ -1975,7 +1999,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
             auto image_view_state = Get<vvl::ImageView>(color_image_view);
             if (image_view_state &&
                 image_view_state->create_info.format != inheritance_rendering_info.pColorAttachmentFormats[color_i]) {
-                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+                const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
                 skip |= LogError("VUID-vkCmdExecuteCommands-imageView-06028", objlist, secondary_cb_loc,
                                  "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats[%" PRIu32
                                  "] (%s) which does not match the current render pass that called vkCmdBeginRendering with "
@@ -1991,7 +2015,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
         auto image_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
 
         if (image_view_state && image_view_state->create_info.format != inheritance_rendering_info.depthAttachmentFormat) {
-            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+            const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
             skip |= LogError(
                 "VUID-vkCmdExecuteCommands-pDepthAttachment-06029", objlist, secondary_cb_loc,
                 "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::depthAttachmentFormat (%s) which does not match "
@@ -2006,7 +2030,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
         auto image_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
 
         if (image_view_state && image_view_state->create_info.format != inheritance_rendering_info.stencilAttachmentFormat) {
-            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+            const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
             skip |= LogError(
                 "VUID-vkCmdExecuteCommands-pStencilAttachment-06030", objlist, secondary_cb_loc,
                 "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::stencilAttachmentFormat (%s) which does not match "
@@ -2020,7 +2044,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
     if (rendering_info.pDepthAttachment == nullptr || rendering_info.pDepthAttachment->imageView == VK_NULL_HANDLE) {
         VkFormat format = inheritance_rendering_info.depthAttachmentFormat;
         if (format != VK_FORMAT_UNDEFINED) {
-            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+            const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
             skip |= LogError("VUID-vkCmdExecuteCommands-pDepthAttachment-06774", objlist, secondary_cb_loc,
                              "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::depthAttachmentFormat (%s) instead "
                              "of VK_FORMAT_UNDEFINED since the current render pass called vkCmdBeginRendering with "
@@ -2032,7 +2056,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
     if (rendering_info.pStencilAttachment == nullptr || rendering_info.pStencilAttachment->imageView == VK_NULL_HANDLE) {
         VkFormat format = inheritance_rendering_info.stencilAttachmentFormat;
         if (format != VK_FORMAT_UNDEFINED) {
-            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+            const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
             skip |= LogError("VUID-vkCmdExecuteCommands-pStencilAttachment-06775", objlist, secondary_cb_loc,
                              "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::stencilAttachmentFormat (%s) instead "
                              "of VK_FORMAT_UNDEFINED since the current render pass called vkCmdBeginRendering with "
@@ -2042,7 +2066,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
     }
 
     if (rendering_info.viewMask != inheritance_rendering_info.viewMask) {
-        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+        const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-viewMask-06031", objlist, secondary_cb_loc,
                          "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::viewMask (0x%" PRIx32
                          ") which does not match the current render pass called vkCmdBeginRendering with "
@@ -2051,7 +2075,6 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
                          rendering_info.viewMask);
     }
 
-    const auto& cb_sub_state = core::SubState(cb_state);
     // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
     if (const auto amd_sample_count =
             vku::FindStructInPNextChain<VkAttachmentSampleCountInfoAMD>(inheritance_rendering_info.pNext)) {
@@ -2062,7 +2085,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
             }
             auto image_view_state = Get<vvl::ImageView>(color_image_view);
             if (image_view_state && image_view_state->samples != amd_sample_count->pColorAttachmentSamples[index]) {
-                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+                const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
                 skip |= LogError(
                     "VUID-vkCmdExecuteCommands-pNext-06032", objlist, secondary_cb_loc,
                     "(%s) is executed within a dynamic renderpass instance "
@@ -2080,7 +2103,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
             auto image_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
 
             if (image_view_state && image_view_state->samples != amd_sample_count->depthStencilAttachmentSamples) {
-                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+                const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
                 skip |= LogError("VUID-vkCmdExecuteCommands-pNext-06033", objlist, secondary_cb_loc,
                                  "(%s) is executed within a dynamic renderpass instance "
                                  "scope begun by vkCmdBeginRenderingKHR(), but "
@@ -2096,7 +2119,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
             auto image_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
 
             if (image_view_state && image_view_state->samples != amd_sample_count->depthStencilAttachmentSamples) {
-                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+                const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
                 skip |= LogError("VUID-vkCmdExecuteCommands-pNext-06034", objlist, secondary_cb_loc,
                                  "(%s) is executed within a dynamic renderpass instance "
                                  "scope begun "
@@ -2117,7 +2140,8 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
             auto image_view_state = Get<vvl::ImageView>(color_image_view);
 
             if (image_view_state && image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
-                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle(), color_image_view);
+                const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle(),
+                                            color_image_view);
                 skip |= LogError(
                     "VUID-vkCmdExecuteCommands-pNext-06035", objlist, secondary_cb_loc,
                     "(%s) is executed within a dynamic renderpass instance "
@@ -2133,7 +2157,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
             auto image_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
 
             if (image_view_state && image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
-                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle(),
+                const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle(),
                                             rendering_info.pDepthAttachment->imageView);
                 skip |= LogError(
                     "VUID-vkCmdExecuteCommands-pNext-06036", objlist, secondary_cb_loc,
@@ -2149,7 +2173,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
             auto image_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
 
             if (image_view_state && image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
-                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle(),
+                const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle(),
                                             rendering_info.pStencilAttachment->imageView);
                 skip |= LogError(
                     "VUID-vkCmdExecuteCommands-pNext-06037", objlist, secondary_cb_loc,
@@ -2169,7 +2193,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
                 auto resolve_image_view_state = Get<vvl::ImageView>(resolve_image_view);
                 ASSERT_AND_RETURN_SKIP(resolve_image_view_state);
                 if (inheritance_rendering_info.rasterizationSamples != resolve_image_view_state->image_state->GetSamples()) {
-                    const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
+                    const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle());
                     skip |= LogError("VUID-vkCmdExecuteCommands-resolveImageView-11526", objlist, secondary_cb_loc,
                                      "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::rasterizationSamples (%s) "
                                      "which does not match VkRenderingInfo::pColorAttachments[%" PRIu32
@@ -2188,7 +2212,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
                 auto resolve_image_view_state = Get<vvl::ImageView>(resolve_image_view);
                 ASSERT_AND_RETURN_SKIP(resolve_image_view_state);
                 if (inheritance_rendering_info.rasterizationSamples != resolve_image_view_state->image_state->GetSamples()) {
-                    const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
+                    const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle());
                     skip |= LogError(
                         "VUID-vkCmdExecuteCommands-pDepthAttachment-11527", objlist, secondary_cb_loc,
                         "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::rasterizationSamples (%s) which does not "
@@ -2207,7 +2231,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
                 auto resolve_image_view_state = Get<vvl::ImageView>(resolve_image_view);
                 ASSERT_AND_RETURN_SKIP(resolve_image_view_state);
                 if (inheritance_rendering_info.rasterizationSamples != resolve_image_view_state->image_state->GetSamples()) {
-                    const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
+                    const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle());
                     skip |= LogError(
                         "VUID-vkCmdExecuteCommands-pStencilAttachment-11528", objlist, secondary_cb_loc,
                         "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::rasterizationSamples (%s) which does not "
