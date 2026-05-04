@@ -15,6 +15,7 @@
 
 #include "shared_memory_data_race_pass.h"
 #include "containers/container_utils.h"
+#include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
@@ -70,7 +71,12 @@ void SharedMemoryDataRacePass::CreateFunctionCall(const Function& function, Basi
         block.CreateInstruction(spv::OpFunctionCall, {void_type, function_result, function_def, length_id, work_group_size_id_},
                                 inst_it);
     } else {
-        const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
+        // inst_position is packed into bits [28..12] of the shadow alongside thread_id and
+        // flags so a racing atomicExchange returns the offender's thread and source location
+        // together. Fall back to 0 if it doesn't fit; the host logger treats 0 as "no source
+        // available" rather than print a misleading line.
+        const uint32_t inst_position_raw = meta.target_instruction->GetPositionOffset();
+        const uint32_t inst_position = (inst_position_raw <= glsl::kSharedMemoryDataRace_InstOffsetMax) ? inst_position_raw : 0u;
         const uint32_t inst_position_id = type_manager_.GetConstantUInt32(inst_position).Id();
 
         const uint32_t variable_idx_id = type_manager_.GetConstantUInt32(meta.variable_idx).Id();
@@ -378,6 +384,11 @@ bool SharedMemoryDataRacePass::Instrument() {
 
     // Need size to init the shadow memory
     const uint32_t work_group_size = GetWorkgroupSize();
+    // The shadow's thread_id field is 12 bits so this is bound to 4k
+    // But the maxComputeWorkGroupInvocations for 99% of known devices is already under 4k
+    if (work_group_size > glsl::kSharedMemoryDataRace_ThreadIdMask) {
+        return false;
+    }
     work_group_size_id_ = type_manager_.GetConstantUInt32(work_group_size).Id();
 
     // Can safely loop function list as there is no injecting of new Functions until linking time
