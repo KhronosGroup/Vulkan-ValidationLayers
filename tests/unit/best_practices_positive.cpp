@@ -416,16 +416,22 @@ TEST_F(VkPositiveBestPracticesLayerTest, ResetCommandPool) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Event event1(*m_device);
-    m_command_buffer.Begin();
-    event1.CmdSet(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-    m_command_buffer.End();
-    m_default_queue->SubmitAndWait(m_command_buffer);
+    // Scope to destroy event object at the end
+    {
+        vkt::Event event1(*m_device);
+        m_command_buffer.Begin();
+        event1.CmdSet(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        m_command_buffer.End();
+        m_default_queue->SubmitAndWait(m_command_buffer);
+        // event1 is destroyed somehwere here
+    }
 
     vkt::Event event2(*m_device);
     m_command_buffer.Begin();
     event2.CmdSet(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     m_command_buffer.End();
+    // Submit tries to access signaling state of deleted event1. This should not cause a crash.
+    // Currently VVL does not cleanup event_signaling_state: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9171
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
