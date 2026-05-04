@@ -4383,3 +4383,29 @@ TEST_F(NegativeDeviceAddressCommands, DrawIndirectByteCount2VertexStride) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDeviceAddressCommands, VertexBufferBindingAddressFlags) {
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+
+    vkt::Buffer buffer1(*m_device, 256u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                        vkt::device_address);
+    vkt::Buffer buffer2(*m_device, 256u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                        vkt::device_address);
+
+    VkBindVertexBuffer3InfoKHR infos[2];
+    infos[0] = vku::InitStructHelper();
+    infos[0].setStride = VK_FALSE;
+    infos[0].addressRange = buffer1.StridedAddressRange();
+    infos[0].addressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
+    infos[1] = vku::InitStructHelper();
+    infos[1].setStride = VK_FALSE;
+    infos[1].addressRange = buffer2.StridedAddressRange();
+    infos[1].addressFlags =
+        VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR | VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkBindVertexBuffer3InfoKHR-addressFlags-13100");
+    vk::CmdBindVertexBuffers3KHR(m_command_buffer, 0, 2u, infos);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
