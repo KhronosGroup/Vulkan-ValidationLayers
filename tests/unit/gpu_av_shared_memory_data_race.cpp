@@ -946,15 +946,18 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, StoreCoopMatLoad) {
         #extension GL_KHR_cooperative_matrix : enable
         #extension GL_KHR_memory_scope_semantics : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
 
-        layout(local_size_x = 128) in;
+        layout(local_size_x = 256) in;
         shared float16_t arr[16*16];
         coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
         void main() {
             if (gl_LocalInvocationIndex == 40) {
                 arr[17] = float16_t(40);
             }
-            coopMatLoad(mat, arr, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
+            if (gl_SubgroupID == 0) {
+                coopMatLoad(mat, arr, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
+            }
         }
     )glsl";
 
@@ -973,7 +976,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, CoopMatStoreLoad) {
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
         #extension GL_KHR_shader_subgroup_basic : enable
 
-        layout(local_size_x = 128) in;
+        layout(local_size_x = 256) in;
         shared float16_t arr[16*16];
         coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
         void main() {
@@ -1002,7 +1005,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreOverlap) {
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
         #extension GL_KHR_shader_subgroup_basic : enable
 
-        layout(local_size_x = 128) in;
+        layout(local_size_x = 256) in;
         shared float16_t arr[32*32];
         coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
         void main() {
@@ -1032,7 +1035,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, StoreCoopMatLoadWorkgroup) {
         #extension GL_KHR_memory_scope_semantics : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 
-        layout(local_size_x = 128) in;
+        layout(local_size_x = 256) in;
         shared float16_t arr[32*32];
         coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseA> mat;
         void main() {
@@ -1060,7 +1063,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, CoopMatStoreLoadWorkgroup) {
         #extension GL_KHR_memory_scope_semantics : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 
-        layout(local_size_x = 128) in;
+        layout(local_size_x = 256) in;
         shared float16_t arr[32*32];
         coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseA> mat;
         void main() {
@@ -1087,7 +1090,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreOverlapFloat) {
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
         #extension GL_KHR_shader_subgroup_basic : enable
 
-        layout(local_size_x = 128) in;
+        layout(local_size_x = 256) in;
         shared float arr[32*32/2];
         coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
         void main() {
@@ -1116,7 +1119,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreOverlapVec4) {
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
         #extension GL_KHR_shader_subgroup_basic : enable
 
-        layout(local_size_x = 128) in;
+        layout(local_size_x = 256) in;
         shared vec4 arr[32*32/8];
         coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
         void main() {
@@ -1147,7 +1150,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreOverlapUint8) {
         #extension GL_EXT_shader_explicit_arithmetic_types_int8 : enable
         #extension GL_KHR_shader_subgroup_basic : enable
 
-        layout(local_size_x = 128) in;
+        layout(local_size_x = 256) in;
         shared uint8_t arr[32*32*2];
         coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
         void main() {
@@ -1178,7 +1181,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreOverlapUint8Col
         #extension GL_EXT_shader_explicit_arithmetic_types_int8 : enable
         #extension GL_KHR_shader_subgroup_basic : enable
 
-        layout(local_size_x = 128) in;
+        layout(local_size_x = 256) in;
         shared uint8_t arr[32*32*2];
         coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
         void main() {
@@ -1218,7 +1221,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, AtomicVsCoopMatStore) {
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
         #extension GL_KHR_shader_subgroup_basic : enable
 
-        layout(local_size_x = 128) in;
+        layout(local_size_x = 256) in;
         shared uint arr[16*16/2];
         coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
         void main() {
