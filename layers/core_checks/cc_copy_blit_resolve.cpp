@@ -4437,21 +4437,12 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryKHR(VkCommandBuffer commandBuffer, 
         const Location region_loc = error_obj.location.dot(Field::pRegions, i);
         const LogObjectList objlist(commandBuffer);
 
-        BufferAddressValidation<1> src_buffer_address_validator = {
-            {{{"VUID-VkDeviceMemoryCopyKHR-srcRange-13017",
-               [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT) == 0; },
-               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT"; }, kUsageErrorMsgBuffer}}}};
-
-        skip |= src_buffer_address_validator.ValidateDeviceAddress(*this, region_loc.dot(Field::srcRange).dot(Field::address),
-                                                                   objlist, region.srcRange.address);
-
-        BufferAddressValidation<1> dst_buffer_address_validator = {
-            {{{"VUID-VkDeviceMemoryCopyKHR-dstRange-13018",
-               [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_TRANSFER_DST_BIT) == 0; },
-               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_TRANSFER_DST_BIT"; }, kUsageErrorMsgBuffer}}}};
-
-        skip |= dst_buffer_address_validator.ValidateDeviceAddress(*this, region_loc.dot(Field::dstRange).dot(Field::address),
-                                                                   objlist, region.dstRange.address);
+        skip |=
+            ValidateDeviceAddressRange(region.srcRange.address, region.srcRange.size, false, region_loc.dot(Field::srcRange),
+                                       objlist, VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT, "VUID-VkDeviceMemoryCopyKHR-srcRange-13017");
+        skip |=
+            ValidateDeviceAddressRange(region.dstRange.address, region.dstRange.size, false, region_loc.dot(Field::dstRange),
+                                       objlist, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT, "VUID-VkDeviceMemoryCopyKHR-dstRange-13018");
 
         if (!phys_dev_props_core11.protectedNoFault) {
             if (cb_state->unprotected) {
