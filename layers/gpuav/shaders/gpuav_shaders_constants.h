@@ -146,6 +146,17 @@ const uint kPostProcessMetaMaskAccessed = 1u << 31;
 const uint kPostProcessMetaShiftErrorLoggerIndex = 18;
 const uint kPostProcessMetaMaskErrorLoggerIndex = 0x1FFF << kPostProcessMetaShiftErrorLoggerIndex;
 
+// Shared Memory Data Race
+//  Shadow word encoding
+//   [31..29] flags (STORE_BIT, ATOMIC_BIT, MULTI_LOAD_BIT)
+//   [28..12] inst_offset (17 bits, word offset of the accessing SPIR-V instruction)
+//   [11..0]  thread_id (12 bits)
+const uint kSharedMemoryDataRace_InstOffsetShift = 12u;
+const uint kSharedMemoryDataRace_ThreadIdMask = 0x00000FFFu;    // bits 11..0
+const uint kSharedMemoryDataRace_InstOffsetMask = 0x1FFFF000u;  // bits 28..12
+const uint kSharedMemoryDataRace_InstOffsetBits = 0x1FFFFu;
+const uint kSharedMemoryDataRace_InstOffsetMax = kSharedMemoryDataRace_InstOffsetBits - 1;  // 0x1FFFF reserved
+
 #ifdef __cplusplus
 }  // namespace glsl
 }  // namespace gpuav

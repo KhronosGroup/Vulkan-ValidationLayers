@@ -15,6 +15,7 @@
 
 #include "shared_memory_data_race_pass.h"
 #include "containers/container_utils.h"
+#include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
@@ -28,13 +29,6 @@ namespace spirv {
 const static OfflineModule kOfflineModule = {instrumentation_shared_memory_data_race_comp,
                                              instrumentation_shared_memory_data_race_comp_size,
                                              UseErrorPayloadVariable | SharedMemoryDataRace};
-
-// Shadow word encoding (keep in sync with shared_memory_data_race.comp):
-//   [31..29] flags (STORE_BIT, ATOMIC_BIT, MULTI_LOAD_BIT)
-//   [28..12] inst_offset (17 bits, word offset of the accessing SPIR-V instruction)
-//   [11..0]  thread_id (12 bits)
-constexpr uint32_t kThreadIdMax = 0xFFFu;           // workgroup size ceiling (0xFFF reserved)
-constexpr uint32_t kInstOffsetMax = 0x1FFFFu - 1u;  // 0x1FFFF reserved
 
 const static OfflineFunction kOfflineFunction[] = {
     {"inst_init_shadow", instrumentation_shared_memory_data_race_comp_function_0_offset},
@@ -82,7 +76,7 @@ void SharedMemoryDataRacePass::CreateFunctionCall(const Function& function, Basi
         // together. Fall back to 0 if it doesn't fit; the host logger treats 0 as "no source
         // available" rather than print a misleading line.
         const uint32_t inst_position_raw = meta.target_instruction->GetPositionOffset();
-        const uint32_t inst_position = (inst_position_raw <= kInstOffsetMax) ? inst_position_raw : 0u;
+        const uint32_t inst_position = (inst_position_raw <= glsl::kSharedMemoryDataRace_InstOffsetMax) ? inst_position_raw : 0u;
         const uint32_t inst_position_id = type_manager_.GetConstantUInt32(inst_position).Id();
 
         const uint32_t variable_idx_id = type_manager_.GetConstantUInt32(meta.variable_idx).Id();
@@ -390,9 +384,9 @@ bool SharedMemoryDataRacePass::Instrument() {
 
     // Need size to init the shadow memory
     const uint32_t work_group_size = GetWorkgroupSize();
-    // The shadow's thread_id field is 12 bits with 0xFFF reserved (part of SENTINEL),
-    // so the largest workgroup we can instrument is 0xFFE.
-    if (work_group_size > kThreadIdMax) {
+    // The shadow's thread_id field is 12 bits so this is bound to 4k
+    // But the maxComputeWorkGroupInvocations for 99% of known devices is already under 4k
+    if (work_group_size > glsl::kSharedMemoryDataRace_ThreadIdMask) {
         return false;
     }
     work_group_size_id_ = type_manager_.GetConstantUInt32(work_group_size).Id();

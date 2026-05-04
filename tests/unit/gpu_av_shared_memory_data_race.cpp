@@ -20,15 +20,11 @@ class NegativeGpuAVSharedMemoryDataRace : public GpuAVSharedMemoryDataRaceTest {
   protected:
     void TestHelper(const char* source, int source_type, uint32_t count, VkScopeKHR coopmat_scope = VK_SCOPE_DEVICE_KHR,
                     const char* error = "SharedMemoryDataRace");
-    // Runs a compute pipeline built from `shader_source` and asserts the race error matches
-    // `full_regex`. The pipeline/buffer are kept alive on the stack here so they outlive
-    // SubmitAndWait.
-    void RunAndAssertErrorRegex(const char* shader_source, const std::string& full_regex,
-                                SpvSourceType source_type = SPV_SOURCE_GLSL);
+    void TestHelperRegex(const char* shader_source, const std::string& full_regex, SpvSourceType source_type = SPV_SOURCE_GLSL);
 };
 
-void NegativeGpuAVSharedMemoryDataRace::RunAndAssertErrorRegex(const char* shader_source, const std::string& full_regex,
-                                                               SpvSourceType source_type) {
+void NegativeGpuAVSharedMemoryDataRace::TestHelperRegex(const char* shader_source, const std::string& full_regex,
+                                                        SpvSourceType source_type) {
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, source_type);
@@ -1234,9 +1230,9 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, AtomicVsCoopMatStore) {
         }
     )glsl";
 
-    RunAndAssertErrorRegex(shader_source, R"((?=[\s\S]*SharedMemoryDataRace))"
-                                          R"((?=[\s\S]*Likely against unknown invocation))"
-                                          R"((?=[\s\S]*The other access in this race was at:))");
+    TestHelperRegex(shader_source, R"((?=[\s\S]*SharedMemoryDataRace))"
+                                   R"((?=[\s\S]*Likely against unknown invocation))"
+                                   R"((?=[\s\S]*The other access in this race was at:))");
 }
 
 // The next few tests verify the offender's SPIR-V op kind is reported correctly.
@@ -1258,8 +1254,8 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SelfRaceSameInstruction) {
         }
     )glsl";
 
-    RunAndAssertErrorRegex(shader_source, R"((?=[\s\S]*SharedMemoryDataRace-RaceOnStore))"
-                                          R"((?=[\s\S]*This race is between two invocations executing the same instruction))");
+    TestHelperRegex(shader_source, R"((?=[\s\S]*SharedMemoryDataRace-RaceOnStore))"
+                                   R"((?=[\s\S]*This race is between two invocations executing the same instruction))");
 }
 
 // Concurrent loaders racing one store. Either side can win: if the loaders go first the
@@ -1285,9 +1281,9 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, OffenderIsOpLoadFromMultipleLoaders) {
     )glsl";
 
     // OpLoad produces a result id ("%<n> = OpLoad ..."); OpStore does not.
-    RunAndAssertErrorRegex(shader_source,
-                           R"((?=[\s\S]*SharedMemoryDataRace))"
-                           R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: (?:%\d+ = OpLoad|OpStore)))");
+    TestHelperRegex(shader_source,
+                    R"((?=[\s\S]*SharedMemoryDataRace))"
+                    R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: (?:%\d+ = OpLoad|OpStore)))");
 }
 
 // Atomic vs store race. The offender is OpAtomicIAdd or OpStore depending on which side
@@ -1309,9 +1305,9 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, OffenderIsOpAtomic) {
     )glsl";
 
     // OpAtomicIAdd has a result id ("%<n> = OpAtomicIAdd ..."); OpStore does not.
-    RunAndAssertErrorRegex(
-        shader_source, R"((?=[\s\S]*SharedMemoryDataRace-RaceOnLoadStoreVsAtomic))"
-                       R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: (?:%\d+ = OpAtomicIAdd|OpStore)))");
+    TestHelperRegex(shader_source,
+                    R"((?=[\s\S]*SharedMemoryDataRace-RaceOnLoadStoreVsAtomic))"
+                    R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: (?:%\d+ = OpAtomicIAdd|OpStore)))");
 }
 
 // Race that straddles a function boundary: one store in main, the other in a helper.
@@ -1338,8 +1334,8 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, RaceAcrossFunctions) {
 
     // Without debug info both render as "OpStore"; we just need the offender to resolve
     // to a real instruction, not the "not recorded" fallback.
-    RunAndAssertErrorRegex(shader_source, R"((?=[\s\S]*SharedMemoryDataRace-RaceOnStore))"
-                                          R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: OpStore))");
+    TestHelperRegex(shader_source, R"((?=[\s\S]*SharedMemoryDataRace-RaceOnStore))"
+                                   R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: OpStore))");
 }
 
 // Hand-written SPIR-V with DebugLine on both the store and the load, racing on two
@@ -1409,7 +1405,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, DebugInfoTwoSourceLines) {
     // the framework's wrapper appends the detector's line at the end of the message.
     // Order of which side detects is non-deterministic, so accept either pairing - but
     // require the two lines to actually differ.
-    RunAndAssertErrorRegex(
+    TestHelperRegex(
         shader_source,
         R"((?=[\s\S]*SharedMemoryDataRace))"
         R"((?:)"

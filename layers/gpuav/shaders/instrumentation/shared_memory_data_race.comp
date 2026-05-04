@@ -67,17 +67,15 @@
 const uint STORE_BIT         = 0x80000000u;
 const uint ATOMIC_BIT        = 0x40000000u;
 const uint MULTI_LOAD_BIT    = 0x20000000u;
-const uint INST_OFFSET_SHIFT = 12u;
-const uint THREAD_ID_MASK    = 0x00000FFFu;   // bits 11..0
-const uint INST_OFFSET_MASK  = 0x1FFFF000u;   // bits 28..12
 const uint FLAG_AND_TID_MASK = 0xE0000FFFu;   // everything except inst_offset (flags | thread_id)
 const uint SENTINEL          = 0x1FFFFFFFu;   // bits 28..0 set = unique "no access" marker
+// Duplicated here to keep single source of truth
+const uint INST_OFFSET_SHIFT = kSharedMemoryDataRace_InstOffsetShift;
+const uint THREAD_ID_MASK    = kSharedMemoryDataRace_ThreadIdMask;   // bits 11..0
+const uint INST_OFFSET_MASK  = kSharedMemoryDataRace_InstOffsetMask;   // bits 28..
 
 // This array has a placeholder size and the whole array is replaced in LinkFunctions
 shared uint shadow[99999];
-
-// Macros, not functions: the offline linker doesn't resolve OpFunctionCalls between
-// functions in this file, and kOfflineFunction[] expects exactly the six inst_* bodies.
 
 // Pack a shadow word from its three fields.
 #define PACK_SHADOW(flags, thread_id, inst_offset) \
