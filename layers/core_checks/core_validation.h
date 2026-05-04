@@ -421,7 +421,11 @@ class CoreChecks : public vvl::DeviceProxy {
                                 const ErrorObject& error_obj) const;
     bool ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count, const VkMappedMemoryRange* mem_ranges,
                                                const ErrorObject& error_obj) const;
-    bool ValidateSecondaryCommandBufferState(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& secondary_cb_state,
+    bool ValidateSecondaryCommandBufferCustomResolve(const core::CommandBufferSubState& cb_sub_state,
+                                                     const core::CommandBufferSubState& secondary_sub_state,
+                                                     const vvl::RenderPass& rp_state, const Location& secondary_cb_loc) const;
+    bool ValidateSecondaryCommandBufferState(const vvl::CommandBuffer& cb_state,
+                                             const core::CommandBufferSubState& secondary_sub_state,
                                              const Location& secondary_cb_loc) const;
     bool ValidateSecondaryCommandBufferQuery(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& secondary_cb_state,
                                              const Location& secondary_cb_loc) const;
@@ -430,7 +434,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateSecondaryCommandBufferDescriptorHeapInheritance(const vvl::CommandBuffer& cb_state,
                                                                  const vvl::CommandBuffer& secondary_cb_state,
                                                                  const Location& secondary_cb_loc) const;
-    bool ValidateInheritanceInfoFramebuffer(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& secondary_cb_state,
+    bool ValidateInheritanceInfoFramebuffer(const vvl::CommandBuffer& cb_state,
+                                            const core::CommandBufferSubState& secondary_cb_state,
                                             const VkCommandBufferInheritanceInfo& secondary_inheritance_info,
                                             const Location& loc) const;
     bool ValidateImportFence(VkFence fence, const char* vuid, const Location& loc) const;
@@ -2148,10 +2153,20 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateCmdExecuteCommandsRenderPass(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
                                               const Location& loc) const;
     bool ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
-                                                         const vvl::CommandBuffer& secondary_cb_state,
+                                                         const core::CommandBufferSubState& secondary_sub_state,
                                                          const VkCommandBufferInheritanceInfo& inheritance_info,
                                                          const Location& secondary_cb_loc) const;
-    bool ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
+    bool ValidateCmdExecuteCommandsRenderPassInheritanceCustomResolve(const LogObjectList& objlist, const vvl::RenderPass& rp_state,
+                                                                      const core::CommandBufferSubState& secondary_sub_state,
+                                                                      const VkCommandBufferInheritanceInfo& inheritance_info,
+                                                                      const Location& secondary_cb_loc) const;
+    bool ValidateCmdExecuteCommandsRenderPassInheritanceTileShading(const vvl::CommandBuffer& cb_state,
+                                                                    const vvl::RenderPass& rp_state,
+                                                                    const core::CommandBufferSubState& secondary_cb_state,
+                                                                    const VkCommandBufferInheritanceInfo& inheritance_info,
+                                                                    const Location& secondary_cb_loc) const;
+    bool ValidateCmdExecuteCommandsDynamicRenderingInherited(const core::CommandBufferSubState& cb_sub_state,
+                                                             const vvl::RenderPass& rp_state,
                                                              const vvl::CommandBuffer& secondary_cb_state,
                                                              const vvl::RenderPass& secondary_rp_state,
                                                              const Location& secondary_cb_loc) const;
