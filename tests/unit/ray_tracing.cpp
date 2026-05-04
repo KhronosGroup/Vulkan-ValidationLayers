@@ -58,31 +58,53 @@ TEST_F(NegativeRayTracing, BarrierAccessAccelerationStructure) {
 
     m_command_buffer.Begin();
 
-    mem_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-03927");
-    m_command_buffer.BarrierKHR(mem_barrier);
-
     mem_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
     m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-03928");
     m_command_buffer.BarrierKHR(mem_barrier);
 
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
-
-    mem_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcStageMask-10751");
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-03927");
     m_command_buffer.BarrierKHR(mem_barrier);
 
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcStageMask-10751");
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-03928");
     m_command_buffer.BarrierKHR(mem_barrier);
 
     m_command_buffer.End();
 
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracing, BarrierReadAccelerationStructureRayQueryEnabled) {
+    TEST_DESCRIPTION("Test barrier with VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR and ray query eanbled.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryBarrier2 mem_barrier{};
+
+    m_command_buffer.Begin();
+
+    mem_barrier = vku::InitStructHelper();
+    mem_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-03927");
+    m_command_buffer.BarrierKHR(mem_barrier);
+    m_errorMonitor->VerifyFound();
+
+    mem_barrier = vku::InitStructHelper();
+    mem_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-03927");
+    m_command_buffer.BarrierKHR(mem_barrier);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeRayTracing, BarrierSync2AccessAccelerationStructureRayQueryDisabled) {

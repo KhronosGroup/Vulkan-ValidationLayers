@@ -624,7 +624,8 @@ TEST_F(NegativeDeviceAddressCommandsSync, ColorAttachmentReadNoncoherentAccess) 
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDeviceAddressCommandsSync, AccelerationStructureReadAccess) {
+TEST_F(NegativeDeviceAddressCommandsSync, AccelerationStructureReadAccessRayQueryEnabled) {
+    AddRequiredFeature(vkt::Feature::rayQuery);
     RETURN_IF_SKIP(InitSyncDeviceAddressCommands());
 
     m_command_buffer.Begin();
