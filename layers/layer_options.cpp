@@ -254,6 +254,7 @@ const char* VK_LAYER_GPU_DUMP_COPY_MEMORY_INDIRECT = "gpu_dump_copy_memory_indir
 const char* VK_LAYER_GPU_DUMP_DEVICE_GENERATED_COMMANDS = "gpu_dump_device_generated_commands";
 // Print to stdout
 const char* VK_LAYER_GPU_DUMP_TO_STDOUT = "gpu_dump_to_stdout";
+// Experimental
 const char* VK_LAYER_GPU_DUMP_DEVICE_COPY = "gpu_dump_device_copy";
 
 // Don't need any setting helper when using self vvl and don't want unused function warnings

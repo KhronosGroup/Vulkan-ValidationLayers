@@ -88,6 +88,9 @@
                         { "key": "printf_enable", "value": false },
                         { "key": "debug_descriptor", "value": false },
                         { "key": "gpuav_enable", "value": false },
+                        { "key": "gpu_dump_descriptors", "value": false },
+                        { "key": "gpu_dump_copy_memory_indirect", "value": false },
+                        { "key": "gpu_dump_device_generated_commands", "value": false },
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags", "value": [ "error", "warn" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
@@ -116,6 +119,9 @@
                         { "key": "printf_enable", "value": false },
                         { "key": "debug_descriptor", "value": false },
                         { "key": "gpuav_enable", "value": false },
+                        { "key": "gpu_dump_descriptors", "value": false },
+                        { "key": "gpu_dump_copy_memory_indirect", "value": false },
+                        { "key": "gpu_dump_device_generated_commands", "value": false },
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags", "value": [ "error" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
@@ -144,6 +150,9 @@
                         { "key": "printf_enable", "value": false },
                         { "key": "debug_descriptor", "value": false },
                         { "key": "gpuav_enable", "value": false },
+                        { "key": "gpu_dump_descriptors", "value": false },
+                        { "key": "gpu_dump_copy_memory_indirect", "value": false },
+                        { "key": "gpu_dump_device_generated_commands", "value": false },
                         { "key": "validate_best_practices", "value": true },
                         { "key": "report_flags", "value": [ "error", "warn", "perf" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
@@ -172,6 +181,9 @@
                         { "key": "printf_enable", "value": false },
                         { "key": "debug_descriptor", "value": false },
                         { "key": "gpuav_enable", "value": false },
+                        { "key": "gpu_dump_descriptors", "value": false },
+                        { "key": "gpu_dump_copy_memory_indirect", "value": false },
+                        { "key": "gpu_dump_device_generated_commands", "value": false },
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags", "value": [ "error" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
@@ -203,6 +215,9 @@
                         { "key": "gpuav_shader_instrumentation", "value": true },
                         { "key": "gpuav_select_instrumented_shaders", "value": false },
                         { "key": "gpuav_buffers_validation", "value": true },
+                        { "key": "gpu_dump_descriptors", "value": false },
+                        { "key": "gpu_dump_copy_memory_indirect", "value": false },
+                        { "key": "gpu_dump_device_generated_commands", "value": false },
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags", "value": [ "error", "warn" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
@@ -231,6 +246,9 @@
                         { "key": "gpuav_enable", "value": false },
                         { "key": "printf_enable", "value": true },
                         { "key": "debug_descriptor", "value": false },
+                        { "key": "gpu_dump_descriptors", "value": false },
+                        { "key": "gpu_dump_copy_memory_indirect", "value": false },
+                        { "key": "gpu_dump_device_generated_commands", "value": false },
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags",  "value": [ "error", "warn", "info" ] },
                         { "key": "debug_action",  "value": [] },
@@ -259,8 +277,42 @@
                         { "key": "gpuav_enable", "value": false },
                         { "key": "printf_enable", "value": false },
                         { "key": "debug_descriptor", "value": false },
+                        { "key": "gpu_dump_descriptors", "value": false },
+                        { "key": "gpu_dump_copy_memory_indirect", "value": false },
+                        { "key": "gpu_dump_device_generated_commands", "value": false },
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags",  "value": [ "warn" ] },
+                        { "key": "debug_action",  "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
+                        { "key": "enable_message_limit", "value": false }
+                    ]
+                },
+                {
+                    "label": "GPU Dump Only",
+                    "description": "Turn on only GPU Dump and turn off everything else.",
+                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
+                    "status": "STABLE",
+                    "settings": [
+                        { "key": "validate_core", "value": false },
+                        { "key": "check_image_layout", "value": false },
+                        { "key": "check_command_buffer", "value": false },
+                        { "key": "check_object_in_use", "value": false },
+                        { "key": "check_query", "value": false },
+                        { "key": "check_shaders", "value": false },
+                        { "key": "check_shaders_caching", "value": false },
+                        { "key": "unique_handles", "value": false },
+                        { "key": "object_lifetime", "value": false },
+                        { "key": "stateless_param", "value": false },
+                        { "key": "legacy_detection", "value": false },
+                        { "key": "thread_safety", "value": false },
+                        { "key": "validate_sync", "value": false },
+                        { "key": "gpuav_enable", "value": false },
+                        { "key": "printf_enable", "value": false },
+                        { "key": "debug_descriptor", "value": false },
+                        { "key": "gpu_dump_descriptors", "value": true },
+                        { "key": "gpu_dump_copy_memory_indirect", "value": true },
+                        { "key": "gpu_dump_device_generated_commands", "value": true },
+                        { "key": "validate_best_practices", "value": false },
+                        { "key": "report_flags",  "value": [ "warn", "info" ] },
                         { "key": "debug_action",  "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
                         { "key": "enable_message_limit", "value": false }
                     ]
@@ -1270,40 +1322,35 @@
                 {
                     "key": "gpu_dump",
                     "label": "GPU Dump",
-                    "view": "DEBUG",
-                    "description": "Similar to API Dump, but using all the state tracking information, print out information about GPU centric API usages.",
+                    "description": "Similar to API Dump, but using all the state tracking information, print out information for GPU centric extensions.",
                     "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                     "type": "GROUP",
                     "expanded": true,
                     "settings": [
                         {
                             "key": "gpu_dump_descriptors",
-                            "label": "Dump Descriptors",
-                            "view": "DEBUG",
-                            "description": "Dump VK_EXT_descriptor_buffer and VK_EXT_descriptor_heap",
+                            "label": "Dump Descriptors (VK_EXT_descriptor_buffer and VK_EXT_descriptor_heap)",
+                            "description": "Dump all the information at every draw/dispatch when recording",
                             "type": "BOOL",
                             "default": false
                         },
                         {
                             "key": "gpu_dump_copy_memory_indirect",
                             "label": "Dump VK_KHR_copy_memory_indirect",
-                            "view": "DEBUG",
-                            "description": "Dump VK_KHR_copy_memory_indirect information",
+                            "description": "Dump information at each copy command when recording",
                             "type": "BOOL",
                             "default": false
                         },
                         {
                             "key": "gpu_dump_device_generated_commands",
                             "label": "Dump VK_EXT_device_generated_commands",
-                            "view": "DEBUG",
-                            "description": "Dump VK_EXT_device_generated_commands information",
+                            "description": "Dump information at each vkCmdExecuteGeneratedCommands when recording",
                             "type": "BOOL",
                             "default": false
                         },
                         {
                             "key": "gpu_dump_to_stdout",
                             "label": "Redirect all GPU Dump to stdout",
-                            "view": "DEBUG",
                             "description": "Instead of using the debug callback with information severity, redirect to stdout instead.",
                             "type": "BOOL",
                             "default": false
@@ -1315,6 +1362,77 @@
                             "description": "[Very experimental] For non-host visible memory, try and do a device copy during command recording to view the data inside a buffer.",
                             "type": "BOOL",
                             "default": false
+                        }
+                    ],
+                    "messages": [
+                        {
+                            "key": "gpu_dump_enable_msg1",
+                            "title": "Warning: GPU Dump without info level message severity flag",
+                            "version": 1,
+                            "description": "Enabling GPU Dump for Descriptors, with output directed to the debug callback, but info/warning level message severity is disabled, so printf message won't be shown.",
+                            "informative": "Adding 'info' and 'warning' level to 'Message Severity'",
+                            "severity": "INFORMATION",
+                            "conditions": [
+                                { "setting": { "key": "gpu_dump_descriptors", "value": true }},
+                                { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
+                                { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
+                            ],
+                            "actions": {
+                                "default": "BUTTON0",
+                                "BUTTON0": {
+                                    "type": "OK",
+                                    "changes": [
+                                        { "setting": { "key": "report_flags", "value": ["info"] }, "operator": "APPEND" },
+                                        { "setting": { "key": "report_flags", "value": ["warn"] }, "operator": "APPEND" }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "key": "gpu_dump_enable_msg2",
+                            "title": "Warning: GPU Dump without info level message severity flag",
+                            "version": 1,
+                            "description": "Enabling GPU Dump for Copy Memory Indirect, with output directed to the debug callback, but info/warning level message severity is disabled, so printf message won't be shown.",
+                            "informative": "Adding 'info' and 'warning' level to 'Message Severity'",
+                            "severity": "INFORMATION",
+                            "conditions": [
+                                { "setting": { "key": "gpu_dump_copy_memory_indirect", "value": true }},
+                                { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
+                                { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
+                            ],
+                            "actions": {
+                                "default": "BUTTON0",
+                                "BUTTON0": {
+                                    "type": "OK",
+                                    "changes": [
+                                        { "setting": { "key": "report_flags", "value": ["info"] }, "operator": "APPEND" },
+                                        { "setting": { "key": "report_flags", "value": ["warn"] }, "operator": "APPEND" }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "key": "gpu_dump_enable_msg3",
+                            "title": "Warning: GPU Dump without info level message severity flag",
+                            "version": 1,
+                            "description": "Enabling GPU Dump for Device Generated Commands, with output directed to the debug callback, but info/warning level message severity is disabled, so printf message won't be shown.",
+                            "informative": "Adding 'info' and 'warning' level to 'Message Severity'",
+                            "severity": "INFORMATION",
+                            "conditions": [
+                                { "setting": { "key": "gpu_dump_device_generated_commands", "value": true }},
+                                { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
+                                { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
+                            ],
+                            "actions": {
+                                "default": "BUTTON0",
+                                "BUTTON0": {
+                                    "type": "OK",
+                                    "changes": [
+                                        { "setting": { "key": "report_flags", "value": ["info"] }, "operator": "APPEND" },
+                                        { "setting": { "key": "report_flags", "value": ["warn"] }, "operator": "APPEND" }
+                                    ]
+                                }
+                            }
                         }
                     ]
                 },

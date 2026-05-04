@@ -57,12 +57,12 @@ khronos_validation.fine_grained_locking = true
 
 # Dump VK_KHR_copy_memory_indirect
 # =====================
-# Dump VK_KHR_copy_memory_indirect information
+# Dump information at each copy command when recording
 khronos_validation.gpu_dump_copy_memory_indirect = false
 
-# Dump Descriptors
+# Dump Descriptors (VK_EXT_descriptor_buffer and VK_EXT_descriptor_heap)
 # =====================
-# Dump VK_EXT_descriptor_buffer and VK_EXT_descriptor_heap
+# Dump all the information at every draw/dispatch when recording
 khronos_validation.gpu_dump_descriptors = false
 
 # Force Device Copy
@@ -72,7 +72,7 @@ khronos_validation.gpu_dump_device_copy = false
 
 # Dump VK_EXT_device_generated_commands
 # =====================
-# Dump VK_EXT_device_generated_commands information
+# Dump information at each vkCmdExecuteGeneratedCommands when recording
 khronos_validation.gpu_dump_device_generated_commands = false
 
 # Redirect all GPU Dump to stdout
