@@ -859,7 +859,16 @@ bool CoreChecks::ValidatePipelineTessellationStages(const ShaderStageState& tesc
                          "OutputVertices (patch size) specified in tessellation control shader is %" PRIu32
                          ", but OutputVertices specified in tessellation evaluation shader is %" PRIu32,
                          tesc_patch_size, tese_patch_size);
+    } else if ((tesc_patch_size != spirv::kInvalidValue &&
+                (tesc_patch_size == 0u || tesc_patch_size > phys_dev_props.limits.maxTessellationPatchSize)) ||
+               (tese_patch_size != spirv::kInvalidValue &&
+                (tese_patch_size == 0u || tese_patch_size > phys_dev_props.limits.maxTessellationPatchSize))) {
+        skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-00713", device, create_info_loc.dot(Field::pCode),
+                         "is using OutputVertices (patch size) %" PRIu32
+                         ", which is not between 1 and maxTessellationPatchSize (%" PRIu32 ").",
+                         tesc_patch_size, phys_dev_props.limits.maxTessellationPatchSize);
     }
+
     return skip;
 }
 
