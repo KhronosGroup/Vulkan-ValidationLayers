@@ -322,10 +322,17 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::Comm
                     if (!swapchain_image.acquired) {
                         const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
                         // VUID request: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4784
+                        // TODO: remove spec text after VUID is added
+                        static const char* acquire_image_usage_spec_text =
+                            "The Vulkan spec states: Use of a presentable image must occur only after the image is returned by "
+                            "vkAcquireNextImageKHR, and before it is released by vkQueuePresentKHR. This includes transitioning "
+                            "the image layout and rendering commands "
+                            "(https://docs.vulkan.org/refpages/latest/refpages/source/VkSwapchainKHR.html#_description)";
                         skip |= LogError("UNASSIGNED-non-acquired-swapchain-image-used", objlist, loc,
                                          "performs a layout transition on presentable %s, but the image has not been acquired from "
-                                         "%s (either never or since the last present operation).",
-                                         FormatHandle(*image_state).c_str(), FormatHandle(*image_state->bind_swapchain).c_str());
+                                         "%s (either never or since the last present operation).\n%s",
+                                         FormatHandle(*image_state).c_str(), FormatHandle(*image_state->bind_swapchain).c_str(),
+                                         acquire_image_usage_spec_text);
                     } else if (!has_wait && (semaphore_signal || fence_signal)) {
                         std::ostringstream oss;
                         const char* was_were = "was";
@@ -341,10 +348,16 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::Comm
                         }
                         const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
                         // VUID request: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4784
+                        // TODO: remove spec text after VUID is added
+                        static const char* acquire_image_usage_spec_text =
+                            "The Vulkan spec states: After acquiring a presentable image and before modifying it, the application "
+                            "must use a synchronization primitive to ensure that the presentation engine has finished reading from "
+                            "the image (https://docs.vulkan.org/refpages/latest/refpages/source/VkSwapchainKHR.html#_description)";
                         skip |= LogError("UNASSIGNED-non-acquired-swapchain-image-used", objlist, loc,
                                          "performs a layout transition on presentable %s, but %s signaled by image acquire "
-                                         "operation %s not waited on.",
-                                         FormatHandle(*image_state).c_str(), oss.str().c_str(), was_were);
+                                         "operation %s not waited on.\n%s",
+                                         FormatHandle(*image_state).c_str(), oss.str().c_str(), was_were,
+                                         acquire_image_usage_spec_text);
                     }
                 }
             }
