@@ -114,79 +114,45 @@ TEST_F(NegativeEvent, WaitEvent2HostStage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, EventStageMaskOneCommandBufferPass) {
+TEST_F(NegativeEvent, EventStageMask) {
     RETURN_IF_SKIP(Init());
 
     vkt::Event event(*m_device);
 
     m_command_buffer.Begin();
     vk::CmdSetEvent(m_command_buffer, event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-    vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                      VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
-    m_command_buffer.End();
-
-    m_default_queue->SubmitAndWait(m_command_buffer);
-}
-
-TEST_F(NegativeEvent, EventStageMaskOneCommandBufferFail) {
-    RETURN_IF_SKIP(Init());
-
-    vkt::Event event(*m_device);
-
-    m_command_buffer.Begin();
-    vk::CmdSetEvent(m_command_buffer, event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-    // wrong srcStageMask
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdWaitEvents-srcStageMask-01158");
+    // Source stage mask does not match CmdSetEvent's stage mask
     vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                       0, nullptr, 0, nullptr, 0, nullptr);
     m_command_buffer.End();
 
+    // TODO: it has to be VUID-vkCmdWaitEvents-srcStageMask-01158 and also directly during recording,
+    // no need for submit validation.
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-parameter");
     m_default_queue->Submit(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeEvent, EventStageMaskTwoCommandBufferPass) {
+TEST_F(NegativeEvent, EventStageMaskSubmit) {
     RETURN_IF_SKIP(Init());
 
-    vkt::CommandBuffer commandBuffer1(*m_device, m_command_pool);
-    vkt::CommandBuffer commandBuffer2(*m_device, m_command_pool);
+    vkt::CommandBuffer command_buffer1(*m_device, m_command_pool);
+    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
     vkt::Event event(*m_device);
 
-    commandBuffer1.Begin();
-    vk::CmdSetEvent(commandBuffer1, event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-    commandBuffer1.End();
-    m_default_queue->Submit(commandBuffer1);
+    command_buffer1.Begin();
+    command_buffer1.SetEvent(event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    command_buffer1.End();
+    m_default_queue->Submit(command_buffer1);
 
-    commandBuffer2.Begin();
-    vk::CmdWaitEvents(commandBuffer2, 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                      VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
-    commandBuffer2.End();
-    m_default_queue->Submit(commandBuffer2);
-
-    m_default_queue->Wait();
-}
-
-TEST_F(NegativeEvent, EventStageMaskTwoCommandBufferFail) {
-    RETURN_IF_SKIP(Init());
-
-    vkt::CommandBuffer commandBuffer1(*m_device, m_command_pool);
-    vkt::CommandBuffer commandBuffer2(*m_device, m_command_pool);
-    vkt::Event event(*m_device);
-
-    commandBuffer1.Begin();
-    vk::CmdSetEvent(commandBuffer1, event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-    commandBuffer1.End();
-    m_default_queue->Submit(commandBuffer1);
-
-    commandBuffer2.Begin();
-    // wrong srcStageMask
-    vk::CmdWaitEvents(commandBuffer2, 1, &event.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                      0, nullptr, 0, nullptr, 0, nullptr);
-    commandBuffer2.End();
+    command_buffer2.Begin();
+    // Source stage mask does not match CmdSetEvent's stage mask
+    vk::CmdWaitEvents(command_buffer2, 1, &event.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0,
+                      nullptr, 0, nullptr, 0, nullptr);
+    command_buffer2.End();
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-parameter");
-    m_default_queue->Submit(commandBuffer2);
+    m_default_queue->Submit(command_buffer2);
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();

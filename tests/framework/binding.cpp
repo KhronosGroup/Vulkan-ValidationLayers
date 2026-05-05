@@ -1069,21 +1069,8 @@ NON_DISPATCHABLE_HANDLE_DTOR(Event, vk::DestroyEvent)
 
 void Event::Init(const Device& dev, const VkEventCreateInfo& info) { NON_DISPATCHABLE_HANDLE_INIT(vk::CreateEvent, dev, &info); }
 
+VkResult Event::GetStatus() const { return vk::GetEventStatus(device(), handle()); }
 void Event::Set() { ASSERT_EQ(VK_SUCCESS, vk::SetEvent(device(), handle())); }
-
-void Event::CmdSet(const CommandBuffer& cmd, VkPipelineStageFlags stage_mask) { vk::CmdSetEvent(cmd, handle(), stage_mask); }
-
-void Event::CmdReset(const CommandBuffer& cmd, VkPipelineStageFlags stage_mask) { vk::CmdResetEvent(cmd, handle(), stage_mask); }
-
-void Event::CmdWait(const CommandBuffer& cmd, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
-                    const std::vector<VkMemoryBarrier>& memory_barriers, const std::vector<VkBufferMemoryBarrier>& buffer_barriers,
-                    const std::vector<VkImageMemoryBarrier>& image_barriers) {
-    VkEvent event_handle = handle();
-    vk::CmdWaitEvents(cmd, 1, &event_handle, src_stage_mask, dst_stage_mask, static_cast<uint32_t>(memory_barriers.size()),
-                      memory_barriers.data(), static_cast<uint32_t>(buffer_barriers.size()), buffer_barriers.data(),
-                      static_cast<uint32_t>(image_barriers.size()), image_barriers.data());
-}
-
 void Event::Reset() { ASSERT_EQ(VK_SUCCESS, vk::ResetEvent(device(), handle())); }
 
 NON_DISPATCHABLE_HANDLE_DTOR(QueryPool, vk::DestroyQueryPool)
@@ -2166,6 +2153,33 @@ void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR& decodeInfo) { vk::Cm
 void CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR& encodeInfo) { vk::CmdEncodeVideoKHR(handle(), &encodeInfo); }
 
 void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR& endInfo) { vk::CmdEndVideoCodingKHR(handle(), &endInfo); }
+
+void CommandBuffer::SetEvent(Event& event, VkPipelineStageFlags src_stage_mask) {
+    vk::CmdSetEvent(handle(), event, src_stage_mask);
+}
+
+void CommandBuffer::ResetEvent(Event& event, VkPipelineStageFlags src_stageMask) {
+    vk::CmdResetEvent(handle(), event, src_stageMask);
+}
+
+void CommandBuffer::WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask) {
+    vk::CmdWaitEvents(handle(), 1, &event.handle(), src_stage_mask, dst_stage_mask, 0, nullptr, 0, nullptr, 0, nullptr);
+}
+
+void CommandBuffer::WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                              const VkMemoryBarrier& memory_barrier) {
+    vk::CmdWaitEvents(handle(), 1, &event.handle(), src_stage_mask, dst_stage_mask, 1, &memory_barrier, 0, nullptr, 0, nullptr);
+}
+
+void CommandBuffer::WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                              const VkBufferMemoryBarrier& buffer_barrier) {
+    vk::CmdWaitEvents(handle(), 1, &event.handle(), src_stage_mask, dst_stage_mask, 0, nullptr, 1, &buffer_barrier, 0, nullptr);
+}
+
+void CommandBuffer::WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                              const VkImageMemoryBarrier& image_barrier) {
+    vk::CmdWaitEvents(handle(), 1, &event.handle(), src_stage_mask, dst_stage_mask, 0, nullptr, 0, nullptr, 1, &image_barrier);
+}
 
 void CommandBuffer::Copy(const Buffer& src, const Buffer& dst) {
     assert(src.CreateInfo().size == dst.CreateInfo().size);
