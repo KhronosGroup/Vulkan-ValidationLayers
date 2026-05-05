@@ -416,25 +416,17 @@ inline const Semaphore no_semaphore;  // equivalent to vkt::Semaphore{}
 class Event : public internal::NonDispHandle<VkEvent> {
   public:
     Event() = default;
-    Event(const Device &dev) { Init(dev, CreateInfo(0)); }
-    Event(const Device &dev, const VkEventCreateInfo &info) { Init(dev, info); }
+    Event(const Device& dev) { Init(dev, CreateInfo(0)); }
+    Event(const Device& dev, const VkEventCreateInfo& info) { Init(dev, info); }
     ~Event() noexcept;
     void Destroy() noexcept;
 
     // vkCreateEvent()
-    void Init(const Device &dev, const VkEventCreateInfo &info);
-    void SetName(const char *name) { NonDispHandle<VkEvent>::SetName(VK_OBJECT_TYPE_EVENT, name); }
+    void Init(const Device& dev, const VkEventCreateInfo& info);
+    void SetName(const char* name) { NonDispHandle<VkEvent>::SetName(VK_OBJECT_TYPE_EVENT, name); }
 
-    // vkGetEventStatus()
-    // vkSetEvent()
-    // vkResetEvent()
-    VkResult GetStatus() const { return vk::GetEventStatus(device(), handle()); }
+    VkResult GetStatus() const;
     void Set();
-    void CmdSet(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask);
-    void CmdReset(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask);
-    void CmdWait(const CommandBuffer &cmd, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
-                 const std::vector<VkMemoryBarrier> &memory_barriers, const std::vector<VkBufferMemoryBarrier> &buffer_barriers,
-                 const std::vector<VkImageMemoryBarrier> &image_barriers);
     void Reset();
 
     static VkEventCreateInfo CreateInfo(VkFlags flags);
@@ -1134,15 +1126,15 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void EncodeVideo(const VkVideoEncodeInfoKHR &encodeInfo);
     void EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo);
 
-    void SetEvent(Event &event, VkPipelineStageFlags stageMask) { event.CmdSet(*this, stageMask); }
-    void ResetEvent(Event &event, VkPipelineStageFlags stageMask) { event.CmdReset(*this, stageMask); }
-    void WaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags srcStageMask,
-                    VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                    uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
-        vk::CmdWaitEvents(handle(), eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
-                          bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-    }
+    void SetEvent(Event& event, VkPipelineStageFlags src_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    void ResetEvent(Event& event, VkPipelineStageFlags src_stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    void WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask);
+    void WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                   const VkMemoryBarrier& memory_barrier);
+    void WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                   const VkBufferMemoryBarrier& buffer_barrier);
+    void WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                   const VkImageMemoryBarrier& image_barrier);
 
     void Copy(const Buffer &src, const Buffer &dst);
     void ExecuteCommands(const CommandBuffer &secondary);

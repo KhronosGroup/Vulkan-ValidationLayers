@@ -420,7 +420,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, ResetCommandPool) {
     {
         vkt::Event event1(*m_device);
         m_command_buffer.Begin();
-        event1.CmdSet(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        m_command_buffer.SetEvent(event1);
         m_command_buffer.End();
         m_default_queue->SubmitAndWait(m_command_buffer);
         // event1 is destroyed somehwere here
@@ -428,7 +428,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, ResetCommandPool) {
 
     vkt::Event event2(*m_device);
     m_command_buffer.Begin();
-    event2.CmdSet(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    m_command_buffer.SetEvent(event2);
     m_command_buffer.End();
     // Submit tries to access signaling state of deleted event1. This should not cause a crash.
     // Currently VVL does not cleanup event_signaling_state: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9171

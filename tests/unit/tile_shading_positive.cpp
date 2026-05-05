@@ -514,8 +514,7 @@ TEST_F(PositiveTileShading, WaitEventsOutsidePerTileExecutionModelScope) {
 
     {
         m_command_buffer.Begin();
-        m_command_buffer.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                    0, nullptr, 0, nullptr, 0, nullptr);
+        m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
         m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
         vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);

@@ -16,6 +16,39 @@
 
 class PositiveEvent : public SyncObjectTest {};
 
+TEST_F(PositiveEvent, EventStageMask) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                      0, nullptr, 0, nullptr, 0, nullptr);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveEvent, EventStageMaskTwoSubmits) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::CommandBuffer commandBuffer1(*m_device, m_command_pool);
+    vkt::CommandBuffer commandBuffer2(*m_device, m_command_pool);
+    vkt::Event event(*m_device);
+
+    commandBuffer1.Begin();
+    vk::CmdSetEvent(commandBuffer1, event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    commandBuffer1.End();
+    m_default_queue->Submit(commandBuffer1);
+
+    commandBuffer2.Begin();
+    vk::CmdWaitEvents(commandBuffer2, 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                      VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
+    commandBuffer2.End();
+    m_default_queue->Submit(commandBuffer2);
+
+    m_default_queue->Wait();
+}
+
 TEST_F(PositiveEvent, BasicSetAndWaitEvent) {
     TEST_DESCRIPTION("Sets event and then wait for it using CmdSetEvent/CmdWaitEvents");
     RETURN_IF_SKIP(Init());
