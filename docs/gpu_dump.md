@@ -1,23 +1,23 @@
 # GPU Dump
 
-**⚠️ This was released in 1.4.350 SDK as a preview and the goal is the July 2026 SDK will have the final version, so warning things may change. ⚠️**
+**⚠️ This was released in the 1.4.350 SDK as a preview. The goal is for the July 2026 SDK to contain the final version, so please be aware that details may change. ⚠️**
 
-As more extensions move towards the GPU the goal is tools like[GPU-Assisted Validation](./gpu_validation.md) will be used.
+As more extensions move towards the GPU, the objective is to ensure tools like [GPU-Assisted Validation](./gpu_validation.md) are utilized.
 
-The reality is each tool fits on the spectrum for debugging, and something to just "print out" the GPU information was missing, so `GPU Dump` was added.
+In reality, every tool occupies a specific spot on the debugging spectrum. A tool designed to simply "print out" GPU information was missing, so `GPU Dump` was added.
 
-The goal is something like API Dump but:
+The goal is to provide a tool similar to API Dump, but with several key differences:
 
-- Provide all the addresses and GPU information that VVL has from all our state tracking.
-- API Dump is verbose, this only print the commands we care about.
-- Grab the data of the `VkBuffer` at that moment of recording the command buffer.
-    - While it is still very possible to update these values later on the CPU or even on the GPU, the goal is 90% of use cases are not doing that level of indirection.
+- **State Tracking:** It provides all addresses and GPU information that VVL maintains from its state tracking.
+- **Conciseness:** While API Dump is verbose, this tool only prints the commands relevant to the user.
+- **Data Capture:** It captures the data of the `VkBuffer` at the moment the command buffer is recorded.
+    - While it is still possible to update these values later on the CPU or GPU, the tool targets the 90% of use cases that do not involve that level of indirection.
 
-The options for all the extensions are available on vkconfig (as a preset as well).
+The options for all extensions are available in **VkConfig** (and are also available as a preset).
 
 ## Example
 
-Using the "GPU Dump Descriptor" setting:
+Using the "GPU Dump Descriptor" [setting](./settings.md):
 
 ```bash
 export VK_LAYER_GPU_DUMP_DESCRIPTORS=1
@@ -25,7 +25,7 @@ export VK_LAYER_GPU_DUMP_DESCRIPTORS=1
 export VK_LAYER_GPU_DUMP_TO_STDOUT=1
 ```
 
-When doing a draw with `VK_EXT_descriptor_heap` you will see something such as
+When performing a draw with `VK_EXT_descriptor_heap`, you will see output such as:
 
 ```
 Validation Warning: [ GPU-DUMP ] | MessageID = 0xe5c5edc1
@@ -55,7 +55,7 @@ vkCmdBindResourceHeapEXT last bound the resource heap to [0x300000000, 0x3000001
         Descriptor size: 0x40 (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
 ```
 
-In this example, the first dispatch shader looked like:
+In this example, the first dispatch shader looked like this:
 
 ```glsl
 layout (set = 0, binding = 0) buffer SSBO_0 {
@@ -63,13 +63,13 @@ layout (set = 0, binding = 0) buffer SSBO_0 {
 } ssbo[8];
 ```
 
-GPU Dump prints out the mapping where in the heap it will be read from, but also prints as `warning level`
+GPU Dump prints the mapping of where the heap will be read from, but it also issues a `warning`:
 
 > [WARNING] OUT OF BOUNDS - descriptor has an array length of [8] but any element accessed starting at [4] will be invalid if accessed
 
-To help catch that if the user goes `ssbo[4]` it will actually be out of bounds of the bound descriptor heap memory.
+This helps catch errors where, if the user accesses `ssbo[4]`, it will actually be out of bounds of the bound descriptor heap memory.
 
-The second dispatch has a shader that looks like:
+The second dispatch has a shader that looks like this:
 
 ```
 layout (set = 0, binding = 0) buffer SSBO_0 {
@@ -77,4 +77,4 @@ layout (set = 0, binding = 0) buffer SSBO_0 {
 } ssbo[];
 ```
 
-GPU Dump will help print out the range that is valid to use your runtime descriptor arrays.
+GPU Dump will help print the specific range that is valid for your runtime descriptor arrays.
