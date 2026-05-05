@@ -1563,8 +1563,6 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentationG
             continue;
         }
 
-        vku::safe_VkGraphicsPipelineCreateInfo new_lib_pipeline_ci(lib->GraphicsCreateInfo());
-
         for (uint32_t stage_state_i = 0; stage_state_i < static_cast<uint32_t>(lib->stage_states.size()); ++stage_state_i) {
             auto& instrumentation_metadata = shader_instrumentation_metadata[shader_index++];
 
