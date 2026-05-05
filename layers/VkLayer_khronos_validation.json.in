@@ -1325,6 +1325,7 @@
                     "description": "Similar to API Dump, but using all the state tracking information, print out information for GPU centric extensions.",
                     "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                     "type": "GROUP",
+                    "status": "ALPHA",
                     "expanded": true,
                     "settings": [
                         {
