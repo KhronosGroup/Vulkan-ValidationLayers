@@ -5018,11 +5018,12 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountShaderObject) {
 TEST_F(NegativeDescriptorHeap, MaxEmbeddedSamplers) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    const size_t max_samplers = heap_props.maxDescriptorHeapEmbeddedSamplers;
-    if (max_samplers > 2048) {
-        GTEST_SKIP() << "maxDescriptorHeapEmbeddedSamplers too large to run the test";
+    // Creating this many emedded samplers is really slow on many drivers
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test only for MockICD.";
     }
 
+    const size_t max_samplers = heap_props.maxDescriptorHeapEmbeddedSamplers;
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
     VkDescriptorSetAndBindingMappingEXT mapping;
     mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
@@ -5081,10 +5082,12 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationTotalCountShaderObject) {
     AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    const size_t max_samplers = heap_props.maxDescriptorHeapEmbeddedSamplers;
-    if (heap_props.maxDescriptorHeapEmbeddedSamplers > 2048) {
-        GTEST_SKIP() << "maxDescriptorHeapEmbeddedSamplers too large to run the test";
+    // Creating this many emedded samplers is really slow on many drivers
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test only for MockICD.";
     }
+
+    const size_t max_samplers = heap_props.maxDescriptorHeapEmbeddedSamplers;
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
     VkDescriptorSetAndBindingMappingEXT mapping;
     mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
