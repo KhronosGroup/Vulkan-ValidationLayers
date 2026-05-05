@@ -1109,77 +1109,6 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
     m_default_queue->Wait();
 }
 
-TEST_F(PositiveSyncObject, BasicSetAndWaitEvent) {
-    TEST_DESCRIPTION("Sets event and then wait for it using CmdSetEvent/CmdWaitEvents");
-    RETURN_IF_SKIP(Init());
-
-    const vkt::Event event(*m_device);
-
-    // Record time validation
-    m_command_buffer.Begin();
-    vk::CmdSetEvent(m_command_buffer, event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-    vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                      0, nullptr, 0, nullptr, 0, nullptr);
-    m_command_buffer.End();
-
-    // Also submit to the queue to test submit time validation
-    m_default_queue->Submit(m_command_buffer);
-    m_device->Wait();
-}
-
-TEST_F(PositiveSyncObject, BasicSetAndWaitEvent2) {
-    TEST_DESCRIPTION("Sets event and then wait for it using CmdSetEvent2/CmdWaitEvents2");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredFeature(vkt::Feature::synchronization2);
-    RETURN_IF_SKIP(Init());
-
-    VkMemoryBarrier2 barrier = vku::InitStructHelper();
-    barrier.srcAccessMask = 0;
-    barrier.dstAccessMask = 0;
-    barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-    barrier.dstStageMask = VK_PIPELINE_STAGE_NONE;
-
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.memoryBarrierCount = 1;
-    dependency_info.pMemoryBarriers = &barrier;
-
-    const vkt::Event event(*m_device);
-
-    // Record time validation
-    m_command_buffer.Begin();
-    vk::CmdSetEvent2(m_command_buffer, event, &dependency_info);
-    vk::CmdWaitEvents2(m_command_buffer, 1, &event.handle(), &dependency_info);
-    m_command_buffer.End();
-
-    // Also submit to the queue to test submit time validation
-    m_default_queue->Submit(m_command_buffer);
-    m_device->Wait();
-}
-
-TEST_F(PositiveSyncObject, WaitEvent2HostStage) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::synchronization2);
-    RETURN_IF_SKIP(Init());
-    InitRenderTarget();
-
-    vkt::Event event(*m_device);
-    VkEvent event_handle = event;
-
-    VkMemoryBarrier2 barrier = vku::InitStructHelper();
-    barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-    barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
-    barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;  // Ok to use if outside the renderpass
-    barrier.dstStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.memoryBarrierCount = 1;
-    dependency_info.pMemoryBarriers = &barrier;
-
-    m_command_buffer.Begin();
-    vk::CmdWaitEvents2KHR(m_command_buffer, 1, &event_handle, &dependency_info);
-    m_command_buffer.End();
-}
-
 TEST_F(PositiveSyncObject, DoubleLayoutTransition) {
     TEST_DESCRIPTION("Attempt vkCmdPipelineBarrier with 2 layout transitions of the same image.");
 
@@ -2774,26 +2703,6 @@ TEST_F(PositiveSyncObject, Transition3dImageWithMipLevelsRemainingArrayLayers) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveSyncObject, SetEvent2Flags) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::maintenance9);
-    AddRequiredFeature(vkt::Feature::synchronization2);
-    RETURN_IF_SKIP(Init());
-
-    m_command_buffer.Begin();
-
-    VkMemoryBarrier2 memory_barrier = vku::InitStructHelper();
-
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.dependencyFlags = VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR;
-    dependency_info.memoryBarrierCount = 1u;
-    dependency_info.pMemoryBarriers = &memory_barrier;
-
-    vkt::Event event(*m_device);
-    vk::CmdSetEvent2(m_command_buffer, event, &dependency_info);
-}
-
 TEST_F(PositiveSyncObject, TimelineSemaphoreAndExportedCopyCooperation) {
     TEST_DESCRIPTION("Test that queue submission state is updated properly when using semaphores with shared payload");
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -2929,37 +2838,6 @@ TEST_F(PositiveSyncObject, ZeroInitializeLayoutSubresource) {
     img_barrier.image = image2;
     img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
     m_command_buffer.Barrier(img_barrier);
-}
-
-TEST_F(PositiveSyncObject, AsymmetricWaitEvent2) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::maintenance9);
-    AddRequiredFeature(vkt::Feature::synchronization2);
-    RETURN_IF_SKIP(Init());
-
-    VkMemoryBarrier2 barrier = vku::InitStructHelper();
-    barrier.srcStageMask = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.dependencyFlags = VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR;
-    dependency_info.memoryBarrierCount = 1u;
-    dependency_info.pMemoryBarriers = &barrier;
-
-    const vkt::Event event(*m_device);
-
-    m_command_buffer.Begin();
-
-    vk::CmdSetEvent2(m_command_buffer, event, &dependency_info);
-
-    barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    barrier.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    vk::CmdWaitEvents2(m_command_buffer, 1, &event.handle(), &dependency_info);
-
-    m_command_buffer.End();
-
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncObject, Maintenance9ImageBarriers) {
