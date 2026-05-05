@@ -28,7 +28,6 @@ static std::string GetSpirvSpecLink(const uint32_t opcode) {
     // (https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7853)
     return "\nSee more at https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#" + std::string(string_SpvOpcode(opcode));
 }
-
 void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
     if (!gpuav.gpuav_settings.shader_instrumentation.sanitizer) {
         return;
@@ -85,10 +84,11 @@ void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
                         // Should use std::bit_cast but requires c++20
                         const float x_value = *(float*)(error_record + kInst_LogError_ParameterOffset_1);
                         const float y_value = *(float*)(error_record + kInst_LogError_ParameterOffset_2);
-                        strm << "Pow (from GLSL.std.450) has an undefined result because operand (x < 0) or (x == 0 && y <= 0)\n  ";
+                        strm << "Pow (from GLSL.std.450) has an undefined result because x < 0, or x == 0 and y <= 0. ";
                         if (vector_size > 0) {
                             // Would need a new way to print more than 2 bytes out to get this to work
-                            strm << "Using a vector of size " << vector_size << " but currently only can print out scalar values";
+                            strm << "Using a vector of size " << vector_size
+                                 << "; currently only scalar values can be printed in error messages.";
                         } else {
                             strm << "X == " << x_value << ", Y == " << y_value;
                         }
@@ -96,7 +96,7 @@ void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
                     } break;
                     case kErrorSubCode_Sanitizer_Atan2: {
                         // Atan is only valid with a scalar/vector of 16/32-bit float
-                        strm << "Atan2 (from GLSL.std.450) has an undefined result because both values used are zero.";
+                        strm << "Atan2 (from GLSL.std.450) has an undefined result because both the y and x operands are zero.";
                         out_vuid_msg = "SPIRV-Sanitizer-Atan2";
                     } break;
                     case kErrorSubCode_Sanitizer_Fminmax: {
@@ -109,14 +109,15 @@ void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
                         strm << (glsl_opcode == GLSLstd450FMin ? "FMin" : "FMax")
                              << " (from GLSL.std.450) has an undefined result because ";
                         if (x_is_invalid && y_is_invalid) {
-                            strm << "both the x and y operands are NaN\n";
+                            strm << "both the x and y operands are NaN.";
                         } else if (x_is_invalid) {
-                            strm << "the x operand is NaN\n";
+                            strm << "the x operand is NaN.";
                         } else {
-                            strm << "the y operand is NaN\n";
+                            strm << "the y operand is NaN.";
                         }
                         if (vector_size > 0) {
-                            strm << "Using a vector of size " << vector_size << " but currently only can print out scalar values";
+                            strm << " Using a vector of size " << vector_size
+                                 << "; currently only scalar values can be printed in error messages.";
                         }
                         out_vuid_msg = "SPIRV-Sanitizer-Fminmax";
                     } break;
