@@ -412,7 +412,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeNonArray) {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange = descriptor_heap.AddressRange();
     bind_resource_info.reservedRangeOffset = 0;
-    bind_resource_info.reservedRangeSize = 256;
+    bind_resource_info.reservedRangeSize = (uint32_t)resource_stride;
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
