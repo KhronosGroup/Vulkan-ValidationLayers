@@ -430,3 +430,32 @@ TEST_F(PositiveHostImageCopy, CopyImageToImageMemcpyUsesSubresourceExtent) {
 
     vk::CopyImageToImageEXT(*m_device, &copy);
 }
+
+TEST_F(PositiveHostImageCopy, CopyImageToMemoryLayers) {
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    image_ci.arrayLayers = 2;
+    VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
+    vkt::Image image(*m_device, image_ci);
+    image.SetLayout(layout);
+
+    const uint32_t buffer_size = width * height * 4u * image_ci.arrayLayers;
+    std::vector<uint8_t> data(buffer_size);
+
+    VkImageToMemoryCopy region = vku::InitStructHelper();
+    region.pHostPointer = data.data();
+    region.memoryRowLength = 0u;
+    region.memoryImageHeight = 0u;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 2u};
+    region.imageOffset = {0u, 0u, 0u};
+    region.imageExtent = {32u, 32u, 1u};
+
+    VkCopyImageToMemoryInfo copy_to_image_memory = vku::InitStructHelper();
+    copy_to_image_memory.flags = VK_HOST_IMAGE_COPY_MEMCPY;
+    copy_to_image_memory.srcImage = image;
+    copy_to_image_memory.srcImageLayout = layout;
+    copy_to_image_memory.regionCount = 1u;
+    copy_to_image_memory.pRegions = &region;
+
+    vk::CopyImageToMemoryEXT(*m_device, &copy_to_image_memory);
+}
