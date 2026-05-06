@@ -739,3 +739,34 @@ TEST_F(PositiveTileShading, LaunchDebugMarkerOutsidePerTileExecutionModelScope) 
     vk::CmdDebugMarkerEndEXT(m_command_buffer);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveTileShading, DispatchInsidePerTileExecutionModelAndTileShadingRenderPassScopes) {
+    TEST_DESCRIPTION("Launch dispatch inside the per-tile execution model and the tile-shading render pass.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.CreateComputePipeline();
+
+    VkClearValue clear_color{};
+    clear_color.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea = {{0,0}, tile_shading_rp_config.rt_size};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_color;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}

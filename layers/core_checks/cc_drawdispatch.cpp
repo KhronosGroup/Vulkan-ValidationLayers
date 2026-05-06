@@ -706,6 +706,23 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect2KHR(VkCommandBuffer commandB
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                                    const ErrorObject& error_obj) const {
+    bool skip = false;
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state->GetLastBoundCompute();
+
+    if (!cb_state->per_tile_execution_model_enabled) {
+        skip |= LogError("VUID-vkCmdDispatchTileQCOM-None-10668", commandBuffer, error_obj.location,
+                         "the per-tile execution model isn't enabled in this command buffer. "
+                         "(Can be enabled by calling vkCmdBeginPerTileExecutionQCOM)");
+    }
+
+    skip |= ValidateActionState(last_bound_state, error_obj.location);
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                      uint32_t stride, const ErrorObject& error_obj) const {
@@ -1654,6 +1671,53 @@ bool CoreChecks::ValidateActionState(const LastBound& last_bound_state, const Lo
 
     if (!cb_state.unprotected) {
         skip |= ValidateActionStateProtectedMemory(last_bound_state, bind_point, pipeline, loc);
+    }
+
+    skip |= ValidateActionStateTileShading(last_bound_state, loc);
+
+    return skip;
+}
+
+bool CoreChecks::ValidateActionStateTileShading(const LastBound& last_bound_state, const Location& loc) const {
+    bool skip = false;
+    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+    const vvl::Pipeline* pipeline = last_bound_state.pipeline_state;
+    const VkPipelineBindPoint bind_point = last_bound_state.bind_point;
+
+    if (cb_state.per_tile_execution_model_enabled) {
+        if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && !enabled_features.tileShadingPerTileDraw) {
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PER_TILE_DRAW_ENABLED_10677),
+                             cb_state.GetObjectList(bind_point), loc,
+                             "the per-tile execution model is enabled in this command buffer, but "
+                             "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingPerTileDraw feature isn't enabled.");
+        } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE && !enabled_features.tileShadingPerTileDispatch) {
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PER_TILE_DISPATCH_ENABLED_10674),
+                             cb_state.GetObjectList(bind_point), loc,
+                             "the per-tile execution model is enabled in this command buffer, but "
+                             "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingPerTileDispatch feature isn't enabled.");
+        }
+    }
+
+    if (cb_state.active_render_pass && cb_state.active_render_pass->has_tile_shading_enabled) {
+        const VkShaderStageFlags allowed_shader_stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
+                                                         VK_SHADER_STAGE_COMPUTE_BIT;
+        VkShaderStageFlags active_stages = 0;
+        if (pipeline) {
+            active_stages = pipeline->active_shaders;
+        } else {
+            for (const auto* shader_object : last_bound_state.shader_object_states) {
+                if (shader_object) {
+                    active_stages |= shader_object->create_info.stage;
+                }
+            }
+        }
+        if ((active_stages & ~allowed_shader_stages) != 0) {
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::TILE_SHADING_SHADER_STAGE_10678),
+                             cb_state.GetObjectList(bind_point), loc,
+                             "shader stages (%s) include stages not allowed "
+                             "inside a tile shading render pass scope.",
+                             string_VkShaderStageFlags(active_stages).c_str());
+        }
     }
 
     return skip;

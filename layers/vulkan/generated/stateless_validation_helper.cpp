@@ -24903,6 +24903,7 @@ bool Device::PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, c
             context.ValidateStructPnext(pDispatchTileInfo_loc, pDispatchTileInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                         "VUID-VkDispatchTileInfoQCOM-pNext-pNext", kVUIDUndefined, true);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdDispatchTileQCOM(commandBuffer, pDispatchTileInfo, context);
     return skip;
 }
 

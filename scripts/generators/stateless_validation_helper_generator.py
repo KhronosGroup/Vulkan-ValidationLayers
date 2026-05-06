@@ -287,6 +287,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCreateAccelerationStructure2KHR',
             'vkCmdBeginTransformFeedback2EXT',
             'vkCmdBeginPerTileExecutionQCOM',
+            'vkCmdDispatchTileQCOM',
         ]
 
         # Commands to ignore
