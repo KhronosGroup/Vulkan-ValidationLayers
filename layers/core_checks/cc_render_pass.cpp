@@ -4168,15 +4168,39 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer&
                                  rendering_info.layerCount, image_view_state->normalized_subresource_range.layerCount);
             }
 
-            if ((rendering_info.viewMask != 0) &&
-                (rendering_info.layerCount < (uint32_t)MostSignificantBit(rendering_info.viewMask))) {
+            if (rendering_info.viewMask != 0 && image_view_state->normalized_subresource_range.layerCount <=
+                                                    (uint32_t)MostSignificantBit(rendering_info.viewMask)) {
                 skip |= LogError("VUID-VkRenderingInfo-viewMask-12403", objlist, color_image_view,
                                  "must have a layerCount (%" PRIu32
-                                 ") greater than or equal to the most significant bit (%d) in viewMask (0x%" PRIx32 ")",
-                                 rendering_info.layerCount, MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
+                                 ") greater than the most significant bit index (%d) in viewMask (0x%" PRIx32 ")",
+                                 image_view_state->normalized_subresource_range.layerCount,
+                                 MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
             }
 
             skip |= ValidateRenderingInfoAttachmentDeviceGroup(image_state, rendering_info, objlist, color_image_view);
+        }
+
+        auto resolve_view_state = Get<vvl::ImageView>(color_attachment.resolveImageView);
+
+        if (resolve_view_state) {
+            if (rendering_info.viewMask == 0 &&
+                rendering_info.layerCount > resolve_view_state->normalized_subresource_range.layerCount) {
+                const LogObjectList objlist(commandBuffer, color_attachment.resolveImageView);
+                skip |= LogError("VUID-VkRenderingInfo-viewMask-10859", objlist, color_attachment_loc.dot(Field::layerCount),
+                                 "(%" PRIu32
+                                 ") is greater than the resolveImageView which was created with a layerCount of %" PRIu32 ".",
+                                 rendering_info.layerCount, resolve_view_state->normalized_subresource_range.layerCount);
+            }
+
+            if (rendering_info.viewMask != 0 && resolve_view_state->normalized_subresource_range.layerCount <=
+                                                    (uint32_t)MostSignificantBit(rendering_info.viewMask)) {
+                const LogObjectList objlist(commandBuffer, color_attachment.resolveImageView);
+                skip |= LogError("VUID-VkRenderingInfo-viewMask-12403", objlist, color_attachment_loc.dot(Field::resolveImageView),
+                                 "must have a layerCount (%" PRIu32
+                                 ") greater than the most significant bit index (%d) in viewMask (0x%" PRIx32 ")",
+                                 resolve_view_state->normalized_subresource_range.layerCount,
+                                 MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
+            }
         }
 
         if (color_attachment.resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID) {
@@ -4208,7 +4232,6 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer&
                              "is not null (%s).", FormatHandle(fragment_shading_rate_info_khr->imageView).c_str());
             }
 
-            auto resolve_view_state = Get<vvl::ImageView>(color_attachment.resolveImageView);
             if (!resolve_view_state) {
                 skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveMode-09324", commandBuffer,
                                  color_attachment_loc.dot(Field::resolveImageView), "is not valid (%s).",
@@ -4233,26 +4256,6 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer&
                                      "was created with subresourceRange.layerCount of %" PRIu32 ".",
                                      resolve_view_state->create_info.subresourceRange.layerCount);
                 }
-
-                if (rendering_info.viewMask == 0 &&
-                    rendering_info.layerCount > resolve_view_state->normalized_subresource_range.layerCount) {
-                    const LogObjectList objlist(commandBuffer, color_attachment.resolveImageView);
-                    skip |= LogError("VUID-VkRenderingInfo-viewMask-10859", objlist, color_attachment_loc.dot(Field::layerCount),
-                                     "(%" PRIu32
-                                     ") is greater than the resolveImageView which was created with a layerCount of %" PRIu32 ".",
-                                     rendering_info.layerCount, resolve_view_state->normalized_subresource_range.layerCount);
-                }
-
-                if ((rendering_info.viewMask != 0) &&
-                    (rendering_info.layerCount < (uint32_t)MostSignificantBit(rendering_info.viewMask))) {
-                    const LogObjectList objlist(commandBuffer, color_attachment.resolveImageView);
-                    skip |=
-                        LogError("VUID-VkRenderingInfo-viewMask-12403", objlist, color_attachment_loc.dot(Field::resolveImageView),
-                                 "must have a layerCount (%" PRIu32
-                                 ") greater than or equal to the most significant bit (%d) in viewMask (0x%" PRIx32 ")",
-                                 rendering_info.layerCount, MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
-                }
-
                 if (auto color_view_state = Get<vvl::ImageView>(color_attachment.imageView)) {
                     if (device_state->android_external_format_resolve_null_color_attachment_prop) {
                         const LogObjectList objlist(commandBuffer, color_attachment.resolveImageView, color_attachment.imageView);
@@ -4282,27 +4285,24 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer&
             }
         }
 
-        if (color_attachment.resolveMode != VK_RESOLVE_MODE_NONE) {
-            if (auto resolve_view_state = Get<vvl::ImageView>(color_attachment.resolveImageView)) {
-                const VkComponentMapping components = resolve_view_state->create_info.components;
-                if (!IsIdentitySwizzle(components)) {
-                    const LogObjectList objlist(commandBuffer, resolve_view_state->Handle());
-                    skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-09480", objlist,
-                                     color_attachment_loc.dot(Field::resolveImageView),
-                                     "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
-                                     string_VkComponentMapping(components).c_str());
-                }
+        if (color_attachment.resolveMode != VK_RESOLVE_MODE_NONE && resolve_view_state) {
+            const VkComponentMapping components = resolve_view_state->create_info.components;
+            if (!IsIdentitySwizzle(components)) {
+                const LogObjectList objlist(commandBuffer, resolve_view_state->Handle());
+                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-09480", objlist,
+                                 color_attachment_loc.dot(Field::resolveImageView),
+                                 "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
+                                 string_VkComponentMapping(components).c_str());
+            }
 
-                if ((resolve_view_state->inherited_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
-                    const LogObjectList objlist(commandBuffer, resolve_view_state->Handle(),
-                                                resolve_view_state->image_state->Handle());
-                    skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-09476", objlist,
-                                     color_attachment_loc.dot(Field::resolveImageView),
-                                     "references an image which was not created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT "
-                                     "(resolveMode is %s).\n%s",
-                                     string_VkResolveModeFlagBits(color_attachment.resolveMode),
-                                     resolve_view_state->DescribeImageUsage(*this).c_str());
-                }
+            if ((resolve_view_state->inherited_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
+                const LogObjectList objlist(commandBuffer, resolve_view_state->Handle(), resolve_view_state->image_state->Handle());
+                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-09476", objlist,
+                                 color_attachment_loc.dot(Field::resolveImageView),
+                                 "references an image which was not created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT "
+                                 "(resolveMode is %s).\n%s",
+                                 string_VkResolveModeFlagBits(color_attachment.resolveMode),
+                                 resolve_view_state->DescribeImageUsage(*this).c_str());
             }
         }
     }
@@ -4352,11 +4352,13 @@ bool CoreChecks::ValidateBeginRenderingDepthAttachment(const vvl::CommandBuffer&
                              rendering_info.layerCount, depth_view_state->normalized_subresource_range.layerCount);
         }
 
-        if ((rendering_info.viewMask != 0) && (rendering_info.layerCount < (uint32_t)MostSignificantBit(rendering_info.viewMask))) {
+        if (rendering_info.viewMask != 0 &&
+            depth_view_state->normalized_subresource_range.layerCount <= (uint32_t)MostSignificantBit(rendering_info.viewMask)) {
             skip |= LogError("VUID-VkRenderingInfo-viewMask-12404", objlist, depth_image_view,
                              "must have a layerCount (%" PRIu32
-                             ") greater than or equal to the most significant bit (%d) in viewMask (0x%" PRIx32 ")",
-                             rendering_info.layerCount, MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
+                             ") greater than the most significant bit index (%d) in viewMask (0x%" PRIx32 ")",
+                             depth_view_state->normalized_subresource_range.layerCount, MostSignificantBit(rendering_info.viewMask),
+                             rendering_info.viewMask);
         }
 
         skip |= ValidateRenderingInfoAttachmentDeviceGroup(image_state, rendering_info, objlist, depth_image_view);
@@ -4399,13 +4401,14 @@ bool CoreChecks::ValidateBeginRenderingDepthAttachment(const vvl::CommandBuffer&
                              string_VkResolveModeFlagBits(depth_attachment.resolveMode));
             }
 
-            if ((rendering_info.viewMask != 0) &&
-                (rendering_info.layerCount < (uint32_t)MostSignificantBit(rendering_info.viewMask))) {
+            if (rendering_info.viewMask != 0 && depth_resolve_view_state->normalized_subresource_range.layerCount <=
+                                                    (uint32_t)MostSignificantBit(rendering_info.viewMask)) {
                 const LogObjectList objlist(commandBuffer, depth_resolve_view_state->Handle());
                 skip |= LogError("VUID-VkRenderingInfo-viewMask-12404", objlist, depth_attachment_loc.dot(Field::resolveImageView),
                                  "must have a layerCount (%" PRIu32
-                                 ") greater than or equal to the most significant bit (%d) in viewMask (0x%" PRIx32 ")",
-                                 rendering_info.layerCount, MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
+                                 ") greater than the most significant bit index (%d) in viewMask (0x%" PRIx32 ")",
+                                 depth_resolve_view_state->normalized_subresource_range.layerCount,
+                                 MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
             }
         }
     }
@@ -4456,11 +4459,13 @@ bool CoreChecks::ValidateBeginRenderingStencilAttachment(const vvl::CommandBuffe
                              rendering_info.layerCount, stencil_view_state->normalized_subresource_range.layerCount);
         }
 
-        if ((rendering_info.viewMask != 0) && (rendering_info.layerCount < (uint32_t)MostSignificantBit(rendering_info.viewMask))) {
+        if (rendering_info.viewMask != 0 &&
+            stencil_view_state->normalized_subresource_range.layerCount <= (uint32_t)MostSignificantBit(rendering_info.viewMask)) {
             skip |= LogError("VUID-VkRenderingInfo-viewMask-12405", objlist, stencil_image_view,
                              "must have a layerCount (%" PRIu32
-                             ") greater than or equal to the most significant bit (%d) in viewMask (0x%" PRIx32 ")",
-                             rendering_info.layerCount, MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
+                             ") greater than the most significant bit index (%d) in viewMask (0x%" PRIx32 ")",
+                             stencil_view_state->normalized_subresource_range.layerCount,
+                             MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
         }
 
         skip |= ValidateRenderingInfoAttachmentDeviceGroup(image_state, rendering_info, objlist, stencil_image_view);
@@ -4503,14 +4508,15 @@ bool CoreChecks::ValidateBeginRenderingStencilAttachment(const vvl::CommandBuffe
                              string_VkResolveModeFlagBits(stencil_attachment.resolveMode));
             }
 
-            if ((rendering_info.viewMask != 0) &&
-                (rendering_info.layerCount < (uint32_t)MostSignificantBit(rendering_info.viewMask))) {
+            if (rendering_info.viewMask != 0 && stencil_resolve_view_state->normalized_subresource_range.layerCount <=
+                                                    (uint32_t)MostSignificantBit(rendering_info.viewMask)) {
                 const LogObjectList objlist(commandBuffer, stencil_resolve_view_state->Handle());
                 skip |=
                     LogError("VUID-VkRenderingInfo-viewMask-12405", objlist, stencil_attachment_loc.dot(Field::resolveImageView),
                              "must have a layerCount (%" PRIu32
-                             ") greater than or equal to the most significant bit (%d) in viewMask (0x%" PRIx32 ")",
-                             rendering_info.layerCount, MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
+                             ") greater than the most significant bit index (%d) in viewMask (0x%" PRIx32 ")",
+                             stencil_resolve_view_state->normalized_subresource_range.layerCount,
+                             MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
             }
         }
     }

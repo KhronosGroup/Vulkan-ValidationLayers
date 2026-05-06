@@ -1526,8 +1526,9 @@ TEST_F(NegativeMultiview, MultiviewPerViewViewportsDraw) {
     pipe.vp_state_ci_.scissorCount = 0u;
     pipe.CreateGraphicsPipeline();
 
-    vkt::Image image(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView image_view = image.CreateView();
+    auto image_ci = vkt::Image::ImageCreateInfo2D(m_width, m_height, 1, 2, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = image_view;
@@ -1537,7 +1538,6 @@ TEST_F(NegativeMultiview, MultiviewPerViewViewportsDraw) {
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
     rendering_info.renderArea = {{0, 0}, {100u, 100u}};
-    rendering_info.layerCount = 1u;
     rendering_info.colorAttachmentCount = 1u;
     rendering_info.pColorAttachments = &color_attachment;
     rendering_info.viewMask = 0x2;
@@ -1559,7 +1559,38 @@ TEST_F(NegativeMultiview, MultiviewPerViewViewportsDraw) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeMultiview, DynamicRenderingResolveArrayLayer) {
+TEST_F(NegativeMultiview, DynamicRenderingColorViewLayerCount) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12015");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
+
+    // Color attachment, 1 layer
+    vkt::Image color_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_image_view = color_image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = color_image_view;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.viewMask = 0x3;  // MSB index = 1
+    begin_rendering_info.renderArea = {{0, 0}, {32, 32}};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-viewMask-12403");
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeMultiview, DynamicRenderingColorResolveViewLayerCount) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12015");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -1569,17 +1600,15 @@ TEST_F(NegativeMultiview, DynamicRenderingResolveArrayLayer) {
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
 
-    // Color attachment, 2 layers, multisampled
+    // Color attachment, 2 layers
     auto color_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 2, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     color_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     vkt::Image color_image(*m_device, color_ci, vkt::set_layout);
     vkt::ImageView color_image_view = color_image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
 
-    // Resolve attachment, 1 layer, single-sampled
-    auto resolve_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    resolve_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    vkt::Image resolve_image(*m_device, resolve_ci, vkt::set_layout);
-    vkt::ImageView resolve_image_view = resolve_image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 1);
+    // Resolve attachment, 1 layer
+    vkt::Image resolve_image(*m_device, 32, 32, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1593,8 +1622,7 @@ TEST_F(NegativeMultiview, DynamicRenderingResolveArrayLayer) {
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 0;
-    begin_rendering_info.viewMask = 0x3;
+    begin_rendering_info.viewMask = 0x3;  // MSB index = 1
     begin_rendering_info.renderArea = {{0, 0}, {32, 32}};
 
     m_command_buffer.Begin();
