@@ -61,6 +61,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/descriptor_buffer_positive.cpp
     unit/descriptor_heap.cpp
     unit/descriptor_heap_positive.cpp
+    unit/descriptor_heap_untyped.cpp
+    unit/descriptor_heap_untyped_positive.cpp
     unit/descriptor_indexing.cpp
     unit/descriptor_indexing_positive.cpp
     unit/descriptors.cpp
