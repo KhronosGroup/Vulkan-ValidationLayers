@@ -2725,7 +2725,10 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
                                  "means that pRegions[%" PRIu32 "].imageOffset (%s) must all be zero",
                                  i, string_VkOffset3D(region.imageOffset).c_str());
             }
-            const VkExtent3D subresource_extent = image_state->GetEffectiveSubresourceExtent(region.imageSubresource);
+            VkExtent3D subresource_extent = image_state->GetEffectiveSubresourceExtent(region.imageSubresource);
+            if (image_state->GetImageType() == VK_IMAGE_TYPE_2D) {
+                subresource_extent.depth = 1;
+            }
             if (!IsExtentEqual(region.imageExtent, subresource_extent)) {
                 const char* vuid =
                     from_image ? "VUID-VkCopyImageToMemoryInfo-srcImage-09115" : "VUID-VkCopyMemoryToImageInfo-dstImage-09115";
@@ -2877,28 +2880,37 @@ bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCo
 bool CoreChecks::ValidateMemcpyExtents(const ImageCopyRegion& region, const Location& region_loc) const {
     bool skip = false;
 
+    VkExtent3D src_extent = region.src_subresource_extent;
+    if (region.src_state.GetImageType() == VK_IMAGE_TYPE_2D) {
+        src_extent.depth = 1;
+    }
+    VkExtent3D dst_extent = region.dst_subresource_extent;
+    if (region.dst_state.GetImageType() == VK_IMAGE_TYPE_2D) {
+        dst_extent.depth = 1;
+    }
+
     if (region.src_offset.x != 0 || region.src_offset.y != 0 || region.src_offset.z != 0) {
         skip |= LogError("VUID-VkCopyImageToImageInfo-srcOffset-09114", device, region_loc.dot(Field::srcOffset),
                          "is (%s) but flags contains VK_HOST_IMAGE_COPY_MEMCPY.", string_VkOffset3D(region.src_offset).c_str());
     }
-    if (!IsExtentEqual(region.extent, region.src_subresource_extent)) {
+    if (!IsExtentEqual(region.extent, src_extent)) {
         skip |=
             LogError("VUID-VkCopyImageToImageInfo-srcImage-09115", region.src_state.Handle(), region_loc.dot(Field::imageExtent),
                      "(%s) must match the image's subresource "
                      "extents (%s) when VkCopyImageToImageInfo->flags contains VK_HOST_IMAGE_COPY_MEMCPY",
-                     string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(region.src_subresource_extent).c_str());
+                     string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(src_extent).c_str());
     }
 
     if (region.dst_offset.x != 0 || region.dst_offset.y != 0 || region.dst_offset.z != 0) {
         skip |= LogError("VUID-VkCopyImageToImageInfo-dstOffset-09114", device, region_loc.dot(Field::dstOffset),
                          "is (%s) but flags contains VK_HOST_IMAGE_COPY_MEMCPY.", string_VkOffset3D(region.dst_offset).c_str());
     }
-    if (!IsExtentEqual(region.extent, region.dst_subresource_extent)) {
+    if (!IsExtentEqual(region.extent, dst_extent)) {
         skip |=
             LogError("VUID-VkCopyImageToImageInfo-dstImage-09115", region.dst_state.Handle(), region_loc.dot(Field::imageExtent),
                      "(%s) must match the image's subresource "
                      "extents (%s) when VkCopyImageToImageInfo->flags contains VK_HOST_IMAGE_COPY_MEMCPY",
-                     string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(region.dst_subresource_extent).c_str());
+                     string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(dst_extent).c_str());
     }
     return skip;
 }
