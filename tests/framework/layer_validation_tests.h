@@ -359,6 +359,7 @@ class DescriptorIndexingTest : public VkLayerTest {
 class DescriptorHeapTest : public VkLayerTest {
   public:
     void InitBasicDescriptorHeap();
+    void InitUntypedDescriptorHeap();
     void CreateResourceHeap(VkDeviceSize app_size);
     void CreateSamplerHeap(VkDeviceSize app_size, bool use_embedded_samplers = false);
 
