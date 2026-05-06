@@ -574,6 +574,12 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::TENSOR_09900: suffix = "pDescription-09900"; break;
         // ### VUID-vkCmdDraw-dimensionCount-09905
         case ActionVUID::TENSOR_09905: suffix = "dimensionCount-09905"; break;
+        // ### VUID-vkCmdDraw-None-10677
+        case ActionVUID::PER_TILE_DRAW_ENABLED_10677: suffix = "None-10677"; break;
+        // ### VUID-vkCmdDraw-None-10678
+        case ActionVUID::TILE_SHADING_SHADER_STAGE_10678: suffix = "None-10678"; break;
+        // ### VUID-vkCmdDraw-None-10679
+        case ActionVUID::PER_TILE_MODEL_FEEDBACK_LOOP_IMAGE_ACCESS_10679: suffix = "None-10679"; break;
 
         // ### VUID-vkCmdDraw-viewMask-06178
         case ActionVUID::DYNAMIC_RENDERING_VIEW_MASK_06178: suffix = "viewMask-06178"; break;
@@ -637,6 +643,8 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
 
         // ### VUID-vkCmdDispatch-None-10743
         case ActionVUID::COMPUTE_NOT_BOUND_10743: suffix = "None-10743"; break;
+        // ### VUID-vkCmdDispatch-None-10674
+        case ActionVUID::PER_TILE_DISPATCH_ENABLED_10674: suffix = "None-10674"; break;
 
         // ### VUID-vkCmdDrawMeshTasksEXT-stage-06480
         case ActionVUID::MESH_SHADER_STAGES_06480: suffix = "stage-06480"; break;

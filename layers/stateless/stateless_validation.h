@@ -1377,6 +1377,8 @@ class Device : public vvl::BaseDevice {
     bool manual_PreCallValidateCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
                                                             const VkPerTileBeginInfoQCOM *pPerTileBeginInfo,
                                                             const Context &context) const;
+    bool manual_PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                                   const Context& context) const;
 
 #include "generated/stateless_device_methods.h"
 };

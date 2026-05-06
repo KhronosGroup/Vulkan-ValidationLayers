@@ -299,4 +299,16 @@ bool Device::manual_PreCallValidateCmdDispatchIndirect2KHR(VkCommandBuffer comma
     return skip;
 }
 
+bool Device::manual_PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                                       const Context& context) const {
+    bool skip = false;
+
+    if (!enabled_features.tileShadingDispatchTile) {
+        skip |= LogError("VUID-vkCmdDispatchTileQCOM-None-10669", commandBuffer, context.error_obj.location,
+                         "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingDispatchTile feature is not enabled.");
+    }
+
+    return skip;
+}
+
 }  // namespace stateless

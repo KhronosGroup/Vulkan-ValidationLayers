@@ -13,6 +13,7 @@
 
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
+#include "shader_object_helper.h"
 
 class NegativeTileShading : public TileShadingTest {};
 
@@ -1748,4 +1749,459 @@ TEST_F(NegativeTileShading, QueryInsidePerTileExecutionModelScope) {
         vk::CmdEndQuery(m_command_buffer, query_pool, 0);
         m_command_buffer.End();
     }
+}
+
+TEST_F(NegativeTileShading, DispatchTileButPerTileExecutionModelNotEnabled) {
+    TEST_DESCRIPTION("Try to launch dispatch tile, but per-tile execution model isn't enabled.");
+    AddRequiredFeature(vkt::Feature::tileShadingDispatchTile);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.CreateComputePipeline();
+
+    VkDispatchTileInfoQCOM dispatch_tile_info = vku::InitStructHelper();
+
+    VkClearValue clear_color{};
+    clear_color.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea = {{0,0}, tile_shading_rp_config.rt_size};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_color;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchTileQCOM-None-10672");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchTileQCOM-None-10668");
+    vk::CmdDispatchTileQCOM(m_command_buffer, &dispatch_tile_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, DispatchTileButPerTileDispatchFeatureNotEnabled) {
+    TEST_DESCRIPTION("Try to launch dispatch tile, but tileShadingDispatchTile feature isn't enabled.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.CreateComputePipeline();
+
+    VkDispatchTileInfoQCOM dispatch_tile_info = vku::InitStructHelper();
+
+    VkClearValue clear_color{};
+    clear_color.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea = {{0,0}, tile_shading_rp_config.rt_size};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_color;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchTileQCOM-None-10669");
+    vk::CmdDispatchTileQCOM(m_command_buffer, &dispatch_tile_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, DispatchInsidePerTileExecutionModelButPerTileDispatchFeatureNotEnabled) {
+    TEST_DESCRIPTION("Try to launch dispatch inside the per-tile execution model scope, "
+                     "but tileShadingPerTileDispatch feature isn't enabled.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_TILE_SHADING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileShading);
+    AddRequiredFeature(vkt::Feature::tileShadingPerTileDraw);
+    AddRequiredFeature(vkt::Feature::tileShadingColorAttachments);
+    RETURN_IF_SKIP(Init());
+    InitTileShadingRenderTarget();
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.CreateComputePipeline();
+
+    VkClearValue clear_color{};
+    clear_color.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea = {{0,0}, tile_shading_rp_config.rt_size};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_color;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10674");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, DrawInsidePerTileExecutionModelButPerTileDrawFeatureNotEnabled) {
+    TEST_DESCRIPTION("Try to launch draw inside the per-tile execution model scope, "
+                     "but tileShadingPerTileDraw feature isn't enabled.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_TILE_SHADING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileShading);
+    AddRequiredFeature(vkt::Feature::tileShadingPerTileDispatch);
+    AddRequiredFeature(vkt::Feature::tileShadingColorAttachments);
+    RETURN_IF_SKIP(Init());
+    InitTileShadingRenderTarget();
+
+    CreatePipelineHelper graphics_pipe{*this};
+    graphics_pipe.gp_ci_.renderPass = m_tile_shading_render_pass;
+    graphics_pipe.CreateGraphicsPipeline();
+
+    VkClearValue clear_color{};
+    clear_color.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea = {{0,0}, tile_shading_rp_config.rt_size};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_color;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10677");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, TileShadingDrawButHasActiveGeometryShader) {
+    TEST_DESCRIPTION("Try to launch a draw inside a tile-shading render pass scope, but the graphics pipeline "
+                     "has an active geometry shader.");
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    VkShaderObj vs{*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3};
+    VkShaderObj gs{*m_device, kGeometryMinimalGlsl, VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_3};
+    VkShaderObj fs{*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3};
+
+    CreatePipelineHelper tile_shading_graphics_pipe{*this};
+    tile_shading_graphics_pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    tile_shading_graphics_pipe.gp_ci_.renderPass = m_tile_shading_render_pass;
+    tile_shading_graphics_pipe.CreateGraphicsPipeline();
+
+    VkClearValue clear_color{};
+    clear_color.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea = {{0,0}, tile_shading_rp_config.rt_size};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_color;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tile_shading_graphics_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10678");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, TileShadingDrawButHasActiveGeometryShaderObject) {
+    TEST_DESCRIPTION("Try to launch a draw inside a tile-shading render pass scope, but a geometry "
+                     "shader object is bound.");
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicTileShading());
+    InitTileShadingRenderTarget();
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    const auto geom_spv = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
+    const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+
+    auto vert_ci = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    vert_ci.nextStage = VK_SHADER_STAGE_GEOMETRY_BIT;
+    vkt::Shader vert_shader{*m_device, vert_ci};
+    vkt::Shader geom_shader{*m_device, ShaderCreateInfo(geom_spv, VK_SHADER_STAGE_GEOMETRY_BIT)};
+    vkt::Shader frag_shader{*m_device, ShaderCreateInfoNoNextStage(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT)};
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = m_color_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.clearValue.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_info = vku::InitStructHelper();
+    tile_info.flags = VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM;
+    tile_info.tileApronSize = {0, 0};
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&tile_info);
+    rendering_info.renderArea = {{0, 0}, tile_shading_rp_config.rt_size};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    SetDefaultDynamicStatesExclude();
+    m_command_buffer.BindShaders(vert_shader, geom_shader, frag_shader);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10678");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, PerTileDrawButAccessImageWithFeedbackLoopLayout) {
+    TEST_DESCRIPTION("Try to launch a per-tile draw inside a tile-shading render pass scope, but accesses "
+                     "an tile attachment with VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT.");
+    AddRequiredExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::attachmentFeedbackLoopLayout);
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    constexpr uint32_t width = 64;
+    constexpr uint32_t height = 64;
+    constexpr VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    vkt::Image color_image{*m_device, width, height, color_format,
+                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT |
+                           VK_IMAGE_USAGE_SAMPLED_BIT};
+    vkt::ImageView color_view = color_image.CreateView();
+    vkt::Sampler sampler{*m_device, SafeSaneSamplerCreateInfo()};
+
+    VkAttachmentDescription attachment_desc{};
+    attachment_desc.format = color_format;
+    attachment_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment_desc.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+
+    VkAttachmentReference color_ref{};
+    color_ref.attachment = 0;
+    color_ref.layout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+
+    VkSubpassDescription subpass_desc{};
+    subpass_desc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass_desc.colorAttachmentCount = 1;
+    subpass_desc.pColorAttachments = &color_ref;
+
+    VkSubpassDependency subpass_dependency{};
+    subpass_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    subpass_dependency.dstSubpass = 0;
+    subpass_dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dependency.srcAccessMask = 0;
+    subpass_dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    subpass_dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT | VK_DEPENDENCY_FEEDBACK_LOOP_BIT_EXT;
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_ci = vku::InitStructHelper();
+    tile_shading_ci.flags = VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM;
+    tile_shading_ci.tileApronSize = {0, 0};
+
+    VkRenderPassCreateInfo rp_ci = vku::InitStructHelper(&tile_shading_ci);
+    rp_ci.attachmentCount = 1;
+    rp_ci.pAttachments = &attachment_desc;
+    rp_ci.subpassCount = 1;
+    rp_ci.pSubpasses = &subpass_desc;
+    rp_ci.dependencyCount = 1;
+    rp_ci.pDependencies = &subpass_dependency;
+    vkt::RenderPass tile_shading_render_pass{*m_device, rp_ci};
+
+    const VkImageView color_view_handle = color_view.handle();
+    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
+    framebuffer_ci.renderPass = tile_shading_render_pass;
+    framebuffer_ci.attachmentCount = 1;
+    framebuffer_ci.pAttachments = &color_view_handle;
+    framebuffer_ci.width = width;
+    framebuffer_ci.height = height;
+    framebuffer_ci.layers = 1;
+    vkt::Framebuffer tile_shading_framebuffer{*m_device, framebuffer_ci};
+
+    const char* vs_source = R"glsl(
+        #version 460
+
+        vec2 pos[3] = vec2[](
+            vec2(-1.0, -1.0),
+            vec2( 3.0, -1.0),
+            vec2(-1.0,  3.0)
+        );
+
+        void main() {
+            gl_Position = vec4(pos[gl_VertexIndex], 0.0, 1.0);
+        }
+    )glsl";
+
+    const char* fs_source = R"glsl(
+        #version 460
+
+        layout(set = 0, binding = 0) uniform sampler2D tile_img;
+        layout(location = 0) out vec4 out_color;
+
+        void main() {
+            vec4 color = texture(tile_img, vec2(0.5, 0.5));
+            out_color = color;
+        }
+    )glsl";
+
+    VkShaderObj vs{*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3};
+    VkShaderObj fs{*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3};
+
+    CreatePipelineHelper tile_shading_graphics_pipe{*this};
+    tile_shading_graphics_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    tile_shading_graphics_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    tile_shading_graphics_pipe.gp_ci_.renderPass = tile_shading_render_pass;
+    tile_shading_graphics_pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_COLOR_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT;
+    tile_shading_graphics_pipe.CreateGraphicsPipeline();
+    tile_shading_graphics_pipe.descriptor_set_->WriteDescriptorImageInfo(0, color_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                                         VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT);
+    tile_shading_graphics_pipe.descriptor_set_->UpdateDescriptorSets();
+
+    VkClearValue clear_color{};
+    clear_color.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = tile_shading_render_pass;
+    rp_begin_info.framebuffer = tile_shading_framebuffer;
+    rp_begin_info.renderArea = {{0,0}, {width, height}};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_color;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tile_shading_graphics_pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              tile_shading_graphics_pipe.pipeline_layout_, 0, 1,
+                              &tile_shading_graphics_pipe.descriptor_set_->set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10679");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, ImageDescriptorMismatchTileMemory) {
+    TEST_DESCRIPTION("Try to create tile memory storage buffer and use it within a dispatch tile invocation.");
+    AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileMemoryHeap);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::tileShadingDispatchTile);
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    constexpr uint32_t width = 64;
+    constexpr uint32_t height = 64;
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image{*m_device, image_ci, vkt::no_mem};
+
+    VkImageMemoryRequirementsInfo2 image_info = vku::InitStructHelper();
+    VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
+    VkMemoryRequirements2 image_reqs = vku::InitStructHelper(&tile_mem_reqs);
+    image_info.image = image;
+    vk::GetImageMemoryRequirements2(device(), &image_info, &image_reqs);
+
+    if (tile_mem_reqs.size == 0) {
+        GTEST_SKIP() << "Image not eligible for tile memory binding, skipping test.";
+    }
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.memoryTypeIndex = 0;
+    alloc_info.allocationSize = tile_mem_reqs.size;
+    bool pass = m_device->Physical().SetMemoryType(image_reqs.memoryRequirements.memoryTypeBits, &alloc_info,
+                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM);
+
+    if (!pass) {
+        GTEST_SKIP() << "Failed to find an eligible tile memory type, skipping test.";
+    }
+
+    vkt::DeviceMemory image_memory{*m_device, alloc_info};
+    vk::BindImageMemory(device(), image, image_memory, 0);
+    vkt::ImageView image_view = image.CreateView();
+
+    OneOffDescriptorSet descriptor_set{m_device,
+                                       {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}}};
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                            VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char* cs_source = R"glsl(
+        #version 460
+
+        #extension GL_QCOM_tile_shading : require
+
+        layout(set = 0, binding = 0, tile_attachmentQCOM, rgba8) uniform readonly image2D storage_image;
+        layout(shading_rate_xQCOM = 1, shading_rate_yQCOM = 1, shading_rate_zQCOM = 1) in;
+
+        void main(){
+            vec4 data = imageLoad(storage_image, ivec2(0));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT};
+    compute_pipe.pipeline_layout_ = vkt::PipelineLayout{*m_device, {&descriptor_set.layout_}};
+    compute_pipe.CreateComputePipeline();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.imageView = image_view;
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_info = vku::InitStructHelper();
+    tile_info.flags = VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM;
+    tile_info.tileApronSize = {0, 0};
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper(&tile_info);
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {width, height}};
+
+    VkDispatchTileInfoQCOM dispatch_tile_info = vku::InitStructHelper();
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                              compute_pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
+                              0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchTileQCOM-commandBuffer-10746");
+    vk::CmdDispatchTileQCOM(m_command_buffer, &dispatch_tile_info);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
 }

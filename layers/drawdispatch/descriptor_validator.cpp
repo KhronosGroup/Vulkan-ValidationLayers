@@ -732,6 +732,17 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         skip |= dev_proxy.ValidateBoundTileMemory(*image_view_state->image_state, cb_state, loc.Get());
     }
 
+    if (cb_state.per_tile_execution_model_enabled &&
+        image_descriptor.GetImageLayout() == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
+        skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::PER_TILE_MODEL_FEEDBACK_LOOP_IMAGE_ACCESS_10679),
+                         objlist, loc.Get(),
+                         "the %s has %s which has been transitioned to VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT "
+                         "layout and but is also accessed in shader.%s",
+                         DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                         FormatHandle(image_view).c_str(), DescribeInstruction().c_str());
+    }
+
     // If the Image View is invalid, the combined sampler mayb have the same issue
     if (skip) return skip;
 

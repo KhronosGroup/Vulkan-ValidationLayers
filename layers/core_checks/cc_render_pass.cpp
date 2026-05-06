@@ -44,6 +44,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
+#include "utils/action_command_utils.h"
 
 namespace vvl {
 template <typename T>
@@ -4628,6 +4629,13 @@ bool CoreChecks::ValidateBeginRenderingTileShadingCreateInfo(const vvl::CommandB
 bool CoreChecks::InsideRenderPass(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const {
     bool skip = false;
     if (!cb_state.active_render_pass) {
+        return skip;
+    }
+
+    // Note: According to the spec, inside the per-tile execution model scope, the following dispatch commands
+    //       can be called inside a tile shading render pass instance.
+    if (cb_state.per_tile_execution_model_enabled && cb_state.active_render_pass->has_tile_shading_enabled &&
+        vvl::IsCommandDispatch(loc.function)) {
         return skip;
     }
 

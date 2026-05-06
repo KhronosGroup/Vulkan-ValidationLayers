@@ -749,6 +749,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawShaderObjectMesh(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateActionState(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateActionStateTileShading(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateActionStateDescriptorsPipeline(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
                                                 const vvl::Pipeline& pipeline, const Location& loc) const;
     bool ValidateActionStateDescriptorsShaderObject(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
@@ -1998,6 +1999,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                             const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo,
                                                 const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                            const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
                                         uint32_t stride, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
