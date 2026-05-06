@@ -1376,14 +1376,13 @@
                             "conditions": [
                                 { "setting": { "key": "gpu_dump_descriptors", "value": true }},
                                 { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
-                                { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
+                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
                             ],
                             "actions": {
                                 "default": "BUTTON0",
                                 "BUTTON0": {
                                     "type": "OK",
                                     "changes": [
-                                        { "setting": { "key": "report_flags", "value": ["info"] }, "operator": "APPEND" },
                                         { "setting": { "key": "report_flags", "value": ["warn"] }, "operator": "APPEND" }
                                     ]
                                 }
@@ -1399,14 +1398,13 @@
                             "conditions": [
                                 { "setting": { "key": "gpu_dump_copy_memory_indirect", "value": true }},
                                 { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
-                                { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
+                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
                             ],
                             "actions": {
                                 "default": "BUTTON0",
                                 "BUTTON0": {
                                     "type": "OK",
                                     "changes": [
-                                        { "setting": { "key": "report_flags", "value": ["info"] }, "operator": "APPEND" },
                                         { "setting": { "key": "report_flags", "value": ["warn"] }, "operator": "APPEND" }
                                     ]
                                 }
@@ -1422,14 +1420,13 @@
                             "conditions": [
                                 { "setting": { "key": "gpu_dump_device_generated_commands", "value": true }},
                                 { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
-                                { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
+                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
                             ],
                             "actions": {
                                 "default": "BUTTON0",
                                 "BUTTON0": {
                                     "type": "OK",
                                     "changes": [
-                                        { "setting": { "key": "report_flags", "value": ["info"] }, "operator": "APPEND" },
                                         { "setting": { "key": "report_flags", "value": ["warn"] }, "operator": "APPEND" }
                                     ]
                                 }
