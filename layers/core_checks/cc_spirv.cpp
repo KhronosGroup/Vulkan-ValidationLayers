@@ -3231,6 +3231,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
             used_mapping_set[i] = true;
             found_mapping = true;
 
+            const std::shared_ptr<const spirv::TypeStructInfo>& type_struct_info = resource_variable.type_struct_info;
             if (IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT,
                                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
                                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
@@ -3355,12 +3356,9 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
             } else if (IsValueIn(mapping.source,
                                  {VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT,
                                   VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT})) {
-                const bool block = resource_variable.type_struct_info &&
-                                   resource_variable.type_struct_info->decorations.Has(spirv::DecorationSet::block_bit);
-                if (!block || resource_variable.storage_class != spv::StorageClassUniform) {
+                if (!resource_variable.is_uniform_buffer) {
                     const char* vuid =
                         pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-11315" : "VUID-VkShaderCreateInfoEXT-pNext-11315";
-                    const bool is_uniform = resource_variable.storage_class == spv::StorageClassUniform;
                     const VkDescriptorType potential_descriptor_type = resource_variable.GetPotentialDescriptorType();
                     std::ostringstream ss;
                     ss << "(" << string_VkDescriptorMappingSourceEXT(mapping.source) << ") is used to map descriptor "
@@ -3370,38 +3368,37 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                     if (potential_descriptor_type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER && !resource_variable.is_buffer_block) {
                         ss << " (likely " << string_VkDescriptorType(potential_descriptor_type) << ")";
                     }
-                    if (is_uniform) {
-                        if (resource_variable.is_buffer_block) {
-                            ss << ", but it is decorated with BufferBlock (which is the Vulkan 1.0 way to turn the Uniform "
-                                  "StorageClass into a Storage Buffer)";
-                        } else {
-                            ss << ", but it is not decorated with Block";
-                        }
+                    if (resource_variable.is_buffer_block) {
+                        ss << ", but it is decorated with BufferBlock (which is the Vulkan 1.0 way to turn the Uniform "
+                              "StorageClass into a Storage Buffer)";
                     } else {
-                        ss << ", but it must be StorageClass Uniform (Uniform Buffers) when using this mapping source.\nHint: Did "
+                        ss << ", but it must be a Uniform Buffer (StorageClass Uniform) when using this mapping source as the "
+                              "descriptor is read only.\nHint: Did "
                               "you mean to use VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT instead?";
                     }
                     skip |= LogError(
                         vuid, module_state.handle(),
                         loc.pNext(Struct::VkShaderDescriptorSetAndBindingMappingInfoEXT, Field::pMappings, i).dot(Field::source),
                         "%s", ss.str().c_str());
-                } else if (resource_variable.storage_class == spv::StorageClassUniform && resource_variable.IsArray()) {
-                    // Additional VU because we currently mark array of Block Structs the same in |resource_variable|
+                } else if (resource_variable.IsArray()) {
+                    // Additional message for descriptor array case
                     const char* vuid =
                         pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-11315" : "VUID-VkShaderCreateInfoEXT-pNext-11315";
                     skip |= LogError(
                         vuid, module_state.handle(),
                         loc.pNext(Struct::VkShaderDescriptorSetAndBindingMappingInfoEXT, Field::pMappings, i).dot(Field::source),
                         "(%s) is used to map descriptor %s in %s with storage class Uniform, but it is an array.\n"
-                        "Array of descriptors are not allowed, it must only be a Block structure type",
+                        "Descriptor arrays are not allowed for this mapping as it is not defined where each index would get the "
+                        "descriptor from.%s",
                         string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
-                        entrypoint.Describe().c_str());
+                        entrypoint.Describe().c_str(),
+                        resource_variable.array_length == 1 ? "(array of length 1 is also not allowed)" : "");
                 }
             }
             if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) {
                 // If there is a runtime array, we can't detect statically, but should be handled in some GPU-AV check
-                if (resource_variable.type_struct_info && !resource_variable.type_struct_info->has_runtime_array) {
-                    const uint64_t struct_size = (uint64_t)resource_variable.type_struct_info->GetSize(module_state).size;
+                if (type_struct_info && !type_struct_info->has_runtime_array) {
+                    const uint64_t struct_size = (uint64_t)type_struct_info->GetSize(module_state).size;
                     if (struct_size >
                         (uint64_t)(mapping.sourceData.pushDataOffset + phys_dev_ext_props.descriptor_heap_props.maxPushDataSize)) {
                         const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-11316"
@@ -3419,8 +3416,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                 }
             }
             if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT) {
-                const uint32_t struct_size =
-                    resource_variable.type_struct_info ? resource_variable.type_struct_info->GetSize(module_state).size : 0;
+                const uint32_t struct_size = type_struct_info ? type_struct_info->GetSize(module_state).size : 0;
                 if (mapping.sourceData.shaderRecordDataOffset + struct_size >
                     phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride) {
                     const char* vuid =
@@ -3436,34 +3432,46 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                         mapping.sourceData.shaderRecordDataOffset, phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride);
                 }
             }
-            if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT ||
-                mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT) {
-                const auto* type_struct_info = resource_variable.type_struct_info.get();
-                const bool block_bit = type_struct_info && type_struct_info->decorations.Has(spirv::DecorationSet::block_bit);
-                const bool buffer_block_bit =
-                    type_struct_info && type_struct_info->decorations.Has(spirv::DecorationSet::buffer_block_bit);
-                const spirv::Instruction* type = module_state.FindDef(resource_variable.type_id);
-                uint32_t opcode = type ? type->Opcode() : vvl::kNoIndex32;
-                if (opcode == spv::OpTypePointer) {
-                    opcode = module_state.FindDef(type->Word(3))->Opcode();
-                }
-                const bool block_uniform = block_bit && (resource_variable.storage_class == spv::StorageClassUniform);
-                const bool buffer_block_uniform = buffer_block_bit && (resource_variable.storage_class == spv::StorageClassUniform);
-                const bool block_sb = block_bit && (resource_variable.storage_class == spv::StorageClassStorageBuffer);
-                const bool as = opcode == spv::OpTypeAccelerationStructureKHR;
-                if (!(block_uniform || buffer_block_uniform || block_sb || as)) {
+
+            if (IsValueIn(mapping.source,
+                          {VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT,
+                           VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT})) {
+                if (!resource_variable.is_uniform_buffer && !resource_variable.is_storage_buffer &&
+                    !resource_variable.is_acceleration_structure && !resource_variable.is_acceleration_structure_nv) {
+                    const char* vuid =
+                        pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-11318" : "VUID-VkShaderCreateInfoEXT-pNext-11318";
+
+                    std::ostringstream ss;
+                    ss << "(" << string_VkDescriptorMappingSourceEXT(mapping.source) << ") is used to map descriptor "
+                       << resource_variable.DescribeDescriptor() << " in " << entrypoint.Describe() << " with StorageClass "
+                       << string_SpvStorageClass(resource_variable.storage_class) << " (likely "
+                       << string_VkDescriptorType(resource_variable.GetPotentialDescriptorType())
+                       << ") but it must be a Uniform Buffer, Storage Buffer, or Acceleration Structure when using this mapping "
+                          "source.\nHint: Did you mean to use VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT instead?";
                     skip |= LogError(
-                        pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-11318" : "VUID-VkShaderCreateInfoEXT-pNext-11318",
-                        module_state.handle(),
+                        vuid, module_state.handle(),
                         loc.pNext(Struct::VkShaderDescriptorSetAndBindingMappingInfoEXT, Field::pMappings, i).dot(Field::source),
-                        "(%s) is used to map descriptor %s in %s but is not valid SPIR-V instruction to map too.\n  Storage class: "
-                        "%s\n  "
-                        "Opcode: %s\n  OpTypeStruct Id: %" PRIu32
-                        "\n  Has Block decoration: %s\n  Has BufferBlock decoration: %s\n",
-                        string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
-                        entrypoint.Describe().c_str(), string_SpvStorageClass(resource_variable.storage_class),
-                        string_SpvOpcode(opcode), type_struct_info ? type_struct_info->id : 0, block_bit ? "yes" : "no",
-                        buffer_block_bit ? "yes" : "no");
+                        "%s", ss.str().c_str());
+                } else if (resource_variable.IsArray()) {
+                    // Additional message for descriptor array case
+                    const char* vuid =
+                        pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-11318" : "VUID-VkShaderCreateInfoEXT-pNext-11318";
+
+                    std::ostringstream ss;
+                    ss << "(" << string_VkDescriptorMappingSourceEXT(mapping.source) << ") is used to map descriptor "
+                       << resource_variable.DescribeDescriptor() << " in " << entrypoint.Describe() << " with StorageClass "
+                       << string_SpvStorageClass(resource_variable.storage_class) << " (likely "
+                       << string_VkDescriptorType(resource_variable.GetPotentialDescriptorType())
+                       << ") but it is an array.\nDescriptor arrays are not allowed for this mapping as it is not defined where "
+                          "each index would get the descriptor from.";
+                    if (resource_variable.array_length == 1) {
+                        ss << " (array of length 1 is also not allowed)";
+                    }
+                    ss << "\nHint: Did you mean to use VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT instead?";
+                    skip |= LogError(
+                        vuid, module_state.handle(),
+                        loc.pNext(Struct::VkShaderDescriptorSetAndBindingMappingInfoEXT, Field::pMappings, i).dot(Field::source),
+                        "%s", ss.str().c_str());
                 }
             }
 

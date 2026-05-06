@@ -4780,6 +4780,7 @@ TEST_F(NegativeDescriptorHeap, NonConstantImageMemoryAccess) {
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
     pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
 
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11318");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
@@ -5173,6 +5174,7 @@ TEST_F(NegativeDescriptorHeap, NonConstantMemoryAccess) {
         CreateComputePipelineHelper pipe(*this, &flags2_ci);
         pipe.cp_ci_.layout = VK_NULL_HANDLE;
         pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+        m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11318");
         m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
         pipe.CreateComputePipeline(false);
         m_errorMonitor->VerifyFound();
@@ -6502,4 +6504,278 @@ TEST_F(NegativeDescriptorHeap, ResetPushConstsWithPushData) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeDescriptorHeap, DescriptorIndexingHeapData) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    const char* cs_source_static = R"glsl(
+        #version 450
+        layout (set = 0, binding = 0) buffer SSBO {
+            uint result;
+        };
+        layout (set = 0, binding = 1) uniform UBO {
+            uint data;
+        } ubo[8];
+
+        void main() {
+            result = ubo[0].data;
+        }
+    )glsl";
+    const char* cs_source_runtime = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout (set = 0, binding = 0) buffer SSBO {
+            uint result;
+        };
+        layout (set = 0, binding = 1) uniform UBO {
+            uint data;
+        } ubo[];
+
+        void main() {
+            result = ubo[result].data;
+        }
+    )glsl";
+    VkShaderObj cs_module_static = VkShaderObj(*m_device, cs_source_static, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj cs_module_runtime = VkShaderObj(*m_device, cs_source_runtime, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 1);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT;
+    mappings[0].sourceData.heapData.heapOffset = 0;
+    mappings[0].sourceData.heapData.pushOffset = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 0);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe1(*this, &pipeline_create_flags_2_create_info);
+    pipe1.cp_ci_.stage = cs_module_static.GetStageCreateInfo(&mapping_info);
+    pipe1.cp_ci_.layout = VK_NULL_HANDLE;
+    // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
+    m_errorMonitor->SetDesiredError("but it is an array");
+    pipe1.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+
+    CreateComputePipelineHelper pipe2(*this, &pipeline_create_flags_2_create_info);
+    pipe2.cp_ci_.stage = cs_module_runtime.GetStageCreateInfo(&mapping_info);
+    pipe2.cp_ci_.layout = VK_NULL_HANDLE;
+    // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
+    m_errorMonitor->SetDesiredError("but it is an array");
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4804#note_605752
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
+    pipe2.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorHeap, DescriptorIndexingPushData) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    const char* cs_source_static = R"glsl(
+        #version 450
+        layout (set = 0, binding = 0) buffer SSBO {
+            uint result;
+        };
+        layout (set = 0, binding = 1) uniform UBO {
+            uint data;
+        } ubo[8];
+
+        void main() {
+            result = ubo[0].data;
+        }
+    )glsl";
+    const char* cs_source_runtime = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout (set = 0, binding = 0) buffer SSBO {
+            uint result;
+        };
+        layout (set = 0, binding = 1) uniform UBO {
+            uint data;
+        } ubo[];
+
+        void main() {
+            result = ubo[result].data;
+        }
+    )glsl";
+    VkShaderObj cs_module_static = VkShaderObj(*m_device, cs_source_static, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj cs_module_runtime = VkShaderObj(*m_device, cs_source_runtime, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 1);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT;
+    mappings[0].sourceData.pushDataOffset = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 0);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe1(*this, &pipeline_create_flags_2_create_info);
+    pipe1.cp_ci_.stage = cs_module_static.GetStageCreateInfo(&mapping_info);
+    pipe1.cp_ci_.layout = VK_NULL_HANDLE;
+    // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
+    m_errorMonitor->SetDesiredError("but it is an array");
+    pipe1.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+
+    CreateComputePipelineHelper pipe2(*this, &pipeline_create_flags_2_create_info);
+    pipe2.cp_ci_.stage = cs_module_runtime.GetStageCreateInfo(&mapping_info);
+    pipe2.cp_ci_.layout = VK_NULL_HANDLE;
+    // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
+    m_errorMonitor->SetDesiredError("but it is an array");
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4804#note_605752
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
+    pipe2.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorHeap, DescriptorIndexingPushAddress) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    const char* cs_source_static = R"glsl(
+        #version 450
+        layout (set = 0, binding = 0) buffer SSBO {
+            uint result;
+        };
+        layout (set = 0, binding = 1) uniform UBO {
+            uint data;
+        } ubo[8];
+
+        void main() {
+            result = ubo[0].data;
+        }
+    )glsl";
+    const char* cs_source_runtime = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout (set = 0, binding = 0) buffer SSBO {
+            uint result;
+        };
+        layout (set = 0, binding = 1) uniform UBO {
+            uint data;
+        } ubo[];
+
+        void main() {
+            result = ubo[result].data;
+        }
+    )glsl";
+    VkShaderObj cs_module_static = VkShaderObj(*m_device, cs_source_static, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj cs_module_runtime = VkShaderObj(*m_device, cs_source_runtime, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 1);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
+    mappings[0].sourceData.pushAddressOffset = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 0);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe1(*this, &pipeline_create_flags_2_create_info);
+    pipe1.cp_ci_.stage = cs_module_static.GetStageCreateInfo(&mapping_info);
+    pipe1.cp_ci_.layout = VK_NULL_HANDLE;
+    // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
+    m_errorMonitor->SetDesiredError("but it is an array");
+    pipe1.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+
+    CreateComputePipelineHelper pipe2(*this, &pipeline_create_flags_2_create_info);
+    pipe2.cp_ci_.stage = cs_module_runtime.GetStageCreateInfo(&mapping_info);
+    pipe2.cp_ci_.layout = VK_NULL_HANDLE;
+    // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
+    m_errorMonitor->SetDesiredError("but it is an array");
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4804#note_605752
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
+    pipe2.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorHeap, DescriptorIndexingIndirectAddress) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    const char* cs_source_static = R"glsl(
+        #version 450
+        layout (set = 0, binding = 0) buffer SSBO {
+            uint result;
+        };
+        layout (set = 0, binding = 1) uniform UBO {
+            uint data;
+        } ubo[8];
+
+        void main() {
+            result = ubo[0].data;
+        }
+    )glsl";
+    const char* cs_source_runtime = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout (set = 0, binding = 0) buffer SSBO {
+            uint result;
+        };
+        layout (set = 0, binding = 1) uniform UBO {
+            uint data;
+        } ubo[];
+
+        void main() {
+            result = ubo[result].data;
+        }
+    )glsl";
+    VkShaderObj cs_module_static = VkShaderObj(*m_device, cs_source_static, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj cs_module_runtime = VkShaderObj(*m_device, cs_source_runtime, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 1);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
+    mappings[0].sourceData.indirectAddress.pushOffset = 0;
+    mappings[0].sourceData.indirectAddress.addressOffset = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 0);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe1(*this, &pipeline_create_flags_2_create_info);
+    pipe1.cp_ci_.stage = cs_module_static.GetStageCreateInfo(&mapping_info);
+    pipe1.cp_ci_.layout = VK_NULL_HANDLE;
+    // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
+    m_errorMonitor->SetDesiredError("but it is an array");
+    pipe1.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+
+    CreateComputePipelineHelper pipe2(*this, &pipeline_create_flags_2_create_info);
+    pipe2.cp_ci_.stage = cs_module_runtime.GetStageCreateInfo(&mapping_info);
+    pipe2.cp_ci_.layout = VK_NULL_HANDLE;
+    // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
+    m_errorMonitor->SetDesiredError("but it is an array");
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4804#note_605752
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
+    pipe2.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
 }
