@@ -784,6 +784,7 @@ bool CoreChecks::ValidateDrawShaderObjectFlags(const LastBound& last_bound_state
         }
 
         if (binding_with_pre_rast_stage.has_value() && binding_with_mesh_stage.has_value()) {
+            bool same_binding = *binding_with_pre_rast_stage == *binding_with_mesh_stage;
             const auto pre_raster_dsl = set_layouts_list[binding_with_pre_rast_stage->first];
             const auto mesh_dsl = set_layouts_list[binding_with_mesh_stage->first];
 
@@ -798,7 +799,7 @@ bool CoreChecks::ValidateDrawShaderObjectFlags(const LastBound& last_bound_state
                << string_VkShaderStageFlags(
                       pre_raster_dsl->GetDescriptorSetLayoutBindingPtrFromBinding(binding_with_pre_rast_stage->second)->stageFlags)
                << '\n';
-            if (pre_raster_dsl != mesh_dsl) {
+            if (!same_binding) {
                 ss << FormatHandle(mesh_dsl->VkHandle()) << " at set " << binding_with_mesh_stage->first << ", binding "
                    << binding_with_mesh_stage->second << " has stageFlags "
                    << string_VkShaderStageFlags(
