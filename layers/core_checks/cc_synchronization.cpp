@@ -1428,14 +1428,14 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
 
     auto queue_flags = cb_state->GetQueueFlags();
-    const LogObjectList objlist(commandBuffer);
-
-    skip |= ValidatePipelineStage(objlist, error_obj.location.dot(Field::srcStageMask), queue_flags, srcStageMask);
-    skip |= ValidatePipelineStage(objlist, error_obj.location.dot(Field::dstStageMask), queue_flags, dstStageMask);
+    const LogObjectList objlist(cb_state->Handle());
 
     skip |= ValidateCmd(*cb_state, error_obj.location);
+    skip |= ValidatePipelineStage(objlist, error_obj.location.dot(Field::srcStageMask), queue_flags, srcStageMask);
+    skip |= ValidatePipelineStage(objlist, error_obj.location.dot(Field::dstStageMask), queue_flags, dstStageMask);
     skip |= ValidateBarriers(error_obj.location, *cb_state, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
                              bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+
     for (uint32_t i = 0; i < bufferMemoryBarrierCount; ++i) {
         if (pBufferMemoryBarriers[i].srcQueueFamilyIndex != pBufferMemoryBarriers[i].dstQueueFamilyIndex) {
             skip |= LogError("VUID-vkCmdWaitEvents-srcQueueFamilyIndex-02803", objlist,
@@ -1462,6 +1462,33 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
         skip |= LogError("VUID-vkCmdWaitEvents-None-10655", objlist, error_obj.location,
                          "the per-tile execution model has been enabled in this command buffer. "
                          "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdWaitEvents)");
+    }
+
+    if (pEvents) {
+        auto& cb_sub_state = core::SubState(*cb_state);
+
+        // Record time validation of VUID 01158 is possible only if all relevant
+        // CmdSetEvent commands are recorded in the same command buffer
+        bool found_all_set_commands = true;
+
+        VkPipelineStageFlags2 set_event_src_stages = VK_PIPELINE_STAGE_2_NONE;
+        for (uint32_t i = 0; i < eventCount; i++) {
+            const EventSignalingState* signaling_state = vvl::Find(cb_sub_state.event_signaling_states, pEvents[i]);
+            if (!signaling_state || !signaling_state->signaled) {
+                found_all_set_commands = false;
+                break;
+            }
+            set_event_src_stages |= signaling_state->src_stage_mask;
+        }
+        if (found_all_set_commands) {
+            if (srcStageMask != set_event_src_stages) {
+                skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", objlist, error_obj.location.dot(Field::srcStageMask),
+                                 "is %s, but the bitwise OR of stageMask values from the most recent vkCmdSetEvent call for each "
+                                 "waited event is %s.",
+                                 string_VkPipelineStageFlags2(srcStageMask).c_str(),
+                                 string_VkPipelineStageFlags2(set_event_src_stages).c_str());
+            }
+        }
     }
 
     return skip;

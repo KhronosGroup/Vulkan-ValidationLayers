@@ -594,6 +594,7 @@ void CommandBufferSubState::RecordSetEvent(VkEvent event, VkPipelineStageFlags2 
         // Set sType to invalid, so following code can check sType to see if the struct is valid
         safe_dependency_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     }
+    event_signaling_states.insert_or_assign(event, EventSignalingState(true, stage_mask, safe_dependency_info));
     event_updates.emplace_back([event, stage_mask, safe_dependency_info](vvl::CommandBuffer&, bool do_validate,
                                                                          EventMap& local_event_signal_info, VkQueue,
                                                                          const Location& loc) {
@@ -603,6 +604,7 @@ void CommandBufferSubState::RecordSetEvent(VkEvent event, VkPipelineStageFlags2 
 }
 
 void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags2) {
+    event_signaling_states.insert_or_assign(event, EventSignalingState(false));
     event_updates.emplace_back(
         [event](vvl::CommandBuffer&, bool do_validate, EventMap& local_event_signal_info, VkQueue, const Location& loc) {
             local_event_signal_info[event] = EventInfo{VK_PIPELINE_STAGE_2_NONE, false};
@@ -1089,6 +1091,7 @@ void CommandBufferSubState::ResetCBState() {
     custom_primitive_restart_index = 0;
 
     push_data_mask.clear();
+    event_signaling_states.clear();
 
     // Submit time validation
     queue_submit_functions.clear();

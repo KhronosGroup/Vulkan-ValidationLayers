@@ -116,22 +116,32 @@ TEST_F(NegativeEvent, WaitEvent2HostStage) {
 
 TEST_F(NegativeEvent, EventStageMask) {
     RETURN_IF_SKIP(Init());
-
     vkt::Event event(*m_device);
 
     m_command_buffer.Begin();
-    vk::CmdSetEvent(m_command_buffer, event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-    // Source stage mask does not match CmdSetEvent's stage mask
-    vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                      0, nullptr, 0, nullptr, 0, nullptr);
-    m_command_buffer.End();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
 
-    // TODO: it has to be VUID-vkCmdWaitEvents-srcStageMask-01158 and also directly during recording,
-    // no need for submit validation.
-    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-parameter");
-    m_default_queue->Submit(m_command_buffer);
+    // Source stage mask does not match CmdSetEvent's stage mask
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     m_errorMonitor->VerifyFound();
-    m_default_queue->Wait();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, EventStageMask2) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+    // Source stage mask does not match CmdSetEvent's stage mask
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeEvent, EventStageMaskSubmit) {
