@@ -207,9 +207,10 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     using QueueCallback = std::function<bool(const class vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state)>;
     std::vector<QueueCallback> queue_submit_functions;
 
-    using EventCallback = std::function<bool(vvl::CommandBuffer &cb_state, bool do_validate, EventMap &local_event_signal_info,
-                                             VkQueue waiting_queue, const Location &loc)>;
+    using EventCallback = std::function<bool(vvl::CommandBuffer& cb_state, bool do_validate, EventMap& local_event_signal_info,
+                                             VkQueue waiting_queue, const Location& loc)>;
     std::vector<EventCallback> event_updates;
+    vvl::unordered_map<VkEvent, EventSignalingState> event_signaling_states;
 
     // Validation functions run when secondary CB is executed in primary
     std::vector<

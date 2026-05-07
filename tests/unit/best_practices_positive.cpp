@@ -362,6 +362,27 @@ TEST_F(VkPositiveBestPracticesLayerTest, ResetEventFromSecondary) {
     m_command_buffer.End();
 }
 
+TEST_F(VkPositiveBestPracticesLayerTest, DestroyEventThenUseAnotherEvent) {
+    TEST_DESCRIPTION("Destroy event that was set in a command buffer");
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+
+    // Scope to destroy event object at the end
+    {
+        vkt::Event event1(*m_device);
+        m_command_buffer.Begin();
+        m_command_buffer.SetEvent(event1);
+        m_command_buffer.End();
+        m_default_queue->SubmitAndWait(m_command_buffer);
+        // event1 is destroyed somewhere here and should not cause troubles in the event code below
+    }
+    vkt::Event event2(*m_device);
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event2);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(VkPositiveBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     TEST_DESCRIPTION("Test creating fifo relaxed swapchain");
 
@@ -409,30 +430,6 @@ TEST_F(VkPositiveBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     // lazy way to not query
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentMode-02839");
     m_swapchain.Init(*m_device, swapchain_create_info);
-}
-
-TEST_F(VkPositiveBestPracticesLayerTest, ResetCommandPool) {
-    TEST_DESCRIPTION("Destroy event that was set in a command buffer");
-    RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState());
-
-    // Scope to destroy event object at the end
-    {
-        vkt::Event event1(*m_device);
-        m_command_buffer.Begin();
-        m_command_buffer.SetEvent(event1);
-        m_command_buffer.End();
-        m_default_queue->SubmitAndWait(m_command_buffer);
-        // event1 is destroyed somehwere here
-    }
-
-    vkt::Event event2(*m_device);
-    m_command_buffer.Begin();
-    m_command_buffer.SetEvent(event2);
-    m_command_buffer.End();
-    // Submit tries to access signaling state of deleted event1. This should not cause a crash.
-    // Currently VVL does not cleanup event_signaling_state: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9171
-    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(VkPositiveBestPracticesLayerTest, ShaderObjectDraw) {
