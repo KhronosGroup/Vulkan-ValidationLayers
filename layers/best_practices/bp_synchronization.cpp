@@ -45,6 +45,7 @@ bool BestPractices::CheckDependencyInfo(const LogObjectList& objlist, const Loca
 void BestPractices::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
                                               const RecordObject& record_obj) {
     device_state->ForEachShared<vvl::CommandBuffer>([event](const std::shared_ptr<vvl::CommandBuffer>& command_buffer) {
+        auto guard = command_buffer->WriteLock();
         auto& sub_state = bp_state::SubState(*command_buffer.get());
         sub_state.event_signaling_state.erase(event);
     });
