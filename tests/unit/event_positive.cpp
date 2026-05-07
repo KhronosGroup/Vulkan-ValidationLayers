@@ -49,6 +49,17 @@ TEST_F(PositiveEvent, EventStageMaskTwoSubmits) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveEvent, EventStageMaskHost) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_HOST_BIT,
+                               VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveEvent, BasicSetAndWaitEvent) {
     TEST_DESCRIPTION("Sets event and then wait for it using CmdSetEvent/CmdWaitEvents");
     RETURN_IF_SKIP(Init());
