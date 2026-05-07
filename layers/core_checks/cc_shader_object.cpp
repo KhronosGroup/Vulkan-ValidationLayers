@@ -698,7 +698,7 @@ bool CoreChecks::ValidateDrawShaderObjectFlags(const LastBound& last_bound_state
             continue;
         }
 
-        if (shader->safe_create_info.flags & VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR) {
+        if (shader->is_independent_set) {
             shader_with_independent_sets = shader;
         } else {
             shader_without_independent_sets = shader;
@@ -749,7 +749,7 @@ bool CoreChecks::ValidateDrawShaderObjectFlags(const LastBound& last_bound_state
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::INDEPENDENT_SETS_13362), objlist, loc,
                              "Shader object bound at stage %s has flag VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR but the "
                              "VkPipelineLayout (bound with %s) "
-                             "was created without the INDEPENDENT_SETS flag\nCreate flags: %s.",
+                             "was created without the VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT flag\nCreate flags: %s.",
                              string_VkShaderStageFlagBits(shader_with_independent_sets->safe_create_info.stage),
                              vvl::String(last_bound_state.GetDescriptorModeFunc()),
                              string_VkPipelineLayoutCreateFlags(last_bound_state.desc_set_pipeline_layout->create_flags).c_str());
@@ -960,7 +960,10 @@ bool CoreChecks::ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& 
             }
         }
 
-        if (first->create_info.setLayoutCount != shader_state->create_info.setLayoutCount) {
+        // 13361 ensure both shader objects have INDEPENDENT_SETS
+        const bool has_independent_sets = first->is_independent_set;
+
+        if (first->create_info.setLayoutCount != shader_state->create_info.setLayoutCount && !has_independent_sets) {
             const LogObjectList objlist(cb_state.Handle(), first->Handle(), shader_state->Handle());
             skip |=
                 LogError(CreateActionVuid(loc.function, vvl::ActionVUID::SHADERS_DESCRIPTOR_LAYOUTS_08879), objlist, loc,
@@ -973,15 +976,21 @@ bool CoreChecks::ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& 
                 const auto first_layout = Get<vvl::DescriptorSetLayout>(first->create_info.pSetLayouts[i]);
                 const auto current_layout = Get<vvl::DescriptorSetLayout>(shader_state->create_info.pSetLayouts[i]);
                 if (!first_layout || !current_layout) {
-                    continue;  // Error will be caught in VUID-VkShaderCreateInfoEXT-pSetLayouts-parameter
+                    // Can be NULL if using VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR
+                    // Otherwise will be caught in 13359/13360
+                    continue;
                 }
                 if (std::string err_msg; !VerifyDescriptorSetLayoutIsCompatibile(*first_layout, *current_layout, err_msg)) {
                     const LogObjectList objlist(cb_state.Handle(), first_layout->Handle(), current_layout->Handle());
+                    const char* hint =
+                        "\nHint: If using VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR make sure to use VK_NULL_HANDLE for the "
+                        "VkShaderCreateInfoEXT::pSetLayouts not being used by the stage.";
                     skip |= LogError(
                         CreateActionVuid(loc.function, vvl::ActionVUID::SHADERS_DESCRIPTOR_LAYOUTS_08879), objlist, loc,
-                        "The bound %s and %s shader are incompatible due to differently defined VkDescriptorSetLayouts.\n%s",
+                        "The bound %s and %s shader are incompatible due to differently defined VkDescriptorSetLayouts.\n%s%s",
                         string_VkShaderStageFlagBits(first->create_info.stage),
-                        string_VkShaderStageFlagBits(shader_state->create_info.stage), err_msg.c_str());
+                        string_VkShaderStageFlagBits(shader_state->create_info.stage), err_msg.c_str(),
+                        has_independent_sets ? hint : "");
                     break;
                 }
             }

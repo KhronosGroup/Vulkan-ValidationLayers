@@ -19,7 +19,6 @@
 #include <vulkan/vulkan_core.h>
 #include "shader_module.h"
 #include "state_tracker/state_tracker.h"
-#include "utils/shader_utils.h"
 
 namespace vvl {
 static DescriptorSetLayoutList GetSetLayouts(DeviceState& dev_data, const VkShaderCreateInfoEXT& pCreateInfo) {
@@ -35,11 +34,12 @@ ShaderObject::ShaderObject(DeviceState& dev_data, const VkShaderCreateInfoEXT& c
     : StateObject(handle, kVulkanObjectTypeShaderEXT),
       safe_create_info(&create_info_i),
       create_info(*safe_create_info.ptr()),
-      set_layouts(GetSetLayouts(dev_data, create_info)),
-      push_constant_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)),
-      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges, 0)),
+      is_independent_set((create_info_i.flags & VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR) != 0),
       descriptor_heap_mode((create_info_i.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0),
       descriptor_heap_embedded_samplers_count(descriptor_heap_mode ? CountDescriptorHeapEmbeddedSamplers(create_info_i.pNext) : 0),
+      set_layouts(GetSetLayouts(dev_data, create_info)),
+      push_constant_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)),
+      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges, is_independent_set, true)),
       stage(nullptr, &safe_create_info, &set_layouts, nullptr, spirv_module, VK_NULL_HANDLE, descriptor_heap_mode),
       active_slots(GetActiveSlots(stage.entrypoint)),
       max_active_slot(GetMaxActiveSlot(active_slots)) {
