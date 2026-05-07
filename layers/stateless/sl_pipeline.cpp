@@ -1339,7 +1339,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                     if (!IsExtEnabled(extensions.vk_ext_extended_dynamic_state) ||
                         (!has_dynamic_viewport_with_count && !has_dynamic_scissor_with_count)) {
                         skip |= LogError("VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134", device, viewport_loc,
-                                         "scissorCount (%" PRIu32 ") is different to viewportCount (%" PRIu32 ").",
+                                         "scissorCount (%" PRIu32 ") is different from viewportCount (%" PRIu32 ").",
                                          viewport_state.scissorCount, viewport_state.viewportCount);
                     }
                 }

@@ -257,7 +257,7 @@ class Device : public internal::Handle<VkDevice> {
     std::optional<uint32_t> ComputeOnlyQueueFamily() const;
     Queue *ComputeOnlyQueue() const;
 
-    // Dedicated transfer queue family: has tranfer but no graphics/compute
+    // Dedicated transfer queue family: has transfer but no graphics/compute
     std::optional<uint32_t> TransferOnlyQueueFamily() const;
     Queue *TransferOnlyQueue() const;
 

@@ -817,7 +817,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                     skip |= LogError(
                         "VUID-VkBindBufferMemoryDeviceGroupInfo-pDeviceIndices-01607", objlist,
                         loc.pNext(Struct::VkBindBufferMemoryDeviceGroupInfo, Field::pDeviceIndices, i),
-                        "(%" PRIu32 ") larger then the number of physical devices in the logical device (%" PRIu32 ").",
+                        "(%" PRIu32 ") larger than the number of physical devices in the logical device (%" PRIu32 ").",
                         bind_buffer_memory_device_group_info->pDeviceIndices[i], device_group_create_info.physicalDeviceCount);
                 }
             }
@@ -1035,7 +1035,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                                                      : "VUID-vkBindBufferMemory-descriptorBufferCaptureReplay-08112";
                 const LogObjectList objlist(buffer, memory);
                 skip |= LogError(vuid, objlist, loc.dot(Field::buffer),
-                                 "was created with VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT,"
+                                 "was created with VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, "
                                  "but the bound memory was not allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT "
                                  "(VkMemoryAllocateFlags::flags were %s).",
                                  string_VkMemoryAllocateFlags(memory_allocate_flags).c_str());
@@ -1046,7 +1046,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                     bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-buffer-09201" : "VUID-vkBindBufferMemory-buffer-09201";
                 const LogObjectList objlist(buffer, memory);
                 skip |= LogError(vuid, objlist, loc.dot(Field::buffer),
-                                 "was created with VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT,"
+                                 "was created with VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, "
                                  "but the bound memory was not allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT "
                                  "(VkMemoryAllocateFlags::flags were %s).",
                                  string_VkMemoryAllocateFlags(memory_allocate_flags).c_str());
@@ -1058,7 +1058,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                                                          : "VUID-vkBindBufferMemory-bufferDeviceAddressCaptureReplay-09200";
                     const LogObjectList objlist(buffer, memory);
                     skip |= LogError(vuid, objlist, loc.dot(Field::buffer),
-                                     "was created with VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT,"
+                                     "was created with VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, "
                                      "but the bound memory was not allocated with "
                                      "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT (VkMemoryAllocateFlags::flags were %s).",
                                      string_VkMemoryAllocateFlags(memory_allocate_flags).c_str());
@@ -1961,7 +1961,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 if (resource.second[i] == vvl::kNoIndex32) {
                     skip |= LogError("VUID-vkBindImageMemory2-pBindInfos-02858", resource.first, error_obj.location,
                                      "Plane %" PRIu32 " of the disjoint image was not bound. All %" PRIu32
-                                     " planes need to bound individually "
+                                     " planes need to be bound individually "
                                      "in separate pBindInfos in a single call.",
                                      i, total_planes);
                 }
@@ -1998,7 +1998,7 @@ bool CoreChecks::ValidateBindImageMemoryResource(const VkBindImageMemoryInfo& bi
                     bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-memory-02629" : "VUID-vkBindImageMemory-memory-02629";
                 const LogObjectList objlist(bind_info.image, bind_info.memory, dedicated_image);
                 skip |= LogError(vuid, objlist, loc.dot(Field::memory),
-                                 "(%s) is a dedicated memory allocation, but VkMemoryDedicatedAllocateInfo:: %s must compatible "
+                                 "(%s) is a dedicated memory allocation, but VkMemoryDedicatedAllocateInfo:: %s must be compatible "
                                  "with %s and memoryOffset %" PRIu64 " must be zero.",
                                  FormatHandle(bind_info.memory).c_str(), FormatHandle(dedicated_image).c_str(),
                                  FormatHandle(bind_info.image).c_str(), bind_info.memoryOffset);

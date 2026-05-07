@@ -1807,7 +1807,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                  ", layerCount = %s\n"
                                  "dstSubresource baseArrayLayer = %" PRIu32
                                  ", layerCount = %s\n"
-                                 "but srcImageLayout is %s and is dstImageLayout is %s",
+                                 "but srcImageLayout is %s and dstImageLayout is %s",
                                  src_subresource.mipLevel, src_subresource.baseArrayLayer,
                                  string_LayerCount(src_image_state->GetArrayLayers(), src_subresource).c_str(),
                                  dst_subresource.baseArrayLayer,
@@ -1904,8 +1904,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                                  string_VkImageAspectFlags(subresource_2.aspectMask).c_str(),
                                                  String(depth_img_field), string_VkFormat(depth_img.GetFormat()),
                                                  invalid_depth_copy_on_transfer
-                                                     ? "VK_FORMAT_FEATURE_2_DEPTH_COPY_ON_TRANFER_QUEUE_BIT_KHR"
-                                                     : "VK_FORMAT_FEATURE_2_STENCIL_COPY_ON_TRANFER_QUEUE_BIT_KHR",
+                                                     ? "VK_FORMAT_FEATURE_2_DEPTH_COPY_ON_TRANSFER_QUEUE_BIT_KHR"
+                                                     : "VK_FORMAT_FEATURE_2_STENCIL_COPY_ON_TRANSFER_QUEUE_BIT_KHR",
                                                  string_VkFormatFeatureFlags2(img_format_features).c_str());
                             }
                         }
@@ -3196,7 +3196,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                                  ", layerCount = %s\n"
                                  "dstSubresource baseArrayLayer = %" PRIu32
                                  ", layerCount = %s\n"
-                                 "but srcImageLayout is %s and is dstImageLayout is %s",
+                                 "but srcImageLayout is %s and dstImageLayout is %s",
                                  src_subresource.mipLevel, src_subresource.baseArrayLayer,
                                  string_LayerCount(src_image_state->GetArrayLayers(), src_subresource).c_str(),
                                  dst_subresource.baseArrayLayer,
@@ -3289,7 +3289,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                 if (dst_subresource.baseArrayLayer != 0 || normalized_dst_layer_count != 1 || normalized_src_layer_count != 1) {
                     vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10208" : "VUID-vkCmdBlitImage-maintenance8-10208";
                     skip |= LogError(vuid, all_objlist, region_loc,
-                                     "the dstImage is VK_IMAGE_TYPE_3D so only can use its first layer\n"
+                                     "the dstImage is VK_IMAGE_TYPE_3D so it only can be use its first layer\n"
                                      "srcSubresource.layerCount = %s\n"
                                      "dstSubresource (baseArrayLayer = %" PRIu32 ", layerCount = %s)\n",
                                      string_LayerCount(src_image_state->GetArrayLayers(), src_subresource).c_str(),

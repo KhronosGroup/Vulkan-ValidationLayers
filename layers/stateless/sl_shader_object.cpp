@@ -113,7 +113,7 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
                                  "is VK_SHADER_CODE_TYPE_SPIRV_EXT, but pCode (%p) is not aligned to 4 bytes.", create_info.pCode);
             } else if (!IsIntegerMultipleOf(create_info.codeSize, 4)) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-codeSize-08735", device, create_info_loc.dot(Field::codeSize),
-                                 "(%" PRIu64 ") is not a multiple of 4. You might have forget to multiply by sizeof(uint32_t).",
+                                 "(%" PRIu64 ") is not a multiple of 4. You might have forgot to multiply by sizeof(uint32_t).",
                                  static_cast<uint64_t>(create_info.codeSize));
             } else {
                 // Can't cast this until we know it is aligned to 4 bytes or USAN will catch it

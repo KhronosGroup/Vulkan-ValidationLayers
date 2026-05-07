@@ -734,13 +734,13 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuff
 
     if (!IsIntegerMultipleOf(offset, 4)) {
         skip |= LogError("VUID-vkCmdDrawIndirectCount-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                         error_obj.location.dot(Field::offset), "(%" PRIu64 "), is not a multiple of 4.", offset);
+                         error_obj.location.dot(Field::offset), "(%" PRIu64 ") is not a multiple of 4.", offset);
     }
 
     if (!IsIntegerMultipleOf(countBufferOffset, 4)) {
         skip |=
             LogError("VUID-vkCmdDrawIndirectCount-countBufferOffset-02716", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                     error_obj.location.dot(Field::countBufferOffset), "(%" PRIu64 "), is not a multiple of 4.", countBufferOffset);
+                     error_obj.location.dot(Field::countBufferOffset), "(%" PRIu64 ") is not a multiple of 4.", countBufferOffset);
     }
 
     if ((extensions.vk_khr_draw_indirect_count != kEnabledByCreateinfo) &&
@@ -817,12 +817,12 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
 
     if (!IsIntegerMultipleOf(offset, 4)) {
         skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                         error_obj.location.dot(Field::offset), "(%" PRIu64 "), is not a multiple of 4.", offset);
+                         error_obj.location.dot(Field::offset), "(%" PRIu64 ") is not a multiple of 4.", offset);
     }
     if (!IsIntegerMultipleOf(countBufferOffset, 4)) {
         skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::countBufferOffset),
-                         "(%" PRIu64 "), is not a multiple of 4.", countBufferOffset);
+                         "(%" PRIu64 ") is not a multiple of 4.", countBufferOffset);
     }
     if ((extensions.vk_khr_draw_indirect_count != kEnabledByCreateinfo) &&
         ((api_version >= VK_API_VERSION_1_2) && (enabled_features.drawIndirectCount == VK_FALSE))) {
@@ -1316,7 +1316,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
 
     if (!IsIntegerMultipleOf(offset, 4)) {
         skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectNV-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                         error_obj.location.dot(Field::offset), "(%" PRIu64 "), is not a multiple of 4.", offset);
+                         error_obj.location.dot(Field::offset), "(%" PRIu64 ") is not a multiple of 4.", offset);
     }
     if (drawCount > phys_dev_props.limits.maxDrawIndirectCount) {
         skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02719",
@@ -1342,12 +1342,12 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
     if (!IsIntegerMultipleOf(offset, 4)) {
         skip |=
             LogError("VUID-vkCmdDrawMeshTasksIndirectCountNV-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                     error_obj.location.dot(Field::offset), "(%" PRIu64 "), is not a multiple of 4.", offset);
+                     error_obj.location.dot(Field::offset), "(%" PRIu64 ") is not a multiple of 4.", offset);
     }
     if (!IsIntegerMultipleOf(countBufferOffset, 4)) {
         skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectCountNV-countBufferOffset-02716",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::countBufferOffset),
-                         "(%" PRIu64 "), is not a multiple of 4.", countBufferOffset);
+                         "(%" PRIu64 ") is not a multiple of 4.", countBufferOffset);
     }
 
     {
@@ -1523,7 +1523,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
     if (!IsIntegerMultipleOf(countBufferOffset, 4)) {
         skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBufferOffset-02716",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::countBufferOffset),
-                         "(%" PRIu64 "), is not a multiple of 4.", countBufferOffset);
+                         "(%" PRIu64 ") is not a multiple of 4.", countBufferOffset);
     }
 
     if ((extensions.vk_khr_draw_indirect_count != kEnabledByCreateinfo) &&
@@ -2544,7 +2544,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound& last_bound_st
                 LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
                 objlist.add(attachment->Handle());
                 skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_BLEND_EQUATION_10864), objlist, loc,
-                                 "%s needs to be set for color attachmet index %" PRIu32 " (%s)\n%s\n%s",
+                                 "%s needs to be set for color attachment index %" PRIu32 " (%s)\n%s\n%s",
                                  IsExtEnabled(extensions.vk_ext_blend_operation_advanced)
                                      ? "Either vkCmdSetColorBlendEquationEXT or vkCmdSetColorBlendAdvancedEXT"
                                      : "vkCmdSetColorBlendEquationEXT",

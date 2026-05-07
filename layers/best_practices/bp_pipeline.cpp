@@ -338,7 +338,7 @@ bool BestPractices::ValidateComputeShaderAmd(const spirv::Module& module_state, 
     if (!IsIntegerMultipleOf(thread_count, 64)) {
         skip |= LogPerformanceWarning("BestPractices-AMD-LocalWorkgroup-Multiple64", device, loc,
                                       "%s compute shader with work group dimensions (%s), workgroup size (%" PRIu64
-                                      "), is not a multiple of 64. Make the workgroup size a multiple of 64 to obtain best "
+                                      ") is not a multiple of 64. Make the workgroup size a multiple of 64 to obtain best "
                                       "performance across all AMD GPU generations.",
                                       VendorSpecificTag(kBPVendorAMD), local_size.ToString().c_str(), thread_count);
     }

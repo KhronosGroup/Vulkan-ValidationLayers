@@ -1120,7 +1120,7 @@ bool CoreChecks::ValidateClearAttachmentExtent(const vvl::CommandBuffer& cb_stat
             skip |= LogError(
                 "VUID-vkCmdClearAttachments-pRects-06937", cb_state.Handle(), loc.dot(Field::pRects, i).dot(Field::baseArrayLayer),
                 "(%" PRIu32 ") + layerCount (%" PRIu32 ") is %" PRIu32
-                ", which is larger then the number of layers rendered to in the current render pass instance (%" PRIu32 ").",
+                ", which is larger than the number of layers rendered to in the current render pass instance (%" PRIu32 ").",
                 rect_base_layer, rect_layer_count, rect_base_layer + rect_layer_count, render_pass_layer_count);
         }
     }
@@ -1480,7 +1480,7 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
     if (subresourceRange.baseMipLevel >= image_mip_count) {
         skip |= LogError(GetSubresourceRangeVUID(subresource_loc, vvl::SubresourceRangeError::BaseMip_01486), objlist,
                          subresource_loc.dot(Field::baseMipLevel),
-                         "(%" PRIu32 ") is greater or equal to the mip level count of the image (%" PRIu32 ").",
+                         "(%" PRIu32 ") is greater than or equal to the mip level count of the image (%" PRIu32 ").",
                          subresourceRange.baseMipLevel, image_mip_count);
     }
 
@@ -3013,14 +3013,14 @@ bool CoreChecks::ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo& 
         skip |= LogError("VUID-VkImageViewCreateInfo-pNext-06955", create_info.image, create_info_loc.dot(Field::pNext),
                          "chain includes VkImageViewSampleWeightCreateInfoQCOM "
                          "for a VK_IMAGE_VIEW_TYPE_2D_ARRAY but the created image extent.width (%" PRIu32
-                         ") is not greater than or equal to filerSize.width (%" PRIu32 ").",
+                         ") is not greater than or equal to filterSize.width (%" PRIu32 ").",
                          image_extent.width, sample_weight_info->filterSize.width);
     }
     if ((create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) && (image_extent.width < sample_weight_info->filterSize.height)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-pNext-06956", create_info.image, create_info_loc.dot(Field::pNext),
                          "chain includes VkImageViewSampleWeightCreateInfoQCOM "
                          "for a VK_IMAGE_VIEW_TYPE_2D_ARRAY but the created image extent.height (%" PRIu32
-                         ") is not greater than or equal to filerSize.height (%" PRIu32 ").",
+                         ") is not greater than or equal to filterSize.height (%" PRIu32 ").",
                          image_extent.height, sample_weight_info->filterSize.height);
     }
 

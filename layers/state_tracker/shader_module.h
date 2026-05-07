@@ -99,7 +99,7 @@ struct DecorationBase {
 };
 
 // subset only for OpDecorate
-// Can't have nested structs with OpMemberDecorate, this class prevents accidently creating a 2nd level of member decorations,
+// Can't have nested structs with OpMemberDecorate, this class prevents accidentally creating a 2nd level of member decorations,
 struct DecorationSet : public DecorationBase {
     // For descriptors
     uint32_t set = kInvalidValue;

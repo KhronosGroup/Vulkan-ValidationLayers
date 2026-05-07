@@ -782,7 +782,7 @@ float LastBound::GetMinSampleShading() const {
 
 std::string LastBound::DescribeSampleShading() const {
     std::ostringstream ss;
-    ss << "Sample Shading was enbled ";
+    ss << "Sample Shading was enabled ";
 
     bool is_implicit = false;
     if (auto fragment_entry_point = GetFragmentEntryPoint()) {

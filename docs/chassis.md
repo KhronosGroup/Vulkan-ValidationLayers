@@ -58,7 +58,7 @@ Some validations objects require additional state to be tracked for various stat
 
 ## Command Buffers
 
-`VkCommandBuffer` objects is where most of the state tracking occurs. Currently the `vvl::CommandBuffer` object is easily 3 or 4x larger then the next state object. From profiling, a lot of wall clock time is spend in `vkCmd*` calls not because they are slow, but because they will get called millions of times in real world applications.
+`VkCommandBuffer` objects is where most of the state tracking occurs. Currently the `vvl::CommandBuffer` object is easily 3 or 4x larger than the next state object. From profiling, a lot of wall clock time is spend in `vkCmd*` calls not because they are slow, but because they will get called millions of times in real world applications.
 
 We adopt a slightly different strategy with them, instead of using the chassis `PreCallRecord`/`PostCallRecord`, for as many spots as possible we want to funnel things through the `vvl::CommanBuffer` state object itself for recording.
 

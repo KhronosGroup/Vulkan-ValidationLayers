@@ -24,7 +24,7 @@
 
 class PositiveSyncObject : public SyncObjectTest {};
 
-TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
+TEST_F(PositiveSyncObject, Sync2OwnershipTransfersImage) {
     TEST_DESCRIPTION("Valid image ownership transfers that shouldn't create errors");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
@@ -74,7 +74,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     ValidOwnershipTransfer(no_gfx_queue, no_gfx_cb, m_default_queue, m_command_buffer, nullptr, &image_barrier);
 }
 
-TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
+TEST_F(PositiveSyncObject, Sync2OwnershipTransfersBuffer) {
     TEST_DESCRIPTION("Valid buffer ownership transfers that shouldn't create errors");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);

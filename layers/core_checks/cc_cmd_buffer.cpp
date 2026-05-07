@@ -467,7 +467,7 @@ bool CoreChecks::ValidateBeginCommandBufferRenderingInheritanceInfo(const vvl::C
     if (MostSignificantBit(rendering_info.viewMask) >= static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
         skip |= LogError("VUID-VkCommandBufferInheritanceRenderingInfo-viewMask-06009", cb_state.Handle(),
                          inheritance_loc.pNext(Struct::VkCommandBufferInheritanceRenderingInfo, Field::viewMask),
-                         "(0x%" PRIx32 ") most significant bit is greater or equal to maxMultiviewViewCount (%" PRIu32 ").",
+                         "(0x%" PRIx32 ") most significant bit is greater than or equal to maxMultiviewViewCount (%" PRIu32 ").",
                          rendering_info.viewMask, phys_dev_props_core11.maxMultiviewViewCount);
     }
     return skip;

@@ -1224,7 +1224,7 @@ TEST_F(NegativeGeometryTessellation, GeometryStreamsCapability) {
     GetPhysicalDeviceProperties2(xfb_props);
 
     if (xfb_props.maxTransformFeedbackStreams <= 1) {
-        GTEST_SKIP() << "maxTransformFeedbackStreams lower than required";
+        GTEST_SKIP() << "maxTransformFeedbackStreams less than required";
     }
 
     const char geom_src[] = R"glsl(

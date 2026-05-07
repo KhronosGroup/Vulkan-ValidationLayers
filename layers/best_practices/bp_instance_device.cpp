@@ -79,13 +79,13 @@ bool bp_state::Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDe
     DispatchGetPhysicalDeviceProperties(physicalDevice, &physical_device_properties);
     auto device_api_version = physical_device_properties.apiVersion;
 
-    // Check api versions and log an info message when instance api Version is higher than version on device.
+    // Check api versions and log an info message when instance api Version is greater than version on device.
     if (api_version > device_api_version) {
         std::string inst_api_name = StringAPIVersion(api_version);
         std::string dev_api_name = StringAPIVersion(device_api_version);
 
         LogInfo("BestPractices-vkCreateDevice-API-version-mismatch", instance, error_obj.location,
-                "API Version of current instance, %s is higher than API Version on device, %s", inst_api_name.c_str(),
+                "API Version of current instance, %s is greater than API Version on device, %s", inst_api_name.c_str(),
                 dev_api_name.c_str());
     }
 

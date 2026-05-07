@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 Valve Corporation
+# Copyright (c) 2026 LunarG, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import csv
 import sys
 import argparse
@@ -62,12 +77,12 @@ def format_diff(ref_val, comp_val):
     Computes the difference between a reference value and a comparison value.
     Returns a string formatted as a signed percentage along with the absolute difference
     in milliseconds, e.g.: "+12.34% (+5.67 ms)".
-    
+
     A color gradient is applied so that:
       - For positive differences, the text is tinted red, with brighter red for +100% and above.
       - For negative differences, the text is tinted green, with brighter green for -100% and below.
       - At 0% the text appears white.
-      
+
     If the reference value is zero, returns "N/A".
     """
     if ref_val == 0:
@@ -139,7 +154,7 @@ def main(reference_csv, comparison_csv):
     print(f"\nZone Timing Comparison ({reference_csv} vs {comparison_csv}):")
     print(header_line)
     print(sep_line)
-    
+
     # Print each row, padding each cell based on its visible width.
     for row in rows:
         padded_cells = [pad_ansi(cell, col_widths[i]) for i, cell in enumerate(row)]
@@ -162,6 +177,6 @@ if __name__ == "__main__":
     parser.add_argument("reference_csv", help="Reference CSV file")
     parser.add_argument("comparison_csv", help="CSV file to compare")
     args = parser.parse_args()
-    
+
     # Pass the parsed arguments to main as parameters.
     main(args.reference_csv, args.comparison_csv)

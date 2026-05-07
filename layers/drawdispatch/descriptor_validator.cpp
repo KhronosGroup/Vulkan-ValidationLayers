@@ -444,7 +444,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             skip |= LogError(
                 CreateActionVuid(loc.Get().function, ActionVUID::IMAGE_VIEW_DIM_07752), objlist, loc.Get(),
                 "the %s VkImageViewType is %s but the OpTypeImage has (Dim = %s) and (Arrayed = %" PRIu32
-                ").\nEither fix in shader or update the VkImageViewType to %s%s%s",
+                ").\nEither fix in the shader or update the VkImageViewType to %s%s%s",
                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                 string_VkImageViewType(image_view_ci.viewType), string_SpvDim(dim), is_image_array,
                 SuggestImageViewType(dim, is_image_array),

@@ -2442,7 +2442,7 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer&
         skip |=
             LogError(vuid, objlist, loc,
                      "There have been no calls to vkCmdBindDescriptorBuffersEXT and no descriptor buffers are bound. Any "
-                     "future call will vkCmdBindDescriptorBuffersEXT would invalidate these offsets anyway.%s",
+                     "future call to vkCmdBindDescriptorBuffersEXT would invalidate these offsets anyway.%s",
                      cb_state.descriptor_buffer.ever_bound
                          ? "\nThere was a legacy vkCmdBindDescriptorSets command recorded which invalidates all descriptor buffers."
                          : "");
@@ -3569,7 +3569,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                     // By searching for ACCELERATION_STRUCTURE_STORAGE_BIT usage, we can likely help identify this
                     const auto found_buffers = GetBuffersByAddress(as_address);
                     if (!found_buffers.empty()) {
-                        ss << "\nThe follow buffers were found at this address:\n";
+                        ss << "\nThe following buffers were found at this address:\n";
                         for (const auto& buffer_state : found_buffers) {
                             ss << "  " << buffer_state->Describe(*this) << "\n";
                         }
@@ -5497,7 +5497,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                     // By searching for ACCELERATION_STRUCTURE_STORAGE_BIT usage, we can likely help identify this
                     const auto found_buffers = GetBuffersByAddress(address_range.address);
                     if (!found_buffers.empty()) {
-                        ss << "\nThe follow buffers were found at this address:\n";
+                        ss << "\nThe following buffers were found at this address:\n";
                         for (const auto& buffer_state : found_buffers) {
                             ss << "  " << buffer_state->Describe(*this) << "\n";
                         }

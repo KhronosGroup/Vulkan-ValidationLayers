@@ -35,7 +35,7 @@ VkImageCreateInfo ImageTest::DefaultImageInfo() {
 
 class PositiveImage : public ImageTest {};
 
-TEST_F(PositiveImage, OwnershipTranfers) {
+TEST_F(PositiveImage, OwnershipTransfers) {
     TEST_DESCRIPTION("Valid image ownership transfers that shouldn't create errors");
     RETURN_IF_SKIP(Init());
 

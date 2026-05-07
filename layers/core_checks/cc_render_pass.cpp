@@ -2050,7 +2050,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                                 const char* vuid =
                                     use_rp2 ? "VUID-VkSubpassDescription2-None-09456" : "VUID-VkSubpassDescription-None-09431";
                                 skip |= LogError(vuid, device, attachment_loc.dot(Field::samples),
-                                                 "%s) (referenced by %s) is larger than from pCreateInfo->pAttachments[%" PRIu32
+                                                 "%s) (referenced by %s) is larger than pCreateInfo->pAttachments[%" PRIu32
                                                  "].samples (%s) (referenced by %s).",
                                                  string_VkSampleCountFlagBits(current_sample_count), color_loc.Fields().c_str(),
                                                  subpass.pDepthStencilAttachment->attachment,
@@ -2324,7 +2324,7 @@ bool CoreChecks::ValidateRenderPassDAG(const VkRenderPassCreateInfo2& create_inf
             vuid = use_rp2 ? "VUID-VkSubpassDescription2-flags-04909" : "VUID-VkSubpassDescription-flags-03343";
             skip |= LogError(vuid, device, dependencies_loc,
                              "specifies that subpass %" PRIu32
-                             " has a dependency on a later subpass"
+                             " has a dependency on a later subpass "
                              "and includes VK_SUBPASS_DESCRIPTION_CUSTOM_RESOLVE_BIT_EXT subpass flags.",
                              dependency.srcSubpass);
         }
@@ -2556,7 +2556,7 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2& crea
         subpass_loc.pNext(Struct::VkSubpassDescriptionDepthStencilResolve, Field::pDepthStencilResolveAttachment);
     if (resolve_attachment >= create_info.attachmentCount) {
         skip |= LogError("VUID-VkRenderPassCreateInfo2-pSubpasses-06473", device, ds_resolve_loc,
-                         "must be less than attachmentCount %" PRIu32 " of for this render pass.", create_info.attachmentCount);
+                         "must be less than attachmentCount (%" PRIu32 ") of this render pass.", create_info.attachmentCount);
         // if the index is invalid need to skip everything else to prevent out of bounds index accesses crashing
         return skip;
     }
@@ -2772,14 +2772,14 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
             if (texel_size.width < phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width) {
                 skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04527", device,
                                  texel_loc.dot(Field::width),
-                                 "(%" PRIu32 ") is lower than minFragmentShadingRateAttachmentTexelSize.width (%" PRIu32 ").",
+                                 "(%" PRIu32 ") is less than minFragmentShadingRateAttachmentTexelSize.width (%" PRIu32 ").",
                                  texel_size.width,
                                  phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width);
             }
             if (texel_size.width > phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width) {
                 skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04526", device,
                                  texel_loc.dot(Field::width),
-                                 "(%" PRIu32 ") is higher than maxFragmentShadingRateAttachmentTexelSize.width (%" PRIu32 ").",
+                                 "(%" PRIu32 ") is greater than maxFragmentShadingRateAttachmentTexelSize.width (%" PRIu32 ").",
                                  texel_size.width,
                                  phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width);
             }
@@ -2791,7 +2791,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                 phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height) {
                 skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530", device,
                                  texel_loc.dot(Field::height),
-                                 "(%" PRIu32 ") is lower than minFragmentShadingRateAttachmentTexelSize.height (%" PRIu32 ").",
+                                 "(%" PRIu32 ") is less than minFragmentShadingRateAttachmentTexelSize.height (%" PRIu32 ").",
                                  texel_size.height,
                                  phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height);
             }
@@ -2799,7 +2799,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                 phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height) {
                 skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04529", device,
                                  texel_loc.dot(Field::height),
-                                 "(%" PRIu32 ") is higher than maxFragmentShadingRateAttachmentTexelSize.height (%" PRIu32 ").",
+                                 "(%" PRIu32 ") is greater than maxFragmentShadingRateAttachmentTexelSize.height (%" PRIu32 ").",
                                  texel_size.height,
                                  phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height);
             }
@@ -2809,7 +2809,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                 skip |=
                     LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04531", device, texel_loc,
                              "has a texel size of %" PRIu32 " by %" PRIu32 ", which has an aspect ratio %" PRIu32
-                             ", which is higher than maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
+                             ", which is greater than maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
                              texel_size.width, texel_size.height, aspect_ratio,
                              phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio);
             }
@@ -2819,7 +2819,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                 skip |=
                     LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04532", device, texel_loc,
                              "has a texel size of %" PRIu32 " by %" PRIu32 ", which has an inverse aspect ratio of %" PRIu32
-                             ", which is higher than maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
+                             ", which is greater than maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
                              texel_size.width, texel_size.height, inverse_aspect_ratio,
                              phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio);
             }
@@ -5357,7 +5357,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& c
         if (IsIdentitySwizzle(ivci.components) == false) {
             LogObjectList objlist(create_info.renderPass, image_views[i]);
             skip |= LogError("VUID-VkFramebufferCreateInfo-pAttachments-00884", objlist, attachment_loc,
-                             "has non-identy swizzle. All "
+                             "has non-identity swizzle. All "
                              "framebuffer attachments must have been created with the identity swizzle. Here are the actual "
                              "swizzle values:\n%s",
                              string_VkComponentMapping(ivci.components).c_str());

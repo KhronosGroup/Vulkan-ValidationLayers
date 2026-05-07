@@ -335,7 +335,7 @@ bool Device::ValidateSamplerImageProcessingQCOM(const VkSamplerCreateInfo& creat
         skip |= LogError("VUID-VkSamplerCreateInfo-flags-06968", device, create_info_loc.dot(Field::flags),
                          "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
                          "so if either addressModeU (%s) or addressModeV (%s) is "
-                         "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, then"
+                         "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, then "
                          "borderColor (%s) must be VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK.",
                          string_VkSamplerAddressMode(create_info.addressModeU),
                          string_VkSamplerAddressMode(create_info.addressModeV), string_VkBorderColor(create_info.borderColor));
