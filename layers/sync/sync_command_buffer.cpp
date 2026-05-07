@@ -1116,6 +1116,9 @@ std::optional<CommandBufferAccessContext::ClearAttachmentInfo> CommandBufferAcce
     } else if (dynamic_rendering_info_) {
         attachment_view = dynamic_rendering_info_->GetClearAttachmentView(clear_attachment);
     }
+    if (!attachment_view) {
+        return {};
+    }
 
     const bool separate_depth_stencil_attachment_access =
         GetSyncState().device_state->enabled_features.maintenance7 &&

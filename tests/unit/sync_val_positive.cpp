@@ -4488,3 +4488,34 @@ TEST_F(PositiveSyncVal, Multiview2) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, ClearAttachmentSecondaryCb) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12217");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = vku::InitStructHelper();
+    inheritance_rendering_info.colorAttachmentCount = 1;
+    inheritance_rendering_info.pColorAttachmentFormats = &color_format;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    VkCommandBufferInheritanceInfo buffer_inheritance_info = vku::InitStructHelper(&inheritance_rendering_info);
+
+    VkCommandBufferBeginInfo command_buffer_bi = vku::InitStructHelper();
+    command_buffer_bi.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    command_buffer_bi.pInheritanceInfo = &buffer_inheritance_info;
+
+    VkClearAttachment clear_attachment{};
+    clear_attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+    VkClearRect clear_rect{};
+    clear_rect.rect.extent = {32, 32};
+    clear_rect.layerCount = 1;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin(&command_buffer_bi);
+    vk::CmdClearAttachments(secondary, 1, &clear_attachment, 1, &clear_rect);
+    secondary.End();
+}
