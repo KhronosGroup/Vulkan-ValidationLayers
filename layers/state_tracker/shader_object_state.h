@@ -37,12 +37,13 @@ struct ShaderObject : public StateObject, public SubStateManager<ShaderObjectSub
     const vku::safe_VkShaderCreateInfoEXT safe_create_info;
     const VkShaderCreateInfoEXT &create_info;
 
+    const bool is_independent_set;  // to match Pipeline version
+    const bool descriptor_heap_mode;
+    const uint32_t descriptor_heap_embedded_samplers_count;
+
     const DescriptorSetLayoutList set_layouts;
     const PushConstantRangesId push_constant_ranges;
     const std::vector<PipelineLayoutCompatId> set_compat_ids;
-
-    const bool descriptor_heap_mode;
-    const uint32_t descriptor_heap_embedded_samplers_count;
 
     // We use this to make things more unified with Pipelines, which need a list of these for each stage
     // Basically the rule is:

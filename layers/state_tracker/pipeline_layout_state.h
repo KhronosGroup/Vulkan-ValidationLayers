@@ -54,10 +54,20 @@ struct PipelineLayoutCompatDef {
     uint32_t set;
     PushConstantRangesId push_constant_ranges;
     PipelineLayoutSetLayoutsId set_layouts_id;
-    bool is_independent_sets;  // VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT
+    // VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT or VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR
+    bool is_independent_sets;
+    // When report mismatch errors, it is confusing for ShaderObject because there is no 'vkCmdBindPipeline' and the PipelineLayout
+    // we are comparing is just a "fake" wrapper our the VkShaderCreateInfoEXT::pSetLayouts to make the pipeline and shaderObject
+    // logic the same
+    bool from_shader_object;
+
     PipelineLayoutCompatDef(const uint32_t set_index, const PushConstantRangesId pcr_id, const PipelineLayoutSetLayoutsId sl_id,
-                            bool is_independent_sets)
-        : set(set_index), push_constant_ranges(pcr_id), set_layouts_id(sl_id), is_independent_sets(is_independent_sets) {}
+                            bool is_independent_sets, bool from_shader_object)
+        : set(set_index),
+          push_constant_ranges(pcr_id),
+          set_layouts_id(sl_id),
+          is_independent_sets(is_independent_sets),
+          from_shader_object(from_shader_object) {}
     size_t hash() const;
 
     bool operator==(const PipelineLayoutCompatDef &other) const;
@@ -79,12 +89,16 @@ class PipelineLayout : public StateObject {
     // canonical form IDs for the "compatible for set" contents
     const PushConstantRangesId push_constant_ranges_layout;
     VkPipelineLayoutCreateFlags create_flags;
-    // table of "compatible for set N" canonical forms for trivial accept validation
-    const std::vector<PipelineLayoutCompatId> set_compat_ids;
+
+    // To match the shader object variation
+    bool is_independent_set;
     // When the sets are using VK_EXT_descriptor_buffer
     bool has_descriptor_buffer;
     // Way to quick prevent searching if we know there are no immutable samplers
     bool has_immutable_samplers;
+
+    // table of "compatible for set N" canonical forms for trivial accept validation
+    const std::vector<PipelineLayoutCompatId> set_compat_ids;
 
     PipelineLayout(DeviceState &dev_data, VkPipelineLayout handle, const VkPipelineLayoutCreateInfo *pCreateInfo);
     // Merge 2 or more non-overlapping layouts
@@ -100,6 +114,6 @@ class PipelineLayout : public StateObject {
 
 }  // namespace vvl
 
-std::vector<PipelineLayoutCompatId> GetCompatForSet(const vvl::DescriptorSetLayoutList &set_layouts,
-                                                    const PushConstantRangesId &push_constant_ranges,
-                                                    VkPipelineLayoutCreateFlags pipeline_layout_create_flags);
+std::vector<PipelineLayoutCompatId> GetCompatForSet(const vvl::DescriptorSetLayoutList& set_layouts,
+                                                    const PushConstantRangesId& push_constant_ranges, bool is_independent_sets,
+                                                    bool from_shader_object);

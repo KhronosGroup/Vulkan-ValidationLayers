@@ -14,6 +14,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/shader_helper.h"
 #include "../framework/shader_templates.h"
+#include "test_framework.h"
 #include "utils/math_utils.h"
 
 void ShaderObjectTest::InitBasicShaderObject(void* instance_pnext) {
@@ -1932,6 +1933,165 @@ TEST_F(PositiveShaderObject, IdenticallyDefinedLayouts) {
                               nullptr);
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
 
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveShaderObject, IndependentSets) {
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const char* vert_src = R"glsl(
+        #version 460
+        layout(set = 0, binding = 0) uniform UBO {
+            vec4 data;
+        };
+        void main() {
+            gl_Position = data;
+        }
+    )glsl";
+
+    const char* frag_src = R"glsl(
+        #version 460
+        layout(set = 1, binding = 0) uniform UBO {
+            vec4 data;
+        };
+        layout(location = 0) out vec4 uFragColor;
+        void main(){
+           uFragColor = data;
+        }
+    )glsl";
+
+    OneOffDescriptorSet ds_v(m_device, {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                       });
+    OneOffDescriptorSet ds_f(m_device, {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
+
+    vkt::Buffer ubo(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    ds_v.WriteDescriptorBufferInfo(0, ubo, 0, VK_WHOLE_SIZE);
+    ds_v.UpdateDescriptorSets();
+    ds_f.WriteDescriptorBufferInfo(0, ubo, 0, VK_WHOLE_SIZE);
+    ds_f.UpdateDescriptorSets();
+
+    VkDescriptorSetLayout dsl_handles_v[2] = {ds_v.layout_, VK_NULL_HANDLE};
+    VkDescriptorSetLayout dsl_handles_f[2] = {VK_NULL_HANDLE, ds_f.layout_};
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 2, dsl_handles_v);
+    create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    const vkt::Shader vert_shader(*m_device, create_info);
+
+    const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_src);
+    create_info = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 2, dsl_handles_f);
+    create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    const vkt::Shader frag_shader(*m_device, create_info);
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds_v.layout_, &ds_f.layout_}, {},
+                                        VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    VkShaderEXT shaders[] = {vert_shader, frag_shader};
+    vk::CmdBindShadersEXT(m_command_buffer, 2u, stages, shaders);
+    const VkDescriptorSet set_handles[2] = {ds_v.set_, ds_f.set_};
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 2u, set_handles, 0u, nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveShaderObject, IndependentSetsDifferentSetLayoutCount) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4812");
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const char* vert_src = R"glsl(
+        #version 460
+        layout(set = 0, binding = 0) uniform UBO_0 {
+            vec4 data;
+        };
+        layout(set = 2, binding = 0) uniform UBO {
+            vec4 foo;
+        };
+        void main() {
+            gl_Position = data + foo;
+        }
+    )glsl";
+
+    const char* frag_src = R"glsl(
+        #version 460
+        layout(set = 0, binding = 0) uniform UBO_0 {
+            vec4 data;
+        };
+        layout(set = 1, binding = 0) uniform UBO {
+            vec4 foo;
+        };
+        layout(location = 0) out vec4 uFragColor;
+        void main(){
+           uFragColor = data + foo;
+        }
+    )glsl";
+
+    OneOffDescriptorSet ds_v0(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                  });
+    OneOffDescriptorSet ds_v2(m_device, {
+                                            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                        });
+    OneOffDescriptorSet ds_f0(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                  });
+    OneOffDescriptorSet ds_f1(m_device, {
+                                            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                        });
+
+    vkt::Buffer ubo(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    ds_v0.WriteDescriptorBufferInfo(0, ubo, 0, VK_WHOLE_SIZE);
+    ds_v0.UpdateDescriptorSets();
+    ds_v2.WriteDescriptorBufferInfo(0, ubo, 0, VK_WHOLE_SIZE);
+    ds_v2.UpdateDescriptorSets();
+    ds_f0.WriteDescriptorBufferInfo(0, ubo, 0, VK_WHOLE_SIZE);
+    ds_f0.UpdateDescriptorSets();
+    ds_f1.WriteDescriptorBufferInfo(0, ubo, 0, VK_WHOLE_SIZE);
+    ds_f1.UpdateDescriptorSets();
+
+    VkDescriptorSetLayout dsl_handles_v[4] = {ds_v0.layout_, VK_NULL_HANDLE, ds_v2.layout_, VK_NULL_HANDLE};
+    VkDescriptorSetLayout dsl_handles_f[2] = {ds_f0.layout_, ds_f1.layout_};
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 4, dsl_handles_v);
+    create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    const vkt::Shader vert_shader(*m_device, create_info);
+
+    const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_src);
+    create_info = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 2, dsl_handles_f);
+    create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    const vkt::Shader frag_shader(*m_device, create_info);
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds_v0.layout_, &ds_f1.layout_, &ds_v2.layout_}, {},
+                                        VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    VkShaderEXT shaders[] = {vert_shader, frag_shader};
+    vk::CmdBindShadersEXT(m_command_buffer, 2u, stages, shaders);
+    const VkDescriptorSet set_handles[3] = {ds_f0.set_, ds_f1.set_, ds_v2.set_};
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 3u, set_handles, 0u, nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
