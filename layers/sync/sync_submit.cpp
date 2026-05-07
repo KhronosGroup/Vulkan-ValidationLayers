@@ -73,13 +73,6 @@ bool SignalsUpdate::OnTimelineSignal(const vvl::Semaphore& semaphore_state, cons
         return false;  // [core validation check]: strictly increasing signal values
     }
 
-    // Do not register signal for external semaphore - external wait-before-signals are skipped
-    // since there is no guarantee we can track the signal. Because of that it's possible that
-    // signals have no way to be released (resolving waits can be wait-before-signals and are skipped)
-    if (semaphore_state.Scope() != vvl::Semaphore::Scope::kInternal) {
-        return false;
-    }
-
     // Register signal
     const VkQueueFlags queue_flags = batch->GetQueueFlags();
     const auto exec_scope = SyncExecScope::MakeSrc(queue_flags, submit_signal.stageMask, VK_PIPELINE_STAGE_2_HOST_BIT);
@@ -710,9 +703,6 @@ std::vector<BatchContextPtr> QueueBatchContext::ResolveSubmitWaits(vvl::span<con
                 } else {
                     // Do not register wait-before-signal for external semaphore.
                     // We might not be able to track the signal. Just assume that wait is satified.
-                    // TODO: current support for external semaphores ensures resources are not
-                    // leaked. It is still possible to get false-positives. Improve how to silence
-                    // validation when signal cannot be tracked properly.
                     continue;
                 }
             }

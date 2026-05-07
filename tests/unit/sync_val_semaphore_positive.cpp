@@ -654,6 +654,70 @@ TEST_F(PositiveSyncValTimelineSemaphore, ExternalSemaphoreWaitBeforeSignal) {
         m_device->Wait();
     }
 }
+
+TEST_F(PositiveSyncValTimelineSemaphore, ExternalSemaphoreWaitAfterSignal) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12218");
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    if (!SemaphoreExportImportSupported(Gpu(), VK_SEMAPHORE_TYPE_TIMELINE, handle_type)) {
+        GTEST_SKIP() << "Semaphore does not support export and import through Win32 handle";
+    }
+
+    VkSemaphoreTypeCreateInfo semaphore_type_ci = vku::InitStructHelper();
+    semaphore_type_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+
+    VkExportSemaphoreCreateInfo export_semaphore_ci = vku::InitStructHelper(&semaphore_type_ci);
+    export_semaphore_ci.handleTypes = handle_type;
+
+    const VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&export_semaphore_ci);
+    vkt::Semaphore semaphore(*m_device, semaphore_ci);
+
+    HANDLE win32_handle = NULL;
+    semaphore.ExportHandle(win32_handle, handle_type);
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 4, 0x42);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer, vkt::TimelineSignal(semaphore, 1));
+    m_default_queue->Submit(m_command_buffer, vkt::TimelineWait(semaphore, 1));
+    m_default_queue->Wait();
+}
+
+// TODO: create PositiveSyncValSemaphore for binary semaphores
+TEST_F(PositiveSyncValTimelineSemaphore, ExternalBinarySemaphoreWaitAfterSignal) {
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    if (!SemaphoreExportImportSupported(Gpu(), VK_SEMAPHORE_TYPE_BINARY, handle_type)) {
+        GTEST_SKIP() << "Semaphore does not support export and import through Win32 handle";
+    }
+
+    VkExportSemaphoreCreateInfo export_semaphore_ci = vku::InitStructHelper();
+    export_semaphore_ci.handleTypes = handle_type;
+
+    const VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&export_semaphore_ci);
+    vkt::Semaphore semaphore(*m_device, semaphore_ci);
+
+    HANDLE win32_handle = NULL;
+    semaphore.ExportHandle(win32_handle, handle_type);
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 4, 0x42);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer, vkt::Signal(semaphore));
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(semaphore));
+    m_default_queue->Wait();
+}
+
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 TEST_F(PositiveSyncValTimelineSemaphore, QueueWaitIdleRemovesSignals) {
