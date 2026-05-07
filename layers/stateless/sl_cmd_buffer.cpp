@@ -762,7 +762,7 @@ bool Device::manual_PreCallValidateCmdBindTransformFeedbackBuffers2EXT(VkCommand
         skip |= context.ValidateDeviceAddressFlags(info_loc.dot(Field::addressFlags), binding_info.addressFlags);
 
         const VkDeviceSize range_size = binding_info.addressRange.size;
-        if (range_size > 0 && range_size < 4) {
+        if (!IsIntegerMultipleOf(range_size, 4)) {
             skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffers2EXT-addressRange-13090", commandBuffer,
                              info_loc.dot(Field::addressRange).dot(Field::size), "is %" PRIu64 ".", range_size);
         }
