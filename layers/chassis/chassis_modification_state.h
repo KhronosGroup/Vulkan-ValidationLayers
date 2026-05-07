@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -79,24 +79,12 @@ struct ShaderObject {
     }
 };
 
-// Contains a single shader stage (ex. VkGraphicsPipelineCreateInfo::pStages[i])
-struct ShaderInstrumentationMetadata {
-    // Unique shader ids are used to map SPIR-V to a specific VkShaderModule/VkPipeline/etc handle
-    uint32_t unique_shader_id = 0;
-    bool IsInstrumented() { return unique_shader_id != 0; }
-
-    // Used to know if VkShaderModuleCreateInfo is passed down VkPipelineShaderStageCreateInfo
-    bool passed_in_shader_stage_ci = false;
-};
-
 struct CreateGraphicsPipelines {
     // When using GPU-AV the pCreateInfo is modified on the user
     bool is_modified = false;
     std::vector<vku::safe_VkGraphicsPipelineCreateInfo> modified_create_infos;
     const VkGraphicsPipelineCreateInfo* pCreateInfos = nullptr;
     spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages];
-    // 2D array for [pipelineCount][stageCount]
-    std::vector<std::vector<ShaderInstrumentationMetadata>> shader_instrumentations_metadata;
 
     CreateGraphicsPipelines(const VkGraphicsPipelineCreateInfo* create_info) { pCreateInfos = create_info; }
 };
@@ -107,9 +95,6 @@ struct CreateComputePipelines {
     std::vector<vku::safe_VkComputePipelineCreateInfo> modified_create_infos;
     const VkComputePipelineCreateInfo* pCreateInfos = nullptr;
     spirv::StatelessData stateless_data;
-    // 2D array for [pipelineCount][stageCount]
-    // While only 1 compute can be used, need interface to match with graphics/rtx structs
-    std::vector<std::vector<ShaderInstrumentationMetadata>> shader_instrumentations_metadata;
     CreateComputePipelines(const VkComputePipelineCreateInfo* create_info) { pCreateInfos = create_info; }
 };
 
@@ -119,8 +104,6 @@ struct CreateRayTracingPipelinesKHR {
     std::vector<vku::safe_VkRayTracingPipelineCreateInfoKHR> modified_create_infos;
     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos = nullptr;
     std::vector<spirv::StatelessData> stateless_data;
-    // 2D array for [pipelineCount][stageCount]
-    std::vector<std::vector<ShaderInstrumentationMetadata>> shader_instrumentations_metadata;
 
     CreateRayTracingPipelinesKHR(const VkRayTracingPipelineCreateInfoKHR* create_info) { pCreateInfos = create_info; }
 };

@@ -114,7 +114,7 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
     const std::shared_ptr<FragmentOutputState> fragment_output_state;
 
     // Additional metadata needed by pipeline_state initialization and validation
-    const std::vector<ShaderStageState> stage_states;
+    std::vector<ShaderStageState> stage_states;
 
     // Shaders from the pipeline create info
     // Normally used for validating pipeline creation, if stages are linked, they will already have been validated

@@ -35,7 +35,6 @@ struct LabelCommand;
 }
 
 namespace chassis {
-struct ShaderInstrumentationMetadata;
 struct ShaderObjectInstrumentationData;
 }  // namespace chassis
 
@@ -178,21 +177,17 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
                                       spirv::InstrumentationDescriptorSetLayouts& out_instrumentation_dsl);
 
     template <typename SafeCreateInfo>
-    [[nodiscard]] bool PreCallRecordPipelineCreationShaderInstrumentation(
-        const VkAllocationCallbacks *pAllocator, vvl::Pipeline &pipeline_state, SafeCreateInfo &modified_pipeline_ci,
-        uint32_t stages_count, const Location &loc,
-        std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
-    void PostCallRecordPipelineCreationShaderInstrumentation(
-        vvl::Pipeline &pipeline_state, uint32_t stages_count,
-        std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
+    [[nodiscard]] bool PreCallRecordPipelineCreationShaderInstrumentation(const VkAllocationCallbacks* pAllocator,
+                                                                          vvl::Pipeline& pipeline_state,
+                                                                          SafeCreateInfo& modified_pipeline_ci,
+                                                                          uint32_t stages_count, const Location& loc);
+    void PostCallRecordPipelineCreationShaderInstrumentation(vvl::Pipeline& pipeline_state, uint32_t stages_count);
 
     // We have GPL variations for graphics as they defer instrumentation until linking
     [[nodiscard]] bool PreCallRecordPipelineCreationShaderInstrumentationGPL(
-        const VkAllocationCallbacks *pAllocator, vvl::Pipeline &linked_pipeline_state,
-        vku::safe_VkGraphicsPipelineCreateInfo &modified_pipeline_ci, const Location &loc,
-        std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
-    void PostCallRecordPipelineCreationShaderInstrumentationGPL(
-        vvl::Pipeline &pipeline_state, std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
+        const VkAllocationCallbacks* pAllocator, vvl::Pipeline& linked_pipeline_state,
+        vku::safe_VkGraphicsPipelineCreateInfo& modified_pipeline_ci, const Location& loc);
+    void PostCallRecordPipelineCreationShaderInstrumentationGPL(vvl::Pipeline& pipeline_state);
 
     // Function that will hook into the SPIR-V instrumentation passes.
     // Returns if shader was instrumented successfully or not.

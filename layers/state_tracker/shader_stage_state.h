@@ -39,6 +39,16 @@ struct EntryPoint;
 class Instruction;
 }  // namespace spirv
 
+// Contains a single shader stage (ex. VkGraphicsPipelineCreateInfo::pStages[i])
+struct ShaderInstrumentationMetadata {
+    // Unique shader ids are used to map SPIR-V to a specific VkShaderModule/VkPipeline/etc handle
+    uint32_t unique_shader_id = 0;
+    bool IsInstrumented() const { return unique_shader_id != 0; }
+
+    // Used to know if VkShaderModuleCreateInfo is passed down VkPipelineShaderStageCreateInfo
+    bool passed_in_shader_stage_ci = false;
+};
+
 // This is a wrapper around the Shader as it may come from a Pipeline or Shader Object.
 //
 // TODO - This class has some very nasty flaws...
@@ -63,6 +73,8 @@ struct ShaderStageState {
     const bool descriptor_heap_mode;
     const bool uses_resource_heap;
     const bool uses_sampler_heap;
+
+    ShaderInstrumentationMetadata instrumentation_metadata;
 
     ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo* pipeline_create_info,
                      const vku::safe_VkShaderCreateInfoEXT* shader_object_create_info,

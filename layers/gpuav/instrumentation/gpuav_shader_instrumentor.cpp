@@ -638,7 +638,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateGraphicsPipelines(VkDevice device
                                                                  chassis::CreateGraphicsPipelines& chassis_state) {
     if (!gpuav_settings.IsSpirvModified()) return;
 
-    chassis_state.shader_instrumentations_metadata.resize(count);
     chassis_state.modified_create_infos.resize(count);
 
     for (uint32_t i = 0; i < count; ++i) {
@@ -653,16 +652,13 @@ void GpuShaderInstrumentor::PreCallRecordCreateGraphicsPipelines(VkDevice device
             continue;
         }
 
-        auto& shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
-
         bool success = false;
         if (pipeline_state->linking_shaders != 0) {
             success = PreCallRecordPipelineCreationShaderInstrumentationGPL(pAllocator, *pipeline_state, new_pipeline_ci,
-                                                                            create_info_loc, shader_instrumentation_metadata);
+                                                                            create_info_loc);
         } else {
-            success = PreCallRecordPipelineCreationShaderInstrumentation(pAllocator, *pipeline_state, new_pipeline_ci,
-                                                                         uint32_t(pipeline_state->stage_states.size()),
-                                                                         create_info_loc, shader_instrumentation_metadata);
+            success = PreCallRecordPipelineCreationShaderInstrumentation(
+                pAllocator, *pipeline_state, new_pipeline_ci, uint32_t(pipeline_state->stage_states.size()), create_info_loc);
         }
         if (!success) {
             return;
@@ -680,7 +676,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateComputePipelines(VkDevice device,
                                                                 chassis::CreateComputePipelines& chassis_state) {
     if (!gpuav_settings.IsSpirvModified()) return;
 
-    chassis_state.shader_instrumentations_metadata.resize(count);
     chassis_state.modified_create_infos.resize(count);
 
     for (uint32_t i = 0; i < count; ++i) {
@@ -695,10 +690,8 @@ void GpuShaderInstrumentor::PreCallRecordCreateComputePipelines(VkDevice device,
             continue;
         }
 
-        auto& shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
-
-        bool success = PreCallRecordPipelineCreationShaderInstrumentation(pAllocator, *pipeline_state, new_pipeline_ci, 1,
-                                                                          create_info_loc, shader_instrumentation_metadata);
+        bool success =
+            PreCallRecordPipelineCreationShaderInstrumentation(pAllocator, *pipeline_state, new_pipeline_ci, 1, create_info_loc);
         if (!success) {
             return;
         }
@@ -716,7 +709,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesKHR(
         return;
     }
 
-    chassis_state.shader_instrumentations_metadata.resize(count);
     chassis_state.modified_create_infos.resize(count);
 
     for (uint32_t i = 0; i < count; ++i) {
@@ -731,8 +723,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesKHR(
             continue;
         }
 
-        auto& shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
-
         // Ray tracing pipelines can be made of libraries, but contrary to GPL instrumentation is not postponed
         // to final link time, and done at ray tracing library creation time.
         // => No need to iterate over shader stages coming from libraries,
@@ -740,8 +730,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesKHR(
         // Note: This code implicitly relies on the fact that in pipeline_state->stage_states,
         // stages coming from libraries are added last.
         bool success = PreCallRecordPipelineCreationShaderInstrumentation(pAllocator, *pipeline_state, new_pipeline_ci,
-                                                                          new_pipeline_ci.stageCount, create_info_loc,
-                                                                          shader_instrumentation_metadata);
+                                                                          new_pipeline_ci.stageCount, create_info_loc);
         if (!success) {
             return;
         }
@@ -788,12 +777,10 @@ void GpuShaderInstrumentor::PostCallRecordCreateGraphicsPipelines(VkDevice devic
         // Move all instrumentation until the final linking time
         if (pipeline_state->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) continue;
 
-        auto& shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
         if (pipeline_state->linking_shaders != 0) {
-            PostCallRecordPipelineCreationShaderInstrumentationGPL(*pipeline_state, shader_instrumentation_metadata);
+            PostCallRecordPipelineCreationShaderInstrumentationGPL(*pipeline_state);
         } else {
-            PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, uint32_t(pipeline_state->stage_states.size()),
-                                                                shader_instrumentation_metadata);
+            PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, uint32_t(pipeline_state->stage_states.size()));
         }
     }
 }
@@ -820,8 +807,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateComputePipelines(VkDevice device
 
         auto pipeline_state = Get<vvl::Pipeline>(pipeline_handle);
         ASSERT_AND_CONTINUE(pipeline_state);
-        auto& shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
-        PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, 1, shader_instrumentation_metadata);
+        PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, 1);
     }
 }
 
@@ -871,8 +857,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
             return;
         }
 
-        deferred_op_post_checks.emplace_back([this, held_chassis_state =
-                                                        chassis_state](std::pair<uint32_t, VkPipeline*> pipelines) mutable {
+        deferred_op_post_checks.emplace_back([this](std::pair<uint32_t, VkPipeline*> pipelines) mutable {
             for (const auto [pipe_i, pipe] : vvl::enumerate(pipelines.second, pipelines.first)) {
                 std::shared_ptr<vvl::Pipeline> pipeline_state = ((GpuShaderInstrumentor*)this)->Get<vvl::Pipeline>(pipe);
                 ASSERT_AND_CONTINUE(pipeline_state);
@@ -884,15 +869,14 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
                         pipeline_state->instrumentation_data.was_instrumented |= lib_state->instrumentation_data.was_instrumented;
                     }
                 }
-                auto& shader_instrumentation_metadata = held_chassis_state->shader_instrumentations_metadata[pipe_i];
                 // Ray tracing pipelines can be made of libraries, but contrary to GPL instrumentation is not postponed
                 // to final link time, and done at ray tracing library creation time.
                 // => No need to iterate over shader stages coming from libraries,
                 // stop at VkRayTracingPipelineCreateInfoKHR::stageCount
                 // Note: This code implicitly relies on the fact that in pipeline_state->stage_states,
                 // stages coming from libraries are added last.
-                PostCallRecordPipelineCreationShaderInstrumentation(
-                    *pipeline_state, pipeline_state->RayTracingCreateInfo().stageCount, shader_instrumentation_metadata);
+                PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state,
+                                                                    pipeline_state->RayTracingCreateInfo().stageCount);
             }
         });
         dispatch_device_->deferred_operation_post_check.insert(deferredOperation, std::move(deferred_op_post_checks));
@@ -916,15 +900,13 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
                 }
             }
 
-            auto& shader_instrumentation_metadata = chassis_state->shader_instrumentations_metadata[i];
             // Ray tracing pipelines can be made of libraries, but contrary to GPL instrumentation is not postponed
             // to final link time, and done at ray tracing library creation time.
             // => No need to iterate over shader stages coming from libraries,
             // stop at VkRayTracingPipelineCreateInfoKHR::stageCount
             // Note: This code implicitly relies on the fact that in pipeline_state->stage_states,
             // stages coming from libraries are added last.
-            PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, pipeline_state->RayTracingCreateInfo().stageCount,
-                                                                shader_instrumentation_metadata);
+            PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, pipeline_state->RayTracingCreateInfo().stageCount);
         }
     }
 }
@@ -1210,27 +1192,22 @@ void GpuShaderInstrumentor::AddDescriptorHeapMappings(VkBaseOutStructure* create
 //    We will skip these as we don't know the incoming SPIR-V
 // Note: Shader Objects are handled in their own path as they don't use pipelines
 template <typename SafeCreateInfo>
-bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
-    const VkAllocationCallbacks* pAllocator, vvl::Pipeline& pipeline_state, SafeCreateInfo& modified_pipeline_ci,
-    uint32_t stages_count, const Location& loc,
-    std::vector<chassis::ShaderInstrumentationMetadata>& shader_instrumentation_metadata) {
-    // Init here instead of in chassis so we don't pay cost when GPU-AV is not used
-    shader_instrumentation_metadata.resize(stages_count);
-
+bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(const VkAllocationCallbacks* pAllocator,
+                                                                               vvl::Pipeline& pipeline_state,
+                                                                               SafeCreateInfo& modified_pipeline_ci,
+                                                                               uint32_t stages_count, const Location& loc) {
     spirv::InstrumentationInterface interface(loc);
     // Can set this once for all shaders in the pipeline
     BuildDescriptorSetLayoutInfo(pipeline_state, interface.instrumentation_dsl);
 
     for (uint32_t stage_state_i = 0; stage_state_i < stages_count; ++stage_state_i) {
-        const auto& stage_state = pipeline_state.stage_states[stage_state_i];
+        auto& stage_state = pipeline_state.stage_states[stage_state_i];
         auto modified_module_state = std::const_pointer_cast<vvl::ShaderModule>(stage_state.module_state);
         ASSERT_AND_CONTINUE(modified_module_state);
         if (!modified_module_state->spirv) {
             continue;  // Hit when using VK_KHR_pipeline_binary
         }
         std::unique_lock<std::mutex> module_lock(modified_module_state->module_mutex_);
-
-        auto& instrumentation_metadata = shader_instrumentation_metadata[stage_state_i];
 
         // Check pNext for inlined SPIR-V
         // ---
@@ -1261,7 +1238,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
                                                                             : vvl::DescriptorModeClassic;
         const bool is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, interface, instrumented_spirv);
         if (is_shader_instrumented) {
-            instrumentation_metadata.unique_shader_id = unique_shader_id;
+            stage_state.instrumentation_metadata.unique_shader_id = unique_shader_id;
             if (modified_module_state->VkHandle() != VK_NULL_HANDLE) {
                 // If the user used vkCreateShaderModule, we create a new VkShaderModule to replace with the instrumented
                 // shader
@@ -1283,7 +1260,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
                 }
             } else if (modified_shader_module_ci) {
                 // The user is inlining the Shader Module into the pipeline, so just need to update the spirv
-                instrumentation_metadata.passed_in_shader_stage_ci = true;
+                stage_state.instrumentation_metadata.passed_in_shader_stage_ci = true;
                 // TODO - This makes a copy, but could save on Chassis stack instead (then remove function from VUL).
                 // The core issue is we always use std::vector<uint32_t> but Safe Struct manages its own version of the pCode
                 // memory. It would be much harder to change everything from std::vector and instead to adjust Safe Struct to not
@@ -1307,22 +1284,18 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
 }
 
 // Now that we have created the pipeline (and have its handle) build up the shader map for each shader we instrumented
-void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentation(
-    vvl::Pipeline& pipeline_state, uint32_t stages_count,
-    std::vector<chassis::ShaderInstrumentationMetadata>& shader_instrumentation_metadata) {
+void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentation(vvl::Pipeline& pipeline_state,
+                                                                                uint32_t stages_count) {
     // if we return early from NeedPipelineCreationShaderInstrumentation, will need to skip at this point in PostCall
-    if (shader_instrumentation_metadata.empty()) return;
 
     for (uint32_t stage_state_i = 0; stage_state_i < stages_count; ++stage_state_i) {
-        auto& instrumentation_metadata = shader_instrumentation_metadata[stage_state_i];
-
+        const auto& stage_state = pipeline_state.stage_states[stage_state_i];
         // if the shader for some reason was not instrumented, there is nothing to save
-        if (!instrumentation_metadata.IsInstrumented()) {
+        if (!stage_state.instrumentation_metadata.IsInstrumented()) {
             continue;
         }
         pipeline_state.instrumentation_data.was_instrumented = true;
 
-        const auto& stage_state = pipeline_state.stage_states[stage_state_i];
         auto& module_state = stage_state.module_state;
 
         // We currently need to store a copy of the original, non-instrumented shader so if there is debug information,
@@ -1334,11 +1307,11 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentation(
         if (module_state && module_state->spirv) code = module_state->spirv->words_;
 
         VkShaderModule shader_module_handle = module_state->VkHandle();
-        if (shader_module_handle == VK_NULL_HANDLE && instrumentation_metadata.passed_in_shader_stage_ci) {
+        if (shader_module_handle == VK_NULL_HANDLE && stage_state.instrumentation_metadata.passed_in_shader_stage_ci) {
             shader_module_handle = kPipelineStageInfoHandle;
         }
 
-        instrumented_shaders_map_.insert_or_assign(instrumentation_metadata.unique_shader_id, pipeline_state.VkHandle(),
+        instrumented_shaders_map_.insert_or_assign(stage_state.instrumentation_metadata.unique_shader_id, pipeline_state.VkHandle(),
                                                    shader_module_handle, VK_NULL_HANDLE, std::move(code));
     }
 }
@@ -1348,21 +1321,13 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentation(
 // doesn't fit in the "all pipeline" templated flow.
 bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGPL(
     const VkAllocationCallbacks* pAllocator, vvl::Pipeline& linked_pipeline_state,
-    vku::safe_VkGraphicsPipelineCreateInfo& modified_pipeline_ci, const Location& loc,
-    std::vector<chassis::ShaderInstrumentationMetadata>& shader_instrumentation_metadata) {
-    // Init here instead of in chassis so we don't pay cost when GPU-AV is not used
-    const size_t total_stages = linked_pipeline_state.stage_states.size();
-    shader_instrumentation_metadata.resize(total_stages);
-
+    vku::safe_VkGraphicsPipelineCreateInfo& modified_pipeline_ci, const Location& loc) {
     spirv::InstrumentationInterface interface(loc);
     // Can set this once for all shaders in the pipeline
     BuildDescriptorSetLayoutInfo(linked_pipeline_state, interface.instrumentation_dsl);
 
     auto modified_library_ci = const_cast<VkPipelineLibraryCreateInfoKHR*>(
         vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(modified_pipeline_ci.pNext));
-
-    // the "pStages[]" is spread across libraries, so build it up in the double for loop
-    uint32_t shader_i = 0;
 
     // This outer loop is the main difference between the GPL and non-GPL version and why its hard to merge them
     for (uint32_t modified_lib_i = 0; modified_lib_i < modified_library_ci->libraryCount; ++modified_lib_i) {
@@ -1404,15 +1369,13 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             IsPipelineSelectedForInstrumentation(modified_lib->VkHandle(), loc.dot(vvl::Field::pLibraries, modified_lib_i));
         for (uint32_t stage_state_i = 0; stage_state_i < static_cast<uint32_t>(modified_lib->stage_states.size());
              ++stage_state_i) {
-            const ShaderStageState& modified_stage_state = modified_lib->stage_states[stage_state_i];
+            ShaderStageState& modified_stage_state = const_cast<ShaderStageState&>(modified_lib->stage_states[stage_state_i]);
             auto modified_module_state = std::const_pointer_cast<vvl::ShaderModule>(modified_stage_state.module_state);
             ASSERT_AND_CONTINUE(modified_module_state);
             if (!modified_module_state->spirv) {
                 continue;  // Hit when using VK_KHR_pipeline_binary
             }
             std::unique_lock<std::mutex> module_lock(modified_module_state->module_mutex_);
-
-            chassis::ShaderInstrumentationMetadata& instrumentation_metadata = shader_instrumentation_metadata[shader_i++];
 
             // Check pNext for inlined SPIR-V
             // ---
@@ -1468,7 +1431,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                 InstrumentShader(modified_module_state->spirv->words_, interface, instrumented_spirv);
 
             if (is_shader_instrumented) {
-                instrumentation_metadata.unique_shader_id = unique_shader_id;
+                modified_stage_state.instrumentation_metadata.unique_shader_id = unique_shader_id;
                 need_new_pipeline = true;
             }
 
@@ -1503,7 +1466,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                 // If inlining and not instrumented, leave it alone
                 if (is_shader_instrumented) {
                     // The user is inlining the Shader Module into the pipeline, so just need to update the spirv
-                    instrumentation_metadata.passed_in_shader_stage_ci = true;
+                    modified_stage_state.instrumentation_metadata.passed_in_shader_stage_ci = true;
                     // TODO - This makes a copy, but could save on Chassis stack instead (then remove function from VUL).
                     // The core issue is we always use std::vector<uint32_t> but Safe Struct manages its own version of the pCode
                     // memory. It would be much harder to change everything from std::vector and instead to adjust Safe Struct to
@@ -1544,14 +1507,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
     return true;
 }
 
-void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentationGPL(
-    vvl::Pipeline& pipeline_state, std::vector<chassis::ShaderInstrumentationMetadata>& shader_instrumentation_metadata) {
-    // if we return early from NeedPipelineCreationShaderInstrumentation, will need to skip at this point in PostCall
-    if (shader_instrumentation_metadata.empty()) {
-        return;
-    }
-
-    uint32_t shader_index = 0;
+void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentationGPL(vvl::Pipeline& pipeline_state) {
     // Update instrumented_shaders_map_
     // #ARNO_TODO should be done at instrumentation time, why postpone? We don't need the linked pipeline handle
     for (uint32_t library_i = 0; library_i < pipeline_state.library_create_info->libraryCount; ++library_i) {
@@ -1564,14 +1520,12 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentationG
         }
 
         for (uint32_t stage_state_i = 0; stage_state_i < static_cast<uint32_t>(lib->stage_states.size()); ++stage_state_i) {
-            auto& instrumentation_metadata = shader_instrumentation_metadata[shader_index++];
-
+            const auto& stage_state = lib->stage_states[stage_state_i];
             // if the shader for some reason was not instrumented, there is nothing to save
-            if (!instrumentation_metadata.IsInstrumented()) {
+            if (!stage_state.instrumentation_metadata.IsInstrumented()) {
                 continue;
             }
 
-            const auto& stage_state = lib->stage_states[stage_state_i];
             auto& module_state = stage_state.module_state;
 
             // We currently need to store a copy of the original, non-instrumented shader so if there is debug information,
@@ -1585,11 +1539,11 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentationG
             }
 
             VkShaderModule shader_module_handle = module_state->VkHandle();
-            if (shader_module_handle == VK_NULL_HANDLE && instrumentation_metadata.passed_in_shader_stage_ci) {
+            if (shader_module_handle == VK_NULL_HANDLE && stage_state.instrumentation_metadata.passed_in_shader_stage_ci) {
                 shader_module_handle = kPipelineStageInfoHandle;
             }
 
-            instrumented_shaders_map_.insert_or_assign(instrumentation_metadata.unique_shader_id, lib->VkHandle(),
+            instrumented_shaders_map_.insert_or_assign(stage_state.instrumentation_metadata.unique_shader_id, lib->VkHandle(),
                                                        shader_module_handle, VK_NULL_HANDLE, std::move(code));
         }
     }
