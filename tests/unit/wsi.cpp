@@ -4259,7 +4259,7 @@ TEST_F(NegativeWsi, InitSwapchainPresentScalingInvalidExtent) {
                                                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0u, &image_format_properties);
 
     if (present_scaling_capabilities.maxScaledImageExtent.width > image_format_properties.maxExtent.width) {
-        GTEST_SKIP() << "VkSurfacePresentScalingCapabilitiesKHR::maxScaledImageExtent.width is higher than "
+        GTEST_SKIP() << "VkSurfacePresentScalingCapabilitiesKHR::maxScaledImageExtent.width is greater than "
                         "VkImageFormatProperties::maxExtent.width";
     }
 

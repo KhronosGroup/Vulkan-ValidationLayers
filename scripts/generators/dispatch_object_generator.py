@@ -194,7 +194,7 @@ class DispatchObjectGenerator(BaseGenerator):
             'vkFreeCommandBuffers',
             'vkDestroyCommandPool',
             'vkBeginCommandBuffer',
-            # Currently we don't properly generate a Wrap and will accidently unwrap the VkDisplayKHR handle
+            # Currently we don't properly generate a Wrap and will accidentally unwrap the VkDisplayKHR handle
             'vkGetPhysicalDeviceDisplayPropertiesKHR',
             'vkGetPhysicalDeviceDisplayProperties2KHR',
             'vkGetPhysicalDeviceDisplayPlanePropertiesKHR',

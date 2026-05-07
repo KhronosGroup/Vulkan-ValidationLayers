@@ -1241,7 +1241,7 @@ TEST_F(NegativePipeline, MissingEntrypointInlineWrongStage) {
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), stage_ci};
     // VUID-VkPipelineShaderStageCreateInfo-pName-00707
     m_errorMonitor->SetDesiredError(
-        "Seems like you accidently created your SPIR-V with VK_SHADER_STAGE_VERTEX_BIT so the entry point is not matching up");
+        "Seems like you accidentally created your SPIR-V with VK_SHADER_STAGE_VERTEX_BIT so the entry point is not matching up");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }

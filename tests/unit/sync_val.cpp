@@ -5454,7 +5454,7 @@ TEST_F(NegativeSyncVal, UseShaderReadAccessForUniformBuffer) {
     barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
     m_command_buffer.Barrier(barrier);
 
-    // Initiate dispatch that reads tranferred data.
+    // Initiate dispatch that reads transferred data.
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
                               0, nullptr);

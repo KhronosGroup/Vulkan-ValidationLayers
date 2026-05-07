@@ -1708,7 +1708,7 @@ bool CoreChecks::ValidateShaderYcbcrSampler(const spirv::Module& module_state, c
         if (!variable.all_constant_integral_expressions) {
             std::ostringstream ss;
             ss << "shader " << entrypoint.Describe() << " has " << variable.DescribeDescriptor()
-               << " which is an COMBINED_SAMPLED_IMAGE tied to an array of YCbCr samplers and it trying to be accessed with a "
+               << " which is an COMBINED_SAMPLED_IMAGE tied to an array of YCbCr samplers and it is trying to be accessed with a "
                   "non-constant index value.\nRegardless if it is uniform or not, you can't dynamically index into an array of "
                   "YCbCr samplers "
                   "in your shader and you need a constant value.\nThis is because the driver's compiler needs to know the exact "
@@ -1740,7 +1740,7 @@ bool CoreChecks::ValidateTransformFeedbackPipeline(const spirv::Module& module_s
         if (pipeline.pre_raster_state) {
             if (entrypoint.stage != pipeline.pre_raster_state->last_stage) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02318", module_state.handle(), loc,
-                                 "shader %s has OpExecutionMode of Xfb , but %s is the last last pre-rasterization shader stage "
+                                 "shader %s has OpExecutionMode of Xfb , but %s is the last pre-rasterization shader stage "
                                  "(and must be %s).",
                                  entrypoint.Describe().c_str(), string_VkShaderStageFlagBits(pipeline.pre_raster_state->last_stage),
                                  string_VkShaderStageFlagBits(entrypoint.stage));
@@ -1914,14 +1914,14 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
             auto entry_point = stage_state.spirv_state->static_data_.entry_points[0];
             if (entry_point) {
                 if (entry_point->stage != stage) {
-                    err << " (Seems like you accidently created your SPIR-V with "
+                    err << " (Seems like you accidentally created your SPIR-V with "
                         << string_VkShaderStageFlagBits(entry_point->stage) << " so the entry point is not matching up)";
                 } else {
                     err << " (The only entry point found was \"" << entry_point->name << "\" for "
                         << string_VkShaderStageFlagBits(entry_point->stage) << ")";
                     if (entry_point->name == "main") {
                         err << "\nSome shading languages will let you name the main function something else, but when "
-                               "compiled to SPIR-V, it will keep it as 'main' to match defaults found in other shading langauges "
+                               "compiled to SPIR-V, it will keep it as 'main' to match defaults found in other shading languages "
                                "such "
                                "as GLSL. It is also valid in a single SPIR-V binary to have 'main' for two different stages.";
                     }
@@ -2226,7 +2226,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
                 skip |=
                     LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06061", device, loc,
                              "shader %s is being created with fragment shader with InputAttachment capability, but renderPass is "
-                             "VK_NULL_HANDLE. (It is only possbile to use input attachments with dynamic rendering if the "
+                             "VK_NULL_HANDLE. (It is only possible to use input attachments with dynamic rendering if the "
                              "dynamicRenderingLocalRead feature is enabled)",
                              entrypoint.Describe().c_str());
             }
@@ -2407,7 +2407,7 @@ bool CoreChecks::ValidateShaderModuleCreateInfo(const VkShaderModuleCreateInfo& 
     if (!IsIntegerMultipleOf(create_info.codeSize, 4)) {
         skip |=
             LogError("VUID-VkShaderModuleCreateInfo-codeSize-08735", device, create_info_loc.dot(Field::codeSize),
-                     "(%zu) must be a multiple of 4. You might have forget to multiply by sizeof(uint32_t).", create_info.codeSize);
+                     "(%zu) must be a multiple of 4. You might have forgot to multiply by sizeof(uint32_t).", create_info.codeSize);
     } else if (first_dword != spv::MagicNumber) {
         skip |= LogError("VUID-VkShaderModuleCreateInfo-pCode-08738", device, create_info_loc.dot(Field::pCode),
                          "doesn't point to a SPIR-V module. The first dword (0x%" PRIx32

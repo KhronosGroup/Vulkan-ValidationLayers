@@ -2531,7 +2531,7 @@ TEST_F(PositiveSyncVal, QueueFamilyOwnershipTransfer) {
 
     vkt::Semaphore semaphore(*m_device);
 
-    // Tranfer queue: copy to image and issue release operation
+    // Transfer queue: copy to image and issue release operation
     {
         VkBufferImageCopy2 region = vku::InitStructHelper();
         region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};

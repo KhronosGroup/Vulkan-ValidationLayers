@@ -50,7 +50,7 @@ cd build
 ./tests/vk_layer_validation_tests --device-index 1
 
 # Run a single test
-./tests/vk_layer_validation_tests --gtest_filter=PositiveBuffer.OwnershipTranfers
+./tests/vk_layer_validation_tests --gtest_filter=PositiveBuffer.OwnershipTransfers
 
 # Run a multiple tests with a pattern
 ./tests/vk_layer_validation_tests --gtest_filter=*Buffer*
@@ -77,7 +77,7 @@ REM see --help for more options
 vk_layer_validation_tests --device-index 1
 
 REM Run a single test
-vk_layer_validation_tests --gtest_filter=PositiveBuffer.OwnershipTranfers
+vk_layer_validation_tests --gtest_filter=PositiveBuffer.OwnershipTransfers
 
 REM Run a multiple tests with a pattern
 vk_layer_validation_tests --gtest_filter=*Buffer*

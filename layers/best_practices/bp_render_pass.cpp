@@ -237,7 +237,7 @@ bool BestPractices::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, con
             }
         }
 
-        // Check if accidently set resolve mode to none since everything else looks like it should be resolving
+        // Check if accidentally set resolve mode to none since everything else looks like it should be resolving
         if (color_attachment.resolveMode == VK_RESOLVE_MODE_NONE && color_attachment.resolveImageView != VK_NULL_HANDLE) {
             auto resolve_image_view_state = Get<vvl::ImageView>(color_attachment.resolveImageView);
             if (resolve_image_view_state && resolve_image_view_state->image_state->GetSamples() == VK_SAMPLE_COUNT_1_BIT &&
@@ -346,8 +346,8 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
         skip |= LogPerformanceWarning(
             "BestPractices-vkCmdEndRenderPass-depth-pre-pass-usage", commandBuffer, loc,
             "%s %s: Depth pre-passes may be in use. In general, this is not recommended in tile-based deferred "
-            "renderering architectures; such as those in Arm Mali or PowerVR GPUs. Since they can remove geometry "
-            "hidden by other opaque geometry. Mali has Forward Pixel Killing (FPK), PowerVR has Hiden Surface "
+            "rendering architectures; such as those in Arm Mali or PowerVR GPUs. Since they can remove geometry "
+            "hidden by other opaque geometry. Mali has Forward Pixel Killing (FPK), PowerVR has Hidden Surface "
             "Remover (HSR) in which case, using depth pre-passes for hidden surface removal may worsen performance.",
             VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG));
     }

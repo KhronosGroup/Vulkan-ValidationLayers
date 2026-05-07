@@ -808,7 +808,7 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
                 if (!sphere_linear_struct->indexData.deviceAddress && !sphere_linear_struct->indexData.hostAddress) {
                     skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexingMode-10427", cmd_buffer,
                                      p_geom_geom_linear_spheres_loc.dot(Field::indexData),
-                                     "shouldn't be NUll if indexing mode is VK_RAY_TRACING_LSS_INDEXING_MODE_SUCCESSIVE_NV.");
+                                     "shouldn't be NULL if indexing mode is VK_RAY_TRACING_LSS_INDEXING_MODE_SUCCESSIVE_NV.");
                 }
             }
         }
@@ -1411,7 +1411,7 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
         skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-query-04880", commandBuffer,
                          error_obj.location.dot(Field::firstQuery),
                          "(%" PRIu32 ") + accelerationStructureCount (%" PRIu32 "), or %" PRIu32
-                         ", is superior to the number of queries in queryPool (%" PRIu32 ").",
+                         ", is greater than the number of queries in queryPool (%" PRIu32 ").",
                          firstQuery, accelerationStructureCount, firstQuery + accelerationStructureCount,
                          query_pool_state->create_info.queryCount);
     }

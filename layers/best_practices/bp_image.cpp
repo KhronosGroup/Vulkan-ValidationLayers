@@ -94,7 +94,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
             (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT)) {
             skip |= LogPerformanceWarning("BestPractices-AMD-vkImage-AvoidConcurrentRenderTargets", device, error_obj.location,
                                           "%s Trying to create an image as a render target with VK_SHARING_MODE_CONCURRENT. "
-                                          "Using a SHARING_MODE_CONCURRENT "
+                                          "Using SHARING_MODE_CONCURRENT "
                                           "is not recommended with color and depth targets",
                                           VendorSpecificTag(kBPVendorAMD));
         }
@@ -105,17 +105,16 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
             skip |=
                 LogPerformanceWarning("BestPractices-AMD-vkImage-DontUseMutableRenderTargets", device, error_obj.location,
                                       "%s Trying to create an image as a render target with VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT. "
-                                      "Using a MUTABLE_FORMAT is not recommended with color, depth, and storage targets",
+                                      "Using MUTABLE_FORMAT is not recommended with color, depth, and storage targets",
                                       VendorSpecificTag(kBPVendorAMD));
         }
 
         if ((pCreateInfo->usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) &&
             (pCreateInfo->usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
-            skip |=
-                LogPerformanceWarning("BestPractices-AMD-vkImage-DontUseStorageRenderTargets", device, error_obj.location,
-                                      "%s Trying to create an image as a render target with VK_IMAGE_USAGE_STORAGE_BIT. Using a "
-                                      "VK_IMAGE_USAGE_STORAGE_BIT is not recommended with color and depth targets",
-                                      VendorSpecificTag(kBPVendorAMD));
+            skip |= LogPerformanceWarning("BestPractices-AMD-vkImage-DontUseStorageRenderTargets", device, error_obj.location,
+                                          "%s Trying to create an image as a render target with VK_IMAGE_USAGE_STORAGE_BIT. Using "
+                                          "VK_IMAGE_USAGE_STORAGE_BIT is not recommended with color and depth targets",
+                                          VendorSpecificTag(kBPVendorAMD));
         }
     }
 

@@ -2288,7 +2288,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline& p
                         "VUID-VkGraphicsPipelineCreateInfo-subpass-01412", device, ms_loc.dot(Field::rasterizationSamples),
                         "(%" PRIu32
                         ") "
-                        "is not greater or equal to the number of samples of the RenderPass color attachment (%" PRIu32 ").",
+                        "is not greater than or equal to the number of samples of the RenderPass color attachment (%" PRIu32 ").",
                         raster_samples, subpass_color_samples);
                 }
 

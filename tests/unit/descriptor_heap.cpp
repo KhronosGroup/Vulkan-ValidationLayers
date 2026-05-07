@@ -1186,7 +1186,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeap) {
 }
 
 TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapReservedRangeSize) {
-    TEST_DESCRIPTION("Validate vkCmdBindSamplerHeapEXT ReservedRangeSize is greater or equal minSamplerHeapReservedRange");
+    TEST_DESCRIPTION("Validate vkCmdBindSamplerHeapEXT ReservedRangeSize is greater than or equal minSamplerHeapReservedRange");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     if (heap_props.minSamplerHeapReservedRange == 0) {

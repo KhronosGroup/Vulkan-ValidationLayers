@@ -684,9 +684,9 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
 
     if ((create_info.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) && device_state->physical_device_count == 1) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-physicalDeviceCount-01429", device, create_info_loc.dot(Field::flags),
-                     "containing VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR"
-                     "but logical device was created with VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to 1."
-                     "The logical device may have been created without explicitly using VkDeviceGroupDeviceCreateInfo, or with"
+                     "containing VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR "
+                     "but logical device was created with VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to 1. "
+                     "The logical device may have been created without explicitly using VkDeviceGroupDeviceCreateInfo, or with "
                      "VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to zero. "
                      "It is equivalent to using VkDeviceGroupDeviceCreateInfo with "
                      "VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to 1.")) {

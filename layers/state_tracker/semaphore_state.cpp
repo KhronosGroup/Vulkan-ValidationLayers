@@ -450,7 +450,7 @@ void vvl::Semaphore::RetireWait(vvl::Queue* current_queue, uint64_t payload, con
                 auto payload_it = timeline_.insert({payload, TimePoint{}}).first;
 
                 // Search existing signal. If found, notify corresponding submission.
-                // (external payload, which is already reached by the gpu, is larger then found signal,
+                // (external payload, which is already reached by the gpu, is larger than found signal,
                 // this means that earlier signals were also processed, so we can retire them)
                 for (auto it = std::make_reverse_iterator(payload_it); it != timeline_.rend(); ++it) {
                     const TimePoint& t = it->second;

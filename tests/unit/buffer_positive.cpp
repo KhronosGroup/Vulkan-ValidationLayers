@@ -17,7 +17,7 @@
 
 class PositiveBuffer : public VkLayerTest {};
 
-TEST_F(PositiveBuffer, OwnershipTranfers) {
+TEST_F(PositiveBuffer, OwnershipTransfers) {
     TEST_DESCRIPTION("Valid buffer ownership transfers that shouldn't create errors");
     RETURN_IF_SKIP(Init());
 
