@@ -45,6 +45,7 @@ namespace vvl {
 
 void DispatchInstance::InitValidationObjects() {
     // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
+    // Anyone using state tracking (LayerObjectTypeStateTracker) must be called after and enable it
 
     if (!settings.disabled[thread_safety]) {
         object_dispatch.emplace_back(new threadsafety::Instance(this));
@@ -59,7 +60,7 @@ void DispatchInstance::InitValidationObjects() {
         object_dispatch.emplace_back(new object_lifetimes::Instance(this));
     }
     if (!settings.disabled[core_checks] || settings.enabled[best_practices] || settings.enabled[gpu_validation] ||
-        settings.enabled[debug_printf_validation] || settings.enabled[sync_validation]) {
+        settings.enabled[debug_printf_validation] || settings.enabled[sync_validation] || settings.enabled[gpu_dump]) {
         object_dispatch.emplace_back(new vvl::InstanceState(this));
     }
     if (!settings.disabled[core_checks]) {
@@ -81,6 +82,7 @@ void DispatchInstance::InitValidationObjects() {
 
 void DispatchDevice::InitValidationObjects() {
     // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
+    // Anyone using state tracking (LayerObjectTypeStateTracker) must be called after and enable it
 
     if (!settings.disabled[thread_safety]) {
         object_dispatch.emplace_back(new threadsafety::Device(
@@ -99,7 +101,7 @@ void DispatchDevice::InitValidationObjects() {
             this, static_cast<object_lifetimes::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeObjectTracker))));
     }
     if (!settings.disabled[core_checks] || settings.enabled[best_practices] || settings.enabled[gpu_validation] ||
-        settings.enabled[debug_printf_validation] || settings.enabled[sync_validation]) {
+        settings.enabled[debug_printf_validation] || settings.enabled[sync_validation] || settings.enabled[gpu_dump]) {
         object_dispatch.emplace_back(new vvl::DeviceState(
             this, static_cast<vvl::InstanceState*>(dispatch_instance->GetValidationObject(LayerObjectTypeStateTracker))));
     }

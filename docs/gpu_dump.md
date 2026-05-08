@@ -15,6 +15,26 @@ The goal is to provide a tool similar to API Dump, but with several key differen
 
 The options for all extensions are available in **VkConfig** (and are also available as a preset).
 
+## Ways to use GPU Dump
+
+### Supplemental Validation
+
+Currently validation won't attempt to report errors where it is not 100% sure. Ultimately it is valid to update the memory on the GPU prior to a given draw/dispatch call. This will require a much more expensive GPU-AV in order to validate these GPU centric extension.
+
+If you only plan to update the memory once on the CPU, than validation could be catching these issues for you already!
+
+The idea is to turn on `GPU Dump` (with `warning`, not `info` level messages) on top of "normal core validation". From here `GPU Dump` will only report a `warning` when it detect a possible issue. This will provide a good portion of GPU-AV level checks, without needing to pay the performance cost of GPU-AV.
+
+### Wanting all the information
+
+Turn on GPU Dump, make sure to enable both `warning` and `info` level messages, and all the info will be printed.
+
+## Options
+
+There is currently a `VK_LAYER_GPU_DUMP_TO_STDOUT` option to allow printing directly to `stdout` incase you don't want to use the debug callback.
+
+We are very happy to hear from people of additional options they feel would be helpful!
+
 ## Example
 
 Using the "GPU Dump Descriptor" [setting](./settings.md):
