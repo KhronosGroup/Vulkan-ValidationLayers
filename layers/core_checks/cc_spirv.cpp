@@ -3292,6 +3292,18 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                     info.array_stride = source_data.heapArrayStride;
                 }
 
+                if (mapping.source != VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT &&
+                    resource_variable.IsArray() && info.array_stride == 0) {
+                    // Trying to make a proper VU here https://gitlab.khronos.org/vulkan/vulkan/-/issues/4815
+                    skip |= LogWarning(
+                        "WARNING-VkDescriptorSetAndBindingMappingEXT-heapArrayStride-zero", module_state.handle(),
+                        loc.pNext(Struct::VkShaderDescriptorSetAndBindingMappingInfoEXT, Field::pMappings, i).dot(Field::source),
+                        "(%s) is used to map descriptor %s in %s which is a descriptor array, but heapArrayStride is zero. This "
+                        "mean every index of the descriptor array will be the same descriptor, which is likely not desired.",
+                        string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
+                        entrypoint.Describe().c_str());
+                }
+
                 if (!IsIntegerMultipleOf(info.offset, info.align) || !IsIntegerMultipleOf(info.array_stride, info.align)) {
                     const Field source_field = vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source);
 
