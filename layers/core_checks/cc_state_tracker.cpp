@@ -587,14 +587,17 @@ void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, co
 
 void CommandBufferSubState::RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask,
                                            const VkDependencyInfo* dependency_info) {
-    vku::safe_VkDependencyInfo safe_dependency_info = {};
+    EventSignalingState signaling_state(true, stage_mask);
     if (dependency_info) {
-        safe_dependency_info.initialize(dependency_info);
-    } else {
-        // Set sType to invalid, so following code can check sType to see if the struct is valid
-        safe_dependency_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        signaling_state.dependency_info.emplace(dependency_info);
     }
-    event_signaling_states.insert_or_assign(event, EventSignalingState(true, stage_mask, safe_dependency_info));
+    event_signaling_states.insert_or_assign(event, signaling_state);
+
+    // TODO: this part will be removed soon because event_updates are going to disappear
+    std::optional<vku::safe_VkDependencyInfo> safe_dependency_info;
+    if (dependency_info) {
+        safe_dependency_info.emplace(dependency_info);
+    }
     event_updates.emplace_back([event, stage_mask, safe_dependency_info](vvl::CommandBuffer&, bool do_validate,
                                                                          EventMap& local_event_signal_info, VkQueue,
                                                                          const Location& loc) {
@@ -607,7 +610,7 @@ void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags
     event_signaling_states.insert_or_assign(event, EventSignalingState(false));
     event_updates.emplace_back(
         [event](vvl::CommandBuffer&, bool do_validate, EventMap& local_event_signal_info, VkQueue, const Location& loc) {
-            local_event_signal_info[event] = EventInfo{VK_PIPELINE_STAGE_2_NONE, false};
+            local_event_signal_info[event] = EventInfo{VK_PIPELINE_STAGE_2_NONE, false, {}};
             return false;  // skip
         });
 }
@@ -618,14 +621,10 @@ void CommandBufferSubState::RecordWaitEvents(uint32_t eventCount, const VkEvent*
     auto first_event_index = base.events.size();
     auto event_added_count = eventCount;
 
-    vku::safe_VkDependencyInfo safe_dependency_info = {};
+    std::optional<vku::safe_VkDependencyInfo> safe_dependency_info;
     if (dependency_info) {
-        safe_dependency_info.initialize(dependency_info);
-    } else {
-        // Set sType to invalid, so following code can check sType to see if the struct is valid
-        safe_dependency_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        safe_dependency_info.emplace(dependency_info);
     }
-
     event_updates.emplace_back(
         [event_added_count, first_event_index, src_stage_mask, safe_dependency_info](
             vvl::CommandBuffer& cb_state, bool do_validate, EventMap& local_event_signal_info, VkQueue queue, const Location& loc) {

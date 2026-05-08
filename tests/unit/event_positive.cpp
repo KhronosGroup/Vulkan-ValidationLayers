@@ -60,6 +60,18 @@ TEST_F(PositiveEvent, EventStageMaskHost) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveEvent, EventStageMaskHostSubmit) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    m_command_buffer.End();
+
+    event.Set();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveEvent, BasicSetAndWaitEvent) {
     TEST_DESCRIPTION("Sets event and then wait for it using CmdSetEvent/CmdWaitEvents");
     RETURN_IF_SKIP(Init());

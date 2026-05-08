@@ -147,7 +147,7 @@ class Event : public StateObject {
     // Signaling state.
     // Gets updated at queue submission granularity or when signaled from the host.
     bool signaled = false;
-    vku::safe_VkDependencyInfo dependency_info = {};
+    std::optional<vku::safe_VkDependencyInfo> dependency_info;
 
     // Source stage specified by the "set event" command.
     // Gets updated at queue submission granularity.
