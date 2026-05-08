@@ -71,10 +71,14 @@ bool PipelineLayoutCompatDef::operator==(const PipelineLayoutCompatDef& other) c
     assert(set < other_ds_layouts.size());
     for (uint32_t i = 0; i <= set; i++) {
         if (descriptor_set_layouts[i] != other_ds_layouts[i]) {
-            if (other.is_independent_sets && other.from_shader_object) {
+            if (other.is_independent_sets) {
                 // This is hit because the vvl::ShaderObject can have NULL, independent layouts.
                 // This never happens with pipelines because we get |merged_graphics_layout| that occurs during the final linking of
                 // the pipeline which is creating a unified version for us.
+                //
+                // I used to have a check for |other.from_shader_object| but would get random failures
+                //  (https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6512)
+                // because the last DSL might have been created first with vkCreatePipelineLayout
                 continue;
             }
             return false;
