@@ -72,25 +72,26 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeCuModuleNVX = 39,
     kVulkanObjectTypeCuFunctionNVX = 40,
     kVulkanObjectTypeDebugUtilsMessengerEXT = 41,
-    kVulkanObjectTypeTensorARM = 42,
-    kVulkanObjectTypeValidationCacheEXT = 43,
-    kVulkanObjectTypeAccelerationStructureNV = 44,
-    kVulkanObjectTypePerformanceConfigurationINTEL = 45,
-    kVulkanObjectTypeIndirectCommandsLayoutNV = 46,
-    kVulkanObjectTypeCudaModuleNV = 47,
-    kVulkanObjectTypeCudaFunctionNV = 48,
-    kVulkanObjectTypeBufferCollectionFUCHSIA = 49,
-    kVulkanObjectTypeMicromapEXT = 50,
-    kVulkanObjectTypeTensorViewARM = 51,
-    kVulkanObjectTypeOpticalFlowSessionNV = 52,
-    kVulkanObjectTypeShaderEXT = 53,
-    kVulkanObjectTypeDataGraphPipelineSessionARM = 54,
-    kVulkanObjectTypeExternalComputeQueueNV = 55,
-    kVulkanObjectTypeIndirectExecutionSetEXT = 56,
-    kVulkanObjectTypeIndirectCommandsLayoutEXT = 57,
-    kVulkanObjectTypeShaderInstrumentationARM = 58,
-    kVulkanObjectTypeInternalDeviceRange = 59,
-    kVulkanObjectTypeMax = 60,
+    kVulkanObjectTypeGpaSessionAMD = 42,
+    kVulkanObjectTypeTensorARM = 43,
+    kVulkanObjectTypeValidationCacheEXT = 44,
+    kVulkanObjectTypeAccelerationStructureNV = 45,
+    kVulkanObjectTypePerformanceConfigurationINTEL = 46,
+    kVulkanObjectTypeIndirectCommandsLayoutNV = 47,
+    kVulkanObjectTypeCudaModuleNV = 48,
+    kVulkanObjectTypeCudaFunctionNV = 49,
+    kVulkanObjectTypeBufferCollectionFUCHSIA = 50,
+    kVulkanObjectTypeMicromapEXT = 51,
+    kVulkanObjectTypeTensorViewARM = 52,
+    kVulkanObjectTypeOpticalFlowSessionNV = 53,
+    kVulkanObjectTypeShaderEXT = 54,
+    kVulkanObjectTypeDataGraphPipelineSessionARM = 55,
+    kVulkanObjectTypeExternalComputeQueueNV = 56,
+    kVulkanObjectTypeIndirectExecutionSetEXT = 57,
+    kVulkanObjectTypeIndirectCommandsLayoutEXT = 58,
+    kVulkanObjectTypeShaderInstrumentationARM = 59,
+    kVulkanObjectTypeInternalDeviceRange = 60,
+    kVulkanObjectTypeMax = 61,
 } VulkanObjectType;
 
 VkDebugReportObjectTypeEXT GetDebugReport(VulkanObjectType type);
@@ -182,6 +183,8 @@ static constexpr VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType i
             return VK_OBJECT_TYPE_CU_FUNCTION_NVX;
         case kVulkanObjectTypeDebugUtilsMessengerEXT:
             return VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT;
+        case kVulkanObjectTypeGpaSessionAMD:
+            return VK_OBJECT_TYPE_GPA_SESSION_AMD;
         case kVulkanObjectTypeTensorARM:
             return VK_OBJECT_TYPE_TENSOR_ARM;
         case kVulkanObjectTypeValidationCacheEXT:
@@ -306,6 +309,8 @@ static constexpr VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType v
             return kVulkanObjectTypeCuFunctionNVX;
         case VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT:
             return kVulkanObjectTypeDebugUtilsMessengerEXT;
+        case VK_OBJECT_TYPE_GPA_SESSION_AMD:
+            return kVulkanObjectTypeGpaSessionAMD;
         case VK_OBJECT_TYPE_TENSOR_ARM:
             return kVulkanObjectTypeTensorARM;
         case VK_OBJECT_TYPE_VALIDATION_CACHE_EXT:
@@ -1085,6 +1090,18 @@ struct VkHandleInfo<VkDebugUtilsMessengerEXT> {
 template <>
 struct VulkanObjectTypeInfo<kVulkanObjectTypeDebugUtilsMessengerEXT> {
     typedef VkDebugUtilsMessengerEXT Type;
+};
+
+template <>
+struct VkHandleInfo<VkGpaSessionAMD> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeGpaSessionAMD;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_GPA_SESSION_AMD;
+    static const char* Typename() { return "VkGpaSessionAMD"; }
+};
+template <>
+struct VulkanObjectTypeInfo<kVulkanObjectTypeGpaSessionAMD> {
+    typedef VkGpaSessionAMD Type;
 };
 
 template <>

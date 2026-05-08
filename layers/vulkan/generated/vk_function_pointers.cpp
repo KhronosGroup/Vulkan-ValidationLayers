@@ -593,6 +593,18 @@ PFN_vkSubmitDebugUtilsMessageEXT SubmitDebugUtilsMessageEXT;
 PFN_vkGetAndroidHardwareBufferPropertiesANDROID GetAndroidHardwareBufferPropertiesANDROID;
 PFN_vkGetMemoryAndroidHardwareBufferANDROID GetMemoryAndroidHardwareBufferANDROID;
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+PFN_vkCreateGpaSessionAMD CreateGpaSessionAMD;
+PFN_vkDestroyGpaSessionAMD DestroyGpaSessionAMD;
+PFN_vkSetGpaDeviceClockModeAMD SetGpaDeviceClockModeAMD;
+PFN_vkGetGpaDeviceClockInfoAMD GetGpaDeviceClockInfoAMD;
+PFN_vkCmdBeginGpaSessionAMD CmdBeginGpaSessionAMD;
+PFN_vkCmdEndGpaSessionAMD CmdEndGpaSessionAMD;
+PFN_vkCmdBeginGpaSampleAMD CmdBeginGpaSampleAMD;
+PFN_vkCmdEndGpaSampleAMD CmdEndGpaSampleAMD;
+PFN_vkGetGpaSessionStatusAMD GetGpaSessionStatusAMD;
+PFN_vkGetGpaSessionResultsAMD GetGpaSessionResultsAMD;
+PFN_vkResetGpaSessionAMD ResetGpaSessionAMD;
+PFN_vkCmdCopyGpaSessionResultsAMD CmdCopyGpaSessionResultsAMD;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 PFN_vkCreateExecutionGraphPipelinesAMDX CreateExecutionGraphPipelinesAMDX;
 PFN_vkGetExecutionGraphPipelineScratchSizeAMDX GetExecutionGraphPipelineScratchSizeAMDX;
@@ -1470,6 +1482,10 @@ void InitExtensionFromCore(const char* extension_name) {
             }
         },
         {
+            "VK_EXT_opacity_micromap", []() {
+            }
+        },
+        {
             "VK_NV_copy_memory_indirect", []() {
             }
         },
@@ -2184,6 +2200,22 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+        {
+            "VK_AMD_gpa_interface", [](VkInstance , VkDevice device) {
+                CreateGpaSessionAMD = reinterpret_cast<PFN_vkCreateGpaSessionAMD>(GetDeviceProcAddr(device, "vkCreateGpaSessionAMD"));
+                DestroyGpaSessionAMD = reinterpret_cast<PFN_vkDestroyGpaSessionAMD>(GetDeviceProcAddr(device, "vkDestroyGpaSessionAMD"));
+                SetGpaDeviceClockModeAMD = reinterpret_cast<PFN_vkSetGpaDeviceClockModeAMD>(GetDeviceProcAddr(device, "vkSetGpaDeviceClockModeAMD"));
+                GetGpaDeviceClockInfoAMD = reinterpret_cast<PFN_vkGetGpaDeviceClockInfoAMD>(GetDeviceProcAddr(device, "vkGetGpaDeviceClockInfoAMD"));
+                CmdBeginGpaSessionAMD = reinterpret_cast<PFN_vkCmdBeginGpaSessionAMD>(GetDeviceProcAddr(device, "vkCmdBeginGpaSessionAMD"));
+                CmdEndGpaSessionAMD = reinterpret_cast<PFN_vkCmdEndGpaSessionAMD>(GetDeviceProcAddr(device, "vkCmdEndGpaSessionAMD"));
+                CmdBeginGpaSampleAMD = reinterpret_cast<PFN_vkCmdBeginGpaSampleAMD>(GetDeviceProcAddr(device, "vkCmdBeginGpaSampleAMD"));
+                CmdEndGpaSampleAMD = reinterpret_cast<PFN_vkCmdEndGpaSampleAMD>(GetDeviceProcAddr(device, "vkCmdEndGpaSampleAMD"));
+                GetGpaSessionStatusAMD = reinterpret_cast<PFN_vkGetGpaSessionStatusAMD>(GetDeviceProcAddr(device, "vkGetGpaSessionStatusAMD"));
+                GetGpaSessionResultsAMD = reinterpret_cast<PFN_vkGetGpaSessionResultsAMD>(GetDeviceProcAddr(device, "vkGetGpaSessionResultsAMD"));
+                ResetGpaSessionAMD = reinterpret_cast<PFN_vkResetGpaSessionAMD>(GetDeviceProcAddr(device, "vkResetGpaSessionAMD"));
+                CmdCopyGpaSessionResultsAMD = reinterpret_cast<PFN_vkCmdCopyGpaSessionResultsAMD>(GetDeviceProcAddr(device, "vkCmdCopyGpaSessionResultsAMD"));
+            }
+        },
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         {
             "VK_AMDX_shader_enqueue", [](VkInstance , VkDevice device) {
@@ -3227,6 +3259,18 @@ void ResetAllExtensions() {
     GetAndroidHardwareBufferPropertiesANDROID = nullptr;
     GetMemoryAndroidHardwareBufferANDROID = nullptr;
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+    CreateGpaSessionAMD = nullptr;
+    DestroyGpaSessionAMD = nullptr;
+    SetGpaDeviceClockModeAMD = nullptr;
+    GetGpaDeviceClockInfoAMD = nullptr;
+    CmdBeginGpaSessionAMD = nullptr;
+    CmdEndGpaSessionAMD = nullptr;
+    CmdBeginGpaSampleAMD = nullptr;
+    CmdEndGpaSampleAMD = nullptr;
+    GetGpaSessionStatusAMD = nullptr;
+    GetGpaSessionResultsAMD = nullptr;
+    ResetGpaSessionAMD = nullptr;
+    CmdCopyGpaSessionResultsAMD = nullptr;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     CreateExecutionGraphPipelinesAMDX = nullptr;
     GetExecutionGraphPipelineScratchSizeAMDX = nullptr;

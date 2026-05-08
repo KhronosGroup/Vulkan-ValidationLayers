@@ -63,6 +63,8 @@ const char* String(Func func) {
     {"vkCmdBeginConditionalRenderingEXT", 34},
     {"vkCmdBeginCustomResolveEXT", 27},
     {"vkCmdBeginDebugUtilsLabelEXT", 29},
+    {"vkCmdBeginGpaSampleAMD", 23},
+    {"vkCmdBeginGpaSessionAMD", 24},
     {"vkCmdBeginPerTileExecutionQCOM", 31},
     {"vkCmdBeginQuery", 16},
     {"vkCmdBeginQueryIndexedEXT", 26},
@@ -122,6 +124,7 @@ const char* String(Func func) {
     {"vkCmdCopyBufferToImage", 23},
     {"vkCmdCopyBufferToImage2", 24},
     {"vkCmdCopyBufferToImage2KHR", 27},
+    {"vkCmdCopyGpaSessionResultsAMD", 30},
     {"vkCmdCopyImage", 15},
     {"vkCmdCopyImage2", 16},
     {"vkCmdCopyImage2KHR", 19},
@@ -193,6 +196,8 @@ const char* String(Func func) {
     {"vkCmdEncodeVideoKHR", 20},
     {"vkCmdEndConditionalRenderingEXT", 32},
     {"vkCmdEndDebugUtilsLabelEXT", 27},
+    {"vkCmdEndGpaSampleAMD", 21},
+    {"vkCmdEndGpaSessionAMD", 22},
     {"vkCmdEndPerTileExecutionQCOM", 29},
     {"vkCmdEndQuery", 14},
     {"vkCmdEndQueryIndexedEXT", 24},
@@ -415,6 +420,7 @@ const char* String(Func func) {
     {"vkCreateExternalComputeQueueNV", 31},
     {"vkCreateFence", 14},
     {"vkCreateFramebuffer", 20},
+    {"vkCreateGpaSessionAMD", 22},
     {"vkCreateGraphicsPipelines", 26},
     {"vkCreateHeadlessSurfaceEXT", 27},
     {"vkCreateIOSSurfaceMVK", 22},
@@ -490,6 +496,7 @@ const char* String(Func func) {
     {"vkDestroyExternalComputeQueueNV", 32},
     {"vkDestroyFence", 15},
     {"vkDestroyFramebuffer", 21},
+    {"vkDestroyGpaSessionAMD", 23},
     {"vkDestroyImage", 15},
     {"vkDestroyImageView", 19},
     {"vkDestroyIndirectCommandsLayoutEXT", 35},
@@ -617,6 +624,9 @@ const char* String(Func func) {
     {"vkGetFramebufferTilePropertiesQCOM", 35},
     {"vkGetGeneratedCommandsMemoryRequirementsEXT", 44},
     {"vkGetGeneratedCommandsMemoryRequirementsNV", 43},
+    {"vkGetGpaDeviceClockInfoAMD", 27},
+    {"vkGetGpaSessionResultsAMD", 26},
+    {"vkGetGpaSessionStatusAMD", 25},
     {"vkGetImageDrmFormatModifierPropertiesEXT", 41},
     {"vkGetImageMemoryRequirements", 29},
     {"vkGetImageMemoryRequirements2", 30},
@@ -812,6 +822,7 @@ const char* String(Func func) {
     {"vkResetDescriptorPool", 22},
     {"vkResetEvent", 13},
     {"vkResetFences", 14},
+    {"vkResetGpaSessionAMD", 21},
     {"vkResetQueryPool", 17},
     {"vkResetQueryPoolEXT", 20},
     {"vkSetBufferCollectionBufferConstraintsFUCHSIA", 46},
@@ -820,6 +831,7 @@ const char* String(Func func) {
     {"vkSetDebugUtilsObjectTagEXT", 28},
     {"vkSetDeviceMemoryPriorityEXT", 29},
     {"vkSetEvent", 11},
+    {"vkSetGpaDeviceClockModeAMD", 27},
     {"vkSetHdrMetadataEXT", 20},
     {"vkSetLatencyMarkerNV", 21},
     {"vkSetLatencySleepModeNV", 24},
@@ -876,6 +888,7 @@ const char* String(Struct structure) {
     {"VkAccelerationStructureGeometryInstancesDataKHR", 48},
     {"VkAccelerationStructureGeometryKHR", 35},
     {"VkAccelerationStructureGeometryLinearSweptSpheresDataNV", 56},
+    {"VkAccelerationStructureGeometryMicromapDataKHR", 47},
     {"VkAccelerationStructureGeometryMotionTrianglesDataNV", 53},
     {"VkAccelerationStructureGeometrySpheresDataNV", 45},
     {"VkAccelerationStructureGeometryTrianglesDataKHR", 48},
@@ -889,6 +902,7 @@ const char* String(Struct structure) {
     {"VkAccelerationStructureSRTMotionInstanceNV", 43},
     {"VkAccelerationStructureTrianglesDisplacementMicromapNV", 55},
     {"VkAccelerationStructureTrianglesOpacityMicromapEXT", 51},
+    {"VkAccelerationStructureTrianglesOpacityMicromapKHR", 51},
     {"VkAccelerationStructureVersionInfoKHR", 38},
     {"VkAcquireNextImageInfoKHR", 26},
     {"VkAcquireProfilingLockInfoKHR", 30},
@@ -1260,6 +1274,12 @@ const char* String(Struct structure) {
     {"VkGeometryNV", 13},
     {"VkGeometryTrianglesNV", 22},
     {"VkGetLatencyMarkerInfoNV", 25},
+    {"VkGpaDeviceClockModeInfoAMD", 28},
+    {"VkGpaDeviceGetClockInfoAMD", 27},
+    {"VkGpaPerfBlockPropertiesAMD", 28},
+    {"VkGpaPerfCounterAMD", 20},
+    {"VkGpaSampleBeginInfoAMD", 24},
+    {"VkGpaSessionCreateInfoAMD", 26},
     {"VkGraphicsPipelineCreateInfo", 29},
     {"VkGraphicsPipelineLibraryCreateInfoEXT", 39},
     {"VkGraphicsPipelineShaderGroupsCreateInfoNV", 43},
@@ -1399,8 +1419,9 @@ const char* String(Struct structure) {
     {"VkMicromapBuildInfoEXT", 23},
     {"VkMicromapBuildSizesInfoEXT", 28},
     {"VkMicromapCreateInfoEXT", 24},
-    {"VkMicromapTriangleEXT", 22},
+    {"VkMicromapTriangleKHR", 22},
     {"VkMicromapUsageEXT", 19},
+    {"VkMicromapUsageKHR", 19},
     {"VkMicromapVersionInfoEXT", 25},
     {"VkMultiDrawIndexedInfoEXT", 26},
     {"VkMultiDrawInfoEXT", 19},
@@ -1539,6 +1560,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceDynamicRenderingFeatures", 41},
     {"VkPhysicalDeviceDynamicRenderingLocalReadFeatures", 50},
     {"VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT", 61},
+    {"VkPhysicalDeviceElapsedTimerQueryFeaturesQCOM", 46},
     {"VkPhysicalDeviceExclusiveScissorFeaturesNV", 43},
     {"VkPhysicalDeviceExtendedDynamicState2FeaturesEXT", 49},
     {"VkPhysicalDeviceExtendedDynamicState3FeaturesEXT", 49},
@@ -1582,6 +1604,9 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceFragmentShadingRatePropertiesKHR", 49},
     {"VkPhysicalDeviceFrameBoundaryFeaturesEXT", 41},
     {"VkPhysicalDeviceGlobalPriorityQueryFeatures", 44},
+    {"VkPhysicalDeviceGpaFeaturesAMD", 31},
+    {"VkPhysicalDeviceGpaProperties2AMD", 34},
+    {"VkPhysicalDeviceGpaPropertiesAMD", 33},
     {"VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT", 51},
     {"VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT", 53},
     {"VkPhysicalDeviceGroupProperties", 32},
@@ -1599,6 +1624,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceImageFormatInfo2", 33},
     {"VkPhysicalDeviceImageProcessing2FeaturesQCOM", 45},
     {"VkPhysicalDeviceImageProcessing2PropertiesQCOM", 47},
+    {"VkPhysicalDeviceImageProcessing3FeaturesQCOM", 45},
     {"VkPhysicalDeviceImageProcessingFeaturesQCOM", 44},
     {"VkPhysicalDeviceImageProcessingPropertiesQCOM", 46},
     {"VkPhysicalDeviceImageRobustnessFeatures", 40},
@@ -1663,7 +1689,9 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceNestedCommandBufferPropertiesEXT", 49},
     {"VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT", 46},
     {"VkPhysicalDeviceOpacityMicromapFeaturesEXT", 43},
+    {"VkPhysicalDeviceOpacityMicromapFeaturesKHR", 43},
     {"VkPhysicalDeviceOpacityMicromapPropertiesEXT", 45},
+    {"VkPhysicalDeviceOpacityMicromapPropertiesKHR", 45},
     {"VkPhysicalDeviceOpticalFlowFeaturesNV", 38},
     {"VkPhysicalDeviceOpticalFlowPropertiesNV", 40},
     {"VkPhysicalDevicePCIBusInfoPropertiesEXT", 40},
@@ -1781,6 +1809,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE", 56},
     {"VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT", 50},
     {"VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT", 52},
+    {"VkPhysicalDeviceShaderMultipleWaitQueuesFeaturesQCOM", 53},
+    {"VkPhysicalDeviceShaderMultipleWaitQueuesPropertiesQCOM", 55},
     {"VkPhysicalDeviceShaderObjectFeaturesEXT", 40},
     {"VkPhysicalDeviceShaderObjectPropertiesEXT", 42},
     {"VkPhysicalDeviceShaderQuadControlFeaturesKHR", 45},
@@ -1788,6 +1818,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT", 54},
     {"VkPhysicalDeviceShaderSMBuiltinsFeaturesNV", 43},
     {"VkPhysicalDeviceShaderSMBuiltinsPropertiesNV", 45},
+    {"VkPhysicalDeviceShaderSplitBarrierFeaturesEXT", 46},
+    {"VkPhysicalDeviceShaderSplitBarrierPropertiesEXT", 48},
     {"VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures", 52},
     {"VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT", 53},
     {"VkPhysicalDeviceShaderSubgroupRotateFeatures", 45},
@@ -2401,7 +2433,10 @@ const char* String(Field field) {
     {"blockDimX", 10},
     {"blockDimY", 10},
     {"blockDimZ", 10},
+    {"blockInstance", 14},
+    {"blockMatchExtendedClampToEdge", 30},
     {"blockTexelViewCompatibleMultipleLayers", 39},
+    {"blockType", 10},
     {"borderColor", 12},
     {"borderColorSwizzle", 19},
     {"borderColorSwizzleFromImage", 28},
@@ -2428,6 +2463,7 @@ const char* String(Field field) {
     {"buildScratchSize", 17},
     {"buildType", 10},
     {"c", 2},
+    {"cacheFlushOnCounterCollection", 30},
     {"cacheType", 10},
     {"cacheVersion", 13},
     {"callableShaderBindingOffset", 28},
@@ -2447,6 +2483,8 @@ const char* String(Field field) {
     {"clearValue", 11},
     {"clearValueCount", 16},
     {"clipped", 8},
+    {"clockMode", 10},
+    {"clockModes", 11},
     {"closestHitShader", 17},
     {"clusterAccelerationStructure", 29},
     {"clusterBottomLevelByteAlignment", 32},
@@ -2839,6 +2877,7 @@ const char* String(Field field) {
     {"earliestPresentTime", 20},
     {"earlyFragmentMultisampleCoverageAfterSampleCounting", 52},
     {"earlyFragmentSampleMaskTestBeforeSampleCounting", 48},
+    {"elapsedTimerQuery", 18},
     {"enable", 7},
     {"enableCbCrDegamma", 18},
     {"enablePartitionTranslation", 27},
@@ -2850,11 +2889,14 @@ const char* String(Field field) {
     {"encodeInputPictureGranularity", 30},
     {"endCapsMode", 12},
     {"engine", 7},
+    {"engineClockFrequency", 21},
+    {"engineClockRatioToPeak", 23},
     {"engineNameOffset", 17},
     {"engineType", 11},
     {"engineVersion", 14},
     {"event", 6},
     {"eventCount", 11},
+    {"eventID", 8},
     {"events", 7},
     {"exclusiveScissor", 17},
     {"exclusiveScissorCount", 22},
@@ -3051,6 +3093,7 @@ const char* String(Field field) {
     {"gopRemainingIntra", 18},
     {"gopRemainingP", 14},
     {"gopRemainingPredictive", 23},
+    {"gpaSession", 11},
     {"gpuRenderEndTimeUs", 19},
     {"gpuRenderStartTimeUs", 21},
     {"graphicsPipelineLibrary", 24},
@@ -3135,6 +3178,8 @@ const char* String(Field field) {
     {"imageFootprint", 15},
     {"imageFormat", 12},
     {"imageFormatProperties", 22},
+    {"imageGatherExtendedModes", 25},
+    {"imageGatherLinear", 18},
     {"imageGranularity", 17},
     {"imageIndex", 11},
     {"imageIndexCount", 16},
@@ -3422,6 +3467,7 @@ const char* String(Field field) {
     {"maxDstPosition", 15},
     {"maxEmbeddedImmutableSamplerBindings", 36},
     {"maxEmbeddedImmutableSamplers", 29},
+    {"maxEventID", 11},
     {"maxExecutionGraphDepth", 23},
     {"maxExecutionGraphShaderOutputNodes", 35},
     {"maxExecutionGraphShaderPayloadCount", 36},
@@ -3458,6 +3504,8 @@ const char* String(Field field) {
     {"maxGeometryOutputVertices", 26},
     {"maxGeometryShaderInvocations", 29},
     {"maxGeometryTotalOutputComponents", 33},
+    {"maxGlobalOnlyCounters", 22},
+    {"maxGlobalSharedCounters", 24},
     {"maxGraphicsPushConstantBanks", 29},
     {"maxGraphicsPushDataBanks", 25},
     {"maxGraphicsShaderGroupCount", 28},
@@ -3508,6 +3556,7 @@ const char* String(Field field) {
     {"maxMeshWorkGroupInvocations", 28},
     {"maxMeshWorkGroupSize", 21},
     {"maxMeshWorkGroupTotalCount", 27},
+    {"maxMicromapTriangles", 21},
     {"maxMipLevels", 13},
     {"maxMovedBytes", 14},
     {"maxMultiDrawCount", 18},
@@ -3516,6 +3565,7 @@ const char* String(Field field) {
     {"maxNumRegionsOfInterest", 24},
     {"maxOpacity2StateSubdivisionLevel", 33},
     {"maxOpacity4StateSubdivisionLevel", 33},
+    {"maxOpacityLossy4StateSubdivisionLevel", 38},
     {"maxOperatingPoints", 19},
     {"maxOutputClusterCount", 22},
     {"maxPPictureL0ReferenceCount", 28},
@@ -3588,17 +3638,20 @@ const char* String(Field field) {
     {"maxShaderBindingTableRecordIndex", 33},
     {"maxShaderCount", 15},
     {"maxShaderGroupStride", 21},
+    {"maxShaderWaitQueues", 20},
     {"maxSingleReferenceCount", 24},
     {"maxSize", 8},
     {"maxSliceCount", 14},
     {"maxSliceSegmentCount", 21},
     {"maxSpatialLayerCount", 21},
+    {"maxSqttSeBufferSize", 20},
     {"maxSrcExtent", 13},
     {"maxSrcPosition", 15},
     {"maxStdPPSCount", 15},
     {"maxStdSPSCount", 15},
     {"maxStdVPSCount", 15},
     {"maxStorageBufferRange", 22},
+    {"maxStreamingCounters", 21},
     {"maxSubLayerCount", 17},
     {"maxSubgroupSize", 16},
     {"maxSubpassShadingWorkgroupSizeAspectRatio", 42},
@@ -3676,6 +3729,8 @@ const char* String(Field field) {
     {"memory", 7},
     {"memoryBarrierCount", 19},
     {"memoryBindIndex", 16},
+    {"memoryClockFrequency", 21},
+    {"memoryClockRatioToPeak", 23},
     {"memoryDecompression", 20},
     {"memoryDeviceIndex", 18},
     {"memoryHeapCount", 16},
@@ -4114,6 +4169,8 @@ const char* String(Field field) {
     {"pGetMetalHandleInfo", 20},
     {"pGetWin32HandleInfo", 20},
     {"pGetZirconHandleInfo", 21},
+    {"pGpaSampleBeginInfo", 20},
+    {"pGpaSession", 12},
     {"pGranularity", 13},
     {"pGroups", 8},
     {"pHandle", 8},
@@ -4243,6 +4300,8 @@ const char* String(Field field) {
     {"pPerTileBeginInfo", 18},
     {"pPerTileEndInfo", 16},
     {"pPerViewRenderAreas", 20},
+    {"pPerfBlocks", 12},
+    {"pPerfCounters", 14},
     {"pPerfHintInfo", 14},
     {"pPerformanceQueryCreateInfo", 28},
     {"pPhysicalDeviceCount", 21},
@@ -4332,6 +4391,7 @@ const char* String(Field field) {
     {"pResources", 11},
     {"pResult", 8},
     {"pResults", 9},
+    {"pSampleID", 10},
     {"pSampleLocations", 17},
     {"pSampleLocationsInfo", 21},
     {"pSampleMask", 12},
@@ -4361,6 +4421,7 @@ const char* String(Field field) {
     {"pSignalSemaphoreInfos", 22},
     {"pSignalSemaphoreValues", 23},
     {"pSignalSemaphores", 18},
+    {"pSizeInBytes", 13},
     {"pSizeInfo", 10},
     {"pSizes", 7},
     {"pSleepInfo", 11},
@@ -4517,6 +4578,10 @@ const char* String(Field field) {
     {"perViewAttributesPositionXOnly", 31},
     {"perViewPositionAllComponents", 29},
     {"perViewRenderAreaCount", 23},
+    {"perfBlockCount", 15},
+    {"perfCounterCount", 17},
+    {"perfCounterDeviceMemoryLimit", 29},
+    {"perfCounters", 13},
     {"performEncodeRgbConversion", 27},
     {"performanceCounterMultipleQueryPools", 37},
     {"performanceCounterQueryPools", 29},
@@ -4855,6 +4920,7 @@ const char* String(Field field) {
     {"resultIndex", 12},
     {"resultSubIndex", 15},
     {"resultType", 11},
+    {"revisionId", 11},
     {"rgbModel", 9},
     {"rgbModels", 10},
     {"rgbRange", 9},
@@ -4881,6 +4947,8 @@ const char* String(Field field) {
     {"sample", 7},
     {"sampleCount", 12},
     {"sampleCounts", 13},
+    {"sampleID", 9},
+    {"sampleInternalOperations", 25},
     {"sampleLocationCoordinateRange", 30},
     {"sampleLocationCount", 20},
     {"sampleLocationGridSize", 23},
@@ -4893,6 +4961,7 @@ const char* String(Field field) {
     {"sampleOrderType", 16},
     {"sampleRateShading", 18},
     {"sampleShadingEnable", 20},
+    {"sampleType", 11},
     {"sampledImageColorSampleCounts", 30},
     {"sampledImageDepthSampleCounts", 30},
     {"sampledImageDescriptorSize", 27},
@@ -4939,6 +5008,7 @@ const char* String(Field field) {
     {"scratchSize", 12},
     {"screenBufferImport", 19},
     {"screenUsage", 12},
+    {"secondaryCopySource", 20},
     {"selectableCubicWeights", 23},
     {"semaphore", 10},
     {"semaphoreCount", 15},
@@ -5037,6 +5107,7 @@ const char* String(Field field) {
     {"shaderModule", 13},
     {"shaderModuleIdentifier", 23},
     {"shaderModuleIdentifierAlgorithmUUID", 36},
+    {"shaderMultipleWaitQueues", 25},
     {"shaderObject", 13},
     {"shaderOutputLayer", 18},
     {"shaderOutputViewportIndex", 26},
@@ -5075,6 +5146,7 @@ const char* String(Field field) {
     {"shaderSignedZeroInfNanPreserveFloat16", 38},
     {"shaderSignedZeroInfNanPreserveFloat32", 38},
     {"shaderSignedZeroInfNanPreserveFloat64", 38},
+    {"shaderSplitBarrier", 19},
     {"shaderStage", 12},
     {"shaderStageMask", 16},
     {"shaderStages", 13},
@@ -5168,7 +5240,14 @@ const char* String(Field field) {
     {"sparseResidencyImage3D", 23},
     {"specVersion", 12},
     {"spheres", 8},
+    {"splitBarrierReservedSharedMemory", 33},
     {"splitInstanceBindRegionCount", 29},
+    {"sqShaderMask", 13},
+    {"sqShaderMaskEnable", 19},
+    {"sqThreadTraceDeviceMemoryLimit", 31},
+    {"sqThreadTraceEnable", 20},
+    {"sqThreadTraceSuppressInstructionTokens", 39},
+    {"sqThreadTracing", 16},
     {"src", 4},
     {"srcAccelerationStructure", 25},
     {"srcAccelerationStructureData", 29},
@@ -5261,6 +5340,8 @@ const char* String(Field field) {
     {"stream", 7},
     {"streamCount", 12},
     {"streamDescriptor", 17},
+    {"streamingPerfCounters", 22},
+    {"streamingPerfTraceSampleInterval", 33},
     {"strictLines", 12},
     {"stride", 7},
     {"strideInBytes", 14},
@@ -5409,6 +5490,8 @@ const char* String(Field field) {
     {"timestampPeriod", 16},
     {"timestampValidBits", 19},
     {"timingCount", 12},
+    {"timingPostSample", 17},
+    {"timingPreSample", 16},
     {"timingPropertiesCounter", 24},
     {"tokenCount", 11},
     {"tokenType", 10},
@@ -5600,6 +5683,7 @@ const char* String(Enum value) {
     {"VkAccelerationStructureCompatibilityKHR", 40},
     {"VkAccelerationStructureMemoryRequirementsTypeNV", 48},
     {"VkAccelerationStructureMotionInstanceTypeNV", 44},
+    {"VkAccelerationStructureSerializedBlockTypeKHR", 46},
     {"VkAccelerationStructureTypeKHR", 31},
     {"VkAntiLagModeAMD", 17},
     {"VkAntiLagStageAMD", 18},
@@ -5666,6 +5750,9 @@ const char* String(Enum value) {
     {"VkFrontFace", 12},
     {"VkFullScreenExclusiveEXT", 25},
     {"VkGeometryTypeKHR", 18},
+    {"VkGpaDeviceClockModeAMD", 24},
+    {"VkGpaPerfBlockAMD", 18},
+    {"VkGpaSampleTypeAMD", 19},
     {"VkImageLayout", 14},
     {"VkImageTiling", 14},
     {"VkImageType", 12},
@@ -5684,8 +5771,8 @@ const char* String(Enum value) {
     {"VkMicromapTypeEXT", 18},
     {"VkNeuralAcceleratorStatisticsModeARM", 37},
     {"VkObjectType", 13},
-    {"VkOpacityMicromapFormatEXT", 27},
-    {"VkOpacityMicromapSpecialIndexEXT", 33},
+    {"VkOpacityMicromapFormatKHR", 27},
+    {"VkOpacityMicromapSpecialIndexKHR", 33},
     {"VkOpticalFlowPerformanceLevelNV", 32},
     {"VkOpticalFlowSessionBindingPointNV", 35},
     {"VkOutOfBandQueueTypeNV", 23},
@@ -5824,6 +5911,7 @@ const char* String(FlagBitmask value) {
     {"VkFramebufferCreateFlagBits", 28},
     {"VkGeometryFlagBitsKHR", 22},
     {"VkGeometryInstanceFlagBitsKHR", 30},
+    {"VkGpaSqShaderStageFlagBitsAMD", 30},
     {"VkGraphicsPipelineLibraryFlagBitsEXT", 37},
     {"VkHostImageCopyFlagBits", 24},
     {"VkImageAspectFlagBits", 22},
@@ -5948,6 +6036,7 @@ const char* String(Extension extension) {
     {"VK_AMD_display_native_hdr", 26},
     {"VK_AMD_draw_indirect_count", 27},
     {"VK_AMD_gcn_shader", 18},
+    {"VK_AMD_gpa_interface", 21},
     {"VK_AMD_gpu_shader_half_float", 29},
     {"VK_AMD_gpu_shader_int16", 24},
     {"VK_AMD_memory_overallocation_behavior", 38},
@@ -6102,6 +6191,7 @@ const char* String(Extension extension) {
     {"VK_EXT_shader_module_identifier", 32},
     {"VK_EXT_shader_object", 21},
     {"VK_EXT_shader_replicated_composites", 36},
+    {"VK_EXT_shader_split_barrier", 28},
     {"VK_EXT_shader_stencil_export", 29},
     {"VK_EXT_shader_subgroup_ballot", 30},
     {"VK_EXT_shader_subgroup_partitioned", 35},
@@ -6215,6 +6305,7 @@ const char* String(Extension extension) {
     {"VK_KHR_maintenance9", 20},
     {"VK_KHR_map_memory2", 19},
     {"VK_KHR_multiview", 17},
+    {"VK_KHR_opacity_micromap", 24},
     {"VK_KHR_performance_query", 25},
     {"VK_KHR_pipeline_binary", 23},
     {"VK_KHR_pipeline_executable_properties", 38},
@@ -6371,11 +6462,13 @@ const char* String(Extension extension) {
     {"VK_OHOS_surface", 16},
     {"VK_QCOM_cooperative_matrix_conversion", 38},
     {"VK_QCOM_data_graph_model", 25},
+    {"VK_QCOM_elapsed_timer_query", 28},
     {"VK_QCOM_filter_cubic_clamp", 27},
     {"VK_QCOM_filter_cubic_weights", 29},
     {"VK_QCOM_fragment_density_map_offset", 36},
     {"VK_QCOM_image_processing", 25},
     {"VK_QCOM_image_processing2", 26},
+    {"VK_QCOM_image_processing3", 26},
     {"VK_QCOM_multiview_per_view_render_areas", 40},
     {"VK_QCOM_multiview_per_view_viewports", 37},
     {"VK_QCOM_queue_perf_hint", 24},
@@ -6383,6 +6476,7 @@ const char* String(Extension extension) {
     {"VK_QCOM_render_pass_store_ops", 30},
     {"VK_QCOM_render_pass_transform", 30},
     {"VK_QCOM_rotated_copy_commands", 30},
+    {"VK_QCOM_shader_multiple_wait_queues", 36},
     {"VK_QCOM_tile_memory_heap", 25},
     {"VK_QCOM_tile_properties", 24},
     {"VK_QCOM_tile_shading", 21},
@@ -6647,6 +6741,8 @@ bool IsFieldPointer(Field field) {
     case Field::pGetMetalHandleInfo:
     case Field::pGetWin32HandleInfo:
     case Field::pGetZirconHandleInfo:
+    case Field::pGpaSampleBeginInfo:
+    case Field::pGpaSession:
     case Field::pGranularity:
     case Field::pGroups:
     case Field::pHandle:
@@ -6776,6 +6872,8 @@ bool IsFieldPointer(Field field) {
     case Field::pPerTileBeginInfo:
     case Field::pPerTileEndInfo:
     case Field::pPerViewRenderAreas:
+    case Field::pPerfBlocks:
+    case Field::pPerfCounters:
     case Field::pPerfHintInfo:
     case Field::pPerformanceQueryCreateInfo:
     case Field::pPhysicalDeviceCount:
@@ -6865,6 +6963,7 @@ bool IsFieldPointer(Field field) {
     case Field::pResources:
     case Field::pResult:
     case Field::pResults:
+    case Field::pSampleID:
     case Field::pSampleLocations:
     case Field::pSampleLocationsInfo:
     case Field::pSampleMask:
@@ -6894,6 +6993,7 @@ bool IsFieldPointer(Field field) {
     case Field::pSignalSemaphoreInfos:
     case Field::pSignalSemaphoreValues:
     case Field::pSignalSemaphores:
+    case Field::pSizeInBytes:
     case Field::pSizeInfo:
     case Field::pSizes:
     case Field::pSleepInfo:
@@ -8125,6 +8225,14 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceRobustness2PropertiesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_KHR:
        return Struct::VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR;
+    case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_MICROMAP_DATA_KHR:
+       return Struct::VkAccelerationStructureGeometryMicromapDataKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPACITY_MICROMAP_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceOpacityMicromapFeaturesKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPACITY_MICROMAP_PROPERTIES_KHR:
+       return Struct::VkPhysicalDeviceOpacityMicromapPropertiesKHR;
+    case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_KHR:
+       return Struct::VkAccelerationStructureTrianglesOpacityMicromapKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_10_FEATURES_KHR:
        return Struct::VkPhysicalDeviceMaintenance10FeaturesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_10_PROPERTIES_KHR:
@@ -8267,6 +8375,20 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkExternalFormatANDROID;
     case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_2_ANDROID:
        return Struct::VkAndroidHardwareBufferFormatProperties2ANDROID;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GPA_FEATURES_AMD:
+       return Struct::VkPhysicalDeviceGpaFeaturesAMD;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GPA_PROPERTIES_AMD:
+       return Struct::VkPhysicalDeviceGpaPropertiesAMD;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GPA_PROPERTIES_2_AMD:
+       return Struct::VkPhysicalDeviceGpaProperties2AMD;
+    case VK_STRUCTURE_TYPE_GPA_SAMPLE_BEGIN_INFO_AMD:
+       return Struct::VkGpaSampleBeginInfoAMD;
+    case VK_STRUCTURE_TYPE_GPA_DEVICE_CLOCK_MODE_INFO_AMD:
+       return Struct::VkGpaDeviceClockModeInfoAMD;
+    case VK_STRUCTURE_TYPE_GPA_DEVICE_GET_CLOCK_INFO_AMD:
+       return Struct::VkGpaDeviceGetClockInfoAMD;
+    case VK_STRUCTURE_TYPE_GPA_SESSION_CREATE_INFO_AMD:
+       return Struct::VkGpaSessionCreateInfoAMD;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_FEATURES_AMDX:
        return Struct::VkPhysicalDeviceShaderEnqueueFeaturesAMDX;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_PROPERTIES_AMDX:
@@ -8393,6 +8515,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkFilterCubicImageViewImageFormatPropertiesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_CONVERSION_FEATURES_QCOM:
        return Struct::VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ELAPSED_TIMER_QUERY_FEATURES_QCOM:
+       return Struct::VkPhysicalDeviceElapsedTimerQueryFeaturesQCOM;
     case VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT:
        return Struct::VkImportMemoryHostPointerInfoEXT;
     case VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT:
@@ -8601,6 +8725,16 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceQueuePerfHintFeaturesQCOM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_QUEUE_PERF_HINT_PROPERTIES_QCOM:
        return Struct::VkPhysicalDeviceQueuePerfHintPropertiesQCOM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_3_FEATURES_QCOM:
+       return Struct::VkPhysicalDeviceImageProcessing3FeaturesQCOM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MULTIPLE_WAIT_QUEUES_FEATURES_QCOM:
+       return Struct::VkPhysicalDeviceShaderMultipleWaitQueuesFeaturesQCOM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MULTIPLE_WAIT_QUEUES_PROPERTIES_QCOM:
+       return Struct::VkPhysicalDeviceShaderMultipleWaitQueuesPropertiesQCOM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SPLIT_BARRIER_FEATURES_EXT:
+       return Struct::VkPhysicalDeviceShaderSplitBarrierFeaturesEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SPLIT_BARRIER_PROPERTIES_EXT:
+       return Struct::VkPhysicalDeviceShaderSplitBarrierPropertiesEXT;
     case VK_STRUCTURE_TYPE_CUDA_MODULE_CREATE_INFO_NV:
        return Struct::VkCudaModuleCreateInfoNV;
     case VK_STRUCTURE_TYPE_CUDA_FUNCTION_CREATE_INFO_NV:

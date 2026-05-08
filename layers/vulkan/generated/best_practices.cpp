@@ -1232,6 +1232,52 @@ void BestPractices::PostCallRecordGetMemoryAndroidHardwareBufferANDROID(VkDevice
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
+void BestPractices::PostCallRecordCreateGpaSessionAMD(VkDevice device, const VkGpaSessionCreateInfoAMD* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator, VkGpaSessionAMD* pGpaSession,
+                                                      const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordSetGpaDeviceClockModeAMD(VkDevice device, VkGpaDeviceClockModeInfoAMD* pInfo,
+                                                           const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordGetGpaDeviceClockInfoAMD(VkDevice device, VkGpaDeviceGetClockInfoAMD* pInfo,
+                                                           const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordCmdBeginGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                        const RecordObject& record_obj) {
+    bp_state::LogResult(*this, commandBuffer, record_obj);
+}
+
+void BestPractices::PostCallRecordCmdEndGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                      const RecordObject& record_obj) {
+    bp_state::LogResult(*this, commandBuffer, record_obj);
+}
+
+void BestPractices::PostCallRecordCmdBeginGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                       const VkGpaSampleBeginInfoAMD* pGpaSampleBeginInfo, uint32_t* pSampleID,
+                                                       const RecordObject& record_obj) {
+    bp_state::LogResult(*this, commandBuffer, record_obj);
+}
+
+void BestPractices::PostCallRecordGetGpaSessionStatusAMD(VkDevice device, VkGpaSessionAMD gpaSession,
+                                                         const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordGetGpaSessionResultsAMD(VkDevice device, VkGpaSessionAMD gpaSession, uint32_t sampleID,
+                                                          size_t* pSizeInBytes, void* pData, const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordResetGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession, const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 void BestPractices::PostCallRecordCreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache,
                                                                     uint32_t createInfoCount,

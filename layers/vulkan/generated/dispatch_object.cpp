@@ -619,6 +619,13 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
                     safe_struct->micromap = Unwrap(safe_struct->micromap);
                 }
             } break;
+            case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_KHR: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkAccelerationStructureTrianglesOpacityMicromapKHR*>(cur_pnext);
+
+                if (safe_struct->micromap) {
+                    safe_struct->micromap = Unwrap(safe_struct->micromap);
+                }
+            } break;
             case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SHADER_MODULE_CREATE_INFO_ARM: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkDataGraphPipelineShaderModuleCreateInfoARM*>(cur_pnext);
 
@@ -6266,6 +6273,125 @@ VkResult DispatchDevice::GetMemoryAndroidHardwareBufferANDROID(VkDevice device,
     return result;
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+
+VkResult DispatchDevice::CreateGpaSessionAMD(VkDevice device, const VkGpaSessionCreateInfoAMD* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkGpaSessionAMD* pGpaSession) {
+    if (!wrap_handles) return device_dispatch_table.CreateGpaSessionAMD(device, pCreateInfo, pAllocator, pGpaSession);
+    vku::safe_VkGpaSessionCreateInfoAMD var_local_pCreateInfo;
+    vku::safe_VkGpaSessionCreateInfoAMD* local_pCreateInfo = nullptr;
+    {
+        if (pCreateInfo) {
+            local_pCreateInfo = &var_local_pCreateInfo;
+            local_pCreateInfo->initialize(pCreateInfo);
+
+            if (pCreateInfo->secondaryCopySource) {
+                local_pCreateInfo->secondaryCopySource = Unwrap(pCreateInfo->secondaryCopySource);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.CreateGpaSessionAMD(device, (const VkGpaSessionCreateInfoAMD*)local_pCreateInfo,
+                                                                pAllocator, pGpaSession);
+    if (result == VK_SUCCESS) {
+        *pGpaSession = WrapNew(*pGpaSession);
+    }
+    return result;
+}
+
+void DispatchDevice::DestroyGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession, const VkAllocationCallbacks* pAllocator) {
+    if (!wrap_handles) return device_dispatch_table.DestroyGpaSessionAMD(device, gpaSession, pAllocator);
+    gpaSession = Erase(gpaSession);
+    device_dispatch_table.DestroyGpaSessionAMD(device, gpaSession, pAllocator);
+}
+
+VkResult DispatchDevice::SetGpaDeviceClockModeAMD(VkDevice device, VkGpaDeviceClockModeInfoAMD* pInfo) {
+    VkResult result = device_dispatch_table.SetGpaDeviceClockModeAMD(device, pInfo);
+
+    return result;
+}
+
+VkResult DispatchDevice::GetGpaDeviceClockInfoAMD(VkDevice device, VkGpaDeviceGetClockInfoAMD* pInfo) {
+    VkResult result = device_dispatch_table.GetGpaDeviceClockInfoAMD(device, pInfo);
+
+    return result;
+}
+
+VkResult DispatchDevice::CmdBeginGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession) {
+    if (!wrap_handles) return device_dispatch_table.CmdBeginGpaSessionAMD(commandBuffer, gpaSession);
+    {
+        gpaSession = Unwrap(gpaSession);
+    }
+    VkResult result = device_dispatch_table.CmdBeginGpaSessionAMD(commandBuffer, gpaSession);
+
+    return result;
+}
+
+VkResult DispatchDevice::CmdEndGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession) {
+    if (!wrap_handles) return device_dispatch_table.CmdEndGpaSessionAMD(commandBuffer, gpaSession);
+    {
+        gpaSession = Unwrap(gpaSession);
+    }
+    VkResult result = device_dispatch_table.CmdEndGpaSessionAMD(commandBuffer, gpaSession);
+
+    return result;
+}
+
+VkResult DispatchDevice::CmdBeginGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                              const VkGpaSampleBeginInfoAMD* pGpaSampleBeginInfo, uint32_t* pSampleID) {
+    if (!wrap_handles) return device_dispatch_table.CmdBeginGpaSampleAMD(commandBuffer, gpaSession, pGpaSampleBeginInfo, pSampleID);
+    {
+        gpaSession = Unwrap(gpaSession);
+    }
+    VkResult result = device_dispatch_table.CmdBeginGpaSampleAMD(commandBuffer, gpaSession, pGpaSampleBeginInfo, pSampleID);
+
+    return result;
+}
+
+void DispatchDevice::CmdEndGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession, uint32_t sampleID) {
+    if (!wrap_handles) return device_dispatch_table.CmdEndGpaSampleAMD(commandBuffer, gpaSession, sampleID);
+    {
+        gpaSession = Unwrap(gpaSession);
+    }
+    device_dispatch_table.CmdEndGpaSampleAMD(commandBuffer, gpaSession, sampleID);
+}
+
+VkResult DispatchDevice::GetGpaSessionStatusAMD(VkDevice device, VkGpaSessionAMD gpaSession) {
+    if (!wrap_handles) return device_dispatch_table.GetGpaSessionStatusAMD(device, gpaSession);
+    {
+        gpaSession = Unwrap(gpaSession);
+    }
+    VkResult result = device_dispatch_table.GetGpaSessionStatusAMD(device, gpaSession);
+
+    return result;
+}
+
+VkResult DispatchDevice::GetGpaSessionResultsAMD(VkDevice device, VkGpaSessionAMD gpaSession, uint32_t sampleID,
+                                                 size_t* pSizeInBytes, void* pData) {
+    if (!wrap_handles) return device_dispatch_table.GetGpaSessionResultsAMD(device, gpaSession, sampleID, pSizeInBytes, pData);
+    {
+        gpaSession = Unwrap(gpaSession);
+    }
+    VkResult result = device_dispatch_table.GetGpaSessionResultsAMD(device, gpaSession, sampleID, pSizeInBytes, pData);
+
+    return result;
+}
+
+VkResult DispatchDevice::ResetGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession) {
+    if (!wrap_handles) return device_dispatch_table.ResetGpaSessionAMD(device, gpaSession);
+    {
+        gpaSession = Unwrap(gpaSession);
+    }
+    VkResult result = device_dispatch_table.ResetGpaSessionAMD(device, gpaSession);
+
+    return result;
+}
+
+void DispatchDevice::CmdCopyGpaSessionResultsAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession) {
+    if (!wrap_handles) return device_dispatch_table.CmdCopyGpaSessionResultsAMD(commandBuffer, gpaSession);
+    {
+        gpaSession = Unwrap(gpaSession);
+    }
+    device_dispatch_table.CmdCopyGpaSessionResultsAMD(commandBuffer, gpaSession);
+}
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VkResult DispatchDevice::CreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,

@@ -856,6 +856,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->presentModeFifoLatestReady |= enabled->presentModeFifoLatestReady == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPACITY_MICROMAP_FEATURES_KHR: {
+                const VkPhysicalDeviceOpacityMicromapFeaturesKHR* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceOpacityMicromapFeaturesKHR*>(pNext);
+                features->micromap |= enabled->micromap == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_10_FEATURES_KHR: {
                 const VkPhysicalDeviceMaintenance10FeaturesKHR* enabled =
                     reinterpret_cast<const VkPhysicalDeviceMaintenance10FeaturesKHR*>(pNext);
@@ -906,6 +912,14 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->relaxedLineRasterization |= enabled->relaxedLineRasterization == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GPA_FEATURES_AMD: {
+                const VkPhysicalDeviceGpaFeaturesAMD* enabled = reinterpret_cast<const VkPhysicalDeviceGpaFeaturesAMD*>(pNext);
+                features->perfCounters |= enabled->perfCounters == VK_TRUE;
+                features->streamingPerfCounters |= enabled->streamingPerfCounters == VK_TRUE;
+                features->sqThreadTracing |= enabled->sqThreadTracing == VK_TRUE;
+                features->clockModes |= enabled->clockModes == VK_TRUE;
+                break;
+            }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_FEATURES_AMDX: {
                 const VkPhysicalDeviceShaderEnqueueFeaturesAMDX* enabled =
@@ -951,6 +965,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM* enabled =
                     reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM*>(pNext);
                 features->cooperativeMatrixConversion |= enabled->cooperativeMatrixConversion == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ELAPSED_TIMER_QUERY_FEATURES_QCOM: {
+                const VkPhysicalDeviceElapsedTimerQueryFeaturesQCOM* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceElapsedTimerQueryFeaturesQCOM*>(pNext);
+                features->elapsedTimerQuery |= enabled->elapsedTimerQuery == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV: {
@@ -1173,6 +1193,26 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceQueuePerfHintFeaturesQCOM* enabled =
                     reinterpret_cast<const VkPhysicalDeviceQueuePerfHintFeaturesQCOM*>(pNext);
                 features->queuePerfHint |= enabled->queuePerfHint == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_3_FEATURES_QCOM: {
+                const VkPhysicalDeviceImageProcessing3FeaturesQCOM* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceImageProcessing3FeaturesQCOM*>(pNext);
+                features->imageGatherLinear |= enabled->imageGatherLinear == VK_TRUE;
+                features->imageGatherExtendedModes |= enabled->imageGatherExtendedModes == VK_TRUE;
+                features->blockMatchExtendedClampToEdge |= enabled->blockMatchExtendedClampToEdge == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MULTIPLE_WAIT_QUEUES_FEATURES_QCOM: {
+                const VkPhysicalDeviceShaderMultipleWaitQueuesFeaturesQCOM* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderMultipleWaitQueuesFeaturesQCOM*>(pNext);
+                features->shaderMultipleWaitQueues |= enabled->shaderMultipleWaitQueues == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SPLIT_BARRIER_FEATURES_EXT: {
+                const VkPhysicalDeviceShaderSplitBarrierFeaturesEXT* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderSplitBarrierFeaturesEXT*>(pNext);
+                features->shaderSplitBarrier |= enabled->shaderSplitBarrier == VK_TRUE;
                 break;
             }
 #ifdef VK_ENABLE_BETA_EXTENSIONS

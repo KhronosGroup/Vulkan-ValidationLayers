@@ -1476,6 +1476,7 @@ ExtensionData GetExtensionData(vvl::Extension extension_name) {
          {Reason::Promoted, {vvl::Extension::_VK_KHR_present_mode_fifo_latest_ready}}},
         {vvl::Extension::_VK_EXT_extended_dynamic_state2, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_global_priority_query, {Reason::Promoted, {vvl::Extension::_VK_KHR_global_priority}}},
+        {vvl::Extension::_VK_EXT_opacity_micromap, {Reason::Promoted, {vvl::Extension::_VK_KHR_opacity_micromap}}},
         {vvl::Extension::_VK_NV_displacement_micromap,
          {Reason::Superseded, {vvl::Extension::_VK_NV_cluster_acceleration_structure}}},
         {vvl::Extension::_VK_EXT_load_store_op_none, {Reason::Promoted, {vvl::Extension::_VK_KHR_load_store_op_none}}},

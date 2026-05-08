@@ -5444,6 +5444,160 @@ void Device::PostCallRecordGetMemoryAndroidHardwareBufferANDROID(VkDevice device
 }
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+void Device::PreCallRecordCreateGpaSessionAMD(VkDevice device, const VkGpaSessionCreateInfoAMD* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkGpaSessionAMD* pGpaSession,
+                                              const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordCreateGpaSessionAMD(VkDevice device, const VkGpaSessionCreateInfoAMD* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkGpaSessionAMD* pGpaSession,
+                                               const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    if (record_obj.result == VK_SUCCESS) {
+        CreateObject(*pGpaSession);
+    }
+}
+
+void Device::PreCallRecordDestroyGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession, const VkAllocationCallbacks* pAllocator,
+                                               const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartWriteObject(gpaSession, record_obj.location);
+    // Host access to gpaSession must be externally synchronized
+}
+
+void Device::PostCallRecordDestroyGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession,
+                                                const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishWriteObject(gpaSession, record_obj.location);
+    DestroyObject(gpaSession);
+    // Host access to gpaSession must be externally synchronized
+}
+
+void Device::PreCallRecordSetGpaDeviceClockModeAMD(VkDevice device, VkGpaDeviceClockModeInfoAMD* pInfo,
+                                                   const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordSetGpaDeviceClockModeAMD(VkDevice device, VkGpaDeviceClockModeInfoAMD* pInfo,
+                                                    const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordGetGpaDeviceClockInfoAMD(VkDevice device, VkGpaDeviceGetClockInfoAMD* pInfo,
+                                                   const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetGpaDeviceClockInfoAMD(VkDevice device, VkGpaDeviceGetClockInfoAMD* pInfo,
+                                                    const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordCmdBeginGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    StartReadObject(gpaSession, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdBeginGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                 const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    FinishReadObject(gpaSession, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PreCallRecordCmdEndGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                              const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    StartReadObject(gpaSession, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdEndGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                               const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    FinishReadObject(gpaSession, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PreCallRecordCmdBeginGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                               const VkGpaSampleBeginInfoAMD* pGpaSampleBeginInfo, uint32_t* pSampleID,
+                                               const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    StartReadObject(gpaSession, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdBeginGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                const VkGpaSampleBeginInfoAMD* pGpaSampleBeginInfo, uint32_t* pSampleID,
+                                                const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    FinishReadObject(gpaSession, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PreCallRecordCmdEndGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession, uint32_t sampleID,
+                                             const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    StartReadObject(gpaSession, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdEndGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession, uint32_t sampleID,
+                                              const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    FinishReadObject(gpaSession, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PreCallRecordGetGpaSessionStatusAMD(VkDevice device, VkGpaSessionAMD gpaSession, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartReadObject(gpaSession, record_obj.location);
+}
+
+void Device::PostCallRecordGetGpaSessionStatusAMD(VkDevice device, VkGpaSessionAMD gpaSession, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishReadObject(gpaSession, record_obj.location);
+}
+
+void Device::PreCallRecordGetGpaSessionResultsAMD(VkDevice device, VkGpaSessionAMD gpaSession, uint32_t sampleID,
+                                                  size_t* pSizeInBytes, void* pData, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartReadObject(gpaSession, record_obj.location);
+}
+
+void Device::PostCallRecordGetGpaSessionResultsAMD(VkDevice device, VkGpaSessionAMD gpaSession, uint32_t sampleID,
+                                                   size_t* pSizeInBytes, void* pData, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishReadObject(gpaSession, record_obj.location);
+}
+
+void Device::PreCallRecordResetGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartReadObject(gpaSession, record_obj.location);
+}
+
+void Device::PostCallRecordResetGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishReadObject(gpaSession, record_obj.location);
+}
+
+void Device::PreCallRecordCmdCopyGpaSessionResultsAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                      const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    StartReadObject(gpaSession, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdCopyGpaSessionResultsAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                       const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    FinishReadObject(gpaSession, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 void Device::PreCallRecordCreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache,
                                                             uint32_t createInfoCount,

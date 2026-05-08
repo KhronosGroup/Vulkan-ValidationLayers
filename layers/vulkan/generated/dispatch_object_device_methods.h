@@ -622,6 +622,20 @@ VkResult GetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct
 VkResult GetMemoryAndroidHardwareBufferANDROID(VkDevice device, const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
                                                struct AHardwareBuffer** pBuffer);
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+VkResult CreateGpaSessionAMD(VkDevice device, const VkGpaSessionCreateInfoAMD* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                             VkGpaSessionAMD* pGpaSession);
+void DestroyGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession, const VkAllocationCallbacks* pAllocator);
+VkResult SetGpaDeviceClockModeAMD(VkDevice device, VkGpaDeviceClockModeInfoAMD* pInfo);
+VkResult GetGpaDeviceClockInfoAMD(VkDevice device, VkGpaDeviceGetClockInfoAMD* pInfo);
+VkResult CmdBeginGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession);
+VkResult CmdEndGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession);
+VkResult CmdBeginGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                              const VkGpaSampleBeginInfoAMD* pGpaSampleBeginInfo, uint32_t* pSampleID);
+void CmdEndGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession, uint32_t sampleID);
+VkResult GetGpaSessionStatusAMD(VkDevice device, VkGpaSessionAMD gpaSession);
+VkResult GetGpaSessionResultsAMD(VkDevice device, VkGpaSessionAMD gpaSession, uint32_t sampleID, size_t* pSizeInBytes, void* pData);
+VkResult ResetGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession);
+void CmdCopyGpaSessionResultsAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession);
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 VkResult CreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                            const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,

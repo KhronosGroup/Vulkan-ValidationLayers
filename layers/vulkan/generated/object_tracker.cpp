@@ -81,6 +81,7 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
     FindLeakedObjects(kVulkanObjectTypePipelineBinaryKHR, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeCuModuleNVX, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeCuFunctionNVX, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeGpaSessionAMD, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeTensorARM, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeValidationCacheEXT, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeAccelerationStructureNV, leaked_list);
@@ -146,6 +147,7 @@ void Device::DestroyLeakedObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypePipelineBinaryKHR, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeCuModuleNVX, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeCuFunctionNVX, loc);
+    DestroyUndestroyedObjects(kVulkanObjectTypeGpaSessionAMD, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeTensorARM, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeValidationCacheEXT, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeAccelerationStructureNV, loc);
@@ -5469,6 +5471,138 @@ bool Device::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice devic
     return skip;
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+
+bool Device::PreCallValidateCreateGpaSessionAMD(VkDevice device, const VkGpaSessionCreateInfoAMD* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkGpaSessionAMD* pGpaSession,
+                                                const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkCreateGpaSessionAMD-device-parameter"
+    if (pCreateInfo) {
+        [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
+        skip |= ValidateObject(pCreateInfo->secondaryCopySource, kVulkanObjectTypeGpaSessionAMD, true,
+                               "VUID-VkGpaSessionCreateInfoAMD-secondaryCopySource-parameter",
+                               "UNASSIGNED-VkGpaSessionCreateInfoAMD-secondaryCopySource-parent",
+                               pCreateInfo_loc.dot(Field::secondaryCopySource));
+    }
+
+    return skip;
+}
+
+void Device::PostCallRecordCreateGpaSessionAMD(VkDevice device, const VkGpaSessionCreateInfoAMD* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkGpaSessionAMD* pGpaSession,
+                                               const RecordObject& record_obj) {
+    if (record_obj.result < VK_SUCCESS) return;
+    tracker.CreateObject(*pGpaSession, kVulkanObjectTypeGpaSessionAMD, pAllocator, record_obj.location, device);
+}
+
+bool Device::PreCallValidateDestroyGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession,
+                                                 const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkDestroyGpaSessionAMD-device-parameter"
+    skip |= ValidateObject(gpaSession, kVulkanObjectTypeGpaSessionAMD, true, "VUID-vkDestroyGpaSessionAMD-gpaSession-parameter",
+                           "VUID-vkDestroyGpaSessionAMD-gpaSession-parent", error_obj.location.dot(Field::gpaSession));
+    skip |= ValidateDestroyObject(gpaSession, kVulkanObjectTypeGpaSessionAMD, pAllocator, kVUIDUndefined, kVUIDUndefined,
+                                  error_obj.location);
+
+    return skip;
+}
+
+void Device::PreCallRecordDestroyGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession, const VkAllocationCallbacks* pAllocator,
+                                               const RecordObject& record_obj) {
+    RecordDestroyObject(gpaSession, kVulkanObjectTypeGpaSessionAMD, record_obj.location);
+}
+
+// vkSetGpaDeviceClockModeAMD:
+// Checked by chassis: device: "VUID-vkSetGpaDeviceClockModeAMD-device-parameter"
+
+// vkGetGpaDeviceClockInfoAMD:
+// Checked by chassis: device: "VUID-vkGetGpaDeviceClockInfoAMD-device-parameter"
+
+bool Device::PreCallValidateCmdBeginGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                  const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdBeginGpaSessionAMD-commandBuffer-parameter"
+    // Checked by chassis: commandBuffer: "VUID-vkCmdBeginGpaSessionAMD-commonparent"
+    skip |= ValidateObject(gpaSession, kVulkanObjectTypeGpaSessionAMD, false, "VUID-vkCmdBeginGpaSessionAMD-gpaSession-parameter",
+                           "VUID-vkCmdBeginGpaSessionAMD-commonparent", error_obj.location.dot(Field::gpaSession));
+
+    return skip;
+}
+
+bool Device::PreCallValidateCmdEndGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdEndGpaSessionAMD-commandBuffer-parameter"
+    // Checked by chassis: commandBuffer: "VUID-vkCmdEndGpaSessionAMD-commonparent"
+    skip |= ValidateObject(gpaSession, kVulkanObjectTypeGpaSessionAMD, false, "VUID-vkCmdEndGpaSessionAMD-gpaSession-parameter",
+                           "VUID-vkCmdEndGpaSessionAMD-commonparent", error_obj.location.dot(Field::gpaSession));
+
+    return skip;
+}
+
+bool Device::PreCallValidateCmdBeginGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                 const VkGpaSampleBeginInfoAMD* pGpaSampleBeginInfo, uint32_t* pSampleID,
+                                                 const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdBeginGpaSampleAMD-commandBuffer-parameter"
+    // Checked by chassis: commandBuffer: "VUID-vkCmdBeginGpaSampleAMD-commonparent"
+    skip |= ValidateObject(gpaSession, kVulkanObjectTypeGpaSessionAMD, false, "VUID-vkCmdBeginGpaSampleAMD-gpaSession-parameter",
+                           "VUID-vkCmdBeginGpaSampleAMD-commonparent", error_obj.location.dot(Field::gpaSession));
+
+    return skip;
+}
+
+bool Device::PreCallValidateCmdEndGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession, uint32_t sampleID,
+                                               const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdEndGpaSampleAMD-commandBuffer-parameter"
+    // Checked by chassis: commandBuffer: "VUID-vkCmdEndGpaSampleAMD-commonparent"
+    skip |= ValidateObject(gpaSession, kVulkanObjectTypeGpaSessionAMD, false, "VUID-vkCmdEndGpaSampleAMD-gpaSession-parameter",
+                           "VUID-vkCmdEndGpaSampleAMD-commonparent", error_obj.location.dot(Field::gpaSession));
+
+    return skip;
+}
+
+bool Device::PreCallValidateGetGpaSessionStatusAMD(VkDevice device, VkGpaSessionAMD gpaSession,
+                                                   const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetGpaSessionStatusAMD-device-parameter"
+    skip |= ValidateObject(gpaSession, kVulkanObjectTypeGpaSessionAMD, false, "VUID-vkGetGpaSessionStatusAMD-gpaSession-parameter",
+                           "VUID-vkGetGpaSessionStatusAMD-gpaSession-parent", error_obj.location.dot(Field::gpaSession));
+
+    return skip;
+}
+
+bool Device::PreCallValidateGetGpaSessionResultsAMD(VkDevice device, VkGpaSessionAMD gpaSession, uint32_t sampleID,
+                                                    size_t* pSizeInBytes, void* pData, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetGpaSessionResultsAMD-device-parameter"
+    skip |= ValidateObject(gpaSession, kVulkanObjectTypeGpaSessionAMD, false, "VUID-vkGetGpaSessionResultsAMD-gpaSession-parameter",
+                           "VUID-vkGetGpaSessionResultsAMD-gpaSession-parent", error_obj.location.dot(Field::gpaSession));
+
+    return skip;
+}
+
+bool Device::PreCallValidateResetGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkResetGpaSessionAMD-device-parameter"
+    skip |= ValidateObject(gpaSession, kVulkanObjectTypeGpaSessionAMD, false, "VUID-vkResetGpaSessionAMD-gpaSession-parameter",
+                           "VUID-vkResetGpaSessionAMD-gpaSession-parent", error_obj.location.dot(Field::gpaSession));
+
+    return skip;
+}
+
+bool Device::PreCallValidateCmdCopyGpaSessionResultsAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdCopyGpaSessionResultsAMD-commandBuffer-parameter"
+    // Checked by chassis: commandBuffer: "VUID-vkCmdCopyGpaSessionResultsAMD-commonparent"
+    skip |=
+        ValidateObject(gpaSession, kVulkanObjectTypeGpaSessionAMD, false, "VUID-vkCmdCopyGpaSessionResultsAMD-gpaSession-parameter",
+                       "VUID-vkCmdCopyGpaSessionResultsAMD-commonparent", error_obj.location.dot(Field::gpaSession));
+
+    return skip;
+}
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool Device::PreCallValidateCreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache,

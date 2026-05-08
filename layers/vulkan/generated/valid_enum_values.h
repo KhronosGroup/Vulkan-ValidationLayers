@@ -126,6 +126,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkTimeDomainKHR value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDeviceFaultVendorBinaryHeaderVersionKHR value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkOpacityMicromapFormatKHR value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDebugReportObjectTypeEXT value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkRasterizationOrderAMD value) const;
@@ -145,6 +147,12 @@ template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDiscardRectangleModeEXT value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkConservativeRasterizationModeEXT value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkGpaPerfBlockAMD value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkGpaSampleTypeAMD value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkGpaDeviceClockModeAMD value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDescriptorMappingSourceEXT value) const;
 template <>

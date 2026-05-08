@@ -70,6 +70,7 @@ static const VkDebugReportObjectTypeEXT kDebugReportLookup[kVulkanObjectTypeMax]
     VK_DEBUG_REPORT_OBJECT_TYPE_CU_MODULE_NVX_EXT,               // kVulkanObjectTypeCuModuleNVX
     VK_DEBUG_REPORT_OBJECT_TYPE_CU_FUNCTION_NVX_EXT,             // kVulkanObjectTypeCuFunctionNVX
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeDebugUtilsMessengerEXT
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeGpaSessionAMD
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeTensorARM
     VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT,        // kVulkanObjectTypeValidationCacheEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,   // kVulkanObjectTypeAccelerationStructureNV
@@ -134,6 +135,7 @@ static const char* const kVulkanObjectTypeStrings[kVulkanObjectTypeMax] = {
     "VkCuModuleNVX",
     "VkCuFunctionNVX",
     "VkDebugUtilsMessengerEXT",
+    "VkGpaSessionAMD",
     "VkTensorARM",
     "VkValidationCacheEXT",
     "VkAccelerationStructureNV",

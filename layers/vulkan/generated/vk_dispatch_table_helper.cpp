@@ -820,6 +820,26 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetMemoryAndroidHardwareBufferANDROID(
     return VK_SUCCESS;
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateGpaSessionAMD(VkDevice, const VkGpaSessionCreateInfoAMD*,
+                                                              const VkAllocationCallbacks*, VkGpaSessionAMD*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubDestroyGpaSessionAMD(VkDevice, VkGpaSessionAMD, const VkAllocationCallbacks*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubSetGpaDeviceClockModeAMD(VkDevice, VkGpaDeviceClockModeInfoAMD*) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetGpaDeviceClockInfoAMD(VkDevice, VkGpaDeviceGetClockInfoAMD*) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubCmdBeginGpaSessionAMD(VkCommandBuffer, VkGpaSessionAMD) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubCmdEndGpaSessionAMD(VkCommandBuffer, VkGpaSessionAMD) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubCmdBeginGpaSampleAMD(VkCommandBuffer, VkGpaSessionAMD, const VkGpaSampleBeginInfoAMD*,
+                                                               uint32_t*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubCmdEndGpaSampleAMD(VkCommandBuffer, VkGpaSessionAMD, uint32_t) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetGpaSessionStatusAMD(VkDevice, VkGpaSessionAMD) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetGpaSessionResultsAMD(VkDevice, VkGpaSessionAMD, uint32_t, size_t*, void*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubResetGpaSessionAMD(VkDevice, VkGpaSessionAMD) { return VK_SUCCESS; }
+static VKAPI_ATTR void VKAPI_CALL StubCmdCopyGpaSessionResultsAMD(VkCommandBuffer, VkGpaSessionAMD) {}
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateExecutionGraphPipelinesAMDX(VkDevice, VkPipelineCache, uint32_t,
                                                                             const VkExecutionGraphPipelineCreateInfoAMDX*,
@@ -1952,6 +1972,18 @@ const auto& GetApiExtensionMap() {
         {"vkCmdInsertDebugUtilsLabelEXT", {vvl::Extension::_VK_EXT_debug_utils}},
         {"vkGetAndroidHardwareBufferPropertiesANDROID", {vvl::Extension::_VK_ANDROID_external_memory_android_hardware_buffer}},
         {"vkGetMemoryAndroidHardwareBufferANDROID", {vvl::Extension::_VK_ANDROID_external_memory_android_hardware_buffer}},
+        {"vkCreateGpaSessionAMD", {vvl::Extension::_VK_AMD_gpa_interface}},
+        {"vkDestroyGpaSessionAMD", {vvl::Extension::_VK_AMD_gpa_interface}},
+        {"vkSetGpaDeviceClockModeAMD", {vvl::Extension::_VK_AMD_gpa_interface}},
+        {"vkGetGpaDeviceClockInfoAMD", {vvl::Extension::_VK_AMD_gpa_interface}},
+        {"vkCmdBeginGpaSessionAMD", {vvl::Extension::_VK_AMD_gpa_interface}},
+        {"vkCmdEndGpaSessionAMD", {vvl::Extension::_VK_AMD_gpa_interface}},
+        {"vkCmdBeginGpaSampleAMD", {vvl::Extension::_VK_AMD_gpa_interface}},
+        {"vkCmdEndGpaSampleAMD", {vvl::Extension::_VK_AMD_gpa_interface}},
+        {"vkGetGpaSessionStatusAMD", {vvl::Extension::_VK_AMD_gpa_interface}},
+        {"vkGetGpaSessionResultsAMD", {vvl::Extension::_VK_AMD_gpa_interface}},
+        {"vkResetGpaSessionAMD", {vvl::Extension::_VK_AMD_gpa_interface}},
+        {"vkCmdCopyGpaSessionResultsAMD", {vvl::Extension::_VK_AMD_gpa_interface}},
         {"vkCreateExecutionGraphPipelinesAMDX", {vvl::Extension::_VK_AMDX_shader_enqueue}},
         {"vkGetExecutionGraphPipelineScratchSizeAMDX", {vvl::Extension::_VK_AMDX_shader_enqueue}},
         {"vkGetExecutionGraphPipelineNodeIndexAMDX", {vvl::Extension::_VK_AMDX_shader_enqueue}},
@@ -3652,6 +3684,54 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
             (PFN_vkGetMemoryAndroidHardwareBufferANDROID)StubGetMemoryAndroidHardwareBufferANDROID;
     }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+    table->CreateGpaSessionAMD = (PFN_vkCreateGpaSessionAMD)gpa(device, "vkCreateGpaSessionAMD");
+    if (table->CreateGpaSessionAMD == nullptr) {
+        table->CreateGpaSessionAMD = (PFN_vkCreateGpaSessionAMD)StubCreateGpaSessionAMD;
+    }
+    table->DestroyGpaSessionAMD = (PFN_vkDestroyGpaSessionAMD)gpa(device, "vkDestroyGpaSessionAMD");
+    if (table->DestroyGpaSessionAMD == nullptr) {
+        table->DestroyGpaSessionAMD = (PFN_vkDestroyGpaSessionAMD)StubDestroyGpaSessionAMD;
+    }
+    table->SetGpaDeviceClockModeAMD = (PFN_vkSetGpaDeviceClockModeAMD)gpa(device, "vkSetGpaDeviceClockModeAMD");
+    if (table->SetGpaDeviceClockModeAMD == nullptr) {
+        table->SetGpaDeviceClockModeAMD = (PFN_vkSetGpaDeviceClockModeAMD)StubSetGpaDeviceClockModeAMD;
+    }
+    table->GetGpaDeviceClockInfoAMD = (PFN_vkGetGpaDeviceClockInfoAMD)gpa(device, "vkGetGpaDeviceClockInfoAMD");
+    if (table->GetGpaDeviceClockInfoAMD == nullptr) {
+        table->GetGpaDeviceClockInfoAMD = (PFN_vkGetGpaDeviceClockInfoAMD)StubGetGpaDeviceClockInfoAMD;
+    }
+    table->CmdBeginGpaSessionAMD = (PFN_vkCmdBeginGpaSessionAMD)gpa(device, "vkCmdBeginGpaSessionAMD");
+    if (table->CmdBeginGpaSessionAMD == nullptr) {
+        table->CmdBeginGpaSessionAMD = (PFN_vkCmdBeginGpaSessionAMD)StubCmdBeginGpaSessionAMD;
+    }
+    table->CmdEndGpaSessionAMD = (PFN_vkCmdEndGpaSessionAMD)gpa(device, "vkCmdEndGpaSessionAMD");
+    if (table->CmdEndGpaSessionAMD == nullptr) {
+        table->CmdEndGpaSessionAMD = (PFN_vkCmdEndGpaSessionAMD)StubCmdEndGpaSessionAMD;
+    }
+    table->CmdBeginGpaSampleAMD = (PFN_vkCmdBeginGpaSampleAMD)gpa(device, "vkCmdBeginGpaSampleAMD");
+    if (table->CmdBeginGpaSampleAMD == nullptr) {
+        table->CmdBeginGpaSampleAMD = (PFN_vkCmdBeginGpaSampleAMD)StubCmdBeginGpaSampleAMD;
+    }
+    table->CmdEndGpaSampleAMD = (PFN_vkCmdEndGpaSampleAMD)gpa(device, "vkCmdEndGpaSampleAMD");
+    if (table->CmdEndGpaSampleAMD == nullptr) {
+        table->CmdEndGpaSampleAMD = (PFN_vkCmdEndGpaSampleAMD)StubCmdEndGpaSampleAMD;
+    }
+    table->GetGpaSessionStatusAMD = (PFN_vkGetGpaSessionStatusAMD)gpa(device, "vkGetGpaSessionStatusAMD");
+    if (table->GetGpaSessionStatusAMD == nullptr) {
+        table->GetGpaSessionStatusAMD = (PFN_vkGetGpaSessionStatusAMD)StubGetGpaSessionStatusAMD;
+    }
+    table->GetGpaSessionResultsAMD = (PFN_vkGetGpaSessionResultsAMD)gpa(device, "vkGetGpaSessionResultsAMD");
+    if (table->GetGpaSessionResultsAMD == nullptr) {
+        table->GetGpaSessionResultsAMD = (PFN_vkGetGpaSessionResultsAMD)StubGetGpaSessionResultsAMD;
+    }
+    table->ResetGpaSessionAMD = (PFN_vkResetGpaSessionAMD)gpa(device, "vkResetGpaSessionAMD");
+    if (table->ResetGpaSessionAMD == nullptr) {
+        table->ResetGpaSessionAMD = (PFN_vkResetGpaSessionAMD)StubResetGpaSessionAMD;
+    }
+    table->CmdCopyGpaSessionResultsAMD = (PFN_vkCmdCopyGpaSessionResultsAMD)gpa(device, "vkCmdCopyGpaSessionResultsAMD");
+    if (table->CmdCopyGpaSessionResultsAMD == nullptr) {
+        table->CmdCopyGpaSessionResultsAMD = (PFN_vkCmdCopyGpaSessionResultsAMD)StubCmdCopyGpaSessionResultsAMD;
+    }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     table->CreateExecutionGraphPipelinesAMDX =
         (PFN_vkCreateExecutionGraphPipelinesAMDX)gpa(device, "vkCreateExecutionGraphPipelinesAMDX");
