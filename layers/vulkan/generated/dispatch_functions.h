@@ -2933,6 +2933,70 @@ static inline VkResult DispatchGetMemoryAndroidHardwareBufferANDROID(VkDevice de
     return dispatch->GetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer);
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+
+static inline VkResult DispatchCreateGpaSessionAMD(VkDevice device, const VkGpaSessionCreateInfoAMD* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator, VkGpaSessionAMD* pGpaSession) {
+    auto dispatch = vvl::GetDispatchDevice(device);
+    return dispatch->CreateGpaSessionAMD(device, pCreateInfo, pAllocator, pGpaSession);
+}
+
+static inline void DispatchDestroyGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession,
+                                                const VkAllocationCallbacks* pAllocator) {
+    auto dispatch = vvl::GetDispatchDevice(device);
+    dispatch->DestroyGpaSessionAMD(device, gpaSession, pAllocator);
+}
+
+static inline VkResult DispatchSetGpaDeviceClockModeAMD(VkDevice device, VkGpaDeviceClockModeInfoAMD* pInfo) {
+    auto dispatch = vvl::GetDispatchDevice(device);
+    return dispatch->SetGpaDeviceClockModeAMD(device, pInfo);
+}
+
+static inline VkResult DispatchGetGpaDeviceClockInfoAMD(VkDevice device, VkGpaDeviceGetClockInfoAMD* pInfo) {
+    auto dispatch = vvl::GetDispatchDevice(device);
+    return dispatch->GetGpaDeviceClockInfoAMD(device, pInfo);
+}
+
+static inline VkResult DispatchCmdBeginGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession) {
+    auto dispatch = vvl::GetDispatchDevice(commandBuffer);
+    return dispatch->CmdBeginGpaSessionAMD(commandBuffer, gpaSession);
+}
+
+static inline VkResult DispatchCmdEndGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession) {
+    auto dispatch = vvl::GetDispatchDevice(commandBuffer);
+    return dispatch->CmdEndGpaSessionAMD(commandBuffer, gpaSession);
+}
+
+static inline VkResult DispatchCmdBeginGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                    const VkGpaSampleBeginInfoAMD* pGpaSampleBeginInfo, uint32_t* pSampleID) {
+    auto dispatch = vvl::GetDispatchDevice(commandBuffer);
+    return dispatch->CmdBeginGpaSampleAMD(commandBuffer, gpaSession, pGpaSampleBeginInfo, pSampleID);
+}
+
+static inline void DispatchCmdEndGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession, uint32_t sampleID) {
+    auto dispatch = vvl::GetDispatchDevice(commandBuffer);
+    dispatch->CmdEndGpaSampleAMD(commandBuffer, gpaSession, sampleID);
+}
+
+static inline VkResult DispatchGetGpaSessionStatusAMD(VkDevice device, VkGpaSessionAMD gpaSession) {
+    auto dispatch = vvl::GetDispatchDevice(device);
+    return dispatch->GetGpaSessionStatusAMD(device, gpaSession);
+}
+
+static inline VkResult DispatchGetGpaSessionResultsAMD(VkDevice device, VkGpaSessionAMD gpaSession, uint32_t sampleID,
+                                                       size_t* pSizeInBytes, void* pData) {
+    auto dispatch = vvl::GetDispatchDevice(device);
+    return dispatch->GetGpaSessionResultsAMD(device, gpaSession, sampleID, pSizeInBytes, pData);
+}
+
+static inline VkResult DispatchResetGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession) {
+    auto dispatch = vvl::GetDispatchDevice(device);
+    return dispatch->ResetGpaSessionAMD(device, gpaSession);
+}
+
+static inline void DispatchCmdCopyGpaSessionResultsAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession) {
+    auto dispatch = vvl::GetDispatchDevice(commandBuffer);
+    dispatch->CmdCopyGpaSessionResultsAMD(commandBuffer, gpaSession);
+}
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 static inline VkResult DispatchCreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache,

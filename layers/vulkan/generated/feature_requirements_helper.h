@@ -266,6 +266,8 @@ enum class Feature {
     dynamicRenderingLocalRead,
     // VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT
     dynamicRenderingUnusedAttachments,
+    // VkPhysicalDeviceElapsedTimerQueryFeaturesQCOM
+    elapsedTimerQuery,
     // VkPhysicalDeviceExclusiveScissorFeaturesNV
     exclusiveScissor,
     // VkPhysicalDeviceExtendedDynamicState2FeaturesEXT
@@ -502,6 +504,14 @@ enum class Feature {
     frameBoundary,
     // VkPhysicalDeviceGlobalPriorityQueryFeatures, VkPhysicalDeviceVulkan14Features
     globalPriorityQuery,
+    // VkPhysicalDeviceGpaFeaturesAMD
+    clockModes,
+    // VkPhysicalDeviceGpaFeaturesAMD
+    perfCounters,
+    // VkPhysicalDeviceGpaFeaturesAMD
+    sqThreadTracing,
+    // VkPhysicalDeviceGpaFeaturesAMD
+    streamingPerfCounters,
     // VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT
     graphicsPipelineLibrary,
     // VkPhysicalDeviceHdrVividFeaturesHUAWEI
@@ -522,6 +532,12 @@ enum class Feature {
     imageCompressionControlSwapchain,
     // VkPhysicalDeviceImageProcessing2FeaturesQCOM
     textureBlockMatch2,
+    // VkPhysicalDeviceImageProcessing3FeaturesQCOM
+    blockMatchExtendedClampToEdge,
+    // VkPhysicalDeviceImageProcessing3FeaturesQCOM
+    imageGatherExtendedModes,
+    // VkPhysicalDeviceImageProcessing3FeaturesQCOM
+    imageGatherLinear,
     // VkPhysicalDeviceImageProcessingFeaturesQCOM
     textureBlockMatch,
     // VkPhysicalDeviceImageProcessingFeaturesQCOM
@@ -627,11 +643,11 @@ enum class Feature {
     // VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT
     nonSeamlessCubeMap,
     // VkPhysicalDeviceOpacityMicromapFeaturesEXT
-    micromap,
-    // VkPhysicalDeviceOpacityMicromapFeaturesEXT
     micromapCaptureReplay,
     // VkPhysicalDeviceOpacityMicromapFeaturesEXT
     micromapHostCommands,
+    // VkPhysicalDeviceOpacityMicromapFeaturesEXT, VkPhysicalDeviceOpacityMicromapFeaturesKHR
+    micromap,
     // VkPhysicalDeviceOpticalFlowFeaturesNV
     opticalFlow,
     // VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT
@@ -926,6 +942,8 @@ enum class Feature {
     shaderMixedFloatDotProductFloat8AccFloat32,
     // VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT
     shaderModuleIdentifier,
+    // VkPhysicalDeviceShaderMultipleWaitQueuesFeaturesQCOM
+    shaderMultipleWaitQueues,
     // VkPhysicalDeviceShaderObjectFeaturesEXT
     shaderObject,
     // VkPhysicalDeviceShaderQuadControlFeaturesKHR
@@ -936,6 +954,8 @@ enum class Feature {
     shaderReplicatedComposites,
     // VkPhysicalDeviceShaderSMBuiltinsFeaturesNV
     shaderSMBuiltins,
+    // VkPhysicalDeviceShaderSplitBarrierFeaturesEXT
+    shaderSplitBarrier,
     // VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceVulkan12Features
     shaderSubgroupExtendedTypes,
     // VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT

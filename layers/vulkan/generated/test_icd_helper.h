@@ -245,6 +245,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_KHR_DEPTH_CLAMP_ZERO_ONE_EXTENSION_NAME, VK_KHR_DEPTH_CLAMP_ZERO_ONE_SPEC_VERSION},
     {VK_KHR_ROBUSTNESS_2_EXTENSION_NAME, VK_KHR_ROBUSTNESS_2_SPEC_VERSION},
     {VK_KHR_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME, VK_KHR_PRESENT_MODE_FIFO_LATEST_READY_SPEC_VERSION},
+    {VK_KHR_OPACITY_MICROMAP_EXTENSION_NAME, VK_KHR_OPACITY_MICROMAP_SPEC_VERSION},
     {VK_KHR_MAINTENANCE_10_EXTENSION_NAME, VK_KHR_MAINTENANCE_10_SPEC_VERSION},
     {VK_KHR_MAINTENANCE_11_EXTENSION_NAME, VK_KHR_MAINTENANCE_11_SPEC_VERSION},
     {VK_NV_GLSL_SHADER_EXTENSION_NAME, VK_NV_GLSL_SHADER_SPEC_VERSION},
@@ -300,6 +301,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
     {VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME, VK_EXT_SAMPLER_FILTER_MINMAX_SPEC_VERSION},
     {VK_AMD_GPU_SHADER_INT16_EXTENSION_NAME, VK_AMD_GPU_SHADER_INT16_SPEC_VERSION},
+    {VK_AMD_GPA_INTERFACE_EXTENSION_NAME, VK_AMD_GPA_INTERFACE_SPEC_VERSION},
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     {VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME, VK_AMDX_SHADER_ENQUEUE_SPEC_VERSION},
 #endif  // VK_ENABLE_BETA_EXTENSIONS
@@ -325,6 +327,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_EXT_FILTER_CUBIC_EXTENSION_NAME, VK_EXT_FILTER_CUBIC_SPEC_VERSION},
     {VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME, VK_QCOM_RENDER_PASS_SHADER_RESOLVE_SPEC_VERSION},
     {VK_QCOM_COOPERATIVE_MATRIX_CONVERSION_EXTENSION_NAME, VK_QCOM_COOPERATIVE_MATRIX_CONVERSION_SPEC_VERSION},
+    {VK_QCOM_ELAPSED_TIMER_QUERY_EXTENSION_NAME, VK_QCOM_ELAPSED_TIMER_QUERY_SPEC_VERSION},
     {VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME, VK_EXT_GLOBAL_PRIORITY_SPEC_VERSION},
     {VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME, VK_EXT_EXTERNAL_MEMORY_HOST_SPEC_VERSION},
     {VK_AMD_BUFFER_MARKER_EXTENSION_NAME, VK_AMD_BUFFER_MARKER_SPEC_VERSION},
@@ -397,6 +400,9 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME, VK_NV_DEVICE_DIAGNOSTICS_CONFIG_SPEC_VERSION},
     {VK_QCOM_RENDER_PASS_STORE_OPS_EXTENSION_NAME, VK_QCOM_RENDER_PASS_STORE_OPS_SPEC_VERSION},
     {VK_QCOM_QUEUE_PERF_HINT_EXTENSION_NAME, VK_QCOM_QUEUE_PERF_HINT_SPEC_VERSION},
+    {VK_QCOM_IMAGE_PROCESSING_3_EXTENSION_NAME, VK_QCOM_IMAGE_PROCESSING_3_SPEC_VERSION},
+    {VK_QCOM_SHADER_MULTIPLE_WAIT_QUEUES_EXTENSION_NAME, VK_QCOM_SHADER_MULTIPLE_WAIT_QUEUES_SPEC_VERSION},
+    {VK_EXT_SHADER_SPLIT_BARRIER_EXTENSION_NAME, VK_EXT_SHADER_SPLIT_BARRIER_SPEC_VERSION},
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     {VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME, VK_NV_CUDA_KERNEL_LAUNCH_SPEC_VERSION},
 #endif  // VK_ENABLE_BETA_EXTENSIONS
@@ -1604,6 +1610,22 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetAndroidHardwareBufferPropertiesANDROID(
 static VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(
     VkDevice device, const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo, struct AHardwareBuffer** pBuffer);
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+static VKAPI_ATTR VkResult VKAPI_CALL CreateGpaSessionAMD(VkDevice device, const VkGpaSessionCreateInfoAMD* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator, VkGpaSessionAMD* pGpaSession);
+static VKAPI_ATTR void VKAPI_CALL DestroyGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession,
+                                                       const VkAllocationCallbacks* pAllocator);
+static VKAPI_ATTR VkResult VKAPI_CALL SetGpaDeviceClockModeAMD(VkDevice device, VkGpaDeviceClockModeInfoAMD* pInfo);
+static VKAPI_ATTR VkResult VKAPI_CALL GetGpaDeviceClockInfoAMD(VkDevice device, VkGpaDeviceGetClockInfoAMD* pInfo);
+static VKAPI_ATTR VkResult VKAPI_CALL CmdBeginGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession);
+static VKAPI_ATTR VkResult VKAPI_CALL CmdEndGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession);
+static VKAPI_ATTR VkResult VKAPI_CALL CmdBeginGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                           const VkGpaSampleBeginInfoAMD* pGpaSampleBeginInfo, uint32_t* pSampleID);
+static VKAPI_ATTR void VKAPI_CALL CmdEndGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession, uint32_t sampleID);
+static VKAPI_ATTR VkResult VKAPI_CALL GetGpaSessionStatusAMD(VkDevice device, VkGpaSessionAMD gpaSession);
+static VKAPI_ATTR VkResult VKAPI_CALL GetGpaSessionResultsAMD(VkDevice device, VkGpaSessionAMD gpaSession, uint32_t sampleID,
+                                                              size_t* pSizeInBytes, void* pData);
+static VKAPI_ATTR VkResult VKAPI_CALL ResetGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession);
+static VKAPI_ATTR void VKAPI_CALL CmdCopyGpaSessionResultsAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession);
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR VkResult VKAPI_CALL CreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache,
                                                                         uint32_t createInfoCount,
@@ -2916,6 +2938,18 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkGetAndroidHardwareBufferPropertiesANDROID", (void*)GetAndroidHardwareBufferPropertiesANDROID},
     {"vkGetMemoryAndroidHardwareBufferANDROID", (void*)GetMemoryAndroidHardwareBufferANDROID},
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+    {"vkCreateGpaSessionAMD", (void*)CreateGpaSessionAMD},
+    {"vkDestroyGpaSessionAMD", (void*)DestroyGpaSessionAMD},
+    {"vkSetGpaDeviceClockModeAMD", (void*)SetGpaDeviceClockModeAMD},
+    {"vkGetGpaDeviceClockInfoAMD", (void*)GetGpaDeviceClockInfoAMD},
+    {"vkCmdBeginGpaSessionAMD", (void*)CmdBeginGpaSessionAMD},
+    {"vkCmdEndGpaSessionAMD", (void*)CmdEndGpaSessionAMD},
+    {"vkCmdBeginGpaSampleAMD", (void*)CmdBeginGpaSampleAMD},
+    {"vkCmdEndGpaSampleAMD", (void*)CmdEndGpaSampleAMD},
+    {"vkGetGpaSessionStatusAMD", (void*)GetGpaSessionStatusAMD},
+    {"vkGetGpaSessionResultsAMD", (void*)GetGpaSessionResultsAMD},
+    {"vkResetGpaSessionAMD", (void*)ResetGpaSessionAMD},
+    {"vkCmdCopyGpaSessionResultsAMD", (void*)CmdCopyGpaSessionResultsAMD},
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCreateExecutionGraphPipelinesAMDX", (void*)CreateExecutionGraphPipelinesAMDX},
     {"vkGetExecutionGraphPipelineScratchSizeAMDX", (void*)GetExecutionGraphPipelineScratchSizeAMDX},
@@ -5040,6 +5074,52 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(
 }
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+static VKAPI_ATTR VkResult VKAPI_CALL CreateGpaSessionAMD(VkDevice device, const VkGpaSessionCreateInfoAMD* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator, VkGpaSessionAMD* pGpaSession) {
+    unique_lock_t lock(global_lock);
+    *pGpaSession = (VkGpaSessionAMD)global_unique_handle++;
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR void VKAPI_CALL DestroyGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession,
+                                                       const VkAllocationCallbacks* pAllocator) {}
+
+static VKAPI_ATTR VkResult VKAPI_CALL SetGpaDeviceClockModeAMD(VkDevice device, VkGpaDeviceClockModeInfoAMD* pInfo) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetGpaDeviceClockInfoAMD(VkDevice device, VkGpaDeviceGetClockInfoAMD* pInfo) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL CmdBeginGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL CmdEndGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL CmdBeginGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                           const VkGpaSampleBeginInfoAMD* pGpaSampleBeginInfo,
+                                                           uint32_t* pSampleID) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR void VKAPI_CALL CmdEndGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession, uint32_t sampleID) {
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetGpaSessionStatusAMD(VkDevice device, VkGpaSessionAMD gpaSession) { return VK_SUCCESS; }
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetGpaSessionResultsAMD(VkDevice device, VkGpaSessionAMD gpaSession, uint32_t sampleID,
+                                                              size_t* pSizeInBytes, void* pData) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL ResetGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession) { return VK_SUCCESS; }
+
+static VKAPI_ATTR void VKAPI_CALL CmdCopyGpaSessionResultsAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession) {}
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR VkResult VKAPI_CALL CreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache,
                                                                         uint32_t createInfoCount,

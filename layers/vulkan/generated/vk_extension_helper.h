@@ -281,6 +281,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_depth_clamp_zero_one{kNotSupported};
     ExtEnabled vk_khr_robustness2{kNotSupported};
     ExtEnabled vk_khr_present_mode_fifo_latest_ready{kNotSupported};
+    ExtEnabled vk_khr_opacity_micromap{kNotSupported};
     ExtEnabled vk_khr_maintenance10{kNotSupported};
     ExtEnabled vk_khr_maintenance11{kNotSupported};
     ExtEnabled vk_nv_glsl_shader{kNotSupported};
@@ -331,6 +332,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_android_external_memory_android_hardware_buffer{kNotSupported};
     ExtEnabled vk_ext_sampler_filter_minmax{kNotSupported};
     ExtEnabled vk_amd_gpu_shader_int16{kNotSupported};
+    ExtEnabled vk_amd_gpa_interface{kNotSupported};
     ExtEnabled vk_amdx_shader_enqueue{kNotSupported};
     ExtEnabled vk_ext_descriptor_heap{kNotSupported};
     ExtEnabled vk_amd_mixed_attachment_samples{kNotSupported};
@@ -354,6 +356,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_filter_cubic{kNotSupported};
     ExtEnabled vk_qcom_render_pass_shader_resolve{kNotSupported};
     ExtEnabled vk_qcom_cooperative_matrix_conversion{kNotSupported};
+    ExtEnabled vk_qcom_elapsed_timer_query{kNotSupported};
     ExtEnabled vk_ext_global_priority{kNotSupported};
     ExtEnabled vk_ext_external_memory_host{kNotSupported};
     ExtEnabled vk_amd_buffer_marker{kNotSupported};
@@ -422,6 +425,9 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_device_diagnostics_config{kNotSupported};
     ExtEnabled vk_qcom_render_pass_store_ops{kNotSupported};
     ExtEnabled vk_qcom_queue_perf_hint{kNotSupported};
+    ExtEnabled vk_qcom_image_processing3{kNotSupported};
+    ExtEnabled vk_qcom_shader_multiple_wait_queues{kNotSupported};
+    ExtEnabled vk_ext_shader_split_barrier{kNotSupported};
     ExtEnabled vk_nv_cuda_kernel_launch{kNotSupported};
     ExtEnabled vk_qcom_tile_shading{kNotSupported};
     ExtEnabled vk_nv_low_latency{kNotSupported};
@@ -776,6 +782,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_depth_clamp_zero_one:
         case vvl::Extension::_VK_KHR_robustness2:
         case vvl::Extension::_VK_KHR_present_mode_fifo_latest_ready:
+        case vvl::Extension::_VK_KHR_opacity_micromap:
         case vvl::Extension::_VK_KHR_maintenance10:
         case vvl::Extension::_VK_KHR_maintenance11:
         case vvl::Extension::_VK_NV_glsl_shader:
@@ -826,6 +833,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_ANDROID_external_memory_android_hardware_buffer:
         case vvl::Extension::_VK_EXT_sampler_filter_minmax:
         case vvl::Extension::_VK_AMD_gpu_shader_int16:
+        case vvl::Extension::_VK_AMD_gpa_interface:
         case vvl::Extension::_VK_AMDX_shader_enqueue:
         case vvl::Extension::_VK_EXT_descriptor_heap:
         case vvl::Extension::_VK_AMD_mixed_attachment_samples:
@@ -849,6 +857,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_filter_cubic:
         case vvl::Extension::_VK_QCOM_render_pass_shader_resolve:
         case vvl::Extension::_VK_QCOM_cooperative_matrix_conversion:
+        case vvl::Extension::_VK_QCOM_elapsed_timer_query:
         case vvl::Extension::_VK_EXT_global_priority:
         case vvl::Extension::_VK_EXT_external_memory_host:
         case vvl::Extension::_VK_AMD_buffer_marker:
@@ -917,6 +926,9 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_device_diagnostics_config:
         case vvl::Extension::_VK_QCOM_render_pass_store_ops:
         case vvl::Extension::_VK_QCOM_queue_perf_hint:
+        case vvl::Extension::_VK_QCOM_image_processing3:
+        case vvl::Extension::_VK_QCOM_shader_multiple_wait_queues:
+        case vvl::Extension::_VK_EXT_shader_split_barrier:
         case vvl::Extension::_VK_NV_cuda_kernel_launch:
         case vvl::Extension::_VK_QCOM_tile_shading:
         case vvl::Extension::_VK_NV_low_latency:

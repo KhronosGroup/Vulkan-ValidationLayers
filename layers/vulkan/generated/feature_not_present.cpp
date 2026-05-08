@@ -1131,6 +1131,17 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ELAPSED_TIMER_QUERY_FEATURES_QCOM: {
+                VkPhysicalDeviceElapsedTimerQueryFeaturesQCOM supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceElapsedTimerQueryFeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceElapsedTimerQueryFeaturesQCOM*>(current);
+                if (enabling->elapsedTimerQuery && !supported.elapsedTimerQuery) {
+                    ss << "VkPhysicalDeviceElapsedTimerQueryFeaturesQCOM::elapsedTimerQuery is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV: {
                 VkPhysicalDeviceExclusiveScissorFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
@@ -1539,6 +1550,25 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GPA_FEATURES_AMD: {
+                VkPhysicalDeviceGpaFeaturesAMD supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceGpaFeaturesAMD* enabling = reinterpret_cast<const VkPhysicalDeviceGpaFeaturesAMD*>(current);
+                if (enabling->perfCounters && !supported.perfCounters) {
+                    ss << "VkPhysicalDeviceGpaFeaturesAMD::perfCounters is not supported\n";
+                }
+                if (enabling->streamingPerfCounters && !supported.streamingPerfCounters) {
+                    ss << "VkPhysicalDeviceGpaFeaturesAMD::streamingPerfCounters is not supported\n";
+                }
+                if (enabling->sqThreadTracing && !supported.sqThreadTracing) {
+                    ss << "VkPhysicalDeviceGpaFeaturesAMD::sqThreadTracing is not supported\n";
+                }
+                if (enabling->clockModes && !supported.clockModes) {
+                    ss << "VkPhysicalDeviceGpaFeaturesAMD::clockModes is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT: {
                 VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
@@ -1639,6 +1669,23 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                     reinterpret_cast<const VkPhysicalDeviceImageProcessing2FeaturesQCOM*>(current);
                 if (enabling->textureBlockMatch2 && !supported.textureBlockMatch2) {
                     ss << "VkPhysicalDeviceImageProcessing2FeaturesQCOM::textureBlockMatch2 is not supported\n";
+                }
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_3_FEATURES_QCOM: {
+                VkPhysicalDeviceImageProcessing3FeaturesQCOM supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceImageProcessing3FeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceImageProcessing3FeaturesQCOM*>(current);
+                if (enabling->imageGatherLinear && !supported.imageGatherLinear) {
+                    ss << "VkPhysicalDeviceImageProcessing3FeaturesQCOM::imageGatherLinear is not supported\n";
+                }
+                if (enabling->imageGatherExtendedModes && !supported.imageGatherExtendedModes) {
+                    ss << "VkPhysicalDeviceImageProcessing3FeaturesQCOM::imageGatherExtendedModes is not supported\n";
+                }
+                if (enabling->blockMatchExtendedClampToEdge && !supported.blockMatchExtendedClampToEdge) {
+                    ss << "VkPhysicalDeviceImageProcessing3FeaturesQCOM::blockMatchExtendedClampToEdge is not supported\n";
                 }
                 break;
             }
@@ -2102,6 +2149,17 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 if (enabling->micromapHostCommands && !supported.micromapHostCommands) {
                     ss << "VkPhysicalDeviceOpacityMicromapFeaturesEXT::micromapHostCommands is not supported\n";
+                }
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPACITY_MICROMAP_FEATURES_KHR: {
+                VkPhysicalDeviceOpacityMicromapFeaturesKHR supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceOpacityMicromapFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceOpacityMicromapFeaturesKHR*>(current);
+                if (enabling->micromap && !supported.micromap) {
+                    ss << "VkPhysicalDeviceOpacityMicromapFeaturesKHR::micromap is not supported\n";
                 }
                 break;
             }
@@ -3219,6 +3277,17 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MULTIPLE_WAIT_QUEUES_FEATURES_QCOM: {
+                VkPhysicalDeviceShaderMultipleWaitQueuesFeaturesQCOM supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceShaderMultipleWaitQueuesFeaturesQCOM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderMultipleWaitQueuesFeaturesQCOM*>(current);
+                if (enabling->shaderMultipleWaitQueues && !supported.shaderMultipleWaitQueues) {
+                    ss << "VkPhysicalDeviceShaderMultipleWaitQueuesFeaturesQCOM::shaderMultipleWaitQueues is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT: {
                 VkPhysicalDeviceShaderObjectFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
@@ -3272,6 +3341,17 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                     reinterpret_cast<const VkPhysicalDeviceShaderSMBuiltinsFeaturesNV*>(current);
                 if (enabling->shaderSMBuiltins && !supported.shaderSMBuiltins) {
                     ss << "VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::shaderSMBuiltins is not supported\n";
+                }
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SPLIT_BARRIER_FEATURES_EXT: {
+                VkPhysicalDeviceShaderSplitBarrierFeaturesEXT supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceShaderSplitBarrierFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderSplitBarrierFeaturesEXT*>(current);
+                if (enabling->shaderSplitBarrier && !supported.shaderSplitBarrier) {
+                    ss << "VkPhysicalDeviceShaderSplitBarrierFeaturesEXT::shaderSplitBarrier is not supported\n";
                 }
                 break;
             }

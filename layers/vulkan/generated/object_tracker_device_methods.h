@@ -862,6 +862,32 @@ bool PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice device, const
                                                           struct AHardwareBuffer** pBuffer,
                                                           const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+bool PreCallValidateCreateGpaSessionAMD(VkDevice device, const VkGpaSessionCreateInfoAMD* pCreateInfo,
+                                        const VkAllocationCallbacks* pAllocator, VkGpaSessionAMD* pGpaSession,
+                                        const ErrorObject& error_obj) const override;
+void PostCallRecordCreateGpaSessionAMD(VkDevice device, const VkGpaSessionCreateInfoAMD* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator, VkGpaSessionAMD* pGpaSession,
+                                       const RecordObject& record_obj) override;
+bool PreCallValidateDestroyGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession, const VkAllocationCallbacks* pAllocator,
+                                         const ErrorObject& error_obj) const override;
+void PreCallRecordDestroyGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession, const VkAllocationCallbacks* pAllocator,
+                                       const RecordObject& record_obj) override;
+bool PreCallValidateCmdBeginGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                          const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdEndGpaSessionAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                        const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdBeginGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                         const VkGpaSampleBeginInfoAMD* pGpaSampleBeginInfo, uint32_t* pSampleID,
+                                         const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdEndGpaSampleAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession, uint32_t sampleID,
+                                       const ErrorObject& error_obj) const override;
+bool PreCallValidateGetGpaSessionStatusAMD(VkDevice device, VkGpaSessionAMD gpaSession,
+                                           const ErrorObject& error_obj) const override;
+bool PreCallValidateGetGpaSessionResultsAMD(VkDevice device, VkGpaSessionAMD gpaSession, uint32_t sampleID, size_t* pSizeInBytes,
+                                            void* pData, const ErrorObject& error_obj) const override;
+bool PreCallValidateResetGpaSessionAMD(VkDevice device, VkGpaSessionAMD gpaSession, const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdCopyGpaSessionResultsAMD(VkCommandBuffer commandBuffer, VkGpaSessionAMD gpaSession,
+                                                const ErrorObject& error_obj) const override;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                       const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,

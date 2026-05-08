@@ -276,6 +276,8 @@ struct DeviceFeatures {
     bool dynamicRenderingLocalRead;
     // VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT
     bool dynamicRenderingUnusedAttachments;
+    // VkPhysicalDeviceElapsedTimerQueryFeaturesQCOM
+    bool elapsedTimerQuery;
     // VkPhysicalDeviceExclusiveScissorFeaturesNV
     bool exclusiveScissor;
     // VkPhysicalDeviceExtendedDynamicState2FeaturesEXT
@@ -512,6 +514,14 @@ struct DeviceFeatures {
     bool frameBoundary;
     // VkPhysicalDeviceGlobalPriorityQueryFeatures, VkPhysicalDeviceVulkan14Features
     bool globalPriorityQuery;
+    // VkPhysicalDeviceGpaFeaturesAMD
+    bool clockModes;
+    // VkPhysicalDeviceGpaFeaturesAMD
+    bool perfCounters;
+    // VkPhysicalDeviceGpaFeaturesAMD
+    bool sqThreadTracing;
+    // VkPhysicalDeviceGpaFeaturesAMD
+    bool streamingPerfCounters;
     // VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT
     bool graphicsPipelineLibrary;
     // VkPhysicalDeviceHdrVividFeaturesHUAWEI
@@ -532,6 +542,12 @@ struct DeviceFeatures {
     bool imageCompressionControlSwapchain;
     // VkPhysicalDeviceImageProcessing2FeaturesQCOM
     bool textureBlockMatch2;
+    // VkPhysicalDeviceImageProcessing3FeaturesQCOM
+    bool blockMatchExtendedClampToEdge;
+    // VkPhysicalDeviceImageProcessing3FeaturesQCOM
+    bool imageGatherExtendedModes;
+    // VkPhysicalDeviceImageProcessing3FeaturesQCOM
+    bool imageGatherLinear;
     // VkPhysicalDeviceImageProcessingFeaturesQCOM
     bool textureBlockMatch;
     // VkPhysicalDeviceImageProcessingFeaturesQCOM
@@ -637,11 +653,11 @@ struct DeviceFeatures {
     // VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT
     bool nonSeamlessCubeMap;
     // VkPhysicalDeviceOpacityMicromapFeaturesEXT
-    bool micromap;
-    // VkPhysicalDeviceOpacityMicromapFeaturesEXT
     bool micromapCaptureReplay;
     // VkPhysicalDeviceOpacityMicromapFeaturesEXT
     bool micromapHostCommands;
+    // VkPhysicalDeviceOpacityMicromapFeaturesEXT, VkPhysicalDeviceOpacityMicromapFeaturesKHR
+    bool micromap;
     // VkPhysicalDeviceOpticalFlowFeaturesNV
     bool opticalFlow;
     // VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT
@@ -936,6 +952,8 @@ struct DeviceFeatures {
     bool shaderMixedFloatDotProductFloat8AccFloat32;
     // VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT
     bool shaderModuleIdentifier;
+    // VkPhysicalDeviceShaderMultipleWaitQueuesFeaturesQCOM
+    bool shaderMultipleWaitQueues;
     // VkPhysicalDeviceShaderObjectFeaturesEXT
     bool shaderObject;
     // VkPhysicalDeviceShaderQuadControlFeaturesKHR
@@ -946,6 +964,8 @@ struct DeviceFeatures {
     bool shaderReplicatedComposites;
     // VkPhysicalDeviceShaderSMBuiltinsFeaturesNV
     bool shaderSMBuiltins;
+    // VkPhysicalDeviceShaderSplitBarrierFeaturesEXT
+    bool shaderSplitBarrier;
     // VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceVulkan12Features
     bool shaderSubgroupExtendedTypes;
     // VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT
