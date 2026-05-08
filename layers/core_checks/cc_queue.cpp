@@ -75,10 +75,16 @@ struct CommandBufferSubmitState {
         }
 
         auto& cb_sub_state = core::SubState(cb_state);
+
+        for (const WaitEventSubmitInfo& submit_info : cb_sub_state.wait_event_submit_infos) {
+            skip |= submit_info.Validate(core, cb_state, local_event_signal_info, loc);
+        }
+
         for (auto& function : cb_sub_state.event_updates) {
             skip |= function(const_cast<vvl::CommandBuffer&>(cb_state), /*do_validate*/ true, local_event_signal_info,
                              queue_state.VkHandle(), loc);
         }
+
         VkQueryPool first_perf_query_pool = VK_NULL_HANDLE;
         for (auto& function : cb_sub_state.query_updates) {
             skip |= function(const_cast<vvl::CommandBuffer&>(cb_state), /*do_validate*/ true, first_perf_query_pool, perf_pass,

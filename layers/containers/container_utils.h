@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,8 @@ namespace vvl {
 
 inline constexpr std::in_place_t in_place{};
 
-// Only use this if you aren't planning to use what you would have gotten from a find.
 template <typename Container, typename Key = typename Container::key_type>
-bool Contains(const Container &container, const Key &key) {
+bool Contains(const Container& container, const Key& key) {
     return container.find(key) != container.cend();
 }
 
@@ -45,6 +44,12 @@ bool Contains(const std::vector<T> &v, const T &value) {
 template <typename T>
 bool Contains(const std::vector<std::shared_ptr<const T>> &v, const std::shared_ptr<T> &value) {
     return std::find(v.cbegin(), v.cend(), value) != v.cend();
+}
+
+template <typename T, typename Pred>
+const T* FindIf(const std::vector<T>& v, Pred&& pred) {
+    auto it = std::find_if(v.begin(), v.end(), pred);
+    return (it != v.end()) ? &*it : nullptr;
 }
 
 //

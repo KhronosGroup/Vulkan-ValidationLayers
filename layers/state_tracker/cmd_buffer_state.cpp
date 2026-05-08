@@ -341,9 +341,7 @@ void CommandBuffer::ResetCBState() {
     active_subpass_contents = VK_SUBPASS_CONTENTS_INLINE;
     SetActiveSubpass(0);
     rendering_attachments.Reset();
-    waited_events.clear();
     events.clear();
-    write_events_before_wait.clear();
     active_queries.clear();
     started_queries.clear();
     render_pass_queries.clear();
@@ -2189,9 +2187,6 @@ void CommandBuffer::RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stage_ma
         }
     }
     events.push_back(event);
-    if (!waited_events.count(event)) {
-        write_events_before_wait.push_back(event);
-    }
 }
 
 void CommandBuffer::RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const Location& loc) {
@@ -2206,26 +2201,32 @@ void CommandBuffer::RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_
         }
     }
     events.push_back(event);
-    if (!waited_events.count(event)) {
-        write_events_before_wait.push_back(event);
-    }
 }
 
-void CommandBuffer::RecordWaitEvents(uint32_t eventCount, const VkEvent* pEvents, VkPipelineStageFlags2 src_stage_mask,
-                                     const VkDependencyInfo* dependency_info, const Location& loc) {
+void CommandBuffer::RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask, const Location& loc) {
     for (auto& item : sub_states_) {
-        item.second->RecordWaitEvents(eventCount, pEvents, src_stage_mask, dependency_info, loc);
+        item.second->RecordWaitEvents(events, src_stage_mask, loc);
     }
-    for (uint32_t i = 0; i < eventCount; ++i) {
-        const VkEvent event_hanle = pEvents[i];
+    for (const VkEvent event : events) {
         if (!dev_data.disabled[command_buffer_state]) {
-            if (auto event_state = dev_data.Get<vvl::Event>(event_hanle)) {
+            if (auto event_state = dev_data.Get<vvl::Event>(event)) {
                 AddChild(event_state);
             }
         }
-        waited_events.insert(event_hanle);
-        events.push_back(event_hanle);
+        this->events.push_back(event);
     }
+}
+
+void CommandBuffer::RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& dep_info_loc) {
+    for (auto& item : sub_states_) {
+        item.second->RecordWaitEvent2(event, dependency_info, dep_info_loc);
+    }
+    if (!dev_data.disabled[command_buffer_state]) {
+        if (auto event_state = dev_data.Get<vvl::Event>(event)) {
+            AddChild(event_state);
+        }
+    }
+    events.push_back(event);
 }
 
 void CommandBuffer::RecordBarrierObjects(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier* buffer_barriers,

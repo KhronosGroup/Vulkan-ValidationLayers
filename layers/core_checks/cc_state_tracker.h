@@ -18,6 +18,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "core_checks/cc_synchronization.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/queue_state.h"
@@ -98,8 +99,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     void RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stageMask, const VkDependencyInfo *dependency_info) final;
     void RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stageMask) final;
-    void RecordWaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2 src_stage_mask,
-                          const VkDependencyInfo *dependency_info, const Location &loc) final;
+    void RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask, const Location& loc) final;
+    void RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) final;
     void RecordBarriers(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier *buffer_barriers, uint32_t image_barrier_count,
                         const VkImageMemoryBarrier *image_barriers, VkPipelineStageFlags src_stage_mask,
                         VkPipelineStageFlags dst_stage_mask, const Location &loc) final;
@@ -211,6 +212,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                                              VkQueue waiting_queue, const Location& loc)>;
     std::vector<EventCallback> event_updates;
     vvl::unordered_map<VkEvent, EventSignalingState> event_signaling_states;
+    std::vector<WaitEventSubmitInfo> wait_event_submit_infos;
 
     // Validation functions run when secondary CB is executed in primary
     std::vector<

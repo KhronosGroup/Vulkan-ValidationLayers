@@ -147,11 +147,12 @@ class Event : public StateObject {
     // Signaling state.
     // Gets updated at queue submission granularity or when signaled from the host.
     bool signaled = false;
-    std::optional<vku::safe_VkDependencyInfo> dependency_info;
 
     // Source stage specified by the "set event" command.
     // Gets updated at queue submission granularity.
     VkPipelineStageFlags2 signal_src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
+
+    std::optional<vku::safe_VkDependencyInfo> dependency_info;
 
     // Queue that signaled this event. It's null if event was signaled from the host.
     VkQueue signaling_queue = VK_NULL_HANDLE;
@@ -515,8 +516,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
         }
     } rendering_attachments;
 
-    vvl::unordered_set<VkEvent> waited_events;
-    std::vector<VkEvent> write_events_before_wait;
     std::vector<VkEvent> events;
     vvl::unordered_set<QueryObject> active_queries;
     vvl::unordered_set<QueryObject> started_queries;
@@ -764,8 +763,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordSetEvent(VkEvent event, VkPipelineStageFlags2KHR stageMask, const VkDependencyInfo *dependency_info,
                         const Location &loc);
     void RecordResetEvent(VkEvent event, VkPipelineStageFlags2KHR stageMask, const Location &loc);
-    void RecordWaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2KHR src_stage_mask,
-                          const VkDependencyInfo *dependency_info, const Location &loc);
+    void RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask, const Location& loc);
+    void RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& dep_info_loc);
     void RecordPushConstants(const vvl::PipelineLayout &pipeline_layout_state, VkShaderStageFlags stage_flags, uint32_t offset,
                              uint32_t size, const void *values);
     void RecordPushData(const VkPushDataInfoEXT& push_data_info, const Location& loc);
@@ -932,8 +931,8 @@ class CommandBufferSubState {
 
     virtual void RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const VkDependencyInfo *dependency_info) {}
     virtual void RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask) {}
-    virtual void RecordWaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2 src_stage_mask,
-                                  const VkDependencyInfo *dependency_info, const Location &loc) {}
+    virtual void RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask, const Location& loc) {}
+    virtual void RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {}
     virtual void RecordBarriers(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier *buffer_barriers,
                                 uint32_t image_barrier_count, const VkImageMemoryBarrier *image_barriers,
                                 VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask, const Location &loc) {}
