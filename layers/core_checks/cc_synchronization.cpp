@@ -1392,24 +1392,26 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(const vvl::CommandBuffer& cb_state, 
                     "event %s is being waited on with VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR, but was signaled without it.",
                     state_data.FormatHandle(event).c_str());
             }
-            VkPipelineStageFlags2 union_src_stage_mask = 0u;
-            for (uint32_t i = 0; i < dependency_info.memoryBarrierCount; ++i) {
-                union_src_stage_mask |= dependency_info.pMemoryBarriers[i].srcStageMask;
-            }
-            for (uint32_t i = 0; i < dependency_info.bufferMemoryBarrierCount; ++i) {
-                union_src_stage_mask |= dependency_info.pBufferMemoryBarriers[i].srcStageMask;
-            }
-            for (uint32_t i = 0; i < dependency_info.imageMemoryBarrierCount; ++i) {
-                union_src_stage_mask |= dependency_info.pImageMemoryBarriers[i].srcStageMask;
-            }
-            if (union_src_stage_mask != set_dependency_info->pMemoryBarriers[0].srcStageMask) {
-                const LogObjectList objlist(cb_state.Handle(), event);
-                skip |=
-                    state_data.LogError("VUID-vkCmdWaitEvents2-pEvents-10790", objlist, loc,
-                                        "union of all srcStageMask members is %s, but event was set with "
-                                        "pDependencyInfos->pMemoryBarriers[0].srcStageMask %s.",
-                                        string_VkPipelineStageFlags2(union_src_stage_mask).c_str(),
-                                        string_VkPipelineStageFlags2(set_dependency_info->pMemoryBarriers[0].srcStageMask).c_str());
+            if (set_dependency_info->memoryBarrierCount > 0 && set_dependency_info->pMemoryBarriers) {
+                VkPipelineStageFlags2 union_src_stage_mask = 0u;
+                for (uint32_t i = 0; i < dependency_info.memoryBarrierCount; ++i) {
+                    union_src_stage_mask |= dependency_info.pMemoryBarriers[i].srcStageMask;
+                }
+                for (uint32_t i = 0; i < dependency_info.bufferMemoryBarrierCount; ++i) {
+                    union_src_stage_mask |= dependency_info.pBufferMemoryBarriers[i].srcStageMask;
+                }
+                for (uint32_t i = 0; i < dependency_info.imageMemoryBarrierCount; ++i) {
+                    union_src_stage_mask |= dependency_info.pImageMemoryBarriers[i].srcStageMask;
+                }
+                if (union_src_stage_mask != set_dependency_info->pMemoryBarriers[0].srcStageMask) {
+                    const LogObjectList objlist(cb_state.Handle(), event);
+                    skip |= state_data.LogError(
+                        "VUID-vkCmdWaitEvents2-pEvents-10790", objlist, loc,
+                        "union of all srcStageMask members is %s, but event was set with "
+                        "pDependencyInfos->pMemoryBarriers[0].srcStageMask %s.",
+                        string_VkPipelineStageFlags2(union_src_stage_mask).c_str(),
+                        string_VkPipelineStageFlags2(set_dependency_info->pMemoryBarriers[0].srcStageMask).c_str());
+                }
             }
         }
     }

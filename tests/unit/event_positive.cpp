@@ -192,3 +192,24 @@ TEST_F(PositiveEvent, AsymmetricWaitEvent2) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveEvent, AsymmetricEventNoMemorySubmit) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance9);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.dependencyFlags = VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR;
+    vkt::Event event(*m_device);
+
+    monitor_.SetAllowedFailureMsg("VUID-vkCmdSetEvent2-dependencyFlags-10786");
+    m_command_buffer.Begin();
+    vk::CmdSetEvent2(m_command_buffer, event, &dependency_info);
+    vk::CmdWaitEvents2(m_command_buffer, 1, &event.handle(), &dependency_info);
+    m_command_buffer.End();
+
+    // Check that missing memory barrier does not confuse submit validation
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}

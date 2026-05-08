@@ -22,6 +22,7 @@
 #include "vulkan/vulkan.h"
 #include "containers/custom_containers.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
+#include <optional>
 
 // TODO: this is very similar to EventSignalingState (but signal field has different semantics).
 // This will be reworked/removed soon.
