@@ -258,10 +258,29 @@ uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* ins
             const Type& uint32_type = type_manager_.GetTypeInt(32, false);
             const uint32_t x_value_float = meta.target_instruction->Word(5);
             const uint32_t y_value_float = meta.target_instruction->Word(6);
-            x_value_id = module_.TakeNextId();
-            y_value_id = module_.TakeNextId();
-            block.CreateInstruction(spv::OpBitcast, {uint32_type.Id(), x_value_id, x_value_float}, inst_it);
-            block.CreateInstruction(spv::OpBitcast, {uint32_type.Id(), y_value_id, y_value_float}, inst_it);
+            const uint32_t float_bit_width = meta.result_type->meta_.scalar.bit_width;
+            if (float_bit_width == 16) {
+                // Cast to f32 before OpBitCast
+                const uint32_t float32_type_id = type_manager_.GetTypeFloat(32).Id();
+                const uint32_t x_f32_id = module_.TakeNextId();
+                const uint32_t y_f32_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpFConvert, {float32_type_id, x_f32_id, x_value_float}, inst_it);
+                block.CreateInstruction(spv::OpFConvert, {float32_type_id, y_f32_id, y_value_float}, inst_it);
+                x_value_id = module_.TakeNextId();
+                y_value_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpBitcast, {uint32_type.Id(), x_value_id, x_f32_id}, inst_it);
+                block.CreateInstruction(spv::OpBitcast, {uint32_type.Id(), y_value_id, y_f32_id}, inst_it);
+            } else if (float_bit_width == 32) {
+                x_value_id = module_.TakeNextId();
+                y_value_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpBitcast, {uint32_type.Id(), x_value_id, x_value_float}, inst_it);
+                block.CreateInstruction(spv::OpBitcast, {uint32_type.Id(), y_value_id, y_value_float}, inst_it);
+            } else {
+                // GLSL.std.450 spec only allows 16 or 32 bit floats
+                assert(false);
+                x_value_id = type_manager_.GetConstantZeroUint32().Id();
+                y_value_id = type_manager_.GetConstantZeroUint32().Id();
+            }
         } else {
             // Put something valid, these are ignored on when printing error
             x_value_id = type_manager_.GetConstantZeroUint32().Id();

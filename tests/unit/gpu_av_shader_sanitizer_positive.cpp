@@ -388,6 +388,28 @@ TEST_F(PositiveGpuAVShaderSanitizer, PowVectorMix) {
     SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL);
 }
 
+TEST_F(PositiveGpuAVShaderSanitizer, PowFloat16) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
+
+    const char* cs_source = R"glsl(
+        #version 450 core
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        layout(set = 0, binding = 0) buffer UBO {
+            float16_t x;
+            float16_t y;
+            float result;
+        };
+        void main() {
+            result = float(pow(x, float16_t(1.0)));
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL);
+}
+
 TEST_F(PositiveGpuAVShaderSanitizer, Atan2) {
     const char* cs_source = R"glsl(
         #version 460
