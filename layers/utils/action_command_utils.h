@@ -85,6 +85,34 @@ static inline bool IsCommandTraceRays(Func command) {
         command == Func::vkCmdTraceRaysIndirect2KHR;
 }
 
+static inline bool IsCommandIndirect(Func command) {
+    return
+        command == Func::vkCmdDrawIndirect ||
+        command == Func::vkCmdDrawIndexedIndirect ||
+        command == Func::vkCmdDispatchIndirect ||
+        command == Func::vkCmdDrawIndirectCount ||
+        command == Func::vkCmdDrawIndirectCountKHR ||
+        command == Func::vkCmdDrawIndirectCountAMD ||
+        command == Func::vkCmdDrawIndexedIndirectCount ||
+        command == Func::vkCmdDrawIndexedIndirectCountKHR ||
+        command == Func::vkCmdDrawIndexedIndirectCountAMD ||
+        command == Func::vkCmdDrawMeshTasksIndirectCountNV ||
+        command == Func::vkCmdDrawMeshTasksIndirectNV ||
+        command == Func::vkCmdDrawMeshTasksIndirectEXT ||
+        command == Func::vkCmdDrawMeshTasksIndirectCountEXT ||
+        command == Func::vkCmdDrawIndirectByteCountEXT ||
+        command == Func::vkCmdDrawIndirectByteCount2EXT ||
+        command == Func::vkCmdDrawIndirect2KHR ||
+        command == Func::vkCmdDrawIndexedIndirect2KHR ||
+        command == Func::vkCmdDrawIndirectCount2KHR ||
+        command == Func::vkCmdDrawIndexedIndirectCount2KHR ||
+        command == Func::vkCmdDispatchIndirect2KHR ||
+        command == Func::vkCmdDrawMeshTasksIndirect2EXT ||
+        command == Func::vkCmdDrawMeshTasksIndirectCount2EXT ||
+        command == Func::vkCmdTraceRaysIndirectKHR ||
+        command == Func::vkCmdTraceRaysIndirect2KHR;
+}
+
 } // namespace vvl
 
 // clang-format on

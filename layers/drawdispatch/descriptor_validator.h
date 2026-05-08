@@ -1,6 +1,6 @@
-/* Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+/* Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,7 +25,6 @@ struct ResourceInterfaceVariable;
 }  // namespace spirv
 
 namespace vvl {
-struct DrawDispatchVuid;
 class DescriptorBinding;
 class DeviceProxy;
 class BufferDescriptor;
@@ -93,7 +92,6 @@ class DescriptorValidator : public Logger {
     vvl::DescriptorSet& descriptor_set;
     const VkFramebuffer framebuffer;
     LocationCapture loc;
-    const DrawDispatchVuid* vuids;
 
     const std::vector<uint32_t>* original_spirv;
     uint32_t instruction_position_offset;

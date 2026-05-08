@@ -770,8 +770,7 @@ bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
         const VkPipelineBindPoint vk_bind_point = ConvertStageToBindPoint(pGeneratedCommandsInfo->shaderStages);
         const vvl::BindPoint vvl_bind_point = ConvertToVvlBindPoint(vk_bind_point);
         const LastBound& last_bound = cb_state.lastBound[vvl_bind_point];
-        const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(error_obj.location.function);
-        skip |= ValidateActionState(last_bound, vuid);
+        skip |= ValidateActionState(last_bound, error_obj.location);
     }
 
     return skip;

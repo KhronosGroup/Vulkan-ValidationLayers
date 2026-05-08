@@ -33,6 +33,7 @@
 #include "utils/assert_utils.h"
 #include "utils/math_utils.h"
 #include "utils/vk_struct_compare.h"
+#include "utils/action_command_utils.h"
 #include "utils/image_utils.h"
 #include "core_validation.h"
 #include "generated/enum_flag_bits.h"
@@ -3489,22 +3490,21 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer& cb_
 }
 
 // Validate draw-time state related to the PSO
-bool CoreChecks::ValidateDrawPipeline(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
-                                      const vvl::DrawDispatchVuid& vuid) const {
+bool CoreChecks::ValidateDrawPipeline(const LastBound& last_bound_state, const vvl::Pipeline& pipeline, const Location& loc) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const vvl::RenderPass* rp_state = cb_state.active_render_pass.get();
     if (!rp_state) return skip;
 
     if (rp_state->UsesDynamicRendering()) {
-        skip |= ValidateDrawPipelineDynamicRenderpass(last_bound_state, pipeline, *rp_state, vuid.loc());
+        skip |= ValidateDrawPipelineDynamicRenderpass(last_bound_state, pipeline, *rp_state, loc);
     } else {
-        skip |= ValidateDrawPipelineRenderpass(last_bound_state, pipeline, *rp_state, vuid.loc());
+        skip |= ValidateDrawPipelineRenderpass(last_bound_state, pipeline, *rp_state, loc);
     }
 
-    skip |= ValidateDrawPipelineFramebuffer(cb_state, pipeline, vuid);
-    skip |= ValidateDrawPipelineFragmentDensityMapLayered(cb_state, pipeline, *rp_state, vuid.loc());
-    skip |= ValidateDrawPipelineRasterizationState(last_bound_state, pipeline, vuid.loc());
+    skip |= ValidateDrawPipelineFramebuffer(cb_state, pipeline, loc);
+    skip |= ValidateDrawPipelineFragmentDensityMapLayered(cb_state, pipeline, *rp_state, loc);
+    skip |= ValidateDrawPipelineRasterizationState(last_bound_state, pipeline, loc);
 
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && rp_state->UsesDynamicRendering()) {
         const auto msrtss_info = vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(
@@ -3512,7 +3512,7 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound& last_bound_state, const v
         if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
             msrtss_info->rasterizationSamples != pipeline.MultisampleState()->rasterizationSamples) {
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::RASTERIZATION_SAMPLES_07935), objlist, vuid.loc(),
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::RASTERIZATION_SAMPLES_07935), objlist, loc,
                              "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampledEnable is VK_TRUE, but "
                              "the rasterizationSamples (%" PRIu32 ") is not equal to rasterizationSamples (%" PRIu32
                              ") of the the currently bound pipeline.",
@@ -3526,7 +3526,7 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound& last_bound_state, const v
             const auto query_pool_state = Get<vvl::QueryPool>(query.pool);
             if (query_pool_state && query_pool_state->create_info.queryType == VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), query.pool);
-                skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::MESH_SHADER_QUERIES_07073), objlist, vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::MESH_SHADER_QUERIES_07073), objlist, loc,
                                  "query %" PRIu32
                                  " in %s with type VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT is active, but the current pipeline "
                                  "is drawing with non-mesh shader stages.",
@@ -4383,7 +4383,7 @@ bool CoreChecks::ValidateMultiviewPerViewViewports(const vvl::Pipeline& pipeline
 }
 
 bool CoreChecks::ValidateDrawPipelineFramebuffer(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline,
-                                                 const vvl::DrawDispatchVuid& vuid) const {
+                                                 const Location& loc) const {
     bool skip = false;
     if (!cb_state.active_framebuffer) return skip;
 
@@ -4397,12 +4397,15 @@ bool CoreChecks::ValidateDrawPipelineFramebuffer(const vvl::CommandBuffer& cb_st
                 image_desc.append(string_VkImageUsageFlagBits(subpass.usage));
                 // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
                 // Some Functions could not be protected. See VUID 02711.
-                if (subpass.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT && vuid.protected_command_buffer_02712 != kVUIDUndefined) {
-                    skip |= ValidateUnprotectedImage(cb_state, *view_state->image_state, vuid.loc(),
-                                                     vuid.protected_command_buffer_02712, image_desc.c_str());
+
+                std::string temp_vuid = CreateActionVuid(loc.function, vvl::ActionVUID::CB_UNPROTECTED_02707);
+                skip |= ValidateProtectedImage(cb_state, *view_state->image_state, loc, temp_vuid.c_str(), image_desc.c_str());
+                // Indirect commands already have 02711 which will be triggered already
+                if (subpass.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT && !IsCommandIndirect(loc.function)) {
+                    temp_vuid = CreateActionVuid(loc.function, vvl::ActionVUID::CB_PROTECTED_02712);
+                    skip |=
+                        ValidateUnprotectedImage(cb_state, *view_state->image_state, loc, temp_vuid.c_str(), image_desc.c_str());
                 }
-                skip |= ValidateProtectedImage(cb_state, *view_state->image_state, vuid.loc(),
-                                               vuid.unprotected_command_buffer_02707, image_desc.c_str());
             }
         }
     }
@@ -4418,7 +4421,7 @@ bool CoreChecks::ValidateDrawPipelineFramebuffer(const vvl::CommandBuffer& cb_st
                 break;
             }
             LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogUndefinedValue("Undefined-Value-Layer-Written", objlist, vuid.loc(),
+            skip |= LogUndefinedValue("Undefined-Value-Layer-Written", objlist, loc,
                                       "Shader stage %s writes to Layer (gl_Layer) but the framebuffer was created with "
                                       "VkFramebufferCreateInfo::layer of 1, this write will have an undefined value set to it.",
                                       string_VkShaderStageFlags(stage).c_str());

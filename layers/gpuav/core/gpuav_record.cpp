@@ -916,7 +916,7 @@ bool Validator::ValidateUnprotectedImage(const vvl::CommandBuffer& cb_state, con
 
 // Validates the buffer is allowed to be protected
 bool Validator::ValidateProtectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state,
-                                        const Location& tensor_loc, const char* vuid, const char* more_message) const {
+                                        const Location& tensor_loc, const char* more_message) const {
     /* don't use on an unprotected tensor */
     assert(tensor_state.unprotected == false);
 
@@ -925,7 +925,8 @@ bool Validator::ValidateProtectedTensor(const vvl::CommandBuffer& cb_state, cons
     // if driver supports protectedNoFault the operation is valid, just has undefined values
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true)) {
         const LogObjectList objlist(cb_state.Handle(), tensor_state.Handle());
-        skip |= LogError(vuid, objlist, tensor_loc, "(%s) is a protected tensor, but command buffer (%s) is unprotected.%s",
+        skip |= LogError("VUID-vkCmdDispatchDataGraphARM-commandBuffer-09800", objlist, tensor_loc,
+                         "(%s) is a protected tensor, but command buffer (%s) is unprotected.%s",
                          FormatHandle(tensor_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
     }
     return skip;
@@ -933,7 +934,7 @@ bool Validator::ValidateProtectedTensor(const vvl::CommandBuffer& cb_state, cons
 
 // Validates the buffer is allowed to be unprotected
 bool Validator::ValidateUnprotectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state,
-                                          const Location& tensor_loc, const char* vuid, const char* more_message) const {
+                                          const Location& tensor_loc, const char* more_message) const {
     /* don't use on a protected tensor */
     assert(tensor_state.unprotected == true);
 
@@ -942,7 +943,8 @@ bool Validator::ValidateUnprotectedTensor(const vvl::CommandBuffer& cb_state, co
     // if driver supports protectedNoFault the operation is valid, just has undefined values
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false)) {
         const LogObjectList objlist(cb_state.Handle(), tensor_state.Handle());
-        skip |= LogError(vuid, objlist, tensor_loc, "(%s) is an unprotected tensor, but command buffer (%s) is protected.%s",
+        skip |= LogError("VUID-vkCmdDispatchDataGraphARM-commandBuffer-09801", objlist, tensor_loc,
+                         "(%s) is an unprotected tensor, but command buffer (%s) is protected.%s",
                          FormatHandle(tensor_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
     }
     return skip;

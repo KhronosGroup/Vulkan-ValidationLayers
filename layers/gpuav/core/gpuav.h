@@ -241,9 +241,9 @@ class Validator : public GpuShaderInstrumentor {
     bool ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
                                    const char* vuid, const char* more_message = "") const final;
     bool ValidateProtectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state, const Location& tensor_loc,
-                                 const char* vuid, const char* more_message = "") const final;
+                                 const char* more_message = "") const final;
     bool ValidateUnprotectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state, const Location& tensor_loc,
-                                   const char* vuid, const char* more_message = "") const final;
+                                   const char* more_message = "") const final;
 
     void Created(vvl::DescriptorSet& set) final;
     void Created(vvl::CommandBuffer& cb_state) final;
