@@ -411,13 +411,14 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     // SubpassData gets validated elsewhere
     if (resource_variable.IsImage() && dim != spv::DimSubpassData) {
         bool valid_dim = true;
+        const bool alias_single_layer = (image_state->create_flags & VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR) != 0;
         // From vkspec.html#textures-operation-validation
         switch (image_view_ci.viewType) {
             case VK_IMAGE_VIEW_TYPE_1D:
-                valid_dim = (dim == spv::Dim1D) && !is_image_array;
+                valid_dim = (dim == spv::Dim1D) && (!is_image_array || alias_single_layer);
                 break;
             case VK_IMAGE_VIEW_TYPE_2D:
-                valid_dim = (dim == spv::Dim2D) && !is_image_array;
+                valid_dim = (dim == spv::Dim2D) && (!is_image_array || alias_single_layer);
                 break;
             case VK_IMAGE_VIEW_TYPE_3D:
                 valid_dim = (dim == spv::Dim3D) && !is_image_array;
@@ -426,10 +427,10 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 valid_dim = (dim == spv::DimCube) && !is_image_array;
                 break;
             case VK_IMAGE_VIEW_TYPE_1D_ARRAY:
-                valid_dim = (dim == spv::Dim1D) && is_image_array;
+                valid_dim = (dim == spv::Dim1D) && (is_image_array || alias_single_layer);
                 break;
             case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
-                valid_dim = (dim == spv::Dim2D) && is_image_array;
+                valid_dim = (dim == spv::Dim2D) && (is_image_array || alias_single_layer);
                 break;
             case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
                 valid_dim = (dim == spv::DimCube) && is_image_array;
@@ -439,18 +440,25 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         }
         if (!valid_dim) {
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
-            skip |= LogError(
-                CreateActionVuid(loc.Get().function, ActionVUID::IMAGE_VIEW_DIM_07752), objlist, loc.Get(),
-                "the %s VkImageViewType is %s but the OpTypeImage has (Dim = %s) and (Arrayed = %" PRIu32
-                ").\nEither fix in the shader or update the VkImageViewType to %s%s%s",
-                DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                string_VkImageViewType(image_view_ci.viewType), string_SpvDim(dim), is_image_array,
-                SuggestImageViewType(dim, is_image_array),
-                (is_gpu_av && resource_variable.IsArray())
-                    ? "\nAdvice: The dimension is tied to the descriptor variable, so for descriptor indexing, you might need to "
-                      "express two different arrays of different types that share the same descriptor binding."
-                    : "",
-                DescribeInstruction().c_str());
+            std::ostringstream ss;
+            ss << "the " << DescribeDescriptor(resource_variable, index, descriptor_type) << " VkImageViewType is "
+               << string_VkImageViewType(image_view_ci.viewType) << " but the OpTypeImage has (Dim = " << string_SpvDim(dim)
+               << ") and (Arrayed = " << is_image_array << ").\nEither fix in the shader or update the VkImageViewType to "
+               << SuggestImageViewType(dim, is_image_array);
+            if (((image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_1D || image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY) &&
+                 dim == spv::Dim1D) ||
+                ((image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_2D || image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) &&
+                 dim == spv::Dim2D)) {
+                ss << "\nHint: With VK_KHR_maintenance11 there is VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR which "
+                      "would make this legal.";
+            }
+            if (is_gpu_av && resource_variable.IsArray()) {
+                ss << "\nAdvice: The dimension is tied to the descriptor variable, so for descriptor indexing, you might need to "
+                      "express two different arrays of different types that share the same descriptor binding.";
+            }
+            ss << DescribeInstruction();
+            skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::IMAGE_VIEW_DIM_07752), objlist, loc.Get(), "%s",
+                             ss.str().c_str());
         }
 
         const uint32_t view_numeric_type = spirv::GetFormatNumericType(image_view_ci.format);
