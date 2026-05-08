@@ -153,4 +153,15 @@ enum class DeviceAddressCommandError {
 };
 const std::string GetDeviceAddressCommandVUID(const Location& loc, DeviceAddressCommandError error);
 
+enum class DrawDispatchIndirectError {
+    PROTECTED_CD_02711,
+    CONTIGUOUS_MEMORY_02708,
+    BUFFER_02709,
+    COUNT_CONTIGUOUS_MEMORY_02714,
+    COUNT_BUFFER_02715,
+    COUNT_OFFSET_04129,
+};
+
+const char* GetDrawDispatchIndirectVUID(const Location& loc, DrawDispatchIndirectError error);
+
 }  // namespace vvl

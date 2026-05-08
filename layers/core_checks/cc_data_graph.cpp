@@ -384,8 +384,7 @@ bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandB
     bool skip = false;
     const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     const auto& last_bound_state = cb_state.GetLastBoundDataGraph();
-    const vvl::DrawDispatchVuid& dispatch_vuid = GetDrawDispatchVuid(error_obj.location.function);
-    skip |= ValidateActionState(last_bound_state, dispatch_vuid);
+    skip |= ValidateActionState(last_bound_state, error_obj.location);
 
     const auto session_state_ptr = Get<vvl::DataGraphPipelineSession>(session);
     ASSERT_AND_RETURN_SKIP(session_state_ptr);

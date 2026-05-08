@@ -817,7 +817,7 @@ TEST_F(NegativeDataGraph, CmdDispatchPipelineNotBound) {
     m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
                               &pipeline.descriptor_set_.get()->set_, 0, nullptr);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-09799");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-08606");
     vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -850,7 +850,7 @@ TEST_F(NegativeDataGraph, CmdDispatchDescriptorSetNotBound) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-09797");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-08600");
     vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -1011,7 +1011,7 @@ TEST_F(NegativeDataGraph, CmdDispatchInvalidDescriptorNoUpdate) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_.handle(), 0, 1,
                               &pipeline.descriptor_set_.get()->set_, 0, nullptr);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-09935");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-08114");
     vk::CmdDispatchDataGraphARM(m_command_buffer, session.handle(), nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -1054,7 +1054,7 @@ TEST_F(NegativeDataGraph, CmdDispatchInvalidDescriptorDeletedObject) {
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.Handle());
         vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_.handle(), 0, 1,
                                   &pipeline.descriptor_set_.get()->set_, 0, nullptr);
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-09935");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-08114");
         vk::CmdDispatchDataGraphARM(m_command_buffer, session.handle(), nullptr);
         m_errorMonitor->VerifyFound();
         m_command_buffer.End();
@@ -1092,7 +1092,7 @@ TEST_F(NegativeDataGraph, CmdDispatchInvalidDescriptorBufferBit) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_.handle(), 0, 1,
                               &pipeline.descriptor_set_.get()->set_, 0, nullptr);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-09936");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-08115");
     vk::CmdDispatchDataGraphARM(m_command_buffer, session.handle(), nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -1157,8 +1157,8 @@ TEST_F(NegativeDataGraph, CmdDispatchMissingDescriptorBufferBit) {
     vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline_layout, 0, 1, &index,
                                          &offset);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-09938");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-09797");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-08117");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-08600");
     vk::CmdDispatchDataGraphARM(m_command_buffer, session.handle(), nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -2351,7 +2351,7 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongTensorUsage) {
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
                               &pipeline.descriptor_set_.get()->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-pDescription-09930");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-pDescription-09900");
     vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
