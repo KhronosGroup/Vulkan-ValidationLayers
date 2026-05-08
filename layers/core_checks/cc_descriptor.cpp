@@ -860,9 +860,8 @@ bool CoreChecks::PreCallValidateGetDescriptorSetLayoutSupportKHR(VkDevice device
 // Return true if state is acceptable, or false and write an error message into error string
 bool CoreChecks::ValidateDrawState(const vvl::DescriptorSet& descriptor_set, uint32_t set_index,
                                    const BindingVariableMap& binding_req_map, const vvl::CommandBuffer& cb_state,
-                                   const vvl::DrawDispatchVuid& vuids, const LogObjectList& objlist) const {
+                                   const Location& loc, const LogObjectList& objlist) const {
     bool result = false;
-    const Location& loc = vuids.loc();
     const VkFramebuffer framebuffer = cb_state.active_framebuffer ? cb_state.active_framebuffer->VkHandle() : VK_NULL_HANDLE;
     // NOTE: GPU-AV needs non-const state objects to do lazy updates of descriptor state of only the dynamically used
     // descriptors, via the non-const version of ValidateBindingDynamic(), this code uses the const path only even it gives up
@@ -877,8 +876,9 @@ bool CoreChecks::ValidateDrawState(const vvl::DescriptorSet& descriptor_set, uin
         const vvl::DescriptorBinding* binding = descriptor_set.GetBinding(binding_index);
         if (!binding) {  //  End at construction is the condition for an invalid binding.
             const LogObjectList updated_objlist(cb_state.Handle(), objlist, descriptor_set.Handle());
-            result |= LogError(vuids.descriptor_buffer_bit_set_08114, updated_objlist, loc, "%s %s is invalid.",
-                               FormatHandle(descriptor_set).c_str(), resource_variable.DescribeDescriptor().c_str());
+            result |=
+                LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_08114), updated_objlist, loc,
+                         "%s %s is invalid.", FormatHandle(descriptor_set).c_str(), resource_variable.DescribeDescriptor().c_str());
             return result;
         }
 

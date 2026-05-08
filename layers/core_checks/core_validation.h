@@ -45,7 +45,6 @@
 #include "utils/sync_utils.h"
 
 namespace vvl {
-struct DrawDispatchVuid;
 class DescriptorBinding;
 struct DslErrorSource;
 struct DescriptorSetLayoutList;
@@ -290,7 +289,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDrawAttachmentSampleLocation(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawDepthStencilAttachments(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawTessellation(const LastBound& last_bound_state, const Location& loc) const;
-    bool ValidateDrawVertexBinding(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawVertexBinding(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawCustomResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
                                    const core::CommandBufferSubState& cb_sub_state, const Location& loc) const;
     bool ValidateDrawDynamicRenderingFsOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
@@ -327,9 +326,9 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
                                    const char* vuid, const char* more_message = "") const override;
     bool ValidateProtectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state, const Location& tensor_loc,
-                                 const char* vuid, const char* more_message = "") const override;
+                                 const char* more_message = "") const override;
     bool ValidateUnprotectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state, const Location& tensor_loc,
-                                   const char* vuid, const char* more_message = "") const override;
+                                   const char* more_message = "") const override;
 
     bool ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo& create_info, const vvl::Image& image_state,
                                            const Location& create_info_loc) const;
@@ -660,16 +659,15 @@ class CoreChecks : public vvl::DeviceProxy {
                                     const char* vuid) const;
     bool ValidateCmdSubpassState(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
     bool ValidateCmd(const vvl::CommandBuffer& cb_state, const Location& loc) const;
-    bool ValidateIndirectCmd(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
-                             const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateIndirectCmd(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state, const Location& loc) const;
     bool ValidateIndirectCountCmd(const vvl::CommandBuffer& cb_state, const vvl::Buffer& count_buffer_state,
-                                  VkDeviceSize count_buffer_offset, const vvl::DrawDispatchVuid& vuid) const;
+                                  VkDeviceSize count_buffer_offset, const Location& loc) const;
     bool ValidateIndirectBufferDeviceAddress(const vvl::CommandBuffer& cb_state, VkDeviceAddress address, VkDeviceSize size,
-                                             bool strided, const Location& info_loc, const vvl::DrawDispatchVuid& vuid) const;
+                                             bool strided, const Location& info_loc, const Location& loc) const;
     bool ValidateIndirectCountBufferDeviceAddress(const vvl::CommandBuffer& cb_state, VkDeviceAddress address,
-                                                  const Location& info_loc, const vvl::DrawDispatchVuid& vuid) const;
+                                                  const Location& info_loc, const Location& loc) const;
     bool ValidateDrawPipelineFramebuffer(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline,
-                                         const vvl::DrawDispatchVuid& vuid) const;
+                                         const Location& loc) const;
     bool ValidateDrawPipelineFragmentDensityMapLayered(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline,
                                                        const vvl::RenderPass& rp_state, const Location& loc) const;
     bool ValidateDrawPipelineRasterizationState(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
@@ -742,8 +740,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                              const Location& loc) const;
     bool ValidateDrawPipelineDynamicRenderingAttachmentFlags(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                              const vvl::RenderPass& rp_state, const Location& loc) const;
-    bool ValidateDrawPipeline(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
-                              const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawPipeline(const LastBound& last_bound_state, const vvl::Pipeline& pipeline, const Location& loc) const;
     bool ValidateDrawShaderObjectNextStage(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawShaderObjectBoundShader(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawShaderObjectFlags(const LastBound& last_bound_state, const Location& loc) const;
@@ -751,11 +748,11 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDrawShaderObjectLinking(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawShaderObjectMesh(const LastBound& last_bound_state, const Location& loc) const;
-    bool ValidateActionState(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateActionState(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateActionStateDescriptorsPipeline(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
-                                                const vvl::Pipeline& pipeline, const vvl::DrawDispatchVuid& vuid) const;
+                                                const vvl::Pipeline& pipeline, const Location& loc) const;
     bool ValidateActionStateDescriptorsShaderObject(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
-                                                    const vvl::DrawDispatchVuid& vuid) const;
+                                                    const Location& loc) const;
     bool ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuffer& cb_state, const ShaderStageState& stage_state,
                                                    const VkPipelineBindPoint bind_point, const Location& loc) const;
     bool ValidateActionStateDescriptorHeap(const LastBound& last_bound_state, const ShaderStageState& stage_state,
@@ -780,8 +777,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                 void* pData) override;
     // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
     bool ValidateDrawState(const vvl::DescriptorSet& descriptor_set, uint32_t set_index, const BindingVariableMap& binding_req_map,
-                           const vvl::CommandBuffer& cb_state, const vvl::DrawDispatchVuid& vuid,
-                           const LogObjectList& objlist) const;
+                           const vvl::CommandBuffer& cb_state, const Location& loc, const LogObjectList& objlist) const;
 
     bool VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSetLayout& reference_dsl,
                                                 const vvl::DescriptorSetLayout& to_bind_dsl, std::string& error_msg) const;

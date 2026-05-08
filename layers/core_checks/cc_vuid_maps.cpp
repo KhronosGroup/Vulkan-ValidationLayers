@@ -1310,4 +1310,191 @@ const std::string GetDeviceAddressCommandVUID(const Location& loc, DeviceAddress
     return unhandled;
 }
 
+const char* GetDrawDispatchIndirectVUID(const Location& loc, DrawDispatchIndirectError error) {
+    switch (loc.function) {
+        case Func::vkCmdDrawIndirect:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawIndirect-commandBuffer-02711";
+            } else if (error == DrawDispatchIndirectError::CONTIGUOUS_MEMORY_02708) {
+                return "VUID-vkCmdDrawIndirect-buffer-02708";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-vkCmdDrawIndirect-buffer-02709";
+            }
+            break;
+        case Func::vkCmdDrawIndexedIndirect:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02711";
+            } else if (error == DrawDispatchIndirectError::CONTIGUOUS_MEMORY_02708) {
+                return "VUID-vkCmdDrawIndexedIndirect-buffer-02708";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-vkCmdDrawIndexedIndirect-buffer-02709";
+            }
+            break;
+        case Func::vkCmdDispatchIndirect:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDispatchIndirect-commandBuffer-02711";
+            } else if (error == DrawDispatchIndirectError::CONTIGUOUS_MEMORY_02708) {
+                return "VUID-vkCmdDispatchIndirect-buffer-02708";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-vkCmdDispatchIndirect-buffer-02709";
+            }
+            break;
+        case Func::vkCmdDrawIndirectCount:
+        case Func::vkCmdDrawIndirectCountKHR:
+        case Func::vkCmdDrawIndirectCountAMD:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawIndirectCount-commandBuffer-02711";
+            } else if (error == DrawDispatchIndirectError::CONTIGUOUS_MEMORY_02708) {
+                return "VUID-vkCmdDrawIndirectCount-buffer-02708";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-vkCmdDrawIndirectCount-buffer-02709";
+            } else if (error == DrawDispatchIndirectError::COUNT_CONTIGUOUS_MEMORY_02714) {
+                return "VUID-vkCmdDrawIndirectCount-countBuffer-02714";
+            } else if (error == DrawDispatchIndirectError::COUNT_BUFFER_02715) {
+                return "VUID-vkCmdDrawIndirectCount-countBuffer-02715";
+            } else if (error == DrawDispatchIndirectError::COUNT_OFFSET_04129) {
+                return "VUID-vkCmdDrawIndirectCount-countBufferOffset-04129";
+            }
+            break;
+        case Func::vkCmdDrawIndexedIndirectCount:
+        case Func::vkCmdDrawIndexedIndirectCountKHR:
+        case Func::vkCmdDrawIndexedIndirectCountAMD:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02711";
+            } else if (error == DrawDispatchIndirectError::CONTIGUOUS_MEMORY_02708) {
+                return "VUID-vkCmdDrawIndexedIndirectCount-buffer-02708";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-vkCmdDrawIndexedIndirectCount-buffer-02709";
+            } else if (error == DrawDispatchIndirectError::COUNT_CONTIGUOUS_MEMORY_02714) {
+                return "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714";
+            } else if (error == DrawDispatchIndirectError::COUNT_BUFFER_02715) {
+                return "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02715";
+            } else if (error == DrawDispatchIndirectError::COUNT_OFFSET_04129) {
+                return "VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-04129";
+            }
+            break;
+        case Func::vkCmdDrawMeshTasksIndirectCountNV:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02711";
+            } else if (error == DrawDispatchIndirectError::CONTIGUOUS_MEMORY_02708) {
+                return "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02708";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02709";
+            } else if (error == DrawDispatchIndirectError::COUNT_CONTIGUOUS_MEMORY_02714) {
+                return "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02714";
+            } else if (error == DrawDispatchIndirectError::COUNT_BUFFER_02715) {
+                return "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02715";
+            } else if (error == DrawDispatchIndirectError::COUNT_OFFSET_04129) {
+                return "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBufferOffset-04129";
+            }
+            break;
+        case Func::vkCmdDrawMeshTasksIndirectNV:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02711";
+            } else if (error == DrawDispatchIndirectError::CONTIGUOUS_MEMORY_02708) {
+                return "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02708";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02709";
+            }
+            break;
+        case Func::vkCmdDrawMeshTasksIndirectEXT:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawMeshTasksIndirectEXT-commandBuffer-02711";
+            } else if (error == DrawDispatchIndirectError::CONTIGUOUS_MEMORY_02708) {
+                return "VUID-vkCmdDrawMeshTasksIndirectEXT-buffer-02708";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-vkCmdDrawMeshTasksIndirectEXT-buffer-02709";
+            }
+            break;
+        case Func::vkCmdDrawMeshTasksIndirectCountEXT:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawMeshTasksIndirectCountEXT-commandBuffer-02711";
+            } else if (error == DrawDispatchIndirectError::CONTIGUOUS_MEMORY_02708) {
+                return "VUID-vkCmdDrawMeshTasksIndirectCountEXT-buffer-02708";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-vkCmdDrawMeshTasksIndirectCountEXT-buffer-02709";
+            } else if (error == DrawDispatchIndirectError::COUNT_CONTIGUOUS_MEMORY_02714) {
+                return "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02714";
+            } else if (error == DrawDispatchIndirectError::COUNT_BUFFER_02715) {
+                return "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02715";
+            } else if (error == DrawDispatchIndirectError::COUNT_OFFSET_04129) {
+                return "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBufferOffset-04129";
+            }
+            break;
+        case Func::vkCmdDrawIndirectByteCountEXT:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02646";
+            } else if (error == DrawDispatchIndirectError::CONTIGUOUS_MEMORY_02708) {
+                return "VUID-vkCmdDrawIndirectByteCountEXT-counterBuffer-04567";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-vkCmdDrawIndirectByteCountEXT-counterBuffer-02290";
+            }
+            break;
+        case Func::vkCmdDrawIndirectByteCount2EXT:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawIndirectByteCount2EXT-commandBuffer-02646";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-vkCmdDrawIndirectByteCount2EXT-pInfo-13061";
+            }
+            break;
+        case Func::vkCmdDrawIndirect2KHR:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawIndirect2KHR-commandBuffer-13057";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-VkDrawIndirect2InfoKHR-addressRange-13107";
+            }
+            break;
+        case Func::vkCmdDrawIndexedIndirect2KHR:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawIndexedIndirect2KHR-commandBuffer-13059";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-VkDrawIndirect2InfoKHR-addressRange-13107";
+            }
+            break;
+        case Func::vkCmdDrawIndirectCount2KHR:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawIndirectCount2KHR-commandBuffer-13058";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-VkDrawIndirectCount2InfoKHR-addressRange-13107";
+            } else if (error == DrawDispatchIndirectError::COUNT_BUFFER_02715) {
+                return "VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13114";
+            }
+            break;
+        case Func::vkCmdDrawIndexedIndirectCount2KHR:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawIndexedIndirectCount2KHR-commandBuffer-13060";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-VkDrawIndirectCount2InfoKHR-addressRange-13107";
+            } else if (error == DrawDispatchIndirectError::COUNT_BUFFER_02715) {
+                return "VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13114";
+            }
+            break;
+        case Func::vkCmdDispatchIndirect2KHR:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDispatchIndirect2KHR-commandBuffer-13049";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-VkDispatchIndirect2InfoKHR-addressRange-13107";
+            }
+            break;
+        case Func::vkCmdDrawMeshTasksIndirect2EXT:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawMeshTasksIndirect2EXT-commandBuffer-13067";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-VkDrawIndirect2InfoKHR-addressRange-13107";
+            }
+            break;
+        case Func::vkCmdDrawMeshTasksIndirectCount2EXT:
+            if (error == DrawDispatchIndirectError::PROTECTED_CD_02711) {
+                return "VUID-vkCmdDrawMeshTasksIndirectCount2EXT-commandBuffer-13068";
+            } else if (error == DrawDispatchIndirectError::BUFFER_02709) {
+                return "VUID-VkDrawIndirectCount2InfoKHR-addressRange-13107";
+            }
+            break;
+        default:
+            break;
+    }
+
+    return kVUIDUndefined;
+}
+
 }  // namespace vvl

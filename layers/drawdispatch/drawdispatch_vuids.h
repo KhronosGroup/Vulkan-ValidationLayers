@@ -19,38 +19,9 @@
 
 #pragma once
 
-#include "error_message/error_location.h"
 #include "generated/error_location_helper.h"
 
 namespace vvl {
-
-// Set of VUID that need to go between drawdispatch_validation.cpp and rest of CoreChecks
-struct DrawDispatchVuid {
-    // Save the action command here for reverse lookup so don't need to pass around both items
-    const Func function;
-    DrawDispatchVuid(Func func) : function(func){};
-    Location loc() const { return Location(function); }
-
-    const char* pipeline_bound_08606 = kVUIDUndefined;
-    const char* compatible_pipeline_08600 = kVUIDUndefined;
-    const char* indirect_protected_cb_02711 = kVUIDUndefined;
-    const char* indirect_contiguous_memory_02708 = kVUIDUndefined;
-    const char* indirect_count_contiguous_memory_02714 = kVUIDUndefined;
-    const char* indirect_buffer_bit_02290 = kVUIDUndefined;
-    const char* indirect_count_buffer_bit_02715 = kVUIDUndefined;
-    const char* indirect_count_offset_04129 = kVUIDUndefined;
-    const char* primitive_topology_patch_list_10286 = kVUIDUndefined;
-    const char* vertex_binding_attribute_02721 = kVUIDUndefined;
-    const char* unprotected_command_buffer_02707 = kVUIDUndefined;
-    const char* protected_command_buffer_02712 = kVUIDUndefined;
-    const char* descriptor_buffer_bit_set_08114 = kVUIDUndefined;
-    const char* descriptor_buffer_bit_not_set_08115 = kVUIDUndefined;
-    const char* descriptor_buffer_set_offset_missing_08117 = kVUIDUndefined;
-    const char* tensorARM_pDescription_09900 = kVUIDUndefined;
-    const char* tensorARM_dimensionCount_09905 = kVUIDUndefined;
-};
-
-const DrawDispatchVuid& GetDrawDispatchVuid(vvl::Func function);
 
 enum class ActionVUID {
     UNKNOWN,
@@ -303,6 +274,16 @@ enum class ActionVUID {
     SPIRV_OPTYPETENSORARM_09906,
     TILE_MEMORY_HEAP_10746,
     BIND_VERTEX_BUFFERS_3_STRIDE_13118,
+    DESCRIPTOR_BUFFER_BIT_08115,
+    DESCRIPTOR_BUFFER_BIT_08117,
+    COMPATIBLE_PIPELINE_08600,
+    PIPELINE_BOUND_08606,
+    VERTEX_BINDING_ATTRIBUTE_02721,
+    CB_UNPROTECTED_02707,
+    CB_PROTECTED_02712,
+    DESCRIPTOR_08114,
+    TENSOR_09900,
+    TENSOR_09905,
 
     DYNAMIC_RENDERING_VIEW_MASK_06178,
     DYNAMIC_RENDERING_COLOR_COUNT_06179,
@@ -363,6 +344,5 @@ enum class ActionVUID {
 };
 
 std::string CreateActionVuid(vvl::Func function, const ActionVUID id);
-std::string CreateActionVuid(const DrawDispatchVuid& vuid, const ActionVUID id);
 
 }  // namespace vvl

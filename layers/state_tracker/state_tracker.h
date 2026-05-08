@@ -2393,11 +2393,11 @@ class DeviceProxy : public vvl::BaseDevice {
         return false;
     }
     virtual bool ValidateProtectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state,
-                                         const Location& tensor_loc, const char* vuid, const char* more_message = "") const {
+                                         const Location& tensor_loc, const char* more_message = "") const {
         return false;
     }
     virtual bool ValidateUnprotectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state,
-                                           const Location& tensor_loc, const char* vuid, const char* more_message = "") const {
+                                           const Location& tensor_loc, const char* more_message = "") const {
         return false;
     }
     virtual bool ValidateBoundTileMemory(const vvl::Bindable& bindable, const vvl::CommandBuffer& cb_state,
