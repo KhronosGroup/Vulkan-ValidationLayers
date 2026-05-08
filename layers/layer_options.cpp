@@ -1394,7 +1394,8 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
         // sync val relies on the information from spirv::Module being parsed and stored
         if (!settings_data->enabled[sync_validation]) {
             // GPU-AV/DebugPrintf relies on spirv::Module to hold the original SPIR-V
-            if (!settings_data->enabled[gpu_validation] && !settings_data->enabled[debug_printf_validation]) {
+            if (!settings_data->enabled[gpu_validation] && !settings_data->enabled[debug_printf_validation] &&
+                !settings_data->enabled[gpu_dump]) {
                 global_settings.spirv_store = false;
             } else if (settings_data->disabled[shader_validation]) {
                 setting_warnings.emplace_back(

@@ -78,7 +78,8 @@ class APISpecific:
                             settings.enabled[best_practices] ||
                             settings.enabled[gpu_validation] ||
                             settings.enabled[debug_printf_validation] ||
-                            settings.enabled[sync_validation]
+                            settings.enabled[sync_validation] ||
+                            settings.enabled[gpu_dump]
                         '''
                     },
                     {
@@ -415,6 +416,7 @@ class DispatchObjectGenerator(BaseGenerator):
 
             void DispatchInstance::InitValidationObjects() {
                  // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
+                 // Anyone using state tracking (LayerObjectTypeStateTracker) must be called after and enable it
              ''')
         for layer in APISpecific.getValidationLayerList(self.targetApiName):
              classname = layer['instance']
@@ -428,6 +430,7 @@ class DispatchObjectGenerator(BaseGenerator):
         out.append('''
             void DispatchDevice::InitValidationObjects() {
                  // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
+                 // Anyone using state tracking (LayerObjectTypeStateTracker) must be called after and enable it
              ''')
         for layer in APISpecific.getValidationLayerList(self.targetApiName):
              classname = layer['device']

@@ -35,6 +35,7 @@ void CommandBufferSubState::DumpDeviceGeneratedCommands(const VkGeneratedCommand
     std::ostringstream ss;
     ss << "[Dump Device Generated Commands]\n";
 
+    bool found_warning = false;
     const LastBound& last_bound = base.lastBound[ConvertToVvlBindPoint(bind_point)];
     const bool has_pipeline = last_bound.pipeline_state != nullptr;
 
@@ -47,7 +48,8 @@ void CommandBufferSubState::DumpDeviceGeneratedCommands(const VkGeneratedCommand
             ss << "    - " << buffer_state->Describe(dev_data) << "\n";
         }
         if (buffer_states.empty()) {
-            ss << "    - No VkBuffer found at 0x" << std::hex << info.sequenceCountAddress << "\n";
+            ss << "    - [WARNING] No VkBuffer found at 0x" << std::hex << info.sequenceCountAddress << "\n";
+            found_warning = true;
         }
     }
 
@@ -59,7 +61,8 @@ void CommandBufferSubState::DumpDeviceGeneratedCommands(const VkGeneratedCommand
             ss << "    - " << buffer_state->Describe(dev_data) << "\n";
         }
         if (buffer_states.empty()) {
-            ss << "    - No VkBuffer found at 0x" << std::hex << info.preprocessAddress << "\n";
+            ss << "    - [WARNING] No VkBuffer found at 0x" << std::hex << info.preprocessAddress << "\n";
+            found_warning = true;
         }
     }
 
@@ -71,7 +74,8 @@ void CommandBufferSubState::DumpDeviceGeneratedCommands(const VkGeneratedCommand
             ss << "    - " << buffer_state->Describe(dev_data) << "\n";
         }
         if (buffer_states.empty()) {
-            ss << "    - No VkBuffer found at 0x" << std::hex << info.indirectAddress << "\n";
+            ss << "    - [WARNING] No VkBuffer found at 0x" << std::hex << info.indirectAddress << "\n";
+            found_warning = true;
         }
     }
 
@@ -142,9 +146,10 @@ void CommandBufferSubState::DumpDeviceGeneratedCommands(const VkGeneratedCommand
     if (dev_data.gpu_dump_settings.to_stdout) {
         std::cout << "GPU-DUMP " << ss.str() << '\n';
     } else {
+        const VkFlags log_level = found_warning ? kWarningBit : kInformationBit;
         // Don't provide a LogObjectList, embed it into the message instead to keep things cleaner
         // (because the default callback will list them at the bottom)
-        dev_data.debug_report->LogMessage(kInformationBit, "GPU-DUMP", {}, loc, ss.str().c_str());
+        dev_data.debug_report->LogMessage(log_level, "GPU-DUMP", {}, loc, ss.str().c_str());
     }
 }
 

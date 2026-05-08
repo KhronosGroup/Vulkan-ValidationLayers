@@ -38,7 +38,7 @@ static bool ListBuffers(std::ostringstream& ss, const GpuDump& dev_data, VkDevic
         ss << "- " << buffer_state->Describe(dev_data) << "\n";
     }
     if (buffer_states.empty()) {
-        ss << "- No VkBuffer found at 0x" << std::hex << address << "\n";
+        ss << "- [WARNING] No VkBuffer found at 0x" << std::hex << address << "\n";
         return true;
     }
     return false;
@@ -55,7 +55,7 @@ void CommandBufferSubState::DumpCopyMemoryIndirect(const VkCopyMemoryIndirectInf
     std::ostringstream ss;
     ss << "[Dump Copy Memory Indirect]\n";
 
-    bool warn_no_buffer = DumpCopyMemoryIndirectCommon(ss, info.copyCount, info.copyAddressRange);
+    bool found_warning = DumpCopyMemoryIndirectCommon(ss, info.copyCount, info.copyAddressRange);
 
     std::vector<uint8_t> indirect_data = dev_data.CopyDataFromMemory(info.copyAddressRange.address, info.copyAddressRange.size);
     const bool know_data = !indirect_data.empty();
@@ -70,16 +70,16 @@ void CommandBufferSubState::DumpCopyMemoryIndirect(const VkCopyMemoryIndirectInf
             auto command = *(VkCopyMemoryIndirectCommandKHR*)(indirect_data.data() + stride_i);
             ss << "    - size: " << std::dec << command.size << '\n';
             ss << "    - srcAddress: 0x" << std::hex << command.srcAddress << '\n';
-            warn_no_buffer |= ListBuffers(ss, dev_data, command.srcAddress, 2);
+            found_warning |= ListBuffers(ss, dev_data, command.srcAddress, 2);
             ss << "    - dstAddress: 0x" << std::hex << command.dstAddress << '\n';
-            warn_no_buffer |= ListBuffers(ss, dev_data, command.dstAddress, 2);
+            found_warning |= ListBuffers(ss, dev_data, command.dstAddress, 2);
         }
     }
 
     if (dev_data.gpu_dump_settings.to_stdout) {
         std::cout << "GPU-DUMP " << ss.str() << '\n';
     } else {
-        const VkFlags log_level = warn_no_buffer ? kWarningBit : kInformationBit;
+        const VkFlags log_level = found_warning ? kWarningBit : kInformationBit;
         // Don't provide a LogObjectList, embed it into the message instead to keep things cleaner
         // (because the default callback will list them at the bottom)
         dev_data.debug_report->LogMessage(log_level, "GPU-DUMP", {}, loc, ss.str().c_str());
@@ -91,7 +91,7 @@ void CommandBufferSubState::DumpCopyMemoryToImageIndirect(const VkCopyMemoryToIm
     std::ostringstream ss;
     ss << "[Dump Copy Memory Indirect]\n";
 
-    bool warn_no_buffer = DumpCopyMemoryIndirectCommon(ss, info.copyCount, info.copyAddressRange);
+    bool found_warning = DumpCopyMemoryIndirectCommon(ss, info.copyCount, info.copyAddressRange);
 
     std::vector<uint8_t> indirect_data = dev_data.CopyDataFromMemory(info.copyAddressRange.address, info.copyAddressRange.size);
     const bool know_data = !indirect_data.empty();
@@ -106,7 +106,7 @@ void CommandBufferSubState::DumpCopyMemoryToImageIndirect(const VkCopyMemoryToIm
         if (know_data) {
             auto command = *(VkCopyMemoryToImageIndirectCommandKHR*)(indirect_data.data() + stride_i);
             ss << "    - srcAddress: 0x" << std::hex << command.srcAddress << '\n';
-            warn_no_buffer |= ListBuffers(ss, dev_data, command.srcAddress, 2);
+            found_warning |= ListBuffers(ss, dev_data, command.srcAddress, 2);
             ss << "    - bufferRowLength: " << std::dec << command.bufferRowLength << '\n';
             ss << "    - bufferImageHeight: " << command.bufferImageHeight << '\n';
             ss << "    - imageSubresource: " << string_VkImageSubresourceLayers(command.imageSubresource) << '\n';
@@ -118,7 +118,7 @@ void CommandBufferSubState::DumpCopyMemoryToImageIndirect(const VkCopyMemoryToIm
     if (dev_data.gpu_dump_settings.to_stdout) {
         std::cout << "GPU-DUMP " << ss.str() << '\n';
     } else {
-        const VkFlags log_level = warn_no_buffer ? kWarningBit : kInformationBit;
+        const VkFlags log_level = found_warning ? kWarningBit : kInformationBit;
         // Don't provide a LogObjectList, embed it into the message instead to keep things cleaner
         // (because the default callback will list them at the bottom)
         dev_data.debug_report->LogMessage(log_level, "GPU-DUMP", {}, loc, ss.str().c_str());

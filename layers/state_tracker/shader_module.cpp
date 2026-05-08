@@ -2421,8 +2421,6 @@ VkDescriptorType ResourceInterfaceVariable::GetPotentialDescriptorType() const {
         return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     } else if (is_combined_image_sampler) {
         return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    } else if (is_storage_tensor) {
-        return VK_DESCRIPTOR_TYPE_TENSOR_ARM;
     } else if (is_acceleration_structure || is_acceleration_structure_nv) {
         return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     }
