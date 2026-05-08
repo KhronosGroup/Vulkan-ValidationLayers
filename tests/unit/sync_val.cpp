@@ -4015,18 +4015,9 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
 
 TEST_F(NegativeSyncVal, EventsCommandHazards) {
     TEST_DESCRIPTION("Check Set/Reset/Wait command hazard checking");
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
     vkt::Event event(*m_device);
-
-    m_command_buffer.Begin();
-    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-    m_errorMonitor->SetDesiredError("VUID-vkCmdResetEvent-event-03834");
-    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    m_errorMonitor->VerifyFound();
-    m_command_buffer.End();
 
     m_command_buffer.Begin();
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
@@ -4874,21 +4865,20 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
     vkt::Event event(*m_device);
 
     reset.Begin();
-    vk::CmdResetEvent(reset, event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    reset.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     reset.End();
 
     // Command Buffer A reads froms buffer A and writes to buffer B
     cb0.Begin();
     cb0.Copy(buffer_a, buffer_b);
-    vk::CmdSetEvent(cb0, event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    cb0.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     cb0.End();
 
     // cb1 reads froms buffer C and writes to buffer A, but has a wait to protect
     // the write to A when executed on the same queue
     cb1.Begin();
     barrier_war.buffer = buffer_a;
-    vk::CmdWaitEvents(cb1, 1, &event.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 1,
-                      &barrier_war, 0, nullptr);
+    cb1.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier_war);
     cb1.Copy(buffer_c, buffer_a);
     cb1.End();
 
@@ -4897,10 +4887,9 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
     //    reads froms buffer C and writes to buffer A, but has a barrier to protect the write to A when
     cb2.Begin();
     cb2.Copy(buffer_a, buffer_b);
-    vk::CmdSetEvent(cb2, event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    cb2.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     barrier_war.buffer = buffer_a;
-    vk::CmdWaitEvents(cb2, 1, &event.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 1,
-                      &barrier_war, 0, nullptr);
+    cb2.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier_war);
     cb2.Copy(buffer_c, buffer_a);
     cb2.End();
 
@@ -4945,10 +4934,9 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
     cb0.End();
 
     cb1.Begin();
-    vk::CmdSetEvent(cb1, event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    cb1.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     barrier_war.buffer = buffer_a;
-    vk::CmdWaitEvents(cb1, 1, &event.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 1,
-                      &barrier_war, 0, nullptr);
+    cb1.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier_war);
     cb1.Copy(buffer_c, buffer_a);
     cb1.End();
 

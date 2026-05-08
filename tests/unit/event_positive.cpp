@@ -41,12 +41,59 @@ TEST_F(PositiveEvent, EventStageMaskTwoSubmits) {
     m_default_queue->Submit(commandBuffer1);
 
     commandBuffer2.Begin();
-    vk::CmdWaitEvents(commandBuffer2, 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                      VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdWaitEvents(commandBuffer2, 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                      0, nullptr, 0, nullptr, 0, nullptr);
     commandBuffer2.End();
     m_default_queue->Submit(commandBuffer2);
 
     m_default_queue->Wait();
+}
+
+TEST_F(PositiveEvent, EventStageMaskTwoBatches) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
+    command_buffer.Begin();
+    command_buffer.SetEvent(event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    command_buffer.End();
+
+    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
+    command_buffer2.Begin();
+    command_buffer2.WaitEvent(event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+    command_buffer2.End();
+
+    const VkCommandBuffer command_buffers[2] = {command_buffer, command_buffer2};
+
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 2;
+    submit_info.pCommandBuffers = command_buffers;
+    vk::QueueSubmit(*m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveEvent, StageMaskTwoEventsTwoSubmits) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+    vkt::Event event2(*m_device);
+    const VkEvent events[2] = {event, event2};
+
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
+    command_buffer.Begin();
+    command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    command_buffer.End();
+
+    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
+    command_buffer2.Begin();
+    command_buffer2.SetEvent(event2, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    vk::CmdWaitEvents(command_buffer2, 2, events, VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
+    command_buffer2.End();
+
+    m_default_queue->Submit(command_buffer);
+    m_default_queue->SubmitAndWait(command_buffer2);
 }
 
 TEST_F(PositiveEvent, EventStageMaskHost) {
@@ -56,7 +103,7 @@ TEST_F(PositiveEvent, EventStageMaskHost) {
     m_command_buffer.Begin();
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
     m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_HOST_BIT,
-                               VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+                               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
     m_command_buffer.End();
 }
 
@@ -65,10 +112,28 @@ TEST_F(PositiveEvent, EventStageMaskHostSubmit) {
     vkt::Event event(*m_device);
 
     m_command_buffer.Begin();
-    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
     m_command_buffer.End();
 
     event.Set();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveEvent, SecondaryCb) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.SetEvent(event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.ExecuteCommands(secondary);
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    m_command_buffer.End();
+
+    // If due to regression ExecuteCommands has no effect then submit validation will report an error
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 

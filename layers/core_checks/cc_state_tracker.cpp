@@ -22,6 +22,7 @@
 #include <vulkan/vulkan_core.h>
 #include "core_validation.h"
 #include "cc_sync_vuid_maps.h"
+#include "containers/container_utils.h"
 #include "error_message/error_strings.h"
 #include "generated/error_location_helper.h"
 #include "state_tracker/buffer_state.h"
@@ -615,22 +616,51 @@ void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags
         });
 }
 
-void CommandBufferSubState::RecordWaitEvents(uint32_t eventCount, const VkEvent* pEvents, VkPipelineStageFlags2 src_stage_mask,
-                                             const VkDependencyInfo* dependency_info, const Location& loc) {
-    // vvl::CommandBuffer will add to the events vector. TODO this is now incorrect
-    auto first_event_index = base.events.size();
-    auto event_added_count = eventCount;
-
-    std::optional<vku::safe_VkDependencyInfo> safe_dependency_info;
-    if (dependency_info) {
-        safe_dependency_info.emplace(dependency_info);
+void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask,
+                                             const Location& loc) {
+    bool submit_validation = false;
+    std::vector<std::pair<VkEvent, EventSignalingState>> cb_signaling_state;
+    for (VkEvent event : events) {
+        if (const EventSignalingState* signaling_state = vvl::Find(event_signaling_states, event)) {
+            cb_signaling_state.emplace_back(event, *signaling_state);
+        } else {
+            // Command buffer does not signal the waited event.
+            // The wait can be validated only during submit time
+            submit_validation = true;
+        }
     }
+    if (submit_validation) {
+        WaitEventSubmitInfo submit_info;
+        submit_info.wait_events.assign(events.begin(), events.end());
+        submit_info.wait_src_stage_mask = src_stage_mask;
+        submit_info.cb_signaling_state = std::move(cb_signaling_state);
+        wait_event_submit_infos.emplace_back(std::move(submit_info));
+    }
+
+    // TODO: this will be removed when submit validation callbacks are removed
+    auto first_event_index = base.events.size();
+    auto event_added_count = events.size();
+    std::optional<vku::safe_VkDependencyInfo> safe_dependency_info;
     event_updates.emplace_back(
-        [event_added_count, first_event_index, src_stage_mask, safe_dependency_info](
+        [event_added_count, first_event_index, safe_dependency_info](
             vvl::CommandBuffer& cb_state, bool do_validate, EventMap& local_event_signal_info, VkQueue queue, const Location& loc) {
             if (!do_validate) return false;
-            return CoreChecks::ValidateWaitEventsAtSubmit(cb_state, event_added_count, first_event_index, src_stage_mask,
-                                                          safe_dependency_info, local_event_signal_info, queue, loc);
+            return CoreChecks::ValidateWaitEventsAtSubmit(cb_state, event_added_count, first_event_index, safe_dependency_info,
+                                                          local_event_signal_info, queue, loc);
+        });
+}
+
+void CommandBufferSubState::RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {
+    // TODO: this will be removed when submit validation callbacks are removed
+    auto first_event_index = base.events.size();
+    auto event_added_count = 1;
+    std::optional<vku::safe_VkDependencyInfo> safe_dependency_info(&dependency_info);
+    event_updates.emplace_back(
+        [event_added_count, first_event_index, safe_dependency_info](
+            vvl::CommandBuffer& cb_state, bool do_validate, EventMap& local_event_signal_info, VkQueue queue, const Location& loc) {
+            if (!do_validate) return false;
+            return CoreChecks::ValidateWaitEventsAtSubmit(cb_state, event_added_count, first_event_index, safe_dependency_info,
+                                                          local_event_signal_info, queue, loc);
         });
 }
 
@@ -1095,6 +1125,7 @@ void CommandBufferSubState::ResetCBState() {
     // Submit time validation
     queue_submit_functions.clear();
     event_updates.clear();
+    wait_event_submit_infos.clear();
     cmd_execute_commands_functions.clear();
     query_updates.clear();
 
@@ -1121,6 +1152,9 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_c
 
     for (auto& function : secondary_sub_state.event_updates) {
         event_updates.push_back(function);
+    }
+    for (auto& [event, event_signaling_state] : secondary_sub_state.event_signaling_states) {
+        event_signaling_states.insert_or_assign(event, event_signaling_state);
     }
 
     for (auto& function : secondary_sub_state.queue_submit_functions) {
@@ -1165,12 +1199,13 @@ void CommandBufferSubState::Submit(vvl::Queue& queue_state, uint32_t perf_submit
             function(base, /*do_validate*/ false, local_event_signal_info,
                      VK_NULL_HANDLE /* when do_validate is false then wait handler is inactive */, loc);
         }
-        for (const auto& [event, info] : local_event_signal_info) {
-            auto event_state = base.dev_data.Get<vvl::Event>(event);
-            event_state->signaled = info.signal;
-            event_state->dependency_info = info.dependency_info;
-            event_state->signal_src_stage_mask = info.src_stage_mask;
-            event_state->signaling_queue = queue_state.VkHandle();
+        for (const auto& [event, signaling_state] : event_signaling_states) {
+            if (auto event_state = base.dev_data.Get<vvl::Event>(event)) {
+                event_state->signaled = signaling_state.signaled;
+                event_state->signal_src_stage_mask = signaling_state.src_stage_mask;
+                event_state->dependency_info = signaling_state.dependency_info;
+                event_state->signaling_queue = queue_state.VkHandle();
+            }
         }
     }
 

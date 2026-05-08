@@ -1,6 +1,6 @@
-/* Copyright (c) 2024-2025 The Khronos Group Inc.
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,21 @@
 
 #pragma once
 
-#include "state_tracker/semaphore_state.h"
 #include "containers/custom_containers.h"
+#include <vulkan/vulkan_core.h>
+#include <optional>
+
+// TODO: temporary use EventMap, but it will be removed
+#include "state_tracker/event_map.h"
 
 class CoreChecks;
+struct Location;
+
+namespace vvl {
+class CommandBuffer;
+class Semaphore;
+enum class Func;
+}  // namespace vvl
 
 // Tracks semaphore state changes during the validation phase of QueueSubmit commands.
 // Semaphore state object (vvl::Semaphore) is updated later in the record phase.
@@ -59,4 +70,15 @@ struct SemaphoreSubmitState {
     bool ValidateBinarySignal(const Location &semaphore_loc, const vvl::Semaphore &semaphore_state);
     bool ValidateTimelineSignal(const Location &semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
     bool ValidateSignalSemaphore(const Location &semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
+};
+
+struct WaitEventSubmitInfo {
+    std::vector<VkEvent> wait_events;
+    VkPipelineStageFlags wait_src_stage_mask = VK_PIPELINE_STAGE_NONE;
+
+    // Waited events that were signaled in the same command buffer and corresponding signal stage masks
+    std::vector<std::pair<VkEvent, EventSignalingState>> cb_signaling_state;
+
+    bool Validate(const CoreChecks& core, const vvl::CommandBuffer& cb_state, EventMap& submit_signaling_state,
+                  const Location& loc) const;
 };

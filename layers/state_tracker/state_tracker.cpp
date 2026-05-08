@@ -3475,16 +3475,16 @@ void DeviceState::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, Vk
 }
 
 void DeviceState::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                              VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
+                                              VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                               uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
                                               uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                               uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
                                               const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCommand(record_obj.location);
-    cb_state->RecordWaitEvents(eventCount, pEvents, sourceStageMask, nullptr, record_obj.location);
+    cb_state->RecordWaitEvents(vvl::make_span(pEvents, eventCount), srcStageMask, record_obj.location);
     cb_state->RecordBarrierObjects(bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers,
-                                   sourceStageMask, dstStageMask, record_obj.location);
+                                   srcStageMask, dstStageMask, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
@@ -3498,9 +3498,8 @@ void DeviceState::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
     cb_state->RecordCommand(record_obj.location);
     for (uint32_t i = 0; i < eventCount; i++) {
         const auto& dep_info = pDependencyInfos[i];
-        auto exec_scopes = sync_utils::GetExecScopes(dep_info);
         const Location& dep_info_loc = record_obj.location.dot(vvl::Field::pDependencyInfos, i);
-        cb_state->RecordWaitEvents(1, &pEvents[i], exec_scopes.src, &pDependencyInfos[i], dep_info_loc);
+        cb_state->RecordWaitEvent2(pEvents[i], pDependencyInfos[i], dep_info_loc);
         cb_state->RecordBarrierObjects(dep_info, dep_info_loc);
     }
 }
