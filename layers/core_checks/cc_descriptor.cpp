@@ -1679,18 +1679,20 @@ bool CoreChecks::ValidateBufferUpdate(const vvl::Buffer& buffer_state, const VkD
                              string_VkBufferUsageFlags2(buffer_state.usage).c_str(), string_VkDescriptorType(type));
         }
     } else if (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER || type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
-        const uint32_t max_sb_range = phys_dev_props.limits.maxStorageBufferRange;
         if (!enabled_features.shader64BitIndexing) {
+            const uint32_t max_sb_range = phys_dev_props.limits.maxStorageBufferRange;
             if (buffer_info.range != VK_WHOLE_SIZE && buffer_info.range > max_sb_range) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00333", buffer_info.buffer,
                                  buffer_info_loc.dot(Field::range),
-                                 "(%" PRIu64 ") is greater than maxStorageBufferRange (%" PRIu32 ") for descriptorType %s.",
+                                 "(%" PRIu64 ") is greater than maxStorageBufferRange (%" PRIu32
+                                 ") for descriptorType %s.\nHint: This can be relaxed if shader64BitIndexing is enabled.",
                                  buffer_info.range, max_sb_range, string_VkDescriptorType(type));
             } else if (buffer_info.range == VK_WHOLE_SIZE && (buffer_state.GetSize() - buffer_info.offset) > max_sb_range) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00333", buffer_info.buffer,
                                  buffer_info_loc.dot(Field::range),
                                  "is VK_WHOLE_SIZE, but the effective range [size (%" PRIu64 ") - offset (%" PRIu64 ") = %" PRIu64
-                                 "] is greater than maxStorageBufferRange (%" PRIu32 ") for descriptorType %s.",
+                                 "] is greater than maxStorageBufferRange (%" PRIu32
+                                 ") for descriptorType %s.\nHint: This can be relaxed if shader64BitIndexing is enabled.",
                                  buffer_state.GetSize(), buffer_info.offset, buffer_state.GetSize() - buffer_info.offset,
                                  max_sb_range, string_VkDescriptorType(type));
             }
@@ -3210,6 +3212,20 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
         if (address_info.range == VK_WHOLE_SIZE) {
             skip |= LogError("VUID-VkDescriptorAddressInfoEXT-nullDescriptor-08939", device, address_loc.dot(Field::range),
                              "is VK_WHOLE_SIZE.");
+        } else if (address_loc.field == Field::pUniformBuffer && address_info.range > phys_dev_props.limits.maxUniformBufferRange) {
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8269/diffs
+            skip |= LogError("UNASSIGNED-VkDescriptorAddressInfoEXT-range-UBO", device, address_loc.dot(Field::range),
+                             "(%" PRIu64 ") is greater than maxUniformBufferRange (%" PRIu32
+                             ")\nHint: You can have multiple descriptors point to different parts of the Uniform Buffer.",
+                             address_info.range, phys_dev_props.limits.maxUniformBufferRange);
+        } else if (address_loc.field == Field::pStorageBuffer && !enabled_features.shader64BitIndexing &&
+                   address_info.range > phys_dev_props.limits.maxStorageBufferRange) {
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8269/diffs
+            skip |= LogError("UNASSIGNED-VkDescriptorAddressInfoEXT-range-SSBO", device, address_loc.dot(Field::range),
+                             "(%" PRIu64 ") is greater than maxStorageBufferRange (%" PRIu32
+                             ")\nHint: You can have multiple descriptors point to different parts of the Storage Buffer\nHint: "
+                             "This can be relaxed if shader64BitIndexing is enabled",
+                             address_info.range, phys_dev_props.limits.maxStorageBufferRange);
         }
 
         // with VK_EXT_texel_buffer_alignment we have these ugly extra cases to handle
