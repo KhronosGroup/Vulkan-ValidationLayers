@@ -1,0 +1,88 @@
+version = 1
+
+# ---------------------------------------------------------------------------
+# Default: all project files are Apache-2.0, Copyright The Khronos Group, Inc.
+# ---------------------------------------------------------------------------
+
+[[annotations]]
+path = "**"
+SPDX-FileCopyrightText = "The Khronos Group, Inc."
+SPDX-License-Identifier = "Apache-2.0"
+
+# ---------------------------------------------------------------------------
+# ANGLE-origin files (scripts/gn/)
+# ---------------------------------------------------------------------------
+
+[[annotations]]
+path = "scripts/gn/commit_id.py"
+SPDX-FileCopyrightText = "2018 The ANGLE Project Authors."
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = "scripts/gn/generate_vulkan_layers_json.py"
+SPDX-FileCopyrightText = ["2016 The ANGLE Project Authors.", "2022-2024 LunarG, Inc."]
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = "scripts/gn/export_targets.py"
+SPDX-FileCopyrightText = "The ANGLE Project Authors."
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = "scripts/gn/layers-fuchsia.gni"
+SPDX-FileCopyrightText = "2022 The Fuchsia Authors."
+SPDX-License-Identifier = "Apache-2.0"
+
+# ---------------------------------------------------------------------------
+# clang-format-diff.py — LLVM Project, Apache-2.0 WITH LLVM-exception
+# ---------------------------------------------------------------------------
+
+[[annotations]]
+path = "scripts/clang-format-diff.py"
+SPDX-FileCopyrightText = "The LLVM Project"
+SPDX-License-Identifier = "Apache-2.0 WITH LLVM-exception"
+
+# ---------------------------------------------------------------------------
+# External: parallel_hashmap (Apache-2.0, Gregory Popovitch)
+# ---------------------------------------------------------------------------
+
+[[annotations]]
+path = "layers/external/parallel_hashmap/**"
+SPDX-FileCopyrightText = "2019, Gregory Popovitch - greg7mdp@gmail.com"
+SPDX-License-Identifier = "Apache-2.0"
+
+# ---------------------------------------------------------------------------
+# External: parallel_hashmap/meminfo.h — MIT, Gregory Popovitch (from sparsepp)
+# ---------------------------------------------------------------------------
+
+[[annotations]]
+path = "layers/external/parallel_hashmap/meminfo.h"
+SPDX-FileCopyrightText = "2019, Gregory Popovitch - greg7mdp@gmail.com"
+SPDX-License-Identifier = "MIT"
+
+# ---------------------------------------------------------------------------
+# External: VMA — MIT, Advanced Micro Devices, Inc.
+# ---------------------------------------------------------------------------
+
+[[annotations]]
+path = "layers/external/vma/**"
+SPDX-FileCopyrightText = "2017-2024 Advanced Micro Devices, Inc."
+SPDX-License-Identifier = "MIT"
+
+# ---------------------------------------------------------------------------
+# External: xxhash — BSD-2-Clause, Yann Collet
+# ---------------------------------------------------------------------------
+
+[[annotations]]
+path = "layers/external/xxhash.h"
+SPDX-FileCopyrightText = "2012-2023 Yann Collet"
+SPDX-License-Identifier = "BSD-2-Clause"
+
+# ---------------------------------------------------------------------------
+# External: inplace_function — BSL-1.0
+# ---------------------------------------------------------------------------
+
+[[annotations]]
+path = "layers/external/inplace_function.h"
+SPDX-FileCopyrightText = "WG21-SG14 contributors"
+SPDX-License-Identifier = "BSL-1.0"
