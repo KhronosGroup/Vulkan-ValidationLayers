@@ -4072,9 +4072,13 @@ void DeviceState::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bi
     PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 }
 
-void DeviceState::PreCallRecordSetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {
+void DeviceState::PostCallRecordSetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
     if (auto event_state = Get<Event>(event)) {
         event_state->signaled = true;
+        event_state->dependency_info.reset();
         event_state->signal_src_stage_mask = VK_PIPELINE_STAGE_HOST_BIT;
         event_state->signaling_queue = VK_NULL_HANDLE;
     }

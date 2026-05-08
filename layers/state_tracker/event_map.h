@@ -28,7 +28,7 @@
 struct EventInfo {
     VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
     bool signal = false;  // signal (SetEvent) or unsignal (ResetEvent)
-    vku::safe_VkDependencyInfo dependency_info = {};
+    std::optional<vku::safe_VkDependencyInfo> dependency_info;
 };
 using EventMap = vvl::unordered_map<VkEvent, EventInfo>;
 
@@ -42,9 +42,8 @@ struct EventSignalingState {
     VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
 
     // If signaled is true and the event was set by CmdSetEvent2, this is the dependency info from that command
-    vku::safe_VkDependencyInfo dependency_info = {};
+    std::optional<vku::safe_VkDependencyInfo> dependency_info;
 
-    EventSignalingState(bool signaled, VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_NONE,
-                        vku::safe_VkDependencyInfo dependency_info = {})
-        : signaled(signaled), src_stage_mask(src_stage_mask), dependency_info(dependency_info) {}
+    EventSignalingState(bool signaled, VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_NONE)
+        : signaled(signaled), src_stage_mask(src_stage_mask) {}
 };
