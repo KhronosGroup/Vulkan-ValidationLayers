@@ -6137,3 +6137,34 @@ TEST_F(NegativeDescriptorHeap, DescriptorIndexingIndirectAddress) {
     pipe2.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptorHeap, MaxBufferRange) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Easier to control limit test on MockICD.";
+    }
+
+    const uint32_t max_ubo_range = m_device->Physical().limits_.maxUniformBufferRange;
+    const uint32_t max_ssbo_range = m_device->Physical().limits_.maxStorageBufferRange;
+
+    vkt::Buffer buffer_ubo(*m_device, max_ubo_range + 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer buffer_ssbo(*m_device, max_ssbo_range + 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    uint8_t host_data[256];
+    VkHostAddressRangeEXT descriptor_host = {host_data, (size_t)heap_props.bufferDescriptorSize};
+    VkDeviceAddressRangeEXT device_range = buffer_ubo.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkResourceDescriptorInfoEXT-size-UBO");
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+    m_errorMonitor->VerifyFound();
+
+    device_range = buffer_ssbo.AddressRange();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkResourceDescriptorInfoEXT-size-SSBO");
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+    m_errorMonitor->VerifyFound();
+}
