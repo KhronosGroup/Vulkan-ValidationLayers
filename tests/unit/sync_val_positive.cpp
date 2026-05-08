@@ -2779,6 +2779,33 @@ TEST_F(PositiveSyncVal, AmdBufferMarker) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveSyncVal, AmdBufferMarker2) {
+    TEST_DESCRIPTION("Use barrier to synchronize with AMD buffer marker accesses");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredExtensions(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    // AMD marker access is WRITE on TRANSFER stage
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    // Buffer copy access
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.buffer = buffer_a;
+    barrier.size = 256;
+
+    m_command_buffer.Begin();
+    vk::CmdWriteBufferMarker2AMD(m_command_buffer, VK_PIPELINE_STAGE_2_TRANSFER_BIT, buffer_a, 0, 1);
+    m_command_buffer.Barrier(barrier);
+    m_command_buffer.Copy(buffer_b, buffer_a);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveSyncVal, AmdBufferMarkerDuplicated) {
     TEST_DESCRIPTION("Buffer marker accesses create execution dependency betweem themsevles");
     AddRequiredExtensions(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
@@ -2801,6 +2828,35 @@ TEST_F(PositiveSyncVal, AmdBufferMarkerDuplicated2) {
 
     m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
     vk::CmdWriteBufferMarkerAMD(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, buffer, 0, 1);
+    m_command_buffer.End();
+    // Submit two times
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncVal, AmdBufferMarkerDuplicated3) {
+    TEST_DESCRIPTION("Buffer marker accesses create execution dependency betweem themsevles");
+    AddRequiredExtensions(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    vk::CmdWriteBufferMarker2AMD(m_command_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, buffer, 0, 1);
+    vk::CmdWriteBufferMarker2AMD(m_command_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, buffer, 0, 1);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, AmdBufferMarkerDuplicated4) {
+    TEST_DESCRIPTION("Buffer marker accesses create execution dependency betweem themsevles");
+    AddRequiredExtensions(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdWriteBufferMarker2AMD(m_command_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, buffer, 0, 1);
     m_command_buffer.End();
     // Submit two times
     m_default_queue->Submit(m_command_buffer);
