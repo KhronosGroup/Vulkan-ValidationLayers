@@ -1295,7 +1295,7 @@
                         "maxSamplerAllocationCount": 4000,
                         "maxSamplerAnisotropy": 16,
                         "maxSamplerLodBias": 15,
-                        "maxStorageBufferRange": 4294967000,
+                        "maxStorageBufferRange": 4194967000,
                         "maxTessellationControlPerPatchOutputComponents": 120,
                         "maxTessellationControlPerVertexInputComponents": 128,
                         "maxTessellationControlPerVertexOutputComponents": 128,
