@@ -972,7 +972,11 @@ bool CoreChecks::ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& 
                          string_VkShaderStageFlagBits(first->create_info.stage), first->create_info.setLayoutCount,
                          string_VkShaderStageFlagBits(shader_state->create_info.stage), shader_state->create_info.setLayoutCount);
         } else {
-            for (uint32_t i = 0; i < shader_state->create_info.setLayoutCount; ++i) {
+            // with independent sets, could have different counts
+            // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4812
+            const uint32_t set_layout_count = std::min(first->create_info.setLayoutCount, shader_state->create_info.setLayoutCount);
+
+            for (uint32_t i = 0; i < set_layout_count; ++i) {
                 const auto first_layout = Get<vvl::DescriptorSetLayout>(first->create_info.pSetLayouts[i]);
                 const auto current_layout = Get<vvl::DescriptorSetLayout>(shader_state->create_info.pSetLayouts[i]);
                 if (!first_layout || !current_layout) {
