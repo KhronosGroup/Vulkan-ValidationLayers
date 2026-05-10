@@ -195,7 +195,7 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module& module_state, co
                 skip |= LogError(
                     GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::PushConstantRange_10069), objlist, loc,
                     "shader %s has a push constant buffer Block with range [%" PRIu32 ", %" PRIu32
-                    "] which outside the VkPushConstantRange of [%" PRIu32 ", %" PRIu32 "].",
+                    "] which is outside the VkPushConstantRange of [%" PRIu32 ", %" PRIu32 "].",
                     entrypoint.Describe().c_str(), push_constant_variable->offset, push_constant_end, range.offset, range_end);
                 break;
             }
