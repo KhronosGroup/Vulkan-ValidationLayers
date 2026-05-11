@@ -1202,8 +1202,7 @@ class CoreChecks : public vvl::DeviceProxy {
 
     void TransitionFinalSubpassLayouts(vvl::CommandBuffer& cb_state);
 
-    template <typename HandleT>
-    bool ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRegion& region, const Location& region_loc) const;
+    bool ValidateCopyImageRegionCommon(const ImageCopyRegion& region, const Location& region_loc) const;
 
     template <typename HandleT>
     bool ValidateCopyImageCommon(HandleT handle, const vvl::Image& src_image_state, const vvl::Image& dst_image_state,
@@ -1281,8 +1280,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                          VkFormatFeatureFlags2 desired, const Location& image_loc, const char* vuid,
                                          bool all_bits_required = true) const;
 
-    template <typename HandleT>
-    bool ValidateImageSubresourceLayers(HandleT handle, const vvl::Image& image_state,
+    bool ValidateImageSubresourceLayers(const LogObjectList& objlist, const vvl::Image& image_state,
                                         const VkImageSubresourceLayers& subresource_layers, const Location& subresource_loc) const;
 
     bool ValidateBufferUsageFlags(const LogObjectList& objlist, const vvl::Buffer& buffer_state, VkBufferUsageFlags2 desired,
