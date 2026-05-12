@@ -145,13 +145,17 @@ bool CoreChecks::ValidateAccelStructsMemoryDoNotOverlap(const Location& function
         memory != VK_NULL_HANDLE) {
         objlist.add(accel_struct_a.Handle(), buffer_a.state->Handle(), accel_struct_b.Handle(), buffer_b.state->Handle());
 
-        skip |=
-            LogError(vuid, objlist, function_loc,
-                     "memory backing buffer (%s) used as storage for %s (%s) overlaps memory backing buffer (%s) used as "
-                     "storage for %s (%s). Overlapped memory is (%s) on range %s.",
-                     FormatHandle(*buffer_a.state).c_str(), loc_a.Fields().c_str(), FormatHandle(accel_struct_a.Handle()).c_str(),
-                     FormatHandle(*buffer_b.state).c_str(), loc_b.Fields().c_str(), FormatHandle(accel_struct_b.Handle()).c_str(),
-                     FormatHandle(memory).c_str(), string_range_hex(overlap_range).c_str());
+        const std::string loc_a_str = loc_a.Fields();
+        const std::string loc_b_str = loc_b.Fields();
+        skip |= LogError(vuid, objlist, function_loc,
+                         "%s and %s memory overlap.\n"
+                         "%s (%s) is backed by buffer (%s) on range %s.\n"
+                         "%s (%s) is backed by buffer (%s) on range %s.\n"
+                         "The overlapping range for memory (%s) is %s.",
+                         loc_a_str.c_str(), loc_b_str.c_str(), loc_a_str.c_str(), FormatHandle(accel_struct_a.VkHandle()).c_str(),
+                         FormatHandle(buffer_a.state->VkHandle()).c_str(), string_range_hex(range_a).c_str(), loc_b_str.c_str(),
+                         FormatHandle(accel_struct_b.VkHandle()).c_str(), FormatHandle(buffer_b.state->VkHandle()).c_str(),
+                         string_range_hex(range_b).c_str(), FormatHandle(memory).c_str(), string_range(overlap_range).c_str());
     }
 
     return skip;
