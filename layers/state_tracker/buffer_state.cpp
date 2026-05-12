@@ -170,6 +170,11 @@ BufferAddressRange::BufferAddressRange(small_vector<vvl::Buffer*, 2> buffer_stat
       internal_range(range, usage) {}
 
 void BufferAddressRange::Destroy() {
+    for (vvl::Buffer* buffer_state : buffer_states) {
+        if (buffer_state) {
+            buffer_state->RemoveParent(this);
+        }
+    }
     buffer_states.clear();
     StateObject::Destroy();
 }
