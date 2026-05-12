@@ -1250,3 +1250,51 @@ TEST_F(NegativeObjectLifetime, DestroyedImageInImageView) {
     vkt::ImageView view(*m_device, view_ci);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeObjectLifetime, DestroyBufferAddressRange) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12246");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
+    buffer_create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    buffer_create_info.size = 256;
+
+    VkBuffer buffer = VK_NULL_HANDLE;
+    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
+
+    VkMemoryRequirements buffer_mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
+
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
+    VkMemoryAllocateInfo buffer_mem_alloc = vku::InitStructHelper(&allocate_flag_info);
+    buffer_mem_alloc.memoryTypeIndex = 0;  // hard assumption
+    buffer_mem_alloc.allocationSize = buffer_mem_reqs.size;
+    VkDeviceMemory device_memory = VK_NULL_HANDLE;
+    vk::AllocateMemory(device(), &buffer_mem_alloc, nullptr, &device_memory);
+    vk::BindBufferMemory(device(), buffer, device_memory, 0);
+
+    VkBufferDeviceAddressInfo bdai = vku::InitStructHelper();
+    bdai.buffer = buffer;
+    VkDeviceAddress buffer_address = vk::GetBufferDeviceAddress(device(), &bdai);
+
+    VkBindVertexBuffer3InfoKHR info = vku::InitStructHelper();
+    info.setStride = VK_TRUE;
+    info.addressRange.address = buffer_address;
+    info.addressRange.size = 256;
+    info.addressRange.stride = 4u;
+    info.addressFlags = 0u;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers3KHR(m_command_buffer, 0, 1u, &info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+    monitor_.SetAllowedFailureMsg("VUID-vkDestroyDevice-device-05137");
+}
