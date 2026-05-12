@@ -61,10 +61,6 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
         }
     }
 
-    const vvl::PipelineLayout& pipeline_layout = *last_bound.desc_set_pipeline_layout;
-    ss << "vkCmdSetDescriptorBufferOffsetsEXT has bound the following with " << dev_data.FormatHandle(pipeline_layout.VkHandle())
-       << ":\n";
-
     struct BindingInfo {
         uint32_t index;
         VkDescriptorType type;
@@ -120,6 +116,44 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
             }
         }
     }
+
+    // Can be a push constant only shader, which is valid here
+    // But if there are descriptors it is only valid if they are no accessed, which is warning territory
+    if (!last_bound.desc_set_pipeline_layout) {
+        ss << "No VkPipelineLayout found from a previous vkCmdSetDescriptorBufferOffsetsEXT call\n";
+
+        bool uses_descriptors = false;
+        for (const ShaderStageState* stage : stages) {
+            if (stage->HasSpirv() && !stage->entrypoint->resource_interface_variables.empty()) {
+                uses_descriptors = true;
+                break;
+            }
+        }
+        if (uses_descriptors) {
+            ss << "[WARNING] no vkCmdSetDescriptorBufferOffsetsEXT was called so any accesses to the descriptors in the shader "
+                  "will be invalid.\n";
+            // quickly check if they set the wrong bind point (only for the more common one)
+            if (last_bound.bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS &&
+                cb_state.GetLastBoundGraphics().desc_set_pipeline_layout) {
+                ss << "    vkCmdSetDescriptorBufferOffsetsEXT was called with VK_PIPELINE_BIND_POINT_GRAPHICS, did you mean "
+                   << string_VkPipelineBindPoint(last_bound.bind_point) << "?\n";
+            } else if (last_bound.bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
+                       cb_state.GetLastBoundCompute().desc_set_pipeline_layout) {
+                ss << "    vkCmdSetDescriptorBufferOffsetsEXT was called with VK_PIPELINE_BIND_POINT_COMPUTE, did you mean "
+                   << string_VkPipelineBindPoint(last_bound.bind_point) << "?\n";
+            } else if (last_bound.bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR &&
+                       cb_state.GetLastBoundRayTracing().desc_set_pipeline_layout) {
+                ss << "    vkCmdSetDescriptorBufferOffsetsEXT was called with VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, did you mean "
+                   << string_VkPipelineBindPoint(last_bound.bind_point) << "?\n";
+            }
+            found_warning = true;
+        }
+        return found_warning;
+    }
+
+    const vvl::PipelineLayout& pipeline_layout = *last_bound.desc_set_pipeline_layout;
+    ss << "vkCmdSetDescriptorBufferOffsetsEXT has bound the following with " << dev_data.FormatHandle(pipeline_layout.VkHandle())
+       << ":\n";
 
     for (const ShaderStageState* stage : stages) {
         if (!stage->HasSpirv()) {
