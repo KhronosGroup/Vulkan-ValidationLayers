@@ -15,6 +15,7 @@
 #include "descriptor_helper.h"
 #include "generated/vk_function_pointers.h"
 #include "pipeline_helper.h"
+#include "shader_templates.h"
 #include "utils/math_utils.h"
 
 static const VkLayerSettingEXT kAllDumpSettings[3] = {
@@ -26,7 +27,7 @@ VkLayerSettingsCreateInfoEXT kAllDumpSettingCi = {VK_STRUCTURE_TYPE_LAYER_SETTIN
 
 class NegativeGpuDump : public VkLayerTest {};
 
-TEST_F(NegativeGpuDump, DumpDescriptors) {
+TEST_F(NegativeGpuDump, Descriptors) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -86,7 +87,7 @@ TEST_F(NegativeGpuDump, DumpDescriptors) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeGpuDump, DumpDescriptorBufferWithoutDescriptor) {
+TEST_F(NegativeGpuDump, DescriptorBufferWithoutDescriptor) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12250");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
@@ -141,7 +142,7 @@ TEST_F(NegativeGpuDump, DumpDescriptorBufferWithoutDescriptor) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeGpuDump, DumpDescriptorBufferWrongBindPoint) {
+TEST_F(NegativeGpuDump, DescriptorBufferWrongBindPoint) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -195,7 +196,7 @@ TEST_F(NegativeGpuDump, DumpDescriptorBufferWrongBindPoint) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeGpuDump, DumpCopyMemoryIndirect) {
+TEST_F(NegativeGpuDump, CopyMemoryIndirect) {
     AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::indirectMemoryCopy);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
@@ -1065,5 +1066,82 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentHeapData) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeGpuDump, DescriptorHeapWithoutDescriptor) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(heap_props);
+
+    // We want to easily control it for testing
+    if (heap_props.minResourceHeapReservedRange != 0) {
+        GTEST_SKIP() << "minResourceHeapReservedRange is not zero";
+    }
+
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    const VkDeviceSize heap_size = Align((resource_stride * 4), resource_stride);
+    vkt::Buffer descriptor_heap(*m_device, heap_size, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(push_constant) uniform PushConstants {
+            vec4 x;
+        } pc;
+
+        void main() {
+            gl_Position = pc.x;
+        }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineShaderStageCreateInfo stages[2];
+    stages[0] = vs.GetStageCreateInfo();
+    stages[1] = fs.GetStageCreateInfo();
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.gp_ci_.stageCount = 2u;
+    pipe.gp_ci_.pStages = stages;
+    pipe.gp_ci_.layout = VK_NULL_HANDLE;
+    pipe.CreateGraphicsPipeline(false);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    float data[4] = {1.0, 2.0, 3.0, 4.0};
+    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
+    push_data_info.offset = 0;
+    push_data_info.data.size = 16;
+    push_data_info.data.address = data;
+    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    m_errorMonitor->SetDesiredInfo("GPU-DUMP");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = descriptor_heap.AddressRange();
+    bind_resource_info.reservedRangeOffset = 0;
+    bind_resource_info.reservedRangeSize = (uint32_t)resource_stride;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    m_errorMonitor->SetDesiredInfo("GPU-DUMP");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
