@@ -3828,9 +3828,17 @@ void DeviceState::PostCallRecordCmdDrawIndirectByteCount2EXT(VkCommandBuffer com
                                                              uint32_t counterOffset, uint32_t vertexStride,
                                                              const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordCommand(record_obj.location);
+    cb_state->RecordDraw(record_obj.location);
     TrackDeviceAddressRange(*cb_state, pCounterInfo->addressRange.address, pCounterInfo->addressRange.size,
                             VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT);
+}
+
+void DeviceState::PostCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                            uint32_t firstInstance, VkBuffer counterBuffer,
+                                                            VkDeviceSize counterBufferOffset, uint32_t counterOffset,
+                                                            uint32_t vertexStride, const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordDraw(record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdWriteMarkerToMemoryAMD(VkCommandBuffer commandBuffer, const VkMemoryMarkerInfoAMD* pInfo,
