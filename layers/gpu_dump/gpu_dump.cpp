@@ -62,6 +62,8 @@ std::vector<uint8_t> GpuDump::CopyDataFromMemory(VkDeviceAddress memory_addresss
         }
     } else {
         // TODO - Handle non-host visible memory
+        // When we add, we need to guard against if trying to read non-aligned data
+        //   (which should have a warning already)
     }
 
     return result;

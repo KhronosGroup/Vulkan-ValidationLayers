@@ -344,6 +344,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     bool warn_oob = false;
     bool warn_alignment = false;
     bool warn_alignment_sampler = false;
+    bool warn_alignment_ubo_indirect_address = false;
+    bool warn_alignment_indirect_address = false;
+    bool warn_alignment_resource_address = false;
     uint32_t warn_index_oob = 0;
     uint32_t warn_reserved_range_start = vvl::kNoIndex32;
     uint32_t warn_reserved_range_end = vvl::kNoIndex32;
@@ -571,6 +574,10 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         VkDeviceAddress push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.pushOffset]);
         VkDeviceAddress final_indirect_address = push_indirect_address + map_data.addressOffset;
 
+        // VU 11437 requires this to be a UBO
+        warn_alignment_ubo_indirect_address |=
+            !IsPointerAligned(final_indirect_address, dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment);
+
         std::vector<uint8_t> indirect_index_data = dev_data.CopyDataFromMemory(final_indirect_address, 4);
         bool know_ubo = !indirect_index_data.empty();
         uint32_t indirect_index = know_ubo ? *((uint32_t*)indirect_index_data.data()) : 0;
@@ -651,6 +658,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         if (is_combined_image_sampler) {
             push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.samplerPushOffset]);
             final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
+
+            warn_alignment_ubo_indirect_address |=
+                !IsPointerAligned(final_indirect_address, dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment);
 
             indirect_index_data = dev_data.CopyDataFromMemory(final_indirect_address, 4);
             know_ubo = !indirect_index_data.empty();
@@ -737,6 +747,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         VkDeviceAddress push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.pushOffset]);
         VkDeviceAddress final_indirect_address = push_indirect_address + map_data.addressOffset;
 
+        warn_alignment_ubo_indirect_address |=
+            !IsPointerAligned(final_indirect_address, dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment);
+
         ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset
            << ", heapOffset: 0x" << map_data.heapOffset << ", heapIndexStride: 0x" << map_data.heapIndexStride;
         ss << new_line << "indirectAddress: 0x" << final_indirect_address << " (0x" << push_indirect_address << " + 0x"
@@ -810,6 +823,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         if (is_combined_image_sampler) {
             push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.samplerPushOffset]);
             final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
+
+            warn_alignment_ubo_indirect_address |=
+                !IsPointerAligned(final_indirect_address, dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment);
 
             ss << new_line << "samplerPushOffset: 0x" << std::hex << map_data.samplerPushOffset << ", samplerAddressOffset: 0x"
                << map_data.samplerAddressOffset << ", samplerHeapOffset: 0x" << map_data.samplerHeapOffset
@@ -906,6 +922,16 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         uint64_t indirect_address = *((uint64_t*)&push_data_value[mapping.sourceData.pushAddressOffset]);
         ss << "pushAddressOffset: 0x" << std::hex << mapping.sourceData.pushAddressOffset;
         ss << new_line << "Indirect Adresss 0x" << indirect_address;
+
+        if (resource_variable.is_uniform_buffer) {
+            warn_alignment_indirect_address |=
+                !IsPointerAligned(indirect_address, dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment);
+        } else if (resource_variable.is_storage_buffer) {
+            warn_alignment_indirect_address |=
+                !IsPointerAligned(indirect_address, dev_data.phys_dev_props.limits.minStorageBufferOffsetAlignment);
+        } else if (resource_variable.is_acceleration_structure) {
+            // TODO
+        }
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
         const VkDescriptorMappingSourceIndirectAddressEXT& map_data = mapping.sourceData.indirectAddress;
         VkDeviceAddress push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.pushOffset]);
@@ -915,9 +941,24 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         ss << new_line << "Indirect Address: 0x" << final_indirect_address << " (0x" << push_indirect_address << " + 0x"
            << map_data.addressOffset << ")";
 
+        // VU 11437 requires this to be a UBO
+        warn_alignment_ubo_indirect_address |=
+            !IsPointerAligned(final_indirect_address, dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment);
+
         std::vector<uint8_t> indirect_address_data = dev_data.CopyDataFromMemory(final_indirect_address, 8);
         if (!indirect_address_data.empty()) {
-            ss << new_line << "Resource Adresss 0x" << *((VkDeviceAddress*)indirect_address_data.data());
+            const VkDeviceAddress resource_address = *((VkDeviceAddress*)indirect_address_data.data());
+            ss << new_line << "Resource Adresss 0x" << resource_address;
+
+            if (resource_variable.is_uniform_buffer) {
+                warn_alignment_resource_address |=
+                    !IsPointerAligned(resource_address, dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment);
+            } else if (resource_variable.is_storage_buffer) {
+                warn_alignment_resource_address |=
+                    !IsPointerAligned(resource_address, dev_data.phys_dev_props.limits.minStorageBufferOffsetAlignment);
+            } else if (resource_variable.is_acceleration_structure) {
+                // TODO
+            }
         }
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
         // TODO - Add address for RTX
@@ -946,7 +987,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         ss << new_line << "[WARNING] OUT OF BOUNDS - any access to this descriptor will be invalid";
         found_warning = true;
     } else if (warn_alignment || warn_alignment_sampler) {
-        ss << new_line << "[WARNING] OUT OF BOUNDS - the final address";
+        ss << new_line << "[WARNING] MISALIGNED - the final address";
         if (resource_variable.IsArray()) {
             ss << ", to the first element of the array,";
         }
@@ -958,13 +999,43 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         }
         ss << "(0x" << std::hex << required_alignment << ") and any access to this descriptor will be invalid";
         found_warning = true;
+    } else if (warn_alignment_ubo_indirect_address) {
+        ss << new_line << "[WARNING] MISALIGNED - the indirect address is not aligned to minUniformBufferOffsetAlignment (0x" << std::hex
+               << dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment
+               << ") and any access to this descriptor will be invalid";
+        found_warning = true;
+    } else if (warn_alignment_indirect_address || warn_alignment_resource_address) {
+        ss << new_line << "[WARNING] MISALIGNED - the ";
+        if (warn_alignment_resource_address) {
+            ss << "resource";
+        } else {
+            ss << "indirect";
+        }
+        ss << " address is not aligned to ";
+
+        if (resource_variable.is_uniform_buffer) {
+            ss << "minUniformBufferOffsetAlignment (0x" << std::hex
+               << dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment
+               << ") and any access to this descriptor will be invalid";
+        } else if (resource_variable.is_storage_buffer) {
+            ss << "minStorageBufferOffsetAlignment (0x" << std::hex
+               << dev_data.phys_dev_props.limits.minStorageBufferOffsetAlignment
+               << ") and any access to this descriptor will be invalid";
+        } else if (resource_variable.is_acceleration_structure) {
+            // TODO
+        }
+        found_warning = true;
     } else if (warn_reserved_range_start != vvl::kNoIndex32) {
         if (warn_reserved_range_start == warn_reserved_range_end) {
-            ss << new_line << "[WARNING] OUT OF BOUNDS - descriptor index at [" << std::dec << warn_reserved_range_start << std::hex << "] will overlap with the reserved range and the access will be invalid";
+            ss << new_line << "[WARNING] RESERVE RANGE - descriptor index at [" << std::dec << warn_reserved_range_start << std::hex
+               << "] will overlap with the reserved range and the access will be invalid";
         } else if (warn_reserved_range_end != vvl::kNoIndex32) {
-            ss << new_line << "[WARNING] OUT OF BOUNDS - descriptor index starting at [" << std::dec << warn_reserved_range_start << "] to [" << warn_reserved_range_end << std::hex << "] will overlap with the reserved range and the access will be invalid";
+            ss << new_line << "[WARNING] RESERVE RANGE - descriptor index starting at [" << std::dec << warn_reserved_range_start
+               << "] to [" << warn_reserved_range_end << std::hex
+               << "] will overlap with the reserved range and the access will be invalid";
         } else {
-            ss << new_line << "[WARNING] OUT OF BOUNDS - this descriptor overlaps with the reserved range is any access will be invalid";
+            ss << new_line
+               << "[WARNING] RESERVE RANGE - this descriptor overlaps with the reserved range is any access will be invalid";
         }
         found_warning = true;
     } else if (!warn_index_array.empty()) {
@@ -976,7 +1047,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         ss << std::hex << "] will be invalid if accessed";
         found_warning = true;
     } else if (!warn_alignment_index_array.empty()) {
-        ss << new_line << "[WARNING] OUT OF BOUNDS - descriptors indexes at [" << std::dec;
+        ss << new_line << "[WARNING] MISALIGNED - descriptors indexes at [" << std::dec;
         for (uint32_t i = 0; i < warn_alignment_index_array.size(); i++) {
             if (i != 0) ss << ", ";
             ss << warn_alignment_index_array[i];
@@ -988,7 +1059,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         ss << "(0x" << std::hex << required_alignment << ") and any access to this descriptor will be invalid";
         found_warning = true;
     } else if (!warn_alignment_index_array_sampler.empty()) {
-        ss << new_line << "[WARNING] OUT OF BOUNDS - descriptors indexes at [" << std::dec;
+        ss << new_line << "[WARNING] MISALIGNED - descriptors indexes at [" << std::dec;
         for (uint32_t i = 0; i < warn_alignment_index_array_sampler.size(); i++) {
             if (i != 0) ss << ", ";
             ss << warn_alignment_index_array_sampler[i];
@@ -997,7 +1068,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
            << ") and any access to this descriptor will be invalid";
         found_warning = true;
     } else if (!warn_reserved_range_index_array.empty()) {
-        ss << new_line << "[WARNING] OUT OF BOUNDS - descriptors indexes at [" << std::dec;
+        ss << new_line << "[WARNING] RESERVE RANGE - descriptors indexes at [" << std::dec;
         for (uint32_t i = 0; i < warn_reserved_range_index_array.size(); i++) {
             if (i != 0) ss << ", ";
             ss << warn_reserved_range_index_array[i];
