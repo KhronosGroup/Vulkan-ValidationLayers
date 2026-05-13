@@ -433,6 +433,9 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateSecondaryCommandBufferDescriptorHeapInheritance(const vvl::CommandBuffer& cb_state,
                                                                  const vvl::CommandBuffer& secondary_cb_state,
                                                                  const Location& secondary_cb_loc) const;
+    bool ValidateSecondaryCommandBufferWaitEvents(const core::CommandBufferSubState& secondary_cb_sub_state,
+                                                  const Location& secondary_cb_loc,
+                                                  EventSignalingStateMap& local_signaling_state) const;
     bool ValidateInheritanceInfoFramebuffer(const vvl::CommandBuffer& cb_state,
                                             const core::CommandBufferSubState& secondary_cb_state,
                                             const VkCommandBufferInheritanceInfo& secondary_inheritance_info,

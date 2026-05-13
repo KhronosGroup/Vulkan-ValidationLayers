@@ -76,9 +76,9 @@ struct WaitEventSubmitInfo {
     std::vector<VkEvent> wait_events;
     VkPipelineStageFlags wait_src_stage_mask = VK_PIPELINE_STAGE_NONE;
 
-    // Waited events that were signaled in the same command buffer and corresponding signal stage masks
-    std::vector<std::pair<VkEvent, EventSignalingState>> cb_signaling_state;
+    // Subset of waited events with known signaling state
+    EventSignalingStateMap signaling_states;
 
-    bool Validate(const CoreChecks& core, const vvl::CommandBuffer& cb_state, EventMap& submit_signaling_state,
+    bool Validate(const CoreChecks& core, const vvl::CommandBuffer& cb_state, EventMap& submit_signaling_states,
                   const Location& loc) const;
 };

@@ -119,7 +119,7 @@ TEST_F(PositiveEvent, EventStageMaskHostSubmit) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveEvent, SecondaryCb) {
+TEST_F(PositiveEvent, SecondarySetPrimaryWait) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -135,6 +135,54 @@ TEST_F(PositiveEvent, SecondaryCb) {
 
     // If due to regression ExecuteCommands has no effect then submit validation will report an error
     m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveEvent, PrimarySetSecondaryWait) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.WaitEvent(event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    m_command_buffer.ExecuteCommands(secondary);
+    m_command_buffer.End();
+
+    // The src stage mask validation of WaitEvents happens during CmdExecuteCommands.
+    // The following submit tests that src stage mask validation is not happening during submit time
+    // (if validation leaks into submit processing it will likely report false positive)
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveEvent, SecondaryWaitTwoEvents) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+    vkt::Event event2(*m_device);
+
+    const VkEvent events[2] = {event, event2};
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    vk::CmdWaitEvents(secondary, 2, events, VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
+    secondary.End();
+
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
+    command_buffer.Begin();
+    command_buffer.SetEvent(event2, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    command_buffer.End();
+
+    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
+    command_buffer2.Begin();
+    command_buffer2.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    command_buffer2.ExecuteCommands(secondary);
+    command_buffer2.End();
+
+    m_default_queue->Submit(command_buffer);
+    m_default_queue->SubmitAndWait(command_buffer2);
 }
 
 TEST_F(PositiveEvent, BasicSetAndWaitEvent) {

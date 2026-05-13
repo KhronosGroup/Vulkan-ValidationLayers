@@ -1129,6 +1129,38 @@ bool CoreChecks::ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer& 
     return skip;
 }
 
+bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBufferSubState& secondary_cb_sub_state,
+                                                          const Location& secondary_cb_loc,
+                                                          EventSignalingStateMap& local_signaling_states) const {
+    bool skip = false;
+    for (const WaitEventSubmitInfo& secondary_wait : secondary_cb_sub_state.wait_event_submit_infos) {
+        auto signaling_states = secondary_wait.signaling_states;
+        AddWaitEventSignalingStates(secondary_wait.wait_events, local_signaling_states, signaling_states);
+
+        // Do validation if all signaling states are found. Otherwise, validate during submit-time
+        const bool found_all_signaling_states = signaling_states.size() == secondary_wait.wait_events.size();
+        if (found_all_signaling_states) {
+            VkPipelineStageFlags signals_src_stage_mask = VK_PIPELINE_STAGE_NONE;
+            for (const auto& [event, signaling_state] : signaling_states) {
+                signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(signaling_state.src_stage_mask);
+            }
+            if (secondary_wait.wait_src_stage_mask != signals_src_stage_mask) {
+                const LogObjectList objlist(secondary_cb_sub_state.Handle());
+                std::ostringstream ss;
+                ss << "(" << FormatHandle(secondary_cb_sub_state.Handle()) << ") contains a vkCmdWaitEvents call with srcStageMask "
+                   << string_VkPipelineStageFlags(secondary_wait.wait_src_stage_mask)
+                   << ", but the bitwise OR of stageMask values from the most recent vkCmdSetEvent calls is "
+                   << string_VkPipelineStageFlags(signals_src_stage_mask);
+                skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", objlist, secondary_cb_loc, "%s", ss.str().c_str());
+            }
+        }
+    }
+    for (const auto& [event, signaling_state] : secondary_cb_sub_state.event_signaling_states) {
+        local_signaling_states.insert_or_assign(event, signaling_state);
+    }
+    return skip;
+}
+
 // Object that simulates the inherited viewport/scissor state as the device executes the called secondary command buffers.
 // Visit the calling primary command buffer first, then the called secondaries in order.
 // Contact David Zhao Akeley <dakeley@nvidia.com> for clarifications and bug fixes.
@@ -1406,6 +1438,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     }
 
     vvl::unordered_map<VkCommandBuffer, uint32_t> duplicate_secondary_cb;
+    EventSignalingStateMap local_signaling_states = cb_sub_state.event_signaling_states;
     bool suspended_render_pass_instance = (cb_state.last_suspend_state == vvl::CommandBuffer::SuspendState::Suspended);
     const VkRenderingInfo* last_rendering_info =
         cb_state.last_rendering_info.has_value() ? cb_state.last_rendering_info.value().ptr() : nullptr;
@@ -1520,12 +1553,13 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             last_rendering_info = secondary_cb_state.last_rendering_info.value().ptr();
         }
 
+        const char* cb_state_vuid = "VUID-vkCmdExecuteCommands-pCommandBuffers-00089";
+        skip |= ValidateCommandBufferState(secondary_cb_state, secondary_cb_loc, 0, cb_state_vuid);
         skip |= ValidateSecondaryCommandBufferDescriptorHeapInheritance(cb_state, secondary_cb_state, secondary_cb_loc);
         skip |= ValidateSecondaryCommandBufferState(cb_state, secondary_sub_state, secondary_cb_loc);
         skip |= ValidateSecondaryCommandBufferQuery(cb_state, secondary_cb_state, secondary_cb_loc);
         skip |= ValidateSecondaryCommandBufferLayout(cb_state, secondary_cb_state, secondary_cb_loc);
-        skip |=
-            ValidateCommandBufferState(secondary_cb_state, secondary_cb_loc, 0, "VUID-vkCmdExecuteCommands-pCommandBuffers-00089");
+        skip |= ValidateSecondaryCommandBufferWaitEvents(secondary_sub_state, secondary_cb_loc, local_signaling_states);
     }
 
     return skip;

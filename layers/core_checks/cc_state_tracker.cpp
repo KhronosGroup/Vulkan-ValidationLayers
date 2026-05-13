@@ -619,10 +619,10 @@ void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags
 void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask,
                                              const Location& loc) {
     bool submit_validation = false;
-    std::vector<std::pair<VkEvent, EventSignalingState>> cb_signaling_state;
+    EventSignalingStateMap cb_signaling_states;
     for (VkEvent event : events) {
         if (const EventSignalingState* signaling_state = vvl::Find(event_signaling_states, event)) {
-            cb_signaling_state.emplace_back(event, *signaling_state);
+            cb_signaling_states.emplace(event, *signaling_state);
         } else {
             // Command buffer does not signal the waited event.
             // The wait can be validated only during submit time
@@ -633,7 +633,7 @@ void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, Vk
         WaitEventSubmitInfo submit_info;
         submit_info.wait_events.assign(events.begin(), events.end());
         submit_info.wait_src_stage_mask = src_stage_mask;
-        submit_info.cb_signaling_state = std::move(cb_signaling_state);
+        submit_info.signaling_states = std::move(cb_signaling_states);
         wait_event_submit_infos.emplace_back(std::move(submit_info));
     }
 
@@ -1152,6 +1152,20 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_c
 
     for (auto& function : secondary_sub_state.event_updates) {
         event_updates.push_back(function);
+    }
+
+    for (const WaitEventSubmitInfo& secondary_wait : secondary_sub_state.wait_event_submit_infos) {
+        auto signaling_states = secondary_wait.signaling_states;
+        AddWaitEventSignalingStates(secondary_wait.wait_events, event_signaling_states, signaling_states);
+
+        // Do nothing if all signaling states are found: validation has already run during vkCmdExecuteCommands.
+        // Otherwise, schedule submit-time validation
+        const bool found_all_signaling_states = signaling_states.size() == secondary_wait.wait_events.size();
+        if (!found_all_signaling_states) {
+            WaitEventSubmitInfo wait = secondary_wait;
+            wait.signaling_states = std::move(signaling_states);
+            wait_event_submit_infos.emplace_back(wait);
+        }
     }
     for (auto& [event, event_signaling_state] : secondary_sub_state.event_signaling_states) {
         event_signaling_states.insert_or_assign(event, event_signaling_state);
