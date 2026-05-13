@@ -1347,6 +1347,9 @@ class DeviceState : public vvl::BaseDevice {
                                                     const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo,
                                                     uint32_t counterOffset, uint32_t vertexStride,
                                                     const RecordObject& record_obj) override;
+    void PostCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount, uint32_t firstInstance,
+                                                   VkBuffer counterBuffer, VkDeviceSize counterBufferOffset, uint32_t counterOffset,
+                                                   uint32_t vertexStride, const RecordObject& record_obj) override;
     void PostCallRecordCmdWriteMarkerToMemoryAMD(VkCommandBuffer commandBuffer, const VkMemoryMarkerInfoAMD* pInfo,
                                                  const RecordObject& record_obj) override;
     void PostCallRecordCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,

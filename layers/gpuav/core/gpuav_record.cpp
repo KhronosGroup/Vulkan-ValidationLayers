@@ -604,15 +604,26 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer c
     PreCallRecordCmdDrawIndirectCount2KHR(commandBuffer, pInfo, record_obj);
 }
 
+void Validator::PreCallRecordCmdDrawIndirectByteCount(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = SubState(*cb_state);
+    const LastBound& last_bound = cb_state->GetLastBoundGraphics();
+    PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
+}
+
+void Validator::PreCallRecordCmdDrawIndirectByteCount2EXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                          uint32_t firstInstance,
+                                                          const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo,
+                                                          uint32_t counterOffset, uint32_t vertexStride,
+                                                          const RecordObject& record_obj) {
+    PreCallRecordCmdDrawIndirectByteCount(commandBuffer, record_obj);
+}
+
 void Validator::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
                                                          uint32_t firstInstance, VkBuffer counterBuffer,
                                                          VkDeviceSize counterBufferOffset, uint32_t counterOffset,
                                                          uint32_t vertexStride, const RecordObject& record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-
-    auto& sub_state = SubState(*cb_state);
-    const LastBound& last_bound = cb_state->GetLastBoundGraphics();
-    PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
+    PreCallRecordCmdDrawIndirectByteCount(commandBuffer, record_obj);
 }
 
 void Validator::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
