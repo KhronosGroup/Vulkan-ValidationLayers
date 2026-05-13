@@ -441,6 +441,16 @@ struct ResourceInterfaceVariable : public VariableBase {
     // If there is no array, index 0 is marked if the single image is read
     vvl::unordered_set<uint32_t> input_attachment_index_read;
 
+    // Index into the array that have been written to
+    // If there is no array, index 0 is marked if the image is written
+    // Non-constant index requires GPU-AV
+    vvl::unordered_set<uint32_t> image_written_indices;
+
+    // Index into the array that have been read
+    // If there is no array, index 0 is marked if the image is read
+    // Non-constant index requires GPU-AV
+    vvl::unordered_set<uint32_t> image_read_indices;
+
     // Type once array/pointer are stripped
     // most likely will be OpTypeImage, OpTypeStruct, OpTypeSampler, OpTypeSampledImage, or OpTypeAccelerationStructureKHR
     const Instruction &base_type;

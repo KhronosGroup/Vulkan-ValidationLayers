@@ -296,6 +296,11 @@ class SyncValidator : public vvl::DeviceProxy {
                                           uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
                                           const RecordObject &record_obj) override;
 
+    bool PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM *pDispatchTileInfo,
+                                            const ErrorObject &error_obj) const override;
+    void PostCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM *pDispatchTileInfo,
+                                            const RecordObject &record_obj) override;
+
     bool PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                                 uint32_t firstInstance, const ErrorObject &error_obj) const override;
     void PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,

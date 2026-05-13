@@ -1172,6 +1172,22 @@ void SyncValidator::PostCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuff
                                   record_obj);
 }
 
+bool SyncValidator::PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                                       const ErrorObject& error_obj) const {
+    bool skip = false;
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    skip |= GetAccessContext(*cb_state)->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, error_obj.location);
+    return skip;
+}
+
+void SyncValidator::PostCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                                      const RecordObject& record_obj) {
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    auto* cb_access_context = GetAccessContext(*cb_state);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
+    cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, tag);
+}
+
 bool SyncValidator::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                            uint32_t firstVertex, uint32_t firstInstance, const ErrorObject& error_obj) const {
     bool skip = false;

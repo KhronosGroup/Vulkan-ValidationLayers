@@ -655,63 +655,88 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 continue;
             }
 
-            bool descriptor_written_to = false;
-            const auto pipeline = cb_state.GetLastBoundGraphics().pipeline_state;
-            for (const ShaderStageState& stage : pipeline->stage_states) {
-                if (!stage.HasSpirv()) {
-                    continue;
-                }
-                for (const auto& interface_variable : stage.entrypoint->resource_interface_variables) {
-                    if (interface_variable.decorations.set == set_index &&
-                        interface_variable.decorations.binding == binding_index) {
-                        descriptor_written_to |= interface_variable.IsWrittenTo();
-                        break;  // only one set/binding will match
-                    }
-                }
-            }
-
-            const SubpassInfo& subpass = cb_state.active_subpasses[att_index];
-            const bool layout_read_only = IsImageLayoutReadOnly(attachment_info.layout);
-            const bool read_attachment = (subpass.usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) != 0;
-            if (read_attachment && descriptor_written_to) {
-                const vvl::ActionVUID vuid = attachment_info.IsDepth()     ? vvl::ActionVUID::SUBRESOURCE_SUBPASS_12339
-                                             : attachment_info.IsStencil() ? vvl::ActionVUID::SUBRESOURCE_SUBPASS_12340
-                                                                           : vvl::ActionVUID::SUBRESOURCE_SUBPASS_12338;
+            if (attachment_info.IsColor() && resource_variable.storage_class != spv::StorageClass::StorageClassTileAttachmentQCOM &&
+                resource_variable.image_written_indices.count(index) != 0 && resource_variable.stage == VK_SHADER_STAGE_COMPUTE_BIT &&
+                cb_state.per_tile_execution_model_enabled && cb_state.active_render_pass &&
+                cb_state.active_render_pass->has_tile_shading_enabled) {
                 if (same_view) {
                     const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, framebuffer);
-                    skip |= LogError(CreateActionVuid(loc.Get().function, vuid), objlist, loc.Get(),
-                                     "the %s has %s which will be read from as %s attachment %" PRIu32 ".%s",
+                    skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::MEMORY_BACKING_IMAGE_NOT_WRITTEN_10675),
+                                     objlist, loc.Get(),
+                                     "the %s is not TileAttachmentQCOM storage class, it has %s which is "
+                                     "written to, but this image view is also used as tile attachment %" PRIu32 " in %s.%s",
                                      DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                                     FormatHandle(image_view).c_str(), FormatHandle(framebuffer).c_str(), att_index,
+                                     FormatHandle(image_view).c_str(), att_index, FormatHandle(framebuffer).c_str(),
                                      DescribeInstruction().c_str());
                 } else if (overlapping_view) {
                     const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, framebuffer,
                                                 view_state->Handle());
-                    skip |= LogError(CreateActionVuid(loc.Get().function, vuid), objlist, loc.Get(),
-                                     "the %s has %s which will be overlap read from as %s in %s attachment %" PRIu32 " overlap.%s",
+                    skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::MEMORY_BACKING_IMAGE_NOT_WRITTEN_10675),
+                                     objlist, loc.Get(),
+                                     "the %s is not TileAttachmentQCOM storage class, it has %s which is "
+                                     "written to, but overlaps with %s which is used as tile attachment %" PRIu32 " in %s.%s",
                                      DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                                      FormatHandle(image_view).c_str(), FormatHandle(view_state->Handle()).c_str(),
-                                     FormatHandle(framebuffer).c_str(), att_index, DescribeInstruction().c_str());
+                                     att_index, FormatHandle(framebuffer).c_str(), DescribeInstruction().c_str());
                 }
-            }
+            } else if (cb_state.GetLastBoundGraphics().pipeline_state) {
+                bool descriptor_written_to = false;
+                for (const ShaderStageState& stage : cb_state.GetLastBoundGraphics().pipeline_state->stage_states) {
+                    if (!stage.HasSpirv()) {
+                        continue;
+                    }
+                    for (const auto& interface_variable : stage.entrypoint->resource_interface_variables) {
+                        if (interface_variable.decorations.set == set_index &&
+                            interface_variable.decorations.binding == binding_index) {
+                            descriptor_written_to |= interface_variable.IsWrittenTo();
+                            break;  // only one set/binding will match
+                        }
+                    }
+                }
 
-            if (descriptor_written_to && !layout_read_only) {
-                if (same_view) {
-                    const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, framebuffer);
-                    skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::SUBRESOURCE_RP_WRTIE_06537), objlist,
-                                     loc.Get(), "the %s has %s which is written to but is also %s attachment %" PRIu32 ".%s",
-                                     DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                                     FormatHandle(image_view).c_str(), FormatHandle(framebuffer).c_str(), att_index,
-                                     DescribeInstruction().c_str());
-                } else if (overlapping_view) {
-                    const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, framebuffer,
-                                                view_state->Handle());
-                    skip |=
-                        LogError(CreateActionVuid(loc.Get().function, ActionVUID::SUBRESOURCE_RP_WRTIE_06537), objlist, loc.Get(),
-                                 "the %s has %s which overlaps writes to %s but is also %s attachment %" PRIu32 ".%s",
-                                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                                 FormatHandle(image_view).c_str(), FormatHandle(view_state->Handle()).c_str(),
-                                 FormatHandle(framebuffer).c_str(), att_index, DescribeInstruction().c_str());
+                const SubpassInfo& subpass = cb_state.active_subpasses[att_index];
+                const bool layout_read_only = IsImageLayoutReadOnly(attachment_info.layout);
+                const bool read_attachment = (subpass.usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) != 0;
+                if (read_attachment && descriptor_written_to) {
+                    const vvl::ActionVUID vuid = attachment_info.IsDepth()     ? vvl::ActionVUID::SUBRESOURCE_SUBPASS_12339
+                                                 : attachment_info.IsStencil() ? vvl::ActionVUID::SUBRESOURCE_SUBPASS_12340
+                                                                               : vvl::ActionVUID::SUBRESOURCE_SUBPASS_12338;
+                    if (same_view) {
+                        const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, framebuffer);
+                        skip |= LogError(CreateActionVuid(loc.Get().function, vuid), objlist, loc.Get(),
+                                        "the %s has %s which will be read from as %s attachment %" PRIu32 ".%s",
+                                        DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                                        FormatHandle(image_view).c_str(), FormatHandle(framebuffer).c_str(), att_index,
+                                        DescribeInstruction().c_str());
+                    } else if (overlapping_view) {
+                        const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, framebuffer,
+                                                    view_state->Handle());
+                        skip |= LogError(CreateActionVuid(loc.Get().function, vuid), objlist, loc.Get(),
+                                        "the %s has %s which will be overlap read from as %s in %s attachment %" PRIu32 " overlap.%s",
+                                        DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                                        FormatHandle(image_view).c_str(), FormatHandle(view_state->Handle()).c_str(),
+                                        FormatHandle(framebuffer).c_str(), att_index, DescribeInstruction().c_str());
+                    }
+                }
+
+                if (descriptor_written_to && !layout_read_only) {
+                    if (same_view) {
+                        const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, framebuffer);
+                        skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::SUBRESOURCE_RP_WRTIE_06537), objlist,
+                                        loc.Get(), "the %s has %s which is written to but is also %s attachment %" PRIu32 ".%s",
+                                        DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                                        FormatHandle(image_view).c_str(), FormatHandle(framebuffer).c_str(), att_index,
+                                        DescribeInstruction().c_str());
+                    } else if (overlapping_view) {
+                        const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, framebuffer,
+                                                    view_state->Handle());
+                        skip |=
+                            LogError(CreateActionVuid(loc.Get().function, ActionVUID::SUBRESOURCE_RP_WRTIE_06537), objlist, loc.Get(),
+                                    "the %s has %s which overlaps writes to %s but is also %s attachment %" PRIu32 ".%s",
+                                    DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                                    FormatHandle(image_view).c_str(), FormatHandle(view_state->Handle()).c_str(),
+                                    FormatHandle(framebuffer).c_str(), att_index, DescribeInstruction().c_str());
+                    }
                 }
             }
         }
@@ -732,13 +757,55 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         skip |= dev_proxy.ValidateBoundTileMemory(*image_view_state->image_state, cb_state, loc.Get());
     }
 
+    if (cb_state.per_tile_execution_model_enabled && cb_state.active_render_pass &&
+        cb_state.active_render_pass->has_tile_shading_enabled && resource_variable.stage == VK_SHADER_STAGE_COMPUTE_BIT) {
+        if (resource_variable.image_read_indices.count(index) != 0 &&
+            resource_variable.storage_class != spv::StorageClass::StorageClassTileAttachmentQCOM) {
+            for (const auto* written_tile_attachment : cb_state.tile_attachments_written_to) {
+                const bool same_view = written_tile_attachment->VkHandle() == image_view;
+                const bool overlapping_view = image_view_state->OverlapSubresource(*written_tile_attachment);
+                if (same_view) {
+                    const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, written_tile_attachment->VkHandle());
+                    skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::TILE_ATTACHMENT_WRITTEN_10676),
+                                     objlist, loc.Get(),
+                                     "the %s is not TileAttachmentQCOM storage class, "
+                                     "but reads from %s which was previously written as a tile attachment in this subpass.%s",
+                                     DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                                     FormatHandle(image_view).c_str(), DescribeInstruction().c_str());
+                } else if (overlapping_view) {
+                    const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, written_tile_attachment->VkHandle());
+                    skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::TILE_ATTACHMENT_WRITTEN_10676),
+                                     objlist, loc.Get(),
+                                     "the %s is not TileAttachmentQCOM storage class, "
+                                     "but reads from %s which overlaps with the tile attachment %s that was previously written in this subpass.%s",
+                                     DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                                     FormatHandle(image_view).c_str(), FormatHandle(written_tile_attachment->VkHandle()).c_str(),
+                                     DescribeInstruction().c_str());
+                }
+            }
+        } else if (resource_variable.image_written_indices.count(index) != 0 &&
+                   resource_variable.storage_class == spv::StorageClass::StorageClassTileAttachmentQCOM) {
+            const auto aspect_mask = image_view_state->create_info.subresourceRange.aspectMask;
+            if ((aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
+                skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::ASPECT_MASK_10673),
+                                 objlist, loc.Get(),
+                                 "the %s is TileAttachmentQCOM storage class and is written to, but the bound %s was created "
+                                 "with an aspectMask (%s) that contains VK_IMAGE_ASPECT_DEPTH_BIT or VK_IMAGE_ASPECT_STENCIL_BIT.%s",
+                                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                                 FormatHandle(image_view).c_str(), string_VkImageAspectFlags(aspect_mask).c_str(),
+                                 DescribeInstruction().c_str());
+            }
+        }
+    }
+
     if (cb_state.per_tile_execution_model_enabled &&
         image_descriptor.GetImageLayout() == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
         skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::PER_TILE_MODEL_FEEDBACK_LOOP_IMAGE_ACCESS_10679),
                          objlist, loc.Get(),
                          "the %s has %s which has been transitioned to VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT "
-                         "layout and but is also accessed in shader.%s",
+                         "layout, but is also accessed in shader.%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                          FormatHandle(image_view).c_str(), DescribeInstruction().c_str());
     }

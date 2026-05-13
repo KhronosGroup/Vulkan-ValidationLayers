@@ -5459,6 +5459,12 @@ void DeviceState::PostCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, u
     cb_state->RecordDispatch(record_obj.location);
 }
 
+void DeviceState::PostCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                                    const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordDispatch(record_obj.location);
+}
+
 void DeviceState::PostCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                         uint32_t stride, const RecordObject& record_obj) {

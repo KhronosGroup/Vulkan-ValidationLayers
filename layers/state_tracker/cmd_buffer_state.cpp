@@ -35,6 +35,7 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/vertex_index_buffer_state.h"
+#include "shader_module.h"
 #include "utils/assert_utils.h"
 #include "utils/image_utils.h"
 #include "containers/container_utils.h"
@@ -362,6 +363,8 @@ void CommandBuffer::ResetCBState() {
     index_buffer_binding = {};
 
     tensor_barriers.clear();
+
+    tile_attachments_written_to.clear();
 
     // Clean up video specific states
     bound_video_session = nullptr;
@@ -852,6 +855,8 @@ void CommandBuffer::RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pa
     for (auto& item : sub_states_) {
         item.second->RecordBeginRenderPass(render_pass_begin, subpass_begin_info, loc);
     }
+
+    tile_attachments_written_to.clear();
 }
 
 void CommandBuffer::RecordNextSubpass(const VkSubpassBeginInfo& subpass_begin_info, const VkSubpassEndInfo* subpass_end_info,
@@ -878,6 +883,8 @@ void CommandBuffer::RecordNextSubpass(const VkSubpassBeginInfo& subpass_begin_in
     for (auto& item : sub_states_) {
         item.second->RecordNextSubpass(subpass_begin_info, subpass_end_info, loc);
     }
+
+    tile_attachments_written_to.clear();
 }
 
 void CommandBuffer::RecordEndRenderPass(const VkSubpassEndInfo* subpass_end_info, const Location& loc) {
@@ -896,6 +903,7 @@ void CommandBuffer::RecordEndRenderPass(const VkSubpassEndInfo* subpass_end_info
     active_framebuffer = VK_NULL_HANDLE;
     sample_locations_begin_info = {};
     per_tile_execution_model_enabled = false;
+    tile_attachments_written_to.clear();
 }
 
 static void InitDefaultRenderingAttachments(CommandBuffer::RenderingAttachment& attachments, uint32_t count) {
@@ -917,6 +925,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo& rendering_info, 
     active_render_pass = std::make_shared<vvl::RenderPass>(rendering_info);
     render_area = rendering_info.renderArea;
     render_pass_queries.clear();
+    tile_attachments_written_to.clear();
 
     InitDefaultRenderingAttachments(rendering_attachments, rendering_info.colorAttachmentCount);
 
@@ -1062,6 +1071,7 @@ void CommandBuffer::RecordEndRendering(const VkRenderingEndInfoEXT* pRenderingEn
     RecordCommand(loc);
     active_render_pass = nullptr;
     active_color_attachments_index.clear();
+    tile_attachments_written_to.clear();
     per_tile_execution_model_enabled = false;
 }
 
@@ -1533,6 +1543,9 @@ void CommandBuffer::RecordDraw(const Location& loc) {
     for (auto& item : sub_states_) {
         item.second->RecordActionCommand(last_bound, loc);
     }
+    if (per_tile_execution_model_enabled && active_render_pass && active_render_pass->has_tile_shading_enabled) {
+        RecordDrawTileAttachmentsWrittenTo(last_bound);
+    }
 }
 
 // Generic function to handle state update for all CmdDispatch* type functions
@@ -1542,6 +1555,9 @@ void CommandBuffer::RecordDispatch(const Location& loc) {
     for (auto& item : sub_states_) {
         item.second->RecordActionCommand(last_bound, loc);
     }
+    if (per_tile_execution_model_enabled && active_render_pass && active_render_pass->has_tile_shading_enabled) {
+        RecordDispatchTileAttachmentsWrittenTo(last_bound);
+    }
 }
 
 // Generic function to handle state update for all CmdTraceRay* type functions
@@ -1550,6 +1566,78 @@ void CommandBuffer::RecordTraceRay(const Location& loc) {
     LastBound& last_bound = lastBound[vvl::BindPointRayTracing];
     for (auto& item : sub_states_) {
         item.second->RecordActionCommand(last_bound, loc);
+    }
+}
+
+// Generic function to handle tile attachment written to for all CmdDraw* type functions when per-tile execution model is enabled
+void CommandBuffer::RecordDrawTileAttachmentsWrittenTo(const LastBound& last_bound_graphics) {
+    if (active_attachments.empty()) {
+        return;
+    }
+
+    const bool has_fragment_shader = last_bound_graphics.GetFragmentEntryPoint() != nullptr;
+    for (const auto& attachment_info : active_attachments) {
+        const auto* image_view_state = attachment_info.image_view;
+        if (!image_view_state || image_view_state->Destroyed()) {
+            continue;
+        }
+
+        if (attachment_info.IsColor() && has_fragment_shader) {
+            const uint32_t color_index = attachment_info.type_index;
+            if (last_bound_graphics.GetColorWriteMask(color_index) != 0 &&
+                last_bound_graphics.IsColorWriteEnabled(color_index)) {
+                tile_attachments_written_to.insert(image_view_state);
+            }
+        } else if (attachment_info.IsDepth() && last_bound_graphics.IsDepthWriteEnable()) {
+            tile_attachments_written_to.insert(image_view_state);
+        } else if (attachment_info.IsStencil() && last_bound_graphics.IsStencilTestEnable() &&
+                   (last_bound_graphics.GetStencilOpStateFront().writeMask != 0 ||
+                    last_bound_graphics.GetStencilOpStateBack().writeMask != 0)) {
+            tile_attachments_written_to.insert(image_view_state);
+        }
+    }
+}
+
+// Generic function to handle tile attachment written to for all CmdDispatch* type functions when per-tile execution model is enabled
+void CommandBuffer::RecordDispatchTileAttachmentsWrittenTo(const LastBound& last_bound_compute) {
+    const ActiveSlotMap* active_slots = last_bound_compute.GetComputeActiveSlots();
+    if (!active_slots) {
+        return;
+    }
+
+    for (const auto& [set_index, binding_req_map] : *active_slots) {
+        if (set_index >= last_bound_compute.ds_slots.size()) {
+            continue;
+        }
+
+        const auto& ds_slot = last_bound_compute.ds_slots[set_index];
+        if (!ds_slot.ds_state) {
+            continue;
+        }
+
+        for (const auto& [binding_index, desc_set_reqs] : binding_req_map) {
+            const auto& resource_variable = *desc_set_reqs.variable;
+            if (resource_variable.image_written_indices.empty() || resource_variable.storage_class != spv::StorageClass::StorageClassTileAttachmentQCOM) {
+                continue;
+            }
+
+            const vvl::DescriptorBinding* binding = ds_slot.ds_state->GetBinding(binding_index);
+            if (!binding || binding->descriptor_class != DescriptorClass::Image) {
+                continue;
+            }
+
+            const ImageBinding* image_binding = static_cast<const ImageBinding *>(binding);
+            for (const uint32_t index : resource_variable.image_written_indices) {
+                if (index >= image_binding->descriptors.size()) {
+                    continue;
+                }
+                const auto* image_view_state = image_binding->descriptors[index].GetImageViewState();
+                if (!image_view_state || image_view_state->Destroyed()) {
+                    continue;
+                }
+                tile_attachments_written_to.insert(image_view_state);
+            }
+        }
     }
 }
 

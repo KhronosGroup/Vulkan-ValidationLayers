@@ -2560,6 +2560,13 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                             write_without_formats_component_count_list.push_back(image_access.texel_component_count);
                         }
                     }
+                    // Track statically known array indices being written
+                    if (!IsArray()) {
+                        image_written_indices.emplace(0);
+                    } else if (image_access.image_access_chain_index != kInvalidValue &&
+                               image_access.image_access_chain_index != kSpecConstant) {
+                        image_written_indices.emplace(image_access.image_access_chain_index);
+                    }
                 }
 
                 if (image_access.access_mask & AccessBit::image_read) {
@@ -2577,6 +2584,14 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                             // Spec Constants are handled after constant folding
                             input_attachment_index_read.emplace(image_access.image_access_chain_index);
                         }
+                    }
+
+                    // Track statically known array indices being read
+                    if (!IsArray()) {
+                        image_read_indices.emplace(0);
+                    } else if (image_access.image_access_chain_index != kInvalidValue &&
+                               image_access.image_access_chain_index != kSpecConstant) {
+                        image_read_indices.emplace(image_access.image_access_chain_index);
                     }
                 }
 

@@ -1476,6 +1476,8 @@ class DeviceState : public vvl::BaseDevice {
                                           uint32_t x, uint32_t y, uint32_t z, const RecordObject& record_obj) override;
     void PostCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t base_x, uint32_t base_y, uint32_t base_z, uint32_t x,
                                        uint32_t y, uint32_t z, const RecordObject& record_obj) override;
+    void PostCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                           const RecordObject& record_obj) override;
     void PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                                uint32_t firstInstance, const RecordObject& record_obj) override;
     void PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,

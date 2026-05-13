@@ -643,8 +643,14 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
 
         // ### VUID-vkCmdDispatch-None-10743
         case ActionVUID::COMPUTE_NOT_BOUND_10743: suffix = "None-10743"; break;
+        // ### VUID-vkCmdDispatch-aspectMask-10673
+        case ActionVUID::ASPECT_MASK_10673: suffix = "aspectMask-10673"; break;
         // ### VUID-vkCmdDispatch-None-10674
         case ActionVUID::PER_TILE_DISPATCH_ENABLED_10674: suffix = "None-10674"; break;
+        // ### VUID-vkCmdDispatch-None-10675
+        case ActionVUID::MEMORY_BACKING_IMAGE_NOT_WRITTEN_10675: suffix = "None-10675"; break;
+        // ### VUID-vkCmdDispatch-None-10676
+        case ActionVUID::TILE_ATTACHMENT_WRITTEN_10676: suffix = "None-10676"; break;
 
         // ### VUID-vkCmdDrawMeshTasksEXT-stage-06480
         case ActionVUID::MESH_SHADER_STAGES_06480: suffix = "stage-06480"; break;

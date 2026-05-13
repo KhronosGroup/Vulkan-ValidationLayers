@@ -485,6 +485,9 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void SetActiveSubpassRasterizationSampleCount(VkSampleCountFlagBits rasterization_sample_count) {
         active_subpass_sample_count_ = rasterization_sample_count;
     }
+    // Record tile attachments written to in a subpass
+    vvl::unordered_set<const vvl::ImageView *> tile_attachments_written_to;
+
     std::shared_ptr<vvl::Framebuffer> active_framebuffer;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
@@ -700,6 +703,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordDraw(const Location &loc);
     void RecordDispatch(const Location &loc);
     void RecordTraceRay(const Location &loc);
+    void RecordDrawTileAttachmentsWrittenTo(const LastBound& last_bound_graphics);
+    void RecordDispatchTileAttachmentsWrittenTo(const LastBound& last_bound_compute);
 
     void RecordExecuteGeneratedCommands(const VkGeneratedCommandsInfoEXT& info, const Location& loc);
 

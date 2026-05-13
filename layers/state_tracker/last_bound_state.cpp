@@ -837,6 +837,15 @@ const vvl::ShaderObject* LastBound::GetShaderObjectStateIfValid(ShaderObjectStag
     return shader_object_states[static_cast<uint32_t>(stage)];
 }
 
+const ActiveSlotMap* LastBound::GetComputeActiveSlots() const {
+    if (pipeline_state) {
+        return &pipeline_state->active_slots;
+    }
+    const vvl::ShaderObject* compute_shader =
+        GetShaderObjectStateIfValid(ShaderObjectStage::COMPUTE);
+    return compute_shader ? &compute_shader->active_slots : nullptr;
+}
+
 const vvl::ShaderObject* LastBound::GetFirstShader() const {
     if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
         return GetShaderObjectStateIfValid(ShaderObjectStage::COMPUTE);

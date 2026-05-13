@@ -18,6 +18,7 @@
  */
 #pragma once
 
+#include "state_tracker/shader_stage_state.h"
 #include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/descriptor_mode.h"
 #include "utils/shader_utils.h"
@@ -143,6 +144,7 @@ struct LastBound {
     VkShaderEXT GetShaderObject(ShaderObjectStage stage) const;
     vvl::ShaderObject *GetShaderObjectState(ShaderObjectStage stage) const;
     const vvl::ShaderObject *GetShaderObjectStateIfValid(ShaderObjectStage stage) const;
+    const ActiveSlotMap *GetComputeActiveSlots() const;
     // Return compute shader for compute pipeline, vertex or mesh shader for graphics
     const vvl::ShaderObject *GetFirstShader() const;
     bool HasShaderObjects() const;
