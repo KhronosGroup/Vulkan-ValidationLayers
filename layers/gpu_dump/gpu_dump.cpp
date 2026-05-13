@@ -38,12 +38,21 @@ std::vector<uint8_t> GpuDump::CopyDataFromMemory(VkDeviceAddress memory_addresss
     auto buffer_state = *buffer_list.begin();
     const vvl::DeviceMemory& memory_state = *buffer_state->MemoryState();
 
+    // Prevent copying OOB of a buffer
+    if ((memory_addresss + copy_size) > buffer_state->DeviceAddressRange().end) {
+        return result;
+    }
+
     VkDeviceSize offset = memory_addresss - buffer_state->DeviceAddressRange().begin;
     if (memory_state.mappable) {
         uint8_t* data_ptr = static_cast<uint8_t*>(memory_state.p_driver_data);
 
         if (!memory_state.p_driver_data) {
-            DispatchMapMemory(device, memory_state.VkHandle(), offset, copy_size, 0, (void**)&data_ptr);
+            // Just use WHOLE_SIZE to avoid issues with partial mappings
+            // Example:
+            //  The |memory_address| is 0x1001 and |copy_size| is 4, the driver (or at least TestICD) will return back something
+            //  aligned to a value like 64, so if the buffer is only 64 bytes, you will now be accessing data over it
+            DispatchMapMemory(device, memory_state.VkHandle(), offset, VK_WHOLE_SIZE, 0, (void**)&data_ptr);
 
             // Skip checking if coherent memory or not
             VkMappedMemoryRange memory_range = vku::InitStructHelper();
