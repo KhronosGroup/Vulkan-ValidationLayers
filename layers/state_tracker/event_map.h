@@ -20,9 +20,11 @@
 #pragma once
 
 #include "vulkan/vulkan.h"
+#include "containers/container_utils.h"
 #include "containers/custom_containers.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <optional>
+#include <vector>
 
 // TODO: this is very similar to EventSignalingState (but signal field has different semantics).
 // This will be reworked/removed soon.
@@ -48,3 +50,18 @@ struct EventSignalingState {
     EventSignalingState(bool signaled, VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_NONE)
         : signaled(signaled), src_stage_mask(src_stage_mask) {}
 };
+using EventSignalingStateMap = vvl::unordered_map<VkEvent, EventSignalingState>;
+
+// TODO: later this file will be renamed to event_state.h/cpp and this function will go into cpp
+static inline void AddWaitEventSignalingStates(const std::vector<VkEvent>& wait_events,
+                                               const EventSignalingStateMap& new_signaling_states,
+                                               EventSignalingStateMap& current_signaling_states) {
+    for (const auto& signaling_state : new_signaling_states) {
+        const VkEvent event = signaling_state.first;
+        const bool is_waited = vvl::Contains(wait_events, event);
+        const bool is_signaled = vvl::Contains(current_signaling_states, event);
+        if (is_waited && !is_signaled) {
+            current_signaling_states.insert(signaling_state);
+        }
+    }
+}
