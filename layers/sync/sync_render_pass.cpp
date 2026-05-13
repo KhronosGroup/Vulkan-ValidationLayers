@@ -1074,16 +1074,21 @@ DynamicRenderingInfo::Attachment::Attachment(const SyncValidator& state, const v
 }
 
 ImageRangeGen DynamicRenderingInfo::Attachment::GetRangeGen(uint32_t view_mask) const {
+    // VkRenderingAttachmentInfo::imageView is allowed to be VK_NULL_HANDLE
+    if (!view) {
+        return {};
+    }
+    // Multiview is disabled: return precomputed range gen
     if (view_mask == 0) {
-        return view_gen;  // precomputed range gen when multivie is disabled
+        return view_gen;
+    }
+    // Initialize range gen based on view mask
+    if (type == AttachmentType::kColor) {
+        return MakeImageRangeGen(*view, view_mask);
+    } else if (type == AttachmentType::kDepth) {
+        return MakeImageRangeGen(*view, view_mask, VK_IMAGE_ASPECT_DEPTH_BIT);
     } else {
-        if (type == AttachmentType::kColor) {
-            return MakeImageRangeGen(*view, view_mask);
-        } else if (type == AttachmentType::kDepth) {
-            return MakeImageRangeGen(*view, view_mask, VK_IMAGE_ASPECT_DEPTH_BIT);
-        } else {
-            return MakeImageRangeGen(*view, view_mask, VK_IMAGE_ASPECT_STENCIL_BIT);
-        }
+        return MakeImageRangeGen(*view, view_mask, VK_IMAGE_ASPECT_STENCIL_BIT);
     }
 }
 
