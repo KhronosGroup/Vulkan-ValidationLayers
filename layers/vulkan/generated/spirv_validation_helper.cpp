@@ -244,11 +244,10 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         // Not found in current SPIR-V Headers
         // {spv::CapabilityImageGatherExtendedModesQCOM, {0, &DeviceFeatures::imageGatherExtendedModes, nullptr, ""}},
         {spv::CapabilityMeshShadingEXT, {0, nullptr, &DeviceExtensions::vk_ext_mesh_shader, ""}},
-        {spv::CapabilityRayTracingOpacityMicromapEXT, {0, nullptr, &DeviceExtensions::vk_ext_opacity_micromap, ""}},
         // Not found in current SPIR-V Headers
-        // {spv::CapabilityRayTracingOpacityMicromapKHR, {0, &DeviceFeatures::micromap, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityRayTracingOpacityMicromapExecutionModeKHR, {0, &DeviceFeatures::micromap, nullptr, ""}},
+        // {spv::CapabilityRayTracingOpacityMicromapEXT, {0, nullptr, &DeviceExtensions::vk_ext_opacity_micromap, ""}},
+        {spv::CapabilityRayTracingOpacityMicromapKHR, {0, &DeviceFeatures::micromap, nullptr, ""}},
+        {spv::CapabilityRayTracingOpacityMicromapExecutionModeKHR, {0, &DeviceFeatures::micromap, nullptr, ""}},
         {spv::CapabilityCoreBuiltinsARM, {0, &DeviceFeatures::shaderCoreBuiltins, nullptr, ""}},
         {spv::CapabilityShaderInvocationReorderNV, {0, nullptr, &DeviceExtensions::vk_nv_ray_tracing_invocation_reorder, ""}},
         // Not found in current SPIR-V Headers
@@ -289,8 +288,7 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityPushConstantBanksNV, {0, &DeviceFeatures::pushConstantBank, nullptr, ""}},
         {spv::CapabilityShaderInvocationReorderEXT, {0, nullptr, &DeviceExtensions::vk_ext_ray_tracing_invocation_reorder, ""}},
         {spv::CapabilityTileShadingQCOM, {0, &DeviceFeatures::tileShading, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilitySplitBarrierEXT, {0, &DeviceFeatures::shaderSplitBarrier, nullptr, ""}},
+        {spv::CapabilitySplitBarrierEXT, {0, &DeviceFeatures::shaderSplitBarrier, nullptr, ""}},
         // Not found in current SPIR-V Headers
         // {spv::CapabilityMultipleWaitQueuesQCOM, {0, &DeviceFeatures::shaderMultipleWaitQueues, nullptr, ""}},
         {spv::CapabilityTensorsARM, {0, &DeviceFeatures::shaderTensorAccess, nullptr, ""}},
@@ -713,6 +711,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
         case spv::CapabilityPoisonFreezeKHR:
             return "PoisonFreezeKHR";
 #endif
+        case spv::CapabilityWeakLinkageAMD:
+            return "WeakLinkageAMD";
         case spv::CapabilitySampleMaskOverrideCoverageNV:
             return "SampleMaskOverrideCoverageNV";
         case spv::CapabilityGeometryShaderPassthroughNV:
@@ -795,8 +795,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "DemoteToHelperInvocation";
         case spv::CapabilityDisplacementMicromapNV:
             return "DisplacementMicromapNV";
-        case spv::CapabilityRayTracingOpacityMicromapEXT:
-            return "RayTracingOpacityMicromapEXT";
+        case spv::CapabilityRayTracingOpacityMicromapKHR:
+            return "RayTracingOpacityMicromapKHR";
         case spv::CapabilityShaderInvocationReorderNV:
             return "ShaderInvocationReorderNV";
         case spv::CapabilityShaderInvocationReorderEXT:
@@ -873,6 +873,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "FloatControls2";
         case spv::CapabilityFMAKHR:
             return "FMAKHR";
+        case spv::CapabilityRayTracingOpacityMicromapExecutionModeKHR:
+            return "RayTracingOpacityMicromapExecutionModeKHR";
         case spv::CapabilityAtomicFloat32AddEXT:
             return "AtomicFloat32AddEXT";
         case spv::CapabilityAtomicFloat64AddEXT:
@@ -881,6 +883,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "OptNoneEXT";
         case spv::CapabilityAtomicFloat16AddEXT:
             return "AtomicFloat16AddEXT";
+        case spv::CapabilitySplitBarrierEXT:
+            return "SplitBarrierEXT";
         case spv::CapabilityArithmeticFenceEXT:
             return "ArithmeticFenceEXT";
         case spv::CapabilitySubgroupBufferPrefetchINTEL:
@@ -905,6 +909,10 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
         case spv::CapabilityFunctionVariantsINTEL:
             return "FunctionVariantsINTEL";
 #endif
+        case spv::CapabilityPredicatedIOINTEL:
+            return "PredicatedIOINTEL";
+        case spv::CapabilityRoundedDivideSqrtINTEL:
+            return "RoundedDivideSqrtINTEL";
         case spv::CapabilityGroupUniformArithmeticKHR:
             return "GroupUniformArithmeticKHR";
         case spv::CapabilityTensorFloat32RoundingINTEL:
@@ -1248,7 +1256,8 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityTextureBlockMatchQCOM, "VkPhysicalDeviceImageProcessingFeaturesQCOM::textureBlockMatch"},
     {spv::CapabilityTextureBlockMatch2QCOM, "VkPhysicalDeviceImageProcessing2FeaturesQCOM::textureBlockMatch2"},
     {spv::CapabilityMeshShadingEXT, "VK_EXT_mesh_shader"},
-    {spv::CapabilityRayTracingOpacityMicromapEXT, "VK_EXT_opacity_micromap"},
+    {spv::CapabilityRayTracingOpacityMicromapKHR, "VkPhysicalDeviceOpacityMicromapFeaturesKHR::micromap"},
+    {spv::CapabilityRayTracingOpacityMicromapExecutionModeKHR, "VkPhysicalDeviceOpacityMicromapFeaturesKHR::micromap"},
     {spv::CapabilityCoreBuiltinsARM, "VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::shaderCoreBuiltins"},
     {spv::CapabilityShaderInvocationReorderNV, "VK_NV_ray_tracing_invocation_reorder"},
     {spv::CapabilityRayTracingPositionFetchKHR, "VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR::rayTracingPositionFetch"},
@@ -1284,6 +1293,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityPushConstantBanksNV, "VkPhysicalDevicePushConstantBankFeaturesNV::pushConstantBank"},
     {spv::CapabilityShaderInvocationReorderEXT, "VK_EXT_ray_tracing_invocation_reorder"},
     {spv::CapabilityTileShadingQCOM, "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShading"},
+    {spv::CapabilitySplitBarrierEXT, "VkPhysicalDeviceShaderSplitBarrierFeaturesEXT::shaderSplitBarrier"},
     {spv::CapabilityTensorsARM, "VkPhysicalDeviceTensorFeaturesARM::shaderTensorAccess"},
     {spv::CapabilityStorageTensorArrayDynamicIndexingARM, "VkPhysicalDeviceTensorFeaturesARM::shaderStorageTensorArrayDynamicIndexing"},
     {spv::CapabilityStorageTensorArrayNonUniformIndexingARM, "VkPhysicalDeviceTensorFeaturesARM::shaderStorageTensorArrayNonUniformIndexing"},

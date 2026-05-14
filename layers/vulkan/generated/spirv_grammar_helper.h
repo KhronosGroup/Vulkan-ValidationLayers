@@ -462,6 +462,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpSubgroupMatrixMultiplyAccumulateINTEL:
         case spv::OpBitwiseFunctionINTEL:
         case spv::OpUntypedVariableLengthArrayINTEL:
+        case spv::OpPredicatedLoadINTEL:
         case spv::OpGroupIMulKHR:
         case spv::OpGroupFMulKHR:
         case spv::OpGroupBitwiseAndKHR:
@@ -947,6 +948,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpSubgroupMatrixMultiplyAccumulateINTEL:
         case spv::OpBitwiseFunctionINTEL:
         case spv::OpUntypedVariableLengthArrayINTEL:
+        case spv::OpPredicatedLoadINTEL:
         case spv::OpGroupIMulKHR:
         case spv::OpGroupFMulKHR:
         case spv::OpGroupBitwiseAndKHR:
@@ -1136,6 +1138,8 @@ static constexpr uint32_t OpcodeMemoryScopePosition(uint32_t opcode) {
             return 1;
         case spv::OpControlBarrier:
         case spv::OpAtomicStore:
+        case spv::OpControlBarrierArriveEXT:
+        case spv::OpControlBarrierWaitEXT:
             return 2;
         case spv::OpAtomicLoad:
         case spv::OpAtomicExchange:
@@ -1167,6 +1171,8 @@ static constexpr uint32_t OpcodeExecutionScopePosition(uint32_t opcode) {
     uint32_t position = 0;
     switch (opcode) {
         case spv::OpControlBarrier:
+        case spv::OpControlBarrierArriveEXT:
+        case spv::OpControlBarrierWaitEXT:
             return 1;
         case spv::OpGroupAll:
         case spv::OpGroupAny:
