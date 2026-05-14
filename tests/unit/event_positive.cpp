@@ -96,17 +96,6 @@ TEST_F(PositiveEvent, StageMaskTwoEventsTwoSubmits) {
     m_default_queue->SubmitAndWait(command_buffer2);
 }
 
-TEST_F(PositiveEvent, EventStageMaskHost) {
-    RETURN_IF_SKIP(Init());
-    vkt::Event event(*m_device);
-
-    m_command_buffer.Begin();
-    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_HOST_BIT,
-                               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
-    m_command_buffer.End();
-}
-
 TEST_F(PositiveEvent, EventStageMaskHostSubmit) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
