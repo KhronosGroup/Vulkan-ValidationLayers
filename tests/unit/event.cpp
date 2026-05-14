@@ -285,6 +285,19 @@ TEST_F(NegativeEvent, EventStageMaskHost2) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeEvent, EventStageMaskHost3) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_HOST_BIT,
+                               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeEvent, StageMaskPrimarySetSecondaryWait) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);

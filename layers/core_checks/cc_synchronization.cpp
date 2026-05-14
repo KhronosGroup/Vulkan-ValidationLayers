@@ -1513,11 +1513,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
             set_event_src_stages |= static_cast<VkPipelineStageFlags>(signaling_state->src_stage_mask);
         }
         if (found_all_set_commands) {
-            // Do not try to validate HOST stage during record time.
-            // vkSetEvent can be tracked only during submit time (it can be called after command buffer recording)
-            VkPipelineStageFlags src_stage_mask_without_host = srcStageMask & ~VK_PIPELINE_STAGE_HOST_BIT;
-
-            if (src_stage_mask_without_host != set_event_src_stages) {
+            if (srcStageMask != set_event_src_stages) {
                 skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", objlist, error_obj.location.dot(Field::srcStageMask),
                                  "is %s, but the bitwise OR of stageMask values from the most recent vkCmdSetEvent call for each "
                                  "waited event is %s.",
