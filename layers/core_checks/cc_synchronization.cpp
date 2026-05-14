@@ -710,8 +710,11 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
     bool skip = false;
     auto sem_type_create_info = vku::FindStructInPNextChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext);
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    auto semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
 
     if (sem_type_create_info) {
+        semaphoreType = sem_type_create_info->semaphoreType;
+
         if (sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE && !enabled_features.timelineSemaphore) {
             skip |= LogError("VUID-VkSemaphoreTypeCreateInfo-timelineSemaphore-03252", device,
                              create_info_loc.dot(Field::semaphoreType),
@@ -731,7 +734,9 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
         bool export_supported = true;
         // Check export support
         auto check_export_support = [&](VkExternalSemaphoreHandleTypeFlagBits flag) {
-            VkPhysicalDeviceExternalSemaphoreInfo external_info = vku::InitStructHelper();
+            VkSemaphoreTypeCreateInfo type_info = vku::InitStructHelper();
+            type_info.semaphoreType = semaphoreType;
+            VkPhysicalDeviceExternalSemaphoreInfo external_info = vku::InitStructHelper(&type_info);
             external_info.handleType = flag;
             DispatchGetPhysicalDeviceExternalSemaphorePropertiesHelper(api_version, physical_device, &external_info,
                                                                        &external_properties);
