@@ -710,8 +710,11 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
     bool skip = false;
     auto sem_type_create_info = vku::FindStructInPNextChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext);
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    auto semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
 
     if (sem_type_create_info) {
+        semaphoreType = sem_type_create_info->semaphoreType;
+
         if (sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE && !enabled_features.timelineSemaphore) {
             skip |= LogError("VUID-VkSemaphoreTypeCreateInfo-timelineSemaphore-03252", device,
                              create_info_loc.dot(Field::semaphoreType),
@@ -731,7 +734,9 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
         bool export_supported = true;
         // Check export support
         auto check_export_support = [&](VkExternalSemaphoreHandleTypeFlagBits flag) {
-            VkPhysicalDeviceExternalSemaphoreInfo external_info = vku::InitStructHelper();
+            VkSemaphoreTypeCreateInfo type_info = vku::InitStructHelper();
+            type_info.semaphoreType = semaphoreType;
+            VkPhysicalDeviceExternalSemaphoreInfo external_info = vku::InitStructHelper(&type_info);
             external_info.handleType = flag;
             DispatchGetPhysicalDeviceExternalSemaphorePropertiesHelper(api_version, physical_device, &external_info,
                                                                        &external_properties);
@@ -752,6 +757,19 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
                              "(%s) are not reported as compatible by vkGetPhysicalDeviceExternalSemaphoreProperties (%s).",
                              string_VkExternalSemaphoreHandleTypeFlags(sem_export_info->handleTypes).c_str(),
                              string_VkExternalSemaphoreHandleTypeFlags(external_properties.compatibleHandleTypes).c_str());
+        }
+        if ((sem_export_info->handleTypes & VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT) != 0) {
+            if (!enabled_features.externalSemaphoreDrmSyncobj) {
+                skip |= LogError("VUID-VkExportSemaphoreCreateInfo-handleTypes-XXXXX3", device,
+                                 create_info_loc.pNext(Struct::VkExportSemaphoreCreateInfo, Field::handleTypes),
+                                 "contains VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT, but externalSemaphoreDrmSyncobj "
+                                 "feature was not enabled.");
+            }
+            if (semaphoreType != VK_SEMAPHORE_TYPE_TIMELINE) {
+                skip |= LogError("VUID-VkExportSemaphoreCreateInfo-handleTypes-XXXXX4", device,
+                                 create_info_loc.pNext(Struct::VkExportSemaphoreCreateInfo, Field::handleTypes),
+                                 "semaphoreType is %s.", string_VkSemaphoreType(semaphoreType));
+            }
         }
     }
 

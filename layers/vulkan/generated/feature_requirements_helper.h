@@ -348,6 +348,8 @@ enum class Feature {
     externalMemoryRDMA,
     // VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX
     screenBufferImport,
+    // VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT
+    externalSemaphoreDrmSyncobj,
     // VkPhysicalDeviceFaultFeaturesKHR
     deviceFault,
     // VkPhysicalDeviceFaultFeaturesKHR

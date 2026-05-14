@@ -573,6 +573,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_valve_shader_mixed_float_dot_product{kNotSupported};
     ExtEnabled vk_sec_throttle_hint{kNotSupported};
     ExtEnabled vk_arm_data_graph_neural_accelerator_statistics{kNotSupported};
+    ExtEnabled vk_ext_external_semaphore_drm_syncobj{kNotSupported};
     ExtEnabled vk_ext_primitive_restart_index{kNotSupported};
     ExtEnabled vk_khr_acceleration_structure{kNotSupported};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotSupported};
@@ -1074,6 +1075,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_VALVE_shader_mixed_float_dot_product:
         case vvl::Extension::_VK_SEC_throttle_hint:
         case vvl::Extension::_VK_ARM_data_graph_neural_accelerator_statistics:
+        case vvl::Extension::_VK_EXT_external_semaphore_drm_syncobj:
         case vvl::Extension::_VK_EXT_primitive_restart_index:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:

@@ -1577,6 +1577,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceExternalMemoryHostPropertiesEXT", 48},
     {"VkPhysicalDeviceExternalMemoryRDMAFeaturesNV", 45},
     {"VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX", 54},
+    {"VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT", 55},
     {"VkPhysicalDeviceExternalSemaphoreInfo", 38},
     {"VkPhysicalDeviceExternalTensorInfoARM", 38},
     {"VkPhysicalDeviceFaultFeaturesEXT", 33},
@@ -2962,6 +2963,7 @@ const char* String(Field field) {
     {"externalMemoryProperties", 25},
     {"externalMemoryRDMA", 19},
     {"externalQueue", 14},
+    {"externalSemaphoreDrmSyncobj", 28},
     {"externalSemaphoreFeatures", 26},
     {"extraCount", 11},
     {"extraPrimitiveOverestimationSize", 33},
@@ -6114,6 +6116,7 @@ const char* String(Extension extension) {
     {"VK_EXT_external_memory_dma_buf", 31},
     {"VK_EXT_external_memory_host", 28},
     {"VK_EXT_external_memory_metal", 29},
+    {"VK_EXT_external_semaphore_drm_syncobj", 38},
     {"VK_EXT_filter_cubic", 20},
     {"VK_EXT_fragment_density_map", 28},
     {"VK_EXT_fragment_density_map2", 29},
@@ -9567,6 +9570,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkDataGraphPipelineNeuralStatisticsCreateInfoARM;
     case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_NEURAL_STATISTICS_CREATE_INFO_ARM:
        return Struct::VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_DRM_SYNCOBJ_FEATURES_EXT:
+       return Struct::VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT:
        return Struct::VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:

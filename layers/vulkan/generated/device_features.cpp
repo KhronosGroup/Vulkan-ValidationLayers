@@ -2070,6 +2070,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->dataGraphNeuralAcceleratorStatistics |= enabled->dataGraphNeuralAcceleratorStatistics == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_DRM_SYNCOBJ_FEATURES_EXT: {
+                const VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT*>(pNext);
+                features->externalSemaphoreDrmSyncobj |= enabled->externalSemaphoreDrmSyncobj == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT: {
                 const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT* enabled =
                     reinterpret_cast<const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT*>(pNext);

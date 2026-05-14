@@ -91,6 +91,18 @@ bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkIm
         }
     }
 
+    if (pImportSemaphoreFdInfo->handleType == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT) {
+        if (!enabled_features.externalSemaphoreDrmSyncobj) {
+            skip |= LogError("VUID-VkImportSemaphoreFdInfoKHR-handleType-XXXXX1", device, info_loc.dot(Field::handleType),
+                             "is VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT, but externalSemaphoreDrmSyncobj feature "
+                             "was not enabled.");
+        }
+        if (sem_state->type != VK_SEMAPHORE_TYPE_TIMELINE) {
+            skip |= LogError("VUID-VkImportSemaphoreFdInfoKHR-handleType-XXXXX2", device, info_loc.dot(Field::handleType),
+                             "semaphoreType is %s.", string_VkSemaphoreType(sem_state->type));
+        }
+    }
+
     return skip;
 }
 
