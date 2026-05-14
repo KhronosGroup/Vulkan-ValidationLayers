@@ -3214,6 +3214,45 @@ TEST_F(NegativeDescriptorHeap, MappedStructLessThanMaxPushDataSize) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptorHeap, MaxPushDataSizeShaderObject) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::scalarBlockLayout);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    if (heap_props.maxPushDataSize != 256) {
+        GTEST_SKIP() << "maxPushDataSize is not 256";
+    }
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_scalar_block_layout : enable
+        layout(set = 0, binding = 0, scalar) uniform UBO {
+            uint data[33]; // 132 bytes
+        };
+        void main() {
+            uint x = data[0];
+        }
+    )glsl";
+
+    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+    mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT;
+    mappings.sourceData.pushDataOffset = 128u;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mappings;
+
+    const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
+    VkShaderCreateInfoEXT comp_ci =
+        ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT);
+    comp_ci.pNext = &mapping_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pNext-11316");
+    const vkt::Shader comp_shader(*m_device, comp_ci);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptorHeap, OpTypeStruct) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
