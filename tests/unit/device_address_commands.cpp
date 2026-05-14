@@ -1365,7 +1365,8 @@ TEST_F(NegativeDeviceAddressCommands, VertexBufferBindingSizeZero) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDeviceAddressCommands, VertexBufferBindingStride) {
+// VU being reworked in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8276
+TEST_F(NegativeDeviceAddressCommands, DISABLED_VertexBufferBindingStride) {
     RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
     InitRenderTarget();
 
