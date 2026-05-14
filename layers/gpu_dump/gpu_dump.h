@@ -38,6 +38,8 @@ class GpuDump : public vvl::DeviceProxy {
     void Created(vvl::CommandBuffer& cb_state) override;
 
     std::vector<uint8_t> CopyDataFromMemory(VkDeviceAddress memory_addresss, VkDeviceSize copy_size);
+
+    bool ListBuffers(std::ostringstream& ss, VkDeviceAddress address, uint32_t indents, bool new_line_start = false);
 };
 
 }  // namespace gpudump

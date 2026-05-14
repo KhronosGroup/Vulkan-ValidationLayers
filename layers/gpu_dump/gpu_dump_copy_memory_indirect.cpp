@@ -23,32 +23,15 @@
 #include <cstdint>
 #include <iostream>
 #include <sstream>
-#include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 
 namespace gpudump {
-
-// return for warning if no buffer found
-static bool ListBuffers(std::ostringstream& ss, const GpuDump& dev_data, VkDeviceAddress address, uint32_t indents) {
-    auto buffer_states = dev_data.GetBuffersByAddress(address);
-    for (uint32_t i = 0; i < indents; i++) {
-        ss << "    ";
-    }
-    for (auto& buffer_state : buffer_states) {
-        ss << "- " << buffer_state->Describe(dev_data) << "\n";
-    }
-    if (buffer_states.empty()) {
-        ss << "- [WARNING] No VkBuffer found at 0x" << std::hex << address << "\n";
-        return true;
-    }
-    return false;
-}
 
 bool CommandBufferSubState::DumpCopyMemoryIndirectCommon(std::ostringstream& ss, uint32_t copy_count,
                                                          VkStridedDeviceAddressRangeKHR copy_address_range) const {
     ss << "copyCount = " << copy_count << ", starting address = 0x" << std::hex << copy_address_range.address
        << ", size = " << std::dec << copy_address_range.size << ", stride = " << copy_address_range.stride << "\n";
-    return ListBuffers(ss, dev_data, copy_address_range.address, 1);
+    return dev_data.ListBuffers(ss, copy_address_range.address, 1);
 }
 
 void CommandBufferSubState::DumpCopyMemoryIndirect(const VkCopyMemoryIndirectInfoKHR& info, const Location& loc) const {
@@ -70,9 +53,9 @@ void CommandBufferSubState::DumpCopyMemoryIndirect(const VkCopyMemoryIndirectInf
             auto command = *(VkCopyMemoryIndirectCommandKHR*)(indirect_data.data() + stride_i);
             ss << "    - size: " << std::dec << command.size << '\n';
             ss << "    - srcAddress: 0x" << std::hex << command.srcAddress << '\n';
-            found_warning |= ListBuffers(ss, dev_data, command.srcAddress, 2);
+            found_warning |= dev_data.ListBuffers(ss, command.srcAddress, 2);
             ss << "    - dstAddress: 0x" << std::hex << command.dstAddress << '\n';
-            found_warning |= ListBuffers(ss, dev_data, command.dstAddress, 2);
+            found_warning |= dev_data.ListBuffers(ss, command.dstAddress, 2);
         }
     }
 
@@ -106,7 +89,7 @@ void CommandBufferSubState::DumpCopyMemoryToImageIndirect(const VkCopyMemoryToIm
         if (know_data) {
             auto command = *(VkCopyMemoryToImageIndirectCommandKHR*)(indirect_data.data() + stride_i);
             ss << "    - srcAddress: 0x" << std::hex << command.srcAddress << '\n';
-            found_warning |= ListBuffers(ss, dev_data, command.srcAddress, 2);
+            found_warning |= dev_data.ListBuffers(ss, command.srcAddress, 2);
             ss << "    - bufferRowLength: " << std::dec << command.bufferRowLength << '\n';
             ss << "    - bufferImageHeight: " << command.bufferImageHeight << '\n';
             ss << "    - imageSubresource: " << string_VkImageSubresourceLayers(command.imageSubresource) << '\n';

@@ -78,4 +78,37 @@ std::vector<uint8_t> GpuDump::CopyDataFromMemory(VkDeviceAddress memory_addresss
     return result;
 }
 
+// return for warning if no buffer found
+bool GpuDump::ListBuffers(std::ostringstream& ss, VkDeviceAddress address, uint32_t indents, bool new_line_start) {
+    if (new_line_start) {
+        ss << "\n";
+    }
+
+    auto buffer_states = GetBuffersByAddress(address);
+    for (uint32_t i = 0; i < indents; i++) {
+        ss << "    ";
+    }
+
+    for (uint32_t i = 0; i < buffer_states.size(); i++) {
+        if (i != 0) {
+            ss << '\n';
+            for (uint32_t j = 0; j < indents; j++) {
+                ss << "    ";
+            }
+        }
+        auto& buffer_state = buffer_states[i];
+        ss << "- " << buffer_state->Describe(*this);
+    }
+
+    if (buffer_states.empty()) {
+        ss << "- [WARNING] No VkBuffer found at 0x" << std::hex << address;
+    }
+
+    if (!new_line_start) {
+        ss << "\n";
+    }
+
+    return buffer_states.empty();
+}
+
 }  // namespace gpudump

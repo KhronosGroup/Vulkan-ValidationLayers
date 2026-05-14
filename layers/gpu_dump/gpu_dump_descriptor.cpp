@@ -51,14 +51,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
     for (uint32_t binding_i = 0; binding_i < cb_state.descriptor_buffer.binding_info.size(); binding_i++) {
         const VkDeviceAddress address = cb_state.descriptor_buffer.binding_info[binding_i].address;
         ss << "  - pBindingInfos[" << std::dec << binding_i << "].address 0x" << std::hex << address << '\n';
-        auto buffer_states = dev_data.GetBuffersByAddress(address);
-        for (auto& buffer_state : buffer_states) {
-            ss << "    - " << buffer_state->Describe(dev_data) << "\n";
-        }
-        if (buffer_states.empty()) {
-            ss << "    - [WARNING] No VkBuffer found at 0x" << std::hex << address << "\n";
-            found_warning = true;
-        }
+        found_warning |= dev_data.ListBuffers(ss, address, 1);
     }
 
     struct BindingInfo {
@@ -343,6 +336,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
     // attempts to catch obvious OOB offsets in mappings
     std::ostringstream warn_ss;
+    bool warn_indirect_buffer = false;
     uint32_t warn_reserved_range_start = vvl::kNoIndex32;
     uint32_t warn_reserved_range_end = vvl::kNoIndex32;
 
@@ -705,6 +699,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
            << ", heapArrayStride: 0x" << map_data.heapArrayStride;
         ss << new_line << "indirectAddress: 0x" << final_indirect_address << " (0x" << push_indirect_address << " + 0x"
            << map_data.addressOffset << ")";
+
+        warn_indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
+
         if (know_ubo) {
             ss << new_line << "indirectIndex: 0x" << indirect_index;
         }
@@ -790,6 +787,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                << map_data.samplerHeapArrayStride;
             ss << new_line << "indirectAddress: 0x" << final_indirect_address << " (0x" << push_indirect_address << " + 0x"
                << map_data.samplerAddressOffset << ")";
+
+            warn_indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
+
             if (know_ubo) {
                 ss << new_line << "indirectIndex: 0x" << indirect_index;
             }
@@ -869,6 +869,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
            << ", heapOffset: 0x" << map_data.heapOffset << ", heapIndexStride: 0x" << map_data.heapIndexStride;
         ss << new_line << "indirectAddress: 0x" << final_indirect_address << " (0x" << push_indirect_address << " + 0x"
            << map_data.addressOffset << ")";
+
+        warn_indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
         ss << new_line << main_heap_type << " Heap address: 0x" << heap_range.begin + map_data.heapOffset
            << " + (indirectIndex * 0x" << map_data.heapIndexStride << ")";
@@ -952,6 +954,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                << ", samplerHeapIndexStride: 0x" << map_data.samplerHeapIndexStride;
             ss << new_line << "indirectAddress: 0x" << final_indirect_address << " (0x" << push_indirect_address << " + 0x"
                << map_data.samplerAddressOffset << ")";
+
+            warn_indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
+
             ss << new_line << "Sampler Heap address: 0x" << heap.sampler_range.begin + map_data.samplerHeapOffset
                << " + (indirectIndex * 0x" << map_data.samplerHeapIndexStride << ")";
 
@@ -1050,6 +1055,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         ss << new_line << "Indirect Adresss 0x" << indirect_address;
 
         warn_alignment_indirect_address(indirect_address);
+        warn_indirect_buffer |= dev_data.ListBuffers(ss, indirect_address, 3, true);
+
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
         const VkDescriptorMappingSourceIndirectAddressEXT& map_data = mapping.sourceData.indirectAddress;
         VkDeviceAddress push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.pushOffset]);
@@ -1060,6 +1067,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
            << map_data.addressOffset << ")";
 
         warn_alignment_ubo_indirect_address(final_indirect_address);
+        warn_indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
         std::vector<uint8_t> indirect_address_data = dev_data.CopyDataFromMemory(final_indirect_address, 8);
         if (!indirect_address_data.empty()) {
@@ -1067,6 +1075,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             ss << new_line << "Resource Adresss 0x" << resource_address;
 
             warn_alignment_indirect_address(resource_address, true);
+            warn_indirect_buffer |= dev_data.ListBuffers(ss, resource_address, 3, true);
         }
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
         // TODO - Add address for RTX
@@ -1104,7 +1113,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         }
     }
 
-    bool found_warning = false;
+    bool found_warning = warn_indirect_buffer;
     if (!warn_ss.str().empty()) {
         ss << warn_ss.str();
         found_warning = true;
@@ -1126,14 +1135,7 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
             ss << " (no reserved range)";
         }
         ss << '\n';
-        auto buffer_states = dev_data.GetBuffersByAddress(cb_state.descriptor_heap.resource_range.begin);
-        for (auto& buffer_state : buffer_states) {
-            ss << "  - " << buffer_state->Describe(dev_data) << "\n";
-        }
-        if (buffer_states.empty()) {
-            ss << "  - [WARNING] No VkBuffer found at 0x" << std::hex << cb_state.descriptor_heap.resource_range.begin << "\n";
-            found_warning = true;
-        }
+        found_warning |= dev_data.ListBuffers(ss, cb_state.descriptor_heap.resource_range.begin, 1);
     }
     if (!cb_state.descriptor_heap.sampler_range.empty()) {
         ss << "vkCmdBindSamplerHeapEXT last bound the sampler heap to " << string_range_hex(cb_state.descriptor_heap.sampler_range);
@@ -1144,14 +1146,7 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
             ss << " (no reserved range)";
         }
         ss << '\n';
-        auto buffer_states = dev_data.GetBuffersByAddress(cb_state.descriptor_heap.sampler_range.begin);
-        for (auto& buffer_state : buffer_states) {
-            ss << "  - " << buffer_state->Describe(dev_data) << "\n";
-        }
-        if (buffer_states.empty()) {
-            ss << "  - [WARNING] No VkBuffer found at 0x" << std::hex << cb_state.descriptor_heap.sampler_range.begin << "\n";
-            found_warning = true;
-        }
+        found_warning |= dev_data.ListBuffers(ss, cb_state.descriptor_heap.sampler_range.begin, 1);
     }
 
     // Quick way to combine shaderObjects and pipelines

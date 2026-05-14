@@ -25,10 +25,16 @@ static const VkLayerSettingEXT kAllDumpSettings[3] = {
 };
 VkLayerSettingsCreateInfoEXT kAllDumpSettingCi = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 3, kAllDumpSettings};
 
-class NegativeGpuDump : public VkLayerTest {};
+class NegativeGpuDump : public VkLayerTest {
+  public:
+    void InitDescriptorBuffer();
+    void InitDescriptorHeap();
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_props = vku::InitStructHelper();
+};
 
-TEST_F(NegativeGpuDump, Descriptors) {
-    SetTargetApiVersion(VK_API_VERSION_1_2);
+void NegativeGpuDump::InitDescriptorBuffer() {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBuffer);
@@ -36,8 +42,23 @@ TEST_F(NegativeGpuDump, Descriptors) {
     RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
     RETURN_IF_SKIP(InitState());
 
-    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    GetPhysicalDeviceProperties2(descriptor_buffer_props);
+}
+
+void NegativeGpuDump::InitDescriptorHeap() {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
+    RETURN_IF_SKIP(InitState());
+
+    GetPhysicalDeviceProperties2(heap_props);
+}
+
+TEST_F(NegativeGpuDump, Descriptors) {
+    RETURN_IF_SKIP(InitDescriptorBuffer());
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
@@ -51,7 +72,7 @@ TEST_F(NegativeGpuDump, Descriptors) {
     vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data, 16);
 
     void* mapped_descriptor_data = descriptor_buffer.Memory().Map();
-    vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
+    vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_props.storageBufferDescriptorSize, mapped_descriptor_data);
 
     const char* cs_source = R"glsl(
         #version 450
@@ -89,13 +110,7 @@ TEST_F(NegativeGpuDump, Descriptors) {
 
 TEST_F(NegativeGpuDump, DescriptorBufferWithoutDescriptor) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12250");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorBuffer);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitDescriptorBuffer());
     InitRenderTarget();
 
     vkt::Buffer descriptor_buffer(*m_device, 256, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
@@ -143,16 +158,7 @@ TEST_F(NegativeGpuDump, DescriptorBufferWithoutDescriptor) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorBufferWrongBindPoint) {
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorBuffer);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
-
-    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    RETURN_IF_SKIP(InitDescriptorBuffer());
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
@@ -296,20 +302,11 @@ TEST_F(NegativeGpuDump, DISABLED_DeviceCopy) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapDescriptorIndexing) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitDescriptorHeap());
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Alignment not reliable on MockICD";
     }
-
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
 
     if (heap_props.minResourceHeapReservedRange != 0) {
         GTEST_SKIP() << "minResourceHeapReservedRange is not zero";
@@ -491,16 +488,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapDescriptorIndexing) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeNonArray) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
-
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
+    RETURN_IF_SKIP(InitDescriptorHeap());
 
     // We want to easily control it for testing
     if (heap_props.minResourceHeapReservedRange != 0) {
@@ -556,16 +544,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeNonArray) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeArray) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
-
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
+    RETURN_IF_SKIP(InitDescriptorHeap());
 
     // We want to easily control it for testing
     if (heap_props.minResourceHeapReservedRange != 0) {
@@ -622,16 +601,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeArray) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeArrayIndexed) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
-
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
+    RETURN_IF_SKIP(InitDescriptorHeap());
 
     // We want to easily control it for testing
     if (heap_props.minResourceHeapReservedRange != 0) {
@@ -702,16 +672,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeArrayIndexed) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeIndirectArray) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
-
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
+    RETURN_IF_SKIP(InitDescriptorHeap());
 
     // We want to easily control it for testing
     if (heap_props.minResourceHeapReservedRange != 0) {
@@ -782,16 +743,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeIndirectArray) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapSampler) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
-
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
+    RETURN_IF_SKIP(InitDescriptorHeap());
 
     if (heap_props.minResourceHeapReservedRange != 0 || heap_props.minSamplerHeapReservedRange != 0) {
         GTEST_SKIP() << "heapReservedRange is not zero";
@@ -851,16 +803,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapSampler) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapAlignment) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
-
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
+    RETURN_IF_SKIP(InitDescriptorHeap());
 
     // We want to easily control it for testing
     if (heap_props.minResourceHeapReservedRange != 0) {
@@ -926,16 +869,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignment) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectArray) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
-
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
+    RETURN_IF_SKIP(InitDescriptorHeap());
 
     // We want to easily control it for testing
     if (heap_props.minResourceHeapReservedRange != 0) {
@@ -1002,16 +936,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectArray) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapAlignmentHeapData) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
-
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
+    RETURN_IF_SKIP(InitDescriptorHeap());
 
     // We want to easily control it for testing
     if (heap_props.minResourceHeapReservedRange != 0) {
@@ -1072,17 +997,8 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentHeapData) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapWithoutDescriptor) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitDescriptorHeap());
     InitRenderTarget();
-
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
 
     // We want to easily control it for testing
     if (heap_props.minResourceHeapReservedRange != 0) {
@@ -1149,20 +1065,11 @@ TEST_F(NegativeGpuDump, DescriptorHeapWithoutDescriptor) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapAlignmentPushAddress) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitDescriptorHeap());
 
     if (m_device->Physical().limits_.minStorageBufferOffsetAlignment == 1) {
         GTEST_SKIP() << "minStorageBufferOffsetAlignment is 1";
     }
-
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
 
     // We want to easily control it for testing
     if (heap_props.minResourceHeapReservedRange != 0) {
@@ -1224,20 +1131,11 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentPushAddress) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectAddress) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitDescriptorHeap());
 
     if (m_device->Physical().limits_.minUniformBufferOffsetAlignment == 1) {
         GTEST_SKIP() << "minUniformBufferOffsetAlignment is 1";
     }
-
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
 
     // We want to easily control it for testing
     if (heap_props.minResourceHeapReservedRange != 0) {
@@ -1302,20 +1200,11 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectAddress) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectIndex) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitDescriptorHeap());
 
     if (m_device->Physical().limits_.minUniformBufferOffsetAlignment == 1) {
         GTEST_SKIP() << "minUniformBufferOffsetAlignment is 1";
     }
-
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
 
     // We want to easily control it for testing
     if (heap_props.minResourceHeapReservedRange != 0) {
@@ -1370,6 +1259,67 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectIndex) {
     pipe.CreateComputePipeline(false);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredWarning("MISALIGNED");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeGpuDump, DescriptorHeapIndirectIndexNoBuffer) {
+    RETURN_IF_SKIP(InitDescriptorHeap());
+
+    // We want to easily control it for testing
+    if (heap_props.minResourceHeapReservedRange != 0) {
+        GTEST_SKIP() << "minResourceHeapReservedRange is not zero";
+    }
+
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    const VkDeviceSize heap_size = Align((resource_stride * 4), resource_stride);
+    vkt::Buffer descriptor_heap(*m_device, heap_size, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout (set = 0, binding = 0) uniform UBO {
+            uint data;
+        };
+
+        void main() {
+            uint a = data;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    m_command_buffer.Begin();
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = descriptor_heap.AddressRange();
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    VkDeviceAddress indirect_ubo_address = 0xBEEE0000;
+    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
+    push_data_info.data.size = 8;
+    push_data_info.data.address = &indirect_ubo_address;
+    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
+    mapping.sourceData.indirectIndex.heapIndexStride = 0;
+    mapping.sourceData.indirectIndex.heapArrayStride = (uint32_t)resource_stride;
+    mapping.sourceData.indirectIndex.addressOffset = 0x10000;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.CreateComputePipeline(false);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    m_errorMonitor->SetDesiredWarning("[WARNING] No VkBuffer found at 0xbeef0000");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
