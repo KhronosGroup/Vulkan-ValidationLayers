@@ -7437,7 +7437,8 @@ TEST_F(NegativeShaderObject, InvalidVertexBuffer) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, VertexStride) {
+// VU being reworked in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8276
+TEST_F(NegativeShaderObject, DISABLED_VertexStride) {
     TEST_DESCRIPTION("Draw with vertex format components not matching vertex input format components.");
 
     AddRequiredFeature(vkt::Feature::shaderInt64);

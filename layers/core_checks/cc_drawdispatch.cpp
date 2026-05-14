@@ -2969,20 +2969,6 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound& last_bound, const Lo
             const auto attr_index = location.second.index;
             const auto& attr_desc = location.second.desc;
 
-            if (last_bound.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
-                const VkDeviceSize attribute_binding_extent = attr_desc.offset + GetVertexInputFormatSize(attr_desc.format);
-                if (vertex_buffer_binding->stride != 0 && vertex_buffer_binding->stride < attribute_binding_extent) {
-                    const char* vuid_str = cb_state.bind_vertex_buffer_3_used ? "VUID-vkCmdBindVertexBuffers3KHR-addressRange-13073"
-                                                                              : "VUID-vkCmdBindVertexBuffers2-pStrides-06209";
-                    skip |= LogError(vuid_str, last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                                     "(attribute binding %" PRIu32 ", attribute location %" PRIu32 ") The pStrides value (%" PRIu64
-                                     ") parameter in the last call to %s is not 0 "
-                                     "and is less than the extent of the binding for the attribute (%" PRIu64 ").",
-                                     attr_desc.binding, attr_desc.location, vertex_buffer_binding->stride, String(loc.function),
-                                     attribute_binding_extent);
-                }
-            }
-
             // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
             if (!enabled_features.robustBufferAccess && !robust_pipeline && vertex_buffer_binding->Buffer() != VK_NULL_HANDLE) {
                 const VkDeviceSize vertex_buffer_offset = vertex_buffer_binding->BufferOffset();
