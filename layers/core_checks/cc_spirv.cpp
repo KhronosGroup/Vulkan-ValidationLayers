@@ -3412,7 +3412,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                 if (type_struct_info && !type_struct_info->has_runtime_array) {
                     const uint64_t struct_size = (uint64_t)type_struct_info->GetSize(module_state).size;
                     if (struct_size >
-                        (uint64_t)(mapping.sourceData.pushDataOffset + phys_dev_ext_props.descriptor_heap_props.maxPushDataSize)) {
+                        (uint64_t)(phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - mapping.sourceData.pushDataOffset)) {
                         const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-11316"
                                                     : "VUID-VkShaderCreateInfoEXT-pNext-11316";
                         skip |=
@@ -3420,8 +3420,8 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                                      loc.pNext(Struct::VkShaderDescriptorSetAndBindingMappingInfoEXT, Field::pMappings, i)
                                          .dot(Field::source),
                                      "(VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) is used to map descriptor %s in %s which has a "
-                                     "structure size of %" PRIu64 ", which is larger than the sum of pushDataOffset (%" PRIu32
-                                     ") and maxPushDataSize (%" PRIu64 ").",
+                                     "structure size of %" PRIu64 ", which when the pushDataOffset (%" PRIu32
+                                     ") is applied, will be larger than the maxPushDataSize (%" PRIu64 ").",
                                      resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str(), struct_size,
                                      mapping.sourceData.pushDataOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize);
                     }
