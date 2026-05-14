@@ -4504,7 +4504,7 @@ bool Device::PreCallValidateCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffe
         [[maybe_unused]] const Location pCopyMemoryInfo_loc = error_obj.location.dot(Field::pCopyMemoryInfo);
         skip |= ValidateObject(pCopyMemoryInfo->image, kVulkanObjectTypeImage, false,
                                "VUID-VkCopyDeviceMemoryImageInfoKHR-image-parameter",
-                               "UNASSIGNED-VkCopyDeviceMemoryImageInfoKHR-image-parent", pCopyMemoryInfo_loc.dot(Field::image));
+                               "VUID-VkCopyDeviceMemoryImageInfoKHR-image-parent", pCopyMemoryInfo_loc.dot(Field::image));
     }
 
     return skip;
@@ -4519,7 +4519,7 @@ bool Device::PreCallValidateCmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffe
         [[maybe_unused]] const Location pCopyMemoryInfo_loc = error_obj.location.dot(Field::pCopyMemoryInfo);
         skip |= ValidateObject(pCopyMemoryInfo->image, kVulkanObjectTypeImage, false,
                                "VUID-VkCopyDeviceMemoryImageInfoKHR-image-parameter",
-                               "UNASSIGNED-VkCopyDeviceMemoryImageInfoKHR-image-parent", pCopyMemoryInfo_loc.dot(Field::image));
+                               "VUID-VkCopyDeviceMemoryImageInfoKHR-image-parent", pCopyMemoryInfo_loc.dot(Field::image));
     }
 
     return skip;
@@ -5481,7 +5481,7 @@ bool Device::PreCallValidateCreateGpaSessionAMD(VkDevice device, const VkGpaSess
         [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
         skip |= ValidateObject(pCreateInfo->secondaryCopySource, kVulkanObjectTypeGpaSessionAMD, true,
                                "VUID-VkGpaSessionCreateInfoAMD-secondaryCopySource-parameter",
-                               "UNASSIGNED-VkGpaSessionCreateInfoAMD-secondaryCopySource-parent",
+                               "VUID-VkGpaSessionCreateInfoAMD-secondaryCopySource-parent",
                                pCreateInfo_loc.dot(Field::secondaryCopySource));
     }
 
