@@ -218,6 +218,8 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresourceLayers &sub) const;
     VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresource &sub) const;
     VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresourceRange &range) const;
+    // For cases where we just want the extent of a single
+    VkExtent3D GetEffectiveSubresourceLayerExtent(const VkImageSubresourceLayers& sub) const;
 
     std::string DescribeSubresourceLayers(const VkImageSubresourceLayers &subresource) const;
 

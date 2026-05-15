@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include <algorithm>
 
@@ -429,4 +430,59 @@ TEST_F(PositiveHostImageCopy, CopyImageToImageMemcpyUsesSubresourceExtent) {
     copy.pRegions = &region;
 
     vk::CopyImageToImageEXT(*m_device, &copy);
+}
+
+TEST_F(PositiveHostImageCopy, CopyImageToMemoryLayers) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12212");
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    image_ci.arrayLayers = 2;
+    vkt::Image image(*m_device, image_ci);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    const uint32_t buffer_size = width * height * 4u * image_ci.arrayLayers;
+    std::vector<uint8_t> data(buffer_size);
+
+    VkImageToMemoryCopy region = vku::InitStructHelper();
+    region.pHostPointer = data.data();
+    region.memoryRowLength = 0u;
+    region.memoryImageHeight = 0u;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 2u};
+    region.imageOffset = {0u, 0u, 0u};
+    region.imageExtent = {32u, 32u, 1u};
+
+    VkCopyImageToMemoryInfo copy_to_image_memory = vku::InitStructHelper();
+    copy_to_image_memory.flags = VK_HOST_IMAGE_COPY_MEMCPY;
+    copy_to_image_memory.srcImage = image;
+    copy_to_image_memory.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_to_image_memory.regionCount = 1u;
+    copy_to_image_memory.pRegions = &region;
+
+    vk::CopyImageToMemoryEXT(*m_device, &copy_to_image_memory);
+}
+
+TEST_F(PositiveHostImageCopy, CopyImageToImageLayers) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12212");
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    image_ci.arrayLayers = 2;
+    vkt::Image src_image(*m_device, image_ci);
+    src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::Image dst_image(*m_device, image_ci);
+    dst_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageCopy2 image_copy_2 = vku::InitStructHelper();
+    image_copy_2.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2u};
+    image_copy_2.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2u};
+    image_copy_2.extent = {width, height, 1};
+    VkCopyImageToImageInfo copy_image_to_image = vku::InitStructHelper();
+    copy_image_to_image.flags = VK_HOST_IMAGE_COPY_MEMCPY;
+    copy_image_to_image.regionCount = 1;
+    copy_image_to_image.pRegions = &image_copy_2;
+    copy_image_to_image.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_image_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_image_to_image.srcImage = src_image;
+    copy_image_to_image.dstImage = dst_image;
+
+    vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
 }

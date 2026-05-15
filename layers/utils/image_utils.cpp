@@ -54,7 +54,8 @@ uint32_t GetEffectiveLayerCount(const VkImageSubresourceRange& subresource_range
 
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.
 VkExtent3D GetEffectiveExtent(uint32_t mip_levels, VkExtent3D extent, VkFormat format, VkImageCreateFlags flags,
-                              VkImageType image_type, uint32_t array_layers, VkImageAspectFlags aspect_mask, uint32_t mip_level) {
+                              VkImageType image_type, uint32_t array_layers, VkImageAspectFlags aspect_mask, uint32_t mip_level,
+                              bool layer_only) {
     // Return zero extent if mip level doesn't exist
     if (mip_level >= mip_levels) {
         return VkExtent3D{0, 0, 0};
@@ -88,15 +89,18 @@ VkExtent3D GetEffectiveExtent(uint32_t mip_levels, VkExtent3D extent, VkFormat f
     }
 
     // Image arrays have an effective z extent that isn't diminished by mip level
-    if (VK_IMAGE_TYPE_3D != image_type) {
+    // Some cases (https://gitlab.khronos.org/vulkan/vulkan/-/issues/4819) we want only 1 layer's extent
+    if (VK_IMAGE_TYPE_3D != image_type && !layer_only) {
         extent.depth = array_layers;
     }
 
     return extent;
 }
 
+// Currently only used by the testing framework
 VkExtent3D GetEffectiveExtent(const VkImageCreateInfo& ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level) {
-    return GetEffectiveExtent(ci.mipLevels, ci.extent, ci.format, ci.flags, ci.imageType, ci.arrayLayers, aspect_mask, mip_level);
+    return GetEffectiveExtent(ci.mipLevels, ci.extent, ci.format, ci.flags, ci.imageType, ci.arrayLayers, aspect_mask, mip_level,
+                              false);
 }
 
 std::optional<VkImageUsageFlags> GetImageStencilUsageFlags(const void* pNext) {

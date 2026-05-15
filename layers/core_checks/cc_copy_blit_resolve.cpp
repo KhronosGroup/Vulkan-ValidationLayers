@@ -2705,20 +2705,19 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
             if (region.imageOffset.x != 0 || region.imageOffset.y != 0 || region.imageOffset.z != 0) {
                 const char* vuid = from_image ? "VUID-VkCopyImageToMemoryInfo-imageOffset-09114"
                                               : "VUID-VkCopyMemoryToImageInfo-imageOffset-09114";
-                skip |= LogError(vuid, objlist, loc.dot(info_type).dot(Field::flags),
-                                 "contains VK_HOST_IMAGE_COPY_MEMCPY which "
-                                 "means that pRegions[%" PRIu32 "].imageOffset (%s) must all be zero",
-                                 i, string_VkOffset3D(region.imageOffset).c_str());
+                skip |= LogError(vuid, objlist, region_loc.dot(Field::imageOffset),
+                                 "(%s) must all be zero if %s->flags contains VK_HOST_IMAGE_COPY_MEMCPY",
+                                 string_VkOffset3D(region.imageOffset).c_str(), String(info_type));
             }
-            const VkExtent3D subresource_extent = image_state->GetEffectiveSubresourceExtent(region.imageSubresource);
+            const VkExtent3D subresource_extent = image_state->GetEffectiveSubresourceLayerExtent(region.imageSubresource);
             if (!IsExtentEqual(region.imageExtent, subresource_extent)) {
                 const char* vuid =
                     from_image ? "VUID-VkCopyImageToMemoryInfo-srcImage-09115" : "VUID-VkCopyMemoryToImageInfo-dstImage-09115";
-                skip |= LogError(
-                    vuid, objlist, region_loc.dot(Field::imageExtent),
-                    "(%s) must match the imageSubresource extents (%s) because %s->flags contains VK_HOST_IMAGE_COPY_MEMCPY\n%s",
-                    string_VkExtent3D(region.imageExtent).c_str(), string_VkExtent3D(subresource_extent).c_str(), String(info_type),
-                    image_state->DescribeSubresourceLayers(region.imageSubresource).c_str());
+                skip |= LogError(vuid, objlist, region_loc.dot(Field::imageExtent),
+                                 "(%s) must match the imageSubresource extents (%s) for a single array layer because %s->flags "
+                                 "contains VK_HOST_IMAGE_COPY_MEMCPY\n%s",
+                                 string_VkExtent3D(region.imageExtent).c_str(), string_VkExtent3D(subresource_extent).c_str(),
+                                 String(info_type), image_state->DescribeSubresourceLayers(region.imageSubresource).c_str());
             }
             if ((region.memoryRowLength != 0) || (region.memoryImageHeight != 0)) {
                 const char* vuid =
@@ -2866,11 +2865,14 @@ bool CoreChecks::ValidateMemcpyExtents(const ImageCopyRegion& region, const Loca
         skip |= LogError("VUID-VkCopyImageToImageInfo-srcOffset-09114", region.objlist, region_loc.dot(Field::srcOffset),
                          "is (%s) but flags contains VK_HOST_IMAGE_COPY_MEMCPY.", string_VkOffset3D(region.src_offset).c_str());
     }
-    if (!IsExtentEqual(region.extent, region.src_subresource_extent)) {
+
+    VkExtent3D subresource_extent = region.src_state.GetEffectiveSubresourceLayerExtent(region.src_subresource);
+    if (!IsExtentEqual(region.extent, subresource_extent)) {
         skip |= LogError("VUID-VkCopyImageToImageInfo-srcImage-09115", region.objlist, region_loc.dot(Field::imageExtent),
-                         "(%s) must match the image's srcSubresource.extents (%s) when VkCopyImageToImageInfo->flags contains "
+                         "(%s) must match the image's srcSubresource.extents (%s) for a single array layer when "
+                         "VkCopyImageToImageInfo->flags contains "
                          "VK_HOST_IMAGE_COPY_MEMCPY\n%s",
-                         string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(region.src_subresource_extent).c_str(),
+                         string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(subresource_extent).c_str(),
                          region.src_state.DescribeSubresourceLayers(region.src_subresource).c_str());
     }
 
@@ -2878,11 +2880,14 @@ bool CoreChecks::ValidateMemcpyExtents(const ImageCopyRegion& region, const Loca
         skip |= LogError("VUID-VkCopyImageToImageInfo-dstOffset-09114", region.objlist, region_loc.dot(Field::dstOffset),
                          "is (%s) but flags contains VK_HOST_IMAGE_COPY_MEMCPY.", string_VkOffset3D(region.dst_offset).c_str());
     }
-    if (!IsExtentEqual(region.extent, region.dst_subresource_extent)) {
+
+    subresource_extent = region.dst_state.GetEffectiveSubresourceLayerExtent(region.dst_subresource);
+    if (!IsExtentEqual(region.extent, subresource_extent)) {
         skip |= LogError("VUID-VkCopyImageToImageInfo-dstImage-09115", region.objlist, region_loc.dot(Field::imageExtent),
-                         "(%s) must match the image's dstSubresource.extents (%s) when VkCopyImageToImageInfo->flags contains "
+                         "(%s) must match the image's dstSubresource.extents (%s) for a single array layer when "
+                         "VkCopyImageToImageInfo->flags contains "
                          "VK_HOST_IMAGE_COPY_MEMCPY\n%s",
-                         string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(region.dst_subresource_extent).c_str(),
+                         string_VkExtent3D(region.extent).c_str(), string_VkExtent3D(subresource_extent).c_str(),
                          region.dst_state.DescribeSubresourceLayers(region.dst_subresource).c_str());
     }
     return skip;

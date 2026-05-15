@@ -155,35 +155,6 @@ TEST_F(NegativeHostImageCopy, ImageOffset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeHostImageCopy, ImageOffsetArrayLayer) {
-    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11627");
-    RETURN_IF_SKIP(InitHostImageCopyTest());
-
-    VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    image_ci.arrayLayers = 2;
-    vkt::Image image(*m_device, image_ci);
-    image.SetLayout(layout);
-
-    uint8_t garbage = 0;  // should never be dereferenced
-
-    VkMemoryToImageCopy region_to_image = vku::InitStructHelper();
-    region_to_image.pHostPointer = &garbage;
-    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region_to_image.imageOffset = {0, 0, 0};
-    region_to_image.imageExtent = {width, height, 1};
-
-    VkCopyMemoryToImageInfo copy_to_image = vku::InitStructHelper();
-    copy_to_image.dstImage = image;
-    copy_to_image.dstImageLayout = layout;
-    copy_to_image.regionCount = 1;
-    copy_to_image.pRegions = &region_to_image;
-
-    copy_to_image.flags = VK_HOST_IMAGE_COPY_MEMCPY;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-09115");
-    vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(NegativeHostImageCopy, AspectMask) {
     RETURN_IF_SKIP(InitHostImageCopyTest());
 
@@ -2534,5 +2505,42 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutStencilWrongAspect) {
     transition_info.subresourceRange = range;
     m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-10750");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeHostImageCopy, CopyImageToMemoryLayers) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12212");
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    image_ci.mipLevels = 2;
+    vkt::Image image(*m_device, image_ci);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    const uint32_t buffer_size = width * height * 4u;
+    std::vector<uint8_t> data(buffer_size);
+
+    VkImageToMemoryCopy region = vku::InitStructHelper();
+    region.pHostPointer = data.data();
+    region.memoryRowLength = 0u;
+    region.memoryImageHeight = 0u;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 1u, 0u, 1u};
+    region.imageOffset = {0u, 0u, 0u};
+    region.imageExtent = {8u, 8u, 1u};  // only copying half of mip 2 (16x16)
+
+    VkCopyImageToMemoryInfo copy_to_image_memory = vku::InitStructHelper();
+    copy_to_image_memory.flags = VK_HOST_IMAGE_COPY_MEMCPY;
+    copy_to_image_memory.srcImage = image;
+    copy_to_image_memory.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_to_image_memory.regionCount = 1u;
+    copy_to_image_memory.pRegions = &region;
+
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-09115");
+    vk::CopyImageToMemoryEXT(*m_device, &copy_to_image_memory);
+    m_errorMonitor->VerifyFound();
+
+    region.imageSubresource.mipLevel = 0;
+    region.imageExtent = {16u, 16u, 1u};
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-09115");
+    vk::CopyImageToMemoryEXT(*m_device, &copy_to_image_memory);
     m_errorMonitor->VerifyFound();
 }

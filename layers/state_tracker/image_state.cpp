@@ -343,9 +343,8 @@ bool Image::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const Image& 
 }
 
 VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageAspectFlags aspect_mask, const uint32_t mip_level) const {
-    return GetEffectiveExtent(GetMipLevels(), GetExtent(), GetFormat(),
-                              create_flags, GetImageType(), GetArrayLayers(), aspect_mask,
-                              mip_level);
+    return GetEffectiveExtent(GetMipLevels(), GetExtent(), GetFormat(), create_flags, GetImageType(), GetArrayLayers(), aspect_mask,
+                              mip_level, false);
 }
 
 bool Image::IsCompatibleAliasing(const Image* other_image_state) const {
@@ -387,6 +386,11 @@ VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresource& sub) c
 
 VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceRange& range) const {
     return GetEffectiveSubresourceExtent(range.aspectMask, range.baseMipLevel);
+}
+
+VkExtent3D Image::GetEffectiveSubresourceLayerExtent(const VkImageSubresourceLayers& sub) const {
+    return GetEffectiveExtent(GetMipLevels(), GetExtent(), GetFormat(), create_flags, GetImageType(), GetArrayLayers(),
+                              sub.aspectMask, sub.mipLevel, true);
 }
 
 std::string Image::DescribeSubresourceLayers(const VkImageSubresourceLayers& subresource) const {
