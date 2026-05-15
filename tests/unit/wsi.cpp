@@ -3119,7 +3119,10 @@ TEST_F(NegativeWsi, CreatingXcbSurface) {
     RETURN_IF_SKIP(Init());
 
     xcb_connection_t* xcb_connection = xcb_connect(nullptr, nullptr);
-    ASSERT_TRUE(xcb_connection);
+    if (!xcb_connection) {
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12276
+        GTEST_SKIP() << "xcb_connection failed";
+    }
 
     // NOTE: This is technically an invalid window! (There is no width/height)
     // But there is no robust way to check for a valid window without crashing the app.
