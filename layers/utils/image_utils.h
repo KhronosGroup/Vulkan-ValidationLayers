@@ -29,7 +29,8 @@ uint32_t GetEffectiveLevelCount(const VkImageSubresourceRange &subresource_range
 uint32_t GetEffectiveLayerCount(const VkImageSubresourceRange &subresource_range, uint32_t total_layer_count);
 
 VkExtent3D GetEffectiveExtent(uint32_t mip_levels, VkExtent3D extent, VkFormat format, VkImageCreateFlags flags,
-                              VkImageType image_type, uint32_t array_layers, VkImageAspectFlags aspect_mask, uint32_t mip_level);
+                              VkImageType image_type, uint32_t array_layers, VkImageAspectFlags aspect_mask, uint32_t mip_level,
+                              bool layer_only);
 VkExtent3D GetEffectiveExtent(const VkImageCreateInfo& ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level);
 
 std::optional<VkImageUsageFlags> GetImageStencilUsageFlags(const void *pNext);
