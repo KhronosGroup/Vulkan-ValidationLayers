@@ -1126,9 +1126,10 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void EncodeVideo(const VkVideoEncodeInfoKHR &encodeInfo);
     void EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo);
 
-    void SetEvent(Event& event, VkPipelineStageFlags src_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-    void ResetEvent(Event& event, VkPipelineStageFlags src_stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-    void WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask);
+    void SetEvent(const Event& event, VkPipelineStageFlags src_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    void ResetEvent(const Event& event, VkPipelineStageFlags src_stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    void WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                   VkPipelineStageFlags dst_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     void WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                    const VkMemoryBarrier& memory_barrier);
     void WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,

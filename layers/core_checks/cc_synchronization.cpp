@@ -392,11 +392,37 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location& signal_semaph
     return skip;
 }
 
-bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::CommandBuffer& cb_state, EventMap& submit_signaling_states,
-                                   const Location& loc) const {
+static bool ValidateEventQueueMismatch(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
+                                       const vvl::Event& event_state, const EventMap& submit_signaling_states,
+                                       const Location& loc) {
     bool skip = false;
+
+    // Check if prior command buffers from this submit contain signaling operation.
+    // If yes, then everything is on the same queue
+    if (vvl::Contains(submit_signaling_states, event_state.VkHandle())) {
+        return skip;
+    }
+    // Check global event state
+    if (event_state.signaling_queue != VK_NULL_HANDLE && event_state.signaling_queue != queue_state.VkHandle()) {
+        const LogObjectList objlist(cb_state.Handle(), event_state.Handle(), event_state.signaling_queue, queue_state.Handle());
+        skip |= core.LogError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue", objlist, loc,
+                              "waits for event %s on the queue %s but the event was signaled on a different queue %s",
+                              core.FormatHandle(event_state.Handle()).c_str(), core.FormatHandle(queue_state.Handle()).c_str(),
+                              core.FormatHandle(event_state.signaling_queue).c_str());
+    }
+    return skip;
+}
+
+bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
+                                   EventMap& submit_signaling_states, const Location& loc) const {
+    bool skip = false;
+
     VkPipelineStageFlags signals_src_stage_mask = 0;
     for (VkEvent event : wait_events) {
+        auto event_state = core.Get<vvl::Event>(event);
+        if (event_state && !vvl::Contains(signaling_states, event)) {
+            skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, submit_signaling_states, loc);
+        }
         // NOTE: if signaling state is "unsignaled" then src stage mask is NONE
         if (const auto* cb_signaling = vvl::Find(signaling_states, event)) {
             // a) signal from the same command buffer
@@ -404,11 +430,12 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::CommandBuf
         } else if (const auto* submit_signaling = vvl::Find(submit_signaling_states, event)) {
             // b) signals from the previous command buffers of the same submit command
             signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(submit_signaling->src_stage_mask);
-        } else if (auto event_state = core.Get<vvl::Event>(event)) {
+        } else if (event_state) {
             // c) global event state
             signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(event_state->signal_src_stage_mask);
         }
     }
+    // Validate src stage mask mismatch
     if (wait_src_stage_mask != signals_src_stage_mask) {
         std::ostringstream ss;
         ss << "(" << core.FormatHandle(cb_state.Handle()) << ") contains a vkCmdWaitEvents call with srcStageMask "
@@ -427,6 +454,15 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::CommandBuf
             }
         }
         skip |= core.LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", cb_state.Handle(), loc, "%s", ss.str().c_str());
+    }
+    return skip;
+}
+
+bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
+                                    EventMap& submit_signaling_states, const Location& loc) const {
+    bool skip = false;
+    if (auto event_state = core.Get<vvl::Event>(wait_event)) {
+        skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, submit_signaling_states, loc);
     }
     return skip;
 }
@@ -1389,14 +1425,6 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(const vvl::CommandBuffer& cb_state, 
             auto event_state = state_data.Get<vvl::Event>(event);
             if (!event_state) continue;
             set_dependency_info = event_state->dependency_info;
-
-            if (event_state->signaling_queue != VK_NULL_HANDLE && event_state->signaling_queue != waiting_queue) {
-                const LogObjectList objlist(cb_state.Handle(), event, event_state->signaling_queue, waiting_queue);
-                skip |= state_data.LogError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue", objlist, loc,
-                                            "waits for event %s on the queue %s but the event was signaled on a different queue %s",
-                                            state_data.FormatHandle(event).c_str(), state_data.FormatHandle(waiting_queue).c_str(),
-                                            state_data.FormatHandle(event_state->signaling_queue).c_str());
-            }
         }
 
         bool set_is_event2 = set_dependency_info.has_value();

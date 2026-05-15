@@ -385,7 +385,7 @@ TEST_F(NegativeEvent, StageMaskTwoSecondariesSameCommand) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, DetectInterQueueEventUsage) {
+TEST_F(NegativeEvent, InterQueueEventUsage) {
     TEST_DESCRIPTION("Sets event on one queue and tries to wait on a different queue (CmdSetEvent/CmdWaitEvents)");
     all_queue_count_ = true;
     RETURN_IF_SKIP(Init());
@@ -397,25 +397,23 @@ TEST_F(NegativeEvent, DetectInterQueueEventUsage) {
 
     vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.Begin();
-    vk::CmdSetEvent(cb1, event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    cb1.SetEvent(event);
     cb1.End();
 
     vkt::CommandPool pool2(*m_device, m_second_queue->family_index);
     vkt::CommandBuffer cb2(*m_device, pool2);
     cb2.Begin();
-    vk::CmdWaitEvents(cb2, 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, nullptr,
-                      0, nullptr, 0, nullptr);
+    cb2.WaitEvent(event);
     cb2.End();
 
     m_default_queue->Submit(cb1);
     m_errorMonitor->SetDesiredError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue");
     m_second_queue->Submit(cb2);
     m_errorMonitor->VerifyFound();
-
     m_device->Wait();
 }
 
-TEST_F(NegativeEvent, DetectInterQueueEventUsage2) {
+TEST_F(NegativeEvent, InterQueueEvent2Usage) {
     TEST_DESCRIPTION("Sets event on one queue and tries to wait on a different queue (CmdSetEvent2/CmdWaitEvents2)");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -427,8 +425,6 @@ TEST_F(NegativeEvent, DetectInterQueueEventUsage2) {
     }
 
     VkMemoryBarrier2 barrier = vku::InitStructHelper();
-    barrier.srcAccessMask = 0;
-    barrier.dstAccessMask = 0;
     barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     barrier.dstStageMask = VK_PIPELINE_STAGE_NONE;
 
@@ -452,6 +448,80 @@ TEST_F(NegativeEvent, DetectInterQueueEventUsage2) {
     m_default_queue->Submit(cb1);
     m_errorMonitor->SetDesiredError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue");
     m_second_queue->Submit(cb2);
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}
+
+TEST_F(NegativeEvent, InterQueueEventUsageSecondary) {
+    TEST_DESCRIPTION("Set/Wait event from different queues and use secondary command buffer");
+    all_queue_count_ = true;
+    RETURN_IF_SKIP(Init());
+
+    if ((m_second_queue_caps & VK_QUEUE_GRAPHICS_BIT) == 0) {
+        GTEST_SKIP() << "2 graphics queues are needed";
+    }
+    const vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.End();
+
+    vkt::CommandPool pool(*m_device, m_second_queue->family_index);
+    vkt::CommandBuffer secondary(*m_device, pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.WaitEvent(event);
+    secondary.End();
+
+    vkt::CommandBuffer cb(*m_device, pool);
+    cb.Begin();
+    cb.ExecuteCommands(secondary);
+    cb.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->SetDesiredError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue");
+    m_second_queue->Submit(cb);
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}
+
+TEST_F(NegativeEvent, InterQueueEvent2UsageSecondary) {
+    TEST_DESCRIPTION("Set2/Wait2 event from different queues and use secondary command buffer");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    all_queue_count_ = true;
+    RETURN_IF_SKIP(Init());
+
+    if ((m_second_queue_caps & VK_QUEUE_GRAPHICS_BIT) == 0) {
+        GTEST_SKIP() << "2 graphics queues are needed";
+    }
+    const vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_NONE;
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &barrier;
+
+    m_command_buffer.Begin();
+    vk::CmdSetEvent2(m_command_buffer, event, &dependency_info);
+    m_command_buffer.End();
+
+    vkt::CommandPool pool(*m_device, m_second_queue->family_index);
+    vkt::CommandBuffer secondary(*m_device, pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    vk::CmdWaitEvents2(secondary, 1, &event.handle(), &dependency_info);
+    secondary.End();
+
+    vkt::CommandBuffer cb(*m_device, pool);
+    cb.Begin();
+    cb.ExecuteCommands(secondary);
+    cb.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->SetDesiredError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue");
+    m_second_queue->Submit(cb);
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 }

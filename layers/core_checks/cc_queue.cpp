@@ -77,7 +77,10 @@ struct CommandBufferSubmitState {
         auto& cb_sub_state = core::SubState(cb_state);
 
         for (const WaitEventSubmitInfo& submit_info : cb_sub_state.wait_event_submit_infos) {
-            skip |= submit_info.Validate(core, cb_state, local_event_signal_info, loc);
+            skip |= submit_info.Validate(core, queue_state, cb_state, local_event_signal_info, loc);
+        }
+        for (const WaitEvent2SubmitInfo& submit_info : cb_sub_state.wait_event2_submit_infos) {
+            skip |= submit_info.Validate(core, queue_state, cb_state, local_event_signal_info, loc);
         }
 
         for (auto& function : cb_sub_state.event_updates) {

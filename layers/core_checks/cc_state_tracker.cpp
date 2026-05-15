@@ -651,6 +651,12 @@ void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, Vk
 }
 
 void CommandBufferSubState::RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {
+    const bool submit_validation = !vvl::Contains(event_signaling_states, event);
+    if (submit_validation) {
+        WaitEvent2SubmitInfo submit_info;
+        submit_info.wait_event = event;
+        wait_event2_submit_infos.emplace_back(std::move(submit_info));
+    }
     // TODO: this will be removed when submit validation callbacks are removed
     auto first_event_index = base.events.size();
     auto event_added_count = 1;
@@ -1126,6 +1132,7 @@ void CommandBufferSubState::ResetCBState() {
     queue_submit_functions.clear();
     event_updates.clear();
     wait_event_submit_infos.clear();
+    wait_event2_submit_infos.clear();
     cmd_execute_commands_functions.clear();
     query_updates.clear();
 
@@ -1167,6 +1174,13 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_c
             wait_event_submit_infos.emplace_back(wait);
         }
     }
+    for (const WaitEvent2SubmitInfo& secondary_wait : secondary_sub_state.wait_event2_submit_infos) {
+        const bool found_signaling_state = vvl::Contains(event_signaling_states, secondary_wait.wait_event);
+        if (!found_signaling_state) {
+            wait_event2_submit_infos.emplace_back(secondary_wait);
+        }
+    }
+
     for (auto& [event, event_signaling_state] : secondary_sub_state.event_signaling_states) {
         event_signaling_states.insert_or_assign(event, event_signaling_state);
     }
@@ -1205,21 +1219,13 @@ void CommandBufferSubState::Submit(vvl::Queue& queue_state, uint32_t perf_submit
         func(queue_state, base);
     }
 
-    // Update vvl::Event with src_stage from the last recorded SetEvent.
-    // Ultimately, it tracks the last SetEvent for the entire submission.
-    {
-        EventMap local_event_signal_info;
-        for (const auto& function : event_updates) {
-            function(base, /*do_validate*/ false, local_event_signal_info,
-                     VK_NULL_HANDLE /* when do_validate is false then wait handler is inactive */, loc);
-        }
-        for (const auto& [event, signaling_state] : event_signaling_states) {
-            if (auto event_state = base.dev_data.Get<vvl::Event>(event)) {
-                event_state->signaled = signaling_state.signaled;
-                event_state->signal_src_stage_mask = signaling_state.src_stage_mask;
-                event_state->dependency_info = signaling_state.dependency_info;
-                event_state->signaling_queue = queue_state.VkHandle();
-            }
+    // Update global vvl:Event state with signaling state at the end of the command buffer
+    for (const auto& [event, signaling_state] : event_signaling_states) {
+        if (auto event_state = base.dev_data.Get<vvl::Event>(event)) {
+            event_state->signaled = signaling_state.signaled;
+            event_state->signal_src_stage_mask = signaling_state.src_stage_mask;
+            event_state->dependency_info = signaling_state.dependency_info;
+            event_state->signaling_queue = queue_state.VkHandle();
         }
     }
 
