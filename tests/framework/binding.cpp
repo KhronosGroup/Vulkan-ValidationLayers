@@ -2154,11 +2154,11 @@ void CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR& encodeInfo) { vk::Cm
 
 void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR& endInfo) { vk::CmdEndVideoCodingKHR(handle(), &endInfo); }
 
-void CommandBuffer::SetEvent(Event& event, VkPipelineStageFlags src_stage_mask) {
+void CommandBuffer::SetEvent(const Event& event, VkPipelineStageFlags src_stage_mask) {
     vk::CmdSetEvent(handle(), event, src_stage_mask);
 }
 
-void CommandBuffer::ResetEvent(Event& event, VkPipelineStageFlags src_stageMask) {
+void CommandBuffer::ResetEvent(const Event& event, VkPipelineStageFlags src_stageMask) {
     vk::CmdResetEvent(handle(), event, src_stageMask);
 }
 

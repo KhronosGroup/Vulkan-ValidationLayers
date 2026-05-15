@@ -214,6 +214,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     EventSignalingStateMap event_signaling_states;
     std::vector<WaitEventSubmitInfo> wait_event_submit_infos;
+    std::vector<WaitEvent2SubmitInfo> wait_event2_submit_infos;
 
     // Validation functions run when secondary CB is executed in primary
     std::vector<

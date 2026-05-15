@@ -29,6 +29,7 @@ struct Location;
 
 namespace vvl {
 class CommandBuffer;
+class Queue;
 class Semaphore;
 enum class Func;
 }  // namespace vvl
@@ -79,6 +80,13 @@ struct WaitEventSubmitInfo {
     // Subset of waited events with known signaling state
     EventSignalingStateMap signaling_states;
 
-    bool Validate(const CoreChecks& core, const vvl::CommandBuffer& cb_state, EventMap& submit_signaling_states,
-                  const Location& loc) const;
+    bool Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
+                  EventMap& submit_signaling_states, const Location& loc) const;
+};
+
+struct WaitEvent2SubmitInfo {
+    VkEvent wait_event = VK_NULL_HANDLE;
+
+    bool Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
+                  EventMap& submit_signaling_states, const Location& loc) const;
 };

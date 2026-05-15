@@ -315,3 +315,79 @@ TEST_F(PositiveEvent, AsymmetricEventNoMemorySubmit) {
     // Check that missing memory barrier does not confuse submit validation
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveEvent, InterQueueEventUsage) {
+    all_queue_count_ = true;
+    RETURN_IF_SKIP(Init());
+
+    if ((m_second_queue_caps & VK_QUEUE_GRAPHICS_BIT) == 0) {
+        GTEST_SKIP() << "2 graphics queues are needed";
+    }
+    const vkt::Event event(*m_device);
+
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+    cb1.Begin();
+    cb1.SetEvent(event);
+    cb1.End();
+
+    vkt::CommandPool pool2(*m_device, m_second_queue->family_index);
+    vkt::CommandBuffer cb2(*m_device, pool2);
+    cb2.Begin();
+    cb2.SetEvent(event);
+    cb2.End();
+    vkt::CommandBuffer cb3(*m_device, pool2);
+    cb3.Begin();
+    cb3.WaitEvent(event);
+    cb3.End();
+
+    const VkCommandBuffer queue2_cbs[2] = {cb2, cb3};
+    VkSubmitInfo queue2_submit_info = vku::InitStructHelper();
+    queue2_submit_info.commandBufferCount = 2;
+    queue2_submit_info.pCommandBuffers = queue2_cbs;
+
+    m_default_queue->SubmitAndWait(cb1);
+
+    // Check that event wait on the second queue can find the signal on the same queue.
+    // If due to regression the signal from the first queue is used then it will trigger
+    // cross queue event usage error
+    vk::QueueSubmit(*m_second_queue, 1, &queue2_submit_info, VK_NULL_HANDLE);
+    m_second_queue->Wait();
+}
+
+TEST_F(PositiveEvent, InterQueueEventUsage2) {
+    all_queue_count_ = true;
+    RETURN_IF_SKIP(Init());
+
+    if ((m_second_queue_caps & VK_QUEUE_GRAPHICS_BIT) == 0) {
+        GTEST_SKIP() << "2 graphics queues are needed";
+    }
+    const vkt::Event event(*m_device);
+    const vkt::Event event2(*m_device);
+    const VkEvent events[2] = {event, event2};
+
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+    cb1.Begin();
+    cb1.SetEvent(event2);
+    cb1.End();
+
+    vkt::CommandPool pool2(*m_device, m_second_queue->family_index);
+    vkt::CommandBuffer cb2(*m_device, pool2);
+    cb2.Begin();
+    cb2.SetEvent(event);
+    cb2.End();
+    vkt::CommandBuffer cb3(*m_device, pool2);
+    cb3.Begin();
+    cb3.SetEvent(event2);
+    vk::CmdWaitEvents(cb3, 2, events, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0,
+                      nullptr, 0, nullptr);
+    cb3.End();
+
+    const VkCommandBuffer queue2_cbs[2] = {cb2, cb3};
+    VkSubmitInfo queue2_submit_info = vku::InitStructHelper();
+    queue2_submit_info.commandBufferCount = 2;
+    queue2_submit_info.pCommandBuffers = queue2_cbs;
+
+    m_default_queue->SubmitAndWait(cb1);
+    vk::QueueSubmit(*m_second_queue, 1, &queue2_submit_info, VK_NULL_HANDLE);
+    m_second_queue->Wait();
+}
