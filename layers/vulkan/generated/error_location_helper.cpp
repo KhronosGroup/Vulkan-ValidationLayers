@@ -1500,6 +1500,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceCooperativeMatrix2FeaturesNV", 45},
     {"VkPhysicalDeviceCooperativeMatrix2PropertiesNV", 47},
     {"VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM", 56},
+    {"VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV", 56},
     {"VkPhysicalDeviceCooperativeMatrixFeaturesKHR", 45},
     {"VkPhysicalDeviceCooperativeMatrixFeaturesNV", 44},
     {"VkPhysicalDeviceCooperativeMatrixPropertiesKHR", 47},
@@ -2578,6 +2579,7 @@ const char* String(Field field) {
     {"cooperativeMatrixBlockLoads", 28},
     {"cooperativeMatrixConversion", 28},
     {"cooperativeMatrixConversions", 29},
+    {"cooperativeMatrixDecodeVector", 30},
     {"cooperativeMatrixFlexibleDimensions", 36},
     {"cooperativeMatrixFlexibleDimensionsMaxDimension", 48},
     {"cooperativeMatrixPerElementOperations", 38},
@@ -6402,6 +6404,7 @@ const char* String(Extension extension) {
     {"VK_NV_compute_shader_derivatives", 33},
     {"VK_NV_cooperative_matrix", 25},
     {"VK_NV_cooperative_matrix2", 26},
+    {"VK_NV_cooperative_matrix_decode_vector", 39},
     {"VK_NV_cooperative_vector", 25},
     {"VK_NV_copy_memory_indirect", 27},
     {"VK_NV_corner_sampled_image", 27},
@@ -9569,6 +9572,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT:
        return Struct::VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_DECODE_VECTOR_FEATURES_NV:
+       return Struct::VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:
        return Struct::VkAccelerationStructureGeometryTrianglesDataKHR;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR:
