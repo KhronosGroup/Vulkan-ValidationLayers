@@ -867,6 +867,22 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
                     "VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM::cooperativeMatrixConversion"};
         }
 
+        case Feature::cooperativeMatrixDecodeVector: {
+            auto vk_struct = const_cast<VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->cooperativeMatrixDecodeVector,
+                    "VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV::cooperativeMatrixDecodeVector"};
+        }
+
         case Feature::cooperativeMatrix: {
             auto vk_struct = const_cast<VkPhysicalDeviceCooperativeMatrixFeaturesKHR*>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceCooperativeMatrixFeaturesKHR>(*inout_pnext_chain));

@@ -118,6 +118,8 @@ enum class Feature {
     cooperativeMatrixWorkgroupScope,
     // VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM
     cooperativeMatrixConversion,
+    // VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV
+    cooperativeMatrixDecodeVector,
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV
     cooperativeMatrix,
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV

@@ -547,6 +547,18 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_DECODE_VECTOR_FEATURES_NV: {
+                VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV*>(current);
+                if (enabling->cooperativeMatrixDecodeVector && !supported.cooperativeMatrixDecodeVector) {
+                    ss << "VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV::cooperativeMatrixDecodeVector is not "
+                          "supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR: {
                 VkPhysicalDeviceCooperativeMatrixFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
