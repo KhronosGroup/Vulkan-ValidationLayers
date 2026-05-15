@@ -5092,3 +5092,19 @@ TEST_F(NegativeRenderPass, MaxPerStageDescriptorInputAttachments) {
     vkt::RenderPass rp(*m_device, rpci);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeRenderPass, DynamicAndLegacy) {
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    VkPipelineRenderingCreateInfo rendering_info = vku::InitStructHelper();
+    RenderPassSingleSubpass rp(*this);
+    rp.CreateRenderPass();
+
+    CreatePipelineHelper pipe(*this, &rendering_info);
+    pipe.gp_ci_.renderPass = rp;
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pNext-12427");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}

@@ -483,42 +483,6 @@ TEST_F(PositiveDynamicRendering, ResumeThenActionCommandSecondary) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
-    TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled");
-    RETURN_IF_SKIP(InitBasicDynamicRendering());
-
-    const char* fsSource = R"glsl(
-        #version 450
-        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
-        layout(location=0) out vec4 color;
-        void main() {
-           color = subpassLoad(x);
-        }
-    )glsl";
-
-    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    const vkt::DescriptorSetLayout dsl(*m_device,
-                                       {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo rendering_info = vku::InitStructHelper();
-    rendering_info.colorAttachmentCount = 1;
-    rendering_info.pColorAttachmentFormats = &color_format;
-
-    RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_PREINITIALIZED);
-    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.CreateRenderPass();
-
-    CreatePipelineHelper pipe(*this, &rendering_info);
-    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pl;
-    pipe.gp_ci_.renderPass = rp;
-    pipe.CreateGraphicsPipeline();
-}
-
 TEST_F(PositiveDynamicRendering, CreateGraphicsPipelineNoInfo) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled but no rendering info struct.");
     RETURN_IF_SKIP(InitBasicDynamicRendering());

@@ -7951,7 +7951,7 @@ TEST_F(NegativeShaderObject, MissingHeapBind) {
 TEST_F(NegativeShaderObject, ResetShaderObjectBinding) {
     TEST_DESCRIPTION("Bind a pipeline after shader objects to invalidate the shader object bindings.");
     RETURN_IF_SKIP(InitBasicShaderObject());
-    InitRenderTarget();
+    InitDynamicRenderTarget();
 
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
     const auto vert_spv = GLSLToSPV(stages[0], kVertexMinimalGlsl);
@@ -7964,9 +7964,10 @@ TEST_F(NegativeShaderObject, ResetShaderObjectBinding) {
     const vkt::Shader vert_shader(*m_device, create_infos[0]);
     const vkt::Shader frag_shader(*m_device, create_infos[1]);
 
+    VkFormat color_format = GetRenderTargetFormat();
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1u;
-    pipeline_rendering_info.pColorAttachmentFormats = &m_render_target_fmt;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
     CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
     pipe.CreateGraphicsPipeline();
 

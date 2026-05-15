@@ -1974,11 +1974,7 @@ TEST_F(PositivePipeline, SampleLocations) {
     multi_sample_state.sampleShadingEnable = VK_FALSE;
     multi_sample_state.minSampleShading = 1.0f;
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_ci = vku::InitStructHelper();
-    pipeline_rendering_ci.colorAttachmentCount = 1u;
-    pipeline_rendering_ci.pColorAttachmentFormats = &image_ci.format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_ci);
+    CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.pMultisampleState = &multi_sample_state;
     pipe.gp_ci_.renderPass = render_pass;
     pipe.CreateGraphicsPipeline();
