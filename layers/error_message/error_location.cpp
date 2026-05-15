@@ -30,8 +30,10 @@ void Location::AppendFields(std::ostream& out) const {
         // check if need connector from last item
         const bool prev_loc_struct_not_empty = prev_loc.structure != vvl::Struct::Empty;
         const bool prev_loc_has_unindexed_field = prev_loc.field != vvl::Field::Empty && prev_loc.index == vvl::kNoIndex32;
-        const bool loc_is_array_element_field =
-            prev_loc.index != vvl::kNoIndex32 && field != vvl::Field::Empty;  // eg: this->Fields() would yield "pInfos[42].mode"
+        const bool loc_is_array_element_field = prev_loc.index != vvl::kNoIndex32 &&
+                                                // eg: this->Fields() would yield "pInfos[42].mode"
+                                                // |isPNext| case to handle pCreateInfo[0].pNext<>
+                                                (field != vvl::Field::Empty || isPNext);
         if (prev_loc_struct_not_empty || prev_loc_has_unindexed_field || loc_is_array_element_field) {
             out << ((prev_loc.index == vvl::kNoIndex32 && IsFieldPointer(prev_loc.field)) ? "->" : ".");
         }
