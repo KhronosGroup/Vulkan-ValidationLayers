@@ -3072,7 +3072,7 @@ TEST_F(NegativeDynamicRendering, LibraryRenderPass) {
 
     CreatePipelineHelper lib(*this);
     lib.cb_ci_ = color_blend_state_create_info;
-    lib.InitFragmentOutputLibInfo(&pipeline_rendering_info);
+    lib.InitFragmentOutputLibInfo();
     lib.CreateGraphicsPipeline();
 
     VkPipelineLibraryCreateInfoKHR library_create_info = vku::InitStructHelper(&pipeline_rendering_info);

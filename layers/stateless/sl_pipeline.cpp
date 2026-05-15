@@ -886,11 +886,11 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             }
         }
 
+        const auto rendering_struct = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
         if (!create_info.renderPass) {
             // Pipeline has fragment output state
             if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0 ||
                 (create_info.pColorBlendState && create_info.pMultisampleState)) {
-                const auto rendering_struct = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
                 if (rendering_struct) {
                     skip |= ValidatePipelineRenderingCreateInfo(context, *rendering_struct, create_info_loc);
                 }
@@ -907,6 +907,13 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                     }
                 }
             }
+        } else if (rendering_struct) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pNext-12427", device, create_info_loc.dot(Field::renderPass),
+                             "(%s) is not VK_NULL_HANDLE, but the pNext chain includes VkPipelineRenderingCreateInfo. It is "
+                             "invalid to mix legacy RenderPass wit Dynamic Rendering as its ambiguous for an implementation to use "
+                             "the legacy RenderPass or the VkPipelineRenderingCreateInfo struct, so only one can be set.\n%s",
+                             FormatHandle(create_info.renderPass).c_str(),
+                             PrintPNextChain(Struct::VkGraphicsPipelineCreateInfo, create_info.pNext).c_str());
         }
 
         if (!IsExtEnabled(extensions.vk_ext_graphics_pipeline_library)) {
