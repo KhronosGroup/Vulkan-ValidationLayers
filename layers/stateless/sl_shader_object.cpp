@@ -62,6 +62,11 @@ bool Device::ValidateCreateShadersFlags(VkShaderCreateFlagsEXT flags, VkShaderSt
                      "includes VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT but the stage is %s.", string_VkShaderStageFlagBits(stage));
     }
 
+    if ((stage == VK_SHADER_STAGE_COMPUTE_BIT) && ((flags & VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR) != 0)) {
+        skip |= LogError("VUID-VkShaderCreateInfoEXT-stage-12428", device, flag_loc,
+                         "includes VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR but the stage is VK_SHADER_STAGE_COMPUTE_BIT.");
+    }
+
     if (stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
         if ((flags & VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT) != 0) {
             skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08486", device, flag_loc,
