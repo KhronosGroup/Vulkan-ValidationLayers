@@ -231,84 +231,6 @@ TEST_F(PositiveDescriptorHeapUntyped, ArrayStrideIdEXT) {
     pipe.CreateComputePipeline(false);
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, OffsetIdEXT) {
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
-
-    std::stringstream cs_source;
-    cs_source << R"(
-               OpCapability Shader
-               OpCapability UntypedPointersKHR
-               OpCapability DescriptorHeapEXT
-               OpCapability Sampled1D
-               OpExtension "SPV_KHR_untyped_pointers"
-               OpExtension "SPV_EXT_descriptor_heap"
-               OpMemoryModel Logical GLSL450
-               OpEntryPoint GLCompute %1 "main" %2 %3
-               OpExecutionMode %1 LocalSize 1 1 1
-               OpDecorate %4 SpecId 0
-               OpDecorate %5 SpecId 1
-               OpDecorate %6 SpecId 2
-               OpDecorate %2 BuiltIn ResourceHeapEXT
-               OpDecorate %3 BuiltIn SamplerHeapEXT
-               OpDecorateId %7 OffsetIdEXT %4
-               OpDecorateId %8 OffsetIdEXT %5
-               OpDecorateId %9 OffsetIdEXT %6
-               OpMemberDecorate %10 0 Offset 0
-         %11 = OpTypeVoid
-         %12 = OpTypeFunction %11
-         %13 = OpTypeInt 32 0
-         %14 = OpTypeVector %13 4
-         %15 = OpTypeFloat 32
-         %16 = OpConstant %13 0
-         %17 = OpConstant %13 1
-         %18 = OpConstant %15 0
-         %19 = OpConstant %15 1
-          %4 = OpSpecConstant %13 0
-          %5 = OpSpecConstant %13 0
-          %6 = OpSpecConstant %13 0
-         %20 = OpTypeImage %13 1D 0 0 0 1 Unknown
-         %21 = OpTypeBufferEXT StorageBuffer
-         %22 = OpTypeSampler
-         %23 = OpTypeSampledImage %20
-          %7 = OpTypeRuntimeArray %20
-          %8 = OpTypeRuntimeArray %21
-          %9 = OpTypeRuntimeArray %22
-         %10 = OpTypeStruct %13
-         %24 = OpTypeUntypedPointerKHR UniformConstant
-         %25 = OpTypeUntypedPointerKHR StorageBuffer
-          %2 = OpUntypedVariableKHR %24 UniformConstant
-          %3 = OpUntypedVariableKHR %24 UniformConstant
-          %1 = OpFunction %11 None %12
-         %26 = OpLabel
-         %27 = OpUntypedAccessChainKHR %24 %7 %2 %16
-         %28 = OpLoad %20 %27
-         %29 = OpUntypedAccessChainKHR %24 %9 %3 %16
-         %30 = OpLoad %22 %29
-         %31 = OpSampledImage %23 %28 %30
-         %32 = OpImageSampleExplicitLod %14 %31 %19 Lod %18
-         %33 = OpCompositeExtract %13 %32 0
-         %34 = OpUntypedAccessChainKHR %24 %8 %2 %16
-         %35 = OpBufferPointerEXT %25 %34
-               OpStore %35 %33
-               OpReturn
-               OpFunctionEnd
-    )";
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    VkShaderObj cs_module =
-        VkShaderObj(*m_device, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
-
-    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
-}
-
 TEST_F(PositiveDescriptorHeapUntyped, ImageAndSampler) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
     InitRenderTarget();
@@ -938,5 +860,504 @@ TEST_F(PositiveDescriptorHeapUntyped, SingleElementNoArray) {
     if (!IsPlatformMockICD()) {
         uint32_t* data = static_cast<uint32_t*>(buffer.Memory().Map());
         ASSERT_EQ(data[0], src_data);
+    }
+}
+
+TEST_F(PositiveDescriptorHeapUntyped, BadArrayStrideWithSingleDescriptor) {
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride);
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+
+    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_, static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %A Block
+               OpMemberDecorate %A 0 Offset 0
+               OpMemberDecorate %A 1 Offset 4
+               ; Stride is bad, but only using index 0
+               OpDecorateId %runtime_buffer_1 ArrayStrideIdEXT %int_1
+               OpDecorateId %runtime_buffer_99999 ArrayStrideIdEXT %uint_99999
+       %void = OpTypeVoid
+    %void_fn = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+    %uint_42 = OpConstant %uint 42
+ %uint_99999 = OpConstant %uint 99999
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+          %A = OpTypeStruct %uint %uint
+%_ptr_StorageBuffer = OpTypeUntypedPointerKHR StorageBuffer
+%type_buffer = OpTypeBufferEXT StorageBuffer
+%runtime_buffer_1 = OpTypeRuntimeArray %type_buffer
+%runtime_buffer_99999 = OpTypeRuntimeArray %type_buffer
+       %main = OpFunction %void None %void_fn
+          %5 = OpLabel
+         %14 = OpUntypedAccessChainKHR %_ptr_UniformConstant %runtime_buffer_1 %resource_heap %int_0
+         %18 = OpBufferPointerEXT %_ptr_StorageBuffer %14
+         %19 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %A %18 %int_0
+               OpStore %19 %uint_42
+
+         %20 = OpUntypedAccessChainKHR %_ptr_UniformConstant %runtime_buffer_99999 %resource_heap %int_0
+         %21 = OpBufferPointerEXT %_ptr_StorageBuffer %20
+         %22 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %A %21 %int_1
+               OpStore %22 %uint_42
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        uint32_t* data = static_cast<uint32_t*>(buffer.Memory().Map());
+        ASSERT_EQ(data[0], 42);
+        ASSERT_EQ(data[1], 42);
+    }
+}
+
+TEST_F(PositiveDescriptorHeapUntyped, StrideByTwoSpecConstantOp) {
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 6);
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+
+    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_, static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+    descriptor_host.address = resource_heap_data_ + (resource_stride * 2);
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+    descriptor_host.address = resource_heap_data_ + (resource_stride * 4);
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    // layout() buffer SSBO {
+    //                         uint a;
+    //                         uint b;
+    //                         uint c;
+    // } b[3];
+    //
+    // where each index is the SAME descriptor
+    // the heap looks like
+    // [ssbo_0, null, ssbo_1, null, ssbo_2, null]
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpMemberDecorate %SSBO 1 Offset 4
+               OpMemberDecorate %SSBO 2 Offset 8
+               OpDecorateId %runtime_buffer ArrayStrideIdEXT %stride_2
+       %void = OpTypeVoid
+    %void_fn = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+    %uint_42 = OpConstant %uint 42
+    %uint_43 = OpConstant %uint 43
+    %uint_44 = OpConstant %uint 44
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+        %SSBO = OpTypeStruct %uint %uint %uint
+%_ptr_StorageBuffer = OpTypeUntypedPointerKHR StorageBuffer
+
+%type_buffer = OpTypeBufferEXT StorageBuffer
+   %buf_size = OpConstantSizeOfEXT %int %type_buffer
+%stride_2 = OpSpecConstantOp %int IMul %buf_size %int_2
+
+%runtime_buffer = OpTypeRuntimeArray %type_buffer
+       %main = OpFunction %void None %void_fn
+          %5 = OpLabel
+
+          ;; Lack of index imply zero (%int_0)
+    %index_0 = OpUntypedAccessChainKHR %_ptr_UniformConstant %runtime_buffer %resource_heap
+  %buf_ptr_0 = OpBufferPointerEXT %_ptr_StorageBuffer %index_0
+   %member_0 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_0
+               OpStore %member_0 %uint_42
+
+    %index_1 = OpUntypedAccessChainKHR %_ptr_UniformConstant %runtime_buffer %resource_heap %int_1
+    %buf_ptr_1 = OpBufferPointerEXT %_ptr_StorageBuffer %index_1
+   %member_1 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_1 %int_1
+               OpStore %member_1 %uint_43
+
+    %index_2 = OpUntypedAccessChainKHR %_ptr_UniformConstant %runtime_buffer %resource_heap %int_2
+    %buf_ptr_2 = OpBufferPointerEXT %_ptr_StorageBuffer %index_2
+   %member_2 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_2 %int_2
+               OpStore %member_2 %uint_44
+
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        uint32_t* data = static_cast<uint32_t*>(buffer.Memory().Map());
+        ASSERT_EQ(data[0], 42);
+        ASSERT_EQ(data[1], 43);
+        ASSERT_EQ(data[2], 44);
+    }
+}
+
+TEST_F(PositiveDescriptorHeapUntyped, StaticHeapArraySize) {
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 6);
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+
+    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_, static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+    descriptor_host.address = resource_heap_data_ + (resource_stride * 2);
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+    descriptor_host.address = resource_heap_data_ + (resource_stride * 4);
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    // Heap is a buffer[6] and accesses [0], [2], [4]
+    // where each index is the SAME descriptor
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpMemberDecorate %SSBO 1 Offset 4
+               OpMemberDecorate %SSBO 2 Offset 8
+               OpDecorateId %buffer_array_6 ArrayStrideIdEXT %stride_2
+       %void = OpTypeVoid
+    %void_fn = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+     %uint_6 = OpConstant %uint 6
+    %uint_42 = OpConstant %uint 42
+    %uint_43 = OpConstant %uint 43
+    %uint_44 = OpConstant %uint 44
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+        %SSBO = OpTypeStruct %uint %uint %uint
+%_ptr_StorageBuffer = OpTypeUntypedPointerKHR StorageBuffer
+
+%type_buffer = OpTypeBufferEXT StorageBuffer
+   %buf_size = OpConstantSizeOfEXT %int %type_buffer
+%stride_2 = OpSpecConstantOp %int IAdd %buf_size %buf_size
+
+%buffer_array_6 = OpTypeArray %type_buffer %uint_6
+       %main = OpFunction %void None %void_fn
+          %5 = OpLabel
+
+    %index_0 = OpUntypedAccessChainKHR %_ptr_UniformConstant %buffer_array_6 %resource_heap %int_0
+  %buf_ptr_0 = OpBufferPointerEXT %_ptr_StorageBuffer %index_0
+   %member_0 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_0 %int_0
+               OpStore %member_0 %uint_42
+
+    %index_1 = OpUntypedAccessChainKHR %_ptr_UniformConstant %buffer_array_6 %resource_heap %int_1
+    %buf_ptr_1 = OpBufferPointerEXT %_ptr_StorageBuffer %index_1
+   %member_1 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_1 %int_1
+               OpStore %member_1 %uint_43
+
+    %index_2 = OpUntypedAccessChainKHR %_ptr_UniformConstant %buffer_array_6 %resource_heap %int_2
+    %buf_ptr_2 = OpBufferPointerEXT %_ptr_StorageBuffer %index_2
+   %member_2 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_2 %int_2
+               OpStore %member_2 %uint_44
+
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        uint32_t* data = static_cast<uint32_t*>(buffer.Memory().Map());
+        ASSERT_EQ(data[0], 42);
+        ASSERT_EQ(data[1], 43);
+        ASSERT_EQ(data[2], 44);
+    }
+}
+
+TEST_F(PositiveDescriptorHeapUntyped, OffsetId) {
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 6);
+
+    vkt::Buffer buffer_0(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Buffer buffer_1(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Buffer buffer_2(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+
+    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_, static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = buffer_0.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    device_range = buffer_1.AddressRange();
+    descriptor_host.address = resource_heap_data_ + (resource_stride * 1);
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    device_range = buffer_2.AddressRange();
+    descriptor_host.address = resource_heap_data_ + (resource_stride * 2);
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    // layout(storage_buffer) SSBO {
+    //     uint a;
+    //     uint b;
+    //     uint c;
+    // };
+    // layout(offset = buffer_size) heap {
+    //     SSBO runtime_buffer[];
+    // } heap_layout;
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpMemberDecorate %SSBO 1 Offset 4
+               OpMemberDecorate %SSBO 2 Offset 8
+               OpDecorate %heap_layout Block
+               OpMemberDecorateIdEXT %heap_layout 0 OffsetIdEXT %buf_size
+               OpDecorateId %runtime_buffer ArrayStrideIdEXT %buf_size
+       %void = OpTypeVoid
+    %void_fn = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+    %uint_42 = OpConstant %uint 42
+    %uint_43 = OpConstant %uint 43
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+        %SSBO = OpTypeStruct %uint %uint %uint
+%_ptr_StorageBuffer = OpTypeUntypedPointerKHR StorageBuffer
+
+%type_buffer = OpTypeBufferEXT StorageBuffer
+   %buf_size = OpConstantSizeOfEXT %int %type_buffer
+%runtime_buffer = OpTypeRuntimeArray %type_buffer
+
+ %heap_layout = OpTypeStruct %runtime_buffer
+
+       %main = OpFunction %void None %void_fn
+          %5 = OpLabel
+
+%heap_index_0 = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap %int_0 %int_0
+  %buf_ptr_0 = OpBufferPointerEXT %_ptr_StorageBuffer %heap_index_0
+   %member_0 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_0 %int_0
+               OpStore %member_0 %uint_42
+
+%heap_index_1 = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap %int_0 %int_1
+   %buf_ptr_1 = OpBufferPointerEXT %_ptr_StorageBuffer %heap_index_1
+    %member_1 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_1 %int_1
+                OpStore %member_1 %uint_43
+
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        uint32_t* data = static_cast<uint32_t*>(buffer_1.Memory().Map());
+        ASSERT_EQ(data[0], 42);
+
+        data = static_cast<uint32_t*>(buffer_2.Memory().Map());
+        ASSERT_EQ(data[1], 43);
+    }
+}
+
+TEST_F(PositiveDescriptorHeapUntyped, OffsetIdStaticArraySize) {
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 4);
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+
+    // heap: [null, null, null, buffer]
+    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_ + (resource_stride * 3), static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    // layout(storage_buffer) SSBO {
+    //     uint a;
+    //     uint b;
+    // };
+    // layout(offset = buffer_size) heap {
+    //     SSBO buffer_array[3];
+    // } heap_layout;
+    //
+    // heap_layout.buffer_array[2].b = 42;
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpMemberDecorate %SSBO 1 Offset 4
+               OpDecorate %heap_layout Block
+               OpMemberDecorateIdEXT %heap_layout 0 OffsetIdEXT %buf_size
+               OpDecorateId %buffer_array ArrayStrideIdEXT %buf_size
+       %void = OpTypeVoid
+    %void_fn = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+     %uint_3 = OpConstant %uint 3
+    %uint_42 = OpConstant %uint 42
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+        %SSBO = OpTypeStruct %uint %uint %uint
+%_ptr_StorageBuffer = OpTypeUntypedPointerKHR StorageBuffer
+
+%type_buffer = OpTypeBufferEXT StorageBuffer
+   %buf_size = OpConstantSizeOfEXT %int %type_buffer
+%buffer_array = OpTypeArray %type_buffer %uint_3
+
+ %heap_layout = OpTypeStruct %buffer_array
+
+       %main = OpFunction %void None %void_fn
+          %5 = OpLabel
+
+%heap_index_0 = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap %int_0 %int_2
+  %buf_ptr_0 = OpBufferPointerEXT %_ptr_StorageBuffer %heap_index_0
+   %member_1 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_0 %int_1
+               OpStore %member_1 %uint_42
+
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        uint32_t* data = static_cast<uint32_t*>(buffer.Memory().Map());
+        ASSERT_EQ(data[1], 42);
     }
 }
