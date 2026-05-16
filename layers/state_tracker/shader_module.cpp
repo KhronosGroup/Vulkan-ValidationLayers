@@ -1,5 +1,6 @@
 ﻿/* Copyright (c) 2021-2026 The Khronos Group Inc.
  * Copyright (c) 2025 Arm Limited.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -232,6 +233,12 @@ void ExecutionModeSet::Add(const Instruction& insn) {
             break;
         case spv::ExecutionModeLocalSize:
             flags |= local_size_bit;
+            local_size.x = insn.Word(3);
+            local_size.y = insn.Word(4);
+            local_size.z = insn.Word(5);
+            break;
+        case spv::ExecutionModeTileShadingRateQCOM:
+            flags |= tile_shading_rate_bit;
             local_size.x = insn.Word(3);
             local_size.y = insn.Word(4);
             local_size.z = insn.Word(5);

@@ -1,5 +1,6 @@
 /* Copyright (c) 2021-2026 The Khronos Group Inc.
  * Copyright (c) 2025 Arm Limited.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -174,12 +175,14 @@ struct ExecutionModeSet {
         geometry_input_triangle_adjacency_bit = 1ull << 42,
 
         shader_64bit_indexing = 1ull << 43,
+
+        tile_shading_rate_bit = 1ull << 44,
     };
 
     // bits to know if things have been set or not by a Decoration
     uint64_t flags = 0;
 
-    // SPIR-V spec says only LocalSize or LocalSizeId can be used, so can share
+    // SPIR-V spec says only LocalSize or LocalSizeId or TileShadingRateQCOM can be used, so can share
     LocalSize local_size = {kInvalidValue, kInvalidValue, kInvalidValue};
 
     uint32_t output_vertices = kInvalidValue;
