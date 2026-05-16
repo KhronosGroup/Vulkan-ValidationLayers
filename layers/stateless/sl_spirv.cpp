@@ -119,6 +119,7 @@ bool SpirvValidator::Validate(const spirv::Module& module_state, const spirv::St
         skip |= ValidateConservativeRasterization(module_state, entry_point, stateless_data, loc);
         skip |= ValidateTransformFeedbackEmitStreams(module_state, entry_point, stateless_data, loc);
         skip |= ValidateShaderTensor(module_state, entry_point, stateless_data, loc);
+        skip |= ValidateTileShadingCapability(module_state, entry_point, stateless_data, loc);
     }
 
     return skip;
@@ -1626,6 +1627,48 @@ bool SpirvValidator::ValidateShaderTensor(const spirv::Module& module_state, con
                                  instruction->Describe().c_str(), copy_object_type_bytes,
                                  phys_dev_ext_props.tensor_properties.maxTensorShaderAccessSize);
             }
+        }
+    }
+
+    return skip;
+}
+
+bool SpirvValidator::ValidateTileShadingCapability(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                   const spirv::StatelessData& stateless_data, const Location& loc) const {
+    bool skip = false;
+    const bool has_tile_shading_capability = module_state.HasCapability(spv::CapabilityTileShadingQCOM);
+
+    if (!enabled_features.tileShading && entrypoint.stage == VK_SHADER_STAGE_COMPUTE_BIT && has_tile_shading_capability) {
+        skip |= LogError("VUID-RuntimeSpirv-TileShadingQCOM-10698", module_state.handle(), loc,
+                         "shader %s declares OpCapability TileShadingQCOM, but "
+                         "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShading isn't enabled.",
+                         entrypoint.Describe().c_str());
+    }
+
+    if (!enabled_features.tileShadingFragmentStage && entrypoint.stage == VK_SHADER_STAGE_FRAGMENT_BIT && has_tile_shading_capability) {
+        skip |= LogError("VUID-RuntimeSpirv-TileShadingQCOM-10699", module_state.handle(), loc,
+                         "shader %s declares OpCapability TileShadingQCOM, but "
+                         "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingFragmentStage isn't enabled.",
+                         entrypoint.Describe().c_str());
+    }
+
+    if (entrypoint.stage == VK_SHADER_STAGE_COMPUTE_BIT && has_tile_shading_capability &&
+        entrypoint.execution_mode.Has(spirv::ExecutionModeSet::tile_shading_rate_bit)) {
+        if (entrypoint.execution_mode.local_size.x > phys_dev_ext_props.tile_shading_props.maxTileShadingRate.width) {
+            skip |= LogError("VUID-RuntimeSpirv-x-10702", module_state.handle(), loc,
+                             "shader %s has OpExecutionMode TileShadingRateQCOM with x = %" PRIu32
+                             ", but exceeds VkPhysicalDeviceTileShadingPropertiesQCOM::maxTileShadingRate.width (%" PRIu32 ").",
+                             entrypoint.Describe().c_str(),
+                             entrypoint.execution_mode.local_size.x,
+                             phys_dev_ext_props.tile_shading_props.maxTileShadingRate.width);
+        }
+        if (entrypoint.execution_mode.local_size.y > phys_dev_ext_props.tile_shading_props.maxTileShadingRate.height) {
+            skip |= LogError("VUID-RuntimeSpirv-y-10703", module_state.handle(), loc,
+                             "shader %s has OpExecutionMode TileShadingRateQCOM with y = %" PRIu32
+                             ", but exceeds VkPhysicalDeviceTileShadingPropertiesQCOM::maxTileShadingRate.height (%" PRIu32 ").",
+                             entrypoint.Describe().c_str(),
+                             entrypoint.execution_mode.local_size.y,
+                             phys_dev_ext_props.tile_shading_props.maxTileShadingRate.height);
         }
     }
 
