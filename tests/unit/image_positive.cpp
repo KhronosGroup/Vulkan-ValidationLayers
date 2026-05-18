@@ -945,3 +945,22 @@ TEST_F(PositiveImage, BlockTexelViewLayerCount) {
     // Test that VK_REMAINING_ARRAY_LAYERS evaluates to 1
     vkt::ImageView view(*m_device, image_view_ci);
 }
+
+TEST_F(PositiveImage, ImageSingleLayerDescriptorFlagButMultiplanarImageView) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(Init());
+
+    auto image_ci =
+        vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.flags |= VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+
+    vkt::Image image(*m_device, image_ci);
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.image = image;
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = VK_FORMAT_R8_UNORM;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0u, 1u, 0u, VK_REMAINING_ARRAY_LAYERS};
+    vkt::ImageView view(*m_device, image_view_ci);
+}
