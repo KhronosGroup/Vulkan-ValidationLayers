@@ -922,6 +922,11 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
                 const spirv::Instruction* var_base_type = vert_spirv_state.FindDef(var_base_type_id);
                 const uint32_t var_numeric_type = vert_spirv_state.GetNumericType(*var_base_type);
 
+                if (var_numeric_type == spirv::NumericTypeUnknown && variable_ptr->type_struct_info) {
+                    // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12281
+                    continue;
+                }
+
                 const bool attribute64 = vkuFormatIs64bit(attrib->desc.format);
                 const bool shader64 = vert_spirv_state.GetBaseTypeInstruction(var_base_type)->GetBitWidth() == 64;
 

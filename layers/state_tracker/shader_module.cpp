@@ -1841,8 +1841,11 @@ uint32_t Module::GetComponentsConsumedByType(const Instruction* insn) const {
     }
 }
 
-// characterizes a SPIR-V type appearing in an interface to a FF stage, for comparison to a VkFormat's characterization above.
-// also used for input attachments, as we statically know their format.
+// "Numeric Type" is the spec language to help map a SPIR-V format to a VkFormat
+// Currently only used in
+// 1. Vertex Input
+// 2. Fragment Output
+// 3. Tensor interface
 NumericType Module::GetNumericType(const Instruction& insn) const {
     switch (insn.Opcode()) {
         case spv::OpTypeBool:
@@ -1860,6 +1863,9 @@ NumericType Module::GetNumericType(const Instruction& insn) const {
             return GetNumericType(*FindDef(insn.Word(2)));
         case spv::OpTypePointer:
             return GetNumericType(*FindDef(insn.Word(3)));
+        case spv::OpTypeStruct:
+            // TODO - // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12281
+            return NumericTypeUnknown;
         default:
             return NumericTypeUnknown;
     }
