@@ -184,29 +184,22 @@ TEST_F(NegativeSampler, BasicUsage) {
 }
 
 TEST_F(NegativeSampler, AllocationCount) {
-    VkResult err = VK_SUCCESS;
-    const int max_samplers = 32;
-    VkSampler samplers[max_samplers + 1];
+    RETURN_IF_SKIP(Init());
 
-    RETURN_IF_SKIP(InitFramework());
+    const uint32_t max_samplers = m_device->Physical().limits_.maxSamplerAllocationCount;
+    if (max_samplers > 4000) {
+        GTEST_SKIP() << "maxSamplerAllocationCount is too high";
+    }
 
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    if (props.limits.maxSamplerAllocationCount > max_samplers) {
-        props.limits.maxSamplerAllocationCount = max_samplers;
-        fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    }
-    RETURN_IF_SKIP(InitState());
+    std::vector<VkSampler> samplers;
+    samplers.reserve(max_samplers + 1);
+
     m_errorMonitor->SetDesiredError("VUID-vkCreateSampler-maxSamplerAllocationCount-04110");
 
     VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
 
-    int i;
+    VkResult err = VK_SUCCESS;
+    uint32_t i;
     for (i = 0; i <= max_samplers; i++) {
         err = vk::CreateSampler(device(), &sampler_create_info, NULL, &samplers[i]);
         if (err != VK_SUCCESS) {
@@ -215,7 +208,7 @@ TEST_F(NegativeSampler, AllocationCount) {
     }
     m_errorMonitor->VerifyFound();
 
-    for (int j = 0; j < i; j++) {
+    for (uint32_t j = 0; j < i; j++) {
         vk::DestroySampler(device(), samplers[j], NULL);
     }
 }

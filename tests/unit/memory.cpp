@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <cstdint>
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
@@ -1904,31 +1905,24 @@ TEST_F(NegativeMemory, BindMemoryToDestroyedObject) {
 }
 
 TEST_F(NegativeMemory, AllocationCount) {
-    VkResult err = VK_SUCCESS;
-    const int max_mems = 32;
-    VkDeviceMemory mems[max_mems + 1];
+    RETURN_IF_SKIP(Init());
 
-    RETURN_IF_SKIP(InitFramework());
+    const uint32_t max_mems = m_device->Physical().limits_.maxMemoryAllocationCount;
+    if (max_mems > 4096) {
+        GTEST_SKIP() << "maxMemoryAllocationCount is too high";
+    }
 
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    if (props.limits.maxMemoryAllocationCount > max_mems) {
-        props.limits.maxMemoryAllocationCount = max_mems;
-        fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    }
-    RETURN_IF_SKIP(InitState());
+    std::vector<VkDeviceMemory> mems;
+    mems.reserve(max_mems + 1);
+
     m_errorMonitor->SetDesiredError("VUID-vkAllocateMemory-maxMemoryAllocationCount-04101");
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = 0;
     mem_alloc.allocationSize = 4;
 
-    int i;
+    VkResult err = VK_SUCCESS;
+    uint32_t i;
     for (i = 0; i <= max_mems; i++) {
         err = vk::AllocateMemory(device(), &mem_alloc, NULL, &mems[i]);
         if (err != VK_SUCCESS) {
@@ -1937,7 +1931,7 @@ TEST_F(NegativeMemory, AllocationCount) {
     }
     m_errorMonitor->VerifyFound();
 
-    for (int j = 0; j < i; j++) {
+    for (uint32_t j = 0; j < i; j++) {
         vk::FreeMemory(device(), mems[j], NULL);
     }
 }

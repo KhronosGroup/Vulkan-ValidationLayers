@@ -492,35 +492,38 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArrayAtEnd) {
 }
 
 TEST_F(NegativeShaderLimits, MaxFragmentCombinedOutputResources) {
-    RETURN_IF_SKIP(InitFramework());
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    RETURN_IF_SKIP(Init());
+    // limit we have in min_core.json
+    if (m_device->Physical().limits_.maxFragmentCombinedOutputResources > 16) {
+        GTEST_SKIP() << "maxFragmentCombinedOutputResources is too high";
     }
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    props.limits.maxFragmentCombinedOutputResources = 4;
-    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    RETURN_IF_SKIP(InitState());
 
     const char* fsSource = R"glsl(
         #version 450
-        layout(set = 0, binding=0) buffer SSBO_0 {
-            uint a;
-        };
-        layout(set = 0, binding=3) buffer SSBO_1 {
-            uint b;
-        };
-        layout(set = 0, binding = 4, r32f) uniform imageBuffer s_buffer;
-
-        layout(location=1) out vec4 color_0;
-        layout(location=3) out vec4 color_1;
+        layout(set=0, binding=0) buffer SSBO_0 { uint a; };
+        layout(set=0, binding=1) buffer SSBO_1 { uint a1; };
+        layout(set=0, binding=2) buffer SSBO_2 { uint a2; };
+        layout(set=0, binding=3) buffer SSBO_3 { uint b3; };
+        layout(set=0, binding=4, r32f) uniform imageBuffer s_buffer;
+        layout(set=0, binding=5) buffer SSBO_5 { uint b5; };
+        layout(set=0, binding=6) buffer SSBO_6 { uint b6; };
+        layout(set=0, binding=7) buffer SSBO_7 { uint b7; };
+        layout(set=0, binding=8) buffer SSBO_8 { uint b8; };
+        layout(set=0, binding=9) buffer SSBO_9 { uint b9; };
+        layout(set=1, binding=0) buffer SSBO_10 { uint b10; };
+        layout(set=2, binding=0) buffer SSBO_11 { uint b11; };
+        layout(set=3, binding=0) buffer SSBO_12 { uint b12; };
+        layout(location=0) out vec4 color_0;
+        layout(location=1) out vec4 color_1;
+        layout(location=2) out vec4 color_2;
+        layout(location=3) out vec4 color_3;
 
         void main(){
            color_0 = vec4(1.0);
            color_1 = vec4(1.0);
-           a = b;
+           color_2 = vec4(1.0);
+           color_3 = vec4(1.0);
+           a = a1 + a2 + b3 + b5 + b6 + b7 + b8 + b9 + b10 + b11 + b12;
            imageStore(s_buffer, 0, vec4(1.0));
         }
     )glsl";
