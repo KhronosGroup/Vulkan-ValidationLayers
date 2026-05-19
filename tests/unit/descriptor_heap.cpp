@@ -4860,34 +4860,23 @@ TEST_F(NegativeDescriptorHeap, ArrayLengthOnMappingSourceAddress) {
 }
 
 TEST_F(NegativeDescriptorHeap, SamplerAllocationCount) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    const int max_samplers = 8;
-    VkSampler samplers[max_samplers + 1] = {};
-
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    // limit we have in max_profile.json
+    const uint32_t max_samplers = m_device->Physical().limits_.maxSamplerAllocationCount;
+    if (max_samplers > 4000) {
+        GTEST_SKIP() << "maxSamplerAllocationCount is too high";
     }
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    if (props.limits.maxSamplerAllocationCount > max_samplers) {
-        props.limits.maxSamplerAllocationCount = max_samplers;
-        fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    }
-    RETURN_IF_SKIP(InitState());
 
-    GetPhysicalDeviceProperties2(heap_props);
     if (heap_props.minSamplerHeapReservedRangeWithEmbedded == 0) {
         GTEST_SKIP() << "minSamplerHeapReservedRangeWithEmbedded is 0";
     }
     if (heap_props.minSamplerHeapReservedRangeWithEmbedded / heap_props.samplerDescriptorSize > max_samplers) {
         GTEST_SKIP() << "minSamplerHeapReservedRangeWithEmbedded / samplerDescriptorSize is too large";
     }
+
+    std::vector<VkSampler> samplers;
+    samplers.reserve(max_samplers + 1);
 
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
@@ -4911,7 +4900,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCount) {
     VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
 
     VkResult err = VK_SUCCESS;
-    int i;
+    uint32_t i;
     for (i = 0; i < max_samplers; i++) {
         err = vk::CreateSampler(device(), &sampler_create_info, NULL, &samplers[i]);
         if (err != VK_SUCCESS) {
@@ -4920,32 +4909,19 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCount) {
     }
     m_errorMonitor->VerifyFound();
 
-    for (int j = 0; j < i; j++) {
+    for (uint32_t j = 0; j < i; j++) {
         vk::DestroySampler(device(), samplers[j], NULL);
     }
 }
 
 TEST_F(NegativeDescriptorHeap, SamplerAllocationCountPipeline) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    const int max_samplers = 8;
-    VkSampler samplers[max_samplers + 1] = {};
-
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    const uint32_t max_samplers = m_device->Physical().limits_.maxSamplerAllocationCount;
+    if (max_samplers > 4000) {
+        GTEST_SKIP() << "maxSamplerAllocationCount is too high";
     }
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    if (props.limits.maxSamplerAllocationCount > max_samplers) {
-        props.limits.maxSamplerAllocationCount = max_samplers;
-        fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    }
-    RETURN_IF_SKIP(InitState());
 
-    GetPhysicalDeviceProperties2(heap_props);
     if (heap_props.minSamplerHeapReservedRangeWithEmbedded == 0) {
         GTEST_SKIP() << "minSamplerHeapReservedRangeWithEmbedded is 0";
     }
@@ -4953,10 +4929,13 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountPipeline) {
         GTEST_SKIP() << "minSamplerHeapReservedRangeWithEmbedded / samplerDescriptorSize is too large";
     }
 
+    std::vector<VkSampler> samplers;
+    samplers.reserve(max_samplers + 1);
+
     VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
 
     VkResult err = VK_SUCCESS;
-    int i;
+    uint32_t i;
     for (i = 0; i < max_samplers; i++) {
         err = vk::CreateSampler(device(), &sampler_create_info, NULL, &samplers[i]);
         if (err != VK_SUCCESS) {
@@ -4986,34 +4965,21 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountPipeline) {
 
     m_errorMonitor->VerifyFound();
 
-    for (int j = 0; j < i; j++) {
+    for (uint32_t j = 0; j < i; j++) {
         vk::DestroySampler(device(), samplers[j], NULL);
     }
 }
 
 TEST_F(NegativeDescriptorHeap, SamplerAllocationCountShaderObject) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    const int max_samplers = 8;
-    VkSampler samplers[max_samplers + 1] = {};
-
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    const uint32_t max_samplers = m_device->Physical().limits_.maxSamplerAllocationCount;
+    if (max_samplers > 4000) {
+        GTEST_SKIP() << "maxSamplerAllocationCount is too high";
     }
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    if (props.limits.maxSamplerAllocationCount > max_samplers) {
-        props.limits.maxSamplerAllocationCount = max_samplers;
-        fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    }
-    RETURN_IF_SKIP(InitState());
 
-    GetPhysicalDeviceProperties2(heap_props);
     if (heap_props.minSamplerHeapReservedRangeWithEmbedded == 0) {
         GTEST_SKIP() << "minSamplerHeapReservedRangeWithEmbedded is 0";
     }
@@ -5021,10 +4987,13 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountShaderObject) {
         GTEST_SKIP() << "minSamplerHeapReservedRangeWithEmbedded / samplerDescriptorSize is too large";
     }
 
+    std::vector<VkSampler> samplers;
+    samplers.reserve(max_samplers + 1);
+
     VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
 
     VkResult err = VK_SUCCESS;
-    int i;
+    uint32_t i;
     for (i = 0; i < max_samplers; i++) {
         err = vk::CreateSampler(device(), &sampler_create_info, NULL, &samplers[i]);
         if (err != VK_SUCCESS) {
@@ -5050,7 +5019,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountShaderObject) {
     const vkt::Shader vertShader(*m_device, vert_ci);
     m_errorMonitor->VerifyFound();
 
-    for (int j = 0; j < i; j++) {
+    for (uint32_t j = 0; j < i; j++) {
         vk::DestroySampler(device(), samplers[j], NULL);
     }
 }

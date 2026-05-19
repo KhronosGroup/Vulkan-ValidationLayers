@@ -214,29 +214,17 @@ TEST_F(NegativeShaderPushConstants, NotInLayout) {
 }
 
 TEST_F(NegativeShaderPushConstants, Range) {
-    TEST_DESCRIPTION("Invalid use of VkPushConstantRange values in vkCmdPushConstants.");
-
-    RETURN_IF_SKIP(InitFramework());
-
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
-    // Set limit to be same max as the shader usages
-    const uint32_t maxPushConstantsSize = 16;
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    props.limits.maxPushConstantsSize = maxPushConstantsSize;
-    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
+
+    const uint32_t max_size = m_device->Physical().limits_.maxPushConstantsSize;
+    if (max_size > 128) {
+        GTEST_SKIP() << "maxPushConstantsSize is too high";
+    }
 
     const char* const vsSource = R"glsl(
         #version 450
-        layout(push_constant, std430) uniform foo { float x[4]; } constants;
+        layout(push_constant, std430) uniform foo { float x[32]; } constants;
         void main(){
            gl_Position = vec4(constants.x[0]);
         }
@@ -246,7 +234,7 @@ TEST_F(NegativeShaderPushConstants, Range) {
     VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Set up a push constant range
-    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize};
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, max_size};
     const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
 
     CreatePipelineHelper pipe(*this);
@@ -254,7 +242,7 @@ TEST_F(NegativeShaderPushConstants, Range) {
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateGraphicsPipeline();
 
-    const float data[16] = {};  // dummy data to match shader size
+    const float data[128] = {};  // dummy data to match shader size
 
     m_command_buffer.Begin();
 
@@ -276,16 +264,16 @@ TEST_F(NegativeShaderPushConstants, Range) {
     // offset at limit
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-offset-00370");
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-size-00371");
-    vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, maxPushConstantsSize, 4, data);
+    vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, max_size, 4, data);
     m_errorMonitor->VerifyFound();
 
     // size at limit
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-size-00371");
-    vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize + 4, data);
+    vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 0, max_size + 4, data);
     m_errorMonitor->VerifyFound();
 
     // Size at limit, should be valid
-    vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize, data);
+    vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 0, max_size, data);
 
     m_command_buffer.End();
 }

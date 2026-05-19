@@ -23,22 +23,15 @@ class NegativeShaderInterface : public VkLayerTest {};
 
 TEST_F(NegativeShaderInterface, MaxVertexComponentsWithBuiltins) {
     TEST_DESCRIPTION("Test if the max componenets checks are being checked from OpMemberDecorate built-ins");
-
-    RETURN_IF_SKIP(InitFramework());
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    props.limits.maxVertexOutputComponents = 128;
-    props.limits.maxFragmentInputComponents = 128;
-    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
+
+    // matches max_profile.json
+    if (m_device->Physical().limits_.maxVertexOutputComponents != 128) {
+        GTEST_SKIP() << "maxVertexOutputComponents is too high";
+    } else if (m_device->Physical().limits_.maxFragmentInputComponents != 128) {
+        GTEST_SKIP() << "maxFragmentInputComponents is too high";
+    }
 
     // vec4 == 4 components
     // This gives 124 which is just below the set max limit
@@ -98,22 +91,15 @@ TEST_F(NegativeShaderInterface, MaxVertexComponentsWithBuiltins) {
 
 TEST_F(NegativeShaderInterface, MaxFragmentComponentsWithBuiltins) {
     TEST_DESCRIPTION("Test if the max componenets checks are being checked from OpDecorate built-ins");
-
-    RETURN_IF_SKIP(InitFramework());
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    props.limits.maxVertexOutputComponents = 128;
-    props.limits.maxFragmentInputComponents = 128;
-    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
+
+    // matches max_profile.json
+    if (m_device->Physical().limits_.maxVertexOutputComponents != 128) {
+        GTEST_SKIP() << "maxVertexOutputComponents is too high";
+    } else if (m_device->Physical().limits_.maxFragmentInputComponents != 128) {
+        GTEST_SKIP() << "maxFragmentInputComponents is too high";
+    }
 
     // vec4 == 4 components
     // This gives 128 which is the max limit
