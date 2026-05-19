@@ -1734,3 +1734,65 @@ TEST_F(PositiveShaderInterface, MeshFragmentSlang) {
     pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveShaderInterface, BlockFragmentLocation) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12281");
+    RETURN_IF_SKIP(Init());
+    m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
+    InitRenderTarget();
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(location=0) out vec4 x;
+        void main(){
+           x = vec4(0);
+        }
+    )glsl";
+
+    const char* fs_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %6 "main" %9 %10
+               OpExecutionMode %6 OriginUpperLeft
+               OpSource Unknown 0
+               OpMemberName %FsOut 0 "color"
+               OpName %FsOut "FsOut"
+               OpMemberDecorate %FsOut 0 Offset 0
+               OpDecorate %FsOut Block
+               OpMemberDecorate %FsOut 0 Location 0
+               OpMemberDecorate %ShaderLink 0 Offset 0
+               OpDecorate %ShaderLink Block
+               OpMemberDecorate %ShaderLink 0 Location 0
+       %void = OpTypeVoid
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+%_ptr_Input_v4float = OpTypePointer Input %v4float
+      %FsOut = OpTypeStruct %v4float
+%_ptr_Output_FsOut = OpTypePointer Output %FsOut
+ %ShaderLink = OpTypeStruct %v4float
+%_ptr_Input_ShaderLink = OpTypePointer Input %ShaderLink
+         %50 = OpTypeFunction %void
+          %9 = OpVariable %_ptr_Input_ShaderLink Input
+         %10 = OpVariable %_ptr_Output_FsOut Output
+          %6 = OpFunction %void None %50
+         %59 = OpLabel
+         %60 = OpAccessChain %_ptr_Output_v4float %10 %int_0
+         %61 = OpAccessChain %_ptr_Input_v4float %9 %int_0
+         %62 = OpLoad %v4float %61
+               OpStore %60 %62
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}

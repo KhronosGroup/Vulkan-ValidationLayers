@@ -117,6 +117,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline& pipeline, con
     for (const auto& [location, attribute_info] : location_map) {
         const auto attribute_input = attribute_info.attribute_input;
         const auto shader_input = attribute_info.shader_input;
+        const auto variable_ptr = attribute_info.variable_ptr;
 
         if (attribute_input && !shader_input) {
             skip |= LogPerformanceWarning("WARNING-Shader-OutputNotConsumed", module_state.handle(), vi_loc,
@@ -128,7 +129,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline& pipeline, con
                                  "does not have a Location %" PRIu32
                                  ", but %s has %s at that Location. (This can be valid if "
                                  "either the vertexAttributeRobustness or maintenance9 feature is enabled)",
-                                 location, entrypoint.Describe().c_str(), attribute_info.variable_ptr->Describe().c_str());
+                                 location, entrypoint.Describe().c_str(), variable_ptr->Describe().c_str());
             }
         } else if (attribute_input && shader_input) {
             const VkFormat attribute_format = *attribute_input;
@@ -137,31 +138,33 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline& pipeline, con
             const spirv::Instruction* var_base_type = module_state.FindDef(var_base_type_id);
             const uint32_t var_numeric_type = module_state.GetNumericType(*var_base_type);
 
+            if (var_numeric_type == spirv::NumericTypeUnknown && variable_ptr->type_struct_info) {
+                // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12281
+                continue;
+            }
+
             const bool attribute64 = vkuFormatIs64bit(attribute_format);
             const bool shader64 = module_state.GetBaseTypeInstruction(var_base_type)->GetBitWidth() == 64;
 
             // Type checking
             if ((attribute_type & var_numeric_type) == 0) {
-                skip |=
-                    LogError("VUID-VkGraphicsPipelineCreateInfo-Input-08733", module_state.handle(),
-                             vi_loc.dot(Field::pVertexAttributeDescriptions, attribute_info.attribute_index).dot(Field::format),
-                             "(%s) at Location %" PRIu32 " does not match %s %s type of (%s).", string_VkFormat(attribute_format),
-                             location, entrypoint.Describe().c_str(), attribute_info.variable_ptr->Describe().c_str(),
-                             module_state.DescribeType(var_base_type_id).c_str());
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-Input-08733", module_state.handle(),
+                                 vi_loc.dot(Field::pVertexAttributeDescriptions, attribute_info.attribute_index).dot(Field::format),
+                                 "(%s) at Location %" PRIu32 " does not match %s %s type of (%s).",
+                                 string_VkFormat(attribute_format), location, entrypoint.Describe().c_str(),
+                                 variable_ptr->Describe().c_str(), module_state.DescribeType(var_base_type_id).c_str());
             } else if (attribute64 && !shader64) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08929", module_state.handle(),
                                  vi_loc.dot(Field::pVertexAttributeDescriptions, attribute_info.attribute_index).dot(Field::format),
                                  "(%s) is a 64-bit format, but the %s %s at Location %" PRIu32 " is a 32-bit type of (%s).",
-                                 string_VkFormat(attribute_format), entrypoint.Describe().c_str(),
-                                 attribute_info.variable_ptr->Describe().c_str(), location,
-                                 module_state.DescribeType(var_base_type_id).c_str());
+                                 string_VkFormat(attribute_format), entrypoint.Describe().c_str(), variable_ptr->Describe().c_str(),
+                                 location, module_state.DescribeType(var_base_type_id).c_str());
             } else if (!attribute64 && shader64) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08930", module_state.handle(),
                                  vi_loc.dot(Field::pVertexAttributeDescriptions, attribute_info.attribute_index).dot(Field::format),
                                  "(%s) is a 64-bit format, but the %s %s at Location %" PRIu32 " is a 64-bit type of (%s).",
-                                 string_VkFormat(attribute_format), entrypoint.Describe().c_str(),
-                                 attribute_info.variable_ptr->Describe().c_str(), location,
-                                 module_state.DescribeType(var_base_type_id).c_str());
+                                 string_VkFormat(attribute_format), entrypoint.Describe().c_str(), variable_ptr->Describe().c_str(),
+                                 location, module_state.DescribeType(var_base_type_id).c_str());
             } else if (attribute64 && shader64) {
                 const uint32_t attribute_components = vkuFormatComponentCount(attribute_format);
                 const uint32_t input_components = module_state.GetNumComponentsInBaseType(shader_input);
@@ -173,7 +176,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline& pipeline, con
                                  "-wide 64-bit type of (%s). (64-bit vertex input don't have default values and require "
                                  "components to match what is used in the shader)",
                                  string_VkFormat(attribute_format), attribute_components, entrypoint.Describe().c_str(),
-                                 attribute_info.variable_ptr->Describe().c_str(), location, input_components,
+                                 variable_ptr->Describe().c_str(), location, input_components,
                                  module_state.DescribeType(var_base_type_id).c_str());
                 }
             }
@@ -599,8 +602,12 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module& module_
                 }
             } else {
                 const uint32_t attachment_type = spirv::GetFormatNumericType(attachment->format);
-                const spirv::Instruction* type_inst = module_state.FindDef(output->type_id);
-                const uint32_t output_type = module_state.GetNumericType(*type_inst);
+                const uint32_t output_type = module_state.GetNumericType(output->base_type);
+
+                if (output_type == spirv::NumericTypeUnknown && output->type_struct_info) {
+                    // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12281
+                    continue;
+                }
 
                 // Type checking
                 if ((output_type & attachment_type) == 0) {
@@ -770,8 +777,12 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound& last_bou
                 }
             } else {
                 const uint32_t attachment_type = spirv::GetFormatNumericType(image_view_state->create_info.format);
-                const spirv::Instruction* type_inst = module_state->FindDef(output->type_id);
-                const uint32_t output_type = module_state->GetNumericType(*type_inst);
+                const uint32_t output_type = module_state->GetNumericType(output->base_type);
+
+                if (output_type == spirv::NumericTypeUnknown && output->type_struct_info) {
+                    // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12281
+                    continue;
+                }
 
                 // Type checking
                 if ((output_type & attachment_type) == 0) {
