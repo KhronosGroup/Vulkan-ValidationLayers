@@ -222,8 +222,16 @@ def write_aggregate_files(shader_data_list, apiname, outdir):
     out_file_header = os.path.join(out_file_dir, output_basename + '.h')
     out_file_source = os.path.join(out_file_dir, output_basename + '.cpp')
 
-    with open(out_file_header, "w") as f:
-        f.write("\n".join(header_content))
+    # For the header file, unless you add a new function/file the header is the same
+    # To prevent causing things to recompile again, only write to file if different
+    # (ccache was hiding this latency, but MSVC wasn't)
+    with open(out_file_header, "r+") as f:
+        existing_content = f.read()
+        new_content = "\n".join(header_content)
+        if new_content != existing_content:
+            f.seek(0)
+            f.write(new_content)
+            f.truncate()
 
     with open(out_file_source, "w") as f:
         f.write("\n".join(source_content))
