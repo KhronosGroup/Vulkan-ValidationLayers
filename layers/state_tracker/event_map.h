@@ -32,6 +32,7 @@ struct EventInfo {
     VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
     bool signal = false;  // signal (SetEvent) or unsignal (ResetEvent)
     std::optional<vku::safe_VkDependencyInfo> dependency_info;
+    bool was_reset = false;
 };
 using EventMap = vvl::unordered_map<VkEvent, EventInfo>;
 
@@ -40,28 +41,49 @@ struct EventSignalingState {
     // When recording is finished, this is the event state at the end of the command buffer
     bool signaled = false;
 
-    // If signaled is true, this is the stage mask specified by the CmdSetEvent command.
-    // If signaled is false, this is NONE
-    VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
+    // If this event was unsignaled at least once during command buffer recording
+    bool was_reset = false;
 
-    // If signaled is true and the event was set by CmdSetEvent2, this is the dependency info from that command
-    std::optional<vku::safe_VkDependencyInfo> dependency_info;
+    // Stage mask from CmdSetEvent.
+    // It is NONE for CmdSetEvent2, or if the event is unsignaled
+    VkPipelineStageFlags2 signal_src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
 
-    EventSignalingState(bool signaled, VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_NONE)
-        : signaled(signaled), src_stage_mask(src_stage_mask) {}
+    // The dependency info from CmdSetEvent2.
+    // It is no value for CmdSetEvent, or if the event is unsignaled
+    std::optional<vku::safe_VkDependencyInfo> signal_dependency_info;
+
+    // Return true if this state's effect on the event is known.
+    // Without a reset or known prior state, we cannot tell whether a signal
+    // in this state is a repeated signal, which the spec says is ignored
+    //
+    // NOTE: this implementation does not try to handle repeated unsignals, which
+    // are also ignored. We do not currently keep data associated with unsignals,
+    // (and for signals we store stage mask/dependency info). Update this if we
+    // need to track associated unsignal data.
+    bool HasKnownEffect(const EventSignalingState* prior_state = nullptr) const {
+        // After a reset, later signal/reset commands define the event state
+        if (was_reset) {
+            return true;
+        }
+        // If the prior state ended unsignaled, this state cannot be a repeated
+        // signal and defines the event state
+        const bool is_prior_unsignaled = prior_state && !prior_state->signaled;
+        return is_prior_unsignaled;
+    }
 };
 using EventSignalingStateMap = vvl::unordered_map<VkEvent, EventSignalingState>;
 
-// TODO: later this file will be renamed to event_state.h/cpp and this function will go into cpp
-static inline void AddWaitEventSignalingStates(const std::vector<VkEvent>& wait_events,
-                                               const EventSignalingStateMap& new_signaling_states,
-                                               EventSignalingStateMap& current_signaling_states) {
-    for (const auto& signaling_state : new_signaling_states) {
-        const VkEvent event = signaling_state.first;
-        const bool is_waited = vvl::Contains(wait_events, event);
-        const bool is_signaled = vvl::Contains(current_signaling_states, event);
-        if (is_waited && !is_signaled) {
-            current_signaling_states.insert(signaling_state);
+inline void UpdateEventSignalingStates(EventSignalingStateMap& accumulated_states, const EventSignalingStateMap& recorded_states) {
+    for (const auto& [event, recorded_state] : recorded_states) {
+        EventSignalingState& accumulated_state = accumulated_states[event];
+
+        const bool keep_accumulated_state = accumulated_state.signaled && !recorded_state.was_reset;
+        if (keep_accumulated_state) {
+            continue;
         }
+
+        const bool was_reset = accumulated_state.was_reset;
+        accumulated_state = recorded_state;
+        accumulated_state.was_reset |= was_reset;
     }
 }

@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -213,7 +213,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment* pAttachments, uint32_t rect_count,
                                 const VkClearRect* pRects, const Location& loc) final;
 
-    void RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stageMask, const VkDependencyInfo* dependency_info) final;
+    void RecordSetEvent(VkEvent event, VkPipelineStageFlags stageMask) final;
+    void RecordSetEvent2(VkEvent event, const VkDependencyInfo& dependency_info) final;
     void RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stageMask) final;
     void RecordBarriers(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier* buffer_barriers, uint32_t image_barrier_count,
                         const VkImageMemoryBarrier* image_barriers, VkPipelineStageFlags src_stage_mask,

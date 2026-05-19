@@ -2174,13 +2174,24 @@ void CommandBuffer::RecordUpdateMemory(VkDeviceAddressRangeKHR range, const Loca
     (void)range;
 }
 
-void CommandBuffer::RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const VkDependencyInfo* dependency_info,
-                                   const Location& loc) {
+void CommandBuffer::RecordSetEvent(VkEvent event, VkPipelineStageFlags stage_mask, const Location& loc) {
     RecordCommand(loc);
     for (auto& item : sub_states_) {
-        item.second->RecordSetEvent(event, stage_mask, dependency_info);
+        item.second->RecordSetEvent(event, stage_mask);
     }
+    if (!dev_data.disabled[command_buffer_state]) {
+        if (auto event_state = dev_data.Get<vvl::Event>(event)) {
+            AddChild(event_state);
+        }
+    }
+    events.push_back(event);
+}
 
+void CommandBuffer::RecordSetEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {
+    RecordCommand(loc);
+    for (auto& item : sub_states_) {
+        item.second->RecordSetEvent2(event, dependency_info);
+    }
     if (!dev_data.disabled[command_buffer_state]) {
         if (auto event_state = dev_data.Get<vvl::Event>(event)) {
             AddChild(event_state);
