@@ -419,20 +419,29 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& que
 
     VkPipelineStageFlags signals_src_stage_mask = 0;
     for (VkEvent event : wait_events) {
-        auto event_state = core.Get<vvl::Event>(event);
-        if (event_state && !vvl::Contains(signaling_states, event)) {
-            skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, submit_signaling_states, loc);
-        }
-        // NOTE: if signaling state is "unsignaled" then src stage mask is NONE
-        if (const auto* cb_signaling = vvl::Find(signaling_states, event)) {
-            // a) signal from the same command buffer
-            signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(cb_signaling->src_stage_mask);
-        } else if (const auto* submit_signaling = vvl::Find(submit_signaling_states, event)) {
-            // b) signals from the previous command buffers of the same submit command
-            signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(submit_signaling->src_stage_mask);
-        } else if (event_state) {
-            // c) global event state
-            signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(event_state->signal_src_stage_mask);
+        if (auto event_state = core.Get<vvl::Event>(event)) {
+            if (!vvl::Contains(signaling_states, event)) {
+                skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, submit_signaling_states, loc);
+            }
+            // NOTE: for unsignaled events the signal_src_stage_mask is NONE
+            VkPipelineStageFlags2 stage_mask = 0;
+            bool last_signal = false;
+            if (event_state->signaled) {
+                stage_mask = event_state->signal_src_stage_mask;
+                last_signal = event_state->signaled;
+            }
+            if (const auto* submit_signaling = vvl::Find(submit_signaling_states, event)) {
+                if (!last_signal || submit_signaling->was_reset) {
+                    stage_mask = submit_signaling->src_stage_mask;
+                }
+                last_signal = submit_signaling->signal;
+            }
+            if (const auto* cb_signaling = vvl::Find(signaling_states, event)) {
+                if (!last_signal || cb_signaling->HasKnownEffect()) {
+                    stage_mask = cb_signaling->signal_src_stage_mask;
+                }
+            }
+            signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(stage_mask);
         }
     }
     // Validate src stage mask mismatch
@@ -1526,27 +1535,24 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
 
     if (pEvents) {
         auto& cb_sub_state = core::SubState(*cb_state);
-
-        // Record time validation of VUID 01158 is possible only if all relevant
-        // CmdSetEvent commands are recorded in the same command buffer
-        bool found_all_set_commands = true;
-
-        VkPipelineStageFlags set_event_src_stages = VK_PIPELINE_STAGE_NONE;
+        bool can_validate = true;
+        VkPipelineStageFlags signals_src_stage_mask = VK_PIPELINE_STAGE_NONE;
         for (uint32_t i = 0; i < eventCount; i++) {
             const EventSignalingState* signaling_state = vvl::Find(cb_sub_state.event_signaling_states, pEvents[i]);
-            if (!signaling_state) {
-                found_all_set_commands = false;
+            // NOTE: the same logic is used by the record phase
+            if (!signaling_state || !signaling_state->HasKnownEffect()) {
+                can_validate = false;
                 break;
             }
-            set_event_src_stages |= static_cast<VkPipelineStageFlags>(signaling_state->src_stage_mask);
+            signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(signaling_state->signal_src_stage_mask);
         }
-        if (found_all_set_commands) {
-            if (srcStageMask != set_event_src_stages) {
+        if (can_validate) {
+            if (srcStageMask != signals_src_stage_mask) {
                 skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", objlist, error_obj.location.dot(Field::srcStageMask),
                                  "is %s, but the bitwise OR of stageMask values from the most recent vkCmdSetEvent call for each "
                                  "waited event is %s.",
                                  string_VkPipelineStageFlags(srcStageMask).c_str(),
-                                 string_VkPipelineStageFlags(set_event_src_stages).c_str());
+                                 string_VkPipelineStageFlags(signals_src_stage_mask).c_str());
             }
         }
     }

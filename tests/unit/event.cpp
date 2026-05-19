@@ -114,36 +114,6 @@ TEST_F(NegativeEvent, WaitEvent2HostStage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, EventStageMask) {
-    RETURN_IF_SKIP(Init());
-    vkt::Event event(*m_device);
-
-    m_command_buffer.Begin();
-    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-
-    // Source stage mask does not match CmdSetEvent's stage mask
-    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
-    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
-    m_errorMonitor->VerifyFound();
-
-    m_command_buffer.End();
-}
-
-TEST_F(NegativeEvent, EventStageMask2) {
-    RETURN_IF_SKIP(Init());
-    vkt::Event event(*m_device);
-
-    m_command_buffer.Begin();
-    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-    // Source stage mask does not match CmdSetEvent's stage mask
-    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
-    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
-    m_errorMonitor->VerifyFound();
-
-    m_command_buffer.End();
-}
-
 TEST_F(NegativeEvent, StageMaskResetEvent) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
@@ -151,6 +121,23 @@ TEST_F(NegativeEvent, StageMaskResetEvent) {
     m_command_buffer.ResetEvent(event);
     monitor_.SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
     m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    monitor_.VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, StageMaskResetEventSecondary) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.ResetEvent(event);
+    monitor_.SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
+    m_command_buffer.ExecuteCommands(secondary);
     monitor_.VerifyFound();
     m_command_buffer.End();
 }
@@ -223,6 +210,11 @@ TEST_F(NegativeEvent, SecondaryWaitIncludesHostStage) {
     secondary.End();
 
     m_command_buffer.Begin();
+
+    // Record-time validation is only possible if we know there was reset,
+    // otherwise we don't know if CmdSetEvent is ignored because it is a duplicate
+    m_command_buffer.ResetEvent(event);
+
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     monitor_.SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
     m_command_buffer.ExecuteCommands(secondary);
@@ -285,19 +277,6 @@ TEST_F(NegativeEvent, EventStageMaskHost2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeEvent, EventStageMaskHost3) {
-    RETURN_IF_SKIP(Init());
-    vkt::Event event(*m_device);
-
-    m_command_buffer.Begin();
-    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
-    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_HOST_BIT,
-                               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
-    m_errorMonitor->VerifyFound();
-    m_command_buffer.End();
-}
-
 TEST_F(NegativeEvent, StageMaskPrimarySetSecondaryWait) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
@@ -308,6 +287,11 @@ TEST_F(NegativeEvent, StageMaskPrimarySetSecondaryWait) {
     secondary.End();
 
     m_command_buffer.Begin();
+
+    // Record-time validation is only possible if we know there was reset,
+    // otherwise we don't know if CmdSetEvent is ignored because it is a duplicate
+    m_command_buffer.ResetEvent(event);
+
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
     monitor_.SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
     m_command_buffer.ExecuteCommands(secondary);
@@ -340,12 +324,68 @@ TEST_F(NegativeEvent, StageMaskPrimarySetSecondaryWaitSubmit) {
     monitor_.VerifyFound();
 }
 
+TEST_F(NegativeEvent, StageMaskPrimarySetSecondaryResetAndWait) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+    vkt::Event event2(*m_device);
+    const VkEvent events[2] = {event, event2};
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    // Reset the first event so its signal's stage mask is not taken into account during Wait call
+    secondary.ResetEvent(event);
+
+    vk::CmdWaitEvents(secondary, 2, events, VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.ResetEvent(event);
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_command_buffer.ResetEvent(event2);
+    m_command_buffer.SetEvent(event2, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+    monitor_.SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
+    m_command_buffer.ExecuteCommands(secondary);
+    monitor_.VerifyFound();
+
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeEvent, StageMaskSecondarySetSecondaryWait) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary.Begin();
+    secondary.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    secondary.End();
+
+    vkt::CommandBuffer secondary2(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary2.Begin();
+    secondary2.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    secondary2.End();
+
+    m_command_buffer.Begin();
+    // Make sure WaitEvents is validated at record-time.
+    // Without Reset the validation can't prove CmdSetEvent is not ignored
+    m_command_buffer.ResetEvent(event);
+
+    m_command_buffer.ExecuteCommands(secondary);
+    monitor_.SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
+    m_command_buffer.ExecuteCommands(secondary2);
+    monitor_.VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, StageMaskSecondarySetSecondaryWait2) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.ResetEvent(event);  // Make sure this is validated at record-time
     secondary.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
     secondary.End();
 
@@ -379,8 +419,42 @@ TEST_F(NegativeEvent, StageMaskTwoSecondariesSameCommand) {
     const VkCommandBuffer secondaries[2] = {secondary, secondary2};
 
     m_command_buffer.Begin();
+    m_command_buffer.ResetEvent(event);
     monitor_.SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
     vk::CmdExecuteCommands(m_command_buffer, 2, secondaries);
+    monitor_.VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, StageMaskPrimaryResetSecondarySetAndWait) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    secondary.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.ResetEvent(event);
+    monitor_.SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
+    m_command_buffer.ExecuteCommands(secondary);
+    monitor_.VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, RepeatedSetEvent) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.ResetEvent(event);
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+    monitor_.SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
     monitor_.VerifyFound();
     m_command_buffer.End();
 }

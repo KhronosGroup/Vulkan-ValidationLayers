@@ -49,9 +49,8 @@ TEST_F(PositiveEvent, EventStageMaskTwoSubmits) {
     m_default_queue->Wait();
 }
 
-TEST_F(PositiveEvent, EventStageMaskTwoBatches) {
+TEST_F(PositiveEvent, TwoCommandBuffers) {
     RETURN_IF_SKIP(Init());
-
     vkt::Event event(*m_device);
 
     vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
@@ -73,7 +72,47 @@ TEST_F(PositiveEvent, EventStageMaskTwoBatches) {
     m_default_queue->Wait();
 }
 
-TEST_F(PositiveEvent, StageMaskTwoEventsTwoSubmits) {
+TEST_F(PositiveEvent, TwoBatches) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
+    command_buffer.Begin();
+    command_buffer.ResetEvent(event);
+    command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    command_buffer.End();
+
+    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
+    command_buffer2.Begin();
+    // This signal goes after the signal from another command buffer and is ignored
+    command_buffer2.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+
+    command_buffer2.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    command_buffer2.End();
+
+    // Need to use semaphore to guarantee ordering of CmdSetEvents
+    vkt::Semaphore semaphore(*m_device);
+
+    VkSubmitInfo submit_infos[2];
+    submit_infos[0] = vku::InitStructHelper();
+    submit_infos[0].commandBufferCount = 1;
+    submit_infos[0].pCommandBuffers = &command_buffer.handle();
+    submit_infos[0].signalSemaphoreCount = 1;
+    submit_infos[0].pSignalSemaphores = &semaphore.handle();
+
+    const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    submit_infos[1] = vku::InitStructHelper();
+    submit_infos[1].waitSemaphoreCount = 1;
+    submit_infos[1].pWaitSemaphores = &semaphore.handle();
+    submit_infos[1].pWaitDstStageMask = &wait_stage;
+    submit_infos[1].commandBufferCount = 1;
+    submit_infos[1].pCommandBuffers = &command_buffer2.handle();
+
+    vk::QueueSubmit(*m_default_queue, 2, submit_infos, VK_NULL_HANDLE);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveEvent, TwoEventsTwoSubmits) {
     RETURN_IF_SKIP(Init());
 
     vkt::Event event(*m_device);
@@ -96,6 +135,34 @@ TEST_F(PositiveEvent, StageMaskTwoEventsTwoSubmits) {
     m_default_queue->SubmitAndWait(command_buffer2);
 }
 
+TEST_F(PositiveEvent, StageMaskTwoEventsTwoSubmits2) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+    vkt::Event event2(*m_device);
+    const VkEvent events[2] = {event, event2};
+
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
+    command_buffer.Begin();
+    command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    command_buffer.End();
+
+    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
+    command_buffer2.Begin();
+    command_buffer2.SetEvent(event2, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    command_buffer2.End();
+
+    vkt::CommandBuffer command_buffer3(*m_device, m_command_pool);
+    command_buffer3.Begin();
+    vk::CmdWaitEvents(command_buffer3, 2, events, VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
+    command_buffer3.End();
+
+    m_default_queue->SubmitAndWait(command_buffer);
+    m_default_queue->SubmitAndWait(command_buffer2);
+    m_default_queue->SubmitAndWait(command_buffer3);
+}
+
 TEST_F(PositiveEvent, EventStageMaskHostSubmit) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
@@ -105,6 +172,58 @@ TEST_F(PositiveEvent, EventStageMaskHostSubmit) {
     m_command_buffer.End();
 
     event.Set();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveEvent, PrimarySetSecondaryWaitCantDetectMismatch) {
+    TEST_DESCRIPTION("CmdSetEvent is not possible to validate during record time without preceding CmdResetEvent");
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    // We don't know if signal is ignored or not (there could be earlier signal which takes priority),
+    // that's why we can't check for signal/wait source stage mismatch
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_command_buffer.ExecuteCommands(secondary);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveEvent, SecondarySetAndWaitMismatch) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    secondary.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    // For the secondary command buffer we can't validate signal/wait stage mismatch
+    // at record-time. The signal can be ignored if it is preceded by another one
+    m_command_buffer.ExecuteCommands(secondary);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveEvent, SecondarySetAndWaitSubmit) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    secondary.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.ExecuteCommands(secondary);
+    m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
@@ -146,6 +265,24 @@ TEST_F(PositiveEvent, PrimarySetSecondaryWait) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
+TEST_F(PositiveEvent, PrimaryResetSecondarySetAndWait) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    secondary.WaitEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.ResetEvent(event);
+    m_command_buffer.ExecuteCommands(secondary);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveEvent, SecondaryWaitTwoEvents) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
@@ -180,14 +317,12 @@ TEST_F(PositiveEvent, BasicSetAndWaitEvent) {
 
     const vkt::Event event(*m_device);
 
-    // Record time validation
     m_command_buffer.Begin();
     vk::CmdSetEvent(m_command_buffer, event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                       0, nullptr, 0, nullptr, 0, nullptr);
     m_command_buffer.End();
 
-    // Also submit to the queue to test submit time validation
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
@@ -314,80 +449,4 @@ TEST_F(PositiveEvent, AsymmetricEventNoMemorySubmit) {
 
     // Check that missing memory barrier does not confuse submit validation
     m_default_queue->SubmitAndWait(m_command_buffer);
-}
-
-TEST_F(PositiveEvent, InterQueueEventUsage) {
-    all_queue_count_ = true;
-    RETURN_IF_SKIP(Init());
-
-    if ((m_second_queue_caps & VK_QUEUE_GRAPHICS_BIT) == 0) {
-        GTEST_SKIP() << "2 graphics queues are needed";
-    }
-    const vkt::Event event(*m_device);
-
-    vkt::CommandBuffer cb1(*m_device, m_command_pool);
-    cb1.Begin();
-    cb1.SetEvent(event);
-    cb1.End();
-
-    vkt::CommandPool pool2(*m_device, m_second_queue->family_index);
-    vkt::CommandBuffer cb2(*m_device, pool2);
-    cb2.Begin();
-    cb2.SetEvent(event);
-    cb2.End();
-    vkt::CommandBuffer cb3(*m_device, pool2);
-    cb3.Begin();
-    cb3.WaitEvent(event);
-    cb3.End();
-
-    const VkCommandBuffer queue2_cbs[2] = {cb2, cb3};
-    VkSubmitInfo queue2_submit_info = vku::InitStructHelper();
-    queue2_submit_info.commandBufferCount = 2;
-    queue2_submit_info.pCommandBuffers = queue2_cbs;
-
-    m_default_queue->SubmitAndWait(cb1);
-
-    // Check that event wait on the second queue can find the signal on the same queue.
-    // If due to regression the signal from the first queue is used then it will trigger
-    // cross queue event usage error
-    vk::QueueSubmit(*m_second_queue, 1, &queue2_submit_info, VK_NULL_HANDLE);
-    m_second_queue->Wait();
-}
-
-TEST_F(PositiveEvent, InterQueueEventUsage2) {
-    all_queue_count_ = true;
-    RETURN_IF_SKIP(Init());
-
-    if ((m_second_queue_caps & VK_QUEUE_GRAPHICS_BIT) == 0) {
-        GTEST_SKIP() << "2 graphics queues are needed";
-    }
-    const vkt::Event event(*m_device);
-    const vkt::Event event2(*m_device);
-    const VkEvent events[2] = {event, event2};
-
-    vkt::CommandBuffer cb1(*m_device, m_command_pool);
-    cb1.Begin();
-    cb1.SetEvent(event2);
-    cb1.End();
-
-    vkt::CommandPool pool2(*m_device, m_second_queue->family_index);
-    vkt::CommandBuffer cb2(*m_device, pool2);
-    cb2.Begin();
-    cb2.SetEvent(event);
-    cb2.End();
-    vkt::CommandBuffer cb3(*m_device, pool2);
-    cb3.Begin();
-    cb3.SetEvent(event2);
-    vk::CmdWaitEvents(cb3, 2, events, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0,
-                      nullptr, 0, nullptr);
-    cb3.End();
-
-    const VkCommandBuffer queue2_cbs[2] = {cb2, cb3};
-    VkSubmitInfo queue2_submit_info = vku::InitStructHelper();
-    queue2_submit_info.commandBufferCount = 2;
-    queue2_submit_info.pCommandBuffers = queue2_cbs;
-
-    m_default_queue->SubmitAndWait(cb1);
-    vk::QueueSubmit(*m_second_queue, 1, &queue2_submit_info, VK_NULL_HANDLE);
-    m_second_queue->Wait();
 }

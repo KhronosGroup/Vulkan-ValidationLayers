@@ -760,12 +760,12 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordFillMemory(VkDeviceAddressRangeKHR range, const Location& loc);
     void RecordUpdateMemory(VkDeviceAddressRangeKHR range, const Location& loc);
 
-    void RecordSetEvent(VkEvent event, VkPipelineStageFlags2KHR stageMask, const VkDependencyInfo *dependency_info,
-                        const Location &loc);
+    void RecordSetEvent(VkEvent event, VkPipelineStageFlags stageMask, const Location& loc);
+    void RecordSetEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc);
     void RecordResetEvent(VkEvent event, VkPipelineStageFlags2KHR stageMask, const Location &loc);
     void RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask, const Location& loc);
     void RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& dep_info_loc);
-    void RecordPushConstants(const vvl::PipelineLayout &pipeline_layout_state, VkShaderStageFlags stage_flags, uint32_t offset,
+    void RecordPushConstants(const vvl::PipelineLayout& pipeline_layout_state, VkShaderStageFlags stage_flags, uint32_t offset,
                              uint32_t size, const void *values);
     void RecordPushData(const VkPushDataInfoEXT& push_data_info, const Location& loc);
 
@@ -929,7 +929,8 @@ class CommandBufferSubState {
     virtual void RecordFillBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc) {}
     virtual void RecordUpdateBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc) {}
 
-    virtual void RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const VkDependencyInfo *dependency_info) {}
+    virtual void RecordSetEvent(VkEvent event, VkPipelineStageFlags stage_mask) {}
+    virtual void RecordSetEvent2(VkEvent event, const VkDependencyInfo& dependency_info) {}
     virtual void RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask) {}
     virtual void RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask, const Location& loc) {}
     virtual void RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {}

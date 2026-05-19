@@ -1129,35 +1129,79 @@ bool CoreChecks::ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer& 
     return skip;
 }
 
+// Return the signal stage mask when it can be identified from recorded state
+static std::optional<VkPipelineStageFlags2> ResolveKnownSignalStageMask(VkEvent event,
+                                                                        const EventSignalingStateMap& prior_signaling_states,
+                                                                        const EventSignalingStateMap& secondary_signaling_states) {
+    const EventSignalingState* prior_state = vvl::Find(prior_signaling_states, event);
+    const EventSignalingState* secondary_state = vvl::Find(secondary_signaling_states, event);
+
+    if (secondary_state && secondary_state->HasKnownEffect(prior_state)) {
+        if (secondary_state->signaled) {
+            return secondary_state->signal_src_stage_mask;
+        }
+        return {};
+    }
+    if (prior_state && prior_state->HasKnownEffect() && prior_state->signaled) {
+        return prior_state->signal_src_stage_mask;
+    }
+    return {};
+}
+
+// Return true when recorded state proves the event is unsignaled at the wait
+static bool IsKnownUnsignaled(VkEvent event, const EventSignalingStateMap& prior_signaling_states,
+                              const EventSignalingStateMap& secondary_signaling_states) {
+    const EventSignalingState* prior_state = vvl::Find(prior_signaling_states, event);
+    const EventSignalingState* secondary_state = vvl::Find(secondary_signaling_states, event);
+
+    if (secondary_state && secondary_state->HasKnownEffect(prior_state)) {
+        return !secondary_state->signaled;
+    }
+    return prior_state && prior_state->HasKnownEffect() && !prior_state->signaled;
+}
+
 bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBufferSubState& secondary_cb_sub_state,
                                                           const Location& secondary_cb_loc,
                                                           EventSignalingStateMap& local_signaling_states) const {
     bool skip = false;
     for (const WaitEventSubmitInfo& secondary_wait : secondary_cb_sub_state.wait_event_submit_infos) {
-        auto signaling_states = secondary_wait.signaling_states;
-        AddWaitEventSignalingStates(secondary_wait.wait_events, local_signaling_states, signaling_states);
+        VkPipelineStageFlags signals_src_stage_mask = VK_PIPELINE_STAGE_NONE;
+        bool can_validate = true;
+        bool found_known_signals = false;
 
-        // Do validation if all signaling states are found. Otherwise, validate during submit-time
-        const bool found_all_signaling_states = signaling_states.size() == secondary_wait.wait_events.size();
-        if (found_all_signaling_states) {
-            VkPipelineStageFlags signals_src_stage_mask = VK_PIPELINE_STAGE_NONE;
-            for (const auto& [event, signaling_state] : signaling_states) {
-                signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(signaling_state.src_stage_mask);
+        for (VkEvent event : secondary_wait.wait_events) {
+            if (auto stage_mask = ResolveKnownSignalStageMask(event, local_signaling_states, secondary_wait.signaling_states)) {
+                signals_src_stage_mask |= *stage_mask;
+                found_known_signals = true;
+                continue;
             }
-            if (secondary_wait.wait_src_stage_mask != signals_src_stage_mask) {
-                const LogObjectList objlist(secondary_cb_sub_state.Handle());
+            if (IsKnownUnsignaled(event, local_signaling_states, secondary_wait.signaling_states)) {
+                // Contribute 0 to signals_src_stage_mask
+                continue;
+            }
+            can_validate = false;
+            break;
+        }
+        if (can_validate && secondary_wait.wait_src_stage_mask != signals_src_stage_mask) {
+            const LogObjectList objlist(secondary_cb_sub_state.Handle());
+            if (found_known_signals) {
                 std::ostringstream ss;
                 ss << "(" << FormatHandle(secondary_cb_sub_state.Handle()) << ") contains a vkCmdWaitEvents call with srcStageMask "
                    << string_VkPipelineStageFlags(secondary_wait.wait_src_stage_mask)
                    << ", but the bitwise OR of stageMask values from the most recent vkCmdSetEvent calls is "
                    << string_VkPipelineStageFlags(signals_src_stage_mask);
                 skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", objlist, secondary_cb_loc, "%s", ss.str().c_str());
+            } else {
+                std::ostringstream ss;
+                ss << "(" << FormatHandle(secondary_cb_sub_state.Handle()) << ") contains a vkCmdWaitEvents call with srcStageMask "
+                   << string_VkPipelineStageFlags(secondary_wait.wait_src_stage_mask)
+                   << ", but the waited events are known to be unsignaled at this point. The wait does not have a corresponding "
+                      "vkCmdSetEvent signal.";
+                skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", objlist, secondary_cb_loc, "%s", ss.str().c_str());
             }
         }
     }
-    for (const auto& [event, signaling_state] : secondary_cb_sub_state.event_signaling_states) {
-        local_signaling_states.insert_or_assign(event, signaling_state);
-    }
+    UpdateEventSignalingStates(local_signaling_states, secondary_cb_sub_state.event_signaling_states);
     return skip;
 }
 

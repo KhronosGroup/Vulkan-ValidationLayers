@@ -3497,7 +3497,7 @@ void DeviceState::PostCallRecordCmdUpdateMemoryKHR(VkCommandBuffer commandBuffer
 void DeviceState::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                             const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordSetEvent(event, stageMask, nullptr, record_obj.location);
+    cb_state->RecordSetEvent(event, stageMask, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -3508,9 +3508,7 @@ void DeviceState::PostCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, V
 void DeviceState::PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
                                              const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    auto exec_scopes = sync_utils::GetExecScopes(*pDependencyInfo);
-
-    cb_state->RecordSetEvent(event, exec_scopes.src, pDependencyInfo, record_obj.location);
+    cb_state->RecordSetEvent2(event, *pDependencyInfo, record_obj.location);
     cb_state->RecordBarrierObjects(*pDependencyInfo, record_obj.location.dot(vvl::Field::pDependencyInfo));
 }
 
