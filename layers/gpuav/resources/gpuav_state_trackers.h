@@ -397,15 +397,19 @@ class PipelineSubState : public vvl::PipelineSubState {
     explicit PipelineSubState(Validator &gpuav, vvl::Pipeline &pipeline);
 
     void Destroy() override;
-
+    // Specifically for pipeline instrumented post original creation:
+    // The old pipeline could be in use at time of instrumentation,
+    // so defer old pipeline destroy to Destroy() call.
+    void AddHandleToDestroy(VkPipeline pipeline);
     VkPipelineLayout GetPipelineLayoutUnion(const Location &loc, vvl::DescriptorMode mode) const;
 
   private:
     // Multiple threads can record multiple commands using the same pipeline,
-    // so pipeline layout recreation has to be thread safe
-    mutable std::mutex recreated_layout_mutex{};
-    mutable VkPipelineLayout recreated_layout = VK_NULL_HANDLE;
+    // so layout recreation and deferred pipeline destruction have to be thread safe
+    mutable std::mutex mutex_{};
+    mutable VkPipelineLayout recreated_layout_ = VK_NULL_HANDLE;
     Validator &gpuav_;
+    VkPipeline uninstrumented_pipeline = VK_NULL_HANDLE;
 };
 
 static inline PipelineSubState &SubState(vvl::Pipeline &pipeline) {

@@ -19,6 +19,7 @@
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 
+#include "containers/container_utils.h"
 #include "error_message/error_location.h"
 #include "generated/vk_extension_helper.h"
 #include "generated/dispatch_functions.h"
@@ -403,6 +404,128 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
             chassis_state.modified_create_info.setLayoutCount = instrumentation_desc_set_bind_index_ + 1;
         }
     }
+}
+
+void GpuShaderInstrumentor::PreCallRecordSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo,
+                                                                    const RecordObject& record_obj) {
+    // Warning: This function is not thread safe WRT pipeline state accesses.
+    // It is assumed that in most cases, objects are named right after being created,
+    // and concurrent accesses should not be a worry.
+
+    if (!gpuav_settings.select_instrumented_shaders) {
+        return;
+    }
+
+    if (!gpuav_settings.IsSpirvModified()) {
+        return;
+    }
+    if (pNameInfo->objectType != VK_OBJECT_TYPE_PIPELINE || !pNameInfo->pObjectName) {
+        return;
+    }
+
+    if (!gpuav_settings.MatchesAnyShaderSelectionRegex(pNameInfo->pObjectName)) {
+        return;
+    }
+
+    if (disabled[handle_wrapping]) {
+        InternalError(LogObjectList(), record_obj.location,
+                      "For GPU-AV selective pipeline instrumentation post creation to work, handle wrapping needs to be enabled.");
+        return;
+    }
+
+    VkPipeline wrapped_pipeline = CastFromUint64<VkPipeline>(pNameInfo->objectHandle);
+    auto pipeline_state = Get<vvl::Pipeline>(wrapped_pipeline);
+    ASSERT_AND_RETURN(pipeline_state);
+
+    if (pipeline_state->instrumentation_data.was_instrumented) {
+        return;
+    }
+
+    if (!NeedPipelineCreationShaderInstrumentation(*pipeline_state, record_obj.location)) {
+        return;
+    }
+
+    auto layer_data = vvl::GetDispatchDevice(device);
+    ASSERT_AND_RETURN(layer_data);
+
+    // The pipeline was selected by name, not by individual shader name, so force all its shaders to be instrumented
+    for (const auto& stage_state : pipeline_state->stage_states) {
+        if (stage_state.module_state && stage_state.module_state->VkHandle() != VK_NULL_HANDLE) {
+            selected_instrumented_shaders.insert(stage_state.module_state->VkHandle());
+        }
+    }
+
+    VkPipeline instrumented_pipeline = VK_NULL_HANDLE;
+    // Can't instrument ray tracing pipeline post creation,
+    // As corresponding shader binding tables may have already been created.
+    if (pipeline_state->linking_shaders == 0 &&
+        IsValueIn(pipeline_state->pipeline_type, {VK_PIPELINE_BIND_POINT_GRAPHICS, VK_PIPELINE_BIND_POINT_COMPUTE})) {
+        std::vector<chassis::ShaderInstrumentationMetadata> shader_instrumentation_metadata;
+        if (pipeline_state->pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+            vku::safe_VkGraphicsPipelineCreateInfo new_pipeline_ci(pipeline_state->GraphicsCreateInfo());
+            new_pipeline_ci.flags &= ~VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+            const bool success = PreCallRecordPipelineCreationShaderInstrumentation(
+                nullptr, *pipeline_state, new_pipeline_ci, uint32_t(pipeline_state->stage_states.size()), record_obj.location,
+                shader_instrumentation_metadata);
+            if (!success) {
+                InternalError(device, record_obj.location, "Failed to instrument graphics pipeline in SetDebugUtilsObjectNameEXT.");
+                return;
+            }
+
+            layer_data->UnwrapGraphicsPipelineCreateInfoHandles(new_pipeline_ci);
+            const VkResult result = layer_data->device_dispatch_table.CreateGraphicsPipelines(
+                device, VK_NULL_HANDLE, 1, new_pipeline_ci.ptr(), nullptr, &instrumented_pipeline);
+            if (result != VK_SUCCESS || instrumented_pipeline == VK_NULL_HANDLE) {
+                InternalError(device, record_obj.location,
+                              "Failed to create instrumented graphics pipeline in SetDebugUtilsObjectNameEXT.");
+                return;
+            }
+        } else if (pipeline_state->pipeline_type == VK_PIPELINE_BIND_POINT_COMPUTE) {
+            vku::safe_VkComputePipelineCreateInfo new_pipeline_ci(pipeline_state->ComputeCreateInfo());
+            new_pipeline_ci.flags &= ~VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+            const bool success = PreCallRecordPipelineCreationShaderInstrumentation(
+                nullptr, *pipeline_state, new_pipeline_ci, uint32_t(pipeline_state->stage_states.size()), record_obj.location,
+                shader_instrumentation_metadata);
+            if (!success) {
+                InternalError(device, record_obj.location, "Failed to instrument compute pipeline in SetDebugUtilsObjectNameEXT.");
+                return;
+            }
+
+            layer_data->UnwrapComputePipelineCreateInfoHandles(new_pipeline_ci);
+            const VkResult result = layer_data->device_dispatch_table.CreateComputePipelines(
+                device, VK_NULL_HANDLE, 1, new_pipeline_ci.ptr(), nullptr, &instrumented_pipeline);
+            if (result != VK_SUCCESS || instrumented_pipeline == VK_NULL_HANDLE) {
+                InternalError(device, record_obj.location,
+                              "Failed to create instrumented compute pipeline in SetDebugUtilsObjectNameEXT.");
+                return;
+            }
+        }
+
+        PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, uint32_t(pipeline_state->stage_states.size()),
+                                                            shader_instrumentation_metadata);
+    } else {
+        vku::safe_VkGraphicsPipelineCreateInfo new_pipeline_ci(pipeline_state->GraphicsCreateInfo());
+        const bool success =
+            PreCallRecordPipelineCreationShaderInstrumentationGPL(nullptr, *pipeline_state, new_pipeline_ci, record_obj.location);
+        if (!success) {
+            InternalError(device, record_obj.location,
+                          "Failed to instrument graphics pipeline library in SetDebugUtilsObjectNameEXT.");
+            return;
+        }
+
+        layer_data->UnwrapGraphicsPipelineCreateInfoHandles(new_pipeline_ci);
+        const VkResult result = layer_data->device_dispatch_table.CreateGraphicsPipelines(
+            device, VK_NULL_HANDLE, 1, new_pipeline_ci.ptr(), nullptr, &instrumented_pipeline);
+        if (result != VK_SUCCESS || instrumented_pipeline == VK_NULL_HANDLE) {
+            InternalError(device, record_obj.location,
+                          "Failed to create instrumented graphics pipeline in SetDebugUtilsObjectNameEXT.");
+            return;
+        }
+    }
+
+    const VkPipeline old_pipeline = layer_data->Replace(pipeline_state->VkHandle(), instrumented_pipeline);
+    gpuav::PipelineSubState& pipeline_sub_state = SubState(*pipeline_state);
+    pipeline_sub_state.AddHandleToDestroy(old_pipeline);
 }
 
 void GpuShaderInstrumentor::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
@@ -1117,7 +1240,8 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::DescriptorSe
     }
 }
 
-bool GpuShaderInstrumentor::IsPipelineSelectedForInstrumentation(VkPipeline pipeline, const Location& loc) {
+bool GpuShaderInstrumentor::IsPipelineSelectedForInstrumentation(const void* pipeline_ci_pnext, VkPipeline pipeline,
+                                                                 const Location& loc) {
     if (!gpuav_settings.select_instrumented_shaders) {
         return true;
     }
@@ -1125,12 +1249,17 @@ bool GpuShaderInstrumentor::IsPipelineSelectedForInstrumentation(VkPipeline pipe
     bool should_instrument_pipeline = false;
     {
         std::string pipeline_debug_name;
-        {
+        if (auto debug = vku::FindStructInPNextChain<VkDebugUtilsObjectNameInfoEXT>(pipeline_ci_pnext)) {
+            if (debug->pObjectName) {
+                pipeline_debug_name = debug->pObjectName;
+            }
+        } else if (pipeline != VK_NULL_HANDLE) {
             std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
             pipeline_debug_name = debug_report->GetUtilsObjectNameNoLock(HandleToUint64(pipeline));
         }
-
-        should_instrument_pipeline = gpuav_settings.MatchesAnyShaderSelectionRegex(pipeline_debug_name);
+        if (!pipeline_debug_name.empty()) {
+            should_instrument_pipeline = gpuav_settings.MatchesAnyShaderSelectionRegex(pipeline_debug_name);
+        }
     }
     if (should_instrument_pipeline) {
         LogInfo("GPU-AV::Selective shader instrumentation", LogObjectList(), loc, "(%s) will be instrumented for validation.",
@@ -1237,6 +1366,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
     // Can set this once for all shaders in the pipeline
     BuildDescriptorSetLayoutInfo(pipeline_state, interface.instrumentation_dsl);
 
+    bool is_pipeline_selected_for_instrumentation =
+        IsPipelineSelectedForInstrumentation(modified_pipeline_ci.pNext, VK_NULL_HANDLE, loc);
+
     for (uint32_t stage_state_i = 0; stage_state_i < stages_count; ++stage_state_i) {
         const auto& stage_state = pipeline_state.stage_states[stage_state_i];
         auto modified_module_state = std::const_pointer_cast<vvl::ShaderModule>(stage_state.module_state);
@@ -1259,8 +1391,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
                 const_cast<vku::safe_VkShaderModuleCreateInfo*>(reinterpret_cast<const vku::safe_VkShaderModuleCreateInfo*>(
                     vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)));
 
-            if (!IsShaderSelectedForInstrumentation(modified_shader_module_ci, modified_module_state->VkHandle(),
-                                                    loc.dot(vvl::Field::pStages, stage_state_i).dot(vvl::Field::module))) {
+            if (!(is_pipeline_selected_for_instrumentation ||
+                  IsShaderSelectedForInstrumentation(modified_shader_module_ci, modified_module_state->VkHandle(),
+                                                     loc.dot(vvl::Field::pStages, stage_state_i).dot(vvl::Field::module)))) {
                 continue;
             }
         }
@@ -1416,10 +1549,15 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
         // creation process no matter caching state.
         new_lib_ci.flags &= ~VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
         bool is_library_instrumented = false;
-
         // If pipeline library is selected for instrumentation, force instrumentation of all its shaders
-        const bool force_pipeline_instrumentation =
-            IsPipelineSelectedForInstrumentation(modified_lib->VkHandle(), loc.dot(vvl::Field::pLibraries, modified_lib_i));
+        bool is_pipeline_selected_for_instrumentation = IsPipelineSelectedForInstrumentation(
+            modified_pipeline_ci.pNext, modified_lib->VkHandle(), loc.dot(vvl::Field::pLibraries, modified_lib_i));
+        // Case where pipeline is instrumented post creation. Otherwise, pipeline handle has yet to be created!
+        // currently only useful when this function is called in PreCallRecordSetDebugUtilsObjectNameEXT
+        if (linked_pipeline_state.VkHandle() != VK_NULL_HANDLE) {
+            is_pipeline_selected_for_instrumentation |=
+                IsPipelineSelectedForInstrumentation(modified_pipeline_ci.pNext, linked_pipeline_state.VkHandle(), loc);
+        }
 
         for (uint32_t stage_state_i = 0; stage_state_i < static_cast<uint32_t>(modified_lib->stage_states.size());
              ++stage_state_i) {
@@ -1457,9 +1595,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                         vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(modified_stage_ci->pNext)));
 
                 // TODO - this is in need of testing, when only selecting various library as well as selecting everything
-                if (!force_pipeline_instrumentation &&
-                    !IsShaderSelectedForInstrumentation(modified_shader_module_ci, modified_module_state->VkHandle(),
-                                                        loc.dot(vvl::Field::pStages, stage_state_i).dot(vvl::Field::module))) {
+                if (!(is_pipeline_selected_for_instrumentation ||
+                      IsShaderSelectedForInstrumentation(modified_shader_module_ci, modified_module_state->VkHandle(),
+                                                         loc.dot(vvl::Field::pStages, stage_state_i).dot(vvl::Field::module)))) {
                     continue;
                 }
 

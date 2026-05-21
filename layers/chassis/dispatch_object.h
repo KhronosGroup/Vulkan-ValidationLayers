@@ -231,7 +231,20 @@ class HandleWrapper : public Logger {
         }
     }
 
+    // Replaces the "driver handle" in the "wrapped handle" to "driver handle" mapping.
+    // Returns the old "driver handle" if found.
+    template <typename HandleType>
+    HandleType Replace(HandleType wrapped_handle, HandleType new_driver_handle) {
+        const HandleType old_driver_handle = Find(wrapped_handle);
+        const uint64_t wrapped_handle_id = CastToUint64(wrapped_handle);
+        assert(wrapped_handle_id != 0);  // can't be 0, otherwise unwrap will apply special rule for VK_NULL_HANDLE
+        unique_id_mapping.insert_or_assign(wrapped_handle_id, CastToUint64(new_driver_handle));
+        return old_driver_handle;
+    }
+
     void UnwrapPnextChainHandles(const void* pNext);
+    void UnwrapComputePipelineCreateInfoHandles(vku::safe_VkComputePipelineCreateInfo& safe_ci);
+    void UnwrapGraphicsPipelineCreateInfoHandles(vku::safe_VkGraphicsPipelineCreateInfo& safe_ci);
 
     static std::atomic<uint64_t> global_unique_id;
     static vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;

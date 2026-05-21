@@ -817,7 +817,7 @@
                                         {
                                             "key": "gpuav_select_instrumented_shaders",
                                             "label": "Enable instrumenting shaders selectively",
-                                            "description": "Select which shaders to instrument by passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext or using a regex matching a shader/pipeline debug name. Because this only validates the selected shaders, it will allow GPU-AV to run much faster.",
+                                            "description": "Select which shaders to instrument by passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext or using a regex matching a shader/pipeline debug name. Because this only validates the selected shaders/pipelines, it will allow GPU-AV to run much faster.",
                                             "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/gpu_av_selective_shader.md",
                                             "type": "BOOL",
                                             "default": false,

@@ -671,9 +671,9 @@ ShaderObjectSubState::ShaderObjectSubState(vvl::ShaderObject& obj) : vvl::Shader
 PipelineSubState::PipelineSubState(Validator& gpuav, vvl::Pipeline& pipeline) : vvl::PipelineSubState(pipeline), gpuav_(gpuav) {}
 
 VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location& loc, vvl::DescriptorMode mode) const {
-    std::unique_lock<std::mutex> recreated_layout_lock(recreated_layout_mutex);
-    if (recreated_layout != VK_NULL_HANDLE) {
-        return recreated_layout;
+    std::unique_lock<std::mutex> recreated_layout_lock(mutex_);
+    if (recreated_layout_ != VK_NULL_HANDLE) {
+        return recreated_layout_;
     }
 
     const std::shared_ptr<const vvl::PipelineLayout> pipeline_layout_state = base.PipelineLayoutState();
@@ -719,7 +719,7 @@ VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location& loc, v
         pipeline_layout_ci.pPushConstantRanges = pipeline_layout_state->push_constant_ranges_layout->data();
     }
 
-    const VkResult result = DispatchCreatePipelineLayout(gpuav_.device, &pipeline_layout_ci, nullptr, &recreated_layout);
+    const VkResult result = DispatchCreatePipelineLayout(gpuav_.device, &pipeline_layout_ci, nullptr, &recreated_layout_);
     (void)result;
     assert(result == VK_SUCCESS);
 
@@ -727,15 +727,27 @@ VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location& loc, v
         DispatchDestroyDescriptorSetLayout(gpuav_.device, set_layout_handles[i], nullptr);
     }
 
-    return recreated_layout;
+    return recreated_layout_;
 }
 
 void PipelineSubState::Destroy() {
-    std::unique_lock<std::mutex> recreated_layout_lock(recreated_layout_mutex);
-    if (recreated_layout != VK_NULL_HANDLE) {
-        DispatchDestroyPipelineLayout(gpuav_.device, recreated_layout, nullptr);
-        recreated_layout = VK_NULL_HANDLE;
+    std::unique_lock<std::mutex> recreated_layout_lock(mutex_);
+    if (recreated_layout_ != VK_NULL_HANDLE) {
+        DispatchDestroyPipelineLayout(gpuav_.device, recreated_layout_, nullptr);
+        recreated_layout_ = VK_NULL_HANDLE;
     }
+    if (uninstrumented_pipeline != VK_NULL_HANDLE) {
+        // vkDestroyPipeline expects an unwrapped handle,
+        // so cannot use DispatchDestroyPipeline as it will try to unwrap supplied pipeline handle
+        auto layer_data = vvl::GetDispatchDevice(gpuav_.device);
+        layer_data->device_dispatch_table.DestroyPipeline(gpuav_.device, uninstrumented_pipeline, nullptr);
+    }
+}
+
+void PipelineSubState::AddHandleToDestroy(VkPipeline pipeline) {
+    std::unique_lock<std::mutex> lock(mutex_);
+    assert(uninstrumented_pipeline == VK_NULL_HANDLE);
+    uninstrumented_pipeline = pipeline;
 }
 
 }  // namespace gpuav

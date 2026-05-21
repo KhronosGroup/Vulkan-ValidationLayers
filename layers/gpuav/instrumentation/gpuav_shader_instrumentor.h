@@ -103,6 +103,9 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
                                            const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                            const RecordObject &record_obj, chassis::CreatePipelineLayout &chassis_state) override;
 
+    void PreCallRecordSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo,
+                                                 const RecordObject& record_obj) override;
+
     void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                           const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                           const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) override;
@@ -246,7 +249,7 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     bool set_null_descriptors_ = false;
 
   private:
-    bool IsPipelineSelectedForInstrumentation(VkPipeline pipeline, const Location &loc);
+    bool IsPipelineSelectedForInstrumentation(const void* pipeline_ci_pnext, VkPipeline pipeline, const Location& loc);
     bool IsShaderSelectedForInstrumentation(vku::safe_VkShaderModuleCreateInfo *modified_shader_module_ci,
                                             VkShaderModule modified_shader, const Location &loc);
     void AddDescriptorHeapMappings(VkBaseOutStructure *create_info);

@@ -167,7 +167,7 @@ khronos_validation.gpuav_safe_mode = false
 
 # Enable instrumenting shaders selectively
 # =====================
-# Select which shaders to instrument by passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext or using a regex matching a shader/pipeline debug name. Because this only validates the selected shaders, it will allow GPU-AV to run much faster.
+# Select which shaders to instrument by passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext or using a regex matching a shader/pipeline debug name. Because this only validates the selected shaders/pipelines, it will allow GPU-AV to run much faster.
 khronos_validation.gpuav_select_instrumented_shaders = false
 
 # Shader instrumentation
