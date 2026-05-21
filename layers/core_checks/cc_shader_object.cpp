@@ -1029,9 +1029,9 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
     const bool has_task_shader = task_shader_handle != VK_NULL_HANDLE;
     const bool has_mesh_shader = mesh_shader_handle != VK_NULL_HANDLE;
 
-    // TODO - We could check (and report) if vkCmdExecuteGeneratedCommandsEXT has a mesh token actually
+    // When using vkCmdExecuteGeneratedCommandsEXT, and using a DRAW_MESH token, it must have a mesh shader bound
     const bool is_mesh_command =
-        vvl::IsCommandDrawMesh(loc.function) || loc.function == vvl::Func::vkCmdExecuteGeneratedCommandsEXT;
+        vvl::IsCommandDrawMesh(loc.function) || (loc.function == vvl::Func::vkCmdExecuteGeneratedCommandsEXT && has_mesh_shader);
 
     if (has_task_shader || has_mesh_shader) {
         auto print_mesh_task = [this, has_task_shader, has_mesh_shader, mesh_shader_handle, task_shader_handle]() {
