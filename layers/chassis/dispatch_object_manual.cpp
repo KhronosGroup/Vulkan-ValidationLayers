@@ -1095,6 +1095,61 @@ static void UnwrapMappingInfo(HandleWrapper* handle_wrapper, const void* pNext) 
     }
 }
 
+void HandleWrapper::UnwrapGraphicsPipelineCreateInfoHandles(vku::safe_VkGraphicsPipelineCreateInfo& safe_ci) {
+    if (safe_ci.basePipelineHandle) {
+        safe_ci.basePipelineHandle = Unwrap(safe_ci.basePipelineHandle);
+    }
+    if (safe_ci.layout) {
+        safe_ci.layout = Unwrap(safe_ci.layout);
+    }
+
+    if (safe_ci.pStages) {
+        for (uint32_t idx1 = 0; idx1 < safe_ci.stageCount; ++idx1) {
+            UnwrapMappingInfo(this, safe_ci.pStages[idx1].pNext);
+
+            if (safe_ci.pStages[idx1].module) {
+                safe_ci.pStages[idx1].module = Unwrap(safe_ci.pStages[idx1].module);
+            }
+        }
+    }
+    if (safe_ci.renderPass) {
+        safe_ci.renderPass = Unwrap(safe_ci.renderPass);
+    }
+
+    auto* link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(safe_ci.pNext);
+    if (link_info) {
+        auto* unwrapped_libs = const_cast<VkPipeline*>(link_info->pLibraries);
+        for (uint32_t idx1 = 0; idx1 < link_info->libraryCount; ++idx1) {
+            unwrapped_libs[idx1] = Unwrap(link_info->pLibraries[idx1]);
+        }
+    }
+
+    auto device_generated_commands = vku::FindStructInPNextChain<VkGraphicsPipelineShaderGroupsCreateInfoNV>(safe_ci.pNext);
+    if (device_generated_commands) {
+        for (uint32_t idx1 = 0; idx1 < device_generated_commands->groupCount; ++idx1) {
+            for (uint32_t idx2 = 0; idx2 < device_generated_commands->pGroups[idx1].stageCount; ++idx2) {
+                auto unwrapped_stage =
+                    const_cast<VkPipelineShaderStageCreateInfo*>(&device_generated_commands->pGroups[idx1].pStages[idx2]);
+                if (device_generated_commands->pGroups[idx1].pStages[idx2].module) {
+                    unwrapped_stage->module = Unwrap(device_generated_commands->pGroups[idx1].pStages[idx2].module);
+                }
+            }
+        }
+        auto unwrapped_pipelines = const_cast<VkPipeline*>(device_generated_commands->pPipelines);
+        for (uint32_t idx1 = 0; idx1 < device_generated_commands->pipelineCount; ++idx1) {
+            unwrapped_pipelines[idx1] = Unwrap(device_generated_commands->pPipelines[idx1]);
+        }
+    }
+
+    auto* binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(safe_ci.pNext);
+    if (binary_info) {
+        auto* unwrapped_binaries = const_cast<VkPipelineBinaryKHR*>(binary_info->pPipelineBinaries);
+        for (uint32_t idx1 = 0; idx1 < binary_info->binaryCount; ++idx1) {
+            unwrapped_binaries[idx1] = Unwrap(binary_info->pPipelineBinaries[idx1]);
+        }
+    }
+}
+
 VkResult DispatchDevice::CreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                  const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
@@ -1118,7 +1173,6 @@ VkResult DispatchDevice::CreateGraphicsPipelines(VkDevice device, VkPipelineCach
                         uses_depthstencil_attachment = true;
                 }
             }
-
             // We only want to find the case where the user is possibly building non-fragment output libraries
             bool has_fragment_output_state = true;
             if (auto lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pCreateInfos[idx0].pNext)) {
@@ -1153,59 +1207,7 @@ VkResult DispatchDevice::CreateGraphicsPipelines(VkDevice device, VkPipelineCach
                     original_color_attachment_formats;
             }
 
-            if (pCreateInfos[idx0].basePipelineHandle) {
-                local_pCreateInfos[idx0].basePipelineHandle = Unwrap(pCreateInfos[idx0].basePipelineHandle);
-            }
-            if (pCreateInfos[idx0].layout) {
-                local_pCreateInfos[idx0].layout = Unwrap(pCreateInfos[idx0].layout);
-            }
-
-            if (pCreateInfos[idx0].pStages) {
-                for (uint32_t idx1 = 0; idx1 < pCreateInfos[idx0].stageCount; ++idx1) {
-                    UnwrapMappingInfo(this, local_pCreateInfos[idx0].pStages[idx1].pNext);
-
-                    if (pCreateInfos[idx0].pStages[idx1].module) {
-                        local_pCreateInfos[idx0].pStages[idx1].module = Unwrap(pCreateInfos[idx0].pStages[idx1].module);
-                    }
-                }
-            }
-            if (pCreateInfos[idx0].renderPass) {
-                local_pCreateInfos[idx0].renderPass = Unwrap(pCreateInfos[idx0].renderPass);
-            }
-
-            auto* link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(local_pCreateInfos[idx0].pNext);
-            if (link_info) {
-                auto* unwrapped_libs = const_cast<VkPipeline*>(link_info->pLibraries);
-                for (uint32_t idx1 = 0; idx1 < link_info->libraryCount; ++idx1) {
-                    unwrapped_libs[idx1] = Unwrap(link_info->pLibraries[idx1]);
-                }
-            }
-
-            auto device_generated_commands =
-                vku::FindStructInPNextChain<VkGraphicsPipelineShaderGroupsCreateInfoNV>(local_pCreateInfos[idx0].pNext);
-            if (device_generated_commands) {
-                for (uint32_t idx1 = 0; idx1 < device_generated_commands->groupCount; ++idx1) {
-                    for (uint32_t idx2 = 0; idx2 < device_generated_commands->pGroups[idx1].stageCount; ++idx2) {
-                        auto unwrapped_stage =
-                            const_cast<VkPipelineShaderStageCreateInfo*>(&device_generated_commands->pGroups[idx1].pStages[idx2]);
-                        if (device_generated_commands->pGroups[idx1].pStages[idx2].module) {
-                            unwrapped_stage->module = Unwrap(device_generated_commands->pGroups[idx1].pStages[idx2].module);
-                        }
-                    }
-                }
-                auto unwrapped_pipelines = const_cast<VkPipeline*>(device_generated_commands->pPipelines);
-                for (uint32_t idx1 = 0; idx1 < device_generated_commands->pipelineCount; ++idx1) {
-                    unwrapped_pipelines[idx1] = Unwrap(device_generated_commands->pPipelines[idx1]);
-                }
-            }
-
-            auto* binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(local_pCreateInfos[idx0].pNext);
-            if (binary_info) {
-                auto* unwrapped_binaries = const_cast<VkPipelineBinaryKHR*>(binary_info->pPipelineBinaries);
-                for (uint32_t idx1 = 0; idx1 < binary_info->binaryCount; ++idx1) {
-                    unwrapped_binaries[idx1] = Unwrap(binary_info->pPipelineBinaries[idx1]);
-                }
-            }
+            UnwrapGraphicsPipelineCreateInfoHandles(local_pCreateInfos[idx0]);
         }
     }
     if (pipelineCache) {
@@ -2411,6 +2413,20 @@ VkResult DispatchDevice::WriteResourceDescriptorsEXT(VkDevice device, uint32_t r
     return device_dispatch_table.WriteResourceDescriptorsEXT(device, resourceCount, local_pResources[0].ptr(), pDescriptors);
 }
 
+void HandleWrapper::UnwrapComputePipelineCreateInfoHandles(vku::safe_VkComputePipelineCreateInfo& safe_ci) {
+    UnwrapPnextChainHandles(safe_ci.pNext);
+    if (safe_ci.stage.module) {
+        safe_ci.stage.module = Unwrap(safe_ci.stage.module);
+    }
+    UnwrapPnextChainHandles(safe_ci.stage.pNext);
+    if (safe_ci.layout) {
+        safe_ci.layout = Unwrap(safe_ci.layout);
+    }
+    if (safe_ci.basePipelineHandle) {
+        safe_ci.basePipelineHandle = Unwrap(safe_ci.basePipelineHandle);
+    }
+}
+
 VkResult DispatchDevice::CreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                         const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
                                         VkPipeline* pPipelines) {
@@ -2424,17 +2440,7 @@ VkResult DispatchDevice::CreateComputePipelines(VkDevice device, VkPipelineCache
             local_pCreateInfos = new vku::safe_VkComputePipelineCreateInfo[createInfoCount];
             for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
                 local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
-                UnwrapPnextChainHandles(local_pCreateInfos[index0].pNext);
-                if (pCreateInfos[index0].stage.module) {
-                    local_pCreateInfos[index0].stage.module = Unwrap(pCreateInfos[index0].stage.module);
-                }
-                UnwrapPnextChainHandles(local_pCreateInfos[index0].stage.pNext);
-                if (pCreateInfos[index0].layout) {
-                    local_pCreateInfos[index0].layout = Unwrap(pCreateInfos[index0].layout);
-                }
-                if (pCreateInfos[index0].basePipelineHandle) {
-                    local_pCreateInfos[index0].basePipelineHandle = Unwrap(pCreateInfos[index0].basePipelineHandle);
-                }
+                UnwrapComputePipelineCreateInfoHandles(local_pCreateInfos[index0]);
             }
         }
     }

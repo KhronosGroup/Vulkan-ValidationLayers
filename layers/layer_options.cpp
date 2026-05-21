@@ -1360,6 +1360,17 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
         }
     }
 
+    // Only truly needed for pipelines (see GpuShaderInstrumentor::PreCallRecordSetDebugUtilsObjectNameEXT)
+    // In the future, could be removed in favor of debug names supplied at pipeline creation time.
+    if (gpuav_settings.select_instrumented_shaders) {
+        if (settings_data->disabled[handle_wrapping]) {
+            setting_warnings.emplace_back(
+                "Handle wrapping has been disabled, but GPU-AV selective shader instrumentation is enabled. Forcing activation of "
+                "handle wrapping.");
+            settings_data->disabled[handle_wrapping] = false;
+        }
+    }
+
     // After checking the various ways to enable both DebugPrintf and GPU-AV, disable non-DebugPrintf portion if not used
     if (settings_data->enabled[debug_printf_validation] && !settings_data->enabled[gpu_validation]) {
         gpuav_settings.SetOnlyDebugPrintf();
