@@ -61,6 +61,18 @@ static void GetVariableInfo(const spirv::Module& module_state, const spirv::Inst
     }
 }
 
+static bool IsTileAttachmentImagePointer(const spirv::Module& module_state, uint32_t image_id) {
+    const auto* insn = module_state.FindDef(image_id);
+    if (!insn) {
+        return false;
+    }
+
+    // Note: Every pointer-producing instruction carries a result type of OpTypePointer
+    //       or OpTypeUntypedPointerKHR, both of which encode the storage class.
+    const auto* type_insn = module_state.FindDef(insn->TypeId());
+    return type_insn && type_insn->StorageClass() == spv::StorageClassTileAttachmentQCOM;
+}
+
 SpirvValidator::SpirvValidator(DebugReport* debug_report, const vvl::StatelessDeviceData& stateless_device_data, bool disabled)
     : Logger(debug_report),
       disabled(disabled),
@@ -120,6 +132,10 @@ bool SpirvValidator::Validate(const spirv::Module& module_state, const spirv::St
         skip |= ValidateTransformFeedbackEmitStreams(module_state, entry_point, stateless_data, loc);
         skip |= ValidateShaderTensor(module_state, entry_point, stateless_data, loc);
         skip |= ValidateTileShadingCapability(module_state, entry_point, stateless_data, loc);
+    }
+
+    if (enabled_features.tileShading) {
+        skip |= ValidateTileShadingAtomicAccess(module_state, stateless_data, loc);
     }
 
     return skip;
@@ -1669,6 +1685,29 @@ bool SpirvValidator::ValidateTileShadingCapability(const spirv::Module& module_s
                              entrypoint.Describe().c_str(),
                              entrypoint.execution_mode.local_size.y,
                              phys_dev_ext_props.tile_shading_props.maxTileShadingRate.height);
+        }
+    }
+
+    return skip;
+}
+
+
+bool SpirvValidator::ValidateTileShadingAtomicAccess(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
+                                                     const Location &loc) const {
+    bool skip = false;
+    const bool has_tile_shading_capability = module_state.HasCapability(spv::CapabilityTileShadingQCOM);
+
+    if (has_tile_shading_capability && !enabled_features.tileShadingAtomicOps) {
+        for (auto &instruction : stateless_data.image_texel_pointer_inst) {
+            const uint32_t opcode = instruction->Opcode();
+            const uint32_t image_id = (opcode == spv::OpImageTexelPointer) ? instruction->Word(3) : instruction->Word(4);
+            if (IsTileAttachmentImagePointer(module_state, image_id)) {
+                skip |= LogError("VUID-RuntimeSpirv-OpImage-10706", module_state.handle(), loc,
+                                 "SPIR-V is using an image pointer with TileAttachmentQCOM storage class consumed by %s, "
+                                 "but tileShadingAtomicOps was not enabled.\n%s\n",
+                                 opcode == spv::OpImageTexelPointer ? "OpImageTexelPointer" : "OpUntypedImageTexelPointerEXT",
+                                 module_state.DescribeInstruction(*instruction).c_str());
+            }
         }
     }
 

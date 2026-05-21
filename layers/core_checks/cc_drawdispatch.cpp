@@ -34,6 +34,7 @@
 #include "generated/error_location_helper.h"
 #include "generated/spirv_grammar_helper.h"
 #include "generated/vk_extension_helper.h"
+#include "generated/dispatch_functions.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/descriptor_mode.h"
 #include "state_tracker/image_state.h"
@@ -1687,6 +1688,26 @@ bool CoreChecks::ValidateActionStateTileShading(const LastBound& last_bound_stat
     const VkPipelineBindPoint bind_point = last_bound_state.bind_point;
     const LogObjectList objlist = cb_state.GetObjectList(bind_point);
     const bool in_tile_shading_rp = cb_state.active_render_pass && cb_state.active_render_pass->has_tile_shading_enabled;
+    std::vector<uint32_t> tile_size_depths{};
+
+    // Note: Only query VkTilePropertiesQCOM when enabled tileProperties feature
+    if (enabled_features.tileProperties && cb_state.active_render_pass && cb_state.active_render_pass->has_tile_shading_enabled) {
+        if (cb_state.active_render_pass->use_dynamic_rendering) {
+            VkTilePropertiesQCOM queried_tile_props = vku::InitStructHelper();
+            DispatchGetDynamicRenderingTilePropertiesQCOM(device, cb_state.active_render_pass->dynamic_rendering_begin_rendering_info.ptr(),
+                                                          &queried_tile_props);
+            tile_size_depths.emplace_back(queried_tile_props.tileSize.depth);
+        } else {
+            std::vector<VkTilePropertiesQCOM> queried_tile_props{};
+            uint32_t tile_props_size = 0;
+            DispatchGetFramebufferTilePropertiesQCOM(device, cb_state.active_framebuffer->VkHandle(), &tile_props_size, nullptr);
+            queried_tile_props.resize(tile_props_size, vku::InitStructHelper());
+            DispatchGetFramebufferTilePropertiesQCOM(device, cb_state.active_framebuffer->VkHandle(), &tile_props_size, queried_tile_props.data());
+            for (uint32_t index = 0; index < tile_props_size; ++index) {
+                tile_size_depths.emplace_back(queried_tile_props[index].tileSize.depth);
+            }
+        }
+    }
 
     if (cb_state.per_tile_execution_model_enabled) {
         if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && !enabled_features.tileShadingPerTileDraw) {
@@ -1735,6 +1756,33 @@ bool CoreChecks::ValidateActionStateTileShading(const LastBound& last_bound_stat
                              "model is not enabled in the current render pass. "
                              "(Did you forget to call vkCmdBeginPerTileExecutionQCOM)",
                              shader_stage->entrypoint->Describe().c_str());
+        }
+
+        if (shader_stage->entrypoint->stage != VK_SHADER_STAGE_COMPUTE_BIT ||
+            !shader_stage->entrypoint->execution_mode.Has(spirv::ExecutionModeSet::tile_shading_rate_bit)) {
+            continue;
+        }
+
+        const uint32_t tile_shading_rate_z = shader_stage->entrypoint->execution_mode.local_size.z;
+        for (uint32_t index = 0; index < tile_size_depths.size(); ++index) {
+            if (tile_shading_rate_z > tile_size_depths[index]) {
+                skip |= LogError("VUID-RuntimeSpirv-z-10704", objlist, loc,
+                                 "shader %s has OpExecutionMode TileShadingRateQCOM with z = %" PRIu32
+                                 ", which exceeds VkTilePropertiesQCOM::tileSize.depth (%" PRIu32 ").",
+                                 shader_stage->entrypoint->Describe().c_str(),
+                                 tile_shading_rate_z, tile_size_depths[index]);
+
+            }
+            if (tile_shading_rate_z != 0 &&
+                (tile_size_depths[index] % tile_shading_rate_z) != 0) {
+                skip |= LogError("VUID-RuntimeSpirv-tileSize-10705", objlist, loc,
+                                 "shader %s has OpExecutionMode TileShadingRateQCOM, but "
+                                 "VkTilePropertiesQCOM::tileSize.depth (%" PRIu32 ") is not divisible by "
+                                 "TileShadingRateQCOM::z (%" PRIu32 ").",
+                                 shader_stage->entrypoint->Describe().c_str(),
+                                 tile_size_depths[index], tile_shading_rate_z);
+
+            }
         }
     }
 

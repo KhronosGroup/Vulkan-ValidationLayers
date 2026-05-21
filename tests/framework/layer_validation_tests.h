@@ -544,6 +544,7 @@ class TileShadingTest : public VkLayerTest {
         VkExtent2D rt_size = {64, 64};
         VkExtent2D tile_apron_size = {0, 0};
         bool use_render_pass2 = false;
+        bool block_match_usage = false;
     } tile_shading_rp_config;
 
     void InitBasicTileShading();

@@ -31,10 +31,13 @@ void TileShadingTest::InitBasicTileShading() {
 }
 
 void TileShadingTest::InitTileShadingRenderTarget() {
+    VkImageUsageFlags image_usages = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                                     VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+    if (tile_shading_rp_config.block_match_usage) {
+        image_usages |= VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM;
+    }
     m_color_image.Init(*m_device, tile_shading_rp_config.rt_size.width, tile_shading_rp_config.rt_size.height, 1,
-                       tile_shading_rp_config.format,
-                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                       VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+                       tile_shading_rp_config.format, image_usages);
     m_color_view = m_color_image.CreateView();
 
     if (tile_shading_rp_config.use_render_pass2) {
