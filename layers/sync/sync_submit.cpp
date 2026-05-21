@@ -917,7 +917,9 @@ bool PresentedImage::Invalid() const { return vvl::StateObject::Invalid(image); 
 void PresentedImage::ExportToSwapchain() {
     // If the swapchain is dead just ignore the present
     auto swap_lock = swapchain_state.lock();
-    if (vvl::StateObject::Invalid(swap_lock)) return;
+    if (vvl::StateObject::Invalid(swap_lock)) {
+        return;
+    }
     auto& sub_state = SubState(*swap_lock);
     sub_state.RecordPresentedImage(std::move(*this));
 }
@@ -926,7 +928,9 @@ void PresentedImage::SetImage(uint32_t at_index) {
     image_index = at_index;
 
     auto swap_lock = swapchain_state.lock();
-    if (vvl::StateObject::Invalid(swap_lock)) return;
+    if (vvl::StateObject::Invalid(swap_lock)) {
+        return;
+    }
 
     image = std::static_pointer_cast<const vvl::Image>(swap_lock->GetSwapChainImageShared(image_index));
     if (Invalid()) {

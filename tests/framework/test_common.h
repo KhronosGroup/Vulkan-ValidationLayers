@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,11 @@
 
 // GTest has a GTEST_SKIP macro, but the test can't be actually "skipped" unless you are at the top function in the test.
 // The macro will call the function and then call 'return' if a skip has been called inside
-#define RETURN_IF_SKIP(function) \
-    function;                    \
-    if (::testing::Test::IsSkipped()) return;
+#define RETURN_IF_SKIP(function)        \
+    function;                           \
+    if (::testing::Test::IsSkipped()) { \
+        return;                         \
+    }
 
 // Stream operator for VkResult so GTEST will print out error codes as strings (automatically)
 inline std::ostream& operator<<(std::ostream& os, const VkResult& result) { return os << string_VkResult(result); }

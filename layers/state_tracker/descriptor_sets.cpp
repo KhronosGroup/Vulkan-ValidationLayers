@@ -883,7 +883,9 @@ void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet& update, co
 void vvl::DescriptorSet::UpdateImageLayoutDrawStates(vvl::DeviceState* device_data, vvl::CommandBuffer& cb_state,
                                                      const BindingVariableMap& binding_req_map) {
     // Descriptor UpdateImageLayoutDrawState only call image layout validation callbacks. If it is disabled, skip the entire loop.
-    if (device_data->disabled[image_layout_validation]) return;
+    if (device_data->disabled[image_layout_validation]) {
+        return;
+    }
 
     // For the active slots, use set# to look up descriptorSet from boundDescriptorSets, and bind all of that descriptor set's
     // resources
@@ -1013,7 +1015,9 @@ bool vvl::SamplerDescriptor::Invalid() const { return !sampler_state_ || sampler
 
 void vvl::ImageSamplerDescriptor::WriteUpdate(DescriptorSet& set_state, const vvl::DeviceState& dev_data,
                                               const VkWriteDescriptorSet& update, const uint32_t index, bool is_bindless) {
-    if (!update.pImageInfo) return;
+    if (!update.pImageInfo) {
+        return;
+    }
     const auto& image_info = update.pImageInfo[index];
     if (!immutable_) {
         ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(image_info.sampler), is_bindless);
@@ -1067,7 +1071,9 @@ bool vvl::ImageSamplerDescriptor::Invalid() const {
 
 void vvl::ImageDescriptor::WriteUpdate(DescriptorSet& set_state, const vvl::DeviceState& dev_data,
                                        const VkWriteDescriptorSet& update, const uint32_t index, bool is_bindless) {
-    if (!update.pImageInfo) return;
+    if (!update.pImageInfo) {
+        return;
+    }
     const auto& image_info = update.pImageInfo[index];
     image_layout_ = image_info.imageLayout;
     ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView), is_bindless);

@@ -82,7 +82,9 @@ OneOffDescriptorIndexingSet::OneOffDescriptorIndexingSet(vkt::Device* device, co
     pool_ci.poolSizeCount = pool_sizes.size();
     pool_ci.pPoolSizes = pool_sizes.data();
     VkResult err = vk::CreateDescriptorPool(device_->handle(), &pool_ci, nullptr, &pool_);
-    if (err != VK_SUCCESS) return;
+    if (err != VK_SUCCESS) {
+        return;
+    }
 
     if ((layout_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) == 0) {
         VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper(allocate_pnext);

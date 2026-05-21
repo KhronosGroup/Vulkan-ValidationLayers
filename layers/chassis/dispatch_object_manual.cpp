@@ -1046,7 +1046,9 @@ void CopyCreatePipelineFeedbackData(const void* src_chain, const void* dst_chain
     auto src_feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(src_chain);
     auto dst_feedback_struct = const_cast<VkPipelineCreationFeedbackCreateInfo*>(
         vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(dst_chain));
-    if (!src_feedback_struct || !dst_feedback_struct) return;
+    if (!src_feedback_struct || !dst_feedback_struct) {
+        return;
+    }
     ASSERT_AND_RETURN(dst_feedback_struct->pPipelineCreationFeedback && src_feedback_struct->pPipelineCreationFeedback);
 
     *dst_feedback_struct->pPipelineCreationFeedback = *src_feedback_struct->pPipelineCreationFeedback;

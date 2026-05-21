@@ -249,19 +249,33 @@ class ViewportInheritanceTestData {
         m_device = p_device_obj->handle();
 
         PickColorFormat(physical_device);
-        if (m_failureReason) return;
+        if (m_failureReason) {
+            return;
+        }
         CreateRenderPass();
-        if (m_failureReason) return;
+        if (m_failureReason) {
+            return;
+        }
         CreateColorImageObj(*p_device_obj);
-        if (m_failureReason) return;
+        if (m_failureReason) {
+            return;
+        }
         CreateColorView();
-        if (m_failureReason) return;
+        if (m_failureReason) {
+            return;
+        }
         CreateFramebuffer();
-        if (m_failureReason) return;
+        if (m_failureReason) {
+            return;
+        }
         CreatePipelineLayout();
-        if (m_failureReason) return;
+        if (m_failureReason) {
+            return;
+        }
         CreateShaderStages();
-        if (m_failureReason) return;
+        if (m_failureReason) {
+            return;
+        }
     }
 
     ~ViewportInheritanceTestData() { Cleanup(); }

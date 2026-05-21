@@ -171,7 +171,9 @@ void Device::DestroyLeakedObjects() {
 
 void Instance::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                                       VkPhysicalDevice* pPhysicalDevices, const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     if (pPhysicalDevices) {
         for (uint32_t index = 0; index < *pPhysicalDeviceCount; index++) {
             tracker.CreateObject(pPhysicalDevices[index], kVulkanObjectTypePhysicalDevice, nullptr,
@@ -383,7 +385,9 @@ bool Device::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAlloca
 void Device::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
                                           const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pMemory, kVulkanObjectTypeDeviceMemory, pAllocator, record_obj.location, device);
 }
 
@@ -643,7 +647,9 @@ bool Device::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCoun
 
 void Device::PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkFence* pFence, const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pFence, kVulkanObjectTypeFence, pAllocator, record_obj.location, device);
 }
 
@@ -709,7 +715,9 @@ bool Device::PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCount, 
 void Device::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore,
                                            const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSemaphore, kVulkanObjectTypeSemaphore, pAllocator, record_obj.location, device);
 }
 
@@ -736,7 +744,9 @@ void Device::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphor
 void Device::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool,
                                            const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pQueryPool, kVulkanObjectTypeQueryPool, pAllocator, record_obj.location, device);
 }
 
@@ -793,7 +803,9 @@ bool Device::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateIn
 void Device::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
                                         const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pBuffer, kVulkanObjectTypeBuffer, pAllocator, record_obj.location, device);
 }
 
@@ -844,7 +856,9 @@ bool Device::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo
 
 void Device::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkImage* pImage, const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pImage, kVulkanObjectTypeImage, pAllocator, record_obj.location, device);
 }
 
@@ -898,7 +912,9 @@ bool Device::PreCallValidateCreateImageView(VkDevice device, const VkImageViewCr
 void Device::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkImageView* pView,
                                            const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pView, kVulkanObjectTypeImageView, pAllocator, record_obj.location, device);
 }
 
@@ -925,7 +941,9 @@ void Device::PreCallRecordDestroyImageView(VkDevice device, VkImageView imageVie
 void Device::PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
                                              const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pCommandPool, kVulkanObjectTypeCommandPool, pAllocator, record_obj.location, device);
 }
 
@@ -1132,7 +1150,9 @@ bool Device::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, ui
 
 void Device::PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkEvent* pEvent, const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pEvent, kVulkanObjectTypeEvent, pAllocator, record_obj.location, device);
 }
 
@@ -1197,7 +1217,9 @@ bool Device::PreCallValidateCreateBufferView(VkDevice device, const VkBufferView
 void Device::PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
                                             const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pView, kVulkanObjectTypeBufferView, pAllocator, record_obj.location, device);
 }
 
@@ -1241,7 +1263,9 @@ bool Device::PreCallValidateCreateShaderModule(VkDevice device, const VkShaderMo
 void Device::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                               const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pShaderModule, kVulkanObjectTypeShaderModule, pAllocator, record_obj.location, device);
 }
 
@@ -1269,7 +1293,9 @@ void Device::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule sh
 void Device::PostCallRecordCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkPipelineCache* pPipelineCache,
                                                const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pPipelineCache, kVulkanObjectTypePipelineCache, pAllocator, record_obj.location, device);
 }
 
@@ -1451,7 +1477,9 @@ bool Device::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreate
 void Device::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkSampler* pSampler,
                                          const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSampler, kVulkanObjectTypeSampler, pAllocator, record_obj.location, device);
 }
 
@@ -1499,7 +1527,9 @@ void Device::PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescript
 void Device::PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
                                                 const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pDescriptorPool, kVulkanObjectTypeDescriptorPool, pAllocator, record_obj.location, device);
 }
 
@@ -1713,7 +1743,9 @@ bool Device::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineC
 void Device::PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
                                              const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pFramebuffer, kVulkanObjectTypeFramebuffer, pAllocator, record_obj.location, device);
 }
 
@@ -1741,7 +1773,9 @@ void Device::PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer fram
 void Device::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                             const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pRenderPass, kVulkanObjectTypeRenderPass, pAllocator, record_obj.location, device);
 }
 
@@ -1989,7 +2023,9 @@ bool Device::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoC
 void Instance::PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                            VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
                                                            const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
 
     if (pPhysicalDeviceGroupProperties) {
         const RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
@@ -2133,7 +2169,9 @@ void Device::PostCallRecordCreateSamplerYcbcrConversion(VkDevice device, const V
                                                         const VkAllocationCallbacks* pAllocator,
                                                         VkSamplerYcbcrConversion* pYcbcrConversion,
                                                         const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pYcbcrConversion, kVulkanObjectTypeSamplerYcbcrConversion, pAllocator, record_obj.location, device);
 }
 
@@ -2286,7 +2324,9 @@ bool Device::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandB
 void Device::PostCallRecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                              const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pRenderPass, kVulkanObjectTypeRenderPass, pAllocator, record_obj.location, device);
 }
 
@@ -2334,7 +2374,9 @@ bool Device::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, c
 void Device::PostCallRecordCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot,
                                                  const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pPrivateDataSlot, kVulkanObjectTypePrivateDataSlot, pAllocator, record_obj.location, device);
 }
 
@@ -3177,7 +3219,9 @@ bool Device::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchai
 void Device::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
                                               const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSwapchain, kVulkanObjectTypeSwapchainKHR, pAllocator, record_obj.location, device);
 }
 
@@ -3349,7 +3393,9 @@ bool Device::PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquir
 void Instance::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                  uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
                                                                  const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     if (pDisplays) {
         for (uint32_t index = 0; index < *pDisplayCount; index++) {
             tracker.CreateObject(pDisplays[index], kVulkanObjectTypeDisplayKHR, nullptr,
@@ -3385,7 +3431,9 @@ void Instance::PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice physicalDevic
                                                   const VkDisplayModeCreateInfoKHR* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkDisplayModeKHR* pMode,
                                                   const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pMode, kVulkanObjectTypeDisplayModeKHR, pAllocator, record_obj.location, physicalDevice);
 }
 
@@ -3419,7 +3467,9 @@ bool Instance::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance instance, 
 void Instance::PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                           const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 
@@ -3449,7 +3499,9 @@ void Device::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t s
                                                      const VkSwapchainCreateInfoKHR* pCreateInfos,
                                                      const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains,
                                                      const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     if (pSwapchains) {
         for (uint32_t index = 0; index < swapchainCount; index++) {
             tracker.CreateObject(pSwapchains[index], kVulkanObjectTypeSwapchainKHR, pAllocator,
@@ -3465,7 +3517,9 @@ void Device::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t s
 void Instance::PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                   const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 
@@ -3481,7 +3535,9 @@ void Instance::PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkX
 void Instance::PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                  const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 
@@ -3497,7 +3553,9 @@ void Instance::PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXc
 void Instance::PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                      const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 
@@ -3513,7 +3571,9 @@ void Instance::PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, const 
 void Instance::PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                      const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
@@ -3525,7 +3585,9 @@ void Instance::PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const 
 void Instance::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                    const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 
@@ -3546,7 +3608,9 @@ void Instance::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const Vk
 void Device::PostCallRecordCreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkVideoSessionKHR* pVideoSession,
                                                  const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pVideoSession, kVulkanObjectTypeVideoSessionKHR, pAllocator, record_obj.location, device);
 }
 
@@ -3629,7 +3693,9 @@ void Device::PostCallRecordCreateVideoSessionParametersKHR(VkDevice device,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkVideoSessionParametersKHR* pVideoSessionParameters,
                                                            const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pVideoSessionParameters, kVulkanObjectTypeVideoSessionParametersKHR, pAllocator, record_obj.location,
                          device);
 }
@@ -3800,7 +3866,9 @@ bool Device::PreCallValidateTrimCommandPoolKHR(VkDevice device, VkCommandPool co
 void Instance::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                               VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
                                                               const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
 
     if (pPhysicalDeviceGroupProperties) {
         const RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
@@ -3952,7 +4020,9 @@ bool Device::PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDevice device, 
 void Device::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                                 const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pRenderPass, kVulkanObjectTypeRenderPass, pAllocator, record_obj.location, device);
 }
 
@@ -4151,7 +4221,9 @@ void Device::PostCallRecordCreateSamplerYcbcrConversionKHR(VkDevice device, cons
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkSamplerYcbcrConversion* pYcbcrConversion,
                                                            const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pYcbcrConversion, kVulkanObjectTypeSamplerYcbcrConversion, pAllocator, record_obj.location, device);
 }
 
@@ -4256,7 +4328,9 @@ bool Device::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice devi
 
 void Device::PostCallRecordCreateDeferredOperationKHR(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                                       VkDeferredOperationKHR* pDeferredOperation, const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pDeferredOperation, kVulkanObjectTypeDeferredOperationKHR, pAllocator, record_obj.location, device);
 }
 
@@ -4585,7 +4659,9 @@ void Device::PostCallRecordCreateAccelerationStructure2KHR(VkDevice device,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkAccelerationStructureKHR* pAccelerationStructure,
                                                            const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pAccelerationStructure, kVulkanObjectTypeAccelerationStructureKHR, pAllocator, record_obj.location,
                          device);
 }
@@ -4875,7 +4951,9 @@ void Instance::PostCallRecordCreateDebugReportCallbackEXT(VkInstance instance,
                                                           const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator,
                                                           VkDebugReportCallbackEXT* pCallback, const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pCallback, kVulkanObjectTypeDebugReportCallbackEXT, pAllocator, record_obj.location, instance);
 }
 
@@ -5012,7 +5090,9 @@ bool Device::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandB
 void Device::PostCallRecordCreateCuModuleNVX(VkDevice device, const VkCuModuleCreateInfoNVX* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkCuModuleNVX* pModule,
                                              const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pModule, kVulkanObjectTypeCuModuleNVX, pAllocator, record_obj.location, device);
 }
 
@@ -5034,7 +5114,9 @@ bool Device::PreCallValidateCreateCuFunctionNVX(VkDevice device, const VkCuFunct
 void Device::PostCallRecordCreateCuFunctionNVX(VkDevice device, const VkCuFunctionCreateInfoNVX* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkCuFunctionNVX* pFunction,
                                                const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pFunction, kVulkanObjectTypeCuFunctionNVX, pAllocator, record_obj.location, device);
 }
 
@@ -5166,7 +5248,9 @@ void Instance::PostCallRecordCreateStreamDescriptorSurfaceGGP(VkInstance instanc
                                                               const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                               const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 #endif  // VK_USE_PLATFORM_GGP
@@ -5195,7 +5279,9 @@ bool Device::PreCallValidateGetMemoryWin32HandleNV(VkDevice device, VkDeviceMemo
 void Instance::PostCallRecordCreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 #endif  // VK_USE_PLATFORM_VI_NN
@@ -5248,7 +5334,9 @@ bool Instance::PreCallValidateAcquireXlibDisplayEXT(VkPhysicalDevice physicalDev
 
 void Instance::PostCallRecordGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
                                                       VkDisplayKHR* pDisplay, const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pDisplay, kVulkanObjectTypeDisplayKHR, nullptr, record_obj.location, physicalDevice);
 }
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
@@ -5286,7 +5374,9 @@ bool Device::PreCallValidateDisplayPowerControlEXT(VkDevice device, VkDisplayKHR
 void Device::PostCallRecordRegisterDeviceEventEXT(VkDevice device, const VkDeviceEventInfoEXT* pDeviceEventInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkFence* pFence,
                                                   const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pFence, kVulkanObjectTypeFence, pAllocator, record_obj.location, device);
 }
 
@@ -5309,7 +5399,9 @@ void Device::PostCallRecordRegisterDisplayEventEXT(VkDevice device, VkDisplayKHR
                                                    const VkDisplayEventInfoEXT* pDisplayEventInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkFence* pFence,
                                                    const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pFence, kVulkanObjectTypeFence, pAllocator, record_obj.location, device);
 }
 
@@ -5380,7 +5472,9 @@ bool Device::PreCallValidateSetHdrMetadataEXT(VkDevice device, uint32_t swapchai
 void Instance::PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                  const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 #endif  // VK_USE_PLATFORM_IOS_MVK
@@ -5392,7 +5486,9 @@ void Instance::PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const VkIO
 void Instance::PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                    const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
@@ -5422,7 +5518,9 @@ void Instance::PostCallRecordCreateDebugUtilsMessengerEXT(VkInstance instance,
                                                           const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator,
                                                           VkDebugUtilsMessengerEXT* pMessenger, const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pMessenger, kVulkanObjectTypeDebugUtilsMessengerEXT, pAllocator, record_obj.location, instance);
 }
 
@@ -5491,7 +5589,9 @@ bool Device::PreCallValidateCreateGpaSessionAMD(VkDevice device, const VkGpaSess
 void Device::PostCallRecordCreateGpaSessionAMD(VkDevice device, const VkGpaSessionCreateInfoAMD* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkGpaSessionAMD* pGpaSession,
                                                const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pGpaSession, kVulkanObjectTypeGpaSessionAMD, pAllocator, record_obj.location, device);
 }
 
@@ -5665,7 +5765,9 @@ void Device::PostCallRecordCreateExecutionGraphPipelinesAMDX(VkDevice device, Vk
                                                              const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
                                                              const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                              const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     if (pPipelines) {
         for (uint32_t index = 0; index < createInfoCount; index++) {
             tracker.CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
@@ -5817,7 +5919,9 @@ bool Device::PreCallValidateGetImageDrmFormatModifierPropertiesEXT(VkDevice devi
 void Device::PostCallRecordCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache,
                                                     const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pValidationCache, kVulkanObjectTypeValidationCacheEXT, pAllocator, record_obj.location, device);
 }
 
@@ -5926,7 +6030,9 @@ void Device::PostCallRecordCreateAccelerationStructureNV(VkDevice device, const 
                                                          const VkAllocationCallbacks* pAllocator,
                                                          VkAccelerationStructureNV* pAccelerationStructure,
                                                          const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pAccelerationStructure, kVulkanObjectTypeAccelerationStructureNV, pAllocator, record_obj.location,
                          device);
 }
@@ -6342,7 +6448,9 @@ void Device::PostCallRecordAcquirePerformanceConfigurationINTEL(VkDevice device,
                                                                 const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
                                                                 VkPerformanceConfigurationINTEL* pConfiguration,
                                                                 const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pConfiguration, kVulkanObjectTypePerformanceConfigurationINTEL, nullptr, record_obj.location, device);
 }
 
@@ -6399,7 +6507,9 @@ void Instance::PostCallRecordCreateImagePipeSurfaceFUCHSIA(VkInstance instance,
                                                            const VkImagePipeSurfaceCreateInfoFUCHSIA* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                            const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 #endif  // VK_USE_PLATFORM_FUCHSIA
@@ -6411,7 +6521,9 @@ void Instance::PostCallRecordCreateImagePipeSurfaceFUCHSIA(VkInstance instance,
 void Instance::PostCallRecordCreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                    const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -6498,7 +6610,9 @@ bool Device::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice devic
 void Instance::PostCallRecordCreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                       const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 
@@ -6718,7 +6832,9 @@ void Device::PostCallRecordCreateIndirectCommandsLayoutNV(VkDevice device, const
                                                           const VkAllocationCallbacks* pAllocator,
                                                           VkIndirectCommandsLayoutNV* pIndirectCommandsLayout,
                                                           const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pIndirectCommandsLayout, kVulkanObjectTypeIndirectCommandsLayoutNV, pAllocator, record_obj.location,
                          device);
 }
@@ -6761,7 +6877,9 @@ bool Instance::PreCallValidateAcquireDrmDisplayEXT(VkPhysicalDevice physicalDevi
 
 void Instance::PostCallRecordGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId,
                                               VkDisplayKHR* display, const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*display, kVulkanObjectTypeDisplayKHR, nullptr, record_obj.location, physicalDevice);
 }
 
@@ -6771,7 +6889,9 @@ void Instance::PostCallRecordGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, i
 void Device::PostCallRecordCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot,
                                                     const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pPrivateDataSlot, kVulkanObjectTypePrivateDataSlot, pAllocator, record_obj.location, device);
 }
 
@@ -6808,7 +6928,9 @@ bool Device::PreCallValidateGetPrivateDataEXT(VkDevice device, VkObjectType obje
 void Device::PostCallRecordCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
                                               const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pModule, kVulkanObjectTypeCudaModuleNV, pAllocator, record_obj.location, device);
 }
 
@@ -6840,7 +6962,9 @@ bool Device::PreCallValidateCreateCudaFunctionNV(VkDevice device, const VkCudaFu
 void Device::PostCallRecordCreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction,
                                                 const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pFunction, kVulkanObjectTypeCudaFunctionNV, pAllocator, record_obj.location, device);
 }
 
@@ -7081,7 +7205,9 @@ bool Instance::PreCallValidateAcquireWinrtDisplayNV(VkPhysicalDevice physicalDev
 
 void Instance::PostCallRecordGetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId, VkDisplayKHR* pDisplay,
                                                const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pDisplay, kVulkanObjectTypeDisplayKHR, nullptr, record_obj.location, physicalDevice);
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
@@ -7093,7 +7219,9 @@ void Instance::PostCallRecordGetWinrtDisplayNV(VkPhysicalDevice physicalDevice, 
 void Instance::PostCallRecordCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                       const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 
@@ -7165,7 +7293,9 @@ bool Device::PreCallValidateGetSemaphoreZirconHandleFUCHSIA(VkDevice device,
 void Device::PostCallRecordCreateBufferCollectionFUCHSIA(VkDevice device, const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator,
                                                          VkBufferCollectionFUCHSIA* pCollection, const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pCollection, kVulkanObjectTypeBufferCollectionFUCHSIA, pAllocator, record_obj.location, device);
 }
 
@@ -7308,7 +7438,9 @@ bool Device::PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPi
 void Instance::PostCallRecordCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                     const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 
@@ -7343,7 +7475,9 @@ bool Device::PreCallValidateCreateMicromapEXT(VkDevice device, const VkMicromapC
 void Device::PostCallRecordCreateMicromapEXT(VkDevice device, const VkMicromapCreateInfoEXT* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkMicromapEXT* pMicromap,
                                              const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pMicromap, kVulkanObjectTypeMicromapEXT, pAllocator, record_obj.location, device);
 }
 
@@ -7830,7 +7964,9 @@ bool Device::PreCallValidateGetMemoryNativeBufferOHOS(VkDevice device, const VkM
 void Device::PostCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
                                            const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pTensor, kVulkanObjectTypeTensorARM, pAllocator, record_obj.location, device);
 }
 
@@ -7869,7 +8005,9 @@ bool Device::PreCallValidateCreateTensorViewARM(VkDevice device, const VkTensorV
 void Device::PostCallRecordCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
                                                const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pView, kVulkanObjectTypeTensorViewARM, pAllocator, record_obj.location, device);
 }
 
@@ -8020,7 +8158,9 @@ bool Device::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice devi
 void Device::PostCallRecordCreateOpticalFlowSessionNV(VkDevice device, const VkOpticalFlowSessionCreateInfoNV* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkOpticalFlowSessionNV* pSession,
                                                       const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSession, kVulkanObjectTypeOpticalFlowSessionNV, pAllocator, record_obj.location, device);
 }
 
@@ -8076,7 +8216,9 @@ bool Device::PreCallValidateCmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffe
 void Device::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                             const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                             const RecordObject& record_obj) {
-    if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
+    if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) {
+        return;
+    }
     if (pShaders) {
         for (uint32_t index = 0; index < createInfoCount; index++) {
             if (!pShaders[index]) continue;
@@ -8324,7 +8466,9 @@ void Device::PostCallRecordCreateDataGraphPipelineSessionARM(VkDevice device,
                                                              const VkAllocationCallbacks* pAllocator,
                                                              VkDataGraphPipelineSessionARM* pSession,
                                                              const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSession, kVulkanObjectTypeDataGraphPipelineSessionARM, pAllocator, record_obj.location, device);
 }
 
@@ -8511,7 +8655,9 @@ bool Device::PreCallValidateCreateExternalComputeQueueNV(VkDevice device, const 
 void Device::PostCallRecordCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator,
                                                         VkExternalComputeQueueNV* pExternalQueue, const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pExternalQueue, kVulkanObjectTypeExternalComputeQueueNV, pAllocator, record_obj.location, device);
 }
 
@@ -8711,7 +8857,9 @@ void Device::PostCallRecordCreateIndirectCommandsLayoutEXT(VkDevice device,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout,
                                                            const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pIndirectCommandsLayout, kVulkanObjectTypeIndirectCommandsLayoutEXT, pAllocator, record_obj.location,
                          device);
 }
@@ -8742,7 +8890,9 @@ void Device::PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device, const 
                                                          const VkAllocationCallbacks* pAllocator,
                                                          VkIndirectExecutionSetEXT* pIndirectExecutionSet,
                                                          const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pIndirectExecutionSet, kVulkanObjectTypeIndirectExecutionSetEXT, pAllocator, record_obj.location, device);
 }
 
@@ -8818,7 +8968,9 @@ bool Device::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice device,
 void Instance::PostCallRecordCreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 #endif  // VK_USE_PLATFORM_OHOS
@@ -8863,7 +9015,9 @@ void Device::PostCallRecordCreateShaderInstrumentationARM(VkDevice device, const
                                                           const VkAllocationCallbacks* pAllocator,
                                                           VkShaderInstrumentationARM* pInstrumentation,
                                                           const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pInstrumentation, kVulkanObjectTypeShaderInstrumentationARM, pAllocator, record_obj.location, device);
 }
 
@@ -8950,7 +9104,9 @@ bool Device::PreCallValidateClearShaderInstrumentationMetricsARM(VkDevice device
 void Instance::PostCallRecordCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                  const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
 
@@ -8982,7 +9138,9 @@ void Device::PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const
                                                           const VkAllocationCallbacks* pAllocator,
                                                           VkAccelerationStructureKHR* pAccelerationStructure,
                                                           const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     tracker.CreateObject(*pAccelerationStructure, kVulkanObjectTypeAccelerationStructureKHR, pAllocator, record_obj.location,
                          device);
 }

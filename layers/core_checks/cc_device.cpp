@@ -355,7 +355,9 @@ void CoreChecks::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const 
 
 void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                             const RecordObject& record_obj) {
-    if (!device) return;
+    if (!device) {
+        return;
+    }
 
     vvl::DeviceProxy::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 

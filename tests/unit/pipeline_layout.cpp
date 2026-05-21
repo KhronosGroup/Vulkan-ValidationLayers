@@ -118,7 +118,9 @@ struct ExcessDescriptorData {
 
 static void test_excess_descriptors(class NegativePipelineLayout* test, const std::vector<ExcessDescriptorData>& data,
                                     const std::vector<const char*>& vuids, bool update_after_bind = false) {
-    if (test->PhysicalDeviceProps().limits.maxBoundDescriptorSets < data.size()) return;
+    if (test->PhysicalDeviceProps().limits.maxBoundDescriptorSets < data.size()) {
+        return;
+    }
 
     VkDevice dev = test->device();
     VkDescriptorSetLayoutBinding dslb = {};

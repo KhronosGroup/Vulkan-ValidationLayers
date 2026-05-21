@@ -49,7 +49,9 @@ void inst_vertex_attribute_fetch_oob(const uvec4 stage_info)
         const uint cmd_errors_count = atomicAdd(inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
         const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
 
-        if (max_cmd_errors_count_reached) return;
+        if (max_cmd_errors_count_reached) {
+            return;
+        }
 
         uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordSize);
         const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= SpecConstantInstErrorBufferLengthId;

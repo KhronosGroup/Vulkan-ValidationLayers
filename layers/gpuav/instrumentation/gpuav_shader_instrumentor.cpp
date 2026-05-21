@@ -497,7 +497,9 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                                                           const VkShaderCreateInfoEXT* pCreateInfos,
                                                           const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                                           const RecordObject& record_obj, chassis::ShaderObject& chassis_state) {
-    if (!gpuav_settings.IsSpirvModified()) return;
+    if (!gpuav_settings.IsSpirvModified()) {
+        return;
+    }
 
     // Resize here so if using just CoreCheck we don't waste time allocating this
     chassis_state.instrumentations_data.resize(createInfoCount);
@@ -638,7 +640,9 @@ void GpuShaderInstrumentor::PreCallRecordCreateGraphicsPipelines(VkDevice device
                                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                  const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                                  chassis::CreateGraphicsPipelines& chassis_state) {
-    if (!gpuav_settings.IsSpirvModified()) return;
+    if (!gpuav_settings.IsSpirvModified()) {
+        return;
+    }
 
     chassis_state.shader_instrumentations_metadata.resize(count);
     chassis_state.modified_create_infos.resize(count);
@@ -680,7 +684,9 @@ void GpuShaderInstrumentor::PreCallRecordCreateComputePipelines(VkDevice device,
                                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                 const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                                 chassis::CreateComputePipelines& chassis_state) {
-    if (!gpuav_settings.IsSpirvModified()) return;
+    if (!gpuav_settings.IsSpirvModified()) {
+        return;
+    }
 
     chassis_state.shader_instrumentations_metadata.resize(count);
     chassis_state.modified_create_infos.resize(count);
@@ -756,7 +762,9 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesKHR(
 template <typename CreateInfos, typename SafeCreateInfos>
 static void UtilCopyCreatePipelineFeedbackData(CreateInfos& create_info, SafeCreateInfos& safe_create_info) {
     auto src_feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(safe_create_info.pNext);
-    if (!src_feedback_struct) return;
+    if (!src_feedback_struct) {
+        return;
+    }
     auto dst_feedback_struct = const_cast<VkPipelineCreationFeedbackCreateInfo*>(
         vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(create_info.pNext));
     *dst_feedback_struct->pPipelineCreationFeedback = *src_feedback_struct->pPipelineCreationFeedback;
@@ -770,12 +778,18 @@ void GpuShaderInstrumentor::PostCallRecordCreateGraphicsPipelines(VkDevice devic
                                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                   const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                                   chassis::CreateGraphicsPipelines& chassis_state) {
-    if (!gpuav_settings.IsSpirvModified()) return;
+    if (!gpuav_settings.IsSpirvModified()) {
+        return;
+    }
     // VK_PIPELINE_COMPILE_REQUIRED means that the current pipeline creation call was used to poke the driver cache,
     // no pipeline is created in this case
-    if (record_obj.result == VK_PIPELINE_COMPILE_REQUIRED) return;
+    if (record_obj.result == VK_PIPELINE_COMPILE_REQUIRED) {
+        return;
+    }
     // This can occur if the driver failed to compile the instrumented shader or if a PreCall step failed
-    if (!chassis_state.is_modified) return;
+    if (!chassis_state.is_modified) {
+        return;
+    }
 
     for (uint32_t i = 0; i < count; ++i) {
         const VkPipeline pipeline_handle = pPipelines[i];
@@ -805,12 +819,18 @@ void GpuShaderInstrumentor::PostCallRecordCreateComputePipelines(VkDevice device
                                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                  const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                                  chassis::CreateComputePipelines& chassis_state) {
-    if (!gpuav_settings.IsSpirvModified()) return;
+    if (!gpuav_settings.IsSpirvModified()) {
+        return;
+    }
     // VK_PIPELINE_COMPILE_REQUIRED means that the current pipeline creation call was used to poke the driver cache,
     // no pipeline is created in this case
-    if (record_obj.result == VK_PIPELINE_COMPILE_REQUIRED) return;
+    if (record_obj.result == VK_PIPELINE_COMPILE_REQUIRED) {
+        return;
+    }
     // This can occur if the driver failed to compile the instrumented shader or if a PreCall step failed
-    if (!chassis_state.is_modified) return;
+    if (!chassis_state.is_modified) {
+        return;
+    }
 
     for (uint32_t i = 0; i < count; ++i) {
         const VkPipeline pipeline_handle = pPipelines[i];
@@ -1070,7 +1090,9 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vku::safe_VkShade
 void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::DescriptorSetLayout& set_layout_state,
                                                          const uint32_t set_layout_index,
                                                          spirv::InstrumentationDescriptorSetLayouts& out_instrumentation_dsl) {
-    if (set_layout_state.GetBindingCount() == 0) return;
+    if (set_layout_state.GetBindingCount() == 0) {
+        return;
+    }
     const uint32_t binding_count = set_layout_state.GetMaxBinding() + 1;
 
     auto& binding_layouts = out_instrumentation_dsl.set_index_to_bindings_layout_lut[set_layout_index];
@@ -1311,7 +1333,9 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentation(
     vvl::Pipeline& pipeline_state, uint32_t stages_count,
     std::vector<chassis::ShaderInstrumentationMetadata>& shader_instrumentation_metadata) {
     // if we return early from NeedPipelineCreationShaderInstrumentation, will need to skip at this point in PostCall
-    if (shader_instrumentation_metadata.empty()) return;
+    if (shader_instrumentation_metadata.empty()) {
+        return;
+    }
 
     for (uint32_t stage_state_i = 0; stage_state_i < stages_count; ++stage_state_i) {
         auto& instrumentation_metadata = shader_instrumentation_metadata[stage_state_i];

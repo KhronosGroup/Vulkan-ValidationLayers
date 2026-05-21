@@ -812,7 +812,9 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext& exec_context, Resou
     // Unlike PipelineBarrier, WaitEvent is *not* limited to accesses within the current subpass (if any) and thus needs to import
     // all accesses. Can instead import for all first_scopes, or a union of them, if this becomes a performance/memory issue,
     // but with no idea of the performance of the union, nor of whether it even matters... take the simplest approach here,
-    if (!exec_context.ValidForSyncOps()) return;
+    if (!exec_context.ValidForSyncOps()) {
+        return;
+    }
     AccessContext* access_context = exec_context.GetCurrentAccessContext();
     SyncEventsContext* events_context = exec_context.GetCurrentEventsContext();
     const QueueId queue_id = exec_context.GetQueueId();
@@ -1018,11 +1020,15 @@ bool SyncOpResetEvent::ReplayValidate(ReplayState& replay, ResourceUsageTag reco
 }
 
 void SyncOpResetEvent::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
-    if (!exec_context.ValidForSyncOps()) return;
+    if (!exec_context.ValidForSyncOps()) {
+        return;
+    }
     SyncEventsContext* events_context = exec_context.GetCurrentEventsContext();
 
     auto* sync_event = events_context->GetFromShared(event_);
-    if (!sync_event) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
+    if (!sync_event) {
+        return;
+    }  // Core, Lifetimes, or Param check needs to catch invalid events.
 
     // Update the event state
     sync_event->last_command = command_;
@@ -1146,7 +1152,9 @@ ResourceUsageTag SyncOpSetEvent::Record(CommandBufferAccessContext* cb_context) 
 void SyncOpSetEvent::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
     // Create a copy of the current context, and merge in the state snapshot at record set event time
     // Note: we mustn't change the recorded context copy, as a given CB could be submitted more than once (in generaL)
-    if (!exec_context.ValidForSyncOps()) return;
+    if (!exec_context.ValidForSyncOps()) {
+        return;
+    }
     SyncEventsContext* events_context = exec_context.GetCurrentEventsContext();
     AccessContext* access_context = exec_context.GetCurrentAccessContext();
     const QueueId queue_id = exec_context.GetQueueId();
@@ -1162,7 +1170,9 @@ void SyncOpSetEvent::ReplayRecord(CommandExecutionContext& exec_context, Resourc
 void SyncOpSetEvent::DoRecord(QueueId queue_id, ResourceUsageTag tag, const std::shared_ptr<const AccessContext>& access_context,
                               SyncEventsContext* events_context) const {
     auto* sync_event = events_context->GetFromShared(event_);
-    if (!sync_event) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
+    if (!sync_event) {
+        return;
+    }  // Core, Lifetimes, or Param check needs to catch invalid events.
 
     // NOTE: We're going to simply record the sync scope here, as anything else would be implementation defined/undefined
     //       and we're issuing errors re: missing barriers between event commands, which if the user fixes would fix

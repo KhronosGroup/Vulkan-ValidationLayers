@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
- * Copyright (C) 2019-2025 Google Inc.
+/* Copyright (c) 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
+ * Copyright (C) 2019-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -758,7 +758,9 @@ Iterator infill_update_range(RangeMap &map, Iterator pos, const typename RangeMa
 
 template <typename RangeMap, typename InfillUpdateOps>
 void infill_update_range(RangeMap &map, const typename RangeMap::key_type &range, const InfillUpdateOps &ops) {
-    if (range.empty()) return;
+    if (range.empty()) {
+        return;
+    }
     auto pos = map.lower_bound(range);
     infill_update_range(map, pos, range, ops);
 }

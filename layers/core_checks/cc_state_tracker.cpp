@@ -973,7 +973,9 @@ void CommandBufferSubState::EnqueueVerifyVideoSessionInitialized(vvl::VideoSessi
 
 void CommandBufferSubState::EnqueueVerifyVideoInlineQueryUnavailable(const VkVideoInlineQueryInfoKHR& query_info,
                                                                      vvl::Func command) {
-    if (validator.disabled[query_validation]) return;
+    if (validator.disabled[query_validation]) {
+        return;
+    }
     query_updates.emplace_back([this, query_info, command](vvl::CommandBuffer& cb_state_arg, bool do_validate, VkQueryPool&,
                                                            uint32_t perf_query_pass, QueryMap* local_query_to_state_map) {
         if (!do_validate) return false;

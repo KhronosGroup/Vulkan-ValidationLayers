@@ -401,7 +401,9 @@ void VkLayerTest::AddSurfaceExtension() {
 void VkLayerTest::SetTargetApiVersion(APIVersion target_api_version) {
     if (target_api_version == 0) target_api_version = VK_API_VERSION_1_0;
     // If we set target twice, make sure higest version always wins
-    if (target_api_version < m_attempted_api_version) return;
+    if (target_api_version < m_attempted_api_version) {
+        return;
+    }
 
     m_attempted_api_version = target_api_version;  // used to know if request failed
     m_target_api_version = target_api_version;
@@ -631,7 +633,9 @@ class LogcatPrinter : public ::testing::EmptyTestEventListener {
     // Called after a failed assertion or a SUCCEED() invocation.
     virtual void OnTestPartResult(const ::testing::TestPartResult& result) {
         // If the test part succeeded, we don't need to do anything.
-        if (result.type() == ::testing::TestPartResult::kSuccess) return;
+        if (result.type() == ::testing::TestPartResult::kSuccess) {
+            return;
+        }
 
         __android_log_print(ANDROID_LOG_INFO, appTag, "%s in %s:%d %s", result.failed() ? "*** Failure" : "Success",
                             result.file_name(), result.line_number(), result.summary());

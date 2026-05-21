@@ -45,7 +45,9 @@ void main() {
         // that was specified at vkCmdDrawIndexedIndirect time.
         // pc.api_draw_count is used to store maxDrawCount
         const uint draw_count = min(count_buffer[pc.api_count_buffer_offset_dwords], pc.api_draw_count);
-        if (draw_i >= draw_count) return;
+        if (draw_i >= draw_count) {
+            return;
+        }
     }
 
     const uint draw_indexed_indirect_cmd_i = draw_i * pc.api_stride_dwords + pc.first_instance_member_pos + pc.api_offset_dwords;
