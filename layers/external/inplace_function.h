@@ -256,7 +256,9 @@ class inplace_function<R(Args...), Capacity, Alignment> {
     }
 
     void swap(inplace_function& other) noexcept {
-        if (this == std::addressof(other)) return;
+        if (this == std::addressof(other)) {
+            return;
+        }
 
         alignas(Alignment) std::byte tmp[Capacity];
         vtable_ptr_->relocate_ptr(tmp, storage_);

@@ -280,7 +280,9 @@ void Instance::InternalWarning(LogObjectList objlist, const Location& loc, const
 
 void Instance::ReserveBindingSlot(VkPhysicalDevice physicalDevice, VkPhysicalDeviceLimits& limits, const Location& loc) {
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
-    if (limits.maxBoundDescriptorSets == 0) return;
+    if (limits.maxBoundDescriptorSets == 0) {
+        return;
+    }
 
     if (limits.maxBoundDescriptorSets > kMaxAdjustedBoundDescriptorSet) {
         std::ostringstream ss;

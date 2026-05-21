@@ -867,7 +867,9 @@ bool CoreChecks::ValidateRenderingAttachmentCurrentLayout(const vvl::CommandBuff
 }
 
 void CoreChecks::TransitionAttachmentRefLayout(vvl::CommandBuffer& cb_state, const vku::safe_VkAttachmentReference2& ref) {
-    if (ref.attachment == VK_ATTACHMENT_UNUSED) return;
+    if (ref.attachment == VK_ATTACHMENT_UNUSED) {
+        return;
+    }
     vvl::ImageView* image_view = cb_state.GetActiveAttachmentImageViewState(ref.attachment);
     if (image_view) {
         VkImageLayout stencil_layout = kInvalidLayout;

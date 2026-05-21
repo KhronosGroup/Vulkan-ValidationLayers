@@ -54,14 +54,22 @@ void ValidationCache::GetUUID(uint8_t* uuid) {
 void ValidationCache::Load(VkValidationCacheCreateInfoEXT const* pCreateInfo) {
     const auto headerSize = 2 * sizeof(uint32_t) + VK_UUID_SIZE;
     auto size = headerSize;
-    if (!pCreateInfo->pInitialData || pCreateInfo->initialDataSize < size) return;
+    if (!pCreateInfo->pInitialData || pCreateInfo->initialDataSize < size) {
+        return;
+    }
 
     uint32_t const* data = (uint32_t const*)pCreateInfo->pInitialData;
-    if (data[0] != size) return;
-    if (data[1] != VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT) return;
+    if (data[0] != size) {
+        return;
+    }
+    if (data[1] != VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT) {
+        return;
+    }
     uint8_t expected_uuid[VK_UUID_SIZE];
     GetUUID(expected_uuid);
-    if (memcmp(&data[2], expected_uuid, VK_UUID_SIZE) != 0) return;  // different version
+    if (memcmp(&data[2], expected_uuid, VK_UUID_SIZE) != 0) {
+        return;
+    }  // different version
 
     data = (uint32_t const*)(reinterpret_cast<uint8_t const*>(data) + headerSize);
 

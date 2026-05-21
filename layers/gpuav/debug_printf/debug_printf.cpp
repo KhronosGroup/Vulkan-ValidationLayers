@@ -209,7 +209,9 @@ struct CbState {
 void AnalyzeAndGenerateMessage(Validator& gpuav, VkCommandBuffer command_buffer, debug_printf::BufferInfo& buffer_info,
                                const uint32_t* debug_output_buffer, const Location& loc) {
     uint32_t output_buffer_dwords_counts = debug_output_buffer[gpuav::kDebugPrintf_OutputBuffer_DWordsCount];
-    if (!output_buffer_dwords_counts) return;
+    if (!output_buffer_dwords_counts) {
+        return;
+    }
 
     uint32_t output_record_i = gpuav::kDebugPrintf_OutputBuffer_Data;  // get first OutputRecord index
     while (debug_output_buffer[output_record_i]) {

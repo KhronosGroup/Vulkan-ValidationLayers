@@ -822,7 +822,9 @@ class DescriptorBindingImpl : public DescriptorBinding {
     }
 
     void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) override {
-        if (!T::SupportsNotifyInvalidate()) return;
+        if (!T::SupportsNotifyInvalidate()) {
+            return;
+        }
 
         for (const auto &node : invalid_nodes) {
             if (T::IsNotifyInvalidateType(node->Type())) {

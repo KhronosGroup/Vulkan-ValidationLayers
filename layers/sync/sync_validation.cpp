@@ -1243,7 +1243,9 @@ bool SyncValidator::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
 
 void SyncValidator::PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                   uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) {
-    if (drawCount == 0) return;
+    if (drawCount == 0) {
+        return;
+    }
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     auto* cb_access_context = GetAccessContext(*cb_state);
     const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
@@ -1984,7 +1986,9 @@ void SyncValidator::PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, Vk
                                                const VkDependencyInfo* pDependencyInfo, const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     auto* cb_context = GetAccessContext(*cb_state);
-    if (!pDependencyInfo) return;
+    if (!pDependencyInfo) {
+        return;
+    }
 
     cb_context->RecordSyncOp<SyncOpSetEvent>(record_obj.location.function, *this, cb_context->GetQueueFlags(), event,
                                              *pDependencyInfo, cb_context->GetCurrentAccessContext());
@@ -2003,7 +2007,9 @@ void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, V
                                                 const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
-    if (!cb_state) return;
+    if (!cb_state) {
+        return;
+    }
     auto* cb_context = GetAccessContext(*cb_state);
 
     cb_context->RecordSyncOp<SyncOpResetEvent>(record_obj.location.function, *this, cb_context->GetQueueFlags(), event, stageMask);
@@ -2333,32 +2339,44 @@ uint32_t SyncValidator::SetupPresentInfo(const VkPresentInfoKHR& present_info, B
 void SyncValidator::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                       VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
                                                       const RecordObject& record_obj) {
-    if (!syncval_settings.submit_time_validation) return;
+    if (!syncval_settings.submit_time_validation) {
+        return;
+    }
     RecordAcquireNextImageState(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
 }
 
 void SyncValidator::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo,
                                                        uint32_t* pImageIndex, const RecordObject& record_obj) {
-    if (!syncval_settings.submit_time_validation) return;
+    if (!syncval_settings.submit_time_validation) {
+        return;
+    }
     RecordAcquireNextImageState(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
                                 pAcquireInfo->fence, pImageIndex, record_obj);
 }
 
 void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                                 VkFence fence, uint32_t* pImageIndex, const RecordObject& record_obj) {
-    if ((VK_SUCCESS != record_obj.result) && (VK_SUBOPTIMAL_KHR != record_obj.result)) return;
+    if ((VK_SUCCESS != record_obj.result) && (VK_SUBOPTIMAL_KHR != record_obj.result)) {
+        return;
+    }
 
     // Get the image out of the presented list and create apppropriate fences/semaphores.
     auto swapchain_base = Get<vvl::Swapchain>(swapchain);
-    if (vvl::StateObject::Invalid(swapchain_base)) return;  // Invalid acquire calls to be caught in CoreCheck/Parameter validation
+    if (vvl::StateObject::Invalid(swapchain_base)) {
+        return;
+    }  // Invalid acquire calls to be caught in CoreCheck/Parameter validation
 
     auto& swapchain_state = SubState(*swapchain_base);
 
     PresentedImage presented = swapchain_state.MovePresentedImage(*pImageIndex);
-    if (presented.Invalid()) return;
+    if (presented.Invalid()) {
+        return;
+    }
 
     // No way to make access safe, so nothing to record
-    if ((semaphore == VK_NULL_HANDLE) && (fence == VK_NULL_HANDLE)) return;
+    if ((semaphore == VK_NULL_HANDLE) && (fence == VK_NULL_HANDLE)) {
+        return;
+    }
 
     // We create a queue-less QBC for the Semaphore and fences to wait on
 
@@ -2608,7 +2626,9 @@ bool SyncValidator::PropagateTimelineSignals(SignalsUpdate& signals_update, cons
 }
 
 void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, const RecordObject& record_obj) {
-    if (!syncval_settings.submit_time_validation) return;
+    if (!syncval_settings.submit_time_validation) {
+        return;
+    }
     if (record_obj.result == VK_SUCCESS) {
         // fence is signalled, mark it as waited for
         WaitForFence(fence);
@@ -2617,7 +2637,9 @@ void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence,
 
 void SyncValidator::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
                                                 uint64_t timeout, const RecordObject& record_obj) {
-    if (!syncval_settings.submit_time_validation) return;
+    if (!syncval_settings.submit_time_validation) {
+        return;
+    }
     if ((record_obj.result == VK_SUCCESS) && ((VK_TRUE == waitAll) || (1 == fenceCount))) {
         // We can only know the pFences have signal if we waited for all of them, or there was only one of them
         for (uint32_t i = 0; i < fenceCount; i++) {

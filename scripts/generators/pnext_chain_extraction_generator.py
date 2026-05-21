@@ -164,7 +164,9 @@ void *PnextChainExtract(const void */*in_pnext_chain*/, T &/*out*/) { assert(fal
             }
 
             void PnextChainFree(void *chain) {
-                if (!chain) return;
+                if (!chain) {
+                    return;
+                }
                 auto header = reinterpret_cast<VkBaseOutStructure *>(chain);
                 switch (header->sType) {
             ''')

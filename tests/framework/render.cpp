@@ -513,7 +513,9 @@ bool VkRenderFramework::CanEnableDeviceExtension(const std::string& dev_ext_name
 
 void VkRenderFramework::ShutdownFramework() {
     // Nothing to shut down without a VkInstance
-    if (!instance_) return;
+    if (!instance_) {
+        return;
+    }
 
     if (m_device && m_device->handle() != VK_NULL_HANDLE) {
         m_device->Wait();

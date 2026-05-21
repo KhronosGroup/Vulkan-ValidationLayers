@@ -505,7 +505,7 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
                     # Some commands can have partial valid handles be created
                     partial_success_commands = ['vkCreateGraphicsPipelines', 'vkCreateComputePipelines', 'vkCreateRayTracingPipelinesNV', 'vkCreateRayTracingPipelinesKHR', 'vkCreateShadersEXT', 'vkCreateDataGraphPipelinesARM']
                     if command.name not in partial_success_commands:
-                        postPrototype = postPrototype.replace('{', '{\n    if (record_obj.result < VK_SUCCESS) return;')
+                        postPrototype = postPrototype.replace('{', '{\n    if (record_obj.result < VK_SUCCESS) {\n        return;\n    }')
                 out.append(postPrototype)
 
                 out.append(f'{post_call_record}\n')
@@ -1133,7 +1133,7 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
 
                 if objectArray:
                     if command.name in partial_success_commands:
-                        post_call_record += 'if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;\n'
+                        post_call_record += 'if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) {\n    return;\n}\n'
 
                     post_call_record += f'if ({command.params[-1].name}) {{\n'
                     countIsPointer = '*' if command.params[-2].type == 'uint32_t' and command.params[-2].pointer else ''

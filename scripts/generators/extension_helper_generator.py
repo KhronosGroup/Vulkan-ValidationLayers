@@ -352,7 +352,9 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             InstanceExtensions::InstanceExtensions(APIVersion requested_api_version, const VkInstanceCreateInfo* pCreateInfo) {
                 // Initialize struct data, robust to invalid pCreateInfo
                 api_version = NormalizeApiVersion(requested_api_version);
-                if (!api_version.Valid()) return;
+                if (!api_version.Valid()) {
+                    return;
+                }
 
                 const auto promotion_info_map = GetInstancePromotionInfoMap();
                 for (const auto& version_it : promotion_info_map) {
@@ -384,7 +386,9 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 : InstanceExtensions(instance_ext) {
 
                 auto api_version = NormalizeApiVersion(requested_api_version);
-                if (!api_version.Valid()) return;
+                if (!api_version.Valid()) {
+                    return;
+                }
 
                 const auto promotion_info_map = GetDevicePromotionInfoMap();
                 for (const auto& version_it : promotion_info_map) {
@@ -440,7 +444,9 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 : InstanceExtensions(instance_ext) {
 
                 auto api_version = NormalizeApiVersion(requested_api_version);
-                if (!api_version.Valid()) return;
+                if (!api_version.Valid()) {
+                    return;
+                }
 
                 const auto promotion_info_map = GetDevicePromotionInfoMap();
                 for (const auto& version_it : promotion_info_map) {

@@ -44,11 +44,15 @@ bool MaxCmdErrorsCountReached() {
 }
 
 void GpuavLogError5(uint error_group, uint error_sub_code, uint dword_0, uint dword_1, uint dword_2, uint dword_3, uint dword_4) {
-    if (MaxCmdErrorsCountReached()) return;
+    if (MaxCmdErrorsCountReached()) {
+        return;
+    }
 
     uint vo_idx = atomicAdd(errors_count, kErrorRecordSize);
     const bool errors_buffer_filled = (vo_idx + kErrorRecordSize) > errors_buffer.length();
-    if (errors_buffer_filled) return;
+    if (errors_buffer_filled) {
+        return;
+    }
 
     errors_buffer[vo_idx + kHeader_ShaderIdErrorOffset] =
         (error_group << kErrorGroup_Shift) | (error_sub_code << kErrorSubCode_Shift);

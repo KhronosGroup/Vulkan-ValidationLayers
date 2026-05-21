@@ -1390,7 +1390,9 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBuffersEXT(VkCommandBuffer commandBu
             }
             auto lock = vo->ReadLock();
             skip |= vo->PreCallValidateCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, error_obj);
-            if (skip) return;
+            if (skip) {
+                return;
+            }
         }
     }
 

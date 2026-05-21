@@ -549,7 +549,9 @@ void Device::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueI
 void Instance::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                    VkDisplayPropertiesKHR* pProperties,
                                                                    const RecordObject& record_obj) {
-    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
+    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) {
+        return;
+    }
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
             CreateObject(pProperties[i].display);
@@ -560,7 +562,9 @@ void Instance::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDev
 void Instance::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                     VkDisplayProperties2KHR* pProperties,
                                                                     const RecordObject& record_obj) {
-    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
+    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) {
+        return;
+    }
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
             CreateObject(pProperties[i].displayProperties.display);
@@ -571,7 +575,9 @@ void Instance::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDe
 void Instance::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                         VkDisplayPlanePropertiesKHR* pProperties,
                                                                         const RecordObject& record_obj) {
-    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
+    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) {
+        return;
+    }
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
             CreateObject(pProperties[i].currentDisplay);
@@ -582,7 +588,9 @@ void Instance::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysic
 void Instance::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                          VkDisplayPlaneProperties2KHR* pProperties,
                                                                          const RecordObject& record_obj) {
-    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
+    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) {
+        return;
+    }
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
             CreateObject(pProperties[i].displayPlaneProperties.currentDisplay);
@@ -599,7 +607,9 @@ void Instance::PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice
 void Instance::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                  uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
                                                                  const RecordObject& record_obj) {
-    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
+    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) {
+        return;
+    }
     if (pDisplays) {
         for (uint32_t index = 0; index < *pDisplayCount; index++) {
             CreateObject(pDisplays[index]);
@@ -617,7 +627,9 @@ void Instance::PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physic
                                                          uint32_t* pPropertyCount, VkDisplayModePropertiesKHR* pProperties,
                                                          const RecordObject& record_obj) {
     FinishReadObject(display, record_obj.location);
-    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
+    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) {
+        return;
+    }
     if (pProperties != nullptr) {
         for (uint32_t index = 0; index < *pPropertyCount; index++) {
             CreateObject(pProperties[index].displayMode);
@@ -635,7 +647,9 @@ void Instance::PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physi
                                                           uint32_t* pPropertyCount, VkDisplayModeProperties2KHR* pProperties,
                                                           const RecordObject& record_obj) {
     FinishReadObject(display, record_obj.location);
-    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
+    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) {
+        return;
+    }
     if (pProperties != nullptr) {
         for (uint32_t index = 0; index < *pPropertyCount; index++) {
             CreateObject(pProperties[index].displayModeProperties.displayMode);
@@ -661,7 +675,9 @@ void Instance::PostCallRecordGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice ph
 
 void Instance::PostCallRecordGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
                                                       VkDisplayKHR* pDisplay, const RecordObject& record_obj) {
-    if ((record_obj.result != VK_SUCCESS) || (pDisplay == nullptr)) return;
+    if ((record_obj.result != VK_SUCCESS) || (pDisplay == nullptr)) {
+        return;
+    }
     CreateObject(*pDisplay);
 }
 
@@ -669,7 +685,9 @@ void Instance::PostCallRecordGetRandROutputDisplayEXT(VkPhysicalDevice physicalD
 
 void Instance::PostCallRecordGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId,
                                               VkDisplayKHR* display, const RecordObject& record_obj) {
-    if ((record_obj.result != VK_SUCCESS) || (display == nullptr)) return;
+    if ((record_obj.result != VK_SUCCESS) || (display == nullptr)) {
+        return;
+    }
     CreateObject(*display);
 }
 

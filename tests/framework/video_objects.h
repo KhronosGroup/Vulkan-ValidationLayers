@@ -2702,7 +2702,9 @@ class VideoContext {
 
         uint32_t mem_req_count = 0;
         ASSERT_EQ(VK_SUCCESS, vk::GetVideoSessionMemoryRequirementsKHR(device_->handle(), session_, &mem_req_count, nullptr));
-        if (mem_req_count == 0) return;
+        if (mem_req_count == 0) {
+            return;
+        }
 
         std::vector<VkVideoSessionMemoryRequirementsKHR> mem_reqs(mem_req_count,
                                                                   vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>());

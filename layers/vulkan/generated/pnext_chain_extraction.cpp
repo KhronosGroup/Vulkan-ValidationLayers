@@ -52,7 +52,9 @@ void PnextChainRemoveLast(void* chain) {
 }
 
 void PnextChainFree(void* chain) {
-    if (!chain) return;
+    if (!chain) {
+        return;
+    }
     auto header = reinterpret_cast<VkBaseOutStructure*>(chain);
     switch (header->sType) {
         case VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO:

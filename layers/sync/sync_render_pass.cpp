@@ -664,7 +664,9 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
 void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuffer& cmd_buffer, const ResourceUsageTag tag) {
     const auto& last_bound_state = cmd_buffer.GetLastBoundGraphics();
     const auto* pipe = last_bound_state.pipeline_state;
-    if (!pipe || pipe->RasterizationDisabled()) return;
+    if (!pipe || pipe->RasterizationDisabled()) {
+        return;
+    }
 
     const auto& list = pipe->fs_writable_output_location_list;
     const auto& subpass = rp_state_->create_info.pSubpasses[current_subpass_];

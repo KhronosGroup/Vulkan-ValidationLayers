@@ -913,7 +913,9 @@ void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint
     const auto& index_binding = cb_state_->index_buffer_binding;
     // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
     const auto index_buf_state = sync_state_.Get<vvl::Buffer>(index_binding.Buffer());
-    if (!index_buf_state) return;
+    if (!index_buf_state) {
+        return;
+    }
 
     const uint32_t index_size = IndexTypeByteSize(index_binding.index_type);
     const AccessRange range = MakeRangeForIndexData(index_binding.BufferOffset(), firstIndex, indexCount, index_size);
@@ -1009,7 +1011,9 @@ void CommandBufferAccessContext::RecordDrawAttachment(const ResourceUsageTag tag
 void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUsageTag tag) {
     const auto& last_bound_state = cb_state_->GetLastBoundGraphics();
     const auto* pipe = last_bound_state.pipeline_state;
-    if (!pipe || pipe->RasterizationDisabled()) return;
+    if (!pipe || pipe->RasterizationDisabled()) {
+        return;
+    }
 
     const auto& list = pipe->fs_writable_output_location_list;
     auto& access_context = *GetCurrentAccessContext();

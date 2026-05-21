@@ -1509,7 +1509,9 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState& device
                                               ? create_info.descriptorSetLayout
                                               : push_layout;
     auto ds_layout_state = device_data.Get<vvl::DescriptorSetLayout>(effective_dsl);
-    if (!ds_layout_state) return;
+    if (!ds_layout_state) {
+        return;
+    }
 
     // Create a WriteDescriptorSet struct for each template update entry
     for (uint32_t i = 0; i < create_info.descriptorUpdateEntryCount; i++) {
