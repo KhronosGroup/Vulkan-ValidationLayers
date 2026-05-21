@@ -356,13 +356,17 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         }
     };
 
-    // VU 11437 requires this to be a UBO
-    auto warn_alignment_ubo_indirect_address = [&](VkDeviceAddress address) {
-        if (!IsPointerAligned(address, dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment)) {
-            warn_ss << new_line
-                    << "[WARNING] MISALIGNED - the indirect address is not aligned to minUniformBufferOffsetAlignment (0x"
-                    << std::hex << dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment
-                    << ") and any access to this descriptor will be invalid\n";
+    auto warn_alignment_scalar_indirect = [&](VkDeviceAddress address, VkDeviceSize alignment) {
+        if (!IsPointerAligned(address, alignment)) {
+            warn_ss << new_line << "[WARNING] MISALIGNED - the indirect address is not aligned to ";
+            if (alignment == 4) {
+                warn_ss << "4 (scalar alignment for a uint32_t)";
+            } else if (alignment == 8) {
+                warn_ss << "8 (scalar alignment for a VkDeviceAddress)";
+            } else {
+                assert(false);
+            }
+            warn_ss << " and any access to this descriptor will be invalid\n";
         }
     };
 
@@ -688,7 +692,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         VkDeviceAddress push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.pushOffset]);
         VkDeviceAddress final_indirect_address = push_indirect_address + map_data.addressOffset;
 
-        warn_alignment_ubo_indirect_address(final_indirect_address);
+        warn_alignment_scalar_indirect(final_indirect_address, 4);
 
         std::vector<uint8_t> indirect_index_data = dev_data.CopyDataFromMemory(final_indirect_address, 4);
         bool know_ubo = !indirect_index_data.empty();
@@ -775,7 +779,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.samplerPushOffset]);
             final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
 
-            warn_alignment_ubo_indirect_address(final_indirect_address);
+            warn_alignment_scalar_indirect(final_indirect_address, 4);
 
             indirect_index_data = dev_data.CopyDataFromMemory(final_indirect_address, 4);
             know_ubo = !indirect_index_data.empty();
@@ -863,7 +867,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         VkDeviceAddress push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.pushOffset]);
         VkDeviceAddress final_indirect_address = push_indirect_address + map_data.addressOffset;
 
-        warn_alignment_ubo_indirect_address(final_indirect_address);
+        warn_alignment_scalar_indirect(final_indirect_address, 4);
 
         ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset
            << ", heapOffset: 0x" << map_data.heapOffset << ", heapIndexStride: 0x" << map_data.heapIndexStride;
@@ -947,7 +951,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.samplerPushOffset]);
             final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
 
-            warn_alignment_ubo_indirect_address(final_indirect_address);
+            warn_alignment_scalar_indirect(final_indirect_address, 4);
 
             ss << new_line << "samplerPushOffset: 0x" << std::hex << map_data.samplerPushOffset << ", samplerAddressOffset: 0x"
                << map_data.samplerAddressOffset << ", samplerHeapOffset: 0x" << map_data.samplerHeapOffset
@@ -1066,7 +1070,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         ss << new_line << "Indirect Address: 0x" << final_indirect_address << " (0x" << push_indirect_address << " + 0x"
            << map_data.addressOffset << ")";
 
-        warn_alignment_ubo_indirect_address(final_indirect_address);
+        warn_alignment_scalar_indirect(final_indirect_address, 8);
         warn_indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
         std::vector<uint8_t> indirect_address_data = dev_data.CopyDataFromMemory(final_indirect_address, 8);
