@@ -156,6 +156,10 @@ class LegacyGenerator(BaseGenerator):
             if command.name.startswith('vkDestroy'):
                 continue
 
+            extra = ''
+            if command.legacy.link == 'legacy-gpdp2':
+                extra = "\\nNOTE: Many implicit layers and libraries (such as VMA) are known to still be using these functions. One may add \\\"WARNING-legacy-gpdp2\\\" to their VUID Mute Message list to ignore these."
+
             className = 'Device' if command.device else 'Instance'
             handleName = 'VkDevice' if command.device else 'VkInstance'
             objName = 'device' if command.device else 'physicalDevice'
@@ -182,7 +186,7 @@ class LegacyGenerator(BaseGenerator):
                     {logic} (api_version >= {command.legacy.version.nameApi}) {{
                         reported = true;
                         LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
-                            "{command.name} is a legacy command and this {handleName} was created with {command.legacy.version.name} {replacement}.\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
+                            "{command.name} is a legacy command and this {handleName} was created with {command.legacy.version.name} {replacement}.{extra}\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                     }}''')
 
             for extension in command.legacy.extensions:
@@ -208,7 +212,7 @@ class LegacyGenerator(BaseGenerator):
                     {logic} (IsExtEnabled(extensions.{extension.lower()})) {{
                         reported = true;
                         LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
-                            "{command.name} is a legacy command and this {handleName} enabled the {extension} extension {replacement}.\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
+                            "{command.name} is a legacy command and this {handleName} enabled the {extension} extension {replacement}.{extra}\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                     }}''')
 
             # For things mark as legacy in Vulkan 1.0
