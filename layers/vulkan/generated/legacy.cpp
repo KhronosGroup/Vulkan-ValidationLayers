@@ -35,15 +35,19 @@ bool Instance::PreCallValidateGetPhysicalDeviceFeatures(VkPhysicalDevice physica
         reported = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceFeatures is a legacy command and this VkInstance was created with VK_VERSION_1_1 which "
-                   "contains vkGetPhysicalDeviceFeatures2 that can be used instead.\nSee more information about this legacy in the "
-                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+                   "contains vkGetPhysicalDeviceFeatures2 that can be used instead.\nNOTE: Many implicit layers and libraries "
+                   "(such as VMA) are known to still be using these functions. One may add \"WARNING-legacy-gpdp2\" to their VUID "
+                   "Mute Message list to ignore these.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
         reported = true;
-        LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceFeatures is a legacy command and this VkInstance enabled the "
-                   "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceFeatures2KHR that can be "
-                   "used instead.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+        LogWarning(
+            "WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
+            "vkGetPhysicalDeviceFeatures is a legacy command and this VkInstance enabled the "
+            "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceFeatures2KHR that can be used "
+            "instead.\nNOTE: Many implicit layers and libraries (such as VMA) are known to still be using these functions. One may "
+            "add \"WARNING-legacy-gpdp2\" to their VUID Mute Message list to ignore these.\nSee more information about this legacy "
+            "in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     }
     return false;
 }
@@ -58,15 +62,19 @@ bool Instance::PreCallValidateGetPhysicalDeviceFormatProperties(VkPhysicalDevice
         reported = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceFormatProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 "
-                   "which contains vkGetPhysicalDeviceFormatProperties2 that can be used instead.\nSee more information about this "
-                   "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+                   "which contains vkGetPhysicalDeviceFormatProperties2 that can be used instead.\nNOTE: Many implicit layers and "
+                   "libraries (such as VMA) are known to still be using these functions. One may add \"WARNING-legacy-gpdp2\" to "
+                   "their VUID Mute Message list to ignore these.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
         reported = true;
-        LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceFormatProperties is a legacy command and this VkInstance enabled the "
-                   "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceFormatProperties2KHR that "
-                   "can be used instead.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+        LogWarning(
+            "WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
+            "vkGetPhysicalDeviceFormatProperties is a legacy command and this VkInstance enabled the "
+            "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceFormatProperties2KHR that can be "
+            "used instead.\nNOTE: Many implicit layers and libraries (such as VMA) are known to still be using these functions. "
+            "One may add \"WARNING-legacy-gpdp2\" to their VUID Mute Message list to ignore these.\nSee more information about "
+            "this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     }
     return false;
 }
@@ -81,18 +89,21 @@ bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPhysicalD
 
     if (api_version >= VK_API_VERSION_1_1) {
         reported = true;
-        LogWarning(
-            "WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-            "vkGetPhysicalDeviceImageFormatProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 "
-            "which contains vkGetPhysicalDeviceImageFormatProperties2 that can be used instead.\nSee more information about this "
-            "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+        LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceImageFormatProperties is a legacy command and this VkInstance was created with "
+                   "VK_VERSION_1_1 which contains vkGetPhysicalDeviceImageFormatProperties2 that can be used instead.\nNOTE: Many "
+                   "implicit layers and libraries (such as VMA) are known to still be using these functions. One may add "
+                   "\"WARNING-legacy-gpdp2\" to their VUID Mute Message list to ignore these.\nSee more information about this "
+                   "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
         reported = true;
-        LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceImageFormatProperties is a legacy command and this VkInstance enabled the "
-                   "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceImageFormatProperties2KHR "
-                   "that can be used instead.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+        LogWarning(
+            "WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
+            "vkGetPhysicalDeviceImageFormatProperties is a legacy command and this VkInstance enabled the "
+            "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceImageFormatProperties2KHR that can "
+            "be used instead.\nNOTE: Many implicit layers and libraries (such as VMA) are known to still be using these functions. "
+            "One may add \"WARNING-legacy-gpdp2\" to their VUID Mute Message list to ignore these.\nSee more information about "
+            "this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     }
     return false;
 }
@@ -106,15 +117,19 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties(VkPhysicalDevice physi
         reported = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 which "
-                   "contains vkGetPhysicalDeviceProperties2 that can be used instead.\nSee more information about this legacy in "
-                   "the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+                   "contains vkGetPhysicalDeviceProperties2 that can be used instead.\nNOTE: Many implicit layers and libraries "
+                   "(such as VMA) are known to still be using these functions. One may add \"WARNING-legacy-gpdp2\" to their VUID "
+                   "Mute Message list to ignore these.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
         reported = true;
-        LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceProperties is a legacy command and this VkInstance enabled the "
-                   "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceProperties2KHR that can be "
-                   "used instead.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+        LogWarning(
+            "WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
+            "vkGetPhysicalDeviceProperties is a legacy command and this VkInstance enabled the "
+            "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceProperties2KHR that can be used "
+            "instead.\nNOTE: Many implicit layers and libraries (such as VMA) are known to still be using these functions. One may "
+            "add \"WARNING-legacy-gpdp2\" to their VUID Mute Message list to ignore these.\nSee more information about this legacy "
+            "in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     }
     return false;
 }
@@ -128,18 +143,21 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalD
 
     if (api_version >= VK_API_VERSION_1_1) {
         reported = true;
-        LogWarning(
-            "WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-            "vkGetPhysicalDeviceQueueFamilyProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 "
-            "which contains vkGetPhysicalDeviceQueueFamilyProperties2 that can be used instead.\nSee more information about this "
-            "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+        LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceQueueFamilyProperties is a legacy command and this VkInstance was created with "
+                   "VK_VERSION_1_1 which contains vkGetPhysicalDeviceQueueFamilyProperties2 that can be used instead.\nNOTE: Many "
+                   "implicit layers and libraries (such as VMA) are known to still be using these functions. One may add "
+                   "\"WARNING-legacy-gpdp2\" to their VUID Mute Message list to ignore these.\nSee more information about this "
+                   "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
         reported = true;
-        LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceQueueFamilyProperties is a legacy command and this VkInstance enabled the "
-                   "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceQueueFamilyProperties2KHR "
-                   "that can be used instead.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+        LogWarning(
+            "WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
+            "vkGetPhysicalDeviceQueueFamilyProperties is a legacy command and this VkInstance enabled the "
+            "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceQueueFamilyProperties2KHR that can "
+            "be used instead.\nNOTE: Many implicit layers and libraries (such as VMA) are known to still be using these functions. "
+            "One may add \"WARNING-legacy-gpdp2\" to their VUID Mute Message list to ignore these.\nSee more information about "
+            "this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     }
     return false;
 }
@@ -154,15 +172,19 @@ bool Instance::PreCallValidateGetPhysicalDeviceMemoryProperties(VkPhysicalDevice
         reported = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceMemoryProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 "
-                   "which contains vkGetPhysicalDeviceMemoryProperties2 that can be used instead.\nSee more information about this "
-                   "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+                   "which contains vkGetPhysicalDeviceMemoryProperties2 that can be used instead.\nNOTE: Many implicit layers and "
+                   "libraries (such as VMA) are known to still be using these functions. One may add \"WARNING-legacy-gpdp2\" to "
+                   "their VUID Mute Message list to ignore these.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
         reported = true;
-        LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceMemoryProperties is a legacy command and this VkInstance enabled the "
-                   "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceMemoryProperties2KHR that "
-                   "can be used instead.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+        LogWarning(
+            "WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
+            "vkGetPhysicalDeviceMemoryProperties is a legacy command and this VkInstance enabled the "
+            "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceMemoryProperties2KHR that can be "
+            "used instead.\nNOTE: Many implicit layers and libraries (such as VMA) are known to still be using these functions. "
+            "One may add \"WARNING-legacy-gpdp2\" to their VUID Mute Message list to ignore these.\nSee more information about "
+            "this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     }
     return false;
 }
@@ -213,16 +235,19 @@ bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhy
         reported = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceSparseImageFormatProperties is a legacy command and this VkInstance was created with "
-                   "VK_VERSION_1_1 which contains vkGetPhysicalDeviceSparseImageFormatProperties2 that can be used instead.\nSee "
-                   "more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+                   "VK_VERSION_1_1 which contains vkGetPhysicalDeviceSparseImageFormatProperties2 that can be used instead.\nNOTE: "
+                   "Many implicit layers and libraries (such as VMA) are known to still be using these functions. One may add "
+                   "\"WARNING-legacy-gpdp2\" to their VUID Mute Message list to ignore these.\nSee more information about this "
+                   "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
         reported = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceSparseImageFormatProperties is a legacy command and this VkInstance enabled the "
                    "VK_KHR_get_physical_device_properties2 extension which contains "
-                   "vkGetPhysicalDeviceSparseImageFormatProperties2KHR that can be used instead.\nSee more information about this "
-                   "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+                   "vkGetPhysicalDeviceSparseImageFormatProperties2KHR that can be used instead.\nNOTE: Many implicit layers and "
+                   "libraries (such as VMA) are known to still be using these functions. One may add \"WARNING-legacy-gpdp2\" to "
+                   "their VUID Mute Message list to ignore these.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     }
     return false;
 }
