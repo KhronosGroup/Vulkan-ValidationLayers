@@ -24766,6 +24766,7 @@ bool Device::PreCallValidateQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHint
         skip |= context.ValidateRangedEnum(pPerfHintInfo_loc.dot(Field::type), vvl::Enum::VkPerfHintTypeQCOM, pPerfHintInfo->type,
                                            "VUID-VkPerfHintInfoQCOM-type-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateQueueSetPerfHintQCOM(queue, pPerfHintInfo, context);
     return skip;
 }
 

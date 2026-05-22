@@ -604,3 +604,141 @@ TEST_F(NegativeDeviceQueue, MissingInternallySynchronizedQueuesFeature) {
     vk::CreateDevice(Gpu(), &device_ci, nullptr, &test_device);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDeviceQueue, QueuePerfHintFeatureNotEnabled) {
+    TEST_DESCRIPTION("Try to invoke vkQueueSetPerfHintQCOM API, but queuePerfHint feature isn't enabled.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_QUEUE_PERF_HINT_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkPerfHintInfoQCOM perf_hint_info = vku::InitStructHelper();
+    perf_hint_info.type = VK_PERF_HINT_TYPE_DEFAULT_QCOM;
+    perf_hint_info.scale = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSetPerfHintQCOM-queuePerfHint-12387");
+    vk::QueueSetPerfHintQCOM(m_default_queue->handle(), &perf_hint_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceQueue, QueueNotInPerfHintSupportedQueues) {
+    TEST_DESCRIPTION("Try to invoke vkQueueSetPerfHintQCOM API, but the queue isn't in the perf-hint supported queues.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_QUEUE_PERF_HINT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::queuePerfHint);
+    RETURN_IF_SKIP(InitFramework());
+
+    VkPhysicalDeviceQueuePerfHintPropertiesQCOM perf_hint_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(perf_hint_props);
+    const VkQueueFlags supported_queues = perf_hint_props.supportedQueues;
+
+    uint32_t queue_family_count = 0;
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_family_props(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_family_props.data());
+
+    uint32_t bad_queue_family_index = std::numeric_limits<uint32_t>::max();
+    for (uint32_t index = 0; index < queue_family_count; ++index) {
+        if ((queue_family_props[index].queueFlags & supported_queues) == 0) {
+            bad_queue_family_index = index;
+            break;
+        }
+    }
+    if (bad_queue_family_index == std::numeric_limits<uint32_t>::max()) {
+        GTEST_SKIP() << "Failed to find the queue family that doesn't support queue perf-hint property, skipping test.";
+    }
+
+    RETURN_IF_SKIP(InitState());
+
+    VkQueue bad_queue = VK_NULL_HANDLE;
+    vk::GetDeviceQueue(device(), bad_queue_family_index, 0, &bad_queue);
+
+    VkPerfHintInfoQCOM perf_hint_info = vku::InitStructHelper();
+    perf_hint_info.type = VK_PERF_HINT_TYPE_DEFAULT_QCOM;
+    perf_hint_info.scale = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSetPerfHintQCOM-queue-12388");
+    vk::QueueSetPerfHintQCOM(bad_queue, &perf_hint_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceQueue, MaxFrequencyPerfHintButNotZeroScale) {
+    TEST_DESCRIPTION("Try to invoke vkQueueSetPerfHintQCOM API with maximum frequency perf-hint, but the scale isn't zero.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_QUEUE_PERF_HINT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::queuePerfHint);
+    RETURN_IF_SKIP(InitFramework());
+
+    VkPhysicalDeviceQueuePerfHintPropertiesQCOM perf_hint_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(perf_hint_props);
+    const VkQueueFlags supported_queues = perf_hint_props.supportedQueues;
+
+    uint32_t queue_family_count = 0;
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_family_props(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_family_props.data());
+
+    uint32_t expected_queue_family_index = std::numeric_limits<uint32_t>::max();
+    for (uint32_t index = 0; index < queue_family_count; ++index) {
+        if ((queue_family_props[index].queueFlags & supported_queues) != 0) {
+            expected_queue_family_index = index;
+            break;
+        }
+    }
+    if (expected_queue_family_index == std::numeric_limits<uint32_t>::max()) {
+        GTEST_SKIP() << "Failed to find the queue family that supports queue perf-hint property, skipping test.";
+    }
+
+    RETURN_IF_SKIP(InitState());
+
+    VkQueue perf_hint_queue = VK_NULL_HANDLE;
+    vk::GetDeviceQueue(device(), expected_queue_family_index, 0, &perf_hint_queue);
+
+    VkPerfHintInfoQCOM perf_hint_info = vku::InitStructHelper();
+    perf_hint_info.type = VK_PERF_HINT_TYPE_FREQUENCY_MAX_QCOM;
+    perf_hint_info.scale = 100;
+
+    m_errorMonitor->SetDesiredError("VUID-VkPerfHintInfoQCOM-type-12389");
+    vk::QueueSetPerfHintQCOM(perf_hint_queue, &perf_hint_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceQueue, ScaledFrequencyPerfHintButInvalidScale) {
+    TEST_DESCRIPTION("Try to invoke vkQueueSetPerfHintQCOM API with scaled frequency perf-hint, but the scale is greater than 100.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_QUEUE_PERF_HINT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::queuePerfHint);
+    RETURN_IF_SKIP(InitFramework());
+
+    VkPhysicalDeviceQueuePerfHintPropertiesQCOM perf_hint_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(perf_hint_props);
+    const VkQueueFlags supported_queues = perf_hint_props.supportedQueues;
+
+    uint32_t queue_family_count = 0;
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_family_props(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_family_props.data());
+
+    uint32_t expected_queue_family_index = std::numeric_limits<uint32_t>::max();
+    for (uint32_t index = 0; index < queue_family_count; ++index) {
+        if ((queue_family_props[index].queueFlags & supported_queues) != 0) {
+            expected_queue_family_index = index;
+            break;
+        }
+    }
+    if (expected_queue_family_index == std::numeric_limits<uint32_t>::max()) {
+        GTEST_SKIP() << "Failed to find the queue family that supports queue perf-hint property, skipping test.";
+    }
+
+    RETURN_IF_SKIP(InitState());
+
+    VkQueue perf_hint_queue = VK_NULL_HANDLE;
+    vk::GetDeviceQueue(device(), expected_queue_family_index, 0, &perf_hint_queue);
+
+    VkPerfHintInfoQCOM perf_hint_info = vku::InitStructHelper();
+    perf_hint_info.type = VK_PERF_HINT_TYPE_FREQUENCY_SCALED_QCOM;
+    perf_hint_info.scale = 120;
+
+    m_errorMonitor->SetDesiredError("VUID-VkPerfHintInfoQCOM-scale-12390");
+    vk::QueueSetPerfHintQCOM(perf_hint_queue, &perf_hint_info);
+    m_errorMonitor->VerifyFound();
+}

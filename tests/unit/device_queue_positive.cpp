@@ -93,3 +93,57 @@ TEST_F(PositiveDeviceQueue, QueueFamilyIndexDifferentCreateFlags) {
     vk::CreateDevice(Gpu(), &device_ci, nullptr, &test_device);
     vk::DestroyDevice(test_device, nullptr);
 }
+
+TEST_F(PositiveDeviceQueue, MultipleQueuePerfHint) {
+    TEST_DESCRIPTION("Test vkQueueSetPerfHintQCOM on all supported queues.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_QUEUE_PERF_HINT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::queuePerfHint);
+    RETURN_IF_SKIP(InitFramework());
+
+    VkPhysicalDeviceQueuePerfHintPropertiesQCOM perf_hint_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(perf_hint_props);
+    const VkQueueFlags supported_queues = perf_hint_props.supportedQueues;
+
+    uint32_t queue_family_count = 0;
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_family_props(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_family_props.data());
+
+    std::vector<uint32_t> supported_queue_ids{};
+    for (uint32_t index = 0; index < queue_family_count; ++index) {
+        if ((queue_family_props[index].queueFlags & supported_queues) != 0) {
+            supported_queue_ids.push_back(index);
+        }
+    }
+    if (supported_queue_ids.empty()) {
+        GTEST_SKIP() << "Failed to find the queue family that supports queue perf-hint property, skipping test.";
+    }
+
+    RETURN_IF_SKIP(InitState());
+
+    constexpr std::array<VkPerfHintTypeQCOM, 3> hint_types{
+        VK_PERF_HINT_TYPE_FREQUENCY_SCALED_QCOM,
+        VK_PERF_HINT_TYPE_DEFAULT_QCOM,
+        VK_PERF_HINT_TYPE_FREQUENCY_MIN_QCOM,
+    };
+
+    uint32_t index = 0;
+    for (const uint32_t family_id : supported_queue_ids) {
+        VkQueue queue = VK_NULL_HANDLE;
+        vk::GetDeviceQueue(device(), family_id, 0, &queue);
+
+        VkPerfHintInfoQCOM perf_hint_info = vku::InitStructHelper();
+        perf_hint_info.type = hint_types[index];
+        perf_hint_info.scale = 0;
+
+        if (hint_types[index] == VK_PERF_HINT_TYPE_FREQUENCY_SCALED_QCOM) {
+            perf_hint_info.scale = 65;
+        }
+
+        vk::QueueSetPerfHintQCOM(queue, &perf_hint_info);
+
+        ++index;
+        index = index % hint_types.size();
+    }
+}
