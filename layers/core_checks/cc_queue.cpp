@@ -26,6 +26,7 @@
 #include "cc_synchronization.h"
 #include "core_validation.h"
 #include "core_checks/cc_state_tracker.h"
+#include "generated/dispatch_functions.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/semaphore_state.h"
 #include "state_tracker/image_state.h"
@@ -841,5 +842,24 @@ bool CoreChecks::ProcessSubmissionBatch(const vvl::SubmitTimeTracker& tracker,
             }
         }
     }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo,
+                                                     const ErrorObject& error_obj) const {
+    bool skip = false;
+    const auto queue_state = Get<vvl::Queue>(queue);
+
+    // Query here as should not be a common call to need to save in state tracker
+    VkPhysicalDeviceQueuePerfHintPropertiesQCOM queue_perf_hint_props = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&queue_perf_hint_props);
+    DispatchGetPhysicalDeviceProperties2Helper(api_version, physical_device, &props2);
+
+    if ((queue_state->GetQueueFlags() & queue_perf_hint_props.supportedQueues) == 0) {
+        skip |= LogError("VUID-vkQueueSetPerfHintQCOM-queue-12388", queue, error_obj.location,
+                         "the queue with flags (%s) doesn't support queue performance hints.",
+                         string_VkQueueFlags(queue_state->GetQueueFlags()).c_str());
+    }
+
     return skip;
 }

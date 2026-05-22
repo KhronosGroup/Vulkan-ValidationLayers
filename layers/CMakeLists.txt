@@ -453,6 +453,7 @@ target_sources(vvl PRIVATE
     stateless/sl_image.cpp
     stateless/sl_instance_device.cpp
     stateless/sl_pipeline.cpp
+    stateless/sl_queue.cpp
     stateless/sl_ray_tracing.cpp
     stateless/sl_ray_tracing_micromap.cpp
     stateless/sl_ray_tracing_nv.cpp

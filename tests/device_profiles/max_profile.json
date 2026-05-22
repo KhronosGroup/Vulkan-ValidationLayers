@@ -1815,6 +1815,12 @@
                 "VkPhysicalDeviceShaderMultipleWaitQueuesPropertiesQCOM": {
                     "maxShaderWaitQueues": 2
                 },
+                "VkPhysicalDeviceQueuePerfHintPropertiesQCOM": {
+                    "supportedQueues": [
+                        "VK_QUEUE_GRAPHICS_BIT",
+                        "VK_QUEUE_COMPUTE_BIT"
+                    ]
+                },
                 "VkPhysicalDeviceTileMemoryHeapPropertiesQCOM": {
                     "queueSubmitBoundary": true,
                     "tileBufferTransfers": true

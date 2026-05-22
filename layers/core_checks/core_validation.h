@@ -3037,6 +3037,9 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateBoundTileMemory(const vvl::Bindable& bindable, const vvl::CommandBuffer& cb_state,
                                  const Location& loc) const override;
 
+    bool PreCallValidateQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo,
+                                             const ErrorObject& error_obj) const override;
+
     void Created(vvl::CommandBuffer& cb) override;
     void Created(vvl::Queue& queue) override;
 

@@ -1379,6 +1379,8 @@ class Device : public vvl::BaseDevice {
                                                             const Context &context) const;
     bool manual_PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
                                                    const Context& context) const;
+    bool manual_PreCallValidateQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM *pPerfHintInfo,
+                                                    const Context &context) const;
 
 #include "generated/stateless_device_methods.h"
 };

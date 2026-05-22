@@ -371,6 +371,7 @@ vvl_sources = [
   "layers/stateless/sl_image.cpp",
   "layers/stateless/sl_instance_device.cpp",
   "layers/stateless/sl_pipeline.cpp",
+  "layers/stateless/sl_queue.cpp",
   "layers/stateless/sl_ray_tracing.cpp",
   "layers/stateless/sl_ray_tracing_micromap.cpp",
   "layers/stateless/sl_ray_tracing_nv.cpp",
