@@ -1967,12 +1967,15 @@ void DeviceState::PostCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer,
                                                   const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     for (uint32_t i = 0; i < stageCount; ++i) {
-        ShaderObject* shader_object_state = nullptr;
+        std::shared_ptr<ShaderObject> shader_object_state;
         if (pShaders && pShaders[i] != VK_NULL_HANDLE) {
-            shader_object_state = Get<ShaderObject>(pShaders[i]).get();
+            shader_object_state = Get<ShaderObject>(pShaders[i]);
         }
 
-        cb_state->RecordBindShaderObject(pStages[i], shader_object_state);
+        cb_state->RecordBindShaderObject(pStages[i], shader_object_state.get());
+        if (shader_object_state && !disabled[command_buffer_state]) {
+            cb_state->AddChild(shader_object_state);
+        }
     }
 }
 
