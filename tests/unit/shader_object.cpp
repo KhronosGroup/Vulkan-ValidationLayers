@@ -8364,3 +8364,21 @@ TEST_F(NegativeShaderObject, IndependentSetsCompute) {
     const vkt::Shader shader(*m_device, create_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderObject, DestroyBoundShaderObject) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    const VkShaderStageFlagBits stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    vkt::Shader shader(*m_device, ShaderCreateInfo(GLSLToSPV(stage, kMinimalShaderGlsl), stage));
+
+    m_command_buffer.Begin();
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &stage, &shader.handle());
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+
+    m_errorMonitor->SetDesiredError("VUID-vkDestroyShaderEXT-shader-08482");
+    vk::DestroyShaderEXT(*m_device, shader, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
+}
