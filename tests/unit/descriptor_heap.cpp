@@ -4876,7 +4876,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCount) {
     }
 
     std::vector<VkSampler> samplers;
-    samplers.reserve(max_samplers + 1);
+    samplers.resize(max_samplers + 1);
 
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
@@ -4901,7 +4901,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCount) {
 
     VkResult err = VK_SUCCESS;
     uint32_t i;
-    for (i = 0; i < max_samplers; i++) {
+    for (i = 0; i < (uint32_t)samplers.size(); i++) {
         err = vk::CreateSampler(device(), &sampler_create_info, NULL, &samplers[i]);
         if (err != VK_SUCCESS) {
             break;
