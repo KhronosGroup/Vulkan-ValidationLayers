@@ -456,10 +456,12 @@ class Pipeline {
                              const void* pipeline_shader_stage_create_info_pNext = nullptr);
     void AddSpirvRayGenShader(const char* spirv, const char* entry_point);
     void AddSlangRayGenShader(const char* slang, const char* entry_point);
-    void AddGlslMissShader(const char* glsl);
+    void AddGlslMissShader(const char* glsl, const void* shader_module_create_info_pnext = nullptr,
+                           const void* pipeline_shader_stage_create_info_pNext = nullptr);
     void AddSpirvMissShader(const char* spirv, const char* entry_point);
     void AddSlangMissShader(const char* slang, const char* entry_point);
-    void AddGlslClosestHitShader(const char* glsl);
+    void AddGlslClosestHitShader(const char* glsl, const void* shader_module_create_info_pnext = nullptr,
+                                 const void* pipeline_shader_stage_create_info_pNext = nullptr);
     void AddGlslHitGroupShader(const char* closest_hit_glsl, const char* intersection_glsl = nullptr);
     void AddSpirvClosestHitShader(const char* spirv, const char* entry_point);
     void AddSlangClosestHitShader(const char* slang, const char* entry_point);
@@ -478,9 +480,9 @@ class Pipeline {
     // Updates
     // -------
     // (SBT needs to be built)
-    void UpdateRayGenShaderRecord(uint32_t ray_gen_i, void* data, size_t size);
-    void UpdateMissShaderRecord(uint32_t miss_i, void* data, size_t size);
-    void UpdateHitShaderRecord(uint32_t hit_i, void* data, size_t size);
+    void UpdateRayGenShaderRecord(uint32_t ray_gen_i, const void* data, size_t size);
+    void UpdateMissShaderRecord(uint32_t miss_i, const void* data, size_t size);
+    void UpdateHitShaderRecord(uint32_t hit_i, const void* data, size_t size);
 
     // Get
     // ---
