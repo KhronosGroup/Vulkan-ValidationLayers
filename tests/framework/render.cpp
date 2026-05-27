@@ -565,22 +565,10 @@ void VkRenderFramework::GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures* feat
     vk::GetPhysicalDeviceFeatures(Gpu(), features);
 }
 
-// static
-bool VkRenderFramework::IgnoreDisableChecks() {
-    static const bool skip_disable_checks = GetEnvironment("VK_LAYER_TESTS_IGNORE_DISABLE_CHECKS") != "";
-    return skip_disable_checks;
-}
-
 // Will also return true if using VVL Test ICD
 // Using "Mock" for aliasing legacy name
 static const std::string mock_icd_device_name = "Vulkan Mock Device";
-bool VkRenderFramework::IsPlatformMockICD() {
-    if (VkRenderFramework::IgnoreDisableChecks()) {
-        return false;
-    } else {
-        return 0 == mock_icd_device_name.compare(PhysicalDeviceProps().deviceName);
-    }
-}
+bool VkRenderFramework::IsPlatformMockICD() { return 0 == mock_icd_device_name.compare(PhysicalDeviceProps().deviceName); }
 
 void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties* props) { *props = physDevProps_; }
 
