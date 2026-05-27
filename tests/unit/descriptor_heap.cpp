@@ -4871,12 +4871,13 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCount) {
     if (heap_props.minSamplerHeapReservedRangeWithEmbedded == 0) {
         GTEST_SKIP() << "minSamplerHeapReservedRangeWithEmbedded is 0";
     }
-    if (heap_props.minSamplerHeapReservedRangeWithEmbedded / heap_props.samplerDescriptorSize > max_samplers) {
+    const uint32_t reserved_count = uint32_t(heap_props.minSamplerHeapReservedRangeWithEmbedded / heap_props.samplerDescriptorSize);
+    if (reserved_count > max_samplers) {
         GTEST_SKIP() << "minSamplerHeapReservedRangeWithEmbedded / samplerDescriptorSize is too large";
     }
 
-    std::vector<VkSampler> samplers;
-    samplers.resize(max_samplers + 1);
+    const uint32_t sampler_count = max_samplers - reserved_count;
+    std::vector<VkSampler> samplers(sampler_count);
 
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
@@ -4895,21 +4896,17 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCount) {
     pipe.cp_ci_.stage.pNext = &mapping_info;
     pipe.CreateComputePipeline(false);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCreateSampler-maxSamplerAllocationCount-11412");
-
     VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
-
-    VkResult err = VK_SUCCESS;
-    uint32_t i;
-    for (i = 0; i < (uint32_t)samplers.size(); i++) {
-        err = vk::CreateSampler(device(), &sampler_create_info, NULL, &samplers[i]);
-        if (err != VK_SUCCESS) {
-            break;
-        }
+    for (uint32_t i = 0; i < sampler_count; i++) {
+        vk::CreateSampler(device(), &sampler_create_info, NULL, &samplers[i]);
     }
+    // Lets have one more
+    VkSampler last_one;
+    m_errorMonitor->SetDesiredError("VUID-vkCreateSampler-maxSamplerAllocationCount-11412");
+    vk::CreateSampler(device(), &sampler_create_info, NULL, &last_one);
     m_errorMonitor->VerifyFound();
 
-    for (uint32_t j = 0; j < i; j++) {
+    for (uint32_t j = 0; j < sampler_count; j++) {
         vk::DestroySampler(device(), samplers[j], NULL);
     }
 }
@@ -4925,22 +4922,18 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountPipeline) {
     if (heap_props.minSamplerHeapReservedRangeWithEmbedded == 0) {
         GTEST_SKIP() << "minSamplerHeapReservedRangeWithEmbedded is 0";
     }
-    if (heap_props.minSamplerHeapReservedRangeWithEmbedded / heap_props.samplerDescriptorSize > max_samplers) {
+    uint32_t reserved_count = uint32_t(heap_props.minSamplerHeapReservedRangeWithEmbedded / heap_props.samplerDescriptorSize);
+    if (reserved_count > max_samplers) {
         GTEST_SKIP() << "minSamplerHeapReservedRangeWithEmbedded / samplerDescriptorSize is too large";
     }
 
-    std::vector<VkSampler> samplers;
-    samplers.reserve(max_samplers + 1);
+    const uint32_t sampler_count = max_samplers - reserved_count;
+    std::vector<VkSampler> samplers(sampler_count);
 
     VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
 
-    VkResult err = VK_SUCCESS;
-    uint32_t i;
-    for (i = 0; i < max_samplers; i++) {
-        err = vk::CreateSampler(device(), &sampler_create_info, NULL, &samplers[i]);
-        if (err != VK_SUCCESS) {
-            break;
-        }
+    for (uint32_t i = 0; i < sampler_count; i++) {
+        vk::CreateSampler(device(), &sampler_create_info, NULL, &samplers[i]);
     }
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateComputePipelines-pCreateInfos-11414");
@@ -4965,7 +4958,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountPipeline) {
 
     m_errorMonitor->VerifyFound();
 
-    for (uint32_t j = 0; j < i; j++) {
+    for (uint32_t j = 0; j < sampler_count; j++) {
         vk::DestroySampler(device(), samplers[j], NULL);
     }
 }
@@ -4983,22 +4976,17 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountShaderObject) {
     if (heap_props.minSamplerHeapReservedRangeWithEmbedded == 0) {
         GTEST_SKIP() << "minSamplerHeapReservedRangeWithEmbedded is 0";
     }
-    if (heap_props.minSamplerHeapReservedRangeWithEmbedded / heap_props.samplerDescriptorSize > max_samplers) {
+    const uint32_t reserved_count = uint32_t(heap_props.minSamplerHeapReservedRangeWithEmbedded / heap_props.samplerDescriptorSize);
+    if (reserved_count > max_samplers) {
         GTEST_SKIP() << "minSamplerHeapReservedRangeWithEmbedded / samplerDescriptorSize is too large";
     }
 
-    std::vector<VkSampler> samplers;
-    samplers.reserve(max_samplers + 1);
+    const uint32_t sampler_count = max_samplers - reserved_count;
+    std::vector<VkSampler> samplers(sampler_count);
 
     VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
-
-    VkResult err = VK_SUCCESS;
-    uint32_t i;
-    for (i = 0; i < max_samplers; i++) {
-        err = vk::CreateSampler(device(), &sampler_create_info, NULL, &samplers[i]);
-        if (err != VK_SUCCESS) {
-            break;
-        }
+    for (uint32_t i = 0; i < sampler_count; i++) {
+        vk::CreateSampler(device(), &sampler_create_info, NULL, &samplers[i]);
     }
 
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
@@ -5019,7 +5007,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountShaderObject) {
     const vkt::Shader vertShader(*m_device, vert_ci);
     m_errorMonitor->VerifyFound();
 
-    for (uint32_t j = 0; j < i; j++) {
+    for (uint32_t j = 0; j < sampler_count; j++) {
         vk::DestroySampler(device(), samplers[j], NULL);
     }
 }
