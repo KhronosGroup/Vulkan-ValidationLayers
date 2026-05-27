@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2025 Valve Corporation
-# Copyright (c) 2025 LunarG, Inc.
+# Copyright (c) 2026 Valve Corporation
+# Copyright (c) 2026 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -51,6 +51,8 @@ add_library(vk_test_framework STATIC
     sync_val_tests.h
     descriptor_helper.h
     descriptor_helper.cpp
+    descriptor_heap_object.h
+    descriptor_heap_object.cpp
     thread_helper.h
     thread_helper.cpp
     gpu_av_helper.h

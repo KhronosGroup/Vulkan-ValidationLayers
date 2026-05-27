@@ -1196,6 +1196,8 @@ GeometryKHR GeometrySimpleOnDeviceIndexedTriangleInfo(const vkt::Device& device,
     vkt::Buffer transform_buffer(device, sizeof(VkTransformMatrixKHR), buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
     // Fill vertex and index buffers with one triangle
+    // Warning: Changing vertices will break some tests implicitly
+    // relying on this
     triangle_geometry.SetPrimitiveCount(triangles_count);
     constexpr std::array vertices = {// Vertex 0
                                      10.0f, 10.0f, 0.0f,
@@ -2125,8 +2127,11 @@ void Pipeline::AddSlangRayGenShader(const char* slang, const char* entry_point) 
                                                                 SPV_SOURCE_SLANG, nullptr, entry_point));
 }
 
-void Pipeline::AddGlslMissShader(const char* glsl) {
-    miss_shaders_.emplace_back(std::make_unique<VkShaderObj>(*device_, glsl, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2));
+void Pipeline::AddGlslMissShader(const char* glsl, const void* shader_module_create_info_pnext,
+                                 const void* pipeline_shader_stage_create_info_pNext) {
+    miss_shaders_.emplace_back(std::make_unique<VkShaderObj>(*device_, glsl, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2,
+                                                             SPV_SOURCE_GLSL, nullptr, "main", shader_module_create_info_pnext,
+                                                             pipeline_shader_stage_create_info_pNext));
 }
 
 void Pipeline::AddSpirvMissShader(const char* spirv, const char* entry_point) {
@@ -2139,9 +2144,11 @@ void Pipeline::AddSlangMissShader(const char* slang, const char* entry_point) {
                                                              SPV_SOURCE_SLANG, nullptr, entry_point));
 }
 
-void Pipeline::AddGlslClosestHitShader(const char* glsl) {
-    hit_shaders_.emplace_back(
-        HitShader{std::make_unique<VkShaderObj>(*device_, glsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2), nullptr});
+void Pipeline::AddGlslClosestHitShader(const char* glsl, const void* shader_module_create_info_pnext,
+                                       const void* pipeline_shader_stage_create_info_pNext) {
+    hit_shaders_.emplace_back(HitShader{
+        std::make_unique<VkShaderObj>(*device_, glsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL,
+                                      nullptr, "main", shader_module_create_info_pnext, pipeline_shader_stage_create_info_pNext)});
 }
 
 void Pipeline::AddGlslHitGroupShader(const char* closest_hit_glsl, const char* intersection_glsl) {
@@ -2585,7 +2592,7 @@ void Pipeline::BuildSbt() {
     sbt_buffer_.Memory().Unmap();
 }
 
-void Pipeline::UpdateRayGenShaderRecord(uint32_t ray_gen_i, void* data, size_t size) {
+void Pipeline::UpdateRayGenShaderRecord(uint32_t ray_gen_i, const void* data, size_t size) {
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
     test_.GetPhysicalDeviceProperties2(rt_pipeline_props);
     const uint32_t sbt_ray_gen_shader_size = rt_pipeline_props.shaderGroupHandleSize + shader_record_size_;
@@ -2595,9 +2602,10 @@ void Pipeline::UpdateRayGenShaderRecord(uint32_t ray_gen_i, void* data, size_t s
     const uint32_t offset = ray_gen_i * sbt_ray_gen_shader_size_aligned + rt_pipeline_props.shaderGroupHandleSize;
     auto sbt_ray_gen_shader_record_start_ptr = sbt_buffer_ptr + offset;
     std::memcpy(sbt_ray_gen_shader_record_start_ptr, data, size);
+    sbt_buffer_.Memory().Unmap();
 }
 
-void Pipeline::UpdateMissShaderRecord(uint32_t miss_i, void* data, size_t size) {
+void Pipeline::UpdateMissShaderRecord(uint32_t miss_i, const void* data, size_t size) {
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
     test_.GetPhysicalDeviceProperties2(rt_pipeline_props);
     const uint32_t sbt_shader_size = rt_pipeline_props.shaderGroupHandleSize + shader_record_size_;
@@ -2614,7 +2622,7 @@ void Pipeline::UpdateMissShaderRecord(uint32_t miss_i, void* data, size_t size) 
     sbt_buffer_.Memory().Unmap();
 }
 
-void Pipeline::UpdateHitShaderRecord(uint32_t hit_i, void* data, size_t size) {
+void Pipeline::UpdateHitShaderRecord(uint32_t hit_i, const void* data, size_t size) {
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
     test_.GetPhysicalDeviceProperties2(rt_pipeline_props);
     const uint32_t sbt_shader_size = rt_pipeline_props.shaderGroupHandleSize + shader_record_size_;
