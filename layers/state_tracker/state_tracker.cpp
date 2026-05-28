@@ -37,6 +37,7 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/tensor_state.h"
 #include "state_tracker/device_state.h"
+#include "state_tracker/event_state.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
@@ -4142,7 +4143,7 @@ void DeviceState::PostCallRecordSetEvent(VkDevice device, VkEvent event, const R
     }
     if (auto event_state = Get<Event>(event)) {
         event_state->signaled = true;
-        event_state->dependency_info.reset();
+        event_state->signal_dependency_info.reset();
         event_state->signal_src_stage_mask = VK_PIPELINE_STAGE_HOST_BIT;
         event_state->signaling_queue = VK_NULL_HANDLE;
     }

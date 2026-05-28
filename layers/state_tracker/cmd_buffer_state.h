@@ -133,31 +133,6 @@ struct SubpassInfo {
 
 namespace vvl {
 
-class Event : public StateObject {
-  public:
-    Event(VkEvent handle, const VkEventCreateInfo *create_info);
-    VkEvent VkHandle() const { return handle_.Cast<VkEvent>(); }
-
-    const VkEventCreateFlags flags;
-
-#ifdef VK_USE_PLATFORM_METAL_EXT
-    const bool metal_event_export;
-#endif  // VK_USE_PLATFORM_METAL_EXT
-
-    // Signaling state.
-    // Gets updated at queue submission granularity or when signaled from the host.
-    bool signaled = false;
-
-    // Source stage specified by the "set event" command.
-    // Gets updated at queue submission granularity.
-    VkPipelineStageFlags2 signal_src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
-
-    std::optional<vku::safe_VkDependencyInfo> dependency_info;
-
-    // Queue that signaled this event. It's null if event was signaled from the host.
-    VkQueue signaling_queue = VK_NULL_HANDLE;
-};
-
 // Track command pools and their command buffers
 class CommandPool : public StateObject {
   public:

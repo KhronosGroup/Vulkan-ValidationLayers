@@ -28,7 +28,7 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/image_state.h"
-#include "state_tracker/event_map.h"
+#include "state_tracker/event_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/query_state.h"
 #include "state_tracker/render_pass_state.h"
@@ -1234,13 +1234,13 @@ void CommandBufferSubState::Submit(vvl::Queue& queue_state, uint32_t perf_submit
                 if (can_signal) {
                     event_state->signaled = true;
                     event_state->signal_src_stage_mask = signaling_state.signal_src_stage_mask;
-                    event_state->dependency_info = signaling_state.signal_dependency_info;
+                    event_state->signal_dependency_info = signaling_state.signal_dependency_info;
                     event_state->signaling_queue = queue_state.VkHandle();
                 }
             } else {
                 event_state->signaled = false;
                 event_state->signal_src_stage_mask = VK_PIPELINE_STAGE_NONE;
-                event_state->dependency_info.reset();
+                event_state->signal_dependency_info.reset();
                 event_state->signaling_queue = VK_NULL_HANDLE;
             }
         }

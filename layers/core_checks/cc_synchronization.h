@@ -17,11 +17,10 @@
 
 #pragma once
 
+#include "state_tracker/event_state.h"
 #include "containers/custom_containers.h"
 #include <vulkan/vulkan_core.h>
 #include <optional>
-
-#include "state_tracker/event_map.h"
 
 class CoreChecks;
 struct Location;

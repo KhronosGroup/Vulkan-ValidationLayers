@@ -30,7 +30,7 @@
 #include "state_tracker/semaphore_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
-#include "state_tracker/event_map.h"
+#include "state_tracker/event_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/tensor_state.h"
 

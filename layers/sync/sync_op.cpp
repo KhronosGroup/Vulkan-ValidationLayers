@@ -23,7 +23,7 @@
 #include "sync/sync_validation.h"
 
 #include "state_tracker/buffer_state.h"
-#include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/event_state.h"
 #include "state_tracker/render_pass_state.h"
 
 #include "utils/image_utils.h"

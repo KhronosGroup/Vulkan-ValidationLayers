@@ -43,7 +43,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/wsi_state.h"
-#include "state_tracker/event_map.h"
+#include "state_tracker/event_state.h"
 #include "generated/dispatch_functions.h"
 #include "generated/sync_validation_types.h"
 #include "utils/assert_utils.h"
@@ -484,8 +484,8 @@ bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& qu
         signal_dependency_info = signaling_state->signal_dependency_info;
     } else if (const auto* submit_signaling_state = vvl::Find(submit_signaling_states, wait_event)) {
         signal_dependency_info = submit_signaling_state->signal_dependency_info;
-    } else if (event_state->dependency_info.has_value()) {
-        signal_dependency_info = *event_state->dependency_info;
+    } else if (event_state->signal_dependency_info.has_value()) {
+        signal_dependency_info = *event_state->signal_dependency_info;
     }
 
     if (signal_dependency_info.has_value()) {
