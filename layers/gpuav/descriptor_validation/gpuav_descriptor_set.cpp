@@ -65,8 +65,11 @@ void DescriptorSetSubState::CreateDescriptorEncodingBuffer() {
 
     // The descriptor state buffer can be very large (4mb+ in some games). Allocating it as HOST_CACHED
     // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
+    // HOST_CACHED is preferred rather than required so we fall back to HOST_COHERENT on implementations
+    // that don't expose a HOST_CACHED memory type.
     VmaAllocationCreateInfo alloc_info{};
-    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    alloc_info.preferredFlags = VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
     const VkResult result = descriptor_encodings_.Create(&buffer_info, &alloc_info);
     if (result != VK_SUCCESS) {
         return;
