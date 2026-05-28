@@ -35,6 +35,7 @@
 #include "cc_buffer_address.h"
 #include "generated/command_validation.h"
 #include "generated/enum_flag_bits.h"
+#include "containers/container_utils.h"
 #include "utils/image_layout_utils.h"
 #include "utils/math_utils.h"
 

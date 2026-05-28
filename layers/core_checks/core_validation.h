@@ -32,7 +32,7 @@
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/query_state.h"
 #include "state_tracker/vertex_index_buffer_state.h"
-#include "state_tracker/event_map.h"
+#include "state_tracker/event_state.h"
 #include "state_tracker/submit_time_tracker.h"
 #include "state_tracker/subresource_adapter.h"
 

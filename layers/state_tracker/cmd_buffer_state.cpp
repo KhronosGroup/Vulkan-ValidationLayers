@@ -32,6 +32,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/event_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/vertex_index_buffer_state.h"
@@ -114,32 +115,7 @@ std::string AttachmentInfo::Describe(const vvl::CommandBuffer& cb_state, uint32_
     return ss.str();
 }
 
-#ifdef VK_USE_PLATFORM_METAL_EXT
-static bool GetMetalExport(const VkEventCreateInfo* info) {
-    bool retval = false;
-    auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
-    while (export_metal_object_info) {
-        if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT) {
-            retval = true;
-            break;
-        }
-        export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
-    }
-    return retval;
-}
-#endif  // VK_USE_PLATFORM_METAL_EXT
-
 namespace vvl {
-
-Event::Event(VkEvent handle, const VkEventCreateInfo* create_info)
-    : StateObject(handle, kVulkanObjectTypeEvent),
-      flags(create_info->flags)
-#ifdef VK_USE_PLATFORM_METAL_EXT
-      ,
-      metal_event_export(GetMetalExport(create_info))
-#endif  // VK_USE_PLATFORM_METAL_EXT
-{
-}
 
 CommandPool::CommandPool(DeviceState& dev, VkCommandPool handle, const VkCommandPoolCreateInfo* create_info, VkQueueFlags flags)
     : StateObject(handle, kVulkanObjectTypeCommandPool),

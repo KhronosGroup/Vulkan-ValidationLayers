@@ -385,7 +385,8 @@ target_sources(vvl PRIVATE
     state_tracker/device_range_state.h
     state_tracker/device_state.cpp
     state_tracker/device_state.h
-    state_tracker/event_map.h
+    state_tracker/event_state.cpp
+    state_tracker/event_state.h
     state_tracker/fence_state.cpp
     state_tracker/fence_state.h
     state_tracker/image_layout_map.cpp

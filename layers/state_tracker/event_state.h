@@ -19,12 +19,10 @@
  */
 #pragma once
 
-#include "vulkan/vulkan.h"
-#include "containers/container_utils.h"
+#include "state_tracker/state_object.h"
 #include "containers/custom_containers.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <optional>
-#include <vector>
 
 struct EventSignalingState {
     // Tracks how the event signaling state changes as command buffer recording progresses.
@@ -50,30 +48,38 @@ struct EventSignalingState {
     // are also ignored. We do not currently keep data associated with unsignals,
     // (and for signals we store stage mask/dependency info). Update this if we
     // need to track associated unsignal data.
-    bool HasKnownEffect(const EventSignalingState* prior_state = nullptr) const {
-        // After a reset, later signal/reset commands define the event state
-        if (was_reset) {
-            return true;
-        }
-        // If the prior state ended unsignaled, this state cannot be a repeated
-        // signal and defines the event state
-        const bool is_prior_unsignaled = prior_state && !prior_state->signaled;
-        return is_prior_unsignaled;
-    }
+    bool HasKnownEffect(const EventSignalingState* prior_state = nullptr) const;
 };
+
 using EventSignalingStateMap = vvl::unordered_map<VkEvent, EventSignalingState>;
 
-inline void UpdateEventSignalingStates(EventSignalingStateMap& accumulated_states, const EventSignalingStateMap& recorded_states) {
-    for (const auto& [event, recorded_state] : recorded_states) {
-        EventSignalingState& accumulated_state = accumulated_states[event];
+void UpdateEventSignalingStates(EventSignalingStateMap& accumulated_states, const EventSignalingStateMap& recorded_states);
 
-        const bool keep_accumulated_state = accumulated_state.signaled && !recorded_state.was_reset;
-        if (keep_accumulated_state) {
-            continue;
-        }
+namespace vvl {
 
-        const bool was_reset = accumulated_state.was_reset;
-        accumulated_state = recorded_state;
-        accumulated_state.was_reset |= was_reset;
-    }
-}
+class Event : public StateObject {
+  public:
+    Event(VkEvent handle, const VkEventCreateInfo* create_info);
+    VkEvent VkHandle() const { return handle_.Cast<VkEvent>(); }
+
+    const VkEventCreateFlags flags;
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    const bool metal_event_export;
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
+    // Signaling state.
+    // Gets updated at queue submission granularity or when signaled from the host.
+    bool signaled = false;
+
+    // Source stage specified by the "set event" command.
+    // Gets updated at queue submission granularity.
+    VkPipelineStageFlags2 signal_src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
+
+    std::optional<vku::safe_VkDependencyInfo> signal_dependency_info;
+
+    // Queue that signaled this event. It's null if event was signaled from the host.
+    VkQueue signaling_queue = VK_NULL_HANDLE;
+};
+
+}  // namespace vvl
