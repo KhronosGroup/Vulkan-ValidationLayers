@@ -672,18 +672,6 @@ void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, Vk
         submit_info.signaling_states = std::move(signaling_states);
         wait_event_submit_infos.emplace_back(std::move(submit_info));
     }
-
-    // TODO: this will be removed when submit validation callbacks are removed
-    auto first_event_index = base.events.size();
-    auto event_added_count = events.size();
-    std::optional<vku::safe_VkDependencyInfo> safe_dependency_info;
-    event_updates.emplace_back(
-        [event_added_count, first_event_index, safe_dependency_info](
-            vvl::CommandBuffer& cb_state, bool do_validate, EventMap& local_event_signal_info, VkQueue queue, const Location& loc) {
-            if (!do_validate) return false;
-            return CoreChecks::ValidateWaitEventsAtSubmit(cb_state, event_added_count, first_event_index, safe_dependency_info,
-                                                          local_event_signal_info, queue, loc);
-        });
 }
 
 void CommandBufferSubState::RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {
@@ -693,19 +681,12 @@ void CommandBufferSubState::RecordWaitEvent2(VkEvent event, const VkDependencyIn
     if (submit_validation) {
         WaitEvent2SubmitInfo submit_info;
         submit_info.wait_event = event;
+        submit_info.wait_dependency_info = &dependency_info;
+        if (signaling_state) {
+            submit_info.signaling_state = *signaling_state;
+        }
         wait_event2_submit_infos.emplace_back(std::move(submit_info));
     }
-    // TODO: this will be removed when submit validation callbacks are removed
-    auto first_event_index = base.events.size();
-    auto event_added_count = 1;
-    std::optional<vku::safe_VkDependencyInfo> safe_dependency_info(&dependency_info);
-    event_updates.emplace_back(
-        [event_added_count, first_event_index, safe_dependency_info](
-            vvl::CommandBuffer& cb_state, bool do_validate, EventMap& local_event_signal_info, VkQueue queue, const Location& loc) {
-            if (!do_validate) return false;
-            return CoreChecks::ValidateWaitEventsAtSubmit(cb_state, event_added_count, first_event_index, safe_dependency_info,
-                                                          local_event_signal_info, queue, loc);
-        });
 }
 
 void CommandBufferSubState::RecordBarriers(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier* buffer_barriers,

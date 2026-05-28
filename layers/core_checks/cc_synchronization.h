@@ -86,6 +86,8 @@ struct WaitEventSubmitInfo {
 
 struct WaitEvent2SubmitInfo {
     VkEvent wait_event = VK_NULL_HANDLE;
+    vku::safe_VkDependencyInfo wait_dependency_info;
+    std::optional<EventSignalingState> signaling_state;
 
     bool Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
                   EventMap& submit_signaling_states, const Location& loc) const;

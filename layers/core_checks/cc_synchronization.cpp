@@ -470,8 +470,60 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& que
 bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
                                     EventMap& submit_signaling_states, const Location& loc) const {
     bool skip = false;
-    if (auto event_state = core.Get<vvl::Event>(wait_event)) {
-        skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, submit_signaling_states, loc);
+
+    auto event_state = core.Get<vvl::Event>(wait_event);
+    if (!event_state) {
+        return skip;
+    }
+
+    skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, submit_signaling_states, loc);
+
+    std::optional<vku::safe_VkDependencyInfo> signal_dependency_info;
+    if (signaling_state.has_value()) {
+        assert(signaling_state->signal_dependency_info.has_value());
+        signal_dependency_info = signaling_state->signal_dependency_info;
+    } else if (const auto* event_info = vvl::Find(submit_signaling_states, wait_event)) {
+        signal_dependency_info = event_info->dependency_info;
+    } else if (event_state->dependency_info.has_value()) {
+        signal_dependency_info = *event_state->dependency_info;
+    }
+
+    if (signal_dependency_info.has_value()) {
+        const bool signal_has_asymmetric = (signal_dependency_info->dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) != 0;
+        const bool wait_has_asymmetric = (wait_dependency_info.dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) != 0;
+
+        if (!wait_has_asymmetric) {
+            if (!CompareDependencyInfo(*signal_dependency_info.value().ptr(), *wait_dependency_info.ptr())) {
+                const LogObjectList objlist(cb_state.Handle(), event_state->Handle());
+                skip |= core.LogError(
+                    "VUID-vkCmdWaitEvents2-pEvents-10788", objlist, loc,
+                    "event %s is being waited on without VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR and was "
+                    "signaled by vkCmdSetEvent2, but %s.",
+                    core.FormatHandle(wait_event).c_str(),
+                    string_VkDependencyInfo(core, *signal_dependency_info.value().ptr(), *wait_dependency_info.ptr()).c_str());
+            }
+        }
+
+        if (wait_has_asymmetric && !signal_has_asymmetric) {
+            const LogObjectList objlist(cb_state.Handle(), wait_event);
+            skip |= core.LogError(
+                "VUID-vkCmdWaitEvents2-pEvents-10789", objlist, loc,
+                "event %s is being waited on with VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR, but was signaled without it.",
+                core.FormatHandle(wait_event).c_str());
+        }
+
+        if (wait_has_asymmetric && signal_dependency_info->memoryBarrierCount && signal_dependency_info->pMemoryBarriers) {
+            const VkPipelineStageFlags2 union_src_stage_mask = sync_utils::GetExecScopes(*wait_dependency_info.ptr()).src;
+            if (union_src_stage_mask != signal_dependency_info->pMemoryBarriers[0].srcStageMask) {
+                const LogObjectList objlist(cb_state.Handle(), wait_event);
+                skip |=
+                    core.LogError("VUID-vkCmdWaitEvents2-pEvents-10790", objlist, loc,
+                                  "union of all srcStageMask members is %s, but event was set with "
+                                  "pDependencyInfos->pMemoryBarriers[0].srcStageMask %s.",
+                                  string_VkPipelineStageFlags2(union_src_stage_mask).c_str(),
+                                  string_VkPipelineStageFlags2(signal_dependency_info->pMemoryBarriers[0].srcStageMask).c_str());
+            }
+        }
     }
     return skip;
 }
@@ -1405,85 +1457,6 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList& objlist, const Location
         }
     }
 
-    return skip;
-}
-
-bool CoreChecks::ValidateWaitEventsAtSubmit(const vvl::CommandBuffer& cb_state, size_t eventCount, size_t firstEventIndex,
-                                            const std::optional<vku::safe_VkDependencyInfo>& dependency_info_opt,
-                                            const EventMap& local_event_signal_info, VkQueue waiting_queue, const Location& loc) {
-    bool skip = false;
-    const vvl::DeviceState& state_data = cb_state.dev_data;
-    const auto max_event = std::min((firstEventIndex + eventCount), cb_state.events.size());
-    const bool wait_is_event2 = dependency_info_opt.has_value();
-
-    for (size_t event_index = firstEventIndex; event_index < max_event; ++event_index) {
-        auto event = cb_state.events[event_index];
-
-        // The event signal map tracks src_stage from the last SetEvent within the
-        // *current* queue submission. If the current submission does not have
-        // SetEvent before WaitEvents then we need to find the last SetEvent (if any)
-        // in the previous submissions to the same queue. This information is
-        // conveniently stored in the vvl::Event object itself (after each queue
-        // submit, vvl::CommandBuffer::Submit() updates vvl::Event, so it contains
-        // the last src_stage from that submission).
-        std::optional<vku::safe_VkDependencyInfo> set_dependency_info;
-        if (const auto* event_info = vvl::Find(local_event_signal_info, event)) {
-            set_dependency_info = event_info->dependency_info;
-            // The "set event" is found in the current submission (the same queue); there can't be inter-queue usage errors
-        } else {
-            auto event_state = state_data.Get<vvl::Event>(event);
-            if (!event_state) continue;
-            set_dependency_info = event_state->dependency_info;
-        }
-
-        bool set_is_event2 = set_dependency_info.has_value();
-
-        if (!set_is_event2 || !wait_is_event2) {
-            continue;  // the following code is only for event2
-        }
-        const vku::safe_VkDependencyInfo& dependency_info = *dependency_info_opt;
-        if ((dependency_info.dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) == 0) {
-            if (!CompareDependencyInfo(*set_dependency_info.value().ptr(), *dependency_info.ptr())) {
-                const LogObjectList objlist(cb_state.Handle(), event);
-                // This could be moved to record time, if both vkCmdWaitEvents2 and vkSetEvents2 are in the same command buffer
-                skip |= state_data.LogError(
-                    "VUID-vkCmdWaitEvents2-pEvents-10788", objlist, loc,
-                    "event %s is being waited on without VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR and was "
-                    "signaled by vkCmdSetEvent2, but %s.",
-                    state_data.FormatHandle(event).c_str(),
-                    string_VkDependencyInfo(state_data, *set_dependency_info.value().ptr(), *dependency_info.ptr()).c_str());
-            }
-        } else {
-            if ((set_dependency_info->dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) == 0) {
-                const LogObjectList objlist(cb_state.Handle(), event);
-                skip |= state_data.LogError(
-                    "VUID-vkCmdWaitEvents2-pEvents-10789", objlist, loc,
-                    "event %s is being waited on with VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR, but was signaled without it.",
-                    state_data.FormatHandle(event).c_str());
-            }
-            if (set_dependency_info->memoryBarrierCount > 0 && set_dependency_info->pMemoryBarriers) {
-                VkPipelineStageFlags2 union_src_stage_mask = 0u;
-                for (uint32_t i = 0; i < dependency_info.memoryBarrierCount; ++i) {
-                    union_src_stage_mask |= dependency_info.pMemoryBarriers[i].srcStageMask;
-                }
-                for (uint32_t i = 0; i < dependency_info.bufferMemoryBarrierCount; ++i) {
-                    union_src_stage_mask |= dependency_info.pBufferMemoryBarriers[i].srcStageMask;
-                }
-                for (uint32_t i = 0; i < dependency_info.imageMemoryBarrierCount; ++i) {
-                    union_src_stage_mask |= dependency_info.pImageMemoryBarriers[i].srcStageMask;
-                }
-                if (union_src_stage_mask != set_dependency_info->pMemoryBarriers[0].srcStageMask) {
-                    const LogObjectList objlist(cb_state.Handle(), event);
-                    skip |= state_data.LogError(
-                        "VUID-vkCmdWaitEvents2-pEvents-10790", objlist, loc,
-                        "union of all srcStageMask members is %s, but event was set with "
-                        "pDependencyInfos->pMemoryBarriers[0].srcStageMask %s.",
-                        string_VkPipelineStageFlags2(union_src_stage_mask).c_str(),
-                        string_VkPipelineStageFlags2(set_dependency_info->pMemoryBarriers[0].srcStageMask).c_str());
-                }
-            }
-        }
-    }
     return skip;
 }
 
