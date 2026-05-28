@@ -26,16 +26,6 @@
 #include <optional>
 #include <vector>
 
-// TODO: this is very similar to EventSignalingState (but signal field has different semantics).
-// This will be reworked/removed soon.
-struct EventInfo {
-    VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
-    bool signal = false;  // signal (SetEvent) or unsignal (ResetEvent)
-    std::optional<vku::safe_VkDependencyInfo> dependency_info;
-    bool was_reset = false;
-};
-using EventMap = vvl::unordered_map<VkEvent, EventInfo>;
-
 struct EventSignalingState {
     // Tracks how the event signaling state changes as command buffer recording progresses.
     // When recording is finished, this is the event state at the end of the command buffer

@@ -48,7 +48,7 @@ struct CommandBufferSubmitState {
     // The "local" prefix is about tracking state accross command buffers of a *single* QueueSubmit command.
     // This does not accumulate state from the previous submissions.
     QueryMap local_query_to_state_map;
-    EventMap local_event_signal_info;
+    EventSignalingStateMap local_event_signal_info;
     vvl::unordered_map<VkVideoSessionKHR, vvl::VideoSessionDeviceState> local_video_session_state{};
 
     CommandBufferSubmitState(const CoreChecks& c, const vvl::Queue& q) : core(c), queue_state(q) {
@@ -82,11 +82,7 @@ struct CommandBufferSubmitState {
         for (const WaitEvent2SubmitInfo& submit_info : cb_sub_state.wait_event2_submit_infos) {
             skip |= submit_info.Validate(core, queue_state, cb_state, local_event_signal_info, loc);
         }
-
-        for (auto& function : cb_sub_state.event_updates) {
-            skip |= function(const_cast<vvl::CommandBuffer&>(cb_state), /*do_validate*/ true, local_event_signal_info,
-                             queue_state.VkHandle(), loc);
-        }
+        UpdateEventSignalingStates(local_event_signal_info, cb_sub_state.event_signaling_states);
 
         VkQueryPool first_perf_query_pool = VK_NULL_HANDLE;
         for (auto& function : cb_sub_state.query_updates) {

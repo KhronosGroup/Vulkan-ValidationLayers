@@ -393,7 +393,7 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location& signal_semaph
 }
 
 static bool ValidateEventQueueMismatch(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
-                                       const vvl::Event& event_state, const EventMap& submit_signaling_states,
+                                       const vvl::Event& event_state, const EventSignalingStateMap& submit_signaling_states,
                                        const Location& loc) {
     bool skip = false;
 
@@ -414,7 +414,7 @@ static bool ValidateEventQueueMismatch(const CoreChecks& core, const vvl::Queue&
 }
 
 bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
-                                   EventMap& submit_signaling_states, const Location& loc) const {
+                                   EventSignalingStateMap& submit_signaling_states, const Location& loc) const {
     bool skip = false;
 
     VkPipelineStageFlags signals_src_stage_mask = 0;
@@ -431,10 +431,10 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& que
                 last_signal = event_state->signaled;
             }
             if (const auto* submit_signaling = vvl::Find(submit_signaling_states, event)) {
-                if (!last_signal || submit_signaling->was_reset) {
-                    stage_mask = submit_signaling->src_stage_mask;
+                if (!last_signal || submit_signaling->HasKnownEffect()) {
+                    stage_mask = submit_signaling->signal_src_stage_mask;
                 }
-                last_signal = submit_signaling->signal;
+                last_signal = submit_signaling->signal_src_stage_mask;
             }
             if (const auto* cb_signaling = vvl::Find(signaling_states, event)) {
                 if (!last_signal || cb_signaling->HasKnownEffect()) {
@@ -468,7 +468,7 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& que
 }
 
 bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
-                                    EventMap& submit_signaling_states, const Location& loc) const {
+                                    EventSignalingStateMap& submit_signaling_states, const Location& loc) const {
     bool skip = false;
 
     auto event_state = core.Get<vvl::Event>(wait_event);
@@ -482,8 +482,8 @@ bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& qu
     if (signaling_state.has_value()) {
         assert(signaling_state->signal_dependency_info.has_value());
         signal_dependency_info = signaling_state->signal_dependency_info;
-    } else if (const auto* event_info = vvl::Find(submit_signaling_states, wait_event)) {
-        signal_dependency_info = event_info->dependency_info;
+    } else if (const auto* submit_signaling_state = vvl::Find(submit_signaling_states, wait_event)) {
+        signal_dependency_info = submit_signaling_state->signal_dependency_info;
     } else if (event_state->dependency_info.has_value()) {
         signal_dependency_info = *event_state->dependency_info;
     }
