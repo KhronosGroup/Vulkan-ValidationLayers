@@ -599,16 +599,6 @@ void CommandBufferSubState::RecordSetEvent(VkEvent event, VkPipelineStageFlags s
         new_state.signal_src_stage_mask = stage_mask;
         event_signaling_states.insert(std::make_pair(event, std::move(new_state)));
     }
-    // TODO: this part will be removed soon because event_updates are going to disappear
-    event_updates.emplace_back([event, stage_mask](vvl::CommandBuffer&, bool do_validate, EventMap& local_event_signal_info,
-                                                   VkQueue, const Location& loc) {
-        EventInfo& info = local_event_signal_info[event];
-        if (!info.signal) {
-            info.signal = true;
-            info.src_stage_mask = stage_mask;
-        }
-        return false;  // skip
-    });
 }
 
 void CommandBufferSubState::RecordSetEvent2(VkEvent event, const VkDependencyInfo& dependency_info) {
@@ -624,30 +614,12 @@ void CommandBufferSubState::RecordSetEvent2(VkEvent event, const VkDependencyInf
         new_state.signal_dependency_info.emplace(&dependency_info);
         event_signaling_states.insert(std::make_pair(event, std::move(new_state)));
     }
-    // TODO: this part will be removed soon because event_updates are going to disappear
-    std::optional<vku::safe_VkDependencyInfo> safe_dependency_info;
-    safe_dependency_info.emplace(&dependency_info);
-    event_updates.emplace_back([event, safe_dependency_info](vvl::CommandBuffer&, bool do_validate,
-                                                             EventMap& local_event_signal_info, VkQueue, const Location& loc) {
-        EventInfo& info = local_event_signal_info[event];
-        if (!info.signal) {
-            info.signal = true;
-            info.dependency_info = safe_dependency_info;
-        }
-        return false;  // skip
-    });
 }
 
 void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags2) {
     EventSignalingState& signaling_state = event_signaling_states[event];
     signaling_state = {};
     signaling_state.was_reset = true;
-
-    event_updates.emplace_back(
-        [event](vvl::CommandBuffer&, bool do_validate, EventMap& local_event_signal_info, VkQueue, const Location& loc) {
-            local_event_signal_info[event] = EventInfo{VK_PIPELINE_STAGE_2_NONE, false, {}, true};
-            return false;  // skip
-        });
 }
 
 void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask,
@@ -1151,7 +1123,6 @@ void CommandBufferSubState::ResetCBState() {
 
     // Submit time validation
     queue_submit_functions.clear();
-    event_updates.clear();
     wait_event_submit_infos.clear();
     wait_event2_submit_infos.clear();
     cmd_execute_commands_functions.clear();
@@ -1206,10 +1177,6 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_c
     auto& secondary_sub_state = SubState(secondary_command_buffer);
     if (secondary_command_buffer.IsSecondary()) {
         nesting_level = std::max(nesting_level, secondary_sub_state.nesting_level + 1);
-    }
-
-    for (auto& function : secondary_sub_state.event_updates) {
-        event_updates.push_back(function);
     }
 
     for (const WaitEventSubmitInfo& secondary_wait : secondary_sub_state.wait_event_submit_infos) {

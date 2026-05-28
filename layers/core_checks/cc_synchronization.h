@@ -21,7 +21,6 @@
 #include <vulkan/vulkan_core.h>
 #include <optional>
 
-// TODO: temporary use EventMap, but it will be removed
 #include "state_tracker/event_map.h"
 
 class CoreChecks;
@@ -81,7 +80,7 @@ struct WaitEventSubmitInfo {
     EventSignalingStateMap signaling_states;
 
     bool Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
-                  EventMap& submit_signaling_states, const Location& loc) const;
+                  EventSignalingStateMap& submit_signaling_states, const Location& loc) const;
 };
 
 struct WaitEvent2SubmitInfo {
@@ -90,5 +89,5 @@ struct WaitEvent2SubmitInfo {
     std::optional<EventSignalingState> signaling_state;
 
     bool Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
-                  EventMap& submit_signaling_states, const Location& loc) const;
+                  EventSignalingStateMap& submit_signaling_states, const Location& loc) const;
 };

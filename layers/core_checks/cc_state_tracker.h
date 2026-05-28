@@ -209,10 +209,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     using QueueCallback = std::function<bool(const class vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state)>;
     std::vector<QueueCallback> queue_submit_functions;
 
-    using EventCallback = std::function<bool(vvl::CommandBuffer& cb_state, bool do_validate, EventMap& local_event_signal_info,
-                                             VkQueue waiting_queue, const Location& loc)>;
-    std::vector<EventCallback> event_updates;
-
     EventSignalingStateMap event_signaling_states;
     std::vector<WaitEventSubmitInfo> wait_event_submit_infos;
     std::vector<WaitEvent2SubmitInfo> wait_event2_submit_infos;
