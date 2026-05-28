@@ -192,7 +192,7 @@ TEST_F(NegativeSampler, AllocationCount) {
     }
 
     std::vector<VkSampler> samplers;
-    samplers.reserve(max_samplers + 1);
+    samplers.resize(max_samplers + 1);
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateSampler-maxSamplerAllocationCount-04110");
 
@@ -200,7 +200,7 @@ TEST_F(NegativeSampler, AllocationCount) {
 
     VkResult err = VK_SUCCESS;
     uint32_t i;
-    for (i = 0; i <= max_samplers; i++) {
+    for (i = 0; i < (uint32_t)samplers.size(); i++) {
         err = vk::CreateSampler(device(), &sampler_create_info, NULL, &samplers[i]);
         if (err != VK_SUCCESS) {
             break;
