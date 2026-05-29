@@ -660,9 +660,6 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext& exec_context, c
     const auto& sync_state = exec_context.GetSyncState();
     const QueueId queue_id = exec_context.GetQueueId();
 
-    VkPipelineStageFlags2 event_stage_masks = 0U;
-    VkPipelineStageFlags2 barrier_mask_params = 0U;
-    bool events_not_found = false;
     const auto* events_context = exec_context.GetCurrentEventsContext();
     assert(events_context);
     size_t barrier_set_index = 0;
@@ -672,10 +669,6 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext& exec_context, c
         const auto* sync_event = events_context->Get(event.get());
         const auto& barrier_set = barrier_sets_[barrier_set_index];
         if (!sync_event) {
-            // NOTE PHASE2: This is where we'll need queue submit time validation to come back and check the srcStageMask bits
-            //              or solve this with replay creating the SyncEventState in the queue context... also this will be a
-            //              new validation error... wait without previously submitted set event...
-            events_not_found = true;  // Demote "extra_stage_bits" error to warning, to avoid false positives at *record time*
             barrier_set_index += barrier_set_incr;
             continue;  // Core, Lifetimes, or Param check needs to catch invalid events.
         }
@@ -685,12 +678,6 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext& exec_context, c
 
         const VkEvent event_handle = sync_event->event->VkHandle();
         // TODO add "destroyed" checks
-
-        if (sync_event->first_scope) {
-            // Only accumulate barrier and event stages if there is a pending set in the current context
-            barrier_mask_params |= barrier_set.src_exec_scope.mask_param;
-            event_stage_masks |= sync_event->scope.mask_param;
-        }
 
         const auto& src_exec_scope = barrier_set.src_exec_scope;
 
@@ -724,15 +711,6 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext& exec_context, c
                     break;
                 }
                 case SyncEventState::MissingStageBits: {
-                    const auto missing_bits = sync_event->scope.mask_param & ~src_exec_scope.mask_param;
-                    // Issue error message that event waited for is not in wait events scope
-                    const char* const vuid = "VUID-vkCmdWaitEvents-srcStageMask-01158";
-                    const char* const message =
-                        "%s stageMask %s includes stages not present in srcStageMask %s. Stages missing from srcStageMask: %s. %s";
-                    skip |= sync_state.LogError(vuid, event_handle, loc, message, sync_state.FormatHandle(event_handle).c_str(),
-                                                sync_utils::StringPipelineStageFlags(sync_event->scope.mask_param).c_str(),
-                                                sync_utils::StringPipelineStageFlags(src_exec_scope.mask_param).c_str(),
-                                                sync_utils::StringPipelineStageFlags(missing_bits).c_str(), kIgnored);
                     break;
                 }
                 case SyncEventState::SetVsWait2: {
@@ -775,20 +753,6 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext& exec_context, c
         // TODO:  Add infrastructure for checking pDependencyInfo's vs. CmdSetEvent2 VUID - vkCmdWaitEvents2KHR - pEvents -
         // 03839
         barrier_set_index += barrier_set_incr;
-    }
-
-    // Note that we can't check for HOST in pEvents as we don't track that set event type
-    const auto extra_stage_bits = (barrier_mask_params & ~VK_PIPELINE_STAGE_2_HOST_BIT) & ~event_stage_masks;
-    if (extra_stage_bits) {
-        assert(vvl::Func::vkCmdWaitEvents == command_);
-        // Issue error message that event waited for is not in wait events scope
-        const char* const message =
-            "srcStageMask 0x%" PRIx64 " contains stages not present in pEvents stageMask. Extra stages are %s.%s";
-        const auto handle = exec_context.Handle();
-        if (!events_not_found) {
-            skip |= sync_state.LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", handle, loc, message, barrier_mask_params,
-                                        sync_utils::StringPipelineStageFlags(extra_stage_bits).c_str(), "");
-        }
     }
     return skip;
 }
@@ -1541,7 +1505,9 @@ SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(vvl::Func command, 
     } else if (first_scope) {
         const VkPipelineStageFlags2 missing_bits = scope.mask_param & ~srcStageMask;
         // Note it is the "not missing bits" path that is the only "NotIgnored" path
-        if (missing_bits) reason = MissingStageBits;
+        if (missing_bits) {
+            reason = MissingStageBits;
+        }
     } else {
         reason = MissingSetEvent;
     }
