@@ -8022,14 +8022,24 @@ TEST_F(NegativeShaderObject, PipelineLayoutNoMissingIndependentSetFlag) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
-    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
-    create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
-    const vkt::Shader vert_shader(*m_device, create_info);
+    const char* vert_src = R"glsl(
+        #version 460
+        layout(set = 0, binding = 0) uniform UBO {
+            vec4 data;
+        };
+        void main() {
+            gl_Position = data;
+        }
+    )glsl";
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
                                                  });
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, &descriptor_set.layout_.handle());
+    create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    const vkt::Shader vert_shader(*m_device, create_info);
+
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     m_command_buffer.Begin();
@@ -8040,6 +8050,7 @@ TEST_F(NegativeShaderObject, PipelineLayoutNoMissingIndependentSetFlag) {
     vk::CmdBindShadersEXT(m_command_buffer, 2u, stages, shaders);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 1u, &descriptor_set.set_, 0u,
                               nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08600");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-flags-13362");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();

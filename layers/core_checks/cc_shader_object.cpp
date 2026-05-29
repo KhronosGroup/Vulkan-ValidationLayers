@@ -743,7 +743,12 @@ bool CoreChecks::ValidateDrawShaderObjectFlags(const LastBound& last_bound_state
     }
 
     if (shader_with_independent_sets && last_bound_state.desc_set_pipeline_layout) {
-        if (!(last_bound_state.desc_set_pipeline_layout->create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT)) {
+        // TODO - figure out if this is correct or not
+        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4848
+        const bool uses_descriptor = !shader_with_independent_sets->active_slots.empty();
+
+        if (uses_descriptor &&
+            !(last_bound_state.desc_set_pipeline_layout->create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT)) {
             const LogObjectList objlist(last_bound_state.cb_state.Handle(), last_bound_state.desc_set_pipeline_layout->VkHandle(),
                                         shader_with_independent_sets->VkHandle());
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::INDEPENDENT_SETS_13362), objlist, loc,
