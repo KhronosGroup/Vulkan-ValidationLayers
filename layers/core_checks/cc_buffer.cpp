@@ -34,7 +34,7 @@
 
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct
-bool CoreChecks::ValidateBufferUsageFlags(const LogObjectList& objlist, vvl::Buffer const& buffer_state,
+bool CoreChecks::ValidateBufferUsageFlags(vvl::Buffer const& buffer_state,
                                           VkBufferUsageFlags2 desired, bool strict, const char* vuid,
                                           const Location& buffer_loc) const {
     bool skip = false;
