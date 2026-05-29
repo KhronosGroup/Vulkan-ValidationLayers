@@ -119,7 +119,8 @@ bool ShaderStageState::SamplerHeapIsUsed() {
     }
 
     for (const spirv::ResourceInterfaceVariable& resource_variable : entrypoint->resource_interface_variables) {
-        if (!resource_variable.IsHeap() && resource_variable.is_sampler && mapping_info) {
+        if (!resource_variable.IsHeap() && (resource_variable.is_sampler || resource_variable.is_combined_image_sampler) &&
+            mapping_info) {
             for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
                 const auto& mapping = mapping_info->pMappings[i];
                 if (IsResourceVaribleInMapping(mapping, resource_variable) &&
