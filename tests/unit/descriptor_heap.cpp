@@ -6164,3 +6164,79 @@ TEST_F(NegativeDescriptorHeap, MaxBufferRange) {
     vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptorHeap, CombinedImageSamplerMissingSamplerHeap) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    InitRenderTarget();
+
+    const VkDeviceSize image_offset = 0u;
+    const VkDeviceSize buffer_offset = Align(heap_props.imageDescriptorSize, heap_props.resourceHeapAlignment);
+    CreateResourceHeap(buffer_offset + heap_props.bufferDescriptorSize);
+
+    vkt::Buffer buffer(*m_device, sizeof(float) * 4u, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    VkHostAddressRangeEXT resource_host[2];
+    resource_host[0].address = resource_heap_data_ + image_offset;
+    resource_host[0].size = static_cast<size_t>(heap_props.imageDescriptorSize);
+    resource_host[1].address = resource_heap_data_ + buffer_offset;
+    resource_host[1].size = static_cast<size_t>(heap_props.bufferDescriptorSize);
+
+    VkImageViewCreateInfo view_info = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
+    image_info.pView = &view_info;
+    image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkDeviceAddressRangeEXT buffer_address_range = buffer.AddressRange();
+
+    VkResourceDescriptorInfoEXT descriptor_info[2];
+    descriptor_info[0] = vku::InitStructHelper();
+    descriptor_info[0].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_info[0].data.pImage = &image_info;
+    descriptor_info[1] = vku::InitStructHelper();
+    descriptor_info[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info[1].data.pAddressRange = &buffer_address_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 2u, descriptor_info, resource_host);
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+        layout(set = 1, binding = 0) buffer ssbo {
+            vec4 data;
+        };
+        void main() {
+            data = texture(tex, vec2(0.5f));
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset = {};
+    mappings[1] = MakeSetAndBindingMapping(1, 0);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset = {};
+    mappings[1].sourceData.constantOffset.heapOffset = static_cast<uint32_t>(buffer_offset);
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    BindResourceHeap();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11308");
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
