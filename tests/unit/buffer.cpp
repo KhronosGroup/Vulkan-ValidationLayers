@@ -37,7 +37,7 @@ TEST_F(NegativeBuffer, UpdateBufferAlignment) {
     m_errorMonitor->VerifyFound();
 
     // Introduce failure by using dataSize that is < 0
-    m_errorMonitor->SetDesiredError("must be greater than zero and less than or equal to 65536");
+    m_errorMonitor->SetDesiredError("m536");
     vk::CmdUpdateBuffer(m_command_buffer, buffer, 0, (VkDeviceSize)-44, updateData);
     m_errorMonitor->VerifyFound();
 
@@ -62,7 +62,7 @@ TEST_F(NegativeBuffer, FillBufferAlignmentAndSize) {
     m_errorMonitor->VerifyFound();
 
     // Introduce failure by using size <= buffersize minus dstoffset
-    m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-size-00027");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-size-00111");
     vk::CmdFillBuffer(m_command_buffer, buffer, 16, 12, 0x11111111);
     m_errorMonitor->VerifyFound();
 
