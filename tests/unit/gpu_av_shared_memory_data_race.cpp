@@ -1305,8 +1305,9 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, OffenderIsOpAtomic) {
     )glsl";
 
     // OpAtomicIAdd has a result id ("%<n> = OpAtomicIAdd ..."); OpStore does not.
+    // AtomicIAdd case hits RaceOnLoadStoreVs, Store case hits RaceOnAtomic
     TestHelperRegex(shader_source,
-                    R"((?=[\s\S]*SharedMemoryDataRace-RaceOnLoadStoreVsAtomic))"
+                    R"((?=[\s\S]*SharedMemoryDataRace-RaceOn(?:LoadStoreVs)?Atomic))"
                     R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: (?:%\d+ = OpAtomicIAdd|OpStore)))");
 }
 
