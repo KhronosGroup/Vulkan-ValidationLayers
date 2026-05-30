@@ -2176,17 +2176,17 @@ bool CoreChecks::ValidateActionStatePushConstantDescriptorHeap(const vvl::Comman
             if (unset_start != size) {
                 skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11376),
                                  cb_state.GetObjectList(bind_point), loc,
-                                 "Shader in %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
+                                 "shader %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
                                  "), but vkCmdPushDataEXT was never called for range [%" PRIu32 ", %" PRIu32 ").",
-                                 string_VkShaderStageFlags(entry_point->stage).c_str(), pc_variable.offset,
-                                 pc_variable.offset + pc_variable.size, unset_start, unset_end);
+                                 entry_point->Describe().c_str(), pc_variable.offset, pc_variable.offset + pc_variable.size,
+                                 unset_start, unset_end);
             }
         } else {
-            skip |= LogError(
-                CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11376), cb_state.GetObjectList(bind_point), loc,
-                "Shader in %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
-                "), while there was no call to vkCmdPushDataEXT.",
-                string_VkShaderStageFlags(entry_point->stage).c_str(), pc_variable.offset, pc_variable.offset + pc_variable.size);
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11376),
+                             cb_state.GetObjectList(bind_point), loc,
+                             "shader %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
+                             "), while there was no call to vkCmdPushDataEXT.",
+                             entry_point->Describe().c_str(), pc_variable.offset, pc_variable.offset + pc_variable.size);
         }
     }
 
@@ -2227,10 +2227,9 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound& last_bound_sta
                     if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
                         const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle(), pipeline->Handle());
                         skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PUSH_CONSTANT_08601), objlist, loc,
-                                         "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
+                                         "shader %s uses push-constant statically but vkCmdPushConstants was not called yet for "
                                          "%s bound by vkCmdBindPipeline.",
-                                         string_VkShaderStageFlags(stage.GetStage()).c_str(),
-                                         FormatHandle(pipeline_layout->Handle()).c_str());
+                                         stage.entrypoint->Describe().c_str(), FormatHandle(pipeline_layout->Handle()).c_str());
                     }
                 }
             }
@@ -2250,8 +2249,8 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound& last_bound_sta
                     if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
                         const LogObjectList objlist(cb_state.Handle(), shader_object->Handle());
                         skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PUSH_CONSTANT_08601), objlist, loc,
-                                         "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet.",
-                                         string_VkShaderStageFlags(shader_object->create_info.stage).c_str());
+                                         "shader %s uses push-constant statically but vkCmdPushConstants was not called yet.",
+                                         shader_object->stage.entrypoint->Describe().c_str());
                     }
                 }
             }
@@ -2275,8 +2274,8 @@ bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound& last_bound_
             if (stage.spirv_state->HasCapability(spv::CapabilityRayQueryKHR)) {
                 skip |=
                     LogError(CreateActionVuid(loc.function, vvl::ActionVUID::RAY_QUERY_04617), cb_state.GetObjectList(bind_point),
-                             loc, "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",
-                             string_VkShaderStageFlags(stage.GetStage()).c_str());
+                             loc, "shader %s uses OpCapability RayQueryKHR but the command buffer is protected.",
+                             stage.entrypoint->Describe().c_str());
             }
         }
     } else {
@@ -2287,8 +2286,8 @@ bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound& last_bound_
             if (shader_object->stage.spirv_state->HasCapability(spv::CapabilityRayQueryKHR)) {
                 const LogObjectList objlist(cb_state.Handle(), shader_object->Handle());
                 skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::RAY_QUERY_04617), objlist, loc,
-                                 "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",
-                                 string_VkShaderStageFlags(shader_object->create_info.stage).c_str());
+                                 "shader %s uses OpCapability RayQueryKHR but the command buffer is protected.",
+                                 shader_object->stage.entrypoint->Describe().c_str());
             }
         }
     }
