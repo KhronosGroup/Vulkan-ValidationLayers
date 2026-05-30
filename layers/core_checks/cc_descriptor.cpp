@@ -1421,7 +1421,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView& view_state, VkImageLa
             error_str << "Descriptor update with descriptorType " << string_VkDescriptorType(type)
                       << " is being updated with invalid imageLayout " << string_VkImageLayout(image_layout) << " for image "
                       << FormatHandle(image_state->Handle()) << " in imageView " << FormatHandle(view_state.Handle())
-                      << ". Allowed layouts are: VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
+                      << ".\nAllowed layouts are: VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
                       << "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL";
             for (auto& ext_layout : shared_extended_layouts) {
                 if (IsExtEnabled(extensions.*(ext_layout.extension))) {
