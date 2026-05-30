@@ -1705,7 +1705,7 @@ bool CoreChecks::ValidateActionStateTileShading(const LastBound& last_bound_stat
         if (pipeline) {
             active_stages = pipeline->active_shaders;
         } else {
-            for (const auto* shader_object : last_bound_state.shader_object_states) {
+            for (const auto& shader_object : last_bound_state.shader_object_states) {
                 if (shader_object) {
                     active_stages |= shader_object->create_info.stage;
                 }
@@ -2280,7 +2280,7 @@ bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound& last_bound_
             }
         }
     } else {
-        for (const vvl::ShaderObject* shader_object : last_bound_state.shader_object_states) {
+        for (const auto& shader_object : last_bound_state.shader_object_states) {
             if (!shader_object || !shader_object->stage.HasSpirv()) {
                 continue;
             }

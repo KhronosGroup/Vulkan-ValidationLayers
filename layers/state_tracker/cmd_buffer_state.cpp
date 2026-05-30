@@ -1611,7 +1611,8 @@ void CommandBuffer::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipe
     dirty_static_state = false;
 }
 
-void CommandBuffer::RecordBindShaderObject(VkShaderStageFlagBits shader_stage, vvl::ShaderObject* shader_object_state) {
+void CommandBuffer::RecordBindShaderObject(VkShaderStageFlagBits shader_stage,
+                                           const std::shared_ptr<ShaderObject>& shader_object_state) {
     auto& last_bound = lastBound[ConvertStageToVvlBindPoint(shader_stage)];
     last_bound.BindShaderObject(shader_stage, shader_object_state);
 }
