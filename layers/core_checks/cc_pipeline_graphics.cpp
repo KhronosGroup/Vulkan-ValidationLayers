@@ -3081,7 +3081,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline& pipel
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04800", device,
                          create_info_loc.dot(Field::pDynamicState)
                              .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)),
-                         "is VK_DYNAMIC_STATE_VERTEX_INPUT_EXT but the colorWriteEnable feature is not enabled.");
+                         "is VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT but the colorWriteEnable feature is not enabled.");
     }
 
     return skip;
