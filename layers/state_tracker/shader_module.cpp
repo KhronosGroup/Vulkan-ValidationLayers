@@ -146,6 +146,7 @@ bool DecorationSet::HasAnyBuiltIn() const {
     return false;
 }
 
+// Assumes is being called from a OpTypeStruct
 bool DecorationSet::HasInMember(FlagBit flag_bit) const {
     for (const auto& decoration : member_decorations) {
         if (decoration.second.Has(flag_bit)) {
@@ -1969,6 +1970,14 @@ const char* string_NumericType(uint32_t type) {
     return "(none)";
 }
 
+// When we want to check a OpVariable that has a OpTypeStruct on it
+bool VariableBase::HasInMember(DecorationSet::FlagBit flag_bit) const {
+    if (!type_struct_info) {
+        return false;
+    }
+    return type_struct_info->decorations.HasInMember(flag_bit);
+}
+
 const Instruction* VariableBase::FindDebugGlobalVariable(const VariableBase& variable, const Module& module_state,
                                                          const ParsedInfo& parsed) {
     for (const auto& insn : parsed.debug_global_variables) {
@@ -2075,9 +2084,8 @@ std::string StageInterfaceVariable::Describe() const {
 
 bool StageInterfaceVariable::IsPerTaskNV(const StageInterfaceVariable& variable) {
     // will always be in a struct member
-    if (variable.type_struct_info &&
-        (variable.stage == VK_SHADER_STAGE_MESH_BIT_EXT || variable.stage == VK_SHADER_STAGE_TASK_BIT_EXT)) {
-        return variable.type_struct_info->decorations.HasInMember(DecorationSet::per_task_nv);
+    if ((variable.stage == VK_SHADER_STAGE_MESH_BIT_EXT || variable.stage == VK_SHADER_STAGE_TASK_BIT_EXT)) {
+        return variable.HasInMember(DecorationSet::per_task_nv);
     }
     return false;
 }
