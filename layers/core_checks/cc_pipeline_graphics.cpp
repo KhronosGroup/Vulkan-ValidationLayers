@@ -2568,7 +2568,7 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline& pipeline
                              "\n  Use VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT (%s)"
                              "\n  Use VK_DYNAMIC_STATE_SAMPLE_MASK_EXT (%s)"
                              "\n  Use VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT (%s)"
-                             "\n  Use CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT (%s) or enable alphaToOne feature (%s)\n",
+                             "\n  Use VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT (%s) or enable alphaToOne feature (%s)\n",
                              IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ? "" : "not ",
                              pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) ? "set" : "not set",
                              pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT) ? "set" : "not set",
