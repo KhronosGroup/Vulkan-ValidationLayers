@@ -1973,7 +1973,7 @@ void DeviceState::PostCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer,
             shader_object_state = Get<ShaderObject>(pShaders[i]);
         }
 
-        cb_state->RecordBindShaderObject(pStages[i], shader_object_state.get());
+        cb_state->RecordBindShaderObject(pStages[i], shader_object_state);
         if (shader_object_state && !disabled[command_buffer_state]) {
             cb_state->AddChild(shader_object_state);
         }

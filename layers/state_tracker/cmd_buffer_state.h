@@ -687,7 +687,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordSetDepthCompareOp(VkCompareOp depth_compare_op);
     void RecordSetDepthTestEnable(VkBool32 depth_test_enable);
     void RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline &pipeline);
-    void RecordBindShaderObject(VkShaderStageFlagBits shader_stage, vvl::ShaderObject* shader_object_state);
+    void RecordBindShaderObject(VkShaderStageFlagBits shader_stage, const std::shared_ptr<ShaderObject>& shader_object_state);
 
     void RecordBindIndexbuffer(const Location& loc);
     void RecordSetPrimitiveRestartIndex(uint32_t primitive_restart_index, const Location& loc);

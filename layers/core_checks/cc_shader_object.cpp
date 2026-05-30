@@ -693,21 +693,22 @@ bool CoreChecks::ValidateDrawShaderObjectFlags(const LastBound& last_bound_state
 
     const vvl::ShaderObject* shader_with_independent_sets{};
     const vvl::ShaderObject* shader_without_independent_sets{};
-    for (const vvl::ShaderObject* shader : last_bound_state.shader_object_states) {
+    for (const auto& shader : last_bound_state.shader_object_states) {
         if (!shader || !shader->stage.HasSpirv()) {
             continue;
         }
 
         if (shader->is_independent_set) {
-            shader_with_independent_sets = shader;
+            shader_with_independent_sets = shader.get();
         } else {
-            shader_without_independent_sets = shader;
+            shader_without_independent_sets = shader.get();
         }
 
         constexpr VkShaderCreateFlagsEXT independent_and_no_task =
             VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR | VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
         if ((shader->safe_create_info.flags & independent_and_no_task) == independent_and_no_task) {
-            if (!(last_bound_state.desc_set_pipeline_layout->create_flags & VK_PIPELINE_LAYOUT_CREATE_NO_TASK_SHADER_BIT_KHR)) {
+            if (last_bound_state.desc_set_pipeline_layout &&
+                !(last_bound_state.desc_set_pipeline_layout->create_flags & VK_PIPELINE_LAYOUT_CREATE_NO_TASK_SHADER_BIT_KHR)) {
                 const LogObjectList objlist(last_bound_state.cb_state.Handle(),
                                             last_bound_state.desc_set_pipeline_layout->VkHandle(),
                                             shader_with_independent_sets->VkHandle());
@@ -868,14 +869,15 @@ bool CoreChecks::ValidateDrawShaderObjectLinking(const LastBound& last_bound_sta
             if (!found) {
                 const VkShaderEXT bound_shader = last_bound_state.GetShaderObject(static_cast<ShaderObjectStage>(i));
                 const auto missing_shader = Get<vvl::ShaderObject>(linked_shader);
-                const LogObjectList objlist(cb_state.Handle(), bound_shader, missing_shader->Handle());
-                skip |=
-                    LogError(CreateActionVuid(loc.function, vvl::ActionVUID::LINKED_SHADERS_08698), cb_state.Handle(), loc,
-                             "Shader %s (%s) was created with VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but the linked %s "
-                             "shader (%s) is not bound.",
-                             FormatHandle(bound_shader).c_str(),
-                             string_VkShaderStageFlagBits(last_bound_state.shader_object_states[i]->create_info.stage),
-                             FormatHandle(linked_shader).c_str(), string_VkShaderStageFlagBits(missing_shader->create_info.stage));
+                const LogObjectList objlist(cb_state.Handle(), bound_shader, linked_shader);
+                const char* msg =
+                    missing_shader ? string_VkShaderStageFlagBits(missing_shader->create_info.stage) : "which was destroyed";
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::LINKED_SHADERS_08698), cb_state.Handle(), loc,
+                                 "Shader %s (%s) was created with VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but the linked %s "
+                                 "shader (%s) is not bound.",
+                                 FormatHandle(bound_shader).c_str(),
+                                 string_VkShaderStageFlagBits(last_bound_state.shader_object_states[i]->create_info.stage),
+                                 FormatHandle(linked_shader).c_str(), msg);
                 break;
             }
         }
@@ -928,10 +930,11 @@ bool CoreChecks::ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& 
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
 
     const vvl::ShaderObject* first = nullptr;
-    for (const auto shader_state : last_bound_state.shader_object_states) {
-        if (!shader_state || !shader_state->IsGraphicsShaderState()) {
+    for (const auto& shader_state_ptr : last_bound_state.shader_object_states) {
+        if (!shader_state_ptr || !shader_state_ptr->IsGraphicsShaderState()) {
             continue;
         }
+        const auto shader_state = shader_state_ptr.get();
         if (!first) {
             first = shader_state;
             continue;
