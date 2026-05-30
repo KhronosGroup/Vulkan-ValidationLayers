@@ -8393,3 +8393,65 @@ TEST_F(NegativeShaderObject, DestroyBoundShaderObject) {
 
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeShaderObject, DestroyedLinkedShader) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+
+    VkShaderCreateInfoEXT create_infos[2];
+    create_infos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_infos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderEXT shaders[2];
+    vk::CreateShadersEXT(*m_device, 2u, create_infos, nullptr, shaders);
+
+    vk::DestroyShaderEXT(*m_device, shaders[1], nullptr);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    const VkShaderEXT bound_shaders[] = {shaders[0], VK_NULL_HANDLE};
+    vk::CmdBindShadersEXT(m_command_buffer, 2u, stages, bound_shaders);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08698");
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    vk::DestroyShaderEXT(*m_device, shaders[0], nullptr);
+}
+
+TEST_F(NegativeShaderObject, DestroyedLinkedShader2) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+
+    VkShaderCreateInfoEXT create_infos[2];
+    create_infos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_infos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderEXT shaders[2];
+    vk::CreateShadersEXT(*m_device, 2u, create_infos, nullptr, shaders);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    const VkShaderEXT bound_shaders[] = {shaders[0], shaders[1]};
+    vk::CmdBindShadersEXT(m_command_buffer, 2u, stages, bound_shaders);
+    vk::DestroyShaderEXT(*m_device, shaders[1], nullptr);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-commandBuffer-recording");
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyShaderEXT(*m_device, shaders[0], nullptr);
+}
