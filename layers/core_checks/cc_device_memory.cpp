@@ -2002,8 +2002,8 @@ bool CoreChecks::ValidateBindImageMemoryResource(const VkBindImageMemoryInfo& bi
                     bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-memory-02629" : "VUID-vkBindImageMemory-memory-02629";
                 const LogObjectList objlist(bind_info.image, bind_info.memory, dedicated_image);
                 skip |= LogError(vuid, objlist, loc.dot(Field::memory),
-                                 "(%s) is a dedicated memory allocation, but VkMemoryDedicatedAllocateInfo:: %s must be compatible "
-                                 "with %s and memoryOffset %" PRIu64 " must be zero.",
+                                 "(%s) is a dedicated memory allocation, but VkMemoryDedicatedAllocateInfo::%s must be compatible "
+                                 "with %s and memoryOffset (%" PRIu64 ") must be zero.",
                                  FormatHandle(bind_info.memory).c_str(), FormatHandle(dedicated_image).c_str(),
                                  FormatHandle(bind_info.image).c_str(), bind_info.memoryOffset);
             }
@@ -2013,8 +2013,8 @@ bool CoreChecks::ValidateBindImageMemoryResource(const VkBindImageMemoryInfo& bi
                     bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-memory-02628" : "VUID-vkBindImageMemory-memory-02628";
                 const LogObjectList objlist(bind_info.image, bind_info.memory, dedicated_image);
                 skip |= LogError(vuid, objlist, loc.dot(Field::memory),
-                                 "(%s) is a dedicated memory allocation, but VkMemoryDedicatedAllocateInfo::%s must be equal "
-                                 "to %s and memoryOffset %" PRIu64 " must be zero.",
+                                 "(%s) is a dedicated memory allocation, but VkMemoryDedicatedAllocateInfo::%s must be the same "
+                                 "image (%s) and memoryOffset (%" PRIu64 ") must be zero.",
                                  FormatHandle(bind_info.memory).c_str(), FormatHandle(dedicated_image).c_str(),
                                  FormatHandle(bind_info.image).c_str(), bind_info.memoryOffset);
             }
