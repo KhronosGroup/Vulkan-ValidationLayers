@@ -373,6 +373,8 @@ struct VariableBase {
 
     bool IsUntyped() const { return data_type_id != 0; }
 
+    bool HasInMember(DecorationSet::FlagBit flag_bit) const;
+
   private:
     static const Instruction* FindDebugGlobalVariable(const VariableBase& variable, const Module& module_state,
                                                       const ParsedInfo& parsed);
