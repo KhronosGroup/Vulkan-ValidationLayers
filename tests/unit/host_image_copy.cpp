@@ -470,9 +470,10 @@ TEST_F(NegativeHostImageCopy, Image1D) {
 TEST_F(NegativeHostImageCopy, Image1DMultiSampled) {
     RETURN_IF_SKIP(InitHostImageCopyTest());
 
-    const VkPhysicalDeviceLimits& dev_limits = m_device->Physical().limits_;
-    if ((dev_limits.sampledImageColorSampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
-        GTEST_SKIP() << "VK_SAMPLE_COUNT_2_BIT not supported";
+    VkImageFormatProperties image_properties;
+    VkResult err = GetImageFormatProps(Gpu(), image_ci, image_properties);
+    if (err != VK_SUCCESS || (image_properties.sampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
+        GTEST_SKIP() << "VK_SAMPLE_COUNT_2_BIT for image is not supported.";
     }
 
     VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;

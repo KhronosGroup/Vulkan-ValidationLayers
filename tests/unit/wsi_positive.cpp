@@ -3221,6 +3221,8 @@ TEST_F(PositiveWsi, PresentTimingsFull) {
             m_default_queue->Wait();
         }
     }
+    // To prevent vkt::CommandBuffer from having issues trying to clean itself up
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveWsi, PresentIdWaitAndAcquireSemaphoreReuse) {

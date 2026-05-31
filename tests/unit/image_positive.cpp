@@ -956,6 +956,11 @@ TEST_F(PositiveImage, ImageSingleLayerDescriptorFlagButMultiplanarImageView) {
         vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image_ci.flags |= VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 
+    VkImageFormatProperties props;
+    if (VK_SUCCESS != GetImageFormatProps(Gpu(), image_ci, props)) {
+        GTEST_SKIP() << "Image not supported";
+    }
+
     vkt::Image image(*m_device, image_ci);
     VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
     image_view_ci.image = image;

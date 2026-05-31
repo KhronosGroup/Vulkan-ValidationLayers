@@ -734,7 +734,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         const auto format_limits = image_format_properties.imageFormatProperties;
         if (pCreateInfo->mipLevels > format_limits.maxMipLevels) {
             skip |= LogError("VUID-VkImageCreateInfo-mipLevels-02255", device, create_info_loc.dot(Field::mipLevels),
-                             "(%" PRIu32 ") exceed image format maxMipLevels (%" PRIu32 ") for format %s.", pCreateInfo->mipLevels,
+                             "(%" PRIu32 ") exceeds the maxMipLevels (%" PRIu32 ") for format %s.", pCreateInfo->mipLevels,
                              format_limits.maxMipLevels, string_VkFormat(pCreateInfo->format));
         }
 
@@ -769,32 +769,32 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
         if (pCreateInfo->arrayLayers > format_limits.maxArrayLayers) {
             skip |= LogError("VUID-VkImageCreateInfo-arrayLayers-02256", device, create_info_loc.dot(Field::arrayLayers),
-                             "(%" PRIu32 ") exceeds allowable maximum supported by format %s (format maxArrayLayers: %" PRIu32 ").",
-                             pCreateInfo->arrayLayers, string_VkFormat(pCreateInfo->format), format_limits.maxArrayLayers);
+                             "(%" PRIu32 ") exceeds the maxArrayLayers (%" PRIu32 ") for %s", pCreateInfo->arrayLayers,
+                             format_limits.maxArrayLayers, string_VkFormat(pCreateInfo->format));
         }
 
         if ((pCreateInfo->samples & format_limits.sampleCounts) == 0) {
             skip |= LogError("VUID-VkImageCreateInfo-samples-02258", device, create_info_loc.dot(Field::samples),
-                             "(%s) is not supported by format %s (format sampleCounts: %s).",
+                             "(%s) is not supported by format %s\nsupported sampleCounts: %s",
                              string_VkSampleCountFlagBits(pCreateInfo->samples), string_VkFormat(pCreateInfo->format),
                              string_VkSampleCountFlags(format_limits.sampleCounts).c_str());
         }
 
         if (pCreateInfo->extent.width > format_limits.maxExtent.width) {
             skip |= LogError("VUID-VkImageCreateInfo-extent-02252", device, create_info_loc.dot(Field::extent).dot(Field::width),
-                             "(%" PRIu32 ") exceeds allowable maximum image extent width %" PRIu32 " for format %s.",
+                             "(%" PRIu32 ") exceeds the maximum image extent width (%" PRIu32 ") for format %s.",
                              pCreateInfo->extent.width, format_limits.maxExtent.width, string_VkFormat(pCreateInfo->format));
         }
 
         if (pCreateInfo->extent.height > format_limits.maxExtent.height) {
             skip |= LogError("VUID-VkImageCreateInfo-extent-02253", device, create_info_loc.dot(Field::extent).dot(Field::height),
-                             "(%" PRIu32 ") exceeds allowable maximum image extent height %" PRIu32 " for format %s.",
+                             "(%" PRIu32 ") exceeds the maximum image extent height (%" PRIu32 ") for format %s.",
                              pCreateInfo->extent.height, format_limits.maxExtent.height, string_VkFormat(pCreateInfo->format));
         }
 
         if (pCreateInfo->extent.depth > format_limits.maxExtent.depth) {
             skip |= LogError("VUID-VkImageCreateInfo-extent-02254", device, create_info_loc.dot(Field::extent).dot(Field::depth),
-                             "(%" PRIu32 ") exceeds allowable maximum image extent depth %" PRIu32 " for format %s.",
+                             "(%" PRIu32 ") exceeds the maximum image extent depth (%" PRIu32 ") for format %s.",
                              pCreateInfo->extent.depth, format_limits.maxExtent.depth, string_VkFormat(pCreateInfo->format));
         }
     }
