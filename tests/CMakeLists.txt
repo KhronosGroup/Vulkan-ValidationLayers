@@ -29,15 +29,16 @@ else()
     add_executable(vk_layer_validation_tests)
 endif()
 target_sources(vk_layer_validation_tests PRIVATE
-    unit/amd_best_practices.cpp
     unit/android_hardware_buffer.cpp
     unit/android_hardware_buffer_positive.cpp
     unit/android_external_resolve.cpp
     unit/android_external_resolve_positive.cpp
-    unit/arm_best_practices.cpp
     unit/atomics.cpp
     unit/atomics_positive.cpp
     unit/best_practices.cpp
+    unit/best_practices_amd.cpp
+    unit/best_practices_arm.cpp
+    unit/best_practices_nvidia.cpp
     unit/best_practices_positive.cpp
     unit/buffer.cpp
     unit/buffer_positive.cpp
@@ -164,7 +165,6 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/mesh_positive.cpp
     unit/multiview.cpp
     unit/multiview_positive.cpp
-    unit/nvidia_best_practices.cpp
     unit/object_lifetime.cpp
     unit/object_lifetime_positive.cpp
     unit/other_positive.cpp

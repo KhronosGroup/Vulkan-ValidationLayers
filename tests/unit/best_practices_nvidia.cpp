@@ -24,9 +24,9 @@ const char* kEnableNVIDIAValidation = "validate_best_practices_nvidia";
 
 static constexpr float defaultQueuePriority = 0.0f;
 
-class VkNvidiaBestPracticesLayerTest : public VkBestPracticesLayerTest {};
+class NegativeBestPracticesNV : public VkBestPracticesLayerTest {};
 
-TEST_F(VkNvidiaBestPracticesLayerTest, PageableDeviceLocalMemory) {
+TEST_F(NegativeBestPracticesNV, PageableDeviceLocalMemory) {
     AddRequiredExtensions(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
 
@@ -63,7 +63,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, PageableDeviceLocalMemory) {
     }
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, TilingLinear) {
+TEST_F(NegativeBestPracticesNV, TilingLinear) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -92,7 +92,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, TilingLinear) {
     }
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, Depth32Format) {
+TEST_F(NegativeBestPracticesNV, Depth32Format) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -124,7 +124,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, Depth32Format) {
     }
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
+TEST_F(NegativeBestPracticesNV, QueueBindSparse_NotAsync) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -235,7 +235,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     }
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
+TEST_F(NegativeBestPracticesNV, AccelerationStructure_NotAsync) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
@@ -289,7 +289,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     }
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_SetPriority) {
+TEST_F(NegativeBestPracticesNV, AllocateMemory_SetPriority) {
     AddRequiredExtensions(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
@@ -315,7 +315,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_SetPriority) {
     }
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_ReuseAllocations) {
+TEST_F(NegativeBestPracticesNV, AllocateMemory_ReuseAllocations) {
     AddRequiredExtensions(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
@@ -349,7 +349,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_ReuseAllocations) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
+TEST_F(NegativeBestPracticesNV, BindMemory_NoPriority) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -412,7 +412,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
     }
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_StaticPriority) {
+TEST_F(NegativeBestPracticesNV, BindMemory_StaticPriority) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -468,7 +468,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_StaticPriority) {
     m_errorMonitor->Finish();
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_SeparateSampler) {
+TEST_F(NegativeBestPracticesNV, CreatePipelineLayout_SeparateSampler) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -510,7 +510,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_SeparateSampler) {
     }
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_LargePipelineLayout) {
+TEST_F(NegativeBestPracticesNV, CreatePipelineLayout_LargePipelineLayout) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
     if (m_device->Physical().limits_.maxPerStageDescriptorStorageBuffers < 16) {
@@ -558,7 +558,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_LargePipelineLayout)
     }
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineSwitchTessGeometryMesh) {
+TEST_F(NegativeBestPracticesNV, BindPipelineSwitchTessGeometryMesh) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
@@ -618,7 +618,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineSwitchTessGeometryMesh) {
 }
 
 // TODO - This test needs to move the positive checks to new test because currently they will trigger many other errors
-TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirection) {
+TEST_F(NegativeBestPracticesNV, BindPipelineZcullDirection) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -791,7 +791,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirection) {
     m_command_buffer.End();
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirectionDepth) {
+TEST_F(NegativeBestPracticesNV, BindPipelineZcullDirectionDepth) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -975,7 +975,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirectionDepth) {
     m_command_buffer.End();
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirectionSubresource) {
+TEST_F(NegativeBestPracticesNV, BindPipelineZcullDirectionSubresource) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -1122,7 +1122,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirectionSubresource) {
     m_command_buffer.End();
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, ClearColorNotCompressed) {
+TEST_F(NegativeBestPracticesNV, ClearColorNotCompressed) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
@@ -1216,7 +1216,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColorNotCompressed) {
     m_command_buffer.End();
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
+TEST_F(NegativeBestPracticesNV, BeginCommandBuffer_OneTimeSubmit) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
 

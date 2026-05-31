@@ -114,7 +114,7 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
     }
 
     // We have a few speical VUID we never actually want to suppress.
-    // If a new VUID is added here, make sure to add it in VkLayerTest.VuidHashStability test as well.
+    // If a new VUID is added here, make sure to add it in NegativeOther.VuidHashStability test as well.
     const bool skip_checking_limit =
         // We want to print DebugPrintf message forever, otherwise user will mistake duplicate limit for things not printing
         (vuid_hash == 0x4fe1fef9) ||

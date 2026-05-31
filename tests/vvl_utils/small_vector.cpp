@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+ * Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ bool HaveSameElements(const T& l1, const U& l2) {
     return l1.size() == l2.size() && HaveSameElementsUpTo(l1, l2, l1.size());
 }
 
-TEST(CustomContainer, SmallVectorIntResize) {
+TEST(UtilsCustomContainer, SmallVectorIntResize) {
     // Resize int small vector, moving to small store
     // ---
     {
@@ -139,7 +139,7 @@ struct NoDefaultCons {
 
 bool operator!=(const NoDefaultCons& lhs, const NoDefaultCons& rhs) { return lhs.x != rhs.x; }
 
-TEST(CustomContainer, SmallVectorNotDefaultInsertable) {
+TEST(UtilsCustomContainer, SmallVectorNotDefaultInsertable) {
     // Resize NoDefault small vector, moving to small store
     // ---
     {
@@ -217,7 +217,7 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertable) {
     }
 }
 
-TEST(CustomContainer, SmallVectorNotDefaultInsertableDefaultValue) {
+TEST(UtilsCustomContainer, SmallVectorNotDefaultInsertableDefaultValue) {
     // Resize NoDefault small vector, moving to small store
     // ---
     {
@@ -293,7 +293,7 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertableDefaultValue) {
         ASSERT_TRUE(HaveSameElements(v9, ref));
     }
 }
-TEST(CustomContainer, SmallVectorConstruct) {
+TEST(UtilsCustomContainer, SmallVectorConstruct) {
     using SmallVector = small_vector<std::string, 5, size_t>;
     const SmallVector ref_small = {"one", "two", "three", "four"};
     SmallVector ref_large = {"one", "two", "three", "four", "five", "six"};
@@ -335,7 +335,7 @@ TEST(CustomContainer, SmallVectorConstruct) {
     ASSERT_TRUE(HaveSameElements(ref_large, v_large_move_dst));
 }
 
-TEST(CustomContainer, SmallVectorAssign) {
+TEST(UtilsCustomContainer, SmallVectorAssign) {
     using SmallVector = small_vector<std::string, 5, size_t>;
     const SmallVector ref_xxs = {"one", "two"};
     const SmallVector ref_xs = {"one", "two", "three"};
@@ -425,7 +425,7 @@ TEST(CustomContainer, SmallVectorAssign) {
     ASSERT_TRUE(HaveSameElements(ref_xxl, v_dst));
 }
 
-TEST(CustomContainer, Enumerate) {
+TEST(UtilsCustomContainer, Enumerate) {
     small_vector<int, 2, size_t> sv = {1, 2, 3, 4};
     std::array ref_elements = {1, 2, 3, 4};
     size_t indices_i = 0;
@@ -436,7 +436,7 @@ TEST(CustomContainer, Enumerate) {
     }
 }
 
-TEST(CustomContainer, EnumerateConst) {
+TEST(UtilsCustomContainer, EnumerateConst) {
     const std::vector<int> sv{1, 2, 3, 4};
     std::array ref_elements = {1, 2, 3, 4};
     size_t indices_i = 0;

@@ -27,6 +27,7 @@
 class NegativeRenderPass : public VkLayerTest {
   public:
     void TestRenderPass2KHRCreate(const VkRenderPassCreateInfo2KHR& create_info, const std::vector<const char*>& vuids);
+    void TestPotentialFormatFeatures(bool const useLinearColorAttachment);
 };
 
 void NegativeRenderPass::TestRenderPass2KHRCreate(const VkRenderPassCreateInfo2KHR& create_info,
@@ -1994,12 +1995,7 @@ TEST_F(NegativeRenderPass, MissingAttachment) {
     m_command_buffer.End();
 }
 
-class RenderPassCreatePotentialFormatFeaturesTest : public NegativeRenderPass {
-  public:
-    void Test(bool const useLinearColorAttachment);
-};
-
-void RenderPassCreatePotentialFormatFeaturesTest::Test(bool const useLinearColorAttachment) {
+void NegativeRenderPass::TestPotentialFormatFeatures(bool const useLinearColorAttachment) {
     // Check for VK_KHR_get_physical_device_properties2
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (useLinearColorAttachment) {
@@ -2132,14 +2128,14 @@ void RenderPassCreatePotentialFormatFeaturesTest::Test(bool const useLinearColor
     }
 }
 
-TEST_F(RenderPassCreatePotentialFormatFeaturesTest, Core) {
+TEST_F(NegativeRenderPass, PotentialFormatFeaturesCore) {
     TEST_DESCRIPTION("Validate PotentialFormatFeatures in renderpass create");
-    Test(false);
+    TestPotentialFormatFeatures(false);
 }
 
-TEST_F(RenderPassCreatePotentialFormatFeaturesTest, LinearColorAttachment) {
+TEST_F(NegativeRenderPass, PotentialFormatFeaturesLinearColorAttachment) {
     TEST_DESCRIPTION("Validate PotentialFormatFeatures in renderpass create with linearColorAttachment");
-    Test(true);
+    TestPotentialFormatFeatures(true);
 }
 
 TEST_F(NegativeRenderPass, DepthStencilResolveMode) {
