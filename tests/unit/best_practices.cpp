@@ -20,25 +20,9 @@
 #include "../framework/sync_helper.h"
 #include "../framework/thread_helper.h"
 
-void VkBestPracticesLayerTest::InitBestPracticesFramework(const char* vendor_checks_to_enable) {
-    const VkLayerSettingEXT settings = {OBJECT_LAYER_NAME, vendor_checks_to_enable, VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
-    const VkLayerSettingsCreateInfoEXT layer_settings_create_info{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
-                                                                  &settings};
+class NegativeBestPractices : public VkBestPracticesLayerTest {};
 
-    if (vendor_checks_to_enable) {
-        features_.pNext = &layer_settings_create_info;
-    }
-
-    AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
-    InitFramework(&features_);
-}
-
-void VkBestPracticesLayerTest::InitBestPractices(const char* vendor_checks_to_enable) {
-    RETURN_IF_SKIP(InitBestPracticesFramework(vendor_checks_to_enable));
-    RETURN_IF_SKIP(InitState());
-}
-
-TEST_F(VkBestPracticesLayerTest, ReturnCodes) {
+TEST_F(NegativeBestPractices, ReturnCodes) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddSurfaceExtension();
@@ -82,7 +66,7 @@ TEST_F(VkBestPracticesLayerTest, ReturnCodes) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, SpecialUseExtensionsInstance) {
+TEST_F(NegativeBestPractices, SpecialUseExtensionsInstance) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     if (!InstanceExtensionSupported(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME)) {
         GTEST_SKIP() << "Did not find required instance extension";
@@ -105,7 +89,7 @@ TEST_F(VkBestPracticesLayerTest, SpecialUseExtensionsInstance) {
     Monitor().VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, SpecialUseExtensionsDevice) {
+TEST_F(NegativeBestPractices, SpecialUseExtensionsDevice) {
     AddRequiredExtensions(VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBestPracticesFramework());
 
@@ -128,7 +112,7 @@ TEST_F(VkBestPracticesLayerTest, SpecialUseExtensionsDevice) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
+TEST_F(NegativeBestPractices, CmdClearAttachmentTest) {
     TEST_DESCRIPTION("Test for validating usage of vkCmdClearAttachments");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -157,7 +141,7 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
+TEST_F(NegativeBestPractices, CmdClearAttachmentTestSecondary) {
     TEST_DESCRIPTION("Test for validating usage of vkCmdClearAttachments with secondary command buffers");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -224,7 +208,7 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
     m_command_buffer.EndRenderPass();
 }
 
-TEST_F(VkBestPracticesLayerTest, ZeroSizeBlitRegion) {
+TEST_F(NegativeBestPractices, ZeroSizeBlitRegion) {
     TEST_DESCRIPTION("vkCmdBlitImage with a zero area region");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -250,7 +234,7 @@ TEST_F(VkBestPracticesLayerTest, ZeroSizeBlitRegion) {
     m_command_buffer.End();
 }
 
-TEST_F(VkBestPracticesLayerTest, SecondaryCommandBuffer) {
+TEST_F(NegativeBestPractices, SecondaryCommandBuffer) {
     TEST_DESCRIPTION("Test for validating usage of vkCreateCommandPool with VK_COMMAND_BUFFER_LEVEL_SECONDARY");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -293,7 +277,7 @@ TEST_F(VkBestPracticesLayerTest, SecondaryCommandBuffer) {
     vk::FreeCommandBuffers(device(), command_pool, 1, &command_buffer);
 }
 
-TEST_F(VkBestPracticesLayerTest, SmallDedicatedAllocation) {
+TEST_F(NegativeBestPractices, SmallDedicatedAllocation) {
     TEST_DESCRIPTION("Test for small dedicated memory allocations");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -313,7 +297,7 @@ TEST_F(VkBestPracticesLayerTest, SmallDedicatedAllocation) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, MSImageRequiresMemory) {
+TEST_F(NegativeBestPractices, MSImageRequiresMemory) {
     TEST_DESCRIPTION("Test for MS image that requires memory");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -343,7 +327,7 @@ TEST_F(VkBestPracticesLayerTest, MSImageRequiresMemory) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
+TEST_F(NegativeBestPractices, AttachmentShouldNotBeTransient) {
     TEST_DESCRIPTION("Test for non-lazy multisampled images");
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
@@ -376,7 +360,7 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
+TEST_F(NegativeBestPractices, TooManyInstancedVertexBuffers) {
     TEST_DESCRIPTION("Test for too many instanced vertex buffers");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -425,7 +409,7 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
+TEST_F(NegativeBestPractices, ClearAttachmentsAfterLoad) {
     TEST_DESCRIPTION("Test for clearing attachments after load");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -467,7 +451,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
+TEST_F(NegativeBestPractices, ClearAttachmentsAfterLoadSecondary) {
     TEST_DESCRIPTION("Test for clearing attachments after load with secondary command buffers");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -603,7 +587,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     m_command_buffer.EndRenderPass();
 }
 
-TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
+TEST_F(NegativeBestPractices, TripleBufferingTest) {
     TEST_DESCRIPTION("Test for usage of triple buffering");
 
     AddSurfaceExtension();
@@ -660,7 +644,7 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     m_swapchain.Init(*m_device, swapchain_create_info);
 }
 
-TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
+TEST_F(NegativeBestPractices, SwapchainCreationTest) {
     TEST_DESCRIPTION("Test for correct swapchain creation");
 
     AddSurfaceExtension();
@@ -724,7 +708,7 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     m_swapchain.Init(*m_device, swapchain_create_info);
 }
 
-TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
+TEST_F(NegativeBestPractices, ExpectedQueryDetails) {
     TEST_DESCRIPTION("Check that GetPhysicalDeviceQueueFamilyProperties is working as expected");
 
     // Vulkan 1.1 required to test vkGetPhysicalDeviceQueueFamilyProperties2
@@ -762,7 +746,7 @@ TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
     vkt::Device device(phys_device_obj, m_device_extension_names);
 }
 
-TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
+TEST_F(NegativeBestPractices, MissingQueryDetails) {
     TEST_DESCRIPTION("Check that GetPhysicalDeviceQueueFamilyProperties generates appropriate query warning");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -810,7 +794,7 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
+TEST_F(NegativeBestPractices, CreatePipelineVsFsTypeMismatchArraySize) {
     TEST_DESCRIPTION("Test that an error is produced for mismatched array sizes across the vertex->fragment shader interface");
 
     RETURN_IF_SKIP(Init());
@@ -842,7 +826,7 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "WARNING-Shader-OutputNotConsumed");
 }
 
-TEST_F(VkBestPracticesLayerTest, WorkgroupSizeDeprecated) {
+TEST_F(NegativeBestPractices, WorkgroupSizeDeprecated) {
     TEST_DESCRIPTION("SPIR-V 1.6 deprecated WorkgroupSize build-in.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -877,7 +861,7 @@ TEST_F(VkBestPracticesLayerTest, WorkgroupSizeDeprecated) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "BestPractices-SpirvDeprecated_WorkgroupSize");
 }
 
-TEST_F(VkBestPracticesLayerTest, ImageExtendedUsageWithoutMutableFormat) {
+TEST_F(NegativeBestPractices, ImageExtendedUsageWithoutMutableFormat) {
     TEST_DESCRIPTION("Create image with extended usage bit but not mutable format bit.");
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -892,7 +876,7 @@ TEST_F(VkBestPracticesLayerTest, ImageExtendedUsageWithoutMutableFormat) {
 }
 
 #if GTEST_IS_THREADSAFE
-TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
+TEST_F(NegativeBestPractices, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
     TEST_DESCRIPTION("Two threads updating the same UAB descriptor set, expected not to generate a threading error");
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -937,7 +921,7 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
 }
 #endif  // GTEST_IS_THREADSAFE
 
-TEST_F(VkBestPracticesLayerTest, TransitionFromUndefinedToReadOnly) {
+TEST_F(NegativeBestPractices, TransitionFromUndefinedToReadOnly) {
     TEST_DESCRIPTION("Transition image layout from undefined to read only");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -975,7 +959,7 @@ TEST_F(VkBestPracticesLayerTest, TransitionFromUndefinedToReadOnly) {
     m_command_buffer.End();
 }
 
-TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
+TEST_F(NegativeBestPractices, OverAllocateFromDescriptorPool) {
     TEST_DESCRIPTION("Attempt to allocate more sets and descriptors than descriptor pool has available.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -1005,7 +989,7 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, OverAllocateTypeFromDescriptorPool) {
+TEST_F(NegativeBestPractices, OverAllocateTypeFromDescriptorPool) {
     TEST_DESCRIPTION("Attempt to allocate more sets and descriptors than descriptor pool has available.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -1036,7 +1020,7 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateTypeFromDescriptorPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
+TEST_F(NegativeBestPractices, RenderPassClearWithoutLoadOpClear) {
     TEST_DESCRIPTION("Test for clearing a RenderPass with non-zero clearValueCount without any VK_ATTACHMENT_LOAD_OP_CLEAR");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -1099,7 +1083,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     m_command_buffer.End();
 }
 
-TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCount) {
+TEST_F(NegativeBestPractices, RenderPassClearValueCountHigherThanAttachmentCount) {
     TEST_DESCRIPTION(
         "Test for beginning a RenderPass with VkRenderPassBeginInfo.clearValueCount > VkRenderPassCreateInfo.attachmentCount");
 
@@ -1170,7 +1154,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     m_command_buffer.End();
 }
 
-TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
+TEST_F(NegativeBestPractices, DontCareThenLoad) {
     TEST_DESCRIPTION("Test for storing an attachment with STORE_OP_DONT_CARE then loading with LOAD_OP_LOAD");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -1246,7 +1230,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     m_default_queue->Wait();
 }
 
-TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
+TEST_F(NegativeBestPractices, ExclusiveImageMultiQueueUsage) {
     TEST_DESCRIPTION("Test for using a queue exclusive image on multiple queues");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -1430,7 +1414,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     m_errorMonitor->Finish();
 }
 
-TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
+TEST_F(NegativeBestPractices, ImageMemoryBarrierAccessLayoutCombinations) {
     TEST_DESCRIPTION("Transition image layout from undefined to read only");
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -1523,7 +1507,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
     }
 }
 
-TEST_F(VkBestPracticesLayerTest, NonSimultaneousSecondaryMarksPrimary) {
+TEST_F(NegativeBestPractices, NonSimultaneousSecondaryMarksPrimary) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -1546,7 +1530,7 @@ TEST_F(VkBestPracticesLayerTest, NonSimultaneousSecondaryMarksPrimary) {
     m_command_buffer.End();
 }
 
-TEST_F(VkBestPracticesLayerTest, NoCreateSwapchainPresentModes) {
+TEST_F(NegativeBestPractices, NoCreateSwapchainPresentModes) {
     TEST_DESCRIPTION("With swapchain maintenance 1, CreateSwapchain with VkPresentModesCreateInfoEXT");
 
     AddSurfaceExtension();
@@ -1562,7 +1546,7 @@ TEST_F(VkBestPracticesLayerTest, NoCreateSwapchainPresentModes) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, PipelineWithoutRenderPassOrRenderingInfo) {
+TEST_F(NegativeBestPractices, PipelineWithoutRenderPassOrRenderingInfo) {
     TEST_DESCRIPTION("Create pipeline with VK_NULL_HANDLE render pass and no VkPipelineRenderingCreateInfo in pNext chain");
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
@@ -1579,7 +1563,7 @@ TEST_F(VkBestPracticesLayerTest, PipelineWithoutRenderPassOrRenderingInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, GetQueryPoolResultsWithoutBegin) {
+TEST_F(NegativeBestPractices, GetQueryPoolResultsWithoutBegin) {
     TEST_DESCRIPTION("Get query pool results without ever beginning the query");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -1599,7 +1583,7 @@ TEST_F(VkBestPracticesLayerTest, GetQueryPoolResultsWithoutBegin) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, NonOptimalResolveFormat) {
+TEST_F(NegativeBestPractices, NonOptimalResolveFormat) {
     TEST_DESCRIPTION("Create a render pass with a resolve attachment that is not optimal");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1658,7 +1642,7 @@ TEST_F(VkBestPracticesLayerTest, NonOptimalResolveFormat) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEnd) {
+TEST_F(NegativeBestPractices, PartialPushConstantSetEnd) {
     TEST_DESCRIPTION("Set only a part of push constants at end of a struct");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -1701,7 +1685,7 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEnd) {
     m_command_buffer.End();
 }
 
-TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetMiddle) {
+TEST_F(NegativeBestPractices, PartialPushConstantSetMiddle) {
     TEST_DESCRIPTION("Set only a part of push constants in middle of as struct");
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
@@ -1746,7 +1730,7 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetMiddle) {
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7495
-TEST_F(VkBestPracticesLayerTest, IgnoreResolveImageView) {
+TEST_F(NegativeBestPractices, IgnoreResolveImageView) {
     TEST_DESCRIPTION("Help warn user when they might have resolveMode set to NONE by accident");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -1791,7 +1775,7 @@ TEST_F(VkBestPracticesLayerTest, IgnoreResolveImageView) {
     m_command_buffer.End();
 }
 
-TEST_F(VkBestPracticesLayerTest, SetSignaledEvent) {
+TEST_F(NegativeBestPractices, SetSignaledEvent) {
     TEST_DESCRIPTION("Signal event two times");
     RETURN_IF_SKIP(InitBestPractices());
 
@@ -1805,7 +1789,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEvent) {
     m_command_buffer.End();
 }
 
-TEST_F(VkBestPracticesLayerTest, SetSignaledEvent2) {
+TEST_F(NegativeBestPractices, SetSignaledEvent2) {
     TEST_DESCRIPTION("Signal event two times using CmdSetEvent2 api");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -1826,7 +1810,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEvent2) {
     m_command_buffer.End();
 }
 
-TEST_F(VkBestPracticesLayerTest, SetEventSignaledByHost) {
+TEST_F(NegativeBestPractices, SetEventSignaledByHost) {
     TEST_DESCRIPTION("Set event that was previously set be the host");
     RETURN_IF_SKIP(InitBestPractices());
 
@@ -1841,7 +1825,7 @@ TEST_F(VkBestPracticesLayerTest, SetEventSignaledByHost) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, SetSignaledEventMultipleSubmits) {
+TEST_F(NegativeBestPractices, SetSignaledEventMultipleSubmits) {
     TEST_DESCRIPTION("Set event from different submits");
     RETURN_IF_SKIP(InitBestPractices());
 
@@ -1862,7 +1846,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEventMultipleSubmits) {
     m_device->Wait();
 }
 
-TEST_F(VkBestPracticesLayerTest, SetSignaledEventMultipleSubmits2) {
+TEST_F(NegativeBestPractices, SetSignaledEventMultipleSubmits2) {
     TEST_DESCRIPTION("Set event from multiple submits using QueueSubmit2 api");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -1885,7 +1869,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEventMultipleSubmits2) {
     m_device->Wait();
 }
 
-TEST_F(VkBestPracticesLayerTest, SetSignaledEventSecondary) {
+TEST_F(NegativeBestPractices, SetSignaledEventSecondary) {
     TEST_DESCRIPTION("Set event in the primary command buffer and then one more time in the secondary");
     RETURN_IF_SKIP(InitBestPractices());
 
@@ -1904,7 +1888,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEventSecondary) {
     m_command_buffer.End();
 }
 
-TEST_F(VkBestPracticesLayerTest, SetSignaledEventSecondary2) {
+TEST_F(NegativeBestPractices, SetSignaledEventSecondary2) {
     TEST_DESCRIPTION("Set event in different secondary command buffers");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -1929,7 +1913,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEventSecondary2) {
     m_command_buffer.End();
 }
 
-TEST_F(VkBestPracticesLayerTest, SetSignaledEventSecondary3) {
+TEST_F(NegativeBestPractices, SetSignaledEventSecondary3) {
     TEST_DESCRIPTION("Set event in the secondary command buffer and in the primary from different submissions");
     RETURN_IF_SKIP(InitBestPractices());
 
@@ -1955,7 +1939,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEventSecondary3) {
     m_device->Wait();
 }
 
-TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEndCompute) {
+TEST_F(NegativeBestPractices, PartialPushConstantSetEndCompute) {
     TEST_DESCRIPTION("Set only a part of push constants at end of a struct");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
@@ -2003,7 +1987,7 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEndCompute) {
     m_command_buffer.End();
 }
 
-TEST_F(VkBestPracticesLayerTest, UnneededQueueFamilyOwnershipTransfer) {
+TEST_F(NegativeBestPractices, UnneededQueueFamilyOwnershipTransfer) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
@@ -2056,7 +2040,7 @@ TEST_F(VkBestPracticesLayerTest, UnneededQueueFamilyOwnershipTransfer) {
     transfer_cb.End();
 }
 
-TEST_F(VkBestPracticesLayerTest, UnneededQueueFamilyOwnershipTransferImage) {
+TEST_F(NegativeBestPractices, UnneededQueueFamilyOwnershipTransferImage) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
@@ -2106,7 +2090,7 @@ TEST_F(VkBestPracticesLayerTest, UnneededQueueFamilyOwnershipTransferImage) {
     transfer_cb.End();
 }
 
-TEST_F(VkBestPracticesLayerTest, BadDestroy) {
+TEST_F(NegativeBestPractices, BadDestroy) {
     TEST_DESCRIPTION(
         "In PreCallRecordDestroyDevice, make sure CommandBufferSubState is destroyed before destroying device state and validation "
         "does not crash");
@@ -2154,7 +2138,7 @@ TEST_F(VkBestPracticesLayerTest, BadDestroy) {
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkDestroyInstance-instance-00629");
 }
 
-TEST_F(VkBestPracticesLayerTest, MutableDescriptors) {
+TEST_F(NegativeBestPractices, MutableDescriptors) {
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(InitBestPractices());
@@ -2177,7 +2161,7 @@ TEST_F(VkBestPracticesLayerTest, MutableDescriptors) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, MaxPreferredWorkGroupInvocations) {
+TEST_F(NegativeBestPractices, MaxPreferredWorkGroupInvocations) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::meshShader);

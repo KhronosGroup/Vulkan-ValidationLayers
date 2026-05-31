@@ -20,9 +20,9 @@ There is nothing worse than debugging why your layers are not reporting the VUID
 
 ## Google Test Overview
 
-The tests take advantage of the Google Test (gtest) Framework which breaks each test into a `TEST_F(VkLayerTest, TestName)` "Test Fixture". This just means that for every test there will be a class that holds many useful member variables.
+The tests take advantage of the Google Test (gtest) Framework which breaks each test into a `TEST_F(NegativeOther, TestName)` "Test Fixture". This just means that for every test there will be a class that holds many useful member variables.
 
-To run a test labeled `TEST_F(VkLayerTest, Foo)` is as simple as going `--gtest_filter=VkLayerTest.Foo`
+To run a test labeled `TEST_F(NegativeOther, Foo)` is as simple as going `--gtest_filter=NegativeOther.Foo`
 
 ## VkRenderFramework
 

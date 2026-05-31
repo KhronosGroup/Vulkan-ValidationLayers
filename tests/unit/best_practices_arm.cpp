@@ -20,7 +20,7 @@
 
 const char* kEnableArmValidation = "validate_best_practices_arm";
 
-class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {};
+class NegativeBestPracticesARM : public VkBestPracticesLayerTest {};
 
 class VkConstantBufferObj : public vkt::Buffer {
   public:
@@ -36,7 +36,7 @@ class VkConstantBufferObj : public vkt::Buffer {
 
 // Tests for Arm-specific best practices
 
-TEST_F(VkArmBestPracticesLayerTest, TooManySamples) {
+TEST_F(NegativeBestPracticesARM, TooManySamples) {
     TEST_DESCRIPTION("Test for multisampled images with too many samples");
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
@@ -61,7 +61,7 @@ TEST_F(VkArmBestPracticesLayerTest, TooManySamples) {
     }
 }
 
-TEST_F(VkArmBestPracticesLayerTest, NonTransientMSImage) {
+TEST_F(NegativeBestPracticesARM, NonTransientMSImage) {
     TEST_DESCRIPTION("Test for non-transient multisampled images");
 
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
@@ -77,7 +77,7 @@ TEST_F(VkArmBestPracticesLayerTest, NonTransientMSImage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkArmBestPracticesLayerTest, SamplerCreation) {
+TEST_F(NegativeBestPracticesARM, SamplerCreation) {
     TEST_DESCRIPTION("Test for various checks during sampler creation");
 
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
@@ -105,7 +105,7 @@ TEST_F(VkArmBestPracticesLayerTest, SamplerCreation) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkArmBestPracticesLayerTest, MultisampledBlending) {
+TEST_F(NegativeBestPracticesARM, MultisampledBlending) {
     TEST_DESCRIPTION("Test for multisampled blending");
 
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
@@ -157,7 +157,7 @@ TEST_F(VkArmBestPracticesLayerTest, MultisampledBlending) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
+TEST_F(NegativeBestPracticesARM, AttachmentNeedsReadback) {
     TEST_DESCRIPTION("Test for attachments that need readback");
 
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
@@ -183,7 +183,7 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
+TEST_F(NegativeBestPracticesARM, ManySmallIndexedDrawcalls) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdDrawIndexed-many-small-indexed-drawcalls");
@@ -221,7 +221,7 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     m_command_buffer.End();
 }
 
-TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
+TEST_F(NegativeBestPracticesARM, SuboptimalDescriptorReuseTest) {
     TEST_DESCRIPTION("Test for validation warnings of potentially suboptimal re-use of descriptor set allocations");
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
@@ -278,7 +278,7 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     // this should create no validation warnings
 }
 
-TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
+TEST_F(NegativeBestPracticesARM, SparseIndexBufferTest) {
     TEST_DESCRIPTION(
         "Test for appropriate warnings to be thrown when recording an indexed draw call with sparse/non-sparse index buffers.");
 
@@ -382,7 +382,7 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
     test_pipelines(sparse_ibo, sparse_indices.size(), true);
 }
 
-TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest) {
+TEST_F(NegativeBestPracticesARM, PostTransformVertexCacheThrashingIndicesTest) {
     TEST_DESCRIPTION(
         "Test for appropriate warnings to be thrown when recording an indexed draw call where the indices thrash the "
         "post-transform vertex cache.");
@@ -446,7 +446,7 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     best_ibo.Memory().Unmap();
 }
 
-TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
+TEST_F(NegativeBestPracticesARM, PresentModeTest) {
     TEST_DESCRIPTION("Test for usage of Presentation Modes");
 
     AddSurfaceExtension();
@@ -503,7 +503,7 @@ TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
     ASSERT_TRUE(m_swapchain.initialized());
 }
 
-TEST_F(VkArmBestPracticesLayerTest, PipelineDepthBiasZeroTest) {
+TEST_F(NegativeBestPracticesARM, PipelineDepthBiasZeroTest) {
     TEST_DESCRIPTION("Test for unnecessary rasterization due to using 0 for depthBiasConstantFactor and depthBiasSlopeFactor");
 
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
@@ -523,7 +523,7 @@ TEST_F(VkArmBestPracticesLayerTest, PipelineDepthBiasZeroTest) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(VkArmBestPracticesLayerTest, RobustBufferAccessTest) {
+TEST_F(NegativeBestPracticesARM, RobustBufferAccessTest) {
     TEST_DESCRIPTION("Test for appropriate warnings to be thrown when robustBufferAccess is enabled.");
 
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
@@ -556,7 +556,7 @@ TEST_F(VkArmBestPracticesLayerTest, RobustBufferAccessTest) {
     }
 }
 
-TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
+TEST_F(NegativeBestPracticesARM, DepthPrePassUsage) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -636,7 +636,7 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest) {
+TEST_F(NegativeBestPracticesARM, ComputeShaderBadWorkGroupThreadAlignmentTest) {
     TEST_DESCRIPTION(
         "Testing for cases where compute shaders will be dispatched in an inefficient way, due to work group dispatch counts on "
         "Arm Mali architectures.");
@@ -690,7 +690,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
     }
 }
 
-TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
+TEST_F(NegativeBestPracticesARM, ComputeShaderBadWorkGroupThreadCountTest) {
     TEST_DESCRIPTION(
         "Testing for cases where the number of work groups spawned is greater than advised for Arm Mali architectures.");
 
@@ -740,7 +740,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
     }
 }
 
-TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocality) {
+TEST_F(NegativeBestPracticesARM, ComputeShaderBadSpatialLocality) {
     TEST_DESCRIPTION(
         "Testing for cases where a compute shader's configuration makes poor use of spatial locality, on Arm Mali architectures, "
         "for one or more of its resources.");
@@ -803,7 +803,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocality) {
     }
 }
 
-TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityMultiEntrypoint) {
+TEST_F(NegativeBestPracticesARM, ComputeShaderBadSpatialLocalityMultiEntrypoint) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10035");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
@@ -868,7 +868,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityMultiEntrypoi
     pipe.CreateComputePipeline();
 }
 
-TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
+TEST_F(NegativeBestPracticesARM, RedundantRenderPassStore) {
     TEST_DESCRIPTION("Test for appropriate warnings to be thrown when a redundant store is used.");
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
@@ -929,7 +929,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     render_pass_begin_info.pClearValues = clear_values;
     render_pass_begin_info.renderArea.extent = {32, 32};
 
-    const auto execute_work = [&](const std::function<void(vkt::CommandBuffer & command_buffer)>& work) {
+    const auto execute_work = [&](const std::function<void(vkt::CommandBuffer& command_buffer)>& work) {
         vk::ResetCommandPool(device(), m_command_pool, 0);
         m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
@@ -978,7 +978,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
+TEST_F(NegativeBestPracticesARM, RedundantRenderPassClear) {
     TEST_DESCRIPTION("Test for appropriate warnings to be thrown when a redundant clear is used.");
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
@@ -1041,7 +1041,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
+TEST_F(NegativeBestPracticesARM, InefficientRenderPassClear) {
     TEST_DESCRIPTION("Test for appropriate warnings to be thrown when a redundant clear is used on a LOAD_OP_LOAD attachment.");
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
@@ -1125,7 +1125,7 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
+TEST_F(NegativeBestPracticesARM, DescriptorTracking) {
     TEST_DESCRIPTION("Tests that we track descriptors, which means we should not trigger warnings.");
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
@@ -1263,7 +1263,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
+TEST_F(NegativeBestPracticesARM, BlitImageLoadOpLoad) {
     TEST_DESCRIPTION("Test for vkBlitImage followed by a LoadOpLoad renderpass");
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
@@ -1377,7 +1377,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
+TEST_F(NegativeBestPracticesARM, RedundantAttachment) {
     TEST_DESCRIPTION("Test for redundant renderpasses which consume bandwidth");
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());

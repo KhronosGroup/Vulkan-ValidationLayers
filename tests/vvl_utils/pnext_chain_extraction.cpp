@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ bool FindSTypes(void* chain, const std::vector<VkStructureType>& sTypes_list) {
 }
 
 // Extract all structs from a pNext chain
-TEST(PnextChainExtract, Extract1) {
+TEST(UtilsPnextChainExtract, Extract1) {
     // Those structs extend VkPhysicalDeviceImageFormatInfo2
     VkImageCompressionControlEXT s1 = vku::InitStructHelper();
     VkImageFormatListCreateInfo s2 = vku::InitStructHelper(&s1);
@@ -43,7 +43,7 @@ TEST(PnextChainExtract, Extract1) {
 }
 
 // Extract all structs mentioned in tuple vvl::PnextChainVkPhysicalDeviceImageFormatInfo2 and found in input pNext chain
-TEST(PnextChainExtract, Extract2) {
+TEST(UtilsPnextChainExtract, Extract2) {
     // Those structs extend VkPhysicalDeviceImageFormatInfo2
     VkImageCompressionControlEXT s1 = vku::InitStructHelper();
     VkImageFormatListCreateInfo s2 = vku::InitStructHelper(&s1);
@@ -66,7 +66,7 @@ TEST(PnextChainExtract, Extract2) {
 
 // Test that no struct is extracted when no struct from a pNext chain extends the reference struct, here
 // VkPhysicalDeviceImageFormatInfo2
-TEST(PnextChainExtract, Extract3) {
+TEST(UtilsPnextChainExtract, Extract3) {
     // Those structs do not extend VkPhysicalDeviceImageFormatInfo2
     VkExternalMemoryImageCreateInfo wrong1 = vku::InitStructHelper();
     VkImageDrmFormatModifierListCreateInfoEXT wrong2 = vku::InitStructHelper(&wrong1);
@@ -79,7 +79,7 @@ TEST(PnextChainExtract, Extract3) {
 }
 
 // Extract all structs from a pNext chain, add a new element, then remove it
-TEST(PnextChainExtract, ExtractAddRemove1) {
+TEST(UtilsPnextChainExtract, ExtractAddRemove1) {
     // Those structs extend VkPhysicalDeviceImageFormatInfo2
     VkImageCompressionControlEXT s1 = vku::InitStructHelper();
     VkImageFormatListCreateInfo s2 = vku::InitStructHelper(&s1);
@@ -104,7 +104,7 @@ TEST(PnextChainExtract, ExtractAddRemove1) {
 }
 
 // Extract all structs from a pNext chain, add two new elements, in a nested fashion, then remove them
-TEST(PnextChainExtract, ExtractAddRemove2) {
+TEST(UtilsPnextChainExtract, ExtractAddRemove2) {
     // Those structs extend VkPhysicalDeviceImageFormatInfo2
     VkImageCompressionControlEXT s1 = vku::InitStructHelper();
     VkImageFormatListCreateInfo s2 = vku::InitStructHelper(&s1);

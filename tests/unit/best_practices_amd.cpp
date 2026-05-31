@@ -18,12 +18,12 @@
 // Tests for AMD-specific best practices
 const char* kEnableAMDValidation = "validate_best_practices_amd";
 
-class VkAmdBestPracticesLayerTest : public VkBestPracticesLayerTest {};
+class NegativeBestPracticesAMD : public VkBestPracticesLayerTest {};
 
 // this is a very long test (~10 minutes)
 // disabled for now
 #ifdef AMD_LONG_RUNNING_TEST
-TEST_F(VkAmdBestPracticesLayerTest, TooManyPipelines) {
+TEST_F(NegativeBestPracticesAMD, TooManyPipelines) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -55,7 +55,7 @@ TEST_F(VkAmdBestPracticesLayerTest, TooManyPipelines) {
 }
 #endif
 
-TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
+TEST_F(NegativeBestPracticesAMD, UseMutableRT) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -86,7 +86,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
+TEST_F(NegativeBestPracticesAMD, UsageConcurentRT) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -117,7 +117,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
     }
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, UsageStorageRT) {
+TEST_F(NegativeBestPracticesAMD, UsageStorageRT) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -129,7 +129,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageStorageRT) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, PrimitiveRestart) {
+TEST_F(NegativeBestPracticesAMD, PrimitiveRestart) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -143,7 +143,7 @@ TEST_F(VkAmdBestPracticesLayerTest, PrimitiveRestart) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, NumDynamicStates) {
+TEST_F(NegativeBestPracticesAMD, NumDynamicStates) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -166,7 +166,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumDynamicStates) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, KeepLayoutSmall) {
+TEST_F(NegativeBestPracticesAMD, KeepLayoutSmall) {
     // TODO: add dynamic buffer check as well
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
@@ -192,7 +192,7 @@ TEST_F(VkAmdBestPracticesLayerTest, KeepLayoutSmall) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
+TEST_F(NegativeBestPracticesAMD, CopyingDescriptors) {
     // TODO: add dynamic buffer check as well
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
@@ -230,7 +230,7 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
+TEST_F(NegativeBestPracticesAMD, ClearImage) {
     TEST_DESCRIPTION("Test for validating usage of vkCmdClearAttachments");
 
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
@@ -288,7 +288,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
     }
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
+TEST_F(NegativeBestPracticesAMD, ImageToImageCopy) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -319,7 +319,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
     m_command_buffer.End();
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, GeneralLayout) {
+TEST_F(NegativeBestPracticesAMD, GeneralLayout) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -331,7 +331,7 @@ TEST_F(VkAmdBestPracticesLayerTest, GeneralLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, RobustAccessOn) {
+TEST_F(NegativeBestPracticesAMD, RobustAccessOn) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -355,7 +355,7 @@ TEST_F(VkAmdBestPracticesLayerTest, RobustAccessOn) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
+TEST_F(NegativeBestPracticesAMD, Barriers) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -389,7 +389,7 @@ TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
     m_command_buffer.End();
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
+TEST_F(NegativeBestPracticesAMD, NumberOfSubmissions) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
@@ -417,7 +417,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, NumSyncPrimitives) {
+TEST_F(NegativeBestPracticesAMD, NumSyncPrimitives) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -441,7 +441,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumSyncPrimitives) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
+TEST_F(NegativeBestPracticesAMD, SecondaryCmdBuffer) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
@@ -501,7 +501,7 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, ComputeWorkgroupSize) {
+TEST_F(NegativeBestPracticesAMD, ComputeWorkgroupSize) {
     TEST_DESCRIPTION("On AMD make the workgroup size a multiple of 64 to obtain best performance across all GPU generations.");
 
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
@@ -549,7 +549,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ComputeWorkgroupSize) {
     }
 }
 
-TEST_F(VkAmdBestPracticesLayerTest, ComputeWorkgroupSizeMaintenance5) {
+TEST_F(NegativeBestPracticesAMD, ComputeWorkgroupSizeMaintenance5) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);

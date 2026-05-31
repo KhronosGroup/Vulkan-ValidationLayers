@@ -16,9 +16,27 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 
-class VkPositiveBestPracticesLayerTest : public VkBestPracticesLayerTest {};
+void VkBestPracticesLayerTest::InitBestPracticesFramework(const char* vendor_checks_to_enable) {
+    const VkLayerSettingEXT settings = {OBJECT_LAYER_NAME, vendor_checks_to_enable, VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    const VkLayerSettingsCreateInfoEXT layer_settings_create_info{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                                  &settings};
 
-TEST_F(VkPositiveBestPracticesLayerTest, TestDestroyFreeNullHandles) {
+    if (vendor_checks_to_enable) {
+        features_.pNext = &layer_settings_create_info;
+    }
+
+    AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+    InitFramework(&features_);
+}
+
+void VkBestPracticesLayerTest::InitBestPractices(const char* vendor_checks_to_enable) {
+    RETURN_IF_SKIP(InitBestPracticesFramework(vendor_checks_to_enable));
+    RETURN_IF_SKIP(InitState());
+}
+
+class PositiveBestPractices : public VkBestPracticesLayerTest {};
+
+TEST_F(PositiveBestPractices, TestDestroyFreeNullHandles) {
     VkResult err;
 
     TEST_DESCRIPTION("Call all applicable destroy and free routines with NULL handles, expecting no validation errors");
@@ -87,7 +105,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, TestDestroyFreeNullHandles) {
     vk::FreeMemory(device(), VK_NULL_HANDLE, NULL);
 }
 
-TEST_F(VkPositiveBestPracticesLayerTest, DrawingWithUnboundUnusedSet) {
+TEST_F(PositiveBestPractices, DrawingWithUnboundUnusedSet) {
     TEST_DESCRIPTION(
         "Test issuing draw command with pipeline layout that has 2 descriptor sets with first descriptor set begin unused and "
         "unbound. Its purpose is to catch regression of this bug: "
@@ -121,7 +139,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, DrawingWithUnboundUnusedSet) {
     m_command_buffer.End();
 }
 
-TEST_F(VkPositiveBestPracticesLayerTest, DynStateIgnoreAttachments) {
+TEST_F(PositiveBestPractices, DynStateIgnoreAttachments) {
     TEST_DESCRIPTION("Make sure pAttachments is ignored if dynamic state is enabled");
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
@@ -155,7 +173,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, DynStateIgnoreAttachments) {
     m_command_buffer.End();
 }
 
-TEST_F(VkPositiveBestPracticesLayerTest, PipelineLibraryNoRendering) {
+TEST_F(PositiveBestPractices, PipelineLibraryNoRendering) {
     TEST_DESCRIPTION("Create a pipeline library without a render pass or rendering info");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -176,7 +194,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, PipelineLibraryNoRendering) {
     pre_raster_lib.CreateGraphicsPipeline();
 }
 
-TEST_F(VkPositiveBestPracticesLayerTest, PushConstantSet) {
+TEST_F(PositiveBestPractices, PushConstantSet) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -224,7 +242,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, PushConstantSet) {
     m_command_buffer.End();
 }
 
-TEST_F(VkPositiveBestPracticesLayerTest, VertexBufferNotForAllDraws) {
+TEST_F(PositiveBestPractices, VertexBufferNotForAllDraws) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7636");
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
@@ -265,7 +283,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, VertexBufferNotForAllDraws) {
     m_command_buffer.End();
 }
 
-TEST_F(VkPositiveBestPracticesLayerTest, SetDifferentEvents) {
+TEST_F(PositiveBestPractices, SetDifferentEvents) {
     TEST_DESCRIPTION("Signal different events");
     RETURN_IF_SKIP(InitBestPractices());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
@@ -279,7 +297,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, SetDifferentEvents) {
     m_command_buffer.End();
 }
 
-TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSet) {
+TEST_F(PositiveBestPractices, ResetEventBeforeSet) {
     TEST_DESCRIPTION("Set event two times with reset in between");
     RETURN_IF_SKIP(InitBestPractices());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
@@ -293,7 +311,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSet) {
     m_command_buffer.End();
 }
 
-TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSetMultipleSubmits) {
+TEST_F(PositiveBestPractices, ResetEventBeforeSetMultipleSubmits) {
     TEST_DESCRIPTION("Set event two times with reset in between from multiple submits");
     RETURN_IF_SKIP(InitBestPractices());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
@@ -314,7 +332,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSetMultipleSubmits) {
     m_default_queue->Wait();
 }
 
-TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSetMultipleSubmits2) {
+TEST_F(PositiveBestPractices, ResetEventBeforeSetMultipleSubmits2) {
     TEST_DESCRIPTION("Set event two times with reset in between using single submit with two batches");
     RETURN_IF_SKIP(InitBestPractices());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
@@ -343,7 +361,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSetMultipleSubmits2) {
     m_default_queue->Wait();
 }
 
-TEST_F(VkPositiveBestPracticesLayerTest, ResetEventFromSecondary) {
+TEST_F(PositiveBestPractices, ResetEventFromSecondary) {
     TEST_DESCRIPTION("Set event two times with reset in between executed from a secondary command buffer");
     RETURN_IF_SKIP(InitBestPractices());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
@@ -362,7 +380,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, ResetEventFromSecondary) {
     m_command_buffer.End();
 }
 
-TEST_F(VkPositiveBestPracticesLayerTest, DestroyEventThenUseAnotherEvent) {
+TEST_F(PositiveBestPractices, DestroyEventThenUseAnotherEvent) {
     TEST_DESCRIPTION("Destroy event that was set in a command buffer");
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
@@ -383,7 +401,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, DestroyEventThenUseAnotherEvent) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(VkPositiveBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
+TEST_F(PositiveBestPractices, CreateFifoRelaxedSwapchain) {
     TEST_DESCRIPTION("Test creating fifo relaxed swapchain");
 
     AddSurfaceExtension();
@@ -432,7 +450,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     m_swapchain.Init(*m_device, swapchain_create_info);
 }
 
-TEST_F(VkPositiveBestPracticesLayerTest, ShaderObjectDraw) {
+TEST_F(PositiveBestPractices, ShaderObjectDraw) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
@@ -482,7 +500,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, ShaderObjectDraw) {
     m_command_buffer.End();
 }
 
-TEST_F(VkPositiveBestPracticesLayerTest, CreateDeviceWithFeatures) {
+TEST_F(PositiveBestPractices, CreateDeviceWithFeatures) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     const vkt::PhysicalDevice phys_device_obj(gpu_);
 
