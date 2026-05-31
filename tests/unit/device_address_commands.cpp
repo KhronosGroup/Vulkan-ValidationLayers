@@ -2002,10 +2002,12 @@ TEST_F(NegativeDeviceAddressCommands, TransformFeedbackBindSize) {
     pipe.shader_stages_[0] = vs.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
-    vkt::Buffer xfb(*m_device, xfb_properties.maxTransformFeedbackBufferSize,
-                    VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT, vkt::device_address);
+    vkt::Buffer xfb(*m_device, xfb_properties.maxTransformFeedbackBufferSize + 4,
+                    VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT | VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT,
+                    vkt::device_address);
     VkBindTransformFeedbackBuffer2InfoEXT info = vku::InitStructHelper();
     info.addressRange = xfb.AddressRange();
+    info.addressFlags = VK_ADDRESS_COMMAND_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR;
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);

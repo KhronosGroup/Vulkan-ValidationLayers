@@ -905,13 +905,10 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
                                  PrintPNextChain(Struct::VkPhysicalDeviceImageFormatInfo2, pImageFormatInfo->pNext).c_str());
             }
             if (image_drm_format->sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                // TODO - We should not need to have to spam a dispatch call here, until then, only call when possible chance of an
-                // error
                 if (image_drm_format->queueFamilyIndexCount <= 1) {
-                    VkPhysicalDeviceMaintenance11FeaturesKHR m11_features = vku::InitStructHelper();
-                    VkPhysicalDeviceProperties2 phys_dev_props = vku::InitStructHelper(&m11_features);
-                    DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &phys_dev_props);
-                    if (m11_features.maintenance11) {
+                    // The VU says the feature, but really is the extension. Some drivers will ignore vkGetPhysicalDeviceProperties2
+                    // pNext structs if the extension is not enabled
+                    if (IsExtSupported(extensions.vk_khr_maintenance11)) {
                         if (image_drm_format->queueFamilyIndexCount == 0) {
                             skip |= LogError(
                                 "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-maintenance11-13351", physicalDevice,
@@ -923,8 +920,8 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
                             "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315", physicalDevice,
                             format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT, Field::sharingMode),
                             "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32
-                            " (Needs to be at least 2)\nHint: queueFamilyIndexCount can be 1 if the maintenance11 feature is "
-                            "enabled.",
+                            " (Needs to be at least 2)\nHint: queueFamilyIndexCount can be 1 if the VK_KHR_maintenance11 extension "
+                            "is supported on the device.",
                             image_drm_format->queueFamilyIndexCount);
                     }
                 } else if (!image_drm_format->pQueueFamilyIndices) {
