@@ -916,6 +916,9 @@ TEST_F(NegativeDeviceAddressCommandsSync, SrcExternalQueueFamily) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Test requires 2 queues";
+    }
     uint32_t queue_families[] = {m_default_queue->family_index, m_second_queue->family_index};
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -965,6 +968,9 @@ TEST_F(NegativeDeviceAddressCommandsSync, DstExternalQueueFamily) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Test requires 2 queues";
+    }
     uint32_t queue_families[] = {m_default_queue->family_index, m_second_queue->family_index};
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
