@@ -366,7 +366,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             } else {
                 assert(false);
             }
-            warn_ss << " and any access to this descriptor will be invalid\n";
+            warn_ss << " and any access to this descriptor will be invalid";
         }
     };
 
@@ -1122,6 +1122,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         ss << warn_ss.str();
         found_warning = true;
     }
+
+    ss << '\n';
 
     return found_warning;
 }
