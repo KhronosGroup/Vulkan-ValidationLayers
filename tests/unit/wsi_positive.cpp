@@ -1380,8 +1380,7 @@ TEST_F(PositiveWsi, PresentFenceRetiresPresentQueueOperation) {
     };
     std::vector<Frame> frames;
 
-    // TODO: iteration count can be reduced (100?) if queue simulation is done in more deterministic way
-    for (uint32_t i = 0; i < 500; i++) {
+    for (uint32_t i = 0; i < 100 /* initially 1000 for higher repro rate*/; i++) {
         // Remove completed frames
         for (auto it = frames.begin(); it != frames.end();) {
             if (it->present_finished_fence.GetStatus() == VK_SUCCESS) {

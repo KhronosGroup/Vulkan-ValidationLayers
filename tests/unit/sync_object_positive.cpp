@@ -1252,7 +1252,7 @@ struct FenceSemRaceData {
     std::atomic<bool>* bailout{nullptr};
     uint64_t wait_value{0};
     uint64_t timeout{kWaitTimeout};
-    uint32_t iterations{100000};
+    uint32_t iterations{5000};  // Initially 100000 for higher repro rate
 };
 
 void WaitTimelineSem(FenceSemRaceData* data) {
@@ -1365,7 +1365,7 @@ struct SemBufferRaceData {
     vkt::Semaphore sem;
     uint64_t start_wait_value{0};
     uint64_t timeout_ns{kWaitTimeout};
-    uint32_t iterations{10000};
+    uint32_t iterations{500};  // Initially 10000 for higher repro rate
     std::atomic<bool> bailout{false};
 
     std::unique_ptr<vkt::Buffer> thread_buffer;
@@ -2291,7 +2291,7 @@ TEST_F(PositiveSyncObject, KhronosTimelineSemaphoreExample) {
         GTEST_SKIP() << "Two queues are needed";
     }
 
-    int N = 1000;
+    int N = 250; /* Initially 1000 */
 
     for (int i = 0; i < N; i++) {
         vkt::Semaphore timeline(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);

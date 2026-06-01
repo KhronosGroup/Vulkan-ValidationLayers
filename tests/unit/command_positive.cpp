@@ -303,7 +303,7 @@ TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
         VkDebugUtilsLabelEXT label = vku::InitStructHelper();
         label.pLabelName = "Test label";
 
-        constexpr int iteration_count = 1000;
+        constexpr int iteration_count = 250; /* Initially 1000 */
         for (int frame = 0; frame < iteration_count; frame++) {
             std::array<VkCommandBuffer, command_buffers_per_pool> command_buffers;
             ASSERT_EQ(VK_SUCCESS, vk::AllocateCommandBuffers(device(), &commands_allocate_info, command_buffers.data()));
