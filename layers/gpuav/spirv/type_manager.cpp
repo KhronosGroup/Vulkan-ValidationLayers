@@ -794,19 +794,26 @@ bool Type::Is64Bit() const {
     return false;
 }
 
-uint32_t TypeManager::GetNumScalarElements(const Type& type) const {
+// Current use for SharedMemoryDataRace where each scalar is a slot and we need to know where inside a data type the slot index is.
+uint32_t TypeManager::GetScalarElementCount(const Type& type) const {
     switch (type.spv_type_) {
-        case SpvType::kStruct:
-            return GetNumScalarElementsBeforeCompositeMember(type, type.inst_.Length() - 2);
+        case SpvType::kStruct: {
+            uint32_t count = 0;
+            uint32_t members = type.inst_.Length() - 2;
+            for (uint32_t i = 0; i < members; ++i) {
+                count += GetScalarElementCount(*FindChildType(type, i));
+            }
+            return count;
+        }
         case SpvType::kArray: {
             const Type* element_type = FindTypeById(type.inst_.Word(2));
-            return type.meta_.array.length * GetNumScalarElements(*element_type);
+            return type.meta_.array.length * GetScalarElementCount(*element_type);
         }
         case SpvType::kVectorIdEXT:
         case SpvType::kVector:
             return type.meta_.vector.component_count;
         case SpvType::kMatrix:
-            return type.meta_.matrix.component_count * GetNumScalarElements(*FindTypeById(type.inst_.Word(2)));
+            return type.meta_.matrix.component_count * GetScalarElementCount(*FindTypeById(type.inst_.Word(2)));
         case SpvType::kInt:
         case SpvType::kFloat:
         case SpvType::kBool:
@@ -848,6 +855,7 @@ void TypeManager::AddUndef(std::unique_ptr<Instruction> new_inst) {
 
 bool TypeManager::IsUndef(uint32_t id) const { return undef_ids_.find(id) != undef_ids_.end(); }
 
+// Not ideal to use, the caller really should already know which type it wants
 const Type* TypeManager::FindChildType(const Type& type, uint32_t idx) const {
     switch (type.spv_type_) {
         case SpvType::kPointer:
@@ -871,14 +879,6 @@ const Type* TypeManager::FindChildType(const Type& type, uint32_t idx) const {
             assert(0);
             return nullptr;
     }
-}
-
-uint32_t TypeManager::GetNumScalarElementsBeforeCompositeMember(const Type& type, uint32_t idx) const {
-    uint32_t count = 0;
-    for (uint32_t i = 0; i < idx; ++i) {
-        count += GetNumScalarElements(*FindChildType(type, i));
-    }
-    return count;
 }
 
 // This stems from the fact even if you have two OpTypeStruct that are the EXACT SAME, it is not valid to mix and match them

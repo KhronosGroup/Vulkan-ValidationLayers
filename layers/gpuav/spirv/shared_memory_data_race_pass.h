@@ -40,7 +40,7 @@ class SharedMemoryDataRacePass : public Pass {
         // start of this variable in the shadow memory
         uint32_t start;
         // number of scalar elements touched by this access
-        uint32_t num_elements;
+        uint32_t element_count;
         // The OpVariable ID of the memory being accessed
         uint32_t variable_idx;
     };
@@ -74,7 +74,7 @@ class SharedMemoryDataRacePass : public Pass {
     // < variable ID, starting slot >
     vvl::unordered_map<uint32_t, uint32_t> slot_start_;
     // number of slots in shadow memory
-    uint32_t num_slots_ = 0;
+    uint32_t slot_count_ = 0;
     // Constant ID of known total workgroup size (X * Y * Z)
     uint32_t work_group_size_id_ = 0;
 };

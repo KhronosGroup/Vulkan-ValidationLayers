@@ -198,8 +198,7 @@ class TypeManager {
 
     const Type* FindChildType(const Type& type, uint32_t idx) const;
 
-    uint32_t GetNumScalarElements(const Type& type) const;
-    uint32_t GetNumScalarElementsBeforeCompositeMember(const Type& type, uint32_t idx) const;
+    uint32_t GetScalarElementCount(const Type& type) const;
 
     void AddUndef(std::unique_ptr<Instruction> new_inst);
     bool IsUndef(uint32_t id) const;
