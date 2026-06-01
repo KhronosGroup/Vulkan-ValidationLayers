@@ -21,6 +21,7 @@
 
 #include "state_tracker/state_object.h"
 #include "containers/custom_containers.h"
+#include "generated/error_location_helper.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <optional>
 
@@ -39,6 +40,9 @@ struct EventSignalingState {
     // The dependency info from CmdSetEvent2.
     // It is no value for CmdSetEvent, or if the event is unsignaled
     std::optional<vku::safe_VkDependencyInfo> signal_dependency_info;
+
+    // Last command that changed the event signal state: Set/Set2/Reset/Reset2
+    vvl::Func last_signaling_command = vvl::Func::Empty;
 
     // Return true if this state's effect on the event is known.
     // Without a reset or known prior state, we cannot tell whether a signal
@@ -80,6 +84,9 @@ class Event : public StateObject {
 
     // Queue that signaled this event. It's null if event was signaled from the host.
     VkQueue signaling_queue = VK_NULL_HANDLE;
+
+    // Last command that changed the event signal state: Set/Set2/Reset/Reset2
+    vvl::Func last_signaling_command = vvl::Func::Empty;
 };
 
 }  // namespace vvl

@@ -2181,6 +2181,20 @@ void CommandBuffer::WaitEvent(const Event& event, VkPipelineStageFlags src_stage
     vk::CmdWaitEvents(handle(), 1, &event.handle(), src_stage_mask, dst_stage_mask, 0, nullptr, 0, nullptr, 1, &image_barrier);
 }
 
+void CommandBuffer::SetEvent2(const Event& event, const VkMemoryBarrier2& memory_barrier) {
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.memoryBarrierCount = 1;
+    dep_info.pMemoryBarriers = &memory_barrier;
+    vk::CmdSetEvent2(handle(), event, &dep_info);
+}
+
+void CommandBuffer::WaitEvent2(const Event& event, const VkMemoryBarrier2& memory_barrier) {
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.memoryBarrierCount = 1;
+    dep_info.pMemoryBarriers = &memory_barrier;
+    vk::CmdWaitEvents2(handle(), 1, &event.handle(), &dep_info);
+}
+
 void CommandBuffer::Copy(const Buffer& src, const Buffer& dst) {
     assert(src.CreateInfo().size == dst.CreateInfo().size);
     const VkBufferCopy region = {0, 0, src.CreateInfo().size};

@@ -591,35 +591,40 @@ void CommandBufferSubState::RecordSetEvent(VkEvent event, VkPipelineStageFlags s
         if (!state->signaled) {
             state->signaled = true;
             state->signal_src_stage_mask = stage_mask;
+            state->last_signaling_command = vvl::Func::vkCmdSetEvent;
             // Keep was_reset unchanged
         }
     } else {
         EventSignalingState new_state;
         new_state.signaled = true;
         new_state.signal_src_stage_mask = stage_mask;
+        new_state.last_signaling_command = vvl::Func::vkCmdSetEvent;
         event_signaling_states.insert(std::make_pair(event, std::move(new_state)));
     }
 }
 
-void CommandBufferSubState::RecordSetEvent2(VkEvent event, const VkDependencyInfo& dependency_info) {
+void CommandBufferSubState::RecordSetEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {
     if (EventSignalingState* state = vvl::Find(event_signaling_states, event)) {
         if (!state->signaled) {
             state->signaled = true;
             state->signal_dependency_info.emplace(&dependency_info);
+            state->last_signaling_command = loc.function;
             // Keep was_reset unchanged
         }
     } else {
         EventSignalingState new_state;
         new_state.signaled = true;
         new_state.signal_dependency_info.emplace(&dependency_info);
+        new_state.last_signaling_command = loc.function;
         event_signaling_states.insert(std::make_pair(event, std::move(new_state)));
     }
 }
 
-void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags2) {
+void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags2, const Location& loc) {
     EventSignalingState& signaling_state = event_signaling_states[event];
     signaling_state = {};
     signaling_state.was_reset = true;
+    signaling_state.last_signaling_command = loc.function;
 }
 
 void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask,
@@ -627,7 +632,7 @@ void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, Vk
     bool submit_validation = false;
     EventSignalingStateMap signaling_states;
     for (VkEvent event : events) {
-        const EventSignalingState* signaling_state = vvl::Find(event_signaling_states, event);
+        EventSignalingState* signaling_state = vvl::Find(event_signaling_states, event);
         if (signaling_state) {
             signaling_states.emplace(event, *signaling_state);
         }
@@ -642,12 +647,13 @@ void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, Vk
         submit_info.wait_events.assign(events.begin(), events.end());
         submit_info.wait_src_stage_mask = src_stage_mask;
         submit_info.signaling_states = std::move(signaling_states);
+        submit_info.wait_command = loc.function;
         wait_event_submit_infos.emplace_back(std::move(submit_info));
     }
 }
 
 void CommandBufferSubState::RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {
-    const EventSignalingState* signaling_state = vvl::Find(event_signaling_states, event);
+    EventSignalingState* signaling_state = vvl::Find(event_signaling_states, event);
     const bool already_validated = signaling_state && signaling_state->was_reset;
     const bool submit_validation = !already_validated;
     if (submit_validation) {
@@ -657,6 +663,7 @@ void CommandBufferSubState::RecordWaitEvent2(VkEvent event, const VkDependencyIn
         if (signaling_state) {
             submit_info.signaling_state = *signaling_state;
         }
+        submit_info.wait_command = loc.function;
         wait_event2_submit_infos.emplace_back(std::move(submit_info));
     }
 }
@@ -1243,6 +1250,7 @@ void CommandBufferSubState::Submit(vvl::Queue& queue_state, uint32_t perf_submit
                 event_state->signal_dependency_info.reset();
                 event_state->signaling_queue = VK_NULL_HANDLE;
             }
+            event_state->last_signaling_command = signaling_state.last_signaling_command;
         }
     }
 

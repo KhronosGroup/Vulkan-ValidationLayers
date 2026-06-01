@@ -78,6 +78,8 @@ struct WaitEventSubmitInfo {
     // Subset of waited events with known signaling state
     EventSignalingStateMap signaling_states;
 
+    vvl::Func wait_command = vvl::Func::Empty;
+
     bool Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
                   EventSignalingStateMap& submit_signaling_states, const Location& loc) const;
 };
@@ -86,6 +88,7 @@ struct WaitEvent2SubmitInfo {
     VkEvent wait_event = VK_NULL_HANDLE;
     vku::safe_VkDependencyInfo wait_dependency_info;
     std::optional<EventSignalingState> signaling_state;
+    vvl::Func wait_command = vvl::Func::Empty;
 
     bool Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
                   EventSignalingStateMap& submit_signaling_states, const Location& loc) const;

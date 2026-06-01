@@ -1137,6 +1137,9 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                    const VkImageMemoryBarrier& image_barrier);
 
+    void SetEvent2(const Event& event, const VkMemoryBarrier2& memory_barrier);
+    void WaitEvent2(const Event& event, const VkMemoryBarrier2& memory_barrier);
+
     void Copy(const Buffer &src, const Buffer &dst);
     void ExecuteCommands(const CommandBuffer &secondary);
 

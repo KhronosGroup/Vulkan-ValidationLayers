@@ -905,8 +905,8 @@ class CommandBufferSubState {
     virtual void RecordUpdateBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc) {}
 
     virtual void RecordSetEvent(VkEvent event, VkPipelineStageFlags stage_mask) {}
-    virtual void RecordSetEvent2(VkEvent event, const VkDependencyInfo& dependency_info) {}
-    virtual void RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask) {}
+    virtual void RecordSetEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {}
+    virtual void RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const Location& loc) {}
     virtual void RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask, const Location& loc) {}
     virtual void RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {}
     virtual void RecordBarriers(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier *buffer_barriers,

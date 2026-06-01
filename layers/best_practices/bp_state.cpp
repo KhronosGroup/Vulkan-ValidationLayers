@@ -634,7 +634,7 @@ void CommandBufferSubState::RecordSetEvent(VkEvent event, VkPipelineStageFlags) 
     }
 }
 
-void CommandBufferSubState::RecordSetEvent2(VkEvent event, const VkDependencyInfo&) {
+void CommandBufferSubState::RecordSetEvent2(VkEvent event, const VkDependencyInfo&, const Location&) {
     if (auto* signaling_info = vvl::Find(event_signaling_state, event)) {
         signaling_info->signaled = true;
     } else {
@@ -642,7 +642,7 @@ void CommandBufferSubState::RecordSetEvent2(VkEvent event, const VkDependencyInf
     }
 }
 
-void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags2) {
+void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags2, const Location&) {
     if (auto* signaling_info = vvl::Find(event_signaling_state, event)) {
         signaling_info->signaled = false;
     } else {
