@@ -1131,12 +1131,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer& 
 }
 
 // Return the signal stage mask when it can be identified from recorded state
-static std::optional<VkPipelineStageFlags2> ResolveKnownSignalStageMask(VkEvent event,
-                                                                        const EventSignalingStateMap& prior_signaling_states,
-                                                                        const EventSignalingStateMap& secondary_signaling_states) {
-    const EventSignalingState* prior_state = vvl::Find(prior_signaling_states, event);
-    const EventSignalingState* secondary_state = vvl::Find(secondary_signaling_states, event);
-
+static std::optional<VkPipelineStageFlags2> ResolveKnownSignalStageMask(VkEvent event, const EventSignalingState* prior_state,
+                                                                        const EventSignalingState* secondary_state) {
     if (secondary_state && secondary_state->HasKnownEffect(prior_state)) {
         if (secondary_state->signaled) {
             return secondary_state->signal_src_stage_mask;
@@ -1147,6 +1143,19 @@ static std::optional<VkPipelineStageFlags2> ResolveKnownSignalStageMask(VkEvent 
         return prior_state->signal_src_stage_mask;
     }
     return {};
+}
+
+// Return the last signaling command and does not take into acccount if it was ignored or not.
+// This is used for the set-wait version mismatch. The current validation logic considers
+// version mismtach to be an issue even if the command is ignored.
+static vvl::Func ResolveSignalingCommand(const EventSignalingState* prior_state, const EventSignalingState* secondary_state) {
+    if (secondary_state) {
+        return secondary_state->last_signaling_command;
+    }
+    if (prior_state) {
+        return prior_state->last_signaling_command;
+    }
+    return vvl::Func::Empty;
 }
 
 // Return true when recorded state proves the event is unsignaled at the wait
@@ -1167,23 +1176,33 @@ bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBuf
     bool skip = false;
     for (const WaitEventSubmitInfo& secondary_wait : secondary_cb_sub_state.wait_event_submit_infos) {
         VkPipelineStageFlags signals_src_stage_mask = VK_PIPELINE_STAGE_NONE;
-        bool can_validate = true;
+        bool can_validate_stage_mask = true;
         bool found_known_signals = false;
 
         for (VkEvent event : secondary_wait.wait_events) {
-            if (auto stage_mask = ResolveKnownSignalStageMask(event, local_signaling_states, secondary_wait.signaling_states)) {
+            const EventSignalingState* local_state = vvl::Find(local_signaling_states, event);
+            const EventSignalingState* secondary_state = vvl::Find(secondary_wait.signaling_states, event);
+
+            // Validate set-wait version mismatch
+            const vvl::Func signal_command = ResolveSignalingCommand(local_state, secondary_state);
+            if (IsValueIn(signal_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
+                skip |=
+                    LogError("VUID-vkCmdWaitEvents-pEvents-03847", event, secondary_cb_loc, "%s: %s was set by %s.",
+                             vvl::String(secondary_wait.wait_command), FormatHandle(event).c_str(), vvl::String(signal_command));
+            }
+
+            // Determine if stage mask validation is possible during execution time
+            if (auto stage_mask = ResolveKnownSignalStageMask(event, local_state, secondary_state)) {
                 signals_src_stage_mask |= *stage_mask;
                 found_known_signals = true;
-                continue;
+            } else if (IsKnownUnsignaled(event, local_signaling_states, secondary_wait.signaling_states)) {
+                // Contribute 0 (nothing) to signals_src_stage_mask
+            } else {
+                can_validate_stage_mask = false;
             }
-            if (IsKnownUnsignaled(event, local_signaling_states, secondary_wait.signaling_states)) {
-                // Contribute 0 to signals_src_stage_mask
-                continue;
-            }
-            can_validate = false;
-            break;
         }
-        if (can_validate && secondary_wait.wait_src_stage_mask != signals_src_stage_mask) {
+        // Validate state mask
+        if (can_validate_stage_mask && secondary_wait.wait_src_stage_mask != signals_src_stage_mask) {
             const LogObjectList objlist(secondary_cb_sub_state.Handle());
             if (found_known_signals) {
                 std::ostringstream ss;
@@ -1200,6 +1219,21 @@ bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBuf
                       "vkCmdSetEvent signal.";
                 skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", objlist, secondary_cb_loc, "%s", ss.str().c_str());
             }
+        }
+    }
+    for (const WaitEvent2SubmitInfo& secondary_wait : secondary_cb_sub_state.wait_event2_submit_infos) {
+        // Set-wait version mismatch is always reported. Do not try to determine whether signal is ignored
+        vvl::Func signaling_command = vvl::Func::Empty;
+        if (secondary_wait.signaling_state.has_value() && secondary_wait.signaling_state->signaled) {
+            signaling_command = secondary_wait.signaling_state->last_signaling_command;
+        } else if (const EventSignalingState* local_state = vvl::Find(local_signaling_states, secondary_wait.wait_event);
+                   local_state && local_state->signaled) {
+            signaling_command = local_state->last_signaling_command;
+        }
+        if (signaling_command == vvl::Func::vkCmdSetEvent) {
+            skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03837", secondary_wait.wait_event, secondary_cb_loc,
+                             "%s: %s was set by %s.", vvl::String(secondary_wait.wait_command),
+                             FormatHandle(secondary_wait.wait_event).c_str(), vvl::String(signaling_command));
         }
     }
     UpdateEventSignalingStates(local_signaling_states, secondary_cb_sub_state.event_signaling_states);

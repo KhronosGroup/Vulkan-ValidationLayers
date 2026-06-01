@@ -4146,6 +4146,7 @@ void DeviceState::PostCallRecordSetEvent(VkDevice device, VkEvent event, const R
         event_state->signal_dependency_info.reset();
         event_state->signal_src_stage_mask = VK_PIPELINE_STAGE_HOST_BIT;
         event_state->signaling_queue = VK_NULL_HANDLE;
+        event_state->last_signaling_command = vvl::Func::vkSetEvent;
     }
 }
 

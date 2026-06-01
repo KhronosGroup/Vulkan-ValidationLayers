@@ -2167,7 +2167,7 @@ void CommandBuffer::RecordSetEvent(VkEvent event, VkPipelineStageFlags stage_mas
 void CommandBuffer::RecordSetEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {
     RecordCommand(loc);
     for (auto& item : sub_states_) {
-        item.second->RecordSetEvent2(event, dependency_info);
+        item.second->RecordSetEvent2(event, dependency_info, loc);
     }
     if (!dev_data.disabled[command_buffer_state]) {
         if (auto event_state = dev_data.Get<vvl::Event>(event)) {
@@ -2180,9 +2180,8 @@ void CommandBuffer::RecordSetEvent2(VkEvent event, const VkDependencyInfo& depen
 void CommandBuffer::RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const Location& loc) {
     RecordCommand(loc);
     for (auto& item : sub_states_) {
-        item.second->RecordResetEvent(event, stage_mask);
+        item.second->RecordResetEvent(event, stage_mask, loc);
     }
-
     if (!dev_data.disabled[command_buffer_state]) {
         if (auto event_state = dev_data.Get<vvl::Event>(event)) {
             AddChild(event_state);

@@ -426,6 +426,7 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& que
     bool skip = false;
 
     VkPipelineStageFlags signals_src_stage_mask = 0;
+    bool set_wait_version_mismatch = false;  // if version mismatch is detected some other validations make no sense
     for (VkEvent event : wait_events) {
         if (auto event_state = core.Get<vvl::Event>(event)) {
             if (!vvl::Contains(signaling_states, event)) {
@@ -433,27 +434,40 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& que
             }
             // NOTE: for unsignaled events the signal_src_stage_mask is NONE
             VkPipelineStageFlags2 stage_mask = 0;
+            vvl::Func signal_command = vvl::Func::Empty;
             bool last_signal = false;
             if (event_state->signaled) {
                 stage_mask = event_state->signal_src_stage_mask;
                 last_signal = event_state->signaled;
+                signal_command = event_state->last_signaling_command;
             }
             if (const auto* submit_signaling = vvl::Find(submit_signaling_states, event)) {
                 if (!last_signal || submit_signaling->HasKnownEffect()) {
                     stage_mask = submit_signaling->signal_src_stage_mask;
                 }
                 last_signal = submit_signaling->signal_src_stage_mask;
+                signal_command = submit_signaling->last_signaling_command;
             }
             if (const auto* cb_signaling = vvl::Find(signaling_states, event)) {
                 if (!last_signal || cb_signaling->HasKnownEffect()) {
                     stage_mask = cb_signaling->signal_src_stage_mask;
                 }
+                signal_command = cb_signaling->last_signaling_command;
             }
             signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(stage_mask);
+
+            // Validate set-wait mismatch
+            if (IsValueIn(signal_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
+                set_wait_version_mismatch = true;
+                const LogObjectList objlist(cb_state.Handle(), event_state->Handle());
+                skip |= core.LogError("VUID-vkCmdWaitEvents-pEvents-03847", objlist, loc, "%s: %s was set by %s.",
+                                      vvl::String(wait_command), core.FormatHandle(event).c_str(), vvl::String(signal_command));
+            }
         }
     }
-    // Validate src stage mask mismatch
-    if (wait_src_stage_mask != signals_src_stage_mask) {
+
+    // Validate src stage mask
+    if (!set_wait_version_mismatch && wait_src_stage_mask != signals_src_stage_mask) {
         std::ostringstream ss;
         ss << "(" << core.FormatHandle(cb_state.Handle()) << ") contains a vkCmdWaitEvents call with srcStageMask "
            << string_VkPipelineStageFlags(wait_src_stage_mask)
@@ -487,15 +501,24 @@ bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& qu
     skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, submit_signaling_states, loc);
 
     std::optional<vku::safe_VkDependencyInfo> signal_dependency_info;
+    vvl::Func signal_command = vvl::Func::Empty;
     if (signaling_state.has_value()) {
-        assert(signaling_state->signal_dependency_info.has_value());
         signal_dependency_info = signaling_state->signal_dependency_info;
+        signal_command = signaling_state->last_signaling_command;
     } else if (const auto* submit_signaling_state = vvl::Find(submit_signaling_states, wait_event)) {
         signal_dependency_info = submit_signaling_state->signal_dependency_info;
-    } else if (event_state->signal_dependency_info.has_value()) {
-        signal_dependency_info = *event_state->signal_dependency_info;
+        signal_command = submit_signaling_state->last_signaling_command;
+    } else {
+        signal_dependency_info = event_state->signal_dependency_info;
+        signal_command = event_state->last_signaling_command;
     }
 
+    if (signal_command == vvl::Func::vkCmdSetEvent) {
+        const LogObjectList objlist(cb_state.Handle(), event_state->Handle());
+        skip |=
+            core.LogError("VUID-vkCmdWaitEvents2-pEvents-03837", objlist, loc, "%s: %s was set by %s.", vvl::String(wait_command),
+                          core.FormatHandle(event_state->Handle()).c_str(), vvl::String(signal_command));
+    }
     if (signal_dependency_info.has_value()) {
         const bool signal_has_asymmetric = (signal_dependency_info->dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) != 0;
         const bool wait_has_asymmetric = (wait_dependency_info.dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) != 0;
@@ -1516,18 +1539,27 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
 
     if (pEvents) {
         auto& cb_sub_state = core::SubState(*cb_state);
-        bool can_validate = true;
+        bool can_validate_stage_mask = true;
         VkPipelineStageFlags signals_src_stage_mask = VK_PIPELINE_STAGE_NONE;
         for (uint32_t i = 0; i < eventCount; i++) {
             const EventSignalingState* signaling_state = vvl::Find(cb_sub_state.event_signaling_states, pEvents[i]);
-            // NOTE: the same logic is used by the record phase
+
+            // Record phase also uses this logic to determine stage mask validation status
             if (!signaling_state || !signaling_state->HasKnownEffect()) {
-                can_validate = false;
-                break;
+                can_validate_stage_mask = false;
+            } else {
+                signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(signaling_state->signal_src_stage_mask);
             }
-            signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(signaling_state->signal_src_stage_mask);
+
+            // Set-wait version mismatch is always reported.
+            // Do not try to determine whether signal is ignored
+            if (signaling_state &&
+                IsValueIn(signaling_state->last_signaling_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
+                skip |= LogError("VUID-vkCmdWaitEvents-pEvents-03847", pEvents[i], error_obj.location, "%s was set by %s.",
+                                 FormatHandle(pEvents[i]).c_str(), vvl::String(signaling_state->last_signaling_command));
+            }
         }
-        if (can_validate) {
+        if (can_validate_stage_mask) {
             if (srcStageMask != signals_src_stage_mask) {
                 skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", objlist, error_obj.location.dot(Field::srcStageMask),
                                  "is %s, but the bitwise OR of stageMask values from the most recent vkCmdSetEvent call for each "
@@ -1537,20 +1569,26 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
             }
         }
     }
-
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                                const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const {
-    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-
     bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    auto& cb_sub_state = core::SubState(*cb_state);
+
+    skip |= ValidateCmd(*cb_state, error_obj.location);
     if (!enabled_features.synchronization2) {
         skip |= LogError("VUID-vkCmdWaitEvents2-synchronization2-03836", commandBuffer, error_obj.location,
                          "the synchronization2 feature was not enabled.");
     }
-    for (uint32_t i = 0; (i < eventCount) && !skip; i++) {
+    if (cb_state->per_tile_execution_model_enabled) {
+        skip |= LogError("VUID-vkCmdWaitEvents2-None-10654", commandBuffer, error_obj.location,
+                         "the per-tile execution model has been enabled in this command buffer. "
+                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdWaitEvents2)");
+    }
+    for (uint32_t i = 0; i < eventCount && !skip; i++) {
         const LogObjectList objlist(commandBuffer, pEvents[i]);
         const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfos, i);
 
@@ -1578,15 +1616,16 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
                              "is (%s).", string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str());
         }
         skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, pDependencyInfos[i]);
-    }
-    skip |= ValidateCmd(*cb_state, error_obj.location);
 
-    if (cb_state->per_tile_execution_model_enabled) {
-        skip |= LogError("VUID-vkCmdWaitEvents2-None-10654", commandBuffer, error_obj.location,
-                         "the per-tile execution model has been enabled in this command buffer. "
-                         "(Don't call vkCmdBeginPerTileExecutionQCOM before vkCmdWaitEvents2)");
+        if (const EventSignalingState* signaling_state = vvl::Find(cb_sub_state.event_signaling_states, pEvents[i])) {
+            // Set-wait version mismatch is always reported.
+            // Do not try to determine whether signal is ignored
+            if (signaling_state->last_signaling_command == vvl::Func::vkCmdSetEvent) {
+                skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03837", pEvents[i], error_obj.location, "%s was set by %s.",
+                                 FormatHandle(pEvents[i]).c_str(), vvl::String(signaling_state->last_signaling_command));
+            }
+        }
     }
-
     return skip;
 }
 
