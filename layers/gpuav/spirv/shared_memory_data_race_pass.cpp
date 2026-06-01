@@ -192,25 +192,10 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
         return true;
     }
 
-    const uint32_t ptr_id = inst.Operand(0);  // works with both store and loads
-
-    std::vector<const Instruction*> access_chains;
-    const Variable* variable = type_manager_.FindVariableById(ptr_id);
-    const Instruction* access_chain_inst = FindInstructionGlobal(function, ptr_id);
-    // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
-    while (access_chain_inst && access_chain_inst->IsNonPtrAccessChain()) {
-        // inserting in front allows us to walk over the loop from the front
-        access_chains.insert(access_chains.begin(), access_chain_inst);
-        const uint32_t access_chain_base_id = access_chain_inst->Operand(0);
-        variable = type_manager_.FindVariableById(access_chain_base_id);
-        if (variable) {
-            break;  // found
-        }
-        access_chain_inst = FindInstructionGlobal(function, access_chain_base_id);
-    }
-    if (!variable) {
+    const AccessPath access_path = type_manager_.BuildAccessPath(function, inst);
+    if (!access_path.IsValid()) {
         return false;
-    } else if (variable->StorageClass() != spv::StorageClassWorkgroup) {
+    } else if (access_path.variable->StorageClass() != spv::StorageClassWorkgroup) {
         return false;
     }
 
@@ -219,8 +204,8 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
 
     // ptr_elem_type will point to the portion of the variable being accessed. Initialize it
     // to the variable's pointee type in case of no access chains.
-    const Type* ptr_elem_type = type_manager_.FindChildType(*type_manager_.FindTypeById(variable->inst_.Word(1)), 0);
-    for (auto ac : access_chains) {
+    const Type* ptr_elem_type = type_manager_.FindChildType(*type_manager_.FindTypeById(access_path.variable->inst_.Word(1)), 0);
+    for (auto ac : access_path.ac_list) {
         auto ptr = FindInstructionGlobal(function, ac->Word(3));
         const Type* base_ptr_type = type_manager_.FindTypeById(ptr->Word(1));
 
@@ -246,8 +231,8 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
                     uint32_t idx_u32 = idx_c->GetValueUint32();
 
                     uint32_t scalar_offset = 0;
-                    for (uint32_t i = 0; i < idx_u32; ++i) {
-                        scalar_offset += type_manager_.GetScalarElementCount(*type_manager_.FindChildType(*ptr_elem_type, i));
+                    for (uint32_t idx_m = 0; idx_m < idx_u32; idx_m++) {
+                        scalar_offset += type_manager_.GetScalarElementCount(*type_manager_.FindChildType(*ptr_elem_type, idx_m));
                     }
 
                     uint32_t new_id = module_.TakeNextId();
@@ -276,9 +261,9 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
     }
 
     meta.access_chain_idx_id = offset_id;
-    meta.start = slot_start_[variable->Id()];
+    meta.start = slot_start_[access_path.variable->Id()];
     meta.element_count = type_manager_.GetScalarElementCount(*ptr_elem_type);
-    meta.variable_idx = variable->Id();
+    meta.variable_idx = access_path.variable->Id();
 
     switch (opcode) {
         case spv::OpLoad:

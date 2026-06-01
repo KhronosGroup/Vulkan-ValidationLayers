@@ -17,13 +17,13 @@
 #include "generated/device_features.h"
 #include "generated/spirv_grammar_helper.h"
 #include "containers/container_utils.h"
-#include "state_tracker/shader_instruction.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
 
 #include "generated/gpuav_offline_spirv.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "type_manager.h"
 
 namespace gpuav {
 namespace spirv {
@@ -53,12 +53,12 @@ uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId(bool is_coop_mat) {
 }
 
 void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
-    assert(!meta.access_chain_insts.empty());
+    assert(!meta.access_path.ac_list.empty());
     const Constant& desc_set_constant = type_manager_.GetConstantUInt32(meta.descriptor_set);
     const uint32_t desc_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
 
     const uint32_t descriptor_offset_id =
-        GetLastByte(*meta.descriptor_type, meta.access_chain_insts, meta.coop_mat_access, block, inst_it);
+        GetLastByte(*meta.descriptor_type, meta.access_path.ac_list, meta.coop_mat_access, block, inst_it);
 
     const auto& layout_lut = module_.interface_.instrumentation_dsl.set_index_to_bindings_layout_lut;
     BindingLayout binding_layout = layout_lut[meta.descriptor_set][meta.descriptor_binding];
@@ -95,32 +95,18 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         return false;
     }
 
-    const Instruction* next_access_chain = function.FindInstruction(inst.Operand(0));
-    if (!next_access_chain || !next_access_chain->IsNonPtrAccessChain()) {
+    meta.access_path = type_manager_.BuildAccessPath(function, inst);
+    if (!meta.access_path.IsValid()) {
         return false;
     }
+    const Variable& access_variable = *meta.access_path.variable;
 
-    const Variable* variable = nullptr;
-    // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
-    while (next_access_chain && next_access_chain->IsNonPtrAccessChain()) {
-        meta.access_chain_insts.push_back(next_access_chain);
-        const uint32_t access_chain_base_id = next_access_chain->Operand(0);
-        variable = type_manager_.FindVariableById(access_chain_base_id);
-        if (variable) {
-            break;  // found
-        }
-        next_access_chain = function.FindInstruction(access_chain_base_id);
-    }
-    if (!variable) {
-        return false;
-    }
-
-    uint32_t storage_class = variable->StorageClass();
+    uint32_t storage_class = access_variable.StorageClass();
     if (storage_class != spv::StorageClassUniform && storage_class != spv::StorageClassStorageBuffer) {
         return false;
     }
 
-    meta.descriptor_type = variable->PointerType(type_manager_);
+    meta.descriptor_type = access_variable.PointerType(type_manager_);
     if (!meta.descriptor_type || meta.descriptor_type->spv_type_ == SpvType::kRuntimeArray) {
         return false;  // TODO - Currently we mark these as "bindless"
     }
@@ -142,20 +128,20 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     }
 
     // Grab front() as it will be the "final" type we access
-    const Type* value_type = type_manager_.FindValueTypeById(meta.access_chain_insts.front()->TypeId());
+    const Type* value_type = type_manager_.FindValueTypeById(meta.access_path.FinalAccessedType());
     if (!value_type) {
         return false;
     }
 
     if (is_descriptor_array) {
         // Because you can't have 2D array of descriptors, the first index of the last accessChain is the descriptor index
-        meta.descriptor_index_id = meta.access_chain_insts.back()->Operand(1);
+        meta.descriptor_index_id = meta.access_path.DescriptorIndexId();
     } else {
         // There is no array of this descriptor, so we essentially have an array of 1
         meta.descriptor_index_id = type_manager_.GetConstantZeroUint32().Id();
     }
 
-    GetDescriptorSetAndBinding(variable->Id(), meta.descriptor_set, meta.descriptor_binding);
+    GetDescriptorSetAndBinding(access_variable.Id(), meta.descriptor_set, meta.descriptor_binding);
 
     if (meta.descriptor_set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
@@ -169,7 +155,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
 
     if (!module_.settings_.safe_mode) {
         meta.access_offset =
-            FindOffsetInStruct(meta.descriptor_id, &meta.coop_mat_access, is_descriptor_array, meta.access_chain_insts);
+            FindOffsetInStruct(meta.descriptor_id, &meta.coop_mat_access, is_descriptor_array, meta.access_path.ac_list);
     }
 
     // Save information to be used to make the Function

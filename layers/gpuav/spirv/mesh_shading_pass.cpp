@@ -22,6 +22,7 @@
 #include <iostream>
 
 #include "generated/gpuav_offline_spirv.h"
+#include "type_manager.h"
 
 namespace gpuav {
 namespace spirv {
@@ -71,24 +72,10 @@ bool MeshShading::RequiresInstrumentation(const Function& function, const Instru
         meta.function_id = SET_MESH_OUTPUT;
         return true;
     } else if (guard_all_task_payloads_ && (IsValueIn(opcode, {spv::OpLoad, spv::OpStore}) || AtomicOperation(opcode))) {
-        // |Operand 0| works for both Store/Load
-        const uint32_t ptr_id = inst.Operand(0);
-
-        // Unlike descriptors, TaskPayload can be a scalar that does a direct variable access, not using an access chain
-        const Variable* variable = type_manager_.FindVariableById(ptr_id);
-        const Instruction* next_access_chain = function.FindInstruction(inst.Operand(0));
-        // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
-        while (next_access_chain && next_access_chain->IsNonPtrAccessChain()) {
-            const uint32_t access_chain_base_id = next_access_chain->Operand(0);
-            variable = type_manager_.FindVariableById(access_chain_base_id);
-            if (variable) {
-                break;  // found
-            }
-            next_access_chain = function.FindInstruction(access_chain_base_id);
-        }
-        if (!variable) {
+        const AccessPath access_path = type_manager_.BuildAccessPath(function, inst);
+        if (!access_path.IsValid()) {
             return false;
-        } else if (variable->StorageClass() != spv::StorageClassTaskPayloadWorkgroupEXT) {
+        } else if (access_path.variable->StorageClass() != spv::StorageClassTaskPayloadWorkgroupEXT) {
             return false;
         }
 
