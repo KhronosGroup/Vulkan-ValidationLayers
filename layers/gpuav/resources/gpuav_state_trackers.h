@@ -222,7 +222,7 @@ class QueueSubState : public vvl::QueueSubState {
 
 class ImageSubState : public vvl::ImageSubState {
   public:
-    ImageSubState(vvl::Image &obj, DescriptorHeap &heap);
+    ImageSubState(vvl::Image& obj, DescriptorIdPool& id_pool);
     void Destroy() override;
     void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
 
@@ -238,7 +238,7 @@ static inline const ImageSubState &SubState(const vvl::Image &obj) {
 
 class ImageViewSubState : public vvl::ImageViewSubState {
   public:
-    ImageViewSubState(vvl::ImageView &obj, DescriptorHeap &heap);
+    ImageViewSubState(vvl::ImageView& obj, DescriptorIdPool& id_pool);
     void Destroy() override;
     void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
 
@@ -254,7 +254,7 @@ static inline const ImageViewSubState &SubState(const vvl::ImageView &obj) {
 
 class BufferSubState : public vvl::BufferSubState {
   public:
-    BufferSubState(vvl::Buffer &obj, DescriptorHeap &heap);
+    BufferSubState(vvl::Buffer& obj, DescriptorIdPool& id_pool);
     void Destroy() override;
     void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
 
@@ -270,7 +270,7 @@ static inline const BufferSubState &SubState(const vvl::Buffer &obj) {
 
 class BufferViewSubState : public vvl::BufferViewSubState {
   public:
-    BufferViewSubState(vvl::BufferView &obj, DescriptorHeap &heap);
+    BufferViewSubState(vvl::BufferView& obj, DescriptorIdPool& id_pool);
     void Destroy() override;
     void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
 
@@ -286,7 +286,7 @@ static inline const BufferViewSubState &SubState(const vvl::BufferView &obj) {
 
 class SamplerSubState : public vvl::SamplerSubState {
   public:
-    SamplerSubState(vvl::Sampler &obj, DescriptorHeap &heap);
+    SamplerSubState(vvl::Sampler& obj, DescriptorIdPool& id_pool);
     void Destroy() override;
     void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
 
@@ -302,7 +302,7 @@ static inline const SamplerSubState &SubState(const vvl::Sampler &obj) {
 
 class AccelerationStructureNVSubState : public vvl::AccelerationStructureNVSubState {
   public:
-    AccelerationStructureNVSubState(vvl::AccelerationStructureNV &obj, DescriptorHeap &heap);
+    AccelerationStructureNVSubState(vvl::AccelerationStructureNV& obj, DescriptorIdPool& id_pool);
     void Destroy() override;
     void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
 
@@ -317,7 +317,7 @@ static inline const AccelerationStructureNVSubState &SubState(const vvl::Acceler
 }
 class AccelerationStructureKHRSubState : public vvl::AccelerationStructureKHRSubState {
   public:
-    AccelerationStructureKHRSubState(Validator& validator, vvl::AccelerationStructureKHR& obj, DescriptorHeap& heap);
+    AccelerationStructureKHRSubState(Validator& validator, vvl::AccelerationStructureKHR& obj, DescriptorIdPool& id_pool);
     void Destroy() override;
     void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
 
@@ -344,7 +344,7 @@ static inline const AccelerationStructureKHRSubState &SubState(const vvl::Accele
 
 class TensorSubState : public vvl::TensorSubState {
   public:
-    TensorSubState(vvl::Tensor &obj, DescriptorHeap &heap);
+    TensorSubState(vvl::Tensor& obj, DescriptorIdPool& id_pool);
     void Destroy() override;
     void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
 
@@ -360,7 +360,7 @@ static inline const TensorSubState &SubState(const vvl::Tensor &obj) {
 
 class TensorViewSubState : public vvl::TensorViewSubState {
   public:
-    TensorViewSubState(vvl::TensorView &obj, DescriptorHeap &heap);
+    TensorViewSubState(vvl::TensorView& obj, DescriptorIdPool& id_pool);
     void Destroy() override;
     void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
 

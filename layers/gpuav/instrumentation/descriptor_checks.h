@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ class Validator;
 class CommandBufferSubState;
 
 using DescriptorId = uint32_t;
-class DescriptorHeap {
+class DescriptorIdPool {
   public:
-    DescriptorHeap(Validator &gpuav, uint32_t max_descriptors);
-    ~DescriptorHeap();
+    DescriptorIdPool(Validator& gpuav, uint32_t max_descriptors);
+    ~DescriptorIdPool();
 
     DescriptorId NextId(const VulkanTypedHandle &handle);
     void DeleteId(DescriptorId id);
@@ -43,7 +43,7 @@ class DescriptorHeap {
     vvl::unordered_map<DescriptorId, VulkanTypedHandle> alloc_map_;
 
     vko::Buffer buffer_;
-    uint32_t *gpu_heap_state_{nullptr};
+    uint32_t* gpu_id_pool_state_{nullptr};
 };
 
 // Descriptor Ids are used on the GPU to identify if a given descriptor is valid.
@@ -52,14 +52,14 @@ class DescriptorHeap {
 // so that the instrumentation can decide if a descriptor is actually valid when it is used in a shader.
 class DescriptorIdTracker {
   public:
-    DescriptorIdTracker(DescriptorHeap &heap_, VulkanTypedHandle handle) : heap(heap_), id(heap_.NextId(handle)) {}
+    DescriptorIdTracker(DescriptorIdPool& id_pool_, VulkanTypedHandle handle) : id_pool(id_pool_), id(id_pool_.NextId(handle)) {}
 
     DescriptorIdTracker(const DescriptorIdTracker &) = delete;
     DescriptorIdTracker &operator=(const DescriptorIdTracker &) = delete;
 
-    ~DescriptorIdTracker() { heap.DeleteId(id); }
+    ~DescriptorIdTracker() { id_pool.DeleteId(id); }
 
-    DescriptorHeap &heap;
+    DescriptorIdPool& id_pool;
     const DescriptorId id{};
 };
 

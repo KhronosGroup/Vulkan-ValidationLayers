@@ -29,7 +29,7 @@ static uint32_t BitBufferSize(uint32_t num_bits) {
     return (((num_bits + (kBitsPerWord - 1)) & ~(kBitsPerWord - 1)) / kBitsPerWord) * sizeof(uint32_t);
 }
 
-DescriptorHeap::DescriptorHeap(Validator& gpuav, uint32_t max_descriptors) : max_descriptors_(max_descriptors), buffer_(gpuav) {
+DescriptorIdPool::DescriptorIdPool(Validator& gpuav, uint32_t max_descriptors) : max_descriptors_(max_descriptors), buffer_(gpuav) {
     // If max_descriptors_ is 0, GPU-AV aborted during vkCreateDevice(). We still need to
     // support calls into this class as no-ops if this happens.
     if (max_descriptors_ == 0) {
@@ -47,18 +47,18 @@ DescriptorHeap::DescriptorHeap(Validator& gpuav, uint32_t max_descriptors) : max
         return;
     }
 
-    gpu_heap_state_ = (uint32_t*)buffer_.GetMappedPtr();
-    memset(gpu_heap_state_, 0, static_cast<size_t>(buffer_info.size));
+    gpu_id_pool_state_ = (uint32_t*)buffer_.GetMappedPtr();
+    memset(gpu_id_pool_state_, 0, static_cast<size_t>(buffer_info.size));
 }
 
-DescriptorHeap::~DescriptorHeap() {
+DescriptorIdPool::~DescriptorIdPool() {
     if (max_descriptors_ > 0) {
         buffer_.Destroy();
-        gpu_heap_state_ = nullptr;
+        gpu_id_pool_state_ = nullptr;
     }
 }
 
-DescriptorId DescriptorHeap::NextId(const VulkanTypedHandle& handle) {
+DescriptorId DescriptorIdPool::NextId(const VulkanTypedHandle& handle) {
     if (max_descriptors_ == 0) {
         return 0;
     }
@@ -77,15 +77,15 @@ DescriptorId DescriptorHeap::NextId(const VulkanTypedHandle& handle) {
         }
     } while (alloc_map_.count(result) > 0);
     alloc_map_[result] = handle;
-    gpu_heap_state_[result / 32] |= 1u << (result & 31);
+    gpu_id_pool_state_[result / 32] |= 1u << (result & 31);
     return result;
 }
 
-void DescriptorHeap::DeleteId(DescriptorId id) {
+void DescriptorIdPool::DeleteId(DescriptorId id) {
     if (max_descriptors_ > 0) {
         std::lock_guard guard(lock_);
         // Note: We don't mess with next_id_ here because ids should be assigned in LRU order.
-        gpu_heap_state_[id / 32] &= ~(1u << (id & 31));
+        gpu_id_pool_state_[id / 32] &= ~(1u << (id & 31));
         alloc_map_.erase(id);
     }
 }
@@ -96,7 +96,7 @@ struct DescriptorChecksCbState {
 
 void DescriptorChecksOnFinishDeviceSetup(Validator& gpuav) {
     if (!gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) {
-        gpuav.shared_resources_cache.GetOrCreate<DescriptorHeap>(gpuav, 0);
+        gpuav.shared_resources_cache.GetOrCreate<DescriptorIdPool>(gpuav, 0);
         return;
     }
 
@@ -109,7 +109,7 @@ void DescriptorChecksOnFinishDeviceSetup(Validator& gpuav) {
         num_descs = glsl::kDebugInputBindlessMaxDescriptors;
     }
 
-    gpuav.shared_resources_cache.GetOrCreate<DescriptorHeap>(gpuav, num_descs);
+    gpuav.shared_resources_cache.GetOrCreate<DescriptorIdPool>(gpuav, num_descs);
 }
 
 void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState& cb) {
@@ -347,7 +347,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
             dc_cb_state.last_bound_desc_sets_ssbo.Clear();
             auto desc_sets_ssbo =
                 static_cast<glsl::BoundDescriptorSetsSSBO*>(dc_cb_state.last_bound_desc_sets_ssbo.offset_mapped_ptr);
-            desc_sets_ssbo->descriptor_init_status = gpuav.shared_resources_cache.Get<DescriptorHeap>().GetDeviceAddress();
+            desc_sets_ssbo->descriptor_init_status = gpuav.shared_resources_cache.Get<DescriptorIdPool>().GetDeviceAddress();
 
             for (size_t bound_ds_i = 0; bound_ds_i < desc_binding_cmd.bound_descriptor_sets.size(); ++bound_ds_i) {
                 auto& bound_ds = desc_binding_cmd.bound_descriptor_sets[bound_ds_i];

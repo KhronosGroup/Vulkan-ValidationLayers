@@ -27,7 +27,7 @@ layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorEn
 };
 
 layout(buffer_reference, buffer_reference_align = 8, scalar) buffer InitializedStatus {
-    // Maps to DescriptorHeap and used to detect if descriptor is still valid on CPU
+    // Maps to DescriptorIdPool and used to detect if descriptor is still valid on CPU
     uint data[];
 };
 
