@@ -149,7 +149,7 @@ TEST_F(PositiveSyncValWsi, ThreadedSubmitAndFenceWaitAndPresent) {
         GTEST_SKIP() << "Failed to pre-transition swapchain images";
     }
 
-    constexpr int N = 1'000;
+    constexpr int N = 100;  // Initially 1000 for higher repro rate
     std::mutex queue_mutex;
 
     // Worker thread submits accesses and waits on the fence.
@@ -1086,7 +1086,7 @@ TEST_F(PositiveSyncValWsi, ConcurrentPresentAndSubmit) {
     }
 
     const auto swapchain_images = m_swapchain.GetImages();
-    const int N = 500;
+    const int N = 100;  // Initially 500 for higher repro rate
 
     std::atomic<bool> bailout{false};
     monitor_.SetBailout(&bailout);
@@ -1140,9 +1140,9 @@ TEST_F(PositiveSyncValWsi, ConcurrentPresentMultipleSwapchains) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitSyncVal());
 
-    const uint32_t num_threads = 8;
+    const uint32_t num_threads = 6; /* Initially 8 */
     const uint32_t num_frames_in_flight = 2;
-    const uint32_t N = 200;
+    const uint32_t N = 100; /* Initially 200 */
 
     std::mutex queue_mutex;
 

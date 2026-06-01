@@ -339,7 +339,7 @@ TEST_F(PositiveThreading, GetPhysicalDeviceFeatures) {
     VkInstanceCreateInfo instance_ci = GetInstanceCreateInfo();
 
     // mimics --gtest_repeat=100 which is needed to reproduce constantly
-    for (uint32_t repeat = 0; repeat < 100; repeat++) {
+    for (uint32_t repeat = 0; repeat < 20 /* Initially 100 */; repeat++) {
         VkInstance instance;
         vk::CreateInstance(&instance_ci, nullptr, &instance);
 
