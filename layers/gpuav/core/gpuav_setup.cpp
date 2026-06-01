@@ -24,7 +24,7 @@
 #include "chassis/dispatch_object.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
-#include "gpuav/instrumentation/descriptor_checks.h"
+#include "gpuav/instrumentation/descriptor_checks_classic.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
@@ -263,7 +263,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const L
         vk_set_device_loader_data_ = chain_info->u.pfnSetDeviceLoaderData;
     }
 
-    DescriptorChecksOnFinishDeviceSetup(*this);
+    DescriptorChecksClassicOnFinishDeviceSetup(*this);
 
     // Create error logging buffer allocation pool
     {

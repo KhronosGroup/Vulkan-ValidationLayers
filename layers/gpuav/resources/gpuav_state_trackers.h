@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "external/inplace_function.h"
-#include "gpuav/instrumentation/descriptor_checks.h"
+#include "gpuav/instrumentation/descriptor_checks_classic.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
 
 // We pull in most the core state tracking files
