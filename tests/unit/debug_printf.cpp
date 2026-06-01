@@ -6652,6 +6652,131 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeapMesh) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDebugPrintf, DescriptorHeapRebindHeap) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(heap_props);
+
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    if (heap_props.resourceHeapAlignment > resource_stride || heap_props.imageDescriptorAlignment > resource_stride) {
+        GTEST_SKIP() << "TODO - need to make test more portable";
+    }
+
+    vkt::Buffer ssbo1_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer ssbo2_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer ssbo3_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    uint32_t* data = (uint32_t*)ssbo1_buffer.Memory().Map();
+    data[0] = 8;
+    data[1] = 12;
+    data[2] = 1;
+    data = (uint32_t*)ssbo2_buffer.Memory().Map();
+    data[0] = 5;
+    data[1] = 9;
+    data[2] = 1;
+    data = (uint32_t*)ssbo3_buffer.Memory().Map();
+    data[0] = 9;
+    data[1] = 9;
+    data[2] = 1;
+
+    // 1st heap hold 2 SSBO
+    VkDeviceSize resource_heap_size_app = Align(resource_stride * 2, heap_props.bufferDescriptorAlignment);
+    resource_heap_size_app = Align(resource_heap_size_app, heap_props.imageDescriptorAlignment);
+    const VkDeviceSize resource_heap_size_driver = resource_heap_size_app + heap_props.minResourceHeapReservedRange;
+
+    vkt::Buffer descriptor_heap(*m_device, resource_heap_size_driver, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT,
+                                vkt::device_address);
+    const auto descriptor_heap_ptr = static_cast<uint8_t*>(descriptor_heap.Memory().Map());
+
+    // 2nd heap to hold the 3rd SSBO
+    vkt::Buffer descriptor_heap2(*m_device, resource_heap_size_driver, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT,
+                                 vkt::device_address);
+    const auto descriptor_heap2_ptr = static_cast<uint8_t*>(descriptor_heap2.Memory().Map());
+
+    VkHostAddressRangeEXT descriptor_host{descriptor_heap_ptr, static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = ssbo1_buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    descriptor_host.address = descriptor_heap_ptr + resource_stride;
+    device_range = ssbo2_buffer.AddressRange();
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    descriptor_host.address = descriptor_heap2_ptr;
+    device_range = ssbo3_buffer.AddressRange();
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout (set = 0, binding = 0) buffer SSBO_0 {
+            uint a;
+            uint b;
+            uint c;
+        };
+
+        void main() {
+            c = a + b;
+            debugPrintfEXT("c == %u\n", c);
+        }
+    )glsl";
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = 0;
+    mapping.sourceData.constantOffset.heapArrayStride = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.CreateComputePipeline(false);
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange.address = descriptor_heap.Address();
+    bind_resource_info.heapRange.size = resource_heap_size_driver;
+    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    bind_resource_info.heapRange.address += resource_stride;
+    bind_resource_info.heapRange.size -= resource_stride;
+    bind_resource_info.reservedRangeOffset -= resource_stride;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    bind_resource_info.heapRange.address = descriptor_heap2.Address();
+    bind_resource_info.heapRange.size = resource_heap_size_driver;
+    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("c == 20");  // from first dispatch
+    m_errorMonitor->SetDesiredInfo("c == 14");  // from second dispatch
+    m_errorMonitor->SetDesiredInfo("c == 18");  // from third dispatch
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 void NegativeDebugPrintf::CoopMat2CallbackTest(const char* shader_source, const char* message) {
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);

@@ -30,7 +30,7 @@ class DescriptorIdPool {
     DescriptorIdPool(Validator& gpuav, uint32_t max_descriptors);
     ~DescriptorIdPool();
 
-    DescriptorId NextId(const VulkanTypedHandle &handle);
+    DescriptorId NextId(const VulkanTypedHandle& handle);
     void DeleteId(DescriptorId id);
 
     VkDeviceAddress GetDeviceAddress() const { return buffer_.Address(); }
@@ -54,8 +54,8 @@ class DescriptorIdTracker {
   public:
     DescriptorIdTracker(DescriptorIdPool& id_pool_, VulkanTypedHandle handle) : id_pool(id_pool_), id(id_pool_.NextId(handle)) {}
 
-    DescriptorIdTracker(const DescriptorIdTracker &) = delete;
-    DescriptorIdTracker &operator=(const DescriptorIdTracker &) = delete;
+    DescriptorIdTracker(const DescriptorIdTracker&) = delete;
+    DescriptorIdTracker& operator=(const DescriptorIdTracker&) = delete;
 
     ~DescriptorIdTracker() { id_pool.DeleteId(id); }
 
@@ -63,7 +63,7 @@ class DescriptorIdTracker {
     const DescriptorId id{};
 };
 
-void DescriptorChecksOnFinishDeviceSetup(Validator &gpuav);
-void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState& cb);
+void DescriptorChecksClassicOnFinishDeviceSetup(Validator& gpuav);
+void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSubState& cb);
 
 }  // namespace gpuav
