@@ -47,40 +47,40 @@ void Validator::Created(vvl::CommandBuffer& cb_state) {
 void Validator::Created(vvl::Queue& queue) { queue.SetSubState(container_type, std::make_unique<QueueSubState>(*this, queue)); }
 
 void Validator::Created(vvl::Image& obj) {
-    DescriptorHeap& desc_heap = shared_resources_cache.Get<DescriptorHeap>();
-    obj.SetSubState(container_type, std::make_unique<ImageSubState>(obj, desc_heap));
+    DescriptorIdPool& desc_id_pool = shared_resources_cache.Get<DescriptorIdPool>();
+    obj.SetSubState(container_type, std::make_unique<ImageSubState>(obj, desc_id_pool));
 }
 void Validator::Created(vvl::ImageView& obj) {
-    DescriptorHeap& desc_heap = shared_resources_cache.Get<DescriptorHeap>();
-    obj.SetSubState(container_type, std::make_unique<ImageViewSubState>(obj, desc_heap));
+    DescriptorIdPool& desc_id_pool = shared_resources_cache.Get<DescriptorIdPool>();
+    obj.SetSubState(container_type, std::make_unique<ImageViewSubState>(obj, desc_id_pool));
 }
 void Validator::Created(vvl::Buffer& obj) {
-    DescriptorHeap& desc_heap = shared_resources_cache.Get<DescriptorHeap>();
-    obj.SetSubState(container_type, std::make_unique<BufferSubState>(obj, desc_heap));
+    DescriptorIdPool& desc_id_pool = shared_resources_cache.Get<DescriptorIdPool>();
+    obj.SetSubState(container_type, std::make_unique<BufferSubState>(obj, desc_id_pool));
 }
 void Validator::Created(vvl::BufferView& obj) {
-    DescriptorHeap& desc_heap = shared_resources_cache.Get<DescriptorHeap>();
-    obj.SetSubState(container_type, std::make_unique<BufferViewSubState>(obj, desc_heap));
+    DescriptorIdPool& desc_id_pool = shared_resources_cache.Get<DescriptorIdPool>();
+    obj.SetSubState(container_type, std::make_unique<BufferViewSubState>(obj, desc_id_pool));
 }
 void Validator::Created(vvl::Sampler& obj) {
-    DescriptorHeap& desc_heap = shared_resources_cache.Get<DescriptorHeap>();
-    obj.SetSubState(container_type, std::make_unique<SamplerSubState>(obj, desc_heap));
+    DescriptorIdPool& desc_id_pool = shared_resources_cache.Get<DescriptorIdPool>();
+    obj.SetSubState(container_type, std::make_unique<SamplerSubState>(obj, desc_id_pool));
 }
 void Validator::Created(vvl::AccelerationStructureNV& obj) {
-    DescriptorHeap& desc_heap = shared_resources_cache.Get<DescriptorHeap>();
-    obj.SetSubState(container_type, std::make_unique<AccelerationStructureNVSubState>(obj, desc_heap));
+    DescriptorIdPool& desc_id_pool = shared_resources_cache.Get<DescriptorIdPool>();
+    obj.SetSubState(container_type, std::make_unique<AccelerationStructureNVSubState>(obj, desc_id_pool));
 }
 void Validator::Created(vvl::AccelerationStructureKHR& obj) {
-    DescriptorHeap& desc_heap = shared_resources_cache.Get<DescriptorHeap>();
-    obj.SetSubState(container_type, std::make_unique<AccelerationStructureKHRSubState>(*this, obj, desc_heap));
+    DescriptorIdPool& desc_id_pool = shared_resources_cache.Get<DescriptorIdPool>();
+    obj.SetSubState(container_type, std::make_unique<AccelerationStructureKHRSubState>(*this, obj, desc_id_pool));
 }
 void Validator::Created(vvl::Tensor& obj) {
-    DescriptorHeap& desc_heap = shared_resources_cache.Get<DescriptorHeap>();
-    obj.SetSubState(container_type, std::make_unique<TensorSubState>(obj, desc_heap));
+    DescriptorIdPool& desc_id_pool = shared_resources_cache.Get<DescriptorIdPool>();
+    obj.SetSubState(container_type, std::make_unique<TensorSubState>(obj, desc_id_pool));
 }
 void Validator::Created(vvl::TensorView& obj) {
-    DescriptorHeap& desc_heap = shared_resources_cache.Get<DescriptorHeap>();
-    obj.SetSubState(container_type, std::make_unique<TensorViewSubState>(obj, desc_heap));
+    DescriptorIdPool& desc_id_pool = shared_resources_cache.Get<DescriptorIdPool>();
+    obj.SetSubState(container_type, std::make_unique<TensorViewSubState>(obj, desc_id_pool));
 }
 void Validator::Created(vvl::ShaderObject& obj) { obj.SetSubState(container_type, std::make_unique<ShaderObjectSubState>(obj)); }
 
@@ -547,9 +547,9 @@ bool Validator::IsAllDeviceLocalMappable() const {
     return true;
 }
 
-// Things like DescriptorHeap are singleton class that lives in GPU-AV, but are used when state tracking adds/destroy new resources
-// we need to track. One issue is on vkDestroyDevice we need to teardown the GPU-AV class, then after we try and destroy leaked
-// state objects (ex. user forgot to call vkDestroySampler).
+// Things like DescriptorIdPool are singleton class that lives in GPU-AV, but are used when state tracking adds/destroy new
+// resources we need to track. One issue is on vkDestroyDevice we need to teardown the GPU-AV class, then after we try and destroy
+// leaked state objects (ex. user forgot to call vkDestroySampler).
 void Validator::DestroySubstate() {
     if (!dispatch_device_ || aborted_) {
         return;
