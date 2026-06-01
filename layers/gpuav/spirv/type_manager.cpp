@@ -712,6 +712,37 @@ const Constant& TypeManager::GetConstantNull(const Type& type) {
     return AddConstant(std::move(new_inst), type);
 }
 
+const AccessPath TypeManager::BuildAccessPath(const Function& function, const Instruction& inst) const {
+    AccessPath path;
+
+    // |Operand 0| works for both Store/Load
+    const uint32_t ptr_id = inst.Operand(0);
+
+    // Buffer/Image Descriptor will always have an access chains, but some cases can have direct access.
+    // TaskPayload can be a scalar that does a direct variable access
+    // An non-array AccelerationStructure (which uses UniformConstant storage class)
+    path.variable = FindVariableById(ptr_id);
+    if (path.variable) {
+        return path;
+    }
+
+    const Instruction* next_access_chain = function.FindInstruction(ptr_id);
+    // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
+    while (next_access_chain && next_access_chain->IsNonPtrAccessChain()) {
+        // inserting in front allows us to walk over the loop from the front
+        path.ac_list.insert(path.ac_list.begin(), next_access_chain);
+
+        const uint32_t access_chain_base_id = next_access_chain->Operand(0);
+        path.variable = FindVariableById(access_chain_base_id);
+        if (path.variable) {
+            break;  // found
+        }
+        next_access_chain = function.FindInstruction(access_chain_base_id);
+    }
+
+    return path;
+}
+
 const Variable& TypeManager::AddVariable(std::unique_ptr<Instruction> new_inst, const Type& type) {
     const auto& inst = module_.types_values_constants_.emplace_back(std::move(new_inst));
 

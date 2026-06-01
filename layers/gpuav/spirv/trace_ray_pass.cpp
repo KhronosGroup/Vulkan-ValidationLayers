@@ -58,40 +58,25 @@ std::vector<uint32_t> TraceRayPass::GetTlasValidationFunctionCallInstructions(co
         return {};
     }
 
-    // AS descriptors use UniformConstant storage class (unlike buffers which use Uniform/StorageBuffer),
-    // so a non-array AS can be loaded directly from its variable with no access chain in between.
-    // Pre-initialize variable for that case; the loop below handles the access-chain case.
-    const Variable* variable = type_manager_.FindVariableById(as_op_load_inst->Operand(0));
-    std::vector<const Instruction*> access_chain_insts;
-    const Instruction* next_access_chain = function.FindInstruction(as_op_load_inst->Operand(0));
-    // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
-    while (next_access_chain && next_access_chain->IsNonPtrAccessChain()) {
-        access_chain_insts.push_back(next_access_chain);
-        const uint32_t access_chain_base_id = next_access_chain->Operand(0);
-        variable = type_manager_.FindVariableById(access_chain_base_id);
-        if (variable) {
-            break;  // found
-        }
-        next_access_chain = function.FindInstruction(access_chain_base_id);
-    }
-    if (!variable) {
+    const AccessPath access_path = type_manager_.BuildAccessPath(function, *as_op_load_inst);
+    if (!access_path.IsValid()) {
         return {};
     }
 
-    const Type* descriptor_type = variable->PointerType(type_manager_);
+    const Type* descriptor_type = access_path.variable->PointerType(type_manager_);
     if (!descriptor_type || descriptor_type->spv_type_ == SpvType::kRuntimeArray) {
         return {};  // TODO - Currently we mark these as "bindless"
     }
 
     const bool is_descriptor_array = descriptor_type->IsArray();
-    if (is_descriptor_array && access_chain_insts.empty()) {
+    if (is_descriptor_array && access_path.ac_list.empty()) {
         return {};  // array descriptor without an access chain is invalid SPIR-V
     }
 
     uint32_t descriptor_index_id = 0;
     if (is_descriptor_array) {
         // Because you can't have 2D array of descriptors, the first index of the last accessChain is the descriptor index
-        descriptor_index_id = access_chain_insts.back()->Operand(1);
+        descriptor_index_id = access_path.DescriptorIndexId();
     } else {
         // There is no array of this descriptor, so we essentially have an array of 1
         descriptor_index_id = type_manager_.GetConstantZeroUint32().Id();
@@ -100,7 +85,7 @@ std::vector<uint32_t> TraceRayPass::GetTlasValidationFunctionCallInstructions(co
     uint32_t descriptor_set = 0;
     uint32_t descriptor_binding = 0;
     for (const auto& annotation : module_.annotations_) {
-        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable->Id()) {
+        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == access_path.variable->Id()) {
             if (annotation->Word(2) == spv::DecorationDescriptorSet) {
                 descriptor_set = annotation->Word(3);
             } else if (annotation->Word(2) == spv::DecorationBinding) {

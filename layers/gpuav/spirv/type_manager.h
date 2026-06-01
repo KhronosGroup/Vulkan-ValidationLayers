@@ -27,6 +27,7 @@ using Instruction = ::spirv::Instruction;
 
 class Module;
 class TypeManager;
+struct Function;
 
 // These are the constant operations that we plan to handle in for shader instrumentation
 static constexpr bool ConstantOperation(uint32_t opcode) {
@@ -132,6 +133,29 @@ struct Variable {
     const Instruction& inst_;
 };
 
+// We often want to walk the SSA from an "access" (load, store, atomic, etc) to the Variable it is referencing. There can be a
+// single OpAccessChain or multiple, and this struct holds this information.
+// Background info: https://github.com/KhronosGroup/SPIRV-Guide/blob/main/chapters/access_chains.md
+struct AccessPath {
+    // The variable at the end of the access chain
+    const Variable* variable = nullptr;
+
+    bool IsValid() const { return variable != nullptr; }
+
+    // List of OpAccessChains from the variable to the "access"
+    // - The front() will be closest to the OpVariable
+    // - The back() will be closest to the exact spot accesssed
+    // This is on purpose as we really will want to loop the OpAccessChain in reserve SSA order
+    //
+    // Note: GLSL will try to always create a single large OpAccessChain
+    std::vector<const Instruction*> ac_list;
+
+    // When dealing with an array of descriptors, the access closest to the variable will have it
+    uint32_t DescriptorIndexId() const { return ac_list.front()->Operand(1); }
+
+    uint32_t FinalAccessedType() const { return ac_list.back()->TypeId(); }
+};
+
 // In charge of tracking all Types, Constants, and Variable in the module.
 // Since both Variable and Constant both rely on Types, the Types are the core thing we track
 //
@@ -189,6 +213,8 @@ class TypeManager {
     const Constant& GetConstantZeroUvec4();
     const Constant& GetConstantZeroVector(const Type& vector_type);
     const Constant& GetConstantNull(const Type& type);
+
+    const AccessPath BuildAccessPath(const Function& function, const Instruction& inst) const;
 
     const Variable& AddVariable(std::unique_ptr<Instruction> new_inst, const Type& type);
     const Variable* FindVariableById(uint32_t id) const;

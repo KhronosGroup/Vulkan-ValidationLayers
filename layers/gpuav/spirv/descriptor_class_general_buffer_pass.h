@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 #include <cstdint>
+#include "type_manager.h"
 #include "pass.h"
 
 namespace gpuav {
@@ -45,11 +46,7 @@ class DescriptorClassGeneralBufferPass : public Pass {
         // Id to the descriptor, will have array stripped if descriptor indexing
         uint32_t descriptor_id = 0;
 
-        // List of OpAccessChains fom the Store/Load down to the OpVariable
-        // The front() will be closet to the exact spot accesssed
-        // The back() will be closest to the OpVariable
-        // (note GLSL will try to always create a single large OpAccessChain)
-        std::vector<const Instruction*> access_chain_insts;
+        AccessPath access_path;
 
         // Capture the upper bound offset into the struct the instruction accesses
         // Will be zero if we can't determine it (or in Safe Mode)
