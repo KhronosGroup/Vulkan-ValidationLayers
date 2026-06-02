@@ -17,6 +17,7 @@
 
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
 #include <vulkan/vulkan_core.h>
+#include <cstdint>
 #include <spirv/unified1/spirv.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
@@ -530,8 +531,11 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator& gpuav, 
                                                               const LastBound& last_bound,
                                                               const CommonInstrumentationErrorInfo& common_error_info,
                                                               const Location& loc) {
-    const auto& heap_buffer = gpuav.GetGlobalDescriptorHeap();
-    VkDeviceAddress* indirect_memory = static_cast<VkDeviceAddress*>(heap_buffer.GetMappedPtr());
+    const VkDeviceSize indirect_buffer_offset = gpuav.heap_indirect_buffer_stride_ * common_error_info.action_command_index;
+
+    const auto& indirect_buffer = gpuav.GetGlobalDescriptorHeap();
+    uint8_t* indirect_buffer_ptr = static_cast<uint8_t*>(indirect_buffer.GetMappedPtr());
+    indirect_buffer_ptr += indirect_buffer_offset;
 
     const uint32_t error_logger_index = cb_state.GetErrorLoggerIndex();
 
@@ -540,10 +544,10 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator& gpuav, 
     const uint32_t action_command_index_offset = common_error_info.action_command_index * gpuav.indices_buffer_alignment_;
     const uint32_t resource_index_offset = error_logger_index * gpuav.indices_buffer_alignment_;
 
-    UpdateInstrumentationDescHeap(gpuav, cb_state, last_bound, indirect_memory, action_command_index_offset, resource_index_offset,
-                                  loc);
+    UpdateInstrumentationDescHeap(gpuav, cb_state, last_bound, (VkDeviceAddress*)indirect_buffer_ptr, action_command_index_offset,
+                                  resource_index_offset, loc);
 
-    VkDeviceAddress gpuav_data_address = heap_buffer.Address();
+    VkDeviceAddress gpuav_data_address = indirect_buffer.Address() + indirect_buffer_offset;
     VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
     push_data_info.offset = gpuav.push_data_offset_;
     push_data_info.data.address = &gpuav_data_address;

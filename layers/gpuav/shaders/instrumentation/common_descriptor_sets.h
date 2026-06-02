@@ -32,12 +32,10 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstErrorBuffer, scala
 }
 inst_errors_buffer;
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstActionIndex, scalar) buffer ActionIndexBuffer { uint index[]; }
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstActionIndex, scalar) buffer ActionIndexBuffer { uint data; }
 inst_action_index_buffer;
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstCmdResourceIndex, scalar) buffer ErrorLoggerIndexBuffer {
-    uint index[];
-}
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstCmdResourceIndex, scalar) buffer ErrorLoggerIndexBuffer { uint data; }
 inst_error_logger_index_buffer;
 
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstCmdErrorsCount, scalar) buffer CmdErrorsCountBuffer {

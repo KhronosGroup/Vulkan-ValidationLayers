@@ -234,10 +234,10 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     // Each vector index maps to the binding number with the offset to map to (with the start offset included)
     std::vector<VkDeviceSize> resource_descriptor_buffer_offsets_;
 
-    // Size to reserve in front of reserved range in resource heap
-    VkDeviceSize resource_heap_reserved_bytes_ = 0;
-    VkDeviceSize buffer_descriptor_size_ = 0;
-    VkDeviceSize buffer_descriptor_alignment_ = 0;
+    // VK_EXT_descriptor_heap
+    // Each action command advances into the global indirect buffer by this stride
+    VkDeviceSize heap_indirect_buffer_stride_ = 0;
+    // where in push data we provide our address to the indirect buffer
     uint32_t push_data_offset_ = 0;
 
     // These are the same as enabled_features, but may have been altered at setup time. This should be use for any feature GPU-AV

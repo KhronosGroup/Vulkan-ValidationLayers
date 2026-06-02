@@ -82,12 +82,17 @@ def VerifyClangFormatSource(commit, target_files):
 def VerifyTrailingWhiteSpace(target_files):
     whitespace_pattern = re.compile(r'[ \t]+$', flags=re.MULTILINE)
     found_any = False
+    binary_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.zip', '.tar', '.gz')
+
     for file_path in target_files:
+        if file_path.lower().endswith(binary_extensions):
+            continue
+
         full_path = repo_relative(file_path)
         if not os.path.isfile(full_path):
             continue
         try:
-            with open(repo_relative(full_path), 'r', encoding='utf-8', errors='ignore') as f:
+            with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
                 for line_number, line in enumerate(f, 1):
                     if whitespace_pattern.search(line):
                         print(f"Trailing white space in {file_path} at line {line_number}")

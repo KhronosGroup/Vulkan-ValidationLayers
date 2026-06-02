@@ -336,10 +336,13 @@ vko::Buffer& Validator::GetGlobalDescriptorBuffer() {
     return global_resource_descriptor_buffer_;
 }
 
+// This buffer is going to be the indirect buffer for a VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT mapping.
 vko::Buffer& Validator::GetGlobalDescriptorHeap() {
     if (global_resource_descriptor_heap_.IsDestroyed()) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-        buffer_info.size = resource_heap_reserved_bytes_ + phys_dev_ext_props.descriptor_heap_props.minResourceHeapReservedRange;
+        buffer_info.size = heap_indirect_buffer_stride_ * gpuav_settings.indices_buffer_count;
+        // Note that maxUniformBufferRange is smaller likely to what we need here, but this buffer doesn't need to worry because we
+        // are not "binding" this, so we can use maxBufferSize instead
         buffer_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
