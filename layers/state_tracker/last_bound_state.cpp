@@ -46,6 +46,22 @@ void LastBound::UnbindAndResetPushDescriptorSet(std::shared_ptr<vvl::DescriptorS
 
 bool LastBound::IsDynamic(const CBDynamicState state) const { return !pipeline_state || pipeline_state->IsDynamic(state); }
 
+small_vector<const ShaderStageState*, 3> LastBound::GetStages() const {
+    small_vector<const ShaderStageState*, 3> stages;
+    if (pipeline_state) {
+        for (const ShaderStageState& stage : pipeline_state->stage_states) {
+            stages.emplace_back(&stage);
+        }
+    } else {
+        for (const auto& shader_object : shader_object_states) {
+            if (shader_object) {
+                stages.emplace_back(&shader_object->stage);
+            }
+        }
+    }
+    return stages;
+}
+
 void LastBound::BindPipeline(vvl::Pipeline* pipe_state) {
     pipeline_state = pipe_state;
 

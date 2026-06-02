@@ -38,6 +38,8 @@ namespace spirv {
 struct EntryPoint;
 }  // namespace spirv
 
+struct ShaderStageState;
+
 // Track last states that are bound per pipeline bind point (Gfx & Compute)
 struct LastBound {
     LastBound(vvl::CommandBuffer &cb, const VkPipelineBindPoint bind_point) : cb_state(cb), bind_point(bind_point) {}
@@ -54,6 +56,9 @@ struct LastBound {
     std::shared_ptr<const vvl::PipelineLayout> desc_set_pipeline_layout;
     vvl::Func desc_set_bound_command = vvl::Func::Empty;  // will be something like vkCmdBindDescriptorSets
     std::shared_ptr<vvl::DescriptorSet> push_descriptor_set;
+
+    // Common worst case is using task/mesh/fragment, so chose size of 3 to start
+    small_vector<const ShaderStageState*, 3> GetStages() const;
 
     struct DescriptorBufferBinding {
         uint32_t index = 0;
