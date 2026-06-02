@@ -1126,8 +1126,8 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void EncodeVideo(const VkVideoEncodeInfoKHR &encodeInfo);
     void EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo);
 
+    void ResetEvent(const Event& event, VkPipelineStageFlags stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     void SetEvent(const Event& event, VkPipelineStageFlags src_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-    void ResetEvent(const Event& event, VkPipelineStageFlags src_stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     void WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                    VkPipelineStageFlags dst_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     void WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
@@ -1137,6 +1137,7 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void WaitEvent(const Event& event, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                    const VkImageMemoryBarrier& image_barrier);
 
+    void ResetEvent2(const Event& event, VkPipelineStageFlags2 stage_mask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
     void SetEvent2(const Event& event, const VkMemoryBarrier2& memory_barrier);
     void WaitEvent2(const Event& event, const VkMemoryBarrier2& memory_barrier);
 

@@ -156,6 +156,31 @@ VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask, VkQ
     return expanded;
 }
 
+static VkPipelineStageFlags2 RelatedPipelineStages(
+    VkPipelineStageFlags2 stage_mask,
+    const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& earlier_or_later_stages) {
+    VkPipelineStageFlags2 unscanned = stage_mask;
+    VkPipelineStageFlags2 related = 0;
+    for (const auto& [stage, related_stages] : earlier_or_later_stages) {
+        if (stage & unscanned) {
+            related |= related_stages;
+            unscanned &= ~stage;
+            if (!unscanned) {
+                break;
+            }
+        }
+    }
+    return related;
+}
+
+VkPipelineStageFlags2 AddEarlierPipelineStages(VkPipelineStageFlags2 stage_mask) {
+    return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyEarlierStages());
+}
+
+VkPipelineStageFlags2 AddLaterPipelineStages(VkPipelineStageFlags2 stage_mask) {
+    return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyLaterStages());
+}
+
 VkAccessFlags2 CompatibleAccessMask(VkPipelineStageFlags2 stage_mask) {
     static constexpr uint32_t kNumPipelineStageBits = sizeof(VkPipelineStageFlags2) * 8;
     VkAccessFlags2 result = 0;

@@ -625,13 +625,43 @@ void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags
     signaling_state = {};
     signaling_state.was_reset = true;
     signaling_state.last_signaling_command = loc.function;
+    event_wait_states.erase(event);
+}
+
+// Return the second synchronization scope in canonical form (meta stage expansion and logically later stages)
+static VkPipelineStageFlags2 MakeEventBarriers(VkPipelineStageFlags2 dst_stage_mask, VkQueueFlags queue_flags) {
+    VkPipelineStageFlags2 barriers = sync_utils::ExpandPipelineStages(dst_stage_mask, queue_flags);
+    barriers = sync_utils::AddLaterPipelineStages(barriers);
+
+    // Add ALL_COMMANDS if it was present in the original mask (expansion removes it)
+    barriers |= (dst_stage_mask & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
+
+    return barriers;
+}
+
+// Return event barrier added by src/dst dependency.
+// Return NONE if it does not chain with current_event_barriers
+static VkPipelineStageFlags2 GetNewEventBarriersFromDependency(VkPipelineStageFlags2 current_event_barriers,
+                                                               VkPipelineStageFlags2 src_stage_mask,
+                                                               VkPipelineStageFlags2 dst_stage_mask, VkQueueFlags queue_flags) {
+    const bool all_commands_bit = (src_stage_mask & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) != 0;
+    const VkPipelineStageFlags2 expanded_src_stage_mask = sync_utils::ExpandPipelineStages(src_stage_mask, queue_flags);
+    if (all_commands_bit || (current_event_barriers & expanded_src_stage_mask) != 0) {
+        return MakeEventBarriers(dst_stage_mask, queue_flags);
+    }
+    return VK_PIPELINE_STAGE_2_NONE;
 }
 
 void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask,
-                                             const Location& loc) {
+                                             VkPipelineStageFlags dst_stage_mask, const Location& loc) {
     bool submit_validation = false;
     EventSignalingStateMap signaling_states;
+
+    const VkPipelineStageFlags2 barriers = MakeEventBarriers(dst_stage_mask, base.GetQueueFlags());
+
     for (VkEvent event : events) {
+        event_wait_states[event] = EventWaitState{barriers, loc.function};
+
         EventSignalingState* signaling_state = vvl::Find(event_signaling_states, event);
         if (signaling_state) {
             signaling_states.emplace(event, *signaling_state);
@@ -653,6 +683,10 @@ void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, Vk
 }
 
 void CommandBufferSubState::RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {
+    const VkPipelineStageFlags2 dst_stage_mask = sync_utils::GetExecScopes(dependency_info).dst;
+    const VkPipelineStageFlags2 barriers = MakeEventBarriers(dst_stage_mask, base.GetQueueFlags());
+    event_wait_states[event] = EventWaitState{barriers, loc.function};
+
     EventSignalingState* signaling_state = vvl::Find(event_signaling_states, event);
     const bool already_validated = signaling_state && signaling_state->was_reset;
     const bool submit_validation = !already_validated;
@@ -665,6 +699,40 @@ void CommandBufferSubState::RecordWaitEvent2(VkEvent event, const VkDependencyIn
         }
         submit_info.wait_command = loc.function;
         wait_event2_submit_infos.emplace_back(std::move(submit_info));
+    }
+}
+
+void CommandBufferSubState::UpdateEventWaitBarriers(VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask) {
+    for (auto& [event, state] : event_wait_states) {
+        state.barriers |= GetNewEventBarriersFromDependency(state.barriers, src_stage_mask, dst_stage_mask, base.GetQueueFlags());
+    }
+}
+
+void CommandBufferSubState::UpdateEventWaitBarriers(const VkDependencyInfo& dep_info) {
+    for (auto& [event, state] : event_wait_states) {
+        VkPipelineStageFlags2 new_barriers = VK_PIPELINE_STAGE_2_NONE;
+        if (dep_info.pMemoryBarriers) {
+            for (uint32_t i = 0; i < dep_info.memoryBarrierCount; i++) {
+                const auto& barrier = dep_info.pMemoryBarriers[i];
+                new_barriers |= GetNewEventBarriersFromDependency(state.barriers, barrier.srcStageMask, barrier.dstStageMask,
+                                                                  base.GetQueueFlags());
+            }
+        }
+        if (dep_info.pBufferMemoryBarriers) {
+            for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
+                const auto& barrier = dep_info.pBufferMemoryBarriers[i];
+                new_barriers |= GetNewEventBarriersFromDependency(state.barriers, barrier.srcStageMask, barrier.dstStageMask,
+                                                                  base.GetQueueFlags());
+            }
+        }
+        if (dep_info.pImageMemoryBarriers) {
+            for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
+                const auto& barrier = dep_info.pImageMemoryBarriers[i];
+                new_barriers |= GetNewEventBarriersFromDependency(state.barriers, barrier.srcStageMask, barrier.dstStageMask,
+                                                                  base.GetQueueFlags());
+            }
+        }
+        state.barriers |= new_barriers;
     }
 }
 
@@ -686,6 +754,14 @@ void CommandBufferSubState::RecordBarriers(uint32_t buffer_barrier_count, const 
         validator.RecordBarrierValidationInfo(barrier_loc, base, img_barrier, *image_state, qfo_transfer_image_barriers);
         validator.RecordTransitionImageLayout(base, img_barrier, *image_state);
         validator.EnqueueValidateImageBarrierAttachment(barrier_loc, *this, img_barrier);
+    }
+
+    // Update event's execution dependency chain for pipeline barrier commands.
+    // RecordBarriers is also used by WaitEvents so we need to check for specific commands.
+    const bool is_pipeline_barrier = IsValueIn(
+        loc.function, {vvl::Func::vkCmdPipelineBarrier, vvl::Func::vkCmdPipelineBarrier2, vvl::Func::vkCmdPipelineBarrier2KHR});
+    if (is_pipeline_barrier) {
+        UpdateEventWaitBarriers(src_stage_mask, dst_stage_mask);
     }
 }
 
@@ -711,6 +787,14 @@ void CommandBufferSubState::RecordBarriers2(const VkDependencyInfo& dep_info, co
             const TensorBarrier barrier(tensor_barrier_dep_info->pTensorMemoryBarriers[i]);
             base.tensor_barriers.emplace_back(barrier);
         }
+    }
+
+    // Update event's execution dependency chain for pipeline barrier commands.
+    // RecordBarriers2 is also used by WaitEvents2 so we need to check for specific commands.
+    const bool is_pipeline_barrier = IsValueIn(
+        loc.function, {vvl::Func::vkCmdPipelineBarrier, vvl::Func::vkCmdPipelineBarrier2, vvl::Func::vkCmdPipelineBarrier2KHR});
+    if (is_pipeline_barrier) {
+        UpdateEventWaitBarriers(dep_info);
     }
 }
 
@@ -1127,6 +1211,7 @@ void CommandBufferSubState::ResetCBState() {
 
     push_data_mask.clear();
     event_signaling_states.clear();
+    event_wait_states.clear();
 
     // Submit time validation
     queue_submit_functions.clear();
@@ -1198,6 +1283,15 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_c
         }
     }
     UpdateEventSignalingStates(event_signaling_states, secondary_sub_state.event_signaling_states);
+
+    // We don't currently merge secondary wait state precisely. Use a simplified model
+    // that clears the current wait state and keeps only the secondary's final wait state.
+    // To validate more primary/secondary interactions, this can be extended to replay
+    // secondary wait/barrier/reset commands.
+    event_wait_states.clear();
+    for (const auto& [event, wait_state] : secondary_sub_state.event_wait_states) {
+        event_wait_states[event] = wait_state;
+    }
 
     for (auto& function : secondary_sub_state.queue_submit_functions) {
         queue_submit_functions.push_back(function);
