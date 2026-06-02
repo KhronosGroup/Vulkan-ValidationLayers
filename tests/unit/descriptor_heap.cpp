@@ -1483,7 +1483,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapReservedRangeAlign) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindResourceHeapEXT-pBindInfo-11435");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBindResourceHeapEXT-pBindInfo-11436");
+    // could also be VUID-vkCmdBindResourceHeapEXT-pBindInfo-11436
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

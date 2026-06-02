@@ -1512,18 +1512,19 @@ bool Device::manual_PreCallValidateCmdBindResourceHeapEXT(VkCommandBuffer comman
                          phys_dev_ext_props.descriptor_heap_props.resourceHeapAlignment);
     }
 
-    if (!IsPointerAligned(pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment)) {
-        skip |= LogError("VUID-vkCmdBindResourceHeapEXT-pBindInfo-11435", commandBuffer,
-                         error_obj.location.dot(Field::pBindInfo).dot(Field::reservedRangeOffset),
-                         "(0x%" PRIx64 ") must be aligned with bufferDescriptorAlignment (%" PRIu64 ").",
-                         pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment);
-    }
-
-    if (!IsPointerAligned(pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment)) {
-        skip |= LogError("VUID-vkCmdBindResourceHeapEXT-pBindInfo-11436", commandBuffer,
-                         error_obj.location.dot(Field::pBindInfo).dot(Field::reservedRangeOffset),
-                         "(0x%" PRIx64 ") must be aligned with imageDescriptorAlignment (%" PRIu64 ").",
-                         pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment);
+    // While these are 2 VUs, they really should be one as you want to know both together
+    const bool buffer_misaligned =
+        !IsPointerAligned(pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment);
+    const bool image_misaligned =
+        !IsPointerAligned(pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment);
+    if (buffer_misaligned || image_misaligned) {
+        const char* vuid =
+            buffer_misaligned ? "VUID-vkCmdBindResourceHeapEXT-pBindInfo-11435" : "VUID-vkCmdBindResourceHeapEXT-pBindInfo-11436";
+        skip |= LogError(vuid, commandBuffer, error_obj.location.dot(Field::pBindInfo).dot(Field::reservedRangeOffset),
+                         "(0x%" PRIx64 ") must be aligned with both bufferDescriptorAlignment (0x%" PRIx64
+                         ") and imageDescriptorAlignment (0x%" PRIx64 ").",
+                         pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment,
+                         phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment);
     }
     return skip;
 }
