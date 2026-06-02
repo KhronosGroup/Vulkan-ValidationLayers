@@ -1518,7 +1518,9 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
     vvl::unordered_map<VkCommandBuffer, uint32_t> duplicate_secondary_cb;
     EventSignalingStateMap local_signaling_states = cb_sub_state.event_signaling_states;
-    bool suspended_render_pass_instance = (cb_state.last_suspend_state == vvl::CommandBuffer::SuspendState::Suspended);
+    bool suspended_render_pass_instance =
+        cb_state.last_suspend_state == vvl::CommandBuffer::SuspendState::Suspended && !cb_state.active_render_pass;
+
     const VkRenderingInfo* last_rendering_info =
         cb_state.last_rendering_info.has_value() ? cb_state.last_rendering_info.value().ptr() : nullptr;
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
