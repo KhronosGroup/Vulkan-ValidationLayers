@@ -272,7 +272,7 @@ TEST_F(NegativeDeviceAddressCommandsSync, MicromapBuildStage) {
     memory_range_barrier_.srcStageMask = VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT;
     memory_range_barrier_.srcAccessMask = VK_ACCESS_2_MICROMAP_WRITE_BIT_EXT;
 
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryRangeBarrierKHR-srcStageMask-10753");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryRangeBarrierKHR-srcStageMask-11541");
     vk::CmdPipelineBarrier2(m_command_buffer, &dependency_info_);
     m_errorMonitor->VerifyFound();
 

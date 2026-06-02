@@ -319,6 +319,9 @@ void ExecutionModeSet::Add(const Instruction& insn) {
         case spv::ExecutionModeShader64BitIndexingEXT:
             flags |= shader_64bit_indexing;
             break;
+        case spv::ExecutionModeOpacityMicromapIdKHR:
+            flags |= opacity_micromap_khr;
+            break;
         default:
             break;
     }
@@ -2583,7 +2586,6 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
     : VariableBase(module_state, insn, entrypoint.stage, parsed), base_type(FindBaseType(*this, module_state)) {
     // to make sure no padding in-between the struct produce noise and force same data to become a different hash
     info = {};  // will be cleared with c++11 initialization
-
     const uint32_t base_type_opcode = base_type.Opcode();
     if (base_type_opcode == spv::OpTypeStruct) {
         assert(type_struct_info);

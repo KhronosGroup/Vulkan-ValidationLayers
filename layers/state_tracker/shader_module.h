@@ -178,6 +178,7 @@ struct ExecutionModeSet {
         shader_64bit_indexing = 1ull << 43,
 
         tile_shading_rate_bit = 1ull << 44,
+        opacity_micromap_khr = 1ull << 45,
     };
 
     // bits to know if things have been set or not by a Decoration

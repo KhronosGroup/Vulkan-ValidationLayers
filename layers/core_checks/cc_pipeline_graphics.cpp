@@ -334,6 +334,16 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline& pipeline
         const Location& library_loc = create_info_loc.pNext(Struct::VkPipelineLibraryCreateInfoKHR, Field::pLibraries, i);
         const VkPipelineCreateFlags2 lib_pipeline_flags = lib->create_flags;
 
+        if ((pipeline_flags & VK_PIPELINE_CREATE_2_OPACITY_MICROMAP_DISALLOW_MIXED_SPECIAL_INDEX_BIT_KHR) &&
+            !(lib_pipeline_flags & VK_PIPELINE_CREATE_2_OPACITY_MICROMAP_DISALLOW_MIXED_SPECIAL_INDEX_BIT_KHR)) {
+            const LogObjectList objlist(device, lib->Handle());
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-11594", objlist, library_loc,
+                             "(%s) was created with flags (%s), which is missing "
+                             "VK_PIPELINE_CREATE_2_OPACITY_MICROMAP_DISALLOW_MIXED_SPECIAL_INDEX_BIT_KHR, but %s is %s.",
+                             string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
+                             string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(), flags_loc.Fields().c_str(),
+                             string_VkPipelineCreateFlags2(pipeline_flags).c_str());
+        }
         const bool lib_has_retain_link_time_opt =
             (lib_pipeline_flags & VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
         if (has_link_time_opt && !lib_has_retain_link_time_opt) {

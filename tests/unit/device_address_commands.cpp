@@ -3946,10 +3946,15 @@ TEST_F(NegativeDeviceAddressCommands, AccelerationStructureDeviceAddressSparseRe
 }
 
 TEST_F(NegativeDeviceAddressCommands, AccelerationStructureDeviceAddressCaptureReplay) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::accelerationStructureCaptureReplay);
-    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddressMultiDevice);
+    RETURN_IF_SKIP(Init());
 
     vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, vkt::device_address);
 
@@ -4017,11 +4022,24 @@ TEST_F(NegativeDeviceAddressCommands, AccelerationStructureSize) {
 }
 
 TEST_F(NegativeDeviceAddressCommands, AccelerationStructureCreateFlags) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
-    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddressCaptureReplay);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddressMultiDevice);
+    RETURN_IF_SKIP(Init());
 
-    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, vkt::device_address);
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.flags = VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT;
+    buffer_ci.size = 256u;
+    buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                       &allocate_flag_info);
 
     VkAccelerationStructureCreateInfo2KHR as_ci = vku::InitStructHelper();
     as_ci.createFlags = VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR;

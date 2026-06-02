@@ -1871,6 +1871,10 @@ class CoreChecks : public vvl::DeviceProxy {
                                                           const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
                                                           const ErrorObject& error_obj) const override;
 
+    bool PreCallValidateAccelerationStructureTrianglesOpacityMicromapKHR(
+        const VkAccelerationStructureTrianglesOpacityMicromapKHR& pInfo, const LogObjectList& objlist,
+        const Location& triangles_loc) const;
+
     bool PreCallValidateBuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                        uint32_t infoCount,
                                                        const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
@@ -2588,6 +2592,13 @@ class CoreChecks : public vvl::DeviceProxy {
                                                                   const ErrorObject& error_obj) const override;
     bool ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR& as_info,
                                                   const VulkanTypedHandle& handle, const Location& info_loc) const;
+    bool ValidateCopyMemoryToAccelerationStructureInfoKHR(const vvl::AccelerationStructureKHR& dst_as_state,
+                                                          const Location& dst_as_loc) const;
+    bool ValidateCopyAccelerationStructureToMemoryInfoKHR(const vvl::AccelerationStructureKHR& src_as_state,
+                                                          const Location& src_as_loc) const;
+    bool ValidateDeserializedAccelerationStructureReferencedMicromaps(const vvl::AccelerationStructureKHR& src_as_state,
+                                                                      const LogObjectList& objlist, const Location& src_loc,
+                                                                      const char* vuid) const;
     bool PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                         const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                         const ErrorObject& error_obj) const override;

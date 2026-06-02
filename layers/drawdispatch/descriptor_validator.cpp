@@ -39,6 +39,7 @@
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "utils/action_command_utils.h"
 #include "utils/image_utils.h"
+#include "utils/ray_tracing_utils.h"
 
 namespace vvl {
 
@@ -1475,13 +1476,20 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(acc).c_str(),
                                  DescribeInstruction().c_str());
             }
-        } else if (auto as_buffer = acc_node->GetFirstValidBuffer(*dev_proxy.device_state)) {
-            for (const auto& mem_binding : as_buffer.state->GetInvalidMemory()) {
-                const LogObjectList objlist(this->objlist, descriptor_set.Handle());
-                skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
+        } else {
+            if (auto as_buffer = acc_node->GetFirstValidBuffer(*dev_proxy.device_state)) {
+                for (const auto& mem_binding : as_buffer.state->GetInvalidMemory()) {
+                    const LogObjectList objlist(this->objlist, descriptor_set.Handle());
+                    skip |=
+                        LogError(CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
                                  "the %s is using acceleration structure %s that references invalid memory %s.%s",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(acc).c_str(),
                                  FormatHandle(mem_binding->Handle()).c_str(), DescribeInstruction().c_str());
+                }
+            }
+
+            if (!resource_variable.IsAccessed()) {
+                return skip;
             }
         }
     } else {

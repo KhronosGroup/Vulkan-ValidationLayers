@@ -17,6 +17,8 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
+#include <vulkan/utility/vk_struct_helper.hpp>
+#include <vector>
 
 namespace rt {
 
@@ -34,9 +36,14 @@ VkDeviceSize ComputeAccelerationStructureSize(BuildType build_type, const VkDevi
                                               const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
                                               const VkAccelerationStructureBuildRangeInfoKHR *range_infos);
 
+uint64_t MicromapUsageTotalTriangleCount(const VkAccelerationStructureBuildGeometryInfoKHR &build_info);
+
 inline const VkAccelerationStructureGeometryKHR &GetGeometry(const VkAccelerationStructureBuildGeometryInfoKHR &info,
                                                              uint32_t geometry_i) {
     return info.pGeometries ? info.pGeometries[geometry_i] : *info.ppGeometries[geometry_i];
 }
 
+inline const VkMicromapUsageKHR &GetMicroMapUsage(const VkAccelerationStructureGeometryMicromapDataKHR &info, uint32_t count_i) {
+    return info.pUsageCounts ? info.pUsageCounts[count_i] : *info.ppUsageCounts[count_i];
+}
 }  // namespace rt
