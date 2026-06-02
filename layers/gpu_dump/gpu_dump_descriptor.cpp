@@ -96,19 +96,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
         }
     };
 
-    // Quick way to combine shaderObjects and pipelines
-    small_vector<const ShaderStageState*, 2> stages;
-    if (last_bound.pipeline_state) {
-        for (const ShaderStageState& stage : last_bound.pipeline_state->stage_states) {
-            stages.emplace_back(&stage);
-        }
-    } else {
-        for (const auto& shader_object : last_bound.shader_object_states) {
-            if (shader_object) {
-                stages.emplace_back(&shader_object->stage);
-            }
-        }
-    }
+    small_vector<const ShaderStageState*, 3> stages = last_bound.GetStages();
 
     // Can be a push constant only shader, which is valid here
     // But if there are descriptors it is only valid if they are no accessed, which is warning territory
@@ -371,24 +359,35 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     };
 
     auto warn_alignment_indirect_address = [&](VkDeviceAddress address, bool from_resource = false) {
-        warn_ss << new_line << "[WARNING] MISALIGNED - the ";
-        if (from_resource) {
-            warn_ss << "resource";
-        } else {
-            warn_ss << "indirect";
-        }
-        warn_ss << " address is not aligned to ";
-
+        VkDeviceSize alignment = 0;
         if (resource_variable.is_uniform_buffer) {
-            warn_ss << "minUniformBufferOffsetAlignment (0x" << std::hex
-                    << dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment
-                    << ") and any access to this descriptor will be invalid";
+            alignment = dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment;
         } else if (resource_variable.is_storage_buffer) {
-            warn_ss << "minStorageBufferOffsetAlignment (0x" << std::hex
-                    << dev_data.phys_dev_props.limits.minStorageBufferOffsetAlignment
-                    << ") and any access to this descriptor will be invalid";
+            alignment = dev_data.phys_dev_props.limits.minStorageBufferOffsetAlignment;
         } else if (resource_variable.is_acceleration_structure) {
-            // TODO
+            // TODO - confirm
+            alignment = 256;
+        }
+
+        if (!IsPointerAligned(address, alignment)) {
+            warn_ss << new_line << "[WARNING] MISALIGNED - the ";
+            if (from_resource) {
+                warn_ss << "resource";
+            } else {
+                warn_ss << "indirect";
+            }
+            warn_ss << " address is not aligned to ";
+
+            if (resource_variable.is_uniform_buffer) {
+                warn_ss << "minUniformBufferOffsetAlignment (0x" << std::hex << alignment
+                        << ") and any access to this descriptor will be invalid";
+            } else if (resource_variable.is_storage_buffer) {
+                warn_ss << "minStorageBufferOffsetAlignment (0x" << std::hex << alignment << ");";
+            } else if (resource_variable.is_acceleration_structure) {
+                // TODO - confirm
+                warn_ss << "0x" << std::hex << alignment;
+            }
+            warn_ss << " and any access to this descriptor will be invalid";
         }
     };
 
@@ -1100,7 +1099,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     }
 
     if (descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM) {
-        ss << new_line << "Descriptor size: 0x" << descriptor_size << " (" << string_VkDescriptorType(descriptor_type) << ")";
+        ss << new_line << "Descriptor size: 0x" << std::hex << descriptor_size << " (" << string_VkDescriptorType(descriptor_type)
+           << ")";
     }
 
     if (warn_reserved_range_start != vvl::kNoIndex32) {
@@ -1155,19 +1155,7 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
         found_warning |= dev_data.ListBuffers(ss, cb_state.descriptor_heap.sampler_range.begin, 1);
     }
 
-    // Quick way to combine shaderObjects and pipelines
-    small_vector<const ShaderStageState*, 2> stages;
-    if (last_bound.pipeline_state) {
-        for (const ShaderStageState& stage : last_bound.pipeline_state->stage_states) {
-            stages.emplace_back(&stage);
-        }
-    } else {
-        for (const auto& shader_object : last_bound.shader_object_states) {
-            if (shader_object) {
-                stages.emplace_back(&shader_object->stage);
-            }
-        }
-    }
+    small_vector<const ShaderStageState*, 3> stages = last_bound.GetStages();
 
     for (const ShaderStageState* stage : stages) {
         if (!stage->HasSpirv()) {
@@ -1207,7 +1195,7 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
         }
 
         for (auto& [set_index, mapping_info_list] : mapping_info_map) {
-            ss << "  - Set " << set_index << ":\n";
+            ss << "  - Set " << std::dec << set_index << ":\n";
             std::sort(mapping_info_list.begin(), mapping_info_list.end());
             for (const MappingInfo& set_info : mapping_info_list) {
                 found_warning |= DumpDescriptorHeapMapping(ss, set_info);

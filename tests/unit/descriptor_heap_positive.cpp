@@ -2709,8 +2709,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceWithoutHeap) {
     for (uint32_t i = 0; i < 4; ++i) {
         read_data[i] = i + 1;
     }
-    vkt::Buffer write_buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    vkt::Buffer indirect_buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, 512, VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT_KHR, vkt::device_address);
     uint8_t* indirect_data = static_cast<uint8_t*>(indirect_buffer.Memory().Map());
     VkDeviceAddress* indirect_data_address = reinterpret_cast<VkDeviceAddress*>(indirect_data + indirect_offset);
     *indirect_data_address = read_buffer.Address();

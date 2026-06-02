@@ -92,7 +92,7 @@ void DescriptorIdPool::DeleteId(DescriptorId id) {
     }
 }
 
-struct DescriptorChecksCbState {
+struct DescriptorChecksClassicCbState {
     vko::BufferRange last_bound_desc_sets_ssbo;
 };
 
@@ -343,7 +343,7 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
 
     desc_set_bindings.on_update_bound_descriptor_sets.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
                                                                       DescriptorSetBindings::BindingCommand& desc_binding_cmd) {
-        DescriptorChecksCbState& dc_cb_state = cb.shared_resources_cache.GetOrCreate<DescriptorChecksCbState>();
+        DescriptorChecksClassicCbState& dc_cb_state = cb.shared_resources_cache.GetOrCreate<DescriptorChecksClassicCbState>();
         dc_cb_state.last_bound_desc_sets_ssbo =
             cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(glsl::BoundDescriptorSetsSSBO));
         dc_cb_state.last_bound_desc_sets_ssbo.Clear();
@@ -369,7 +369,7 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
     cb.on_instrumentation_common_desc_update_functions.emplace_back(
         [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, const LastBound&, const Location&,
                                                   CommonDescriptorUpdate& out_update) mutable {
-            DescriptorChecksCbState* dc_cb_state = cb.shared_resources_cache.TryGet<DescriptorChecksCbState>();
+            DescriptorChecksClassicCbState* dc_cb_state = cb.shared_resources_cache.TryGet<DescriptorChecksClassicCbState>();
             if (dc_cb_state) {
                 const vko::BufferRange& buffer_range = dc_cb_state->last_bound_desc_sets_ssbo;
                 out_update.buffer = buffer_range.buffer;

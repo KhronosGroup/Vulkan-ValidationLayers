@@ -63,7 +63,7 @@ class DebugPrintfPass : public Pass {
     // for debugging instrumented shaders
     std::vector<InternalOnlyDebugPrintf>& internal_only_debug_printf_;
 
-    const uint32_t binding_slot_;
+    const uint32_t binding_slot_;  // kBindingInstDebugPrintf
     uint32_t ext_import_id_ = 0;
 
     // <number of arguments in the function call, function id>
