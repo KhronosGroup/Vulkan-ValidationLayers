@@ -6663,10 +6663,8 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapRebindHeap) {
     VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(heap_props);
 
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    if (heap_props.resourceHeapAlignment > resource_stride || heap_props.imageDescriptorAlignment > resource_stride) {
-        GTEST_SKIP() << "TODO - need to make test more portable";
-    }
+    const VkDeviceSize resource_stride =
+        Align(Align(heap_props.bufferDescriptorAlignment, heap_props.imageDescriptorAlignment), heap_props.resourceHeapAlignment);
 
     vkt::Buffer ssbo1_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Buffer ssbo2_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
