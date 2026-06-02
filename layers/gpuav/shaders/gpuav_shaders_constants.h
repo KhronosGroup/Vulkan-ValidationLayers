@@ -62,8 +62,7 @@ const int kBindingInstActionIndex = 5;
 const int kBindingInstCmdResourceIndex = 6;
 const int kBindingInstCmdErrorsCount = 7;
 const int kBindingInstVertexAttributeFetchLimits = 8;
-const int kBindingInstDebugDescriptor = 9;
-const int kTotalBindings = 10;
+const int kTotalBindings = 9;
 
 // Validation pipelines
 // ---

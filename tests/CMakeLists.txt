@@ -52,7 +52,6 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/tile_shading_positive.cpp
     unit/debug_extensions.cpp
     unit/debug_extensions_positive.cpp
-    unit/debug_descriptor.cpp
     unit/debug_printf.cpp
     unit/debug_printf_shader_debug_info.cpp
     unit/debug_printf_ray_tracing.cpp

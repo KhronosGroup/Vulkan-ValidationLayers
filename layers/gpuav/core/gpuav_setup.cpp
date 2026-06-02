@@ -231,8 +231,6 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const L
         {glsl::kBindingInstCmdErrorsCount, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Vertex attribute fetch limits
         {glsl::kBindingInstVertexAttributeFetchLimits, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-        // DebugDescriptor Output buffer
-        {glsl::kBindingInstDebugDescriptor, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
     assert(instrumentation_bindings_.size() == glsl::kTotalBindings);
 
@@ -447,16 +445,6 @@ struct RayTracingBuffersConsistency : public Setting {
     }
 };
 
-struct DebugDescriptor : public Setting {
-    bool IsEnabled(const GpuAVSettings& settings) { return settings.debug_descriptor_enabled; }
-    bool HasRequiredFeatures(const DeviceFeatures& features) { return features.shaderInt64; }
-    void Disable(GpuAVSettings& settings) { settings.debug_descriptor_enabled = false; }
-    std::string DisableMessage() {
-        return "\tDebug Descriptor option was enabled, but the shaderInt64 feature is not supported. [Disabling "
-               "debug_descriptor]\n";
-    }
-};
-
 }  // namespace setting
 
 // At this point extensions/features may have been turned on by us in PreCallRecord.
@@ -469,10 +457,8 @@ void Validator::InitSettings(const Location& loc) {
     setting::BufferContent buffer_content;
     setting::AccelerationStructuresBuild as_builds;
     setting::RayTracingBuffersConsistency rt_buffers_consistency;
-    setting::DebugDescriptor debug_descriptor;
-    std::array<setting::Setting*, 8> all_settings = {&buffer_device_address,  &trace_ray,       &mesh_shading,
-                                                     &buffer_copies,          &buffer_content,  &as_builds,
-                                                     &rt_buffers_consistency, &debug_descriptor};
+    std::array<setting::Setting*, 7> all_settings = {&buffer_device_address, &trace_ray, &mesh_shading,          &buffer_copies,
+                                                     &buffer_content,        &as_builds, &rt_buffers_consistency};
 
     std::string adjustment_warnings;
     for (auto& setting_object : all_settings) {
@@ -492,14 +478,6 @@ void Validator::InitSettings(const Location& loc) {
             "1\nCurrently the limiation to support VK_EXT_descriptor_buffer is to use our own internal binding to inject a buffer into the shader. [Disabling debug_printf] [Disabling gpuav_shader_instrumentation]");
         gpuav_settings.debug_printf_enabled = false;
         gpuav_settings.DisableShaderInstrumentationAndOptions();
-    }
-
-    if (gpuav_settings.debug_descriptor_enabled && !IsExtEnabled(extensions.vk_ext_descriptor_buffer) &&
-        !IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        AdjustmentWarning(device, loc,
-                          "VK_EXT_descriptor_buffer and VK_EXT_descriptor_heap were both not enabled, there is no need/reason to "
-                          "use DebugDescriptor. [Disabling debug_descriptor_enabled]");
-        gpuav_settings.debug_descriptor_enabled = false;
     }
 
     // If we have turned off all the possible things to instrument, turn off everything fully
