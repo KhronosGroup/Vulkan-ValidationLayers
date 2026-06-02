@@ -1054,6 +1054,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |= ValidatePipelineStage(objlist, stage_mask_loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(objlist, stage_mask_loc, stageMask);
+    skip |= ValidateResetVsWaitRace(*cb_state, event, stageMask, error_obj.location);
     return skip;
 }
 
@@ -1071,12 +1072,36 @@ bool CoreChecks::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, Vk
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |= ValidatePipelineStage(objlist, stage_mask_loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(objlist, stage_mask_loc, stageMask);
+    skip |= ValidateResetVsWaitRace(*cb_state, event, stageMask, error_obj.location);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2KHR stageMask,
                                                   const ErrorObject& error_obj) const {
     return PreCallValidateCmdResetEvent2(commandBuffer, event, stageMask, error_obj);
+}
+
+bool CoreChecks::ValidateResetVsWaitRace(const vvl::CommandBuffer& cb_state, VkEvent event, VkPipelineStageFlags2 reset_stage_mask,
+                                         const Location& loc) const {
+    bool skip = false;
+    const auto& cb_sub_state = core::SubState(cb_state);
+    if (const EventWaitState* state = vvl::Find(cb_sub_state.event_wait_states, event)) {
+        VkPipelineStageFlags2 reset_exec_scope = sync_utils::ExpandPipelineStages(reset_stage_mask, cb_state.GetQueueFlags());
+        reset_exec_scope = sync_utils::AddEarlierPipelineStages(reset_exec_scope);
+        const bool has_barrier = (reset_stage_mask & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) ||
+                                 (state->barriers & reset_exec_scope) || (state->barriers & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
+        if (!has_barrier) {
+            const char* vuid = loc.function == vvl::Func::vkCmdResetEvent
+                                   ? (state->last_wait_command == vvl::Func::vkCmdWaitEvents ? "VUID-vkCmdResetEvent-event-03834"
+                                                                                             : "VUID-vkCmdResetEvent-event-03835")
+                                   : (state->last_wait_command == vvl::Func::vkCmdWaitEvents ? "VUID-vkCmdResetEvent2-event-03831"
+                                                                                             : "VUID-vkCmdResetEvent2-event-03832");
+            const LogObjectList objlist(cb_state.Handle(), event);
+            skip |= LogError(vuid, objlist, loc, "does not create an execution dependency with the previous %s for %s.",
+                             vvl::String(state->last_wait_command), FormatHandle(event).c_str());
+        }
+    }
+    return skip;
 }
 
 struct RenderPassDepState {

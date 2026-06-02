@@ -295,6 +295,9 @@ std::string StringPipelineStageFlags(VkPipelineStageFlags2 mask, bool sync1 = fa
 VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask, VkQueueFlags queue_flags,
                                            const VkPipelineStageFlags2 disabled_feature_mask = 0);
 
+VkPipelineStageFlags2 AddEarlierPipelineStages(VkPipelineStageFlags2 stage_mask);
+VkPipelineStageFlags2 AddLaterPipelineStages(VkPipelineStageFlags2 stage_mask);
+
 VkAccessFlags2 CompatibleAccessMask(VkPipelineStageFlags2 stage_mask);
 
 std::string StringAccessFlags(VkAccessFlags2 mask, bool sync1 = false);

@@ -450,3 +450,170 @@ TEST_F(PositiveEvent, AsymmetricEventNoMemorySubmit) {
     // Check that missing memory barrier does not confuse submit validation
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveEvent, ResetAfterWait) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveEvent, ResetAfterWait2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent2(event, barrier);
+    m_command_buffer.WaitEvent2(event, barrier);
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveEvent, ResetAfterWait3) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent2(event, barrier);
+    m_command_buffer.WaitEvent2(event, barrier);
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveEvent, ResetAfterWaitBarrierExecutionDependency) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                           nullptr, 0, nullptr);
+
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveEvent, ResetAfterWaitBarrierExecutionDependency2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    m_command_buffer.Barrier(barrier);
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveEvent, ResetAfterWaitBarrierExecutionDependency3) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 wait_barrier = vku::InitStructHelper();
+    wait_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    wait_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+
+    VkMemoryBarrier2 transfer_barrier = vku::InitStructHelper();
+    transfer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    // Use TRANSFER meta stage (potentially expanded by the validation) to check it correctly
+    // chains with TRANSFER in the next barrier
+    transfer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+
+    VkMemoryBarrier2 color_barrier = vku::InitStructHelper();
+    color_barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    color_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent2(event, wait_barrier);
+    m_command_buffer.WaitEvent2(event, wait_barrier);
+    m_command_buffer.Barrier(transfer_barrier);
+    m_command_buffer.Barrier(color_barrier);
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveEvent, ResetAfterWaitEmptyBarrier2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    VkDependencyInfo empty_dep_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+    // The empty dependency should not affect execution dependency between Wait and Reset via COMPUTE_STAGE
+    m_command_buffer.Barrier(empty_dep_info);
+
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveEvent, ResetAfterWaitSecondaryBarrier) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    vk::CmdPipelineBarrier(secondary, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                           nullptr, 0, nullptr);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    m_command_buffer.ExecuteCommands(secondary);
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveEvent, ResetAfterWaitSecondaryReset) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.ResetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    m_command_buffer.ExecuteCommands(secondary);
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_command_buffer.End();
+}

@@ -2190,9 +2190,10 @@ void CommandBuffer::RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_
     events.push_back(event);
 }
 
-void CommandBuffer::RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask, const Location& loc) {
+void CommandBuffer::RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask,
+                                     VkPipelineStageFlags dst_stage_mask, const Location& loc) {
     for (auto& item : sub_states_) {
-        item.second->RecordWaitEvents(events, src_stage_mask, loc);
+        item.second->RecordWaitEvents(events, src_stage_mask, dst_stage_mask, loc);
     }
     for (const VkEvent event : events) {
         if (!dev_data.disabled[command_buffer_state]) {

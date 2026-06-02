@@ -68,31 +68,6 @@ static SyncAccessFlags AccessScopeByAccess(VkAccessFlags2 accesses) {
     return sync_accesses;
 }
 
-static VkPipelineStageFlags2 RelatedPipelineStages(
-    VkPipelineStageFlags2 stage_mask,
-    const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& earlier_or_later_stages) {
-    VkPipelineStageFlags2 unscanned = stage_mask;
-    VkPipelineStageFlags2 related = 0;
-    for (const auto& [stage, related_stages] : earlier_or_later_stages) {
-        if (stage & unscanned) {
-            related |= related_stages;
-            unscanned &= ~stage;
-            if (!unscanned) {
-                break;
-            }
-        }
-    }
-    return related;
-}
-
-static VkPipelineStageFlags2 WithEarlierPipelineStages(VkPipelineStageFlags2 stage_mask) {
-    return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyEarlierStages());
-}
-
-static VkPipelineStageFlags2 WithLaterPipelineStages(VkPipelineStageFlags2 stage_mask) {
-    return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyLaterStages());
-}
-
 static SyncAccessFlags AccessScope(const SyncAccessFlags& stage_scope, VkAccessFlags2 accesses) {
     SyncAccessFlags access_scope = stage_scope & AccessScopeByAccess(accesses);
 
@@ -118,7 +93,7 @@ SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFl
 
     SyncExecScope result;
     result.mask_param = mask_param;
-    result.exec_scope = WithEarlierPipelineStages(expanded_mask);
+    result.exec_scope = sync_utils::AddEarlierPipelineStages(expanded_mask);
     result.valid_accesses = AccessScopeByStage(expanded_mask);
 
     // ALL_COMMANDS stage includes all accesses performed by the gpu, not only accesses defined by the stages
@@ -133,7 +108,7 @@ SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFl
 
     SyncExecScope result;
     result.mask_param = mask_param;
-    result.exec_scope = WithLaterPipelineStages(expanded_mask);
+    result.exec_scope = sync_utils::AddLaterPipelineStages(expanded_mask);
     result.valid_accesses = AccessScopeByStage(expanded_mask);
 
     // ALL_COMMANDS stage includes all accesses performed by the gpu, not only accesses defined by the stages

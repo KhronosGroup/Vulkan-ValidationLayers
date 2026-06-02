@@ -688,17 +688,6 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext& exec_context, c
             switch (ignore_reason) {
                 case SyncEventState::ResetWaitRace:
                 case SyncEventState::Reset2WaitRace: {
-                    // Four permuations of Reset and Wait calls...
-                    const char* vuid = (command_ == vvl::Func::vkCmdWaitEvents) ? "VUID-vkCmdResetEvent-event-03834"
-                                                                                : "VUID-vkCmdResetEvent-event-03835";
-                    if (ignore_reason == SyncEventState::Reset2WaitRace) {
-                        vuid = (command_ == vvl::Func::vkCmdWaitEvents) ? "VUID-vkCmdResetEvent2-event-03831"
-                                                                        : "VUID-vkCmdResetEvent2-event-03832";
-                    }
-                    const char* const message =
-                        "%s %s operation following %s without intervening execution barrier, may cause race condition. %s";
-                    skip |= sync_state.LogError(vuid, event_handle, loc, message, sync_state.FormatHandle(event_handle).c_str(),
-                                                CmdName(), vvl::String(sync_event->last_command), kIgnored);
                     break;
                 }
                 case SyncEventState::SetRace: {
@@ -716,14 +705,9 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext& exec_context, c
                     break;
                 }
                 case SyncEventState::SetVsWait2: {
-                    skip |= sync_state.LogError(
-                        "VUID-vkCmdWaitEvents2-pEvents-03837", event_handle, loc, "Follows set of %s by %s. Disallowed.",
-                        sync_state.FormatHandle(event_handle).c_str(), vvl::String(sync_event->last_command));
                     break;
                 }
                 case SyncEventState::MissingSetEvent: {
-                    // TODO: There are conditions at queue submit time where we can definitively say that
-                    // a missing set event is an error.  Add those if not captured in CoreChecks
                     break;
                 }
                 default:
@@ -964,8 +948,7 @@ bool SyncOpResetEvent::DoValidate(const CommandExecutionContext& exec_context, c
             case vvl::Func::vkCmdWaitEvents:
             case vvl::Func::vkCmdWaitEvents2KHR:
             case vvl::Func::vkCmdWaitEvents2: {
-                // Needs to be in the barriers chain (either because of a barrier, or because of dstStageMask
-                vuid = "SYNC-vkCmdResetEvent-missingbarrier-wait";
+                // Handled by core checks
                 break;
             }
             case vvl::Func::Empty:
@@ -1149,11 +1132,7 @@ void SyncOpSetEvent::DoRecord(QueueId queue_id, ResourceUsageTag tag, const std:
     auto* sync_event = events_context->GetFromShared(event_);
     if (!sync_event) {
         return;
-    }  // Core, Lifetimes, or Param check needs to catch invalid events.
-
-    // NOTE: We're going to simply record the sync scope here, as anything else would be implementation defined/undefined
-    //       and we're issuing errors re: missing barriers between event commands, which if the user fixes would fix
-    //       any issues caused by naive scope setting here.
+    }
 
     // What happens with two SetEvent is that one cannot know what group of operations will be waited for.
     // Given:
@@ -1511,7 +1490,7 @@ SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(vvl::Func command, 
         (vvl::Func::vkCmdSetEvent == last_command)) {
         reason = SetVsWait2;
     } else if ((last_command == vvl::Func::vkCmdResetEvent || last_command == vvl::Func::vkCmdResetEvent2KHR) &&
-               !HasBarrier(0U, 0U)) {
+               (barriers & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) == 0) {
         reason = (last_command == vvl::Func::vkCmdResetEvent) ? ResetWaitRace : Reset2WaitRace;
     } else if (unsynchronized_set != vvl::Func::Empty) {
         reason = SetRace;
@@ -1524,7 +1503,6 @@ SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(vvl::Func command, 
     } else {
         reason = MissingSetEvent;
     }
-
     return reason;
 }
 

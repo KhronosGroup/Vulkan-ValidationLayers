@@ -3538,7 +3538,7 @@ void DeviceState::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uin
                                               const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCommand(record_obj.location);
-    cb_state->RecordWaitEvents(vvl::make_span(pEvents, eventCount), srcStageMask, record_obj.location);
+    cb_state->RecordWaitEvents(vvl::make_span(pEvents, eventCount), srcStageMask, dstStageMask, record_obj.location);
     cb_state->RecordBarrierObjects(bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers,
                                    srcStageMask, dstStageMask, record_obj.location);
 }

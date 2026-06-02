@@ -4020,14 +4020,6 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
     vkt::Event event(*m_device);
 
     m_command_buffer.Begin();
-    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-    m_errorMonitor->SetDesiredError("SYNC-vkCmdResetEvent-missingbarrier-wait");
-    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    m_errorMonitor->VerifyFound();
-    m_command_buffer.End();
-
-    m_command_buffer.Begin();
     m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     m_errorMonitor->SetDesiredError("SYNC-vkCmdSetEvent-missingbarrier-reset");
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);

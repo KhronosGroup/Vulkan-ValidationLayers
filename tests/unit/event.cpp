@@ -1241,3 +1241,198 @@ TEST_F(NegativeEvent, Set2Wait2ThenWaitVersionMismatchSubmit) {
     monitor_.VerifyFound();
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeEvent, ResetAfterWait) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    monitor_.SetDesiredError("VUID-vkCmdResetEvent-event-03834");
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    monitor_.VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, ResetAfterWait2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent2(event, barrier);
+    m_command_buffer.WaitEvent2(event, barrier);
+    monitor_.SetDesiredError("VUID-vkCmdResetEvent-event-03835");
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    monitor_.VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, Reset2AfterWait) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    monitor_.SetDesiredError("VUID-vkCmdResetEvent2-event-03831");
+    m_command_buffer.ResetEvent2(event, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+    monitor_.VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, Reset2AfterWait2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent2(event, barrier);
+    m_command_buffer.WaitEvent2(event, barrier);
+    monitor_.SetDesiredError("VUID-vkCmdResetEvent2-event-03832");
+    m_command_buffer.ResetEvent2(event, VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+    monitor_.VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, ResetAfterWaitBarrierExecutionDependency) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+
+    VkMemoryBarrier2 barrier2 = vku::InitStructHelper();
+    barrier2.srcStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+    barrier2.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    const VkMemoryBarrier2 barriers[2] = {barrier, barrier2};
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.memoryBarrierCount = 2;
+    dep_info.pMemoryBarriers = barriers;
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    m_command_buffer.Barrier(dep_info);
+
+    // Barriers are applied independently, so STAGE_COMPUTE from the first barrier can't
+    // create execution dependency with STAGE_COLOR_ATTACHMENT_OUTPUT from the second barrier
+    monitor_.SetDesiredError("VUID-vkCmdResetEvent-event-03834");
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    monitor_.VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, ResetAfterWaitBarrierExecutionDependency2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+
+    VkMemoryBarrier2 barrier2 = vku::InitStructHelper();
+    barrier2.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier2.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    const VkMemoryBarrier2 barriers[2] = {barrier, barrier2};
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.memoryBarrierCount = 2;
+    dep_info.pMemoryBarriers = barriers;
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    m_command_buffer.Barrier(dep_info);
+
+    // Barriers are applied independently, they do not form execution dependency between STAGE_COMPUTE
+    // and STAGE_COLOR_ATTACHMENT_OUTPUT as it would be in the case of two sequential barriers
+    monitor_.SetDesiredError("VUID-vkCmdResetEvent-event-03834");
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    monitor_.VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, ResetAfterSecondaryWaitRace) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.WaitEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    m_command_buffer.ExecuteCommands(secondary);
+    monitor_.SetDesiredError("VUID-vkCmdResetEvent-event-03834");
+    m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    monitor_.VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, ResetAfterWaitMultipleEvents) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event0(*m_device);
+    vkt::Event event1(*m_device);
+    const VkEvent events[2] = {event0, event1};
+
+    VkMemoryBarrier2 barrier0 = vku::InitStructHelper();
+    barrier0.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier0.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+
+    VkMemoryBarrier2 barrier1 = vku::InitStructHelper();
+    barrier1.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    barrier1.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+
+    VkDependencyInfo dep_infos[2];
+    dep_infos[0] = vku::InitStructHelper();
+    dep_infos[0].memoryBarrierCount = 1;
+    dep_infos[0].pMemoryBarriers = &barrier0;
+    dep_infos[1] = vku::InitStructHelper();
+    dep_infos[1].memoryBarrierCount = 1;
+    dep_infos[1].pMemoryBarriers = &barrier1;
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent2(event0, barrier0);
+    m_command_buffer.SetEvent2(event1, barrier1);
+    vk::CmdWaitEvents2(m_command_buffer, 2, events, dep_infos);
+
+    // Reset must use COMPUTE_STAGE to sync with event0 wait.
+    // This test checks barriers are applied independently, so barrier1 does not
+    // have effect on event0 wait (does not introduce COPY_STAGE)
+    monitor_.SetDesiredError("VUID-vkCmdResetEvent2-event-03832");
+    m_command_buffer.ResetEvent2(event0, VK_PIPELINE_STAGE_2_COPY_BIT);
+    monitor_.VerifyFound();
+    m_command_buffer.End();
+}

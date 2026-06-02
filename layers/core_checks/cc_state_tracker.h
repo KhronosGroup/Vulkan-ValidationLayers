@@ -100,7 +100,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordSetEvent(VkEvent event, VkPipelineStageFlags stageMask) final;
     void RecordSetEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) final;
     void RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stageMask, const Location& loc) final;
-    void RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask, const Location& loc) final;
+    void RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                          const Location& loc) final;
     void RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) final;
     void RecordBarriers(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier *buffer_barriers, uint32_t image_barrier_count,
                         const VkImageMemoryBarrier *image_barriers, VkPipelineStageFlags src_stage_mask,
@@ -205,13 +206,15 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     // currently need to hold in Command buffer because it can be a suspended renderpass
     std::vector<VkOffset2D> fragment_density_offsets;
 
+    // Event state tracking
+    EventSignalingStateMap event_signaling_states;
+    EventWaitStateMap event_wait_states;
+    std::vector<WaitEventSubmitInfo> wait_event_submit_infos;
+    std::vector<WaitEvent2SubmitInfo> wait_event2_submit_infos;
+
     // Validation functions run at primary CB queue submit time
     using QueueCallback = std::function<bool(const class vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state)>;
     std::vector<QueueCallback> queue_submit_functions;
-
-    EventSignalingStateMap event_signaling_states;
-    std::vector<WaitEventSubmitInfo> wait_event_submit_infos;
-    std::vector<WaitEvent2SubmitInfo> wait_event2_submit_infos;
 
     // Validation functions run when secondary CB is executed in primary
     std::vector<
@@ -228,6 +231,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void UpdateActionShaderObjectState(LastBound &last_bound);
     void UpdateActiveSlotsState(LastBound &last_bound, const ActiveSlotMap &active_slots);
     void UpdateCustomResolve(LastBound &last_bound);
+    void UpdateEventWaitBarriers(VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask);
+    void UpdateEventWaitBarriers(const VkDependencyInfo& dep_info);
 
     // Funnel because Image/Buffer copies have 2 variations for the regions
     template <typename RegionType>

@@ -55,7 +55,13 @@ struct EventSignalingState {
     bool HasKnownEffect(const EventSignalingState* prior_state = nullptr) const;
 };
 
+struct EventWaitState {
+    VkPipelineStageFlags2 barriers = VK_PIPELINE_STAGE_2_NONE;
+    vvl::Func last_wait_command = vvl::Func::Empty;
+};
+
 using EventSignalingStateMap = vvl::unordered_map<VkEvent, EventSignalingState>;
+using EventWaitStateMap = vvl::unordered_map<VkEvent, EventWaitState>;
 
 void UpdateEventSignalingStates(EventSignalingStateMap& accumulated_states, const EventSignalingStateMap& recorded_states);
 
