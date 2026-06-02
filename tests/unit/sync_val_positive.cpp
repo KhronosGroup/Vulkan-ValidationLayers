@@ -4610,3 +4610,107 @@ TEST_F(PositiveSyncVal, ClearAttachmentSecondaryCb) {
     vk::CmdClearAttachments(secondary, 1, &clear_attachment, 1, &clear_rect);
     secondary.End();
 }
+
+TEST_F(PositiveSyncVal, ClearAttachmentOnlyDepthAttachment) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12345");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
+    vkt::Image image(*m_device, 32, 32, depth_stencil_format,
+                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkImageMemoryBarrier2 transition_to_transfer = vku::InitStructHelper();
+    transition_to_transfer.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    transition_to_transfer.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    transition_to_transfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    transition_to_transfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transition_to_transfer.image = image;
+    transition_to_transfer.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+    VkImageMemoryBarrier2 transition_to_attachment = vku::InitStructHelper();
+    transition_to_attachment.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    transition_to_attachment.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    transition_to_attachment.dstStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT;
+    transition_to_attachment.dstAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+    transition_to_attachment.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transition_to_attachment.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    transition_to_attachment.image = image;
+    transition_to_attachment.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
+
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageView = image_view;
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {32, 32};
+    rendering_info.layerCount = 1;
+    rendering_info.pDepthAttachment = &depth_attachment;
+
+    VkClearAttachment clear_attachment = {};
+    clear_attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+    VkClearRect clear_rect = {};
+    clear_rect.rect.extent = {32, 32};
+    clear_rect.layerCount = 1;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(transition_to_transfer);
+    m_command_buffer.Barrier(transition_to_attachment);
+    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    vk::CmdEndRendering(m_command_buffer);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, ClearAttachmentOnlyDepthAttachment2) {
+    TEST_DESCRIPTION("CmdClearAttachments ignores a depth/stencil clear aspect that is not backed by a rendering attachment");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
+
+    vkt::Image src_image(*m_device, 64, 64, depth_stencil_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image(*m_device, 64, 64, depth_stencil_format,
+                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageView = image_view;
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    rendering_info.pDepthAttachment = &depth_attachment;
+
+    VkImageCopy copy_region = {};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
+    copy_region.extent = {64, 64, 1};
+
+    VkClearRect clear_rect = {};
+    clear_rect.rect = {{0, 0}, {64, 64}};
+    clear_rect.layerCount = 1;
+
+    // Render pass instance specifies only pDepthAttachment. The stencil aspect has no effect.
+    // Syncval must not report a WAW hazard with the previous stencil copy.
+    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}

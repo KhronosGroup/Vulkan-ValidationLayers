@@ -418,21 +418,27 @@ TEST_F(NegativeSyncVal, ClearAttachmentStencilAspectWAW) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSyncVal, ClearDepthCopyStencilWAW) {
-    TEST_DESCRIPTION("Clearing depth and copying to stencil causes hazard because depth and stencil can interleave");
+TEST_F(NegativeSyncVal, ClearAttachmentUsesClearAspectMask) {
+    TEST_DESCRIPTION("CmdClearAttachments uses the clear attachment aspect mask, not the view aspect mask");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitSyncVal());
 
-    const uint32_t width = 256;
-    const uint32_t height = 128;
     const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
 
-    vkt::Image src_image(*m_device, width, height, depth_stencil_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    vkt::Image image(*m_device, width, height, depth_stencil_format,
+    vkt::Image src_image(*m_device, 64, 64, depth_stencil_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image(*m_device, 64, 64, depth_stencil_format,
                      VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    // Spec: "The aspectMask of any image view specified for pDepthAttachment or pStencilAttachment is ignored.
+    // Instead, depth attachments are automatically treated as if VK_IMAGE_ASPECT_DEPTH_BIT was specified for
+    // their aspect masks, and stencil attachments are automatically treated as if VK_IMAGE_ASPECT_STENCIL_BIT
+    // was specified for their aspect masks".
+    //
+    // Use a depth-only view to verify that CmdClearAttachments uses STENCIL aspect when it is specified by
+    // VkClearAttachment::aspectMask.
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
     VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
     depth_attachment.imageView = image_view;
@@ -440,30 +446,38 @@ TEST_F(NegativeSyncVal, ClearDepthCopyStencilWAW) {
     depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
     depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
 
+    VkRenderingAttachmentInfo stencil_attachment = vku::InitStructHelper();
+    stencil_attachment.imageView = image_view;
+    stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    stencil_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    stencil_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+
     VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.renderArea.extent = {width, height};
+    rendering_info.renderArea.extent = {64, 64};
     rendering_info.layerCount = 1;
     rendering_info.pDepthAttachment = &depth_attachment;
+    rendering_info.pStencilAttachment = &stencil_attachment;
 
-    // Copy to stencil
     VkImageCopy copy_region = {};
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
     copy_region.dstSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
-    copy_region.extent = {width, height, 1};
+    copy_region.extent = {64, 64, 1};
 
-    // Clear depth
-    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_DEPTH_BIT};
+    // The render pass instance specifies both depth/stencil attachment.
+    // We can clear them both, the view aspect mask (DEPTH) is ignored
+    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT};
     VkClearRect clear_rect = {};
-    clear_rect.rect = {{0, 0}, {width, height}};
+    clear_rect.rect = {{0, 0}, {64, 64}};
     clear_rect.baseArrayLayer = 0;
     clear_rect.layerCount = 1;
 
     m_command_buffer.Begin();
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-
-    // loadOp/storeOp=NONE, so no hazard can be detected at this point
     m_command_buffer.BeginRendering(rendering_info);
 
+    // Create a hazard by writing to the STENCIL aspect.
+    // We had regression where CmdClearAttachments used the view aspect (DEPTH),
+    // so this did not report a hazard with the previous STENCIL copy
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();

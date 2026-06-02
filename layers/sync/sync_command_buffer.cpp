@@ -1053,8 +1053,8 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
     }
 }
 
-static VkImageAspectFlags GetAttachmentAspectsToClear(VkImageAspectFlags clear_aspect_mask, const vvl::ImageView& attachment_view,
-                                                      bool separate_depth_stencil_attachment_access) {
+VkImageAspectFlags CommandBufferAccessContext::GetAttachmentAspectsToClear(VkImageAspectFlags clear_aspect_mask,
+                                                                           const vvl::ImageView& attachment_view) const {
     // Check if clear request is valid.
     const bool clear_color = (clear_aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != 0;
     const bool clear_depth = (clear_aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
@@ -1066,29 +1066,40 @@ static VkImageAspectFlags GetAttachmentAspectsToClear(VkImageAspectFlags clear_a
         return 0;  // according to spec it's not allowed
     }
 
-    // View's aspect mask is used only for color attachment.
-    // For depth/stencil attachment view aspect mask is ignored according to spec.
-    const VkImageAspectFlags view_aspect_mask = attachment_view.normalized_subresource_range.aspectMask;
-
-    // Collect aspects that should be cleared.
-    VkImageAspectFlags aspects_to_clear = VK_IMAGE_ASPECT_NONE;
-    if (clear_color && (view_aspect_mask & kColorAspects) != 0) {
-        assert(CountSetBits(view_aspect_mask) == 1);
-        aspects_to_clear |= view_aspect_mask;
-    }
-    if (clear_depth && vkuFormatHasDepth(attachment_view.create_info.format)) {
-        aspects_to_clear |= VK_IMAGE_ASPECT_DEPTH_BIT;
-    }
-    if (clear_stencil && vkuFormatHasStencil(attachment_view.create_info.format)) {
-        aspects_to_clear |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    // Color aspects to clear
+    if (clear_color) {
+        // The image view aspect mask is used only for color attachment.
+        // For depth/stencil attachment, it is ignored according to the spec.
+        const VkImageAspectFlags view_aspect_mask = attachment_view.normalized_subresource_range.aspectMask;
+        return view_aspect_mask & kColorAspects;
     }
 
-    // Even if only depth or stencil aspect is specified we validate access to
-    // both depth and stencil aspects because they can be interleaved.
-    if (!separate_depth_stencil_attachment_access && (aspects_to_clear & kDepthStencilAspects) != 0) {
-        aspects_to_clear = kDepthStencilAspects;
+    // Depth-stencil aspects to clear
+    bool has_depth_attachment = false;
+    bool has_stencil_attachment = false;
+    if (dynamic_rendering_info_) {
+        has_depth_attachment = dynamic_rendering_info_->info.pDepthAttachment != nullptr;
+        has_stencil_attachment = dynamic_rendering_info_->info.pStencilAttachment != nullptr;
+    } else if (current_renderpass_context_) {
+        const auto& rp_create_info = current_renderpass_context_->GetRenderPassState()->create_info;
+        const auto& subpass = rp_create_info.pSubpasses[current_renderpass_context_->GetCurrentSubpass()];
+        if (subpass.pDepthStencilAttachment) {
+            const uint32_t attachment = subpass.pDepthStencilAttachment->attachment;
+            if (attachment < rp_create_info.attachmentCount) {
+                const VkFormat ds_format = rp_create_info.pAttachments[attachment].format;
+                has_depth_attachment = vkuFormatHasDepth(ds_format);
+                has_stencil_attachment = vkuFormatHasStencil(ds_format);
+            }
+        }
     }
-    return aspects_to_clear;
+    VkImageAspectFlags ds_aspects_to_clear = VK_IMAGE_ASPECT_NONE;
+    if (clear_depth && has_depth_attachment) {
+        ds_aspects_to_clear |= VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+    if (clear_stencil && has_stencil_attachment) {
+        ds_aspects_to_clear |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+    return ds_aspects_to_clear;
 }
 
 static std::optional<VkImageSubresourceRange> RestrictSubresourceRangeToClearLayers(
@@ -1125,21 +1136,17 @@ std::optional<CommandBufferAccessContext::ClearAttachmentInfo> CommandBufferAcce
         return {};
     }
 
-    const bool separate_depth_stencil_attachment_access =
-        GetSyncState().device_state->enabled_features.maintenance7 &&
-        GetSyncState().device_state->phys_dev_ext_props.maintenance7_props.separateDepthStencilAttachmentAccess;
-    const VkImageAspectFlags aspects =
-        GetAttachmentAspectsToClear(clear_attachment.aspectMask, *attachment_view, separate_depth_stencil_attachment_access);
-    if (!aspects) {
+    const VkImageAspectFlags aspects_to_clear = GetAttachmentAspectsToClear(clear_attachment.aspectMask, *attachment_view);
+    if (!aspects_to_clear) {
         return {};
     }
 
-    const auto subresource_range =
+    std::optional<VkImageSubresourceRange> subresource_range =
         RestrictSubresourceRangeToClearLayers(attachment_view->normalized_subresource_range, clear_first_layer, clear_layer_count);
     if (!subresource_range.has_value()) {
         return {};
     }
-
+    subresource_range->aspectMask = aspects_to_clear;
     return ClearAttachmentInfo{*attachment_view, *subresource_range};
 }
 
