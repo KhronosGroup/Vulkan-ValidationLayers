@@ -13,6 +13,8 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/buffer_helper.h"
+#include "utils/math_utils.h"
 
 class NegativeGpuAVShaderDebugInfo : public GpuAVBufferDeviceAddressTest {
   public:
@@ -2737,6 +2739,113 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ReachMaxErrorLoggerLimitUnkown) {
 
     // VUID-VkDispatchIndirectCommand-x-00417
     m_errorMonitor->SetDesiredError("GPUAV-Overflow-Unknown");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVShaderDebugInfo, HeapMultipleDraws) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(heap_props);
+
+    const VkDeviceSize descriptor_size = Align(Align(heap_props.bufferDescriptorAlignment, heap_props.bufferDescriptorAlignment),
+                                               heap_props.imageDescriptorAlignment);
+    const VkDeviceSize heap_size = descriptor_size + heap_props.minResourceHeapReservedRange;
+
+    vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
+    uint8_t* heap_data = static_cast<uint8_t*>(heap.Memory().Map());
+
+    vkt::Buffer ssbo_buffer(*m_device, 256u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    VkDeviceAddressRangeEXT address_range = ssbo_buffer.AddressRange();
+
+    VkResourceDescriptorInfoEXT resource_info = vku::InitStructHelper();
+    resource_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    resource_info.data.pAddressRange = &address_range;
+    VkHostAddressRangeEXT host_address = {heap_data, static_cast<size_t>(heap_props.bufferDescriptorSize)};
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &resource_info, &host_address);
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(location=0) in vec3 pos;
+        layout(set=0, binding=0) buffer SSBO { uint data[]; };
+        void main() {
+            data[gl_VertexIndex] = 0;
+            gl_Position = vec4(pos, 1.0);
+        }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0u, 0u);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.gp_ci_.layout = VK_NULL_HANDLE;
+
+    VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(&mapping_info), pipe.fs_->GetStageCreateInfo(&mapping_info)};
+    pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
+    pipe.gp_ci_.pStages = pipe.shader_stages_.data();
+    pipe.CreateGraphicsPipeline(false);
+
+    VkDrawIndexedIndirectCommand draw_params{3, 1, 0, 0, 0};
+    vkt::Buffer draw_params_buffer = vkt::IndirectBuffer<VkDrawIndexedIndirectCommand>(*m_device, {draw_params});
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_command_buffer.Begin(&begin_info);
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange.address = heap.Address();
+    bind_resource_info.heapRange.size = heap_size;
+    bind_resource_info.reservedRangeOffset = descriptor_size;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    vkt::Buffer index_buffer_good = vkt::IndexBuffer<uint32_t>(*m_device, {0, 1, 2});
+    vkt::Buffer index_buffer_bad = vkt::IndexBuffer<uint32_t>(*m_device, {0, 1, 42});
+    vkt::Buffer vertex_buffer = vkt::VertexBuffer<float>(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+    VkDeviceSize vertex_buffer_offset = 0;
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+    label.pLabelName = "Bad-Draw";
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer_bad, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
+
+    label.pLabelName = "Good-Draw";
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer_good, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("Bad-Draw");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

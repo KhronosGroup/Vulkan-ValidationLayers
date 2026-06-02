@@ -199,13 +199,10 @@ void GpuShaderInstrumentor::SetupDescriptorHeap(const Location& loc) {
     if (!IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
         return;
     }
-    const VkPhysicalDeviceDescriptorHeapPropertiesEXT& descriptor_heap_props = phys_dev_ext_props.descriptor_heap_props;
-    VkDeviceSize bytes_to_reserve =
-        Align(descriptor_heap_props.bufferDescriptorSize * glsl::kTotalBindings, descriptor_heap_props.bufferDescriptorAlignment);
 
-    resource_heap_reserved_bytes_ = bytes_to_reserve;
-    buffer_descriptor_size_ = descriptor_heap_props.bufferDescriptorSize;
-    buffer_descriptor_alignment_ = descriptor_heap_props.bufferDescriptorAlignment;
+    heap_indirect_buffer_stride_ = sizeof(VkDeviceAddress) * glsl::kTotalBindings;
+
+    const VkPhysicalDeviceDescriptorHeapPropertiesEXT& descriptor_heap_props = phys_dev_ext_props.descriptor_heap_props;
     push_data_offset_ = static_cast<uint32_t>(descriptor_heap_props.maxPushDataSize) - 8u;
 }
 

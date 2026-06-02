@@ -45,7 +45,7 @@ void inst_vertex_attribute_fetch_oob(const uvec4 stage_info)
     }
 
     if (!valid_vertex_attribute_fetch_vertex_input_rate || !valid_vertex_attribute_fetch_instance_input_rate) {
-        const uint cmd_id = inst_error_logger_index_buffer.index[0];
+        const uint cmd_id = inst_error_logger_index_buffer.data;
         const uint cmd_errors_count = atomicAdd(inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
         const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
 
@@ -67,7 +67,7 @@ void inst_vertex_attribute_fetch_oob(const uvec4 stage_info)
             inst_errors_buffer.data[write_pos + kHeader_StageInfoOffset_1] = stage_info[2];
             inst_errors_buffer.data[write_pos + kHeader_StageInfoOffset_2] = stage_info[3];
 
-            inst_errors_buffer.data[write_pos + kHeader_ActionIdErrorLoggerIdOffset] = (inst_action_index_buffer.index[0] << kActionId_Shift) | inst_error_logger_index_buffer.index[0];
+            inst_errors_buffer.data[write_pos + kHeader_ActionIdErrorLoggerIdOffset] = (inst_action_index_buffer.data << kActionId_Shift) | inst_error_logger_index_buffer.data;
         }
     }
 }
