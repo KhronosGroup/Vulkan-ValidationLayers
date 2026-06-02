@@ -4,6 +4,7 @@
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -5385,4 +5386,243 @@ TEST_F(NegativeCopyBufferImage, DestroyAfterCopyImageToMemory) {
     m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
     vk::EndCommandBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeCopyBufferImage, RotatedBlitImageButUseUnsupportedTransformValue) {
+    TEST_DESCRIPTION("Try to launch rotated blit image, but uses unsupported transform enumeration value.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    constexpr VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+        GTEST_SKIP() << "VK_FORMAT_R8G8B8A8_UNORM doesn't support blit feature, skipping test.";
+    }
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, format, kSrcDstUsage);
+    vkt::Image src_image{*m_device, image_ci, vkt::set_layout};
+    vkt::Image dst_image{*m_device, image_ci, vkt::set_layout};
+
+    VkCopyCommandTransformInfoQCOM transform_info = vku::InitStructHelper();
+    transform_info.transform = VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_BIT_KHR;
+
+    VkImageBlit2 blit_region = vku::InitStructHelper(&transform_info);
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.srcOffsets[1] = {16, 16, 1};
+    blit_region.dstOffsets[1] = {16, 16, 1};
+
+    VkBlitImageInfo2 blit_image_info = vku::InitStructHelper();
+    blit_image_info.srcImage = src_image;
+    blit_image_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    blit_image_info.dstImage = dst_image;
+    blit_image_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    blit_image_info.regionCount = 1;
+    blit_image_info.pRegions = &blit_region;
+    blit_image_info.filter = VK_FILTER_NEAREST;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkCopyCommandTransformInfoQCOM-transform-04560");
+    vk::CmdBlitImage2(m_command_buffer, &blit_image_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCopyBufferImage, RotatedCopyBufferToImageButUseUnsupportedTransformValue) {
+    TEST_DESCRIPTION("Try to launch rotated copy-buffer-to-image, but uses an unsupported transform enumeration value.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    constexpr VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, format, kSrcDstUsage);
+    vkt::Image dst_image{*m_device, image_ci, vkt::set_layout};
+    vkt::Buffer src_buffer{*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT};
+
+    VkCopyCommandTransformInfoQCOM transform_info = vku::InitStructHelper();
+    transform_info.transform = VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_BIT_KHR;
+
+    VkBufferImageCopy2 region = vku::InitStructHelper(&transform_info);
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {16, 16, 1};
+
+    VkCopyBufferToImageInfo2 copy_info = vku::InitStructHelper();
+    copy_info.srcBuffer = src_buffer;
+    copy_info.dstImage = dst_image;
+    copy_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_info.regionCount = 1;
+    copy_info.pRegions = &region;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkCopyCommandTransformInfoQCOM-transform-04560");
+    vk::CmdCopyBufferToImage2(m_command_buffer, &copy_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCopyBufferImage, RotatedCopyImageToBufferButUseUnsupportedTransformValue) {
+    TEST_DESCRIPTION("Try to launch rotated copy-image-to-buffer, but uses an unsupported transform enumeration value.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    constexpr VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, format, kSrcDstUsage);
+    vkt::Image src_image{*m_device, image_ci, vkt::set_layout};
+    vkt::Buffer dst_buffer{*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT};
+
+    VkCopyCommandTransformInfoQCOM transform_info = vku::InitStructHelper();
+    transform_info.transform = VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_BIT_KHR;
+
+    VkBufferImageCopy2 region = vku::InitStructHelper(&transform_info);
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {16, 16, 1};
+
+    VkCopyImageToBufferInfo2 copy_info = vku::InitStructHelper();
+    copy_info.srcImage = src_image;
+    copy_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_info.dstBuffer = dst_buffer;
+    copy_info.regionCount = 1;
+    copy_info.pRegions = &region;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkCopyCommandTransformInfoQCOM-transform-04560");
+    vk::CmdCopyImageToBuffer2(m_command_buffer, &copy_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCopyBufferImage, RotatedBlitImageButUse3DImage) {
+    TEST_DESCRIPTION("Try to launch rotated blit image, but the source and the destination are 3D images.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    constexpr VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+        GTEST_SKIP() << "VK_FORMAT_R8G8B8A8_UNORM doesn't support blit feature, skipping test.";
+    }
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = format;
+    image_ci.extent = {32, 32, 4};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = kSrcDstUsage;
+    vkt::Image src_image{*m_device, image_ci, vkt::set_layout};
+    vkt::Image dst_image{*m_device, image_ci, vkt::set_layout};
+
+    VkCopyCommandTransformInfoQCOM transform_info = vku::InitStructHelper();
+    transform_info.transform = VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR;
+
+    VkImageBlit2 blit_region = vku::InitStructHelper(&transform_info);
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.srcOffsets[1] = {16, 16, 1};
+    blit_region.dstOffsets[1] = {16, 16, 1};
+
+    VkBlitImageInfo2 blit_image_info = vku::InitStructHelper();
+    blit_image_info.srcImage = src_image;
+    blit_image_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    blit_image_info.dstImage = dst_image;
+    blit_image_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    blit_image_info.regionCount = 1;
+    blit_image_info.pRegions = &blit_region;
+    blit_image_info.filter = VK_FILTER_NEAREST;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkBlitImageInfo2KHR-pRegions-06207");
+    vk::CmdBlitImage2(m_command_buffer, &blit_image_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCopyBufferImage, RotatedBlitImageButUseBlockCompressedImage) {
+    TEST_DESCRIPTION("Try to launch rotated blit image, but the source and the destination are block-compressed images.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    constexpr VkFormat format = VK_FORMAT_BC3_UNORM_BLOCK;
+    if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+        GTEST_SKIP() << "VK_FORMAT_BC3_UNORM_BLOCK doesn't support blit feature, skipping test.";
+    }
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, format, kSrcDstUsage);
+    vkt::Image src_image{*m_device, image_ci, vkt::set_layout};
+    vkt::Image dst_image{*m_device, image_ci, vkt::set_layout};
+
+    VkCopyCommandTransformInfoQCOM transform_info = vku::InitStructHelper();
+    transform_info.transform = VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR;
+
+    VkImageBlit2 blit_region = vku::InitStructHelper(&transform_info);
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.srcOffsets[1] = {16, 16, 1};
+    blit_region.dstOffsets[1] = {16, 16, 1};
+
+    VkBlitImageInfo2 blit_image_info = vku::InitStructHelper();
+    blit_image_info.srcImage = src_image;
+    blit_image_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    blit_image_info.dstImage = dst_image;
+    blit_image_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    blit_image_info.regionCount = 1;
+    blit_image_info.pRegions = &blit_region;
+    blit_image_info.filter = VK_FILTER_NEAREST;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkBlitImageInfo2-pRegions-04561");
+    vk::CmdBlitImage2(m_command_buffer, &blit_image_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCopyBufferImage, RotatedBlitImageButUseMultiPlanarImage) {
+    TEST_DESCRIPTION("Try to launch rotated blit image, but the source is a multi-planar image.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    constexpr VkFormat format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+        GTEST_SKIP() << "VK_FORMAT_G8_B8R8_2PLANE_420_UNORM doesn't support blit feature, skipping test.";
+    }
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, format, kSrcDstUsage);
+    vkt::Image src_image{*m_device, image_ci, vkt::set_layout};
+    vkt::Image dst_image{*m_device, image_ci, vkt::set_layout};
+
+    VkCopyCommandTransformInfoQCOM transform_info = vku::InitStructHelper();
+    transform_info.transform = VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR;
+
+    VkImageBlit2 blit_region = vku::InitStructHelper(&transform_info);
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1};
+    blit_region.srcOffsets[1] = {16, 16, 1};
+    blit_region.dstOffsets[1] = {16, 16, 1};
+
+    VkBlitImageInfo2 blit_image_info = vku::InitStructHelper();
+    blit_image_info.srcImage = src_image;
+    blit_image_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    blit_image_info.dstImage = dst_image;
+    blit_image_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    blit_image_info.regionCount = 1;
+    blit_image_info.pRegions = &blit_region;
+    blit_image_info.filter = VK_FILTER_NEAREST;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkBlitImageInfo2-srcImage-06421");
+    m_errorMonitor->SetDesiredError("VUID-VkBlitImageInfo2-dstImage-06422");
+    m_errorMonitor->SetDesiredError("VUID-VkBlitImageInfo2KHR-pRegions-06208");
+    vk::CmdBlitImage2(m_command_buffer, &blit_image_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
 }

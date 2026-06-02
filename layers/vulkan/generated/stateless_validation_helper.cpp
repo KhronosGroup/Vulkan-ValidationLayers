@@ -14527,6 +14527,7 @@ bool Device::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, context);
     return skip;
 }
 
@@ -14579,6 +14580,7 @@ bool Device::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, context);
     return skip;
 }
 
@@ -15272,6 +15274,7 @@ bool Device::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const V
         skip |= context.ValidateRangedEnum(pBlitImageInfo_loc.dot(Field::filter), vvl::Enum::VkFilter, pBlitImageInfo->filter,
                                            "VUID-VkBlitImageInfo2-filter-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBlitImage2(commandBuffer, pBlitImageInfo, context);
     return skip;
 }
 
