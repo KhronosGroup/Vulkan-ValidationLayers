@@ -50,6 +50,7 @@
 #include "utils/image_utils.h"
 #include "containers/container_utils.h"
 #include "utils/vk_api_utils.h"
+#include "utils/descriptor_utils.h"
 
 bool CoreChecks::ValidateGraphicsIndexedCmd(const LastBound& last_bound, const Location& loc) const {
     bool skip = false;

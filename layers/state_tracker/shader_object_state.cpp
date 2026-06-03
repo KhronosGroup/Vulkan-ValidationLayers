@@ -19,6 +19,7 @@
 #include <vulkan/vulkan_core.h>
 #include "shader_module.h"
 #include "state_tracker/state_tracker.h"
+#include "utils/descriptor_utils.h"
 
 namespace vvl {
 static DescriptorSetLayoutList GetSetLayouts(DeviceState& dev_data, const VkShaderCreateInfoEXT& pCreateInfo) {

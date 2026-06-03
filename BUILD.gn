@@ -421,6 +421,8 @@ vvl_sources = [
   "layers/utils/cast_utils.h",
   "layers/utils/convert_utils.cpp",
   "layers/utils/convert_utils.h",
+  "layers/utils/descriptor_utils.cpp",
+  "layers/utils/descriptor_utils.h",
   "layers/utils/dispatch_utils.cpp",
   "layers/utils/dispatch_utils.h",
   "layers/utils/file_system_utils.cpp",

@@ -25,7 +25,7 @@
 #include "stateless/sl_vuid_maps.h"
 #include "containers/container_utils.h"
 #include "utils/math_utils.h"
-#include "utils/vk_api_utils.h"
+#include "utils/descriptor_utils.h"
 
 namespace stateless {
 

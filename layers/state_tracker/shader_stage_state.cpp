@@ -20,7 +20,7 @@
 #include "shader_stage_state.h"
 
 #include "state_tracker/shader_module.h"
-#include "utils/shader_utils.h"
+#include "utils/descriptor_utils.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include "containers/container_utils.h"
 

@@ -28,7 +28,7 @@
 #include "containers/container_utils.h"
 #include "utils/image_utils.h"
 #include "utils/math_utils.h"
-#include "utils/vk_api_utils.h"
+#include "utils/descriptor_utils.h"
 
 namespace stateless {
 bool Device::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV& order, const Location& order_loc) const {
