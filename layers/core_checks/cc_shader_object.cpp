@@ -29,6 +29,7 @@
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "utils/action_command_utils.h"
 #include "utils/shader_utils.h"
+#include "utils/descriptor_utils.h"
 
 // In order of how stages are linked together
 static const std::array graphics_stages = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,

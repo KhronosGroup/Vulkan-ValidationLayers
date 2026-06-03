@@ -49,6 +49,7 @@
 #include "utils/assert_utils.h"
 #include "utils/image_utils.h"
 #include "utils/math_utils.h"
+#include "utils/descriptor_utils.h"
 #include "error_message/error_strings.h"
 
 using DescriptorSetLayoutDef = vvl::DescriptorSetLayoutDef;

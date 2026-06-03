@@ -46,6 +46,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "utils/shader_utils.h"
 #include "utils/hash_util.h"
+#include "utils/descriptor_utils.h"
 #include "chassis/chassis_modification_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/descriptor_set_layouts.h"

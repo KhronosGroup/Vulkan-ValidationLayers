@@ -500,6 +500,8 @@ target_sources(vvl PRIVATE
     sync/sync_validation.h
     thread_tracker/thread_safety_validation.cpp
     thread_tracker/thread_safety_validation.h
+    utils/descriptor_utils.cpp
+    utils/descriptor_utils.h
     utils/shader_utils.cpp
     utils/shader_utils.h
     utils/spirv_tools_utils.cpp

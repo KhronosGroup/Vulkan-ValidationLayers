@@ -28,6 +28,7 @@
 #include "containers/small_vector.h"
 #include "generated/dispatch_functions.h"
 #include "utils/dispatch_utils.h"
+#include "utils/descriptor_utils.h"
 
 #include <atomic>
 

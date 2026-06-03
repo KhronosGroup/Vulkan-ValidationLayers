@@ -22,7 +22,7 @@
 #include "object_lifetime_validation.h"
 #include "chassis/dispatch_object.h"
 #include "containers/small_vector.h"
-#include "utils/vk_api_utils.h"
+#include "utils/descriptor_utils.h"
 
 namespace object_lifetimes {
 
