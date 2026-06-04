@@ -13,8 +13,11 @@
 #include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/shader_object_helper.h"
 #include "../framework/buffer_helper.h"
 #include "../utils/math_utils.h"
+#include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "shader_templates.h"
 
 void GpuAVDescriptorHeap::CreateResourceHeap(VkDeviceSize app_size) {
     const VkDeviceSize heap_size = AlignResource(app_size) + heap_props.minResourceHeapReservedRange;
@@ -773,25 +776,11 @@ TEST_F(NegativeGpuAVDescriptorHeap, ShaderObjects) {
     )glsl";
 
     const auto vspv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vsSource);
-    VkShaderCreateInfoEXT vert_ci = vku::InitStructHelper();
-    vert_ci.flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
-    vert_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vert_ci.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    vert_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    vert_ci.codeSize = vspv.size() * sizeof(vspv[0]);
-    vert_ci.pCode = vspv.data();
-    vert_ci.pName = "main";
+    VkShaderCreateInfoEXT vert_ci = ShaderCreateInfoHeap(vspv, VK_SHADER_STAGE_VERTEX_BIT);
+    const vkt::Shader vert_shader(*m_device, vert_ci);
 
     const auto fspv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    VkShaderCreateInfoEXT frag_ci = vku::InitStructHelper();
-    frag_ci.flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
-    frag_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    frag_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    frag_ci.codeSize = fspv.size() * sizeof(fspv[0]);
-    frag_ci.pCode = fspv.data();
-    frag_ci.pName = "main";
-
-    const vkt::Shader vert_shader(*m_device, vert_ci);
+    VkShaderCreateInfoEXT frag_ci = ShaderCreateInfoHeap(fspv, VK_SHADER_STAGE_FRAGMENT_BIT);
     const vkt::Shader frag_shader(*m_device, frag_ci);
 
     VkDrawIndexedIndirectCommand draw_params{};
@@ -871,6 +860,651 @@ TEST_F(NegativeGpuAVDescriptorHeap, ShaderObjects) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffset) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    // we have reserved range in front of heap
+    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
+                                          static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(1, 3);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    // 1 resource stride OOB
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)(heap_props.minResourceHeapReservedRange + resource_stride);
+    mapping.sourceData.constantOffset.heapArrayStride = 0;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 1, binding = 3) buffer A { uint a; };
+        void main() {
+            a = 2;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = resource_heap_.AddressRange();
+    bind_resource_info.reservedRangeOffset = 0;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffsetDynamicIndex) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 2);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    auto ssbo_memory = (uint32_t*)ssbo_buffer.Memory().Map();
+    ssbo_memory[0] = 3;
+
+    // we have reserved range in front of heap
+    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
+                                          static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 1);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mapping.sourceData.constantOffset.heapArrayStride = (uint32_t)resource_stride;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        // only [0] is valid, [1] is uninitialized, [2] will go OOB
+        layout(set = 0, binding = 1) buffer A { uint index; uint result; } ssbo[4];
+        void main() {
+            uint index = ssbo[0].index;
+            ssbo[index].result = 99;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = resource_heap_.AddressRange();
+    bind_resource_info.reservedRangeOffset = 0;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBMultipleBinding) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    // we have reserved range in front of heap
+    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
+                                          static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+
+    // Goal is to mix-match the set/binding and mapping index
+    uint32_t oob_offset = (uint32_t)(heap_props.minResourceHeapReservedRange + resource_stride);
+    VkDescriptorSetAndBindingMappingEXT mappings[4];
+    mappings[0] = MakeSetAndBindingMapping(1, 2);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = oob_offset;
+    mappings[0].sourceData.constantOffset.heapArrayStride = 0;
+    // This mapping is valid
+    mappings[1] = MakeSetAndBindingMapping(0, 2);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mappings[1].sourceData.constantOffset.heapArrayStride = 0;
+    mappings[2] = MakeSetAndBindingMapping(1, 0);
+    mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[2].sourceData.constantOffset.heapOffset = oob_offset + (uint32_t)resource_stride;
+    mappings[2].sourceData.constantOffset.heapArrayStride = 0;
+    mappings[3] = MakeSetAndBindingMapping(0, 1);
+    mappings[3].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[3].sourceData.constantOffset.heapOffset = oob_offset;
+    mappings[3].sourceData.constantOffset.heapArrayStride = 0;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 4;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 1) buffer A { uint a; };
+        layout(set = 0, binding = 2) buffer B { uint b; };
+        layout(set = 1, binding = 0) buffer C { uint c; };
+        layout(set = 1, binding = 2) buffer D { uint d; };
+        void main() {
+            a = 1;
+            b = 2; // valid
+            c = 3;
+            d = 4;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = resource_heap_.AddressRange();
+    bind_resource_info.reservedRangeOffset = 0;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBPushIndex) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    // we have reserved range in front of heap
+    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
+                                          static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
+    mapping.sourceData.pushIndex.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mapping.sourceData.pushIndex.heapArrayStride = 0;
+    mapping.sourceData.pushIndex.pushOffset = 8;
+    mapping.sourceData.pushIndex.heapIndexStride = 2;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        void main() {
+            a = 2;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+
+    uint32_t push_index = 512;
+    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
+    push_data_info.offset = 8;
+    push_data_info.data.size = 4;
+    push_data_info.data.address = &push_index;
+    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = resource_heap_.AddressRange();
+    bind_resource_info.reservedRangeOffset = 0;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBIndirectIndex) {
+    TEST_DESCRIPTION("Also tests having different bindings and calling things twice");
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 4);
+
+    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    // we have reserved range in front of heap
+    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
+                                          static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[3];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
+    mappings[0].sourceData.indirectIndex.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mappings[0].sourceData.indirectIndex.pushOffset = 16;
+    mappings[0].sourceData.indirectIndex.addressOffset = 4;
+    mappings[0].sourceData.indirectIndex.heapIndexStride = 1;
+    mappings[0].sourceData.indirectIndex.heapArrayStride = (uint32_t)resource_stride;
+    mappings[1] = MakeSetAndBindingMapping(0, 2);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT;
+    mappings[1].sourceData.pushDataOffset = 0;
+    mappings[2] = MakeSetAndBindingMapping(0, 1);
+    mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT;
+    mappings[2].sourceData.indirectIndexArray.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mappings[2].sourceData.indirectIndexArray.pushOffset = 16;
+    mappings[2].sourceData.indirectIndexArray.addressOffset = 4;
+    mappings[2].sourceData.indirectIndexArray.heapIndexStride = 1;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 3;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        // x[3] and y[3] is where it goes OOB
+        layout(set = 0, binding = 0) buffer A { uint a; } x[4];
+        layout(set = 0, binding = 1) buffer B { uint b; } y[4];
+        layout(set = 0, binding = 2) uniform C { uint a_index; uint b_index; };
+        void main() {
+            x[a_index].a = 1;
+            y[b_index].b = 2;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+    uint32_t* indirect_data = (uint32_t*)indirect_buffer.Memory().Map();
+    for (uint32_t i = 0; i < 8; i++) {
+        indirect_data[i] = (uint32_t)resource_stride * i;
+    }
+
+    VkDeviceAddress indirect_address = indirect_buffer.Address();
+    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
+    push_data_info.offset = 16;
+    push_data_info.data.size = sizeof(VkDeviceAddress);
+    push_data_info.data.address = &indirect_address;
+    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = resource_heap_.AddressRange();
+    bind_resource_info.reservedRangeOffset = 0;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    // first pass good
+    uint32_t a_index = 0;
+    uint32_t b_index = 0;
+    push_data_info.data.size = 4;
+    push_data_info.offset = 0;
+    push_data_info.data.address = &a_index;
+    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    push_data_info.offset = 4;
+    push_data_info.data.address = &b_index;
+    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    // second pass
+    a_index = 3;
+    push_data_info.offset = 0;
+    push_data_info.data.address = &a_index;
+    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    // third pass
+    a_index = 0;
+    push_data_info.offset = 0;
+    push_data_info.data.address = &a_index;
+    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    b_index = 3;
+    push_data_info.offset = 4;
+    push_data_info.data.address = &b_index;
+    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    m_command_buffer.End();
+    // one for each indirect mapping
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309", 2);
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBShaderObjects) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    InitDynamicRenderTarget();
+
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 2);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    // we have reserved range in front of heap
+    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
+                                          static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)(heap_props.minResourceHeapReservedRange + resource_stride);
+    mapping.sourceData.constantOffset.heapArrayStride = (uint32_t)resource_stride;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    const char* fs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { vec4 a; } x[4];
+        layout(location = 0) out vec4 uFragColor;
+        void main(){
+            uFragColor = x[1].a;
+        }
+    )glsl";
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl);
+    VkShaderCreateInfoEXT vert_shader_ci = ShaderCreateInfoHeap(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    const vkt::Shader vert_shader(*m_device, vert_shader_ci);
+
+    const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
+    VkShaderCreateInfoEXT frag_shader_ci = ShaderCreateInfoHeap(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, &mapping_info);
+    const vkt::Shader frag_shader(*m_device, frag_shader_ci);
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_command_buffer.Begin(&begin_info);
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = resource_heap_.AddressRange();
+    bind_resource_info.reservedRangeOffset = 0;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    VkShaderStageFlagBits stages[2] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    VkShaderEXT shaders[2] = {vert_shader.handle(), frag_shader.handle()};
+    vk::CmdBindShadersEXT(m_command_buffer, 2, stages, shaders);
+
+    SetDefaultDynamicStatesExclude();
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-11309", gpuav::glsl::kMaxErrorsPerCmd);
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOB) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
+    const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
+    CreateResourceHeap(resource_stride);
+    CreateSamplerHeap(sampler_stride);
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    VkImageViewCreateInfo view_info = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+    VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
+    image_info.pView = &view_info;
+    image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    // we have reserved range in front of heap
+    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
+                                          static_cast<size_t>(resource_stride)};
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_info.data.pImage = &image_info;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    VkHostAddressRangeEXT sampler_host = {sampler_heap_data_ + heap_props.minSamplerHeapReservedRange,
+                                          static_cast<size_t>(sampler_stride)};
+    vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)(heap_props.minResourceHeapReservedRange + resource_stride);
+    mappings[0].sourceData.constantOffset.heapArrayStride = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minSamplerHeapReservedRange;
+    mappings[1].sourceData.constantOffset.heapArrayStride = 0;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform texture2D kTextures2D;
+        layout(set = 0, binding = 1) uniform sampler kSampler;
+
+        void main() {
+            vec4 out_color = texture(sampler2D(kTextures2D, kSampler), vec2(0));
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    // bad image mappings
+    CreateComputePipelineHelper pipe_image(*this, &pipeline_create_flags_2_create_info);
+    pipe_image.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe_image.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe_image.CreateComputePipeline(false);
+
+    mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)(heap_props.minSamplerHeapReservedRange + sampler_stride);
+    // bad sampler mappings
+    CreateComputePipelineHelper pipe_sampler(*this, &pipeline_create_flags_2_create_info);
+    pipe_sampler.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe_sampler.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe_sampler.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = resource_heap_.AddressRange();
+    bind_resource_info.reservedRangeOffset = 0;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    bind_resource_info.heapRange = sampler_heap_.AddressRange();
+    bind_resource_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
+    vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_resource_info);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_image);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_sampler);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309", 2);
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+// TODO - not clear how CombineImageSampler math is suppose to work
+TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_SamplerOOBCombinedImageSampler) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
+    const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
+    CreateResourceHeap(resource_stride);
+    CreateSamplerHeap(sampler_stride);
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    VkImageViewCreateInfo view_info = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+    VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
+    image_info.pView = &view_info;
+    image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    // we have reserved range in front of heap
+    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
+                                          static_cast<size_t>(resource_stride)};
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_info.data.pImage = &image_info;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    VkHostAddressRangeEXT sampler_host = {sampler_heap_data_ + heap_props.minSamplerHeapReservedRange,
+                                          static_cast<size_t>(sampler_stride)};
+    vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)(heap_props.minResourceHeapReservedRange + resource_stride);
+    mapping.sourceData.constantOffset.heapArrayStride = 0;
+    mapping.sourceData.constantOffset.samplerHeapOffset = (uint32_t)heap_props.minSamplerHeapReservedRange;
+    mapping.sourceData.constantOffset.samplerHeapArrayStride = 0;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+
+        void main() {
+            vec4 out_color = texture(tex, vec2(0.5f));
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    // bad image mappings
+    CreateComputePipelineHelper pipe_image(*this, &pipeline_create_flags_2_create_info);
+    pipe_image.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe_image.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe_image.CreateComputePipeline(false);
+
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mapping.sourceData.constantOffset.samplerHeapOffset = (uint32_t)(heap_props.minSamplerHeapReservedRange + sampler_stride);
+    // bad sampler mappings
+    CreateComputePipelineHelper pipe_sampler(*this, &pipeline_create_flags_2_create_info);
+    pipe_sampler.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe_sampler.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe_sampler.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = resource_heap_.AddressRange();
+    bind_resource_info.reservedRangeOffset = 0;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    bind_resource_info.heapRange = sampler_heap_.AddressRange();
+    bind_resource_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
+    vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_resource_info);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_image);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_sampler);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309", 2);
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

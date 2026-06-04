@@ -23,6 +23,7 @@
 #include "gpuav/debug_printf/debug_printf.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/instrumentation/descriptor_checks_classic.h"
+#include "gpuav/instrumentation/descriptor_checks_heap.h"
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
 #include "gpuav/instrumentation/register_validation.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
@@ -253,6 +254,7 @@ void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, c
 
     CommandBufferSubState& gpuav_cb_state = SubState(*cb_state);
     RegisterDescriptorChecksClassicValidation(*this, gpuav_cb_state);
+    RegisterDescriptorChecksHeapValidation(*this, gpuav_cb_state);
     RegisterPostProcessingValidation(*this, gpuav_cb_state);
     RegisterBufferDeviceAddressValidation(*this, gpuav_cb_state);
     RegisterVertexAttributeFetchOobValidation(*this, gpuav_cb_state);

@@ -143,6 +143,16 @@ void CommandBufferSubState::ClearPushConstants() {
     push_constant_latest_used_layout.fill(VK_NULL_HANDLE);
 }
 
+void CommandBufferSubState::RecordPushData(const VkPushDataInfoEXT& push_data_info) {
+    if (push_data_value.empty()) {
+        push_data_value.resize((size_t)base.dev_data.phys_dev_ext_props.descriptor_heap_props.maxPushDataSize);
+    }
+
+    memcpy(push_data_value.data() + push_data_info.offset, push_data_info.data.address, push_data_info.data.size);
+}
+
+void CommandBufferSubState::ClearPushData() { push_data_value.clear(); }
+
 void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT*) { valcmd::FlushValidationCmds(gpuav_, *this); }
 
 void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo*, const Location&) {

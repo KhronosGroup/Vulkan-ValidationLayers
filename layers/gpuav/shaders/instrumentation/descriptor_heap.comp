@@ -1,0 +1,179 @@
+// Copyright (c) 2026 The Khronos Group Inc.
+// Copyright (c) 2026 Valve Corporation
+// Copyright (c) 2026 LunarG, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// NOTE: This file doesn't contain any entrypoints and should be compiled with the --no-link option for glslang
+
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#include "common_descriptor_sets.h"
+#include "error_payload.h"
+
+struct BoundHeapInfo {
+    uint heap_size;
+    uint reserved_begin;
+    uint reserved_end;
+};
+
+// indirect buffer used in some mappings
+layout(buffer_reference, scalar) buffer IndirectBuffer {
+    uint data[];
+};
+
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorHeap, scalar) buffer DescriptorHeapEncoding {
+    BoundHeapInfo bound_resource_heap;
+    BoundHeapInfo bound_sampler_heap;
+    uint push_data[];
+} gpuav;
+
+// VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT
+bool inst_heap_mapping_constant_offset(const uint inst_offset, const uint heap_offset, const uint heap_array_stride, const uint desc_index, const bool is_sampler) {
+    uint error = 0;
+    uint param_0 = 0;
+
+    // TOOD - add descriptorSize as well
+    uint offset = heap_offset + (desc_index * heap_array_stride);
+    BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
+    if (offset >= bound_heap_info.heap_size) {
+        error = kErrorSubCode_DescriptorHeap_HeapOOB;
+        param_0 = offset;
+    }
+
+    if (error != 0) {
+        error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
+                            desc_index,
+                            param_0,
+                            0
+                        );
+
+        return false;
+    }
+    return true;
+}
+
+// VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT
+bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const bool is_sampler) {
+    uint error = 0;
+    uint param_0 = 0;
+
+    uint push_index = gpuav.push_data[push_offset];
+    uint offset = heap_offset + (push_index * heap_index_stride) + (desc_index * heap_array_stride);
+
+    BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
+    if (offset >= bound_heap_info.heap_size) {
+        error = kErrorSubCode_DescriptorHeap_HeapOOB;
+        param_0 = offset;
+    }
+
+    if (error != 0) {
+        error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
+                            desc_index,
+                            param_0,
+                            0
+                        );
+
+        return false;
+    }
+    return true;
+}
+
+// VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT
+bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint address_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const bool is_sampler) {
+    uint error = 0;
+    uint param_0 = 0;
+
+    // will generate [OpCompositeConstruct, OpBitcast, OpConvertUToPtr] which should be fine as a compromise keeping the push_data in a uint array
+    uint64_t indirect_address = packUint2x32(uvec2(gpuav.push_data[push_offset], gpuav.push_data[push_offset + 1]));
+    IndirectBuffer indirect_buffer = IndirectBuffer(indirect_address);
+
+    uint indirect_index = indirect_buffer.data[address_offset];
+    uint offset = heap_offset + (indirect_index * heap_index_stride) + (desc_index * heap_array_stride);
+
+    BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
+    if (offset >= bound_heap_info.heap_size) {
+        error = kErrorSubCode_DescriptorHeap_HeapOOB;
+        param_0 = offset;
+    }
+
+    if (error != 0) {
+        error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
+                            desc_index,
+                            param_0,
+                            0
+                        );
+
+        return false;
+    }
+    return true;
+}
+
+// VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT
+bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint address_offset, const uint heap_index_stride, const uint desc_index, const bool is_sampler) {
+    uint error = 0;
+    uint param_0 = 0;
+
+    // will generate [OpCompositeConstruct, OpBitcast, OpConvertUToPtr] which should be fine as a compromise keeping the push_data in a uint array
+    uint64_t indirect_address = packUint2x32(uvec2(gpuav.push_data[push_offset], gpuav.push_data[push_offset + 1]));
+    IndirectBuffer indirect_buffer = IndirectBuffer(indirect_address);
+
+    uint indirect_offset = address_offset + desc_index;
+    uint indirect_index = indirect_buffer.data[indirect_offset];
+    uint offset = heap_offset + (indirect_index * heap_index_stride);
+
+    BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
+    if (offset >= bound_heap_info.heap_size) {
+        error = kErrorSubCode_DescriptorHeap_HeapOOB;
+        param_0 = offset;
+    }
+
+    if (error != 0) {
+        error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
+                            desc_index,
+                            param_0,
+                            0
+                        );
+
+        return false;
+    }
+    return true;
+}
+
+// VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT
+bool inst_heap_mapping_resource_heap_data(const uint inst_offset, const uint heap_offset, const uint push_offset) {
+    return true; // Saving function offset space, but currently not used
+}
+
+// VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT
+bool inst_heap_mapping_push_data() {
+    return true; // Saving function offset space, but currently not used
+}
+
+// VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT
+bool inst_heap_mapping_push_address(const uint inst_offset, const uint push_address_offset) {
+    return true; // Saving function offset space, but currently not used
+}
+
+// VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT
+bool inst_heap_mapping_indirect_address(const uint inst_offset, const uint push_offset, const uint address_offset) {
+    return true; // Saving function offset space, but currently not used
+}

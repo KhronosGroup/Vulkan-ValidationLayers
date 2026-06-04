@@ -205,6 +205,7 @@ class TypeManager {
     const Constant& CreateConstantScalar(uint64_t value, const Type& type, uint32_t result_id = 0);
     const Constant& GetConstantUInt32(uint32_t value);
     uint32_t GetConstantUInt32FromId(uint32_t id);  // get a uint32 constant from an integer constant of any type
+    const Constant& GetConstantBool(bool is_true);
     const Constant& GetConstantZeroUint32();
     const Constant& GetConstantOneUint32();
     const Constant& GetConstantZeroFloat16();
@@ -270,6 +271,8 @@ class TypeManager {
     std::vector<const Constant*> int_32bit_constants_;
     std::vector<const Constant*> float_16bit_constants_;
     std::vector<const Constant*> float_32bit_constants_;
+    const Constant* bool_true_constants_ = nullptr;
+    const Constant* bool_false_constants_ = nullptr;
     const Constant* uint_32bit_zero_constants_ = nullptr;
     const Constant* uint_32bit_one_constants_ = nullptr;
     const Constant* float_16bit_zero_constants_ = nullptr;

@@ -2049,9 +2049,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorSetAndBindingMappingShaderObject) {
         }
 
         const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        const VkShaderCreateFlagsEXT flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
-        VkShaderCreateInfoEXT vert_ci = ShaderCreateInfoFlag(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, flags);
-        vert_ci.pNext = &mapping_info;
+        VkShaderCreateInfoEXT vert_ci = ShaderCreateInfoHeap(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, &mapping_info);
 
         m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11389");
         const vkt::Shader vertShader(*m_device, vert_ci);
@@ -3619,9 +3617,7 @@ TEST_F(NegativeDescriptorHeap, NoMappingShaderObject) {
     mapping_info.pMappings = &mappings;
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
-    const VkShaderCreateFlagsEXT flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
-    VkShaderCreateInfoEXT comp_ci = ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_COMPUTE_BIT, flags);
-    comp_ci.pNext = &mapping_info;
+    VkShaderCreateInfoEXT comp_ci = ShaderCreateInfoHeap(spv, VK_SHADER_STAGE_COMPUTE_BIT, &mapping_info);
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-11292");
     const vkt::Shader compShader(*m_device, comp_ci);
@@ -4999,9 +4995,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountShaderObject) {
     mapping_info.pMappings = &mapping;
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    const VkShaderCreateFlagsEXT flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
-    VkShaderCreateInfoEXT vert_ci = ShaderCreateInfoFlag(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, flags);
-    vert_ci.pNext = &mapping_info;
+    VkShaderCreateInfoEXT vert_ci = ShaderCreateInfoHeap(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, &mapping_info);
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-11413");
     const vkt::Shader vertShader(*m_device, vert_ci);
@@ -5074,9 +5068,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationTotalCountShaderObject) {
     mapping_info.pMappings = &mapping;
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    const VkShaderCreateFlagsEXT flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
-    VkShaderCreateInfoEXT vert_ci = ShaderCreateInfoFlag(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, flags);
-    vert_ci.pNext = &mapping_info;
+    VkShaderCreateInfoEXT vert_ci = ShaderCreateInfoHeap(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, &mapping_info);
 
     std::vector<vkt::Shader*> shaders(max_samplers + 1);
     for (size_t i = 0; i < max_samplers; i++) {

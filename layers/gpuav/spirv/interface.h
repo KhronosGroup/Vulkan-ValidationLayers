@@ -81,6 +81,8 @@ struct InstrumentationInterface {
     InstrumentationDescriptorSetLayouts instrumentation_dsl;
     const VkSpecializationInfo* specialization_info = nullptr;
 
+    const VkShaderDescriptorSetAndBindingMappingInfoEXT* mapping_info = nullptr;
+
     // Used for MeshPass to know if a task will be used as well
     bool has_task_shader = false;
 

@@ -12,6 +12,7 @@
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include "shader_helper.h"
+#include "shader_object_helper.h"
 #include "shader_templates.h"
 #include "test_framework.h"
 #include "utils/math_utils.h"
@@ -3066,26 +3067,12 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
     mapping_info.pMappings = mappings;
 
     const auto vspv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
+    VkShaderCreateInfoEXT vs_ci = ShaderCreateInfoHeap(vspv, VK_SHADER_STAGE_VERTEX_BIT, &mapping_info);
+    vkt::Shader vert_shader(*m_device, vs_ci);
+
     const auto fspv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
-
-    VkShaderCreateInfoEXT vert_create_info = vku::InitStructHelper(&mapping_info);
-    vert_create_info.flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
-    vert_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vert_create_info.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    vert_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    vert_create_info.codeSize = vspv.size() * sizeof(vspv[0]);
-    vert_create_info.pCode = vspv.data();
-    vert_create_info.pName = "main";
-    vkt::Shader vert_shader(*m_device, vert_create_info);
-
-    VkShaderCreateInfoEXT frag_create_info = vku::InitStructHelper(&mapping_info);
-    frag_create_info.flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
-    frag_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    frag_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    frag_create_info.codeSize = fspv.size() * sizeof(fspv[0]);
-    frag_create_info.pCode = fspv.data();
-    frag_create_info.pName = "main";
-    vkt::Shader frag_shader(*m_device, frag_create_info);
+    VkShaderCreateInfoEXT fs_ci = ShaderCreateInfoHeap(fspv, VK_SHADER_STAGE_FRAGMENT_BIT, &mapping_info);
+    vkt::Shader frag_shader(*m_device, fs_ci);
 
     m_command_buffer.Begin();
     VkImageMemoryBarrier image_barrier = vku::InitStructHelper();

@@ -513,6 +513,10 @@ const Constant& TypeManager::AddConstant(std::unique_ptr<Instruction> new_inst, 
         }
     } else if (inst->Opcode() == spv::OpConstantNull) {
         null_constants_.emplace_back(new_constant);
+    } else if (inst->Opcode() == spv::OpConstantTrue) {
+        bool_true_constants_ = new_constant;
+    } else if (inst->Opcode() == spv::OpConstantFalse) {
+        bool_false_constants_ = new_constant;
     }
 
     return *new_constant;
@@ -596,7 +600,27 @@ uint32_t TypeManager::GetConstantUInt32FromId(uint32_t id) {
     return GetConstantUInt32(value).Id();
 }
 
-// It is common to use uint32_t(0) as a default, so having it cached is helpful
+// Gets the OpConstantTrue/OpConstantFalse
+const Constant& TypeManager::GetConstantBool(bool is_true) {
+    const Type& bool_type = GetTypeBool();
+    if (is_true) {
+        if (!bool_true_constants_) {
+            const uint32_t constant_id = module_.TakeNextId();
+            auto new_inst = std::make_unique<Instruction>(3, spv::OpConstantTrue);
+            new_inst->Fill({bool_type.Id(), constant_id});
+            AddConstant(std::move(new_inst), bool_type);  // sets member var
+        }
+        return *bool_true_constants_;
+    } else {
+        if (!bool_false_constants_) {
+            const uint32_t constant_id = module_.TakeNextId();
+            auto new_inst = std::make_unique<Instruction>(3, spv::OpConstantFalse);
+            new_inst->Fill({bool_type.Id(), constant_id});
+            AddConstant(std::move(new_inst), bool_type);  // sets member var
+        }
+        return *bool_false_constants_;
+    };
+}
 const Constant& TypeManager::GetConstantZeroUint32() {
     if (!uint_32bit_zero_constants_) {
         const Type& uint_32_type = GetTypeInt(32, 0);

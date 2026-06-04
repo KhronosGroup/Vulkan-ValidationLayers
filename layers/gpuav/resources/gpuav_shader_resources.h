@@ -98,6 +98,22 @@ struct DescriptorEncoding {
     }
 };
 
+struct BoundHeapInfo {
+    // We should not need to deal with 4GB heaps (have an assert checking)
+    uint32_t heap_size;
+    // These are offset from the heap start where the being/end are
+    uint32_t reserved_begin;
+    uint32_t reserved_end;
+};
+
+struct DescriptorHeapEncoding {
+    BoundHeapInfo bound_resource_heap;
+    BoundHeapInfo bound_sampler_heap;
+    // TODO - We are holding a copy of the push data here, we really should be able to get this from the shader, but will involve
+    // some SPIR-V trickery
+    void* push_data;
+};
+
 // To make things easy we make everything in GLSL a 32-bit stream to read later.
 // This is to help ensure we reconstruct the 64-bit value saved in the shader
 //

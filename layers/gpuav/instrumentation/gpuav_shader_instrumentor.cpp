@@ -49,6 +49,7 @@
 #include "gpuav/spirv/descriptor_indexing_oob_pass.h"
 #include "gpuav/spirv/descriptor_class_general_buffer_pass.h"
 #include "gpuav/spirv/descriptor_class_texel_buffer_pass.h"
+#include "gpuav/spirv/descriptor_heap_pass.h"
 #include "gpuav/spirv/trace_ray_pass.h"
 #include "gpuav/spirv/shared_memory_data_race_pass.h"
 #include "gpuav/spirv/mesh_shading_pass.h"
@@ -595,6 +596,7 @@ bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(vku::safe_V
     interface.entry_point_name = modified_create_info.pName;
     interface.entry_point_stage = modified_create_info.stage;
     interface.specialization_info = modified_create_info.pSpecializationInfo->ptr();
+    interface.mapping_info = vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(modified_create_info.pNext);
     interface.has_task_shader = (modified_create_info.flags & VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) == 0;
     interface.descriptor_mode = descriptor_mode;
 
@@ -1400,6 +1402,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
         interface.entry_point_name = stage_state.GetPName();
         interface.entry_point_stage = stage_state.GetStage();
         interface.specialization_info = stage_state.GetSpecializationInfo()->ptr();
+        interface.mapping_info = vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(stage_state.GetPNext());
         interface.has_task_shader = (pipeline_state.active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT) != 0;
         interface.pipeline_has_skip_aabbs_flag =
             (pipeline_state.create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) != 0;
@@ -1611,6 +1614,8 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             interface.entry_point_name = modified_stage_state.GetPName();
             interface.entry_point_stage = modified_stage_state.GetStage();
             interface.specialization_info = modified_stage_state.GetSpecializationInfo()->ptr();
+            interface.mapping_info =
+                vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(modified_stage_state.GetPNext());
             interface.has_task_shader = (linked_pipeline_state.active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT) != 0;
             interface.pipeline_has_skip_aabbs_flag =
                 (linked_pipeline_state.create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) != 0;
@@ -1773,6 +1778,11 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
                 spirv::DescriptorClassGeneralBufferPass general_buffer_pass(module);
                 modified |= general_buffer_pass.Run();
             }
+        }
+
+        if (interface.descriptor_mode == vvl::DescriptorModeHeap) {
+            spirv::DescriptorHeapPass oob_pass(module);
+            modified |= oob_pass.Run();
         }
     }
 
