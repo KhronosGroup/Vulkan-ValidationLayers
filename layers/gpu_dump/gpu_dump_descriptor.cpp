@@ -451,12 +451,12 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
     auto warn_reserved_range_index_array = [&](std::vector<uint32_t>& bad_indexes) {
         if (!bad_indexes.empty()) {
-            warn_ss << new_line << "[WARNING] RESERVE RANGE - descriptors indexes at [" << std::dec;
+            warn_ss << new_line << "[WARNING] RESERVED RANGE - descriptors indexes at [" << std::dec;
             for (uint32_t i = 0; i < bad_indexes.size(); i++) {
                 if (i != 0) warn_ss << ", ";
                 warn_ss << bad_indexes[i];
             }
-            warn_ss << std::hex << "] will overlap with the reserved range is any access will be invalid";
+            warn_ss << std::hex << "] will overlap with the reserved range and any access will be invalid";
         }
     };
 
@@ -501,7 +501,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             if (!heap_reserved.empty()) {
                 const uint32_t max_search_index = array_length != 0 ? array_length : max_index + 1;
                 for (uint32_t i = 0; i < max_search_index; i++) {
-                    // TODO - be smart where to start searching if reserve range is at the end of huge buffer
+                    // TODO - be smart where to start searching if reserved range is at the end of huge buffer
                     VkDeviceAddress next_index_address = index_zero_address + (i * map_data.heapArrayStride);
                     vvl::range<VkDeviceAddress> next_index_range{next_index_address, next_index_address + descriptor_size};
                     if (next_index_range.intersects(heap_reserved)) {
@@ -604,7 +604,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             if (!heap_reserved.empty()) {
                 const uint32_t max_search_index = array_length != 0 ? array_length : max_index + 1;
                 for (uint32_t i = 0; i < max_search_index; i++) {
-                    // TODO - be smart where to start searching if reserve range is at the end of huge buffer
+                    // TODO - be smart where to start searching if reserved range is at the end of huge buffer
                     VkDeviceAddress next_index_address = index_zero_address + (i * map_data.heapArrayStride);
                     vvl::range<VkDeviceAddress> next_index_range{next_index_address, next_index_address + descriptor_size};
                     if (next_index_range.intersects(heap_reserved)) {
@@ -740,7 +740,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                 if (!heap_reserved.empty()) {
                     const uint32_t max_search_index = array_length != 0 ? array_length : max_index + 1;
                     for (uint32_t i = 0; i < max_search_index; i++) {
-                        // TODO - be smart where to start searching if reserve range is at the end of huge buffer
+                        // TODO - be smart where to start searching if reserved range is at the end of huge buffer
                         VkDeviceAddress next_index_address = index_zero_address + (i * map_data.heapArrayStride);
                         vvl::range<VkDeviceAddress> next_index_range{next_index_address, next_index_address + descriptor_size};
                         if (next_index_range.intersects(heap_reserved)) {
@@ -1104,15 +1104,15 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
     if (warn_reserved_range_start != vvl::kNoIndex32) {
         if (warn_reserved_range_start == warn_reserved_range_end) {
-            warn_ss << new_line << "[WARNING] RESERVE RANGE - descriptor index at [" << std::dec << warn_reserved_range_start
+            warn_ss << new_line << "[WARNING] RESERVED RANGE - descriptor index at [" << std::dec << warn_reserved_range_start
                     << std::hex << "] will overlap with the reserved range and the access will be invalid";
         } else if (warn_reserved_range_end != vvl::kNoIndex32) {
-            warn_ss << new_line << "[WARNING] RESERVE RANGE - descriptor index starting at [" << std::dec
+            warn_ss << new_line << "[WARNING] RESERVED RANGE - descriptor index starting at [" << std::dec
                     << warn_reserved_range_start << "] to [" << warn_reserved_range_end << std::hex
                     << "] will overlap with the reserved range and the access will be invalid";
         } else {
             warn_ss << new_line
-                    << "[WARNING] RESERVE RANGE - this descriptor overlaps with the reserved range is any access will be invalid";
+                    << "[WARNING] RESERVED RANGE - this descriptor overlaps with the reserved range and any access will be invalid";
         }
     }
 
@@ -1198,6 +1198,7 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
             std::sort(mapping_info_list.begin(), mapping_info_list.end());
             for (const MappingInfo& set_info : mapping_info_list) {
                 found_warning |= DumpDescriptorHeapMapping(ss, set_info);
+                ss << '\n';
             }
         }
     }

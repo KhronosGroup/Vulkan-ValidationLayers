@@ -536,7 +536,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeNonArray) {
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
     pipe.CreateComputePipeline(false);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    m_errorMonitor->SetDesiredWarning("RESERVE RANGE");
+    m_errorMonitor->SetDesiredWarning("RESERVED RANGE");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
@@ -593,7 +593,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeArray) {
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
     pipe.CreateComputePipeline(false);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    m_errorMonitor->SetDesiredWarning("RESERVE RANGE");
+    m_errorMonitor->SetDesiredWarning("RESERVED RANGE");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
@@ -664,7 +664,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeArrayIndexed) {
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
     pipe.CreateComputePipeline(false);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    m_errorMonitor->SetDesiredWarning("RESERVE RANGE");
+    m_errorMonitor->SetDesiredWarning("RESERVED RANGE");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
@@ -735,7 +735,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeIndirectArray) {
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
     pipe.CreateComputePipeline(false);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    m_errorMonitor->SetDesiredWarning("RESERVE RANGE");
+    m_errorMonitor->SetDesiredWarning("RESERVED RANGE");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
