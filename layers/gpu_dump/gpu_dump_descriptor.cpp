@@ -277,8 +277,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     const spirv::ResourceInterfaceVariable& resource_variable = *mapping_info.resource_variable;
     vvl::CommandBuffer::DescriptorHeap& heap = base.descriptor_heap;
 
-    ss << "    - Binding " << std::dec << resource_variable.decorations.binding << ", "
-       << string_VkDescriptorMappingSourceEXT(mapping.source) << " (from pMappings[" << mapping_info.index << "])\n";
+    ss << "    - SPIR-V Binding " << std::dec << resource_variable.decorations.binding << ", specified in pMappings["
+       << mapping_info.index << "]: binding count = " << mapping.bindingCount
+       << ", source: " << string_VkDescriptorMappingSourceEXT(mapping.source) << '\n';
     const bool is_combined_image_sampler = resource_variable.is_combined_image_sampler;
     const bool is_sampler = resource_variable.is_sampler;
     const char* main_heap_type = is_sampler ? "Sampler" : "Resource";
@@ -1127,7 +1128,6 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     return found_warning;
 }
 
-// Return true if warning found
 bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const LastBound& last_bound) const {
     bool found_warning = false;
     const vvl::CommandBuffer& cb_state = last_bound.cb_state;
@@ -1154,8 +1154,14 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
         found_warning |= dev_data.ListBuffers(ss, cb_state.descriptor_heap.sampler_range.begin, 1);
     }
 
-    small_vector<const ShaderStageState*, 3> stages = last_bound.GetStages();
+    ss << '\n';
+    if (last_bound.pipeline_state) {
+        ss << "Last bound pipeline:\n    " << dev_data.FormatHandle(last_bound.pipeline_state->VkHandle())
+           << " (bind point: " << string_VkPipelineBindPoint(last_bound.pipeline_state->pipeline_type) << ")\n";
+    }
 
+    ss << "\nShader descriptors:\n";
+    small_vector<const ShaderStageState*, 3> stages = last_bound.GetStages();
     for (const ShaderStageState* stage : stages) {
         if (!stage->HasSpirv()) {
             ss << "[No SPIR-V found for " << string_VkShaderStageFlagBits(stage->GetStage())
@@ -1194,7 +1200,7 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
         }
 
         for (auto& [set_index, mapping_info_list] : mapping_info_map) {
-            ss << "  - Set " << std::dec << set_index << ":\n";
+            ss << "  - SPIR-V Set " << std::dec << set_index << ":\n";
             std::sort(mapping_info_list.begin(), mapping_info_list.end());
             for (const MappingInfo& set_info : mapping_info_list) {
                 found_warning |= DumpDescriptorHeapMapping(ss, set_info);

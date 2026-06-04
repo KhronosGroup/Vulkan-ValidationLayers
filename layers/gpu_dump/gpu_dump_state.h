@@ -42,6 +42,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
   private:
     void DumpDescriptors(const LastBound& last_bound, const Location& loc) const;
     bool DumpDescriptorBuffer(std::ostringstream& ss, const LastBound& last_bound) const;
+    // Return true if warning found
     bool DumpDescriptorHeap(std::ostringstream& ss, const LastBound& last_bound) const;
     bool DumpDescriptorHeapMapping(std::ostringstream& ss, const MappingInfo& mapping_info) const;
 
