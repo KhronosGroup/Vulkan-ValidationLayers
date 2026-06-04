@@ -1331,8 +1331,8 @@ TEST_F(NegativeGpuDump, DescriptorHeapCombinedImageSampler) {
     InitRenderTarget();
 
     // We want to easily control it for testing
-    if (heap_props.minResourceHeapReservedRange != 0) {
-        GTEST_SKIP() << "minResourceHeapReservedRange is not zero";
+    if (heap_props.minResourceHeapReservedRange != 0 || heap_props.minSamplerHeapReservedRange != 0) {
+        GTEST_SKIP() << "minResourceHeapReservedRange/minSamplerHeapReservedRange is not zero";
     }
 
     const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
