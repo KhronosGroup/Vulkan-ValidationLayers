@@ -9,6 +9,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "utils/math_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
@@ -6315,5 +6316,65 @@ TEST_F(NegativeDescriptorHeap, ReadOnlyStorageBufferHlsl) {
     // VUID-VkGraphicsPipelineCreateInfo-flags-11312
     m_errorMonitor->SetDesiredError("just use VK_SPIRV_RESOURCE_TYPE_ALL_EXT");
     pipe.CreateGraphicsPipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorHeap, SamplerMappingWarning) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    InitRenderTarget();
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 1, binding = 0) uniform texture2D t;
+        layout(set = 0, binding = 0) uniform sampler s0;
+        layout(set = 0, binding = 1) uniform sampler s1;
+        layout(set = 0, binding = 2) uniform sampler s2;
+        layout(set = 0, binding = 3) uniform sampler s3;
+        void main() {
+            vec4 data0 = texture(sampler2D(t, s0), vec2(0.0f));
+            vec4 data1 = texture(sampler2D(t, s1), vec2(0.0f));
+            vec4 data2 = texture(sampler2D(t, s2), vec2(0.0f));
+            vec4 data3 = texture(sampler2D(t, s3), vec2(0.0f));
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    VkDescriptorSetAndBindingMappingEXT mappings[5];
+    mappings[0] = MakeSetAndBindingMapping(1, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset = {};
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 0);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset = {};
+    mappings[1].sourceData.constantOffset.samplerHeapOffset = (uint32_t)heap_props.samplerDescriptorSize;
+    mappings[2] = MakeSetAndBindingMapping(0, 1);
+    mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
+    mappings[2].sourceData.pushIndex = {};
+    mappings[2].sourceData.pushIndex.samplerHeapOffset = (uint32_t)heap_props.samplerDescriptorSize;
+    mappings[3] = MakeSetAndBindingMapping(0, 2);
+    mappings[3].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
+    mappings[3].sourceData.indirectIndex = {};
+    mappings[3].sourceData.indirectIndex.samplerHeapOffset = (uint32_t)heap_props.samplerDescriptorSize;
+    mappings[4] = MakeSetAndBindingMapping(0, 3);
+    mappings[4].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT;
+    mappings[4].sourceData.indirectIndexArray = {};
+    mappings[4].sourceData.indirectIndexArray.samplerHeapOffset = (uint32_t)heap_props.samplerDescriptorSize;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 5u;
+    mapping_info.pMappings = mappings;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    m_errorMonitor->SetDesiredWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-constantOffset-sampler");
+    m_errorMonitor->SetDesiredWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-pushIndex-sampler");
+    m_errorMonitor->SetDesiredWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndex-sampler");
+    m_errorMonitor->SetDesiredWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndexArray-sampler");
+    pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 }
