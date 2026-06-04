@@ -426,6 +426,15 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         }
     };
 
+    auto warn_array_stride = [&](uint32_t array_stride, bool is_sampler) {
+        if (array_stride == 0) {
+            warn_ss << new_bullet_line << "[WARNING] ZERO ARRAY STRIDE - "
+                    << (is_sampler ? "samplerHeapArrayStride" : "heapArrayStride")
+                    << " is zero, this mean every index of the descriptor array will be the same descriptor, which is likely not "
+                       "desired.";
+        }
+    };
+
     auto warn_index_oob = [&](uint32_t max_index) {
         if (array_length > (max_index + 1)) {
             warn_ss << new_bullet_line << "[WARNING] OUT OF BOUNDS - descriptor has an array length of [" << std::dec
@@ -495,7 +504,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         if (is_array) {
             ss << " + (descriptor_index * 0x" << map_data.heapArrayStride << ")";
             const VkDeviceSize available_space = (heap_range.size() - index_zero_offset) - descriptor_size;
-            const uint32_t max_index = (uint32_t)(available_space / map_data.heapArrayStride);
+            warn_array_stride(map_data.heapArrayStride, false);
+            const uint32_t max_index = map_data.heapArrayStride == 0 ? 1 : (uint32_t)(available_space / map_data.heapArrayStride);
             if (array_length != 0) {
                 const VkDeviceSize final_array_offset = (array_length - 1) * map_data.heapArrayStride;
                 ss << new_line << "    The final descriptor index at [" << std::dec << array_length << std::hex
@@ -543,7 +553,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             if (is_array) {
                 ss << " + (descriptor_index * 0x" << map_data.samplerHeapArrayStride << ")";
                 const VkDeviceSize available_space = (heap.sampler_range.size() - index_zero_offset) - sampler_descriptor_size;
-                const uint32_t max_index = (uint32_t)(available_space / map_data.samplerHeapArrayStride);
+                warn_array_stride(map_data.samplerHeapArrayStride, true);
+                const uint32_t max_index =
+                    map_data.samplerHeapArrayStride == 0 ? 1 : (uint32_t)(available_space / map_data.samplerHeapArrayStride);
                 if (array_length != 0) {
                     const VkDeviceSize final_array_offset = (array_length - 1) * map_data.samplerHeapArrayStride;
                     ss << new_line << "    The final descriptor index at [" << std::dec << array_length << std::hex
@@ -599,7 +611,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         if (is_array) {
             ss << " + (descriptor_index * 0x" << map_data.heapArrayStride << ")";
             const VkDeviceSize available_space = (heap_range.size() - index_zero_offset) - descriptor_size;
-            const uint32_t max_index = (uint32_t)(available_space / map_data.heapArrayStride);
+            warn_array_stride(map_data.heapArrayStride, false);
+            const uint32_t max_index = map_data.heapArrayStride == 0 ? 1 : (uint32_t)(available_space / map_data.heapArrayStride);
             if (array_length != 0) {
                 const VkDeviceSize final_array_offset = (array_length - 1) * map_data.heapArrayStride;
                 ss << new_line << "    The final descriptor index at [" << std::dec << array_length << std::hex
@@ -656,7 +669,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             if (is_array) {
                 ss << " + (descriptor_index * 0x" << map_data.samplerHeapArrayStride << ")";
                 const VkDeviceSize available_space = (heap.sampler_range.size() - index_zero_offset) - sampler_descriptor_size;
-                const uint32_t max_index = (uint32_t)(available_space / map_data.samplerHeapArrayStride);
+                warn_array_stride(map_data.samplerHeapArrayStride, true);
+                const uint32_t max_index =
+                    map_data.samplerHeapArrayStride == 0 ? 1 : (uint32_t)(available_space / map_data.samplerHeapArrayStride);
                 if (array_length != 0) {
                     const VkDeviceSize final_array_offset = (array_length - 1) * map_data.samplerHeapArrayStride;
                     ss << new_line << "    The final descriptor index at [" << std::dec << array_length << std::hex
@@ -736,7 +751,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                 warn_alignment_descriptor(index_zero_address);
 
                 VkDeviceSize available_space = (heap_range.size() - index_zero_offset) - descriptor_size;
-                uint32_t max_index = (uint32_t)(available_space / map_data.heapArrayStride);
+                warn_array_stride(map_data.heapArrayStride, false);
+                const uint32_t max_index =
+                    map_data.heapArrayStride == 0 ? 1 : (uint32_t)(available_space / map_data.heapArrayStride);
                 if (array_length != 0) {
                     const VkDeviceSize final_array_offset = (array_length - 1) * map_data.heapArrayStride;
                     ss << new_line << "    The final descriptor index at [" << std::dec << array_length << std::hex
@@ -825,7 +842,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                     warn_alignment_sampler(index_zero_address);
 
                     VkDeviceSize available_space = (heap.sampler_range.size() - index_zero_offset) - sampler_descriptor_size;
-                    uint32_t max_index = (uint32_t)(available_space / map_data.samplerHeapArrayStride);
+                    warn_array_stride(map_data.samplerHeapArrayStride, true);
+                    const uint32_t max_index =
+                        map_data.samplerHeapArrayStride == 0 ? 1 : (uint32_t)(available_space / map_data.samplerHeapArrayStride);
                     if (array_length != 0) {
                         const VkDeviceSize final_array_offset = (array_length - 1) * map_data.samplerHeapArrayStride;
                         ss << new_line << "    The final descriptor index at [" << std::dec << array_length << std::hex
