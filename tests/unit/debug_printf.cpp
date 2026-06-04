@@ -6215,13 +6215,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapShaderObjects) {
     mapping_info.pMappings = &mapping;
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
-    VkShaderCreateInfoEXT shader_create_info = vku::InitStructHelper(&mapping_info);
-    shader_create_info.flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
-    shader_create_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    shader_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    shader_create_info.codeSize = spv.size() * sizeof(spv[0]);
-    shader_create_info.pCode = spv.data();
-    shader_create_info.pName = "main";
+    VkShaderCreateInfoEXT shader_create_info = ShaderCreateInfoHeap(spv, VK_SHADER_STAGE_COMPUTE_BIT, &mapping_info);
     vkt::Shader shader(*m_device, shader_create_info);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();

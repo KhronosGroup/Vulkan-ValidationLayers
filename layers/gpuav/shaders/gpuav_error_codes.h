@@ -42,6 +42,7 @@ const int kErrorGroup_GpuPreBuildAccelerationStructures = 12;
 const int kErrorGroup_InstMeshShading = 13;
 const int kErrorGroup_SharedMemoryDataRace = 15;
 const int kErrorGroup_TraceRay = 16;
+const int kErrorGroup_InstDescriptorHeap = 17;
 
 // We just take ExecutionModel and normalize it so we only use 5 bits to store it
 const int kExecutionModel_Vertex = 0;
@@ -77,6 +78,10 @@ const int kErrorSubCode_DescriptorClass_GeneralBufferBounds = 1;
 const int kErrorSubCode_DescriptorClass_TexelBufferBounds = 2;
 // Buffers, but with Cooperative Matrix
 const int kErrorSubCode_DescriptorClass_GeneralBufferCoopMatBounds = 3;
+
+// Descriptor Heap
+//
+const int kErrorSubCode_DescriptorHeap_HeapOOB = 1;
 
 // Buffer Device Address
 //

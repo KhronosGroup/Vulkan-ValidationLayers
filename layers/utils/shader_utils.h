@@ -24,10 +24,6 @@
 #include "containers/custom_containers.h"
 #include "utils/lock_utils.h"
 
-namespace spirv {
-struct ResourceInterfaceVariable;
-}
-
 enum class ShaderObjectStage : uint32_t {
     VERTEX = 0u,
     TESSELLATION_CONTROL,

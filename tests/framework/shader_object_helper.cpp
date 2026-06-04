@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2024-2025 The Khronos Group Inc.
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+ * Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,6 +107,19 @@ VkShaderCreateInfoEXT ShaderCreateInfoLink(const std::vector<uint32_t>& spirv, V
     create_info.flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
     create_info.stage = stage;
     create_info.nextStage = next_stage;
+    create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    create_info.codeSize = spirv.size() * sizeof(uint32_t);
+    create_info.pCode = spirv.data();
+    create_info.pName = "main";
+    return create_info;
+}
+
+VkShaderCreateInfoEXT ShaderCreateInfoHeap(const std::vector<uint32_t>& spirv, VkShaderStageFlagBits stage,
+                                           VkShaderDescriptorSetAndBindingMappingInfoEXT* mapping_info) {
+    VkShaderCreateInfoEXT create_info = vku::InitStructHelper(mapping_info);
+    create_info.flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
+    create_info.stage = stage;
+    SetNextStage(create_info);
     create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     create_info.codeSize = spirv.size() * sizeof(uint32_t);
     create_info.pCode = spirv.data();
