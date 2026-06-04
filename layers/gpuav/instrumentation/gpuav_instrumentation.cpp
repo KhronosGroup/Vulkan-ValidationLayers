@@ -363,7 +363,7 @@ void UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_st
 
 static bool WasInstrumented(const LastBound& last_bound) {
     if (last_bound.pipeline_state) {
-        return last_bound.pipeline_state->instrumentation_data.was_instrumented;
+        return last_bound.pipeline_state->instrumentation_data.status.is_instrumented;
     }
     for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
         const auto stage = static_cast<ShaderObjectStage>(i);
@@ -372,7 +372,7 @@ static bool WasInstrumented(const LastBound& last_bound) {
         }
         if (const vvl::ShaderObject* shader_object_state = last_bound.GetShaderObjectState(stage)) {
             auto& sub_state = SubState(*shader_object_state);
-            if (sub_state.was_instrumented) {
+            if (sub_state.instrumented_status.is_instrumented) {
                 return true;
             }
         }

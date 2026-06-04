@@ -26,6 +26,8 @@
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/shader_stage_state.h"
 
+#include "gpuav/spirv/instrumentation_status.h"
+
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace vvl {
 class DescriptorSetLayoutDef;
@@ -156,7 +158,7 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
     struct InstrumentationData {
         // We create a VkShaderModule that is instrumented and it needs to be destroyed before leaving the pipeline call
         std::vector<VkShaderModule> shader_modules;
-        bool was_instrumented = false;
+        gpuav::spirv::InstrumentationStatus status;
         // When we instrument GPL at link time, we need to hold the libraries created by GPU-AV
         // so they can be re-used
         VkPipeline instrumented_pipeline_lib = VK_NULL_HANDLE;

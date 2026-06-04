@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -20,6 +20,7 @@
 
 #pragma once
 #include <vector>
+#include "gpuav/spirv/instrumentation_status.h"
 #include "state_tracker/shader_module.h"
 #include "utils/vk_api_utils.h"
 
@@ -51,7 +52,8 @@ struct ShaderObjectInstrumentationData {
     std::vector<uint32_t> instrumented_spirv;
     // Need to hold this in memory between the PreCallRecord and the PostCallRecord
     uint32_t unique_shader_id = 0;
-    bool IsInstrumented() { return unique_shader_id != 0; }
+
+    gpuav::spirv::InstrumentationStatus status;
 
     std::vector<VkDescriptorSetLayout> new_layouts;
 };
@@ -83,7 +85,9 @@ struct ShaderObject {
 struct ShaderInstrumentationMetadata {
     // Unique shader ids are used to map SPIR-V to a specific VkShaderModule/VkPipeline/etc handle
     uint32_t unique_shader_id = 0;
-    bool IsInstrumented() { return unique_shader_id != 0; }
+
+    // we really can use the data inside the pipeline state, but keep to be more similar like ShaderObject
+    gpuav::spirv::InstrumentationStatus status;
 
     // Used to know if VkShaderModuleCreateInfo is passed down VkPipelineShaderStageCreateInfo
     bool passed_in_shader_stage_ci = false;

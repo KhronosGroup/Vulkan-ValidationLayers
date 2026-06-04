@@ -23,6 +23,7 @@
 #include "external/inplace_function.h"
 #include "gpuav/instrumentation/descriptor_checks_classic.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
+#include "gpuav/spirv/instrumentation_status.h"
 
 // We pull in most the core state tracking files
 // gpuav_state_trackers.h should NOT be included by any other header file
@@ -382,8 +383,9 @@ class ShaderObjectSubState : public vvl::ShaderObjectSubState {
   public:
     explicit ShaderObjectSubState(vvl::ShaderObject &obj);
 
-    bool was_instrumented = false;
+    spirv::InstrumentationStatus instrumented_status;
     uint32_t unique_shader_id = 0;
+
     // We need to keep incase the user calls vkGetShaderBinaryDataEXT
     vku::safe_VkShaderCreateInfoEXT original_create_info;
     VkShaderEXT original_handle = VK_NULL_HANDLE;

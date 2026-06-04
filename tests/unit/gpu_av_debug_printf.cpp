@@ -17,6 +17,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 #include "error_message/log_message_type.h"
+#include "test_framework.h"
 
 class NegativeGpuAVDebugPrintf : public virtual VkLayerTest {
   public:
@@ -371,6 +372,72 @@ TEST_F(NegativeGpuAVDebugPrintf, DynamicRendering) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);
     m_errorMonitor->SetDesiredInfo("b.length == 3", 3);
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDebugPrintf, MixPrintAndNoPrint) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12031");
+    RETURN_IF_SKIP(InitGpuAvDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, ssbo_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char* no_print = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO {
+            float result;
+        };
+
+        void main() {
+            float myfloat = 3.1415f;
+            result = myfloat;
+        }
+    )glsl";
+
+    const char* print = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 0, binding = 0) buffer SSBO {
+            float result;
+        };
+        void main() {
+            float myfloat = 3.1415f;
+            debugPrintfEXT("float == %f", myfloat);
+            result = myfloat;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe_print(*this);
+    pipe_print.cs_ = VkShaderObj(*m_device, print, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe_print.cp_ci_.layout = pipeline_layout;
+    pipe_print.CreateComputePipeline();
+
+    CreateComputePipelineHelper pipe_no_print(*this);
+    pipe_no_print.cs_ = VkShaderObj(*m_device, no_print, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe_no_print.cp_ci_.layout = pipeline_layout;
+    pipe_no_print.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    // Will add SSBO check
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_no_print);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_print);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_no_print);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("float == 3.141500");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
