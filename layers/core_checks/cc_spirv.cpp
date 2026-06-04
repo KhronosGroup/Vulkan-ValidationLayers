@@ -3297,7 +3297,8 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
 
                 if (mapping.source != VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT &&
                     resource_variable.IsArray() && info.array_stride == 0) {
-                    // Trying to make a proper VU here https://gitlab.khronos.org/vulkan/vulkan/-/issues/4815
+                    // Tried to ban in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4815
+                    // but we wrote tests, so this is allowed and will work, just high chance not what people intend to do.
                     skip |= LogWarning(
                         "WARNING-VkDescriptorSetAndBindingMappingEXT-heapArrayStride-zero", module_state.handle(),
                         mapping_loc.dot(Field::source),
