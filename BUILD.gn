@@ -254,6 +254,7 @@ vvl_sources = [
   "layers/gpuav/spirv/function_basic_block.h",
   "layers/gpuav/spirv/cooperative_matrix.h",
   "layers/gpuav/spirv/interface.h",
+  "layers/gpuav/spirv/instrumentation_status.h",
   "layers/gpuav/spirv/link.h",
   "layers/gpuav/spirv/module.cpp",
   "layers/gpuav/spirv/module.h",

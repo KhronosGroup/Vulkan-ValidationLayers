@@ -405,6 +405,25 @@ void AnalyzeAndGenerateMessage(Validator& gpuav, VkCommandBuffer command_buffer,
 #pragma GCC diagnostic pop
 #endif
 
+static bool HasDebugPrintf(const LastBound& last_bound) {
+    if (last_bound.pipeline_state) {
+        return last_bound.pipeline_state->instrumentation_data.status.has_debug_printf;
+    }
+    for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
+        const auto stage = static_cast<ShaderObjectStage>(i);
+        if (!last_bound.IsValidShaderObjectBound(stage)) {
+            continue;
+        }
+        if (const vvl::ShaderObject* shader_object_state = last_bound.GetShaderObjectState(stage)) {
+            auto& sub_state = SubState(*shader_object_state);
+            if (sub_state.instrumented_status.has_debug_printf) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void RegisterDebugPrintf(Validator& gpuav, CommandBufferSubState& cb_state) {
     if (!gpuav.gpuav_settings.debug_printf_enabled) {
         return;
@@ -413,6 +432,11 @@ void RegisterDebugPrintf(Validator& gpuav, CommandBufferSubState& cb_state) {
     cb_state.on_instrumentation_common_desc_update_functions.emplace_back(
         [debug_printf_buffer_size = gpuav.gpuav_settings.debug_printf_buffer_size](
             CommandBufferSubState& cb, const LastBound& last_bound, const Location&, CommonDescriptorUpdate& out_update) {
+            // prevent allocating each draw/dispatch if only 1 shader has the debug printf
+            if (!HasDebugPrintf(last_bound)) {
+                return;
+            }
+
             vko::BufferRange output_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(debug_printf_buffer_size);
             std::memset(output_buffer.offset_mapped_ptr, 0, (size_t)debug_printf_buffer_size);
 

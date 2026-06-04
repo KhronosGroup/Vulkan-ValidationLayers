@@ -45,6 +45,9 @@ struct Module;
 
 namespace gpuav {
 class Validator;
+namespace spirv {
+struct InstrumentationStatus;
+}
 
 // There are 3 ways to have a null VkShaderModule
 // 1. Use GPL for something like Vertex Input which won't have a shader
@@ -195,9 +198,8 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
         vku::safe_VkGraphicsPipelineCreateInfo& modified_pipeline_ci, const Location& loc);
 
     // Function that will hook into the SPIR-V instrumentation passes.
-    // Returns if shader was instrumented successfully or not.
-    bool InstrumentShader(const vvl::span<const uint32_t>& input_spirv, const spirv::InstrumentationInterface& interface,
-                          std::vector<uint32_t>& out_instrumented_spirv);
+    void InstrumentShader(const vvl::span<const uint32_t>& input_spirv, const spirv::InstrumentationInterface& interface,
+                          spirv::InstrumentationStatus& status, std::vector<uint32_t>& out_instrumented_spirv);
 
   public:
     void SetupClassicDescriptor(const Location &loc);
