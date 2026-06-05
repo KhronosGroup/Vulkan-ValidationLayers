@@ -306,8 +306,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         descriptor_type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         descriptor_size = dev_data.phys_dev_ext_props.descriptor_heap_props.imageDescriptorSize;
     } else if (descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM) {
-        // TODO - Cache these once on device creation
-        descriptor_size = DispatchGetPhysicalDeviceDescriptorSizeEXT(dev_data.physical_device, descriptor_type);
+        descriptor_size = dev_data.device_state->cached_descriptor_size.GetSize(descriptor_type);
     }
 
     // TODO - Make common util if others need it

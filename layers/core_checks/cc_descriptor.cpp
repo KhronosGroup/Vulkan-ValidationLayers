@@ -5321,9 +5321,8 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
 
         const bool is_texel_buffer = IsDescriptorHeapTexelBuffer(resource.type);
         const bool is_image = IsDescriptorHeapImage(resource.type);
-        // TODO - Cache these once on device creation
         // The main thing to be careful of is |bufferDescriptorSize| is not for texel buffer
-        const VkDeviceSize expected_size = DispatchGetPhysicalDeviceDescriptorSizeEXT(physical_device, resource.type);
+        const VkDeviceSize expected_size = device_state->cached_descriptor_size.GetSize(resource.type);
 
         const VkHostAddressRangeEXT& descriptor_range = pDescriptors[i];
         if (static_cast<VkDeviceSize>(descriptor_range.size) < expected_size) {

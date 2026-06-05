@@ -23,6 +23,7 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
 #include "chassis/validation_object.h"
+#include "utils/descriptor_utils.h"
 #include "utils/hash_vk_types.h"
 #include "state_tracker/descriptor_sets.h"      // DescriptorSetLayoutDict can't be forward declared
 #include "state_tracker/video_session_state.h"  // TODO - Remove from this header
@@ -2113,6 +2114,9 @@ class DeviceState : public vvl::BaseDevice {
     bool disable_internal_pipeline_cache;
 
     SpecialSupported special_supported;
+
+    // VK_EXT_descriptor_heap
+    CachedDescriptorSize cached_descriptor_size;
 
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties_nv;
     std::vector<VkCooperativeMatrixPropertiesKHR> cooperative_matrix_properties_khr;
