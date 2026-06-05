@@ -45,21 +45,6 @@ uint32_t SharedMemoryDataRacePass::GetLinkFunctionId(const InstructionMeta& meta
     return GetLinkFunction(link_function_id_[meta.function_idx], kOfflineFunction[meta.function_idx]);
 }
 
-// The goal of Function::FindInstruction is you should know the instruction is in the Function.
-// For walking the indexes of an access chain in this pass, we want a global lookup
-const Instruction* SharedMemoryDataRacePass::FindInstructionGlobal(const Function& function, uint32_t id) const {
-    if (auto ret = function.FindInstruction(id)) {
-        return ret;
-    }
-    if (auto ret = module_.type_manager_.FindConstantById(id)) {
-        return &ret->inst_;
-    }
-    if (auto ret = module_.type_manager_.FindVariableById(id)) {
-        return &ret->inst_;
-    }
-    return nullptr;
-}
-
 void SharedMemoryDataRacePass::CreateFunctionCall(const Function& function, BasicBlock& block, InstructionIt* inst_it,
                                                   const InstructionMeta& meta) {
     const uint32_t function_def = GetLinkFunctionId(meta);
@@ -92,8 +77,7 @@ void SharedMemoryDataRacePass::CreateFunctionCall(const Function& function, Basi
                 const Type* coopmat_type;
                 if (store) {
                     const uint32_t object_id = inst.Word(2);
-                    const Instruction* object_inst = FindInstructionGlobal(function, object_id);
-                    coopmat_type = type_manager_.FindTypeById(object_inst->TypeId());
+                    coopmat_type = type_manager_.FindTypeGlobal(function, object_id);
                 } else {
                     coopmat_type = type_manager_.FindTypeById(inst.TypeId());
                 }
@@ -106,8 +90,7 @@ void SharedMemoryDataRacePass::CreateFunctionCall(const Function& function, Basi
                 const uint32_t ptr_id = inst.Operand(0);  // works with both store and loads
 
                 // get type of pointee
-                auto ptr_inst = FindInstructionGlobal(function, ptr_id);
-                const Type* ptr_type = type_manager_.FindTypeById(ptr_inst->TypeId());
+                const Type* ptr_type = type_manager_.FindTypeGlobal(function, ptr_id);
                 const Type* scalar_elem_type = type_manager_.FindChildType(*ptr_type, 0);
 
                 const Type& uint32_type = type_manager_.GetTypeInt(32, false);
@@ -192,7 +175,7 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
         return true;
     }
 
-    const AccessPath access_path = type_manager_.BuildAccessPath(function, inst);
+    const AccessPath access_path = type_manager_.BuildAccessPath(function, inst, true);
     if (!access_path.IsValid()) {
         return false;
     } else if (access_path.variable->StorageClass() != spv::StorageClassWorkgroup) {
@@ -206,16 +189,14 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
     // to the variable's pointee type in case of no access chains.
     const Type* ptr_elem_type = type_manager_.FindChildType(*type_manager_.FindTypeById(access_path.variable->inst_.Word(1)), 0);
     for (auto ac : access_path.ac_list) {
-        auto ptr = FindInstructionGlobal(function, ac->Word(3));
-        const Type* base_ptr_type = type_manager_.FindTypeById(ptr->Word(1));
+        const Type* base_ptr_type = type_manager_.FindTypeGlobal(function, ac->Word(3));
 
         // Get the base pointer pointee type.
         ptr_elem_type = type_manager_.FindChildType(*base_ptr_type, 0);
 
         for (uint32_t i = 4; i < ac->Length(); ++i) {
             uint32_t idx_id = ac->Word(i);
-            auto idx_inst = FindInstructionGlobal(function, idx_id);
-            auto idx_type = type_manager_.FindTypeById(idx_inst->Word(1));
+            auto idx_type = type_manager_.FindTypeGlobal(function, idx_id);
             assert(idx_type->inst_.Opcode() == spv::OpTypeInt);
             // convert to u32 if needed
             if (idx_type->inst_.Word(2) != 32) {

@@ -17,6 +17,7 @@
 #include "../framework/buffer_helper.h"
 #include "../utils/math_utils.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "shader_helper.h"
 #include "shader_templates.h"
 
 void GpuAVDescriptorHeap::CreateResourceHeap(VkDeviceSize app_size) {
@@ -1504,6 +1505,417 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBCombinedImageSampler) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309", 2);
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBuffer) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    if ((heap_props.minResourceHeapReservedRange / heap_props.bufferDescriptorSize) >= 10000) {
+        GTEST_SKIP() << "reserved range is too large, access will not be OOB";
+    }
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride);
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_descriptor_heap : require
+        layout (descriptor_heap) buffer SSBO_0 {
+            uint data;
+        } heapBuffer[];
+
+        void main() {
+            // Something large enough to get pass the reserved range
+            heapBuffer[10000].data = 0;
+        }
+    )glsl";
+
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBufferOldGlsl) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    if ((heap_props.minResourceHeapReservedRange / heap_props.bufferDescriptorSize) >= 10000) {
+        GTEST_SKIP() << "reserved range is too large, access will not be OOB";
+    }
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride);
+
+    // Same shader above in ResourceOOBUntypedPointers, but using the old (still valid) GLSL output
+    const char* cs_source = R"asm(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpMemberName %SSBO_0 0 "data"
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %SSBO_0 Block
+               OpMemberDecorate %SSBO_0 0 Offset 0
+               OpDecorateId %_runtimearr_16 ArrayStrideIdEXT %17
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+        %int = OpTypeInt 32 1
+  %int_10000 = OpConstant %int 10000
+       %uint = OpTypeInt 32 0
+     %SSBO_0 = OpTypeStruct %uint
+      %int_0 = OpConstant %int 0
+     %uint_0 = OpConstant %uint 0
+%_ptr_StorageBuffer = OpTypeUntypedPointerKHR StorageBuffer
+         %16 = OpTypeBufferEXT StorageBuffer
+         %17 = OpConstantSizeOfEXT %int %16
+%_runtimearr_16 = OpTypeRuntimeArray %16
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %15 = OpUntypedAccessChainKHR %_ptr_UniformConstant %_runtimearr_16 %resource_heap %int_10000
+         %19 = OpBufferPointerEXT %_ptr_StorageBuffer %15
+         %20 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO_0 %19 %int_0
+               OpStore %20 %uint_0
+               OpReturn
+               OpFunctionEnd
+    )asm";
+
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBufferAtomics) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    if ((heap_props.minResourceHeapReservedRange / heap_props.bufferDescriptorSize) >= 10000) {
+        GTEST_SKIP() << "reserved range is too large, access will not be OOB";
+    }
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride);
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_descriptor_heap : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+
+        layout (descriptor_heap) buffer heap {
+            uint a;
+        } heapBuffer[];
+
+        void main() {
+            atomicStore(heapBuffer[10000].a, 0u, gl_ScopeDevice, 0, 0);
+        }
+    )glsl";
+
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+// TODO - See not in DescriptorHeapPass, need a way to return a "safe" null descriptor
+TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_ResourceOOBUntypedPointersStorageImage) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    if ((heap_props.minResourceHeapReservedRange / heap_props.imageDescriptorSize) >= 10000) {
+        GTEST_SKIP() << "reserved range is too large, access will not be OOB";
+    }
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride);
+
+    vkt::Buffer ssbo_buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_, static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    // Note - this looks the same in the "old" glslang code as well
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_descriptor_heap : require
+        layout(descriptor_heap, rgba8i) uniform iimage2D heapImages[];
+        layout(set = 0, binding = 0) buffer SSBO { ivec4 result; };
+        void main() {
+            ivec4 data = imageLoad(heapImages[10000], ivec2(0));
+            result = data;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersSampledImage) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    if ((heap_props.minResourceHeapReservedRange / heap_props.imageDescriptorSize) >= 10000) {
+        GTEST_SKIP() << "reserved range is too large, access will not be OOB";
+    }
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
+    CreateResourceHeap(resource_stride);
+    CreateSamplerHeap(sampler_stride);
+
+    vkt::Buffer ssbo_buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_, static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    // Note - this looks the same in the "old" glslang code as well
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_descriptor_heap : require
+        layout(descriptor_heap) uniform texture2D heapTextures[];
+        layout(descriptor_heap) uniform sampler heapSamplers[];
+        layout(set = 0, binding = 0) buffer SSBO { vec4 result; };
+        void main() {
+            vec4 data = texture(sampler2D(heapTextures[10000], heapSamplers[0]), vec2(0.5f));
+            result = data;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    BindSamplerHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBUntypedPointers) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    if ((heap_props.minSamplerHeapReservedRange / heap_props.samplerDescriptorSize) >= 10000) {
+        GTEST_SKIP() << "reserved range is too large, access will not be OOB";
+    }
+    const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
+    CreateResourceHeap(resource_stride);
+    CreateSamplerHeap(heap_props.samplerDescriptorSize);
+
+    // Note - this looks the same in the "old" glslang code as well
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_descriptor_heap : require
+        layout(descriptor_heap) uniform texture2D heapTextures[];
+        layout(descriptor_heap) uniform sampler heapSamplers[];
+        void main() {
+            vec4 data = texture(sampler2D(heapTextures[0], heapSamplers[10000]), vec2(0.5f));
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    BindSamplerHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersOffsetId) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 2);
+
+    vkt::Buffer buffer_0(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+
+    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_ + resource_stride, static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_range = buffer_0.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    // layout(storage_buffer) SSBO {
+    //     uint a;
+    // };
+    // layout(offset = buffer_size * 10000) heap {
+    //     SSBO runtime_buffer[];
+    // } heap_layout;
+    //
+    // heap_layout.runtime_buffer[0].a = 42;
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpDecorate %heap_layout Block
+               OpMemberDecorateIdEXT %heap_layout 0 OffsetIdEXT %crazy_offset
+               OpDecorateId %runtime_buffer ArrayStrideIdEXT %buf_size
+       %void = OpTypeVoid
+    %void_fn = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %int_0 = OpConstant %int 0
+    %uint_42 = OpConstant %uint 42
+    %int_10k = OpConstant %int 10000
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+        %SSBO = OpTypeStruct %uint
+%_ptr_StorageBuffer = OpTypeUntypedPointerKHR StorageBuffer
+
+%type_buffer = OpTypeBufferEXT StorageBuffer
+   %buf_size = OpConstantSizeOfEXT %int %type_buffer
+%crazy_offset = OpSpecConstantOp %int IMul %buf_size %int_10k
+%runtime_buffer = OpTypeRuntimeArray %type_buffer
+
+ %heap_layout = OpTypeStruct %runtime_buffer
+
+       %main = OpFunction %void None %void_fn
+          %5 = OpLabel
+
+%heap_index_0 = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap %int_0 %int_0
+  %buf_ptr_0 = OpBufferPointerEXT %_ptr_StorageBuffer %heap_index_0
+   %member_0 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_0 %int_0
+               OpStore %member_0 %uint_42
+
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

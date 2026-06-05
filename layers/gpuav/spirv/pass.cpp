@@ -227,7 +227,8 @@ uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_i
 
 const Instruction* Pass::GetDecoration(uint32_t id, spv::Decoration decoration) const {
     for (const auto& annotation : module_.annotations_) {
-        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == id &&
+        const uint32_t opcode = annotation->Opcode();
+        if ((opcode == spv::OpDecorate || opcode == spv::OpDecorateId) && annotation->Word(1) == id &&
             spv::Decoration(annotation->Word(2)) == decoration) {
             return annotation.get();
         }
@@ -237,24 +238,13 @@ const Instruction* Pass::GetDecoration(uint32_t id, spv::Decoration decoration) 
 
 const Instruction* Pass::GetMemberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration) const {
     for (const auto& annotation : module_.annotations_) {
-        if (annotation->Opcode() == spv::OpMemberDecorate && annotation->Word(1) == id && annotation->Word(2) == member_index &&
-            spv::Decoration(annotation->Word(3)) == decoration) {
+        const uint32_t opcode = annotation->Opcode();
+        if ((opcode == spv::OpMemberDecorate || opcode == spv::OpMemberDecorateIdEXT) && annotation->Word(1) == id &&
+            annotation->Word(2) == member_index && spv::Decoration(annotation->Word(3)) == decoration) {
             return annotation.get();
         }
     }
     return nullptr;
-}
-
-void Pass::GetDescriptorSetAndBinding(uint32_t variable_id, uint32_t& out_set, uint32_t& out_binding) const {
-    for (const auto& annotation : module_.annotations_) {
-        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable_id) {
-            if (annotation->Word(2) == spv::DecorationDescriptorSet) {
-                out_set = annotation->Word(3);
-            } else if (annotation->Word(2) == spv::DecorationBinding) {
-                out_binding = annotation->Word(3);
-            }
-        }
-    }
 }
 
 // In an ideal world, this would be baked into the Type class when we construct it. The core issue is OpTypeMatrix size can be
@@ -748,16 +738,7 @@ CooperativeMatrixAccess Pass::GetCooperativeMatrixAccess(const Instruction& inst
 // Generate code to convert integer id to 32bit, if needed.
 uint32_t Pass::ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const {
     // Find type doing the indexing into the access chain
-    const Type* type = nullptr;
-    const Constant* constant = type_manager_.FindConstantById(id);
-    if (constant) {
-        type = &constant->type_;
-    } else {
-        const Instruction* inst = block.function_->FindInstruction(id);
-        if (inst) {
-            type = type_manager_.FindTypeById(inst->TypeId());
-        }
-    }
+    const Type* type = type_manager_.FindTypeGlobal(*block.function_, id);
     if (!type) {
         return id;
     }
@@ -778,20 +759,12 @@ uint32_t Pass::ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_i
 }
 
 // Generate code to cast integer it to 32bit unsigned, if needed.
+// TODO - Have a fast path for int32 to uint32
 uint32_t Pass::CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const {
     // Convert value to 32-bit if necessary
     uint32_t int32_id = ConvertTo32(id, block, inst_it);
 
-    const Type* type = nullptr;
-    const Constant* constant = type_manager_.FindConstantById(int32_id);
-    if (constant) {
-        type = &constant->type_;
-    } else {
-        const Instruction* inst = block.function_->FindInstruction(int32_id);
-        if (inst) {
-            type = type_manager_.FindTypeById(inst->TypeId());
-        }
-    }
+    const Type* type = type_manager_.FindTypeGlobal(*block.function_, int32_id);
     if (!type) {
         return int32_id;
     }

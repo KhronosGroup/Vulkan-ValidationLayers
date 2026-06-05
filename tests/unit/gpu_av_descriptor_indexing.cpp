@@ -12,6 +12,7 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include <cstdint>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
@@ -3898,17 +3899,22 @@ TEST_F(NegativeGpuAVDescriptorIndexing, AtomicImageRuntimeArray) {
         #extension GL_KHR_memory_scope_semantics : enable
 
         layout(set = 0, binding = 0, R32ui) uniform uimage2D atomic_image_array[];
-
+        // Also a UniformConstant
+        layout(push_constant) uniform PC {
+            uint x;
+        };
         void main() {
-            uint y = imageAtomicLoad(atomic_image_array[1], ivec2(0), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsAcquire);
-            imageAtomicStore(atomic_image_array[1], ivec2(0), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
-            imageAtomicExchange(atomic_image_array[1], ivec2(0), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
+            ivec2 cord = ivec2(x, x);
+            uint y = imageAtomicLoad(atomic_image_array[1], cord, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsAcquire);
+            imageAtomicStore(atomic_image_array[1], cord, y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
+            imageAtomicExchange(atomic_image_array[1], cord, y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
         }
     )glsl";
 
+    VkPushConstantRange pc_range{VK_SHADER_STAGE_COMPUTE_BIT, 0, 4};
     OneOffDescriptorIndexingSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr,
                                                            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT}});
-    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {pc_range});
 
     descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL, 0);
     descriptor_set.UpdateDescriptorSets();
@@ -3919,6 +3925,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, AtomicImageRuntimeArray) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
+    uint32_t push_data = 0;
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 4, &push_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
@@ -3997,6 +4005,47 @@ TEST_F(NegativeGpuAVDescriptorIndexing, AtomicBufferRuntimeArray) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorIndexing, AtomicBufferOOB) {
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        layout(set = 0, binding = 0) buffer ssbo { uint x; } atomic_buffers[];
+        void main() {
+            uint index = atomic_buffers[0].x;
+            atomicStore(atomic_buffers[index].x, 1u, gl_ScopeDevice, 0, 0);
+        }
+    )glsl";
+
+    OneOffDescriptorIndexingSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr,
+                                                           VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT}});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    *((uint32_t*)storage_buffer.Memory().Map()) = 99;  // OOB!
+    descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

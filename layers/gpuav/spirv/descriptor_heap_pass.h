@@ -15,12 +15,15 @@
 #pragma once
 
 #include <stdint.h>
+#include "type_manager.h"
 #include "pass.h"
 
 struct VkDescriptorSetAndBindingMappingEXT;
 
 namespace gpuav {
 namespace spirv {
+
+struct DescriptorInterface;
 
 class DescriptorHeapPass : public Pass {
   public:
@@ -30,25 +33,10 @@ class DescriptorHeapPass : public Pass {
     void PrintDebugInfo() const final;
 
   private:
-    struct DescriptorMeta {
-        const Instruction* var_inst = nullptr;
-        uint32_t descriptor_set = 0;
-        uint32_t descriptor_binding = 0;
-        uint32_t descriptor_index_id = 0;
-    };
-
     struct InstructionMeta {
         const Instruction* target_instruction = nullptr;
 
-        DescriptorMeta resource;
-        DescriptorMeta sampler;
-
-        bool is_combined_image_sampler = false;
-
-        // Used to move OpSampledImage into block we access it
-        const Instruction* image_inst = nullptr;
-
-        bool HasSampler() const { return sampler.var_inst != nullptr || is_combined_image_sampler; }
+        AccessPath access_path;
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
@@ -57,7 +45,7 @@ class DescriptorHeapPass : public Pass {
                                                const VkDescriptorSetAndBindingMappingEXT& mapping,
                                                const uint32_t descriptor_index_id);
 
-    const VkDescriptorSetAndBindingMappingEXT* GetMapping(uint32_t descriptor_set, uint32_t descriptor_binding);
+    const VkDescriptorSetAndBindingMappingEXT* GetMapping(const DescriptorInterface& interface) const;
 
     // < original ID, new CopyObject ID >
     vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;
@@ -72,7 +60,8 @@ class DescriptorHeapPass : public Pass {
         MAPPING_PUSH_DATA = 5,
         MAPPING_PUSH_ADDRESS = 6,
         MAPPING_INDIRECT_ADDRESS = 7,
-        FUNC_COUNT = 8,
+        UNTYPED = 8,
+        FUNC_COUNT = 9,
     };
     uint32_t link_function_id_[FUNC_COUNT]{};
     uint32_t GetLinkFunctionId(const FunctionNames func_name);

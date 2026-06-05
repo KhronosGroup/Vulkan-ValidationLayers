@@ -14,6 +14,7 @@
  */
 
 #include "descriptor_class_texel_buffer_pass.h"
+#include "function_basic_block.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
@@ -38,8 +39,9 @@ DescriptorClassTexelBufferPass::DescriptorClassTexelBufferPass(Module& module) :
 uint32_t DescriptorClassTexelBufferPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
 void DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
-    assert(meta.access_chain_inst && meta.var_inst);
-    const Constant& set_constant = type_manager_.GetConstantUInt32(meta.descriptor_set);
+    assert(meta.access_chain_inst && meta.descriptor_var);
+    const DescriptorInterface& interface = meta.descriptor_var->interface_;
+    const Constant& set_constant = type_manager_.GetConstantUInt32(interface.set);
     const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
 
     const uint32_t opcode = meta.target_instruction->Opcode();
@@ -56,7 +58,7 @@ void DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, Instr
     const uint32_t descriptor_offset_id = CastToUint32(meta.target_instruction->Operand(1), block, inst_it);
 
     const auto& layout_lut = module_.interface_.instrumentation_dsl.set_index_to_bindings_layout_lut;
-    BindingLayout binding_layout = layout_lut[meta.descriptor_set][meta.descriptor_binding];
+    BindingLayout binding_layout = layout_lut[interface.set][interface.binding];
     const Constant& binding_layout_offset = type_manager_.GetConstantUInt32(binding_layout.start);
 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
@@ -74,6 +76,7 @@ void DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, Instr
     module_.need_log_error_ = true;
 }
 
+// TODO - use AccessPath
 bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
                                                              InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
@@ -110,41 +113,39 @@ bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& fun
         return false;  // TODO: Handle additional possibilities?
     }
 
-    meta.var_inst = function.FindInstruction(load_inst->Operand(0));
-    if (!meta.var_inst) {
+    const Instruction* var_inst = function.FindInstruction(load_inst->Operand(0));
+    if (!var_inst) {
         // can be a global variable
         const Variable* global_var = type_manager_.FindVariableById(load_inst->Operand(0));
-        meta.var_inst = global_var ? &global_var->inst_ : nullptr;
+        var_inst = global_var ? &global_var->inst_ : nullptr;
     }
-    if (!meta.var_inst || (!meta.var_inst->IsNonPtrAccessChain() && meta.var_inst->Opcode() != spv::OpVariable)) {
+    if (!var_inst || (!var_inst->IsNonPtrAccessChain() && var_inst->Opcode() != spv::OpVariable)) {
         return false;
     }
 
     // If OpVariable, access_chain_inst_ is never checked because it should be a direct image access
-    meta.access_chain_inst = meta.var_inst;
+    meta.access_chain_inst = var_inst;
 
-    if (meta.var_inst->IsNonPtrAccessChain()) {
-        meta.descriptor_index_id = meta.var_inst->Operand(1);
+    if (var_inst->IsNonPtrAccessChain()) {
+        meta.descriptor_index_id = var_inst->Operand(1);
 
-        if (meta.var_inst->Length() > 5) {
+        if (var_inst->Length() > 5) {
             module_.InternalError(Name(), "OpAccessChain has more than 1 indexes. 2D Texel Buffers not supported");
             return false;
         }
 
-        const Variable* variable = type_manager_.FindVariableById(meta.var_inst->Operand(0));
-        if (!variable) {
+        meta.descriptor_var = type_manager_.FindVariableById(var_inst->Operand(0));
+        if (!meta.descriptor_var) {
             module_.InternalError(Name(), "OpAccessChain base is not a variable");
             return false;
         }
-        meta.var_inst = &variable->inst_;
     } else {
         // There is no array of this descriptor, so we essentially have an array of 1
         meta.descriptor_index_id = type_manager_.GetConstantZeroUint32().Id();
+        meta.descriptor_var = type_manager_.FindVariableById(var_inst->ResultId());
     }
 
-    GetDescriptorSetAndBinding(meta.var_inst->ResultId(), meta.descriptor_set, meta.descriptor_binding);
-
-    if (meta.descriptor_set >= glsl::kDebugInputBindlessMaxDescSets) {
+    if (meta.descriptor_var->interface_.set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }

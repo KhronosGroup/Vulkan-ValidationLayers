@@ -72,7 +72,7 @@ bool MeshShading::RequiresInstrumentation(const Function& function, const Instru
         meta.function_id = SET_MESH_OUTPUT;
         return true;
     } else if (guard_all_task_payloads_ && (IsValueIn(opcode, {spv::OpLoad, spv::OpStore}) || AtomicOperation(opcode))) {
-        const AccessPath access_path = type_manager_.BuildAccessPath(function, inst);
+        const AccessPath access_path = type_manager_.BuildAccessPath(function, inst, true);
         if (!access_path.IsValid()) {
             return false;
         } else if (access_path.variable->StorageClass() != spv::StorageClassTaskPayloadWorkgroupEXT) {

@@ -177,3 +177,29 @@ bool inst_heap_mapping_push_address(const uint inst_offset, const uint push_addr
 bool inst_heap_mapping_indirect_address(const uint inst_offset, const uint push_offset, const uint address_offset) {
     return true; // Saving function offset space, but currently not used
 }
+
+// Untyped Pointers
+bool inst_heap_untyped(const uint inst_offset, const uint heap_offset, const uint address_stride, const uint desc_index, const bool is_sampler) {
+    uint error = 0;
+    uint param_0 = 0;
+
+    uint offset = heap_offset + (desc_index * address_stride);
+    BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
+    if (offset >= bound_heap_info.heap_size) {
+        error = kErrorSubCode_DescriptorHeap_HeapOOB;
+        param_0 = offset;
+    }
+
+    if (error != 0) {
+        error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
+                            desc_index,
+                            param_0,
+                            0
+                        );
+
+        return false;
+    }
+    return true;
+}

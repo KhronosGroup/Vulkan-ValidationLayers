@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "type_manager.h"
 #include "pass.h"
 
 namespace gpuav {
@@ -35,10 +36,8 @@ class PostProcessDescriptorIndexingPass : public Pass {
     // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later
     struct InstructionMeta {
         const Instruction* target_instruction = nullptr;
-        uint32_t descriptor_set = 0;
-        uint32_t descriptor_binding = 0;
-        uint32_t descriptor_index_id = 0;
-        uint32_t variable_id = 0;
+
+        AccessPath access_path;
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);

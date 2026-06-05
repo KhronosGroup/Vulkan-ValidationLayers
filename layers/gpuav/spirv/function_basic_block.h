@@ -120,7 +120,7 @@ struct Function {
     // A slower version of BasicBlock::CreateInstruction() that will search the entire function for |id| and then inject the
     // instruction after. Only to be used if you need to suddenly walk back to find an instruction, but normally instructions should
     // be added as you go forward only.
-    void CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, uint32_t id);
+    void CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, uint32_t id, InstructionIt* out_inst_it);
 
     // This is the uvec4 most consumers will need
     uint32_t stage_info_id_ = 0;

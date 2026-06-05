@@ -16,6 +16,7 @@
 #include "type_manager.h"
 #include <cstdint>
 #include <spirv/unified1/spirv.hpp>
+#include "containers/container_utils.h"
 #include "generated/spirv_grammar_helper.h"
 #include "module.h"
 
@@ -37,10 +38,41 @@ bool Type::operator==(Type const& other) const {
     return true;
 }
 
+DescriptorInterface Variable::FindDescriptorInterface(const Module& module, const Instruction& inst) {
+    DescriptorInterface descriptor;
+    // Only allowed descriptor storage classes
+    // https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-resources-storage-class-correspondence
+    if (IsValueIn(inst.StorageClass(), {
+                                           spv::StorageClassUniform,
+                                           spv::StorageClassUniformConstant,
+                                           spv::StorageClassStorageBuffer,
+                                           spv::StorageClassTileAttachmentQCOM,
+                                       })) {
+        const uint32_t variable_id = inst.ResultId();
+        for (const auto& annotation : module.annotations_) {
+            if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable_id) {
+                if (annotation->Word(2) == spv::DecorationDescriptorSet) {
+                    descriptor.set = annotation->Word(3);
+                } else if (annotation->Word(2) == spv::DecorationBinding) {
+                    descriptor.binding = annotation->Word(3);
+                } else if (annotation->Word(2) == spv::DecorationBuiltIn && annotation->Word(3) == spv::BuiltInResourceHeapEXT) {
+                    descriptor.is_resource_heap = true;
+                } else if (annotation->Word(2) == spv::DecorationBuiltIn && annotation->Word(3) == spv::BuiltInSamplerHeapEXT) {
+                    descriptor.is_sampler_heap = true;
+                }
+            }
+        }
+    }
+    return descriptor;
+}
+
 // return %A in:
 //   %B = OpTypePointer Input %A
 //   %C = OpVariable %B Input
-const Type* Variable::PointerType(TypeManager& type_manager_) const {
+const Type* Variable::PointerType(const TypeManager& type_manager_) const {
+    // If we are hitting kUntypedPointer, the logic need to get the type info either from the Base Type of the UntypedAccessChain or
+    // if it cares about the type, it can find it at the access type (example to help show how to getting the type
+    // https://godbolt.org/z/ejf1TGx8Y)
     assert(type_.spv_type_ == SpvType::kPointer || type_.spv_type_ == SpvType::kForwardPointer);
     uint32_t type_id = type_.inst_.Word(3);
     return type_manager_.FindTypeById(type_id);
@@ -161,26 +193,6 @@ const Type* TypeManager::FindTypeById(uint32_t id) const {
     return (type == id_to_type_.end()) ? nullptr : type->second.get();
 }
 
-// It is common to have things like
-//
-// %uint = OpTypeInt 32 0
-// %ptr_uint = OpTypePointer StorageBuffer %uint
-// %ac = OpAccessChain %ptr_uint %var %int_1
-//
-// Where you have %ptr_uint and want to know it is OpTypeInt
-// This function is like FindTypeById() but it will bypass the OpTypePointer for you (if it is there)
-// There is also a matching Variable::PointerType()
-const Type* TypeManager::FindValueTypeById(uint32_t id) const {
-    const Type* pointer_type = FindTypeById(id);
-    if (!pointer_type) {
-        return nullptr;
-    } else if (pointer_type->spv_type_ != SpvType::kPointer && pointer_type->spv_type_ != SpvType::kForwardPointer) {
-        return pointer_type;
-    } else {
-        return FindTypeById(pointer_type->inst_.Word(3));
-    }
-}
-
 const Type* TypeManager::FindFunctionType(const Instruction& inst) const {
     const uint32_t inst_length = inst.Length();
     for (const auto& type : function_types_) {
@@ -198,6 +210,23 @@ const Type* TypeManager::FindFunctionType(const Instruction& inst) const {
         if (found) {
             return type;
         }
+    }
+    return nullptr;
+}
+
+// ONLY USE IF NEEDED!
+// The goal of Function::FindInstruction is you should know the instruction is in the Function.
+// For walking the indexes of an access chain in this pass, we want a global lookup
+// This manily happens because the value of the index could be both a OpConstant value or loaded in the function.
+const Type* TypeManager::FindTypeGlobal(const Function& function, uint32_t id) const {
+    if (auto ret = function.FindInstruction(id)) {
+        return FindTypeById(ret->TypeId());
+    }
+    if (auto ret = module_.type_manager_.FindConstantById(id)) {
+        return &ret->type_;
+    }
+    if (auto ret = module_.type_manager_.FindVariableById(id)) {
+        return &ret->type_;
     }
     return nullptr;
 }
@@ -736,32 +765,208 @@ const Constant& TypeManager::GetConstantNull(const Type& type) {
     return AddConstant(std::move(new_inst), type);
 }
 
-const AccessPath TypeManager::BuildAccessPath(const Function& function, const Instruction& inst) const {
+static bool IsAccessInstruction(const Instruction& inst) {
+    const spv::Op opcode = (spv::Op)inst.Opcode();
+    if (IsValueIn(opcode, {spv::OpLoad, spv::OpStore, spv::OpCooperativeMatrixLoadKHR, spv::OpCooperativeMatrixStoreKHR})) {
+        return true;
+    } else if (IsValueIn(opcode, {spv::OpImageTexelPointer, spv::OpImage})) {
+        // OpImageTexelPointer is for image atomics handled at the atomic instruction
+        // OpImage is describing an action, rather than the input to or the output from an action.
+        return false;
+    } else if (AtomicOperation(opcode)) {
+        return true;  // any atomic
+    } else if (OpcodeImageAccessPosition(opcode) != 0) {
+        return true;  // image access
+    }
+
+    return false;
+}
+
+// |ignore_image_sampler_skip| used for passes that don't care about safe_mode that want to ignore until we fix support
+const AccessPath TypeManager::BuildAccessPath(const Function& function, const Instruction& inst, bool ignore_image_sampler_skip) {
     AccessPath path;
 
-    // |Operand 0| works for both Store/Load
-    const uint32_t ptr_id = inst.Operand(0);
+    if (!IsAccessInstruction(inst)) {
+        return path;
+    }
+
+    const spv::Op opcode = (spv::Op)inst.Opcode();
+    path.access_type = FindTypeById(inst.TypeId());
+    // if it is a store, then we need to look a the type it loading
+    if (!path.access_type) {
+        if (opcode == spv::OpStore || opcode == spv::OpCooperativeMatrixStoreKHR) {
+            path.access_type = FindTypeGlobal(function, inst.Operand(1));  // object id
+        } else if (opcode == spv::OpImageWrite) {
+            path.access_type = FindTypeGlobal(function, inst.Operand(2));  // texel id
+        } else if (opcode == spv::OpAtomicStore) {
+            path.access_type = FindTypeGlobal(function, inst.Operand(3));  // value id
+        } else {
+            assert(false);  // not being handled
+        }
+    }
+    assert(path.access_type);
+
+    const bool image_sampler_access = path.access_type->spv_type_ == SpvType::kImage ||
+                                      path.access_type->spv_type_ == SpvType::kSampledImage ||
+                                      path.access_type->spv_type_ == SpvType::kSampler;
+
+    // This is just loading the image handle, this alone is the not the access.
+    // There will be an access (OpImageWrite, OpImageSampleImplicitLod, etc) later which has the real access information
+    if (opcode == spv::OpLoad && image_sampler_access) {
+        return path;
+    }
+
+    // TODO - Need to add Storage Image support (https://gitlab.khronos.org/vulkan/vulkan/-/issues/3977)
+    // TODO - we currently don't handle storage image/sampled/samplers in safe mode as we put a OpConstantNull in the OpPhi which
+    // doesn't make sense as it needs to be a OpTypeImage. The way around this will be having a null descriptor ready and point
+    // there in the case it is wrong
+    if (!ignore_image_sampler_skip && module_.settings_.safe_mode && image_sampler_access) {
+        return path;
+    }
+
+    const Instruction* sampler_load_inst = nullptr;
+    uint32_t ptr_id = OpcodeImageAccessPosition(opcode);
+    // Basically there are 2 flows, images and non-images
+    const bool image_access = ptr_id != 0;
+    if (image_access) {
+        path.image_load_inst = function.FindInstruction(inst.Word(ptr_id));
+        const Instruction* load_inst = path.image_load_inst;
+        uint32_t load_operand = 0;
+        while (load_inst && (load_inst->Opcode() == spv::OpSampledImage || load_inst->Opcode() == spv::OpImage ||
+                             load_inst->Opcode() == spv::OpCopyObject)) {
+            if (load_inst->Opcode() == spv::OpSampledImage) {
+                sampler_load_inst = function.FindInstruction(load_inst->Operand(1));
+            }
+
+            load_operand = load_inst->Operand(0);
+            load_inst = function.FindInstruction(load_operand);
+        }
+
+        // Note - we never "store" an image, we only load its handle and store the "texel" data
+        if (!load_inst || load_inst->Opcode() != spv::OpLoad) {
+            // TODO - should be able to remove this check, its invalid SPIR-V
+            // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7753
+            assert(IsUndef(load_operand));
+            return path;
+        }
+
+        path.is_combined_image_sampler = sampler_load_inst == nullptr && ImageSampleOperation(opcode);
+
+        // From here the load should look like a non-image access
+        ptr_id = load_inst->Operand(0);
+    } else {
+        // |Operand 0| works for both Store/Load
+        ptr_id = inst.Operand(0);
+    }
 
     // Buffer/Image Descriptor will always have an access chains, but some cases can have direct access.
     // TaskPayload can be a scalar that does a direct variable access
     // An non-array AccelerationStructure (which uses UniformConstant storage class)
     path.variable = FindVariableById(ptr_id);
-    if (path.variable) {
+    const Instruction* next_access_chain = nullptr;
+    if (!path.variable) {
+        next_access_chain = function.FindInstruction(ptr_id);
+
+        // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
+        while (next_access_chain && next_access_chain->IsNonPtrAccessChain()) {
+            // inserting in front allows us to walk over the loop from the front
+            path.ac_list.insert(path.ac_list.begin(), next_access_chain);
+
+            const uint32_t base_operand = next_access_chain->IsUntypedAccessChain() ? 1 : 0;
+            const uint32_t access_chain_base_id = next_access_chain->Operand(base_operand);
+            path.variable = FindVariableById(access_chain_base_id);
+            if (path.variable) {
+                break;  // found
+            }
+            next_access_chain = function.FindInstruction(access_chain_base_id);
+        }
+
+        if (next_access_chain->Opcode() == spv::OpBufferPointerEXT) {
+            const uint32_t buffer_pointer_id = next_access_chain->Operand(0);
+            // For now assume this is a 1D array into the descriptor array
+            // https://gitlab.khronos.org/spirv/SPIR-V/-/issues/942
+            next_access_chain = function.FindInstruction(buffer_pointer_id);
+            assert(next_access_chain->Opcode() == spv::OpUntypedAccessChainKHR);
+            path.ac_list.insert(path.ac_list.begin(), next_access_chain);
+            const uint32_t untyped_variable_id = next_access_chain->Operand(1);
+            path.variable = FindVariableById(untyped_variable_id);
+        } else if (next_access_chain->Opcode() == spv::OpImageTexelPointer) {
+            // Storage Images (and image atomics)
+            const Instruction* access_chain_inst = function.FindInstruction(next_access_chain->Operand(0));
+            if (access_chain_inst && access_chain_inst->IsNonPtrAccessChain()) {
+                next_access_chain = access_chain_inst;
+                path.ac_list.insert(path.ac_list.begin(), next_access_chain);
+                path.variable = FindVariableById(access_chain_inst->Operand(0));
+            } else {
+                // if no array, will point right to a variable
+                path.variable = FindVariableById(next_access_chain->Operand(0));
+            }
+        }
+    }
+
+    if (!path.variable) {
+        // Two know spots this occur is Function Variables and PhysicalStorageBuffer access
+        assert((next_access_chain->Opcode() == spv::OpVariable && next_access_chain->StorageClass() == spv::StorageClassFunction) ||
+               FindTypeById(next_access_chain->TypeId())->spv_type_ == SpvType::kPointer);
+        return path;  // not a valid access path
+    }
+
+    // Welcome to SPV_KHR_untyped_pointers soldier!
+    // Untyped we get the pointer type from the last access chain
+    // But typed, the OpVariable had it
+    if (next_access_chain && next_access_chain->IsUntypedAccessChain()) {
+        const uint32_t pointer_type_id = next_access_chain->Operand(0);
+        path.pointer_type = FindTypeById(pointer_type_id);
+    } else {
+        path.pointer_type = path.variable->PointerType(*this);
+    }
+    assert(path.pointer_type);
+
+    // Everything else is just for descriptor variable access
+    if (!path.variable->IsDescriptor()) {
         return path;
     }
 
-    const Instruction* next_access_chain = function.FindInstruction(ptr_id);
-    // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
-    while (next_access_chain && next_access_chain->IsNonPtrAccessChain()) {
-        // inserting in front allows us to walk over the loop from the front
-        path.ac_list.insert(path.ac_list.begin(), next_access_chain);
+    if (path.pointer_type->IsArray()) {
+        assert(next_access_chain);  // no way to have an array otherwise
+        const uint32_t index_0_operand = next_access_chain->IsUntypedAccessChain() ? 2 : 1;
+        path.descriptor_index_id = next_access_chain->Operand(index_0_operand);
+    } else {
+        // There is no array of this descriptor, so we essentially have an array of 1
+        path.descriptor_index_id = GetConstantZeroUint32().Id();
 
-        const uint32_t access_chain_base_id = next_access_chain->Operand(0);
-        path.variable = FindVariableById(access_chain_base_id);
-        if (path.variable) {
-            break;  // found
+        // Hack for Offset in Heaps until get better understanding
+        if (path.variable->interface_.IsHeap() && path.pointer_type->spv_type_ == SpvType::kStruct) {
+            assert(next_access_chain->IsUntypedAccessChain() && next_access_chain->Length() == 7);
+            // https://godbolt.org/z/hWz84zdTW - this is required to be a constant
+            const Constant* struct_member_index_constant = FindConstantById(next_access_chain->Operand(2));
+            assert(struct_member_index_constant);
+            path.heap_offset_member_index = struct_member_index_constant->GetValueUint32();
+            path.descriptor_index_id = next_access_chain->Operand(3);
         }
-        next_access_chain = function.FindInstruction(access_chain_base_id);
+    }
+
+    // When using a SAMPLED_IMAGE and SAMPLER, they are accessed together so we need check for 2 descriptors
+    if (sampler_load_inst) {
+        assert(sampler_load_inst->Opcode() == spv::OpLoad);
+
+        ptr_id = sampler_load_inst->Operand(0);
+        path.sampler_variable = FindVariableById(ptr_id);
+        if (path.sampler_variable) {
+            path.sampler_descriptor_index_id = GetConstantZeroUint32().Id();
+        } else {
+            // descriptor array
+            // this is a lazy way to assume the sampler is can only be 1D and a single access chain away
+            next_access_chain = function.FindInstruction(ptr_id);
+            assert(next_access_chain->IsNonPtrAccessChain());
+
+            const uint32_t base_operand = next_access_chain->IsUntypedAccessChain() ? 1 : 0;
+            const uint32_t access_chain_base_id = next_access_chain->Operand(base_operand);
+            path.sampler_variable = FindVariableById(access_chain_base_id);
+
+            const uint32_t index_0_operand = base_operand + 1;
+            path.sampler_descriptor_index_id = next_access_chain->Operand(index_0_operand);
+        }
     }
 
     return path;
@@ -770,7 +975,7 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
 const Variable& TypeManager::AddVariable(std::unique_ptr<Instruction> new_inst, const Type& type) {
     const auto& inst = module_.types_values_constants_.emplace_back(std::move(new_inst));
 
-    id_to_variable_[inst->ResultId()] = std::make_unique<Variable>(type, *inst);
+    id_to_variable_[inst->ResultId()] = std::make_unique<Variable>(module_, type, *inst);
     const Variable* new_variable = id_to_variable_[inst->ResultId()].get();
 
     if (new_variable->StorageClass() == spv::StorageClassInput) {
@@ -788,6 +993,8 @@ const Variable& TypeManager::AddVariable(std::unique_ptr<Instruction> new_inst, 
     return *new_variable;
 }
 
+// Note - this does not include Function variables and will not find them
+// currently no need to track them for any GPU-AV checks
 const Variable* TypeManager::FindVariableById(uint32_t id) const {
     auto variable = id_to_variable_.find(id);
     return (variable == id_to_variable_.end()) ? nullptr : variable->second.get();

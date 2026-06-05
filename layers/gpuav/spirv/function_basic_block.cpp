@@ -129,12 +129,15 @@ const Instruction* Function::FindInstruction(uint32_t id) const {
     return (it == inst_map_.end()) ? nullptr : it->second;
 }
 
-void Function::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, uint32_t id) {
+void Function::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, uint32_t id, InstructionIt* out_inst_it) {
     for (auto& block : blocks_) {
         for (auto inst_it = block->instructions_.begin(); inst_it != block->instructions_.end(); ++inst_it) {
             if ((*inst_it)->ResultId() == id) {
                 inst_it++;  // insert after
                 block->CreateInstruction(opcode, words, &inst_it);
+                if (out_inst_it) {
+                    *out_inst_it = inst_it;
+                }
                 return;
             }
         }

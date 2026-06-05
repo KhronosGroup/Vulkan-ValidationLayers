@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,12 @@ class DescriptorClassTexelBufferPass : public Pass {
     struct InstructionMeta {
         const Instruction* target_instruction = nullptr;
         const Instruction* access_chain_inst = nullptr;
-        const Instruction* var_inst = nullptr;
         const Instruction* image_inst = nullptr;
 
-        uint32_t descriptor_set = 0;
-        uint32_t descriptor_binding = 0;
-        uint32_t descriptor_index_id = 0;  // index input the descriptor array
+        const Variable* descriptor_var = nullptr;
+
+        // This is the ID of the uint that indexes in the array (or constant zero if no array)
+        uint32_t descriptor_index_id = 0;
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);

@@ -15,10 +15,10 @@
 
 #include "post_process_descriptor_indexing_pass.h"
 
-#include "containers/container_utils.h"
 #include "module.h"
 #include "generated/gpuav_offline_spirv.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "type_manager.h"
 #include "utils/hash_util.h"
 
 #include <iostream>
@@ -40,14 +40,15 @@ PostProcessDescriptorIndexingPass::PostProcessDescriptorIndexingPass(Module& mod
 uint32_t PostProcessDescriptorIndexingPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
 void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
-    const Constant& set_constant = type_manager_.GetConstantUInt32(meta.descriptor_set);
-    const Constant& binding_constant = type_manager_.GetConstantUInt32(meta.descriptor_binding);
-    const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
+    const DescriptorInterface& interface = meta.access_path.variable->interface_;
+    const Constant& set_constant = type_manager_.GetConstantUInt32(interface.set);
+    const Constant& binding_constant = type_manager_.GetConstantUInt32(interface.binding);
+    const uint32_t descriptor_index_id = CastToUint32(meta.access_path.descriptor_index_id, block, inst_it);  // might be int32
 
     const auto& layout_lut = module_.interface_.instrumentation_dsl.set_index_to_bindings_layout_lut;
-    BindingLayout binding_layout = layout_lut[meta.descriptor_set][meta.descriptor_binding];
+    BindingLayout binding_layout = layout_lut[interface.set][interface.binding];
     const Constant& binding_layout_offset = type_manager_.GetConstantUInt32(binding_layout.start);
-    const Constant& variable_id_constant = type_manager_.GetConstantUInt32(meta.variable_id);
+    const Constant& variable_id_constant = type_manager_.GetConstantUInt32(meta.access_path.variable->Id());
 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
@@ -64,84 +65,12 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlock& block, In
 
 bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
                                                                 InstructionMeta& meta) {
-    const spv::Op opcode = (spv::Op)inst.Opcode();
-
-    const Instruction* var_inst = nullptr;
-    if (IsValueIn(opcode, {spv::OpLoad, spv::OpStore, spv::OpCooperativeMatrixLoadKHR, spv::OpCooperativeMatrixStoreKHR})) {
-        const AccessPath access_path = type_manager_.BuildAccessPath(function, inst);
-        if (!access_path.IsValid()) {
-            return false;
-        }
-
-        var_inst = &access_path.variable->inst_;
-
-        const uint32_t storage_class = access_path.variable->StorageClass();
-        if (storage_class != spv::StorageClassUniform && storage_class != spv::StorageClassStorageBuffer) {
-            return false;
-        }
-
-        const Type* pointer_type = access_path.variable->PointerType(type_manager_);
-        if (pointer_type->IsArray()) {
-            meta.descriptor_index_id = access_path.DescriptorIndexId();
-        } else {
-            // There is no array of this descriptor, so we essentially have an array of 1
-            meta.descriptor_index_id = type_manager_.GetConstantZeroUint32().Id();
-        }
-
-    } else {
-        // Reference is not load or store, so if it isn't a image-based reference, move on
-        const uint32_t image_word = OpcodeImageAccessPosition(opcode);
-        if (image_word == 0) {
-            return false;
-        }
-        if (opcode == spv::OpImageTexelPointer || opcode == spv::OpImage) {
-            return false;  // need to test if we can support these
-        }
-
-        const Instruction* load_inst = function.FindInstruction(inst.Word(image_word));
-        while (load_inst && (load_inst->Opcode() == spv::OpSampledImage || load_inst->Opcode() == spv::OpImage ||
-                             load_inst->Opcode() == spv::OpCopyObject)) {
-            load_inst = function.FindInstruction(load_inst->Operand(0));
-        }
-        if (!load_inst || load_inst->Opcode() != spv::OpLoad) {
-            return false;  // TODO: Handle additional possibilities?
-        }
-
-        var_inst = function.FindInstruction(load_inst->Operand(0));
-        if (!var_inst) {
-            // can be a global variable
-            const Variable* global_var = type_manager_.FindVariableById(load_inst->Operand(0));
-            var_inst = global_var ? &global_var->inst_ : nullptr;
-        }
-        if (!var_inst || (!var_inst->IsNonPtrAccessChain() && var_inst->Opcode() != spv::OpVariable)) {
-            return false;
-        }
-
-        if (var_inst->IsNonPtrAccessChain()) {
-            meta.descriptor_index_id = var_inst->Operand(1);
-
-            if (var_inst->Length() > 5) {
-                module_.InternalError(Name(), "OpAccessChain has more than 1 indexes");
-                return false;
-            }
-
-            const Variable* variable = type_manager_.FindVariableById(var_inst->Operand(0));
-            if (!variable) {
-                module_.InternalError(Name(), "OpAccessChain base is not a variable");
-                return false;
-            }
-            var_inst = &variable->inst_;
-        } else {
-            meta.descriptor_index_id = type_manager_.GetConstantZeroUint32().Id();
-        }
+    meta.access_path = type_manager_.BuildAccessPath(function, inst, true);
+    if (!meta.access_path.IsValid() || !meta.access_path.variable->IsDescriptor()) {
+        return false;
     }
 
-    assert(var_inst);
-    meta.variable_id = var_inst->ResultId();
-
-    GetDescriptorSetAndBinding(meta.variable_id, meta.descriptor_set, meta.descriptor_binding);
-
-    if (meta.descriptor_set >= glsl::kDebugInputBindlessMaxDescSets) {
+    if (meta.access_path.variable->interface_.set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }
@@ -185,10 +114,12 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
                     continue;
                 }
 
-                const uint32_t hash_descriptor_index_id =
-                    pc_access.next_alias_id == meta.descriptor_index_id ? pc_access.descriptor_index_id : meta.descriptor_index_id;
-                uint32_t hash_content[4] = {meta.descriptor_set, meta.descriptor_binding, hash_descriptor_index_id,
-                                            meta.variable_id};
+                const uint32_t hash_descriptor_index_id = pc_access.next_alias_id == meta.access_path.descriptor_index_id
+                                                              ? pc_access.descriptor_index_id
+                                                              : meta.access_path.descriptor_index_id;
+                uint32_t hash_content[4] = {meta.access_path.variable->interface_.set,
+                                            meta.access_path.variable->interface_.binding, hash_descriptor_index_id,
+                                            meta.access_path.variable->Id()};
                 const uint32_t hash = hash_util::Hash32(hash_content, sizeof(uint32_t) * 4);
                 if (function_duplicate_tracker.FindAndUpdate(block_duplicate_tracker, hash)) {
                     continue;  // duplicate detected
