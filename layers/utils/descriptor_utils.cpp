@@ -18,10 +18,16 @@
  */
 
 #include "utils/descriptor_utils.h"
+#include <vulkan/vulkan_core.h>
 
+#include "containers/container_utils.h"
+#include "generated/dispatch_functions.h"
 #include "generated/spirv_grammar_helper.h"
+#include "generated/vk_extension_helper.h"
 #include "state_tracker/shader_module.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <string>
 
@@ -247,4 +253,56 @@ std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_ty
     }
 
     return "[UNKNOWN]";
+}
+
+void CachedDescriptorSize::Init(VkPhysicalDevice gpu, const DeviceExtensions& extensions) {
+    size_[0] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLER);
+    size_[2] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    size_[3] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    size_[4] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
+    size_[5] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
+    size_[6] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    size_[7] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    size_[10] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+    if (IsExtEnabled(extensions.vk_khr_acceleration_structure)) {
+        size_[1] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
+    }
+    if (IsExtEnabled(extensions.vk_nv_ray_tracing)) {
+        size_[8] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
+    }
+    if (IsExtEnabled(extensions.vk_nv_partitioned_acceleration_structure)) {
+        size_[9] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
+    }
+    if (IsExtEnabled(extensions.vk_arm_tensors)) {
+        size_[11] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_TENSOR_ARM);
+    }
+    if (IsExtEnabled(extensions.vk_qcom_image_processing)) {
+        size_[12] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM);
+        size_[13] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM);
+    }
+}
+
+VkDeviceSize CachedDescriptorSize::GetSize(VkDescriptorType type) const {
+    if (type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+        // takes VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER value at index 1
+        return size_[1];
+    } else if (type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
+        // takes VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC value at index 8
+        return size_[8];
+    } else if (type == VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV) {
+        // takes VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC value at index 9
+        return size_[9];
+    } else if (type == VK_DESCRIPTOR_TYPE_TENSOR_ARM) {
+        return size_[11];
+    } else if (type == VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM) {
+        return size_[12];
+    } else if (type == VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM) {
+        return size_[13];
+    }
+    assert(IsValueIn(
+        type, {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+               VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+               VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT}));
+    uint32_t index = (uint32_t)type;
+    return size_[index];
 }

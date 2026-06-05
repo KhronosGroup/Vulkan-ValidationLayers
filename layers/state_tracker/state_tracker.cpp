@@ -1264,6 +1264,10 @@ void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const
         }
     }
 
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        cached_descriptor_size.Init(physical_device, extensions);
+    }
+
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     android_external_format_resolve_null_color_attachment_prop =
         phys_dev_ext_props.android_format_resolve_props.nullColorAttachmentWithExternalFormatResolve;

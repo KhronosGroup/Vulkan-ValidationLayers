@@ -71,3 +71,17 @@ bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
                                 const spirv::ResourceInterfaceVariable& resource_variable);
 std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_type,
                                          const spirv::ResourceInterfaceVariable& resource_variable);
+
+// Way to cache vkGetPhysicalDeviceDescriptorSizeEXT as a flat array
+// This is a very quick way to use the VkDescriptorType enum and knowledge of the limited VkDescriptorType allowed to make this fast
+// and not making it impossible to update if a new VkDescriptorType is added later
+struct DeviceExtensions;
+struct CachedDescriptorSize {
+    void Init(VkPhysicalDevice gpu, const DeviceExtensions& extensions);
+    VkDeviceSize GetSize(VkDescriptorType type) const;
+
+  private:
+    // The number of valid descriptors that can be queried is known in the spec
+    // (see VU 11362)
+    VkDeviceSize size_[14];
+};
