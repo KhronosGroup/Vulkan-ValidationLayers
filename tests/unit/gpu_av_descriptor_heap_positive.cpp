@@ -520,3 +520,48 @@ TEST_F(PositiveGpuAVDescriptorHeap, ForceNullDescriptor) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveGpuAVDescriptorHeap, CombinedAndSeparateImageSampler) {
+    TEST_DESCRIPTION("Just need to test compiler pass with these two sampler usages");
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
+    const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
+    const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
+
+    VkDescriptorSetAndBindingMappingEXT mappings[3];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)resource_stride;
+    mappings[0].sourceData.constantOffset.heapArrayStride = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)sampler_stride;
+    mappings[1].sourceData.constantOffset.heapArrayStride = 0;
+    mappings[2] = MakeSetAndBindingMapping(0, 2);
+    mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[2].sourceData.constantOffset.heapOffset = (uint32_t)resource_stride * 2;
+    mappings[2].sourceData.constantOffset.samplerHeapOffset = (uint32_t)sampler_stride * 2;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 3;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform texture2D t;
+        layout(set = 0, binding = 1) uniform sampler s;
+        layout(set = 0, binding = 2) uniform sampler2D c;
+
+        void main() {
+            vec4 a = texture(sampler2D(t, s), vec2(0));
+            vec4 b = texture(c, vec2(0.5f));
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    CreateComputePipelineHelper pipe_image(*this, &pipeline_create_flags_2_create_info);
+    pipe_image.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe_image.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe_image.CreateComputePipeline(false);
+}
