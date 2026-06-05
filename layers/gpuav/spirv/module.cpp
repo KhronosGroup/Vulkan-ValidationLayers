@@ -16,6 +16,7 @@
 #include "module.h"
 #include <cassert>
 #include <spirv/unified1/spirv.hpp>
+#include "containers/container_utils.h"
 #include "containers/custom_containers.h"
 #include "containers/limits.h"
 #include "function_basic_block.h"
@@ -115,6 +116,7 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
                 types_values_constants_.emplace_back(std::move(new_inst));
                 break;
             case spv::OpMemberDecorate:
+            case spv::OpMemberDecorateIdEXT:
             case spv::OpDecorationGroup:
             case spv::OpGroupDecorate:
             case spv::OpGroupMemberDecorate:
@@ -155,7 +157,8 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
             case spv::OpSpecConstantComposite:
             case spv::OpConstant:
             case spv::OpConstantNull:
-            case spv::OpConstantComposite: {
+            case spv::OpConstantComposite:
+            case spv::OpConstantSizeOfEXT: {
                 const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
                 if (opcode == spv::OpSpecConstant || opcode == spv::OpSpecConstantComposite) {
                     SetSpecConstantValue(new_inst.get(), *type, id_to_spec_id);
@@ -163,7 +166,8 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
                 type_manager_.AddConstant(std::move(new_inst), *type);
                 break;
             }
-            case spv::OpVariable: {
+            case spv::OpVariable:
+            case spv::OpUntypedVariableKHR: {
                 const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
                 const Variable& new_var = type_manager_.AddVariable(std::move(new_inst), *type);
 
@@ -171,8 +175,9 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
                 spv::StorageClass storage_class = new_var.StorageClass();
                 // These are the only storage classes that interface with a descriptor
                 // see vkspec.html#interfaces-resources-descset
-                if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
-                    storage_class == spv::StorageClassStorageBuffer) {
+                if (opcode == spv::OpVariable &&
+                    IsValueIn(storage_class,
+                              {spv::StorageClassUniform, spv::StorageClassUniformConstant, spv::StorageClassStorageBuffer})) {
                     const Type* ptr_type = new_var.PointerType(type_manager_);
                     // The shader will also have OpCapability RuntimeDescriptorArray
                     if (ptr_type->spv_type_ == SpvType::kRuntimeArray) {
@@ -181,11 +186,6 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
                     }
                 }
 
-                break;
-            }
-            case spv::OpUntypedVariableKHR: {
-                type_manager_.AddUntypedVariable(new_inst->ResultId());
-                types_values_constants_.emplace_back(std::move(new_inst));
                 break;
             }
             case spv::OpSpecConstantOp: {

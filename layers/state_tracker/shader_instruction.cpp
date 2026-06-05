@@ -196,13 +196,20 @@ bool Instruction::IsVector() const { return (Opcode() == spv::OpTypeVector || Op
 
 bool Instruction::IsNonPtrAccessChain() const {
     const uint32_t opcode = Opcode();
-    return opcode == spv::OpAccessChain || opcode == spv::OpInBoundsAccessChain;
+    return opcode == spv::OpAccessChain || opcode == spv::OpInBoundsAccessChain || opcode == spv::OpUntypedAccessChainKHR ||
+           opcode == spv::OpUntypedInBoundsAccessChainKHR;
 }
 
 bool Instruction::IsAccessChain() const {
     const uint32_t opcode = Opcode();
-    return opcode == spv::OpAccessChain || opcode == spv::OpPtrAccessChain || opcode == spv::OpInBoundsAccessChain ||
-           opcode == spv::OpInBoundsPtrAccessChain;
+    return IsNonPtrAccessChain() || opcode == spv::OpPtrAccessChain || opcode == spv::OpInBoundsPtrAccessChain ||
+           opcode == spv::OpUntypedPtrAccessChainKHR || opcode == spv::OpUntypedInBoundsPtrAccessChainKHR;
+}
+
+bool Instruction::IsUntypedAccessChain() const {
+    const uint32_t opcode = Opcode();
+    return opcode == spv::OpUntypedAccessChainKHR || opcode == spv::OpUntypedInBoundsAccessChainKHR ||
+           opcode == spv::OpUntypedPtrAccessChainKHR || opcode == spv::OpUntypedInBoundsPtrAccessChainKHR;
 }
 
 bool Instruction::IsTensor() const { return (Opcode() == spv::OpTypeTensorARM); }
@@ -577,6 +584,10 @@ ImageInstruction::ImageInstruction(const uint32_t* words) {
         case spv::OpImageQueryLod:
         case spv::OpFragmentFetchAMD:
         case spv::OpFragmentMaskFetchAMD:
+        // Image atomics can only be accessed with these 3 atomics
+        case spv::OpAtomicLoad:
+        case spv::OpAtomicStore:
+        case spv::OpAtomicExchange:
             break;
 
         case spv::OpImageSparseTexelsResident:

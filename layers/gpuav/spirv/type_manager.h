@@ -18,6 +18,7 @@
 #include <vector>
 #include <memory>
 #include "containers/custom_containers.h"
+#include "containers/limits.h"
 #include "state_tracker/shader_instruction.h"
 #include "generated/spirv_grammar_helper.h"
 
@@ -121,26 +122,59 @@ struct Constant {
     const bool is_spec_constant_;
 };
 
+struct DescriptorInterface {
+    // Set/Binding for decorations
+    uint32_t set = vvl::kNoIndex32;
+    uint32_t binding = vvl::kNoIndex32;
+
+    // For SPV_EXT_descriptor_heap
+    bool is_resource_heap = false;
+    bool is_sampler_heap = false;
+    bool IsHeap() const { return is_resource_heap || is_sampler_heap; }
+};
+
 // Represents a global OpVariable found before the first function
 struct Variable {
-    Variable(const Type& type, const Instruction& inst) : type_(type), inst_(inst) {}
+    Variable(const Module& module, const Type& type, const Instruction& inst)
+        : type_(type), inst_(inst), interface_(FindDescriptorInterface(module, inst)) {}
 
     uint32_t Id() const { return inst_.ResultId(); }
-    spv::StorageClass StorageClass() const { return spv::StorageClass(inst_.Word(3)); }
-    const Type* PointerType(TypeManager& type_manager_) const;
+    spv::StorageClass StorageClass() const { return inst_.StorageClass(); }
+    const Type* PointerType(const TypeManager& type_manager_) const;
 
     const Type& type_;
     const Instruction& inst_;
+
+    const DescriptorInterface interface_;
+
+    // Help used to know if you have a PushConstant, Input/Output, etc instead
+    bool IsDescriptor() const {
+        return interface_.IsHeap() || (interface_.set != vvl::kNoIndex32 && interface_.binding != vvl::kNoIndex32);
+    }
+
+  protected:
+    static DescriptorInterface FindDescriptorInterface(const Module& module, const Instruction& inst);
 };
 
 // We often want to walk the SSA from an "access" (load, store, atomic, etc) to the Variable it is referencing. There can be a
 // single OpAccessChain or multiple, and this struct holds this information.
 // Background info: https://github.com/KhronosGroup/SPIRV-Guide/blob/main/chapters/access_chains.md
+//
+// Note - currently this is very heavily leaned towards use of descriptors, but will work for any variable type
 struct AccessPath {
+    // The type of the access itself (what type it will store or load)
+    const Type* access_type = nullptr;
+
+    // This the %ptr_type in
+    //   %ptr_type = OpTypeArray
+    //   %ptr = OpTypePointer StorageBuffer %ptr_type
+    //   %var = OpVariable %ptr StorageBuffer
+    const Type* pointer_type = nullptr;
+
     // The variable at the end of the access chain
     const Variable* variable = nullptr;
 
-    bool IsValid() const { return variable != nullptr; }
+    bool IsValid() const { return access_type != nullptr && pointer_type != nullptr && variable != nullptr; }
 
     // List of OpAccessChains from the variable to the "access"
     // - The front() will be closest to the OpVariable
@@ -150,10 +184,26 @@ struct AccessPath {
     // Note: GLSL will try to always create a single large OpAccessChain
     std::vector<const Instruction*> ac_list;
 
-    // When dealing with an array of descriptors, the access closest to the variable will have it
-    uint32_t DescriptorIndexId() const { return ac_list.front()->Operand(1); }
+    //
+    // Descriptor variable access related info
+    //
 
-    uint32_t FinalAccessedType() const { return ac_list.back()->TypeId(); }
+    // Optional variable of seperate sampler descriptor (still null if combinedImageSampler)
+    const Variable* sampler_variable = nullptr;
+    bool is_combined_image_sampler = false;
+    bool HasSampler() const { return sampler_variable != nullptr || is_combined_image_sampler; }
+
+    // The OpLoad to access an image descriptor
+    const Instruction* image_load_inst = nullptr;
+
+    // Most access paths are used to get the descriptor variable.
+    // This is the ID of the uint that indexes in the array (or constant zero if no array)
+    uint32_t descriptor_index_id = 0;
+    // Optional index if there is a seperate sampler as well
+    uint32_t sampler_descriptor_index_id = 0;
+
+    // TODO - Need to handle OffsetIdEXT correctly, this is a dumb hack
+    uint32_t heap_offset_member_index = 0;
 };
 
 // In charge of tracking all Types, Constants, and Variable in the module.
@@ -170,8 +220,8 @@ class TypeManager {
     const Type& AddType(std::unique_ptr<Instruction> new_inst, SpvType spv_type);
 
     const Type* FindTypeById(uint32_t id) const;
-    const Type* FindValueTypeById(uint32_t id) const;
     const Type* FindFunctionType(const Instruction& inst) const;
+    const Type* FindTypeGlobal(const Function& function, uint32_t id) const;
     // There shouldn't be a case where we need to query for a specific type, but then not add it if not found.
     const Type& GetTypeVoid();
     const Type& GetTypeBool();
@@ -215,7 +265,7 @@ class TypeManager {
     const Constant& GetConstantZeroVector(const Type& vector_type);
     const Constant& GetConstantNull(const Type& type);
 
-    const AccessPath BuildAccessPath(const Function& function, const Instruction& inst) const;
+    const AccessPath BuildAccessPath(const Function& function, const Instruction& inst, bool ignore_image_sampler_skip = false);
 
     const Variable& AddVariable(std::unique_ptr<Instruction> new_inst, const Type& type);
     const Variable* FindVariableById(uint32_t id) const;
@@ -230,9 +280,6 @@ class TypeManager {
     void AddUndef(std::unique_ptr<Instruction> new_inst);
     bool IsUndef(uint32_t id) const;
 
-    void AddUntypedVariable(uint32_t id) { untyped_variable_set_.insert(id); };
-    bool IsUntypedVariable(uint32_t id) const { return untyped_variable_set_.find(id) != untyped_variable_set_.end(); }
-
   private:
     Module& module_;
 
@@ -241,10 +288,6 @@ class TypeManager {
     vvl::unordered_map<uint32_t, std::unique_ptr<Type>> id_to_type_;
     vvl::unordered_map<uint32_t, std::unique_ptr<Constant>> id_to_constant_;
     vvl::unordered_map<uint32_t, std::unique_ptr<Variable>> id_to_variable_;
-
-    // Currently don't fully support untyped pointers, but to allow things not to break, start tracking them so when searching for
-    // Variable, we can assert if not found, it is an OpUntypedVariableKHR
-    vvl::unordered_set<uint32_t> untyped_variable_set_;
 
     // Create faster lookups for specific types
     // some types are base types and only will be one

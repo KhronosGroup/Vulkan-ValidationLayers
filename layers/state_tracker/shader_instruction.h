@@ -79,6 +79,7 @@ class Instruction {
     bool IsVector() const;
     bool IsNonPtrAccessChain() const;
     bool IsAccessChain() const;
+    bool IsUntypedAccessChain() const;
     // Helpers for OpTypeImage
     bool IsTensor() const;
     bool IsConstant() const;

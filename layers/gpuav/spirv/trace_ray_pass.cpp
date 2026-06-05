@@ -24,6 +24,7 @@
 #include <iostream>
 
 #include "generated/gpuav_offline_spirv.h"
+#include "type_manager.h"
 
 namespace gpuav {
 namespace spirv {
@@ -58,52 +59,26 @@ std::vector<uint32_t> TraceRayPass::GetTlasValidationFunctionCallInstructions(co
         return {};
     }
 
-    const AccessPath access_path = type_manager_.BuildAccessPath(function, *as_op_load_inst);
+    const AccessPath access_path = type_manager_.BuildAccessPath(function, *as_op_load_inst, true);
     if (!access_path.IsValid()) {
         return {};
     }
 
-    const Type* descriptor_type = access_path.variable->PointerType(type_manager_);
-    if (!descriptor_type || descriptor_type->spv_type_ == SpvType::kRuntimeArray) {
+    if (access_path.pointer_type->spv_type_ == SpvType::kRuntimeArray) {
         return {};  // TODO - Currently we mark these as "bindless"
     }
 
-    const bool is_descriptor_array = descriptor_type->IsArray();
-    if (is_descriptor_array && access_path.ac_list.empty()) {
-        return {};  // array descriptor without an access chain is invalid SPIR-V
-    }
-
-    uint32_t descriptor_index_id = 0;
-    if (is_descriptor_array) {
-        // Because you can't have 2D array of descriptors, the first index of the last accessChain is the descriptor index
-        descriptor_index_id = access_path.DescriptorIndexId();
-    } else {
-        // There is no array of this descriptor, so we essentially have an array of 1
-        descriptor_index_id = type_manager_.GetConstantZeroUint32().Id();
-    }
-
-    uint32_t descriptor_set = 0;
-    uint32_t descriptor_binding = 0;
-    for (const auto& annotation : module_.annotations_) {
-        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == access_path.variable->Id()) {
-            if (annotation->Word(2) == spv::DecorationDescriptorSet) {
-                descriptor_set = annotation->Word(3);
-            } else if (annotation->Word(2) == spv::DecorationBinding) {
-                descriptor_binding = annotation->Word(3);
-            }
-        }
-    }
-
-    if (descriptor_set >= glsl::kDebugInputBindlessMaxDescSets) {
+    const DescriptorInterface& interface = access_path.variable->interface_;
+    if (interface.set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return {};
     }
 
-    const Constant& desc_set_constant = type_manager_.GetConstantUInt32(descriptor_set);
-    const uint32_t desc_index_id = CastToUint32(descriptor_index_id, block, trace_ray_inst_it);  // might be int32
+    const Constant& desc_set_constant = type_manager_.GetConstantUInt32(interface.set);
+    const uint32_t desc_index_id = CastToUint32(access_path.descriptor_index_id, block, trace_ray_inst_it);  // might be int32
 
     const auto& layout_lut = module_.interface_.instrumentation_dsl.set_index_to_bindings_layout_lut;
-    BindingLayout binding_layout = layout_lut[descriptor_set][descriptor_binding];
+    BindingLayout binding_layout = layout_lut[interface.set][interface.binding];
     const Constant& binding_layout_offset = type_manager_.GetConstantUInt32(binding_layout.start);
 
     const uint32_t function_result = module_.TakeNextId();
