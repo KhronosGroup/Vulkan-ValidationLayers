@@ -306,7 +306,7 @@ bool Device::manual_PreCallValidateGetSwapchainTimeDomainPropertiesEXT(
     const bool time_domain_ids = pSwapchainTimeDomainProperties->pTimeDomainIds != nullptr;
     if (time_domains && time_domain_ids) {
         if (pSwapchainTimeDomainProperties->timeDomainCount == 0) {
-            skip |= LogError(" VUID-VkSwapchainTimeDomainPropertiesEXT-pTimeDomains-12371", swapchain, context.error_obj.location,
+            skip |= LogError("VUID-VkSwapchainTimeDomainPropertiesEXT-pTimeDomains-12371", swapchain, context.error_obj.location,
                              "pTimeDomains and pTimeDomainIds are not null, but timeDomainCount is 0.");
         }
     } else if (time_domains || time_domain_ids) {
