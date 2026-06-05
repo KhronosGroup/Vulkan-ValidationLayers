@@ -48,11 +48,14 @@ class DescriptorHeapPass : public Pass {
         // Used to move OpSampledImage into block we access it
         const Instruction* image_inst = nullptr;
 
-        bool HasSampler() const { return sampler.var_inst != nullptr; }
+        bool HasSampler() const { return sampler.var_inst != nullptr || is_combined_image_sampler; }
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta, bool is_sampler);
+    uint32_t CreateFunctionCallCombinedSampler(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
+                                               const VkDescriptorSetAndBindingMappingEXT& mapping,
+                                               const uint32_t descriptor_index_id);
 
     const VkDescriptorSetAndBindingMappingEXT* GetMapping(uint32_t descriptor_set, uint32_t descriptor_binding);
 

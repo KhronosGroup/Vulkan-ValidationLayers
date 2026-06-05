@@ -1438,8 +1438,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOB) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - not clear how CombineImageSampler math is suppose to work
-TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_SamplerOOBCombinedImageSampler) {
+TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBCombinedImageSampler) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
     const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;

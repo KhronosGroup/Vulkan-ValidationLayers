@@ -205,15 +205,93 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
 
     module_.need_log_error_ = true;
 
+    // If there is a sampler, we have another descriptor at this spot we need to validate
     if (!is_sampler && meta.HasSampler()) {
-        if (!module_.settings_.safe_mode) {
-            CreateFunctionCall(block, inst_it, meta, true);
+        const uint32_t valid_image = function_result;
+        uint32_t valid_sampler = 0;
+        if (meta.is_combined_image_sampler) {
+            assert(mapping);  // not allowed with untyped pointers
+            valid_sampler = CreateFunctionCallCombinedSampler(block, inst_it, meta, *mapping, descriptor_index_id);
         } else {
-            const uint32_t valid_image = function_result;
-            const uint32_t valid_sampler = CreateFunctionCall(block, nullptr, meta, true);
+            valid_sampler = CreateFunctionCall(block, inst_it, meta, true);
+        }
+
+        if (module_.settings_.safe_mode) {
             function_result = module_.TakeNextId();
             block.CreateInstruction(spv::OpLogicalAnd, {bool_type, function_result, valid_image, valid_sampler}, inst_it);
         }
+    }
+
+    return function_result;
+}
+
+// Sampler are annoying, decided this should just be its own function as its only used for 4 mappings
+uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block, InstructionIt* inst_it,
+                                                               const InstructionMeta& meta,
+                                                               const VkDescriptorSetAndBindingMappingEXT& mapping,
+                                                               const uint32_t descriptor_index_id) {
+    const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
+    const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
+    const uint32_t is_sampler_id = type_manager_.GetConstantBool(true).Id();
+
+    uint32_t function_result = module_.TakeNextId();
+    const uint32_t bool_type = type_manager_.GetTypeBool().Id();
+
+    if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
+        const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping.sourceData.constantOffset;
+
+        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.samplerHeapOffset).Id();
+        const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapArrayStride).Id();
+
+        const uint32_t function_def = GetLinkFunctionId(MAPPING_CONSTANT_OFFSET);
+
+        block.CreateInstruction(spv::OpFunctionCall,
+                                {bool_type, function_result, function_def, inst_position_id, heap_offset_id, heap_array_stride_id,
+                                 descriptor_index_id, is_sampler_id},
+                                inst_it);
+    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
+        const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping.sourceData.pushIndex;
+
+        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
+        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
+        const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.heapIndexStride).Id();
+        const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.heapArrayStride).Id();
+
+        const uint32_t function_def = GetLinkFunctionId(MAPPING_PUSH_INDEX);
+
+        block.CreateInstruction(spv::OpFunctionCall,
+                                {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id,
+                                 heap_index_stride_id, heap_array_stride_id, descriptor_index_id, is_sampler_id},
+                                inst_it);
+    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
+        const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping.sourceData.indirectIndex;
+
+        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.samplerHeapOffset).Id();
+        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.samplerPushOffset / 4).Id();
+        const uint32_t address_offset_id = type_manager_.GetConstantUInt32(map_data.samplerAddressOffset / 4).Id();
+        const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapIndexStride).Id();
+        const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapArrayStride).Id();
+
+        const uint32_t function_def = GetLinkFunctionId(MAPPING_INDIRECT_INDEX);
+
+        block.CreateInstruction(spv::OpFunctionCall,
+                                {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id,
+                                 address_offset_id, heap_index_stride_id, heap_array_stride_id, descriptor_index_id, is_sampler_id},
+                                inst_it);
+    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
+        const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data = mapping.sourceData.indirectIndexArray;
+
+        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.samplerHeapOffset).Id();
+        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.samplerPushOffset / 4).Id();
+        const uint32_t address_offset_id = type_manager_.GetConstantUInt32(map_data.samplerAddressOffset / 4).Id();
+        const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapIndexStride).Id();
+
+        const uint32_t function_def = GetLinkFunctionId(MAPPING_INDIRECT_INDEX_ARRAY);
+
+        block.CreateInstruction(spv::OpFunctionCall,
+                                {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id,
+                                 address_offset_id, heap_index_stride_id, descriptor_index_id, is_sampler_id},
+                                inst_it);
     }
 
     return function_result;
@@ -328,9 +406,6 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
         // If we can't find a seperate sampler, and non sampled images are check elsewhere
         // we know this is actually a combined image sampler
         meta.is_combined_image_sampler = sampler_load_inst == nullptr;
-        if (meta.is_combined_image_sampler) {
-            return false;  // TODO - Need to figure out the math here
-        }
 
         if (!load_inst || load_inst->Opcode() != spv::OpLoad) {
             return false;  // TODO: Handle additional possibilities?
@@ -444,6 +519,10 @@ bool DescriptorHeapPass::Instrument() {
 
                 if (!module_.settings_.safe_mode) {
                     CreateFunctionCall(current_block, &inst_it, meta, false);
+                    // This is just a dumb hack around iterators, for samplers we call a second function
+                    if (meta.HasSampler()) {
+                        inst_it++;
+                    }
                 } else {
                     InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);
                     ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, meta, false);
