@@ -121,9 +121,8 @@ bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
         if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT) != 0 && resource_variable.base_type.Word(7) == 1) {
             return true;
         }
-        // NonWritable must be on the OpVariable, not the OpTypeStruct
-        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4789
-        const bool nonwritable = resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit);
+        const bool nonwritable = resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit) ||
+                                 resource_variable.HasInMember(spirv::DecorationSet::nonwritable_bit);
         if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT) != 0 && resource_variable.base_type.Word(7) == 2 &&
             nonwritable) {
             return true;
@@ -141,9 +140,8 @@ bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
         return true;
     }
     if (resource_variable.is_storage_buffer) {
-        // NonWritable must be on the OpVariable, not the OpTypeStruct
-        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4789
-        const bool nonwritable = resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit);
+        const bool nonwritable = resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit) ||
+                                 resource_variable.HasInMember(spirv::DecorationSet::nonwritable_bit);
         if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT) != 0 && nonwritable) {
             return true;
         }
@@ -183,13 +181,7 @@ std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_ty
         } else if (resource_variable.base_type.Word(7) != 2) {
             return "OpTypeImage Sampled is " + std::to_string(resource_variable.base_type.Word(7)) + ", not 2";
         } else if (!resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
-            if (resource_variable.HasInMember(spirv::DecorationSet::nonwritable_bit)) {
-                return "is not decorated with NonWritable on the OpVariable, but is in the OpTypeStruct. This likely is hitting a "
-                       "known DXC code generation bug (DirectXShaderCompiler/issues/8492). Simple work around is to just use "
-                       "VK_SPIRV_RESOURCE_TYPE_ALL_EXT here as that will give the desired behavior.";
-            } else {
-                return "is not decorated with NonWritable";
-            }
+            return "is not decorated with NonWritable";
         }
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT) != 0) {
@@ -216,13 +208,7 @@ std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_ty
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT) != 0) {
         if (!resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
-            if (resource_variable.HasInMember(spirv::DecorationSet::nonwritable_bit)) {
-                return "is not decorated with NonWritable on the OpVariable, but is in the OpTypeStruct. This likely is hitting a "
-                       "known DXC code generation bug (DirectXShaderCompiler/issues/8492). Simple work around is to just use "
-                       "VK_SPIRV_RESOURCE_TYPE_ALL_EXT here as that will give the desired behavior.";
-            } else {
-                return "is not decorated with NonWritable";
-            }
+            return "is not decorated with NonWritable";
         } else if (!resource_variable.type_struct_info) {
             return "is not a OpTypeStruct";
         } else if (!resource_variable.is_storage_buffer) {
