@@ -280,8 +280,7 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityCooperativeMatrixPerElementOperationsNV, {0, &DeviceFeatures::cooperativeMatrixPerElementOperations, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixTensorAddressingNV, {0, &DeviceFeatures::cooperativeMatrixTensorAddressing, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixBlockLoadsNV, {0, &DeviceFeatures::cooperativeMatrixBlockLoads, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityCooperativeMatrixDecodeVectorNV, {0, &DeviceFeatures::cooperativeMatrixDecodeVector, nullptr, ""}},
+        {spv::CapabilityCooperativeMatrixDecodeVectorNV, {0, &DeviceFeatures::cooperativeMatrixDecodeVector, nullptr, ""}},
         {spv::CapabilityRayTracingSpheresGeometryNV, {0, &DeviceFeatures::spheres, nullptr, ""}},
         {spv::CapabilityRayTracingLinearSweptSpheresGeometryNV, {0, &DeviceFeatures::linearSweptSpheres, nullptr, ""}},
         {spv::CapabilityRayTracingClusterAccelerationStructureNV, {0, &DeviceFeatures::clusterAccelerationStructure, nullptr, ""}},
@@ -842,6 +841,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "RayTracingClusterAccelerationStructureNV";
         case spv::CapabilityTensorAddressingNV:
             return "TensorAddressingNV";
+        case spv::CapabilityCooperativeMatrixDecodeVectorNV:
+            return "CooperativeMatrixDecodeVectorNV";
         case spv::CapabilityIntegerFunctions2INTEL:
             return "IntegerFunctions2INTEL";
         case spv::CapabilityFunctionPointersINTEL:
@@ -1288,6 +1289,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityCooperativeMatrixPerElementOperationsNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixPerElementOperations"},
     {spv::CapabilityCooperativeMatrixTensorAddressingNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixTensorAddressing"},
     {spv::CapabilityCooperativeMatrixBlockLoadsNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixBlockLoads"},
+    {spv::CapabilityCooperativeMatrixDecodeVectorNV, "VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV::cooperativeMatrixDecodeVector"},
     {spv::CapabilityRayTracingSpheresGeometryNV, "VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV::spheres"},
     {spv::CapabilityRayTracingLinearSweptSpheresGeometryNV, "VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV::linearSweptSpheres"},
     {spv::CapabilityRayTracingClusterAccelerationStructureNV, "VkPhysicalDeviceClusterAccelerationStructureFeaturesNV::clusterAccelerationStructure"},
