@@ -899,7 +899,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
 
             if (tile_memory_requirements.size > (mem_info->allocate_info.allocationSize - memoryOffset)) {
                 const char* vuid =
-                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-10742" : " VUID-vkBindBufferMemory-memory-10742";
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-10742" : "VUID-vkBindBufferMemory-memory-10742";
                 const LogObjectList objlist(buffer, memory);
                 skip |= LogError(vuid, objlist, loc,
                                  "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
