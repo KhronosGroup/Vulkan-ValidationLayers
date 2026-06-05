@@ -836,6 +836,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->videoMaintenance2 |= enabled->videoMaintenance2 == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_FEEDBACK_2_FEATURES_KHR: {
+                const VkPhysicalDeviceVideoEncodeFeedback2FeaturesKHR* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceVideoEncodeFeedback2FeaturesKHR*>(pNext);
+                features->videoEncodeFeedback2 |= enabled->videoEncodeFeedback2 == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_KHR: {
                 const VkPhysicalDeviceDepthClampZeroOneFeaturesKHR* enabled =
                     reinterpret_cast<const VkPhysicalDeviceDepthClampZeroOneFeaturesKHR*>(pNext);
@@ -872,6 +878,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceMaintenance11FeaturesKHR* enabled =
                     reinterpret_cast<const VkPhysicalDeviceMaintenance11FeaturesKHR*>(pNext);
                 features->maintenance11 |= enabled->maintenance11 == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_FLAGS_FEATURES_KHR: {
+                const VkPhysicalDeviceExtendedFlagsFeaturesKHR* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceExtendedFlagsFeaturesKHR*>(pNext);
+                features->extendedFlags |= enabled->extendedFlags == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT: {
@@ -1984,6 +1996,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 const VkPhysicalDevicePresentMeteringFeaturesNV* enabled =
                     reinterpret_cast<const VkPhysicalDevicePresentMeteringFeaturesNV*>(pNext);
                 features->presentMetering |= enabled->presentMetering == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTISAMPLED_RENDER_TO_SWAPCHAIN_FEATURES_EXT: {
+                const VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT*>(pNext);
+                features->multisampledRenderToSwapchain |= enabled->multisampledRenderToSwapchain == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_DEVICE_MEMORY_FEATURES_EXT: {

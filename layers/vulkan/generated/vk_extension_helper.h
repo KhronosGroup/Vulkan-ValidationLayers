@@ -278,12 +278,14 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_shader_fma{kNotSupported};
     ExtEnabled vk_khr_maintenance9{kNotSupported};
     ExtEnabled vk_khr_video_maintenance2{kNotSupported};
+    ExtEnabled vk_khr_video_encode_feedback2{kNotSupported};
     ExtEnabled vk_khr_depth_clamp_zero_one{kNotSupported};
     ExtEnabled vk_khr_robustness2{kNotSupported};
     ExtEnabled vk_khr_present_mode_fifo_latest_ready{kNotSupported};
     ExtEnabled vk_khr_opacity_micromap{kNotSupported};
     ExtEnabled vk_khr_maintenance10{kNotSupported};
     ExtEnabled vk_khr_maintenance11{kNotSupported};
+    ExtEnabled vk_khr_extended_flags{kNotSupported};
     ExtEnabled vk_nv_glsl_shader{kNotSupported};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotSupported};
     ExtEnabled vk_img_filter_cubic{kNotSupported};
@@ -559,6 +561,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_arm_format_pack{kNotSupported};
     ExtEnabled vk_valve_fragment_density_map_layered{kNotSupported};
     ExtEnabled vk_nv_present_metering{kNotSupported};
+    ExtEnabled vk_ext_multisampled_render_to_swapchain{kNotSupported};
     ExtEnabled vk_ext_fragment_density_map_offset{kNotSupported};
     ExtEnabled vk_ext_zero_initialize_device_memory{kNotSupported};
     ExtEnabled vk_ext_shader_64bit_indexing{kNotSupported};
@@ -780,12 +783,14 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_shader_fma:
         case vvl::Extension::_VK_KHR_maintenance9:
         case vvl::Extension::_VK_KHR_video_maintenance2:
+        case vvl::Extension::_VK_KHR_video_encode_feedback2:
         case vvl::Extension::_VK_KHR_depth_clamp_zero_one:
         case vvl::Extension::_VK_KHR_robustness2:
         case vvl::Extension::_VK_KHR_present_mode_fifo_latest_ready:
         case vvl::Extension::_VK_KHR_opacity_micromap:
         case vvl::Extension::_VK_KHR_maintenance10:
         case vvl::Extension::_VK_KHR_maintenance11:
+        case vvl::Extension::_VK_KHR_extended_flags:
         case vvl::Extension::_VK_NV_glsl_shader:
         case vvl::Extension::_VK_EXT_depth_range_unrestricted:
         case vvl::Extension::_VK_IMG_filter_cubic:
@@ -1061,6 +1066,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_ARM_format_pack:
         case vvl::Extension::_VK_VALVE_fragment_density_map_layered:
         case vvl::Extension::_VK_NV_present_metering:
+        case vvl::Extension::_VK_EXT_multisampled_render_to_swapchain:
         case vvl::Extension::_VK_EXT_fragment_density_map_offset:
         case vvl::Extension::_VK_EXT_zero_initialize_device_memory:
         case vvl::Extension::_VK_EXT_shader_64bit_indexing:

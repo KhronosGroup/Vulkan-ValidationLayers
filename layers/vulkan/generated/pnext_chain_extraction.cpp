@@ -1660,6 +1660,21 @@ void PnextChainFree(void* chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkVideoDecodeAV1InlineSessionParametersInfoKHR*>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_FEEDBACK_2_FEATURES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceVideoEncodeFeedback2FeaturesKHR*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_FEEDBACK_2_CAPABILITIES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkVideoEncodeFeedback2CapabilitiesKHR*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_QUERY_POOL_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_CREATE_INFO_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkQueryPoolVideoEncodePerPartitionFeedbackCreateInfoKHR*>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_KHR:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
@@ -1729,6 +1744,41 @@ void PnextChainFree(void* chain) {
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
             delete reinterpret_cast<const VkQueueFamilyOptimalImageTransferGranularityPropertiesKHR*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_4_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkFormatProperties4KHR*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_IMAGE_USAGE_FLAGS_2_CREATE_INFO_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkImageUsageFlags2CreateInfoKHR*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_IMAGE_CREATE_FLAGS_2_CREATE_INFO_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkImageCreateFlags2CreateInfoKHR*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_2_CREATE_INFO_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkImageViewUsage2CreateInfoKHR*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_FLAGS_FEATURES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceExtendedFlagsFeaturesKHR*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_2_CREATE_INFO_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkImageStencilUsage2CreateInfoKHR*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_2_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkSharedPresentSurfaceCapabilities2KHR*>(header);
             break;
         case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT:
             PnextChainFree(header->pNext);
@@ -3933,6 +3983,16 @@ void PnextChainFree(void* chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDevicePresentMeteringFeaturesNV*>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTISAMPLED_RENDER_TO_SWAPCHAIN_FEATURES_EXT:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT*>(header);
+            break;
+        case VK_STRUCTURE_TYPE_SWAPCHAIN_FLAGS_SURFACE_CAPABILITIES_EXT:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkSwapchainFlagsSurfaceCapabilitiesEXT*>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_DEVICE_MEMORY_FEATURES_EXT:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
@@ -4138,6 +4198,18 @@ void* PnextChainExtract(const void* in_pnext_chain, PnextChainVkPhysicalDeviceIm
         }
     }
 
+    if (auto* chain_struct = vku::FindStructInPNextChain<VkImageCreateFlags2CreateInfoKHR>(in_pnext_chain)) {
+        auto& out_chain_struct = std::get<VkImageCreateFlags2CreateInfoKHR>(out);
+        out_chain_struct = *chain_struct;
+        out_chain_struct.pNext = nullptr;
+        if (!chain_begin) {
+            chain_begin = &out_chain_struct;
+            chain_end = chain_begin;
+        } else {
+            chain_end = PnextChainAdd(chain_end, &out_chain_struct);
+        }
+    }
+
     if (auto* chain_struct = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(in_pnext_chain)) {
         auto& out_chain_struct = std::get<VkImageFormatListCreateInfo>(out);
         out_chain_struct = *chain_struct;
@@ -4150,8 +4222,32 @@ void* PnextChainExtract(const void* in_pnext_chain, PnextChainVkPhysicalDeviceIm
         }
     }
 
+    if (auto* chain_struct = vku::FindStructInPNextChain<VkImageStencilUsage2CreateInfoKHR>(in_pnext_chain)) {
+        auto& out_chain_struct = std::get<VkImageStencilUsage2CreateInfoKHR>(out);
+        out_chain_struct = *chain_struct;
+        out_chain_struct.pNext = nullptr;
+        if (!chain_begin) {
+            chain_begin = &out_chain_struct;
+            chain_end = chain_begin;
+        } else {
+            chain_end = PnextChainAdd(chain_end, &out_chain_struct);
+        }
+    }
+
     if (auto* chain_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(in_pnext_chain)) {
         auto& out_chain_struct = std::get<VkImageStencilUsageCreateInfo>(out);
+        out_chain_struct = *chain_struct;
+        out_chain_struct.pNext = nullptr;
+        if (!chain_begin) {
+            chain_begin = &out_chain_struct;
+            chain_end = chain_begin;
+        } else {
+            chain_end = PnextChainAdd(chain_end, &out_chain_struct);
+        }
+    }
+
+    if (auto* chain_struct = vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(in_pnext_chain)) {
+        auto& out_chain_struct = std::get<VkImageUsageFlags2CreateInfoKHR>(out);
         out_chain_struct = *chain_struct;
         out_chain_struct.pNext = nullptr;
         if (!chain_begin) {
