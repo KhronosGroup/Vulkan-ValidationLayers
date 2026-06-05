@@ -1256,6 +1256,7 @@ const char* String(Struct structure) {
     {"VkFormatProperties", 19},
     {"VkFormatProperties2", 20},
     {"VkFormatProperties3", 20},
+    {"VkFormatProperties4KHR", 23},
     {"VkFragmentShadingRateAttachmentInfoKHR", 39},
     {"VkFrameBoundaryEXT", 19},
     {"VkFrameBoundaryTensorsARM", 26},
@@ -1301,6 +1302,7 @@ const char* String(Struct structure) {
     {"VkImageConstraintsInfoFUCHSIA", 30},
     {"VkImageCopy", 12},
     {"VkImageCopy2", 13},
+    {"VkImageCreateFlags2CreateInfoKHR", 33},
     {"VkImageCreateInfo", 18},
     {"VkImageDescriptorInfoEXT", 25},
     {"VkImageDrmFormatModifierExplicitCreateInfoEXT", 46},
@@ -1318,6 +1320,7 @@ const char* String(Struct structure) {
     {"VkImageResolve", 15},
     {"VkImageResolve2", 16},
     {"VkImageSparseMemoryRequirementsInfo2", 37},
+    {"VkImageStencilUsage2CreateInfoKHR", 34},
     {"VkImageStencilUsageCreateInfo", 30},
     {"VkImageSubresource", 19},
     {"VkImageSubresource2", 20},
@@ -1325,6 +1328,7 @@ const char* String(Struct structure) {
     {"VkImageSubresourceRange", 24},
     {"VkImageSwapchainCreateInfoKHR", 30},
     {"VkImageToMemoryCopy", 20},
+    {"VkImageUsageFlags2CreateInfoKHR", 32},
     {"VkImageViewASTCDecodeModeEXT", 29},
     {"VkImageViewAddressPropertiesNVX", 32},
     {"VkImageViewCaptureDescriptorDataInfoEXT", 40},
@@ -1333,6 +1337,7 @@ const char* String(Struct structure) {
     {"VkImageViewMinLodCreateInfoEXT", 31},
     {"VkImageViewSampleWeightCreateInfoQCOM", 38},
     {"VkImageViewSlicedCreateInfoEXT", 31},
+    {"VkImageViewUsage2CreateInfoKHR", 31},
     {"VkImageViewUsageCreateInfo", 27},
     {"VkImportAndroidHardwareBufferInfoANDROID", 41},
     {"VkImportFenceFdInfoKHR", 23},
@@ -1567,6 +1572,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceExtendedDynamicState3FeaturesEXT", 49},
     {"VkPhysicalDeviceExtendedDynamicState3PropertiesEXT", 51},
     {"VkPhysicalDeviceExtendedDynamicStateFeaturesEXT", 48},
+    {"VkPhysicalDeviceExtendedFlagsFeaturesKHR", 41},
     {"VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV", 53},
     {"VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV", 55},
     {"VkPhysicalDeviceExternalBufferInfo", 35},
@@ -1680,6 +1686,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceMultiDrawFeaturesEXT", 37},
     {"VkPhysicalDeviceMultiDrawPropertiesEXT", 39},
     {"VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT", 61},
+    {"VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT", 57},
     {"VkPhysicalDeviceMultiviewFeatures", 34},
     {"VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX", 56},
     {"VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM", 56},
@@ -1870,6 +1877,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT", 51},
     {"VkPhysicalDeviceVideoDecodeVP9FeaturesKHR", 42},
     {"VkPhysicalDeviceVideoEncodeAV1FeaturesKHR", 42},
+    {"VkPhysicalDeviceVideoEncodeFeedback2FeaturesKHR", 48},
     {"VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR", 51},
     {"VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR", 47},
     {"VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR", 54},
@@ -1985,6 +1993,7 @@ const char* String(Struct structure) {
     {"VkQueryPoolPerformanceCreateInfoKHR", 36},
     {"VkQueryPoolPerformanceQueryCreateInfoINTEL", 43},
     {"VkQueryPoolVideoEncodeFeedbackCreateInfoKHR", 44},
+    {"VkQueryPoolVideoEncodePerPartitionFeedbackCreateInfoKHR", 56},
     {"VkQueueFamilyCheckpointProperties2NV", 37},
     {"VkQueueFamilyCheckpointPropertiesNV", 36},
     {"VkQueueFamilyDataGraphOpticalFlowPropertiesARM", 47},
@@ -2083,6 +2092,7 @@ const char* String(Struct structure) {
     {"VkShaderResourceUsageAMD", 25},
     {"VkShaderStatisticsInfoAMD", 26},
     {"VkShadingRatePaletteNV", 23},
+    {"VkSharedPresentSurfaceCapabilities2KHR", 39},
     {"VkSharedPresentSurfaceCapabilitiesKHR", 38},
     {"VkSparseBufferMemoryBindInfo", 29},
     {"VkSparseImageFormatProperties", 30},
@@ -2136,6 +2146,7 @@ const char* String(Struct structure) {
     {"VkSwapchainCounterCreateInfoEXT", 32},
     {"VkSwapchainCreateInfoKHR", 25},
     {"VkSwapchainDisplayNativeHdrCreateInfoAMD", 41},
+    {"VkSwapchainFlagsSurfaceCapabilitiesEXT", 39},
     {"VkSwapchainLatencyCreateInfoNV", 31},
     {"VkSwapchainPresentBarrierCreateInfoNV", 38},
     {"VkSwapchainPresentFenceInfoKHR", 31},
@@ -2219,6 +2230,7 @@ const char* String(Struct structure) {
     {"VkVideoEncodeAV1SessionCreateInfoKHR", 37},
     {"VkVideoEncodeAV1SessionParametersCreateInfoKHR", 47},
     {"VkVideoEncodeCapabilitiesKHR", 29},
+    {"VkVideoEncodeFeedback2CapabilitiesKHR", 38},
     {"VkVideoEncodeH264CapabilitiesKHR", 33},
     {"VkVideoEncodeH264DpbSlotInfoKHR", 32},
     {"VkVideoEncodeH264FrameSizeKHR", 30},
@@ -2946,6 +2958,7 @@ const char* String(Field field) {
     {"extendedDynamicState3TessellationDomainOrigin", 46},
     {"extendedDynamicState3ViewportSwizzle", 37},
     {"extendedDynamicState3ViewportWScalingEnable", 44},
+    {"extendedFlags", 14},
     {"extendedSparseAddressSpace", 27},
     {"extendedSparseAddressSpaceSize", 31},
     {"extendedSparseBufferUsageFlags", 31},
@@ -3573,6 +3586,7 @@ const char* String(Field field) {
     {"maxPPictureL0ReferenceCount", 28},
     {"maxPartitionCount", 18},
     {"maxPerDimensionTensorElements", 30},
+    {"maxPerPartitionFeedbackEntries", 31},
     {"maxPerRegionPerformanceCounters", 32},
     {"maxPerSetDescriptors", 21},
     {"maxPerStageDescriptorAccelerationStructures", 44},
@@ -3854,6 +3868,7 @@ const char* String(Field field) {
     {"multisampleArrayImage", 22},
     {"multisampledRenderToSingleSampled", 34},
     {"multisampledRenderToSingleSampledEnable", 40},
+    {"multisampledRenderToSwapchain", 30},
     {"multiview", 10},
     {"multiviewClusterCullingShader", 30},
     {"multiviewGeometryShader", 24},
@@ -4575,6 +4590,7 @@ const char* String(Field field) {
     {"pciDomain", 10},
     {"pciFunction", 12},
     {"perBasicBlockGranularity", 25},
+    {"perPartitionEncodeFeedbackFlags", 32},
     {"perStageDescriptorSet", 22},
     {"perViewAttributes", 18},
     {"perViewAttributesPositionXOnly", 31},
@@ -5395,6 +5411,7 @@ const char* String(Field field) {
     {"supportedIndirectCommandsShaderStagesShaderBinding", 51},
     {"supportedOperations", 20},
     {"supportedOutputGridSizes", 25},
+    {"supportedPerPartitionEncodeFeedbackFlags", 41},
     {"supportedPresentGravityX", 25},
     {"supportedPresentGravityY", 25},
     {"supportedPresentScaling", 24},
@@ -5416,6 +5433,7 @@ const char* String(Field field) {
     {"swapchain", 10},
     {"swapchainCount", 15},
     {"swapchainMaintenance1", 22},
+    {"swapchainSupportedFlags", 24},
     {"sx", 3},
     {"sy", 3},
     {"synchronization2", 17},
@@ -5605,6 +5623,7 @@ const char* String(Field field) {
     {"videoContentHints", 18},
     {"videoDecodeVP9", 15},
     {"videoEncodeAV1", 15},
+    {"videoEncodeFeedback2", 21},
     {"videoEncodeIntraRefresh", 24},
     {"videoEncodeQuantizationMap", 27},
     {"videoEncodeRgbConversion", 25},
@@ -5909,6 +5928,7 @@ const char* String(FlagBitmask value) {
     {"VkFenceImportFlagBits", 22},
     {"VkFormatFeatureFlagBits", 24},
     {"VkFormatFeatureFlagBits2", 25},
+    {"VkFormatFeatureFlagBits4KHR", 28},
     {"VkFrameBoundaryFlagBitsEXT", 27},
     {"VkFramebufferCreateFlagBits", 28},
     {"VkGeometryFlagBitsKHR", 22},
@@ -5921,7 +5941,9 @@ const char* String(FlagBitmask value) {
     {"VkImageCompressionFlagBitsEXT", 30},
     {"VkImageConstraintsInfoFlagBitsFUCHSIA", 38},
     {"VkImageCreateFlagBits", 22},
+    {"VkImageCreateFlagBits2KHR", 26},
     {"VkImageUsageFlagBits", 21},
+    {"VkImageUsageFlagBits2KHR", 25},
     {"VkImageViewCreateFlagBits", 26},
     {"VkIndirectCommandsInputModeFlagBitsEXT", 39},
     {"VkIndirectCommandsLayoutUsageFlagBitsEXT", 41},
@@ -6016,6 +6038,7 @@ const char* String(FlagBitmask value) {
     {"VkVideoEncodeH265StdFlagBitsKHR", 32},
     {"VkVideoEncodeH265TransformBlockSizeFlagBitsKHR", 47},
     {"VkVideoEncodeIntraRefreshModeFlagBitsKHR", 41},
+    {"VkVideoEncodePerPartitionFeedbackFlagBitsKHR", 45},
     {"VkVideoEncodeRateControlModeFlagBitsKHR", 40},
     {"VkVideoEncodeRgbChromaOffsetFlagBitsVALVE", 42},
     {"VkVideoEncodeRgbModelConversionFlagBitsVALVE", 45},
@@ -6153,6 +6176,7 @@ const char* String(Extension extension) {
     {"VK_EXT_metal_surface", 21},
     {"VK_EXT_multi_draw", 18},
     {"VK_EXT_multisampled_render_to_single_sampled", 45},
+    {"VK_EXT_multisampled_render_to_swapchain", 40},
     {"VK_EXT_mutable_descriptor_type", 31},
     {"VK_EXT_nested_command_buffer", 29},
     {"VK_EXT_non_seamless_cube_map", 29},
@@ -6267,6 +6291,7 @@ const char* String(Extension extension) {
     {"VK_KHR_driver_properties", 25},
     {"VK_KHR_dynamic_rendering", 25},
     {"VK_KHR_dynamic_rendering_local_read", 36},
+    {"VK_KHR_extended_flags", 22},
     {"VK_KHR_external_fence", 22},
     {"VK_KHR_external_fence_capabilities", 35},
     {"VK_KHR_external_fence_fd", 25},
@@ -6371,6 +6396,7 @@ const char* String(Extension extension) {
     {"VK_KHR_video_decode_queue", 26},
     {"VK_KHR_video_decode_vp9", 24},
     {"VK_KHR_video_encode_av1", 24},
+    {"VK_KHR_video_encode_feedback2", 30},
     {"VK_KHR_video_encode_h264", 25},
     {"VK_KHR_video_encode_h265", 25},
     {"VK_KHR_video_encode_intra_refresh", 34},
@@ -8220,6 +8246,12 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkVideoDecodeH265InlineSessionParametersInfoKHR;
     case VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_INLINE_SESSION_PARAMETERS_INFO_KHR:
        return Struct::VkVideoDecodeAV1InlineSessionParametersInfoKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_FEEDBACK_2_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceVideoEncodeFeedback2FeaturesKHR;
+    case VK_STRUCTURE_TYPE_VIDEO_ENCODE_FEEDBACK_2_CAPABILITIES_KHR:
+       return Struct::VkVideoEncodeFeedback2CapabilitiesKHR;
+    case VK_STRUCTURE_TYPE_QUERY_POOL_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_CREATE_INFO_KHR:
+       return Struct::VkQueryPoolVideoEncodePerPartitionFeedbackCreateInfoKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_KHR:
        return Struct::VkPhysicalDeviceDepthClampZeroOneFeaturesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_KHR:
@@ -8250,6 +8282,20 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceMaintenance11FeaturesKHR;
     case VK_STRUCTURE_TYPE_QUEUE_FAMILY_OPTIMAL_IMAGE_TRANSFER_GRANULARITY_PROPERTIES_KHR:
        return Struct::VkQueueFamilyOptimalImageTransferGranularityPropertiesKHR;
+    case VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_4_KHR:
+       return Struct::VkFormatProperties4KHR;
+    case VK_STRUCTURE_TYPE_IMAGE_USAGE_FLAGS_2_CREATE_INFO_KHR:
+       return Struct::VkImageUsageFlags2CreateInfoKHR;
+    case VK_STRUCTURE_TYPE_IMAGE_CREATE_FLAGS_2_CREATE_INFO_KHR:
+       return Struct::VkImageCreateFlags2CreateInfoKHR;
+    case VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_2_CREATE_INFO_KHR:
+       return Struct::VkImageViewUsage2CreateInfoKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_FLAGS_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceExtendedFlagsFeaturesKHR;
+    case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_2_CREATE_INFO_KHR:
+       return Struct::VkImageStencilUsage2CreateInfoKHR;
+    case VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_2_KHR:
+       return Struct::VkSharedPresentSurfaceCapabilities2KHR;
     case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT:
        return Struct::VkDebugReportCallbackCreateInfoEXT;
     case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_RASTERIZATION_ORDER_AMD:
@@ -9510,6 +9556,10 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkSetPresentConfigNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV:
        return Struct::VkPhysicalDevicePresentMeteringFeaturesNV;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTISAMPLED_RENDER_TO_SWAPCHAIN_FEATURES_EXT:
+       return Struct::VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT;
+    case VK_STRUCTURE_TYPE_SWAPCHAIN_FLAGS_SURFACE_CAPABILITIES_EXT:
+       return Struct::VkSwapchainFlagsSurfaceCapabilitiesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_DEVICE_MEMORY_FEATURES_EXT:
        return Struct::VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_64_BIT_INDEXING_FEATURES_EXT:
