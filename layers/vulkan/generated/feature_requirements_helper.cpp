@@ -2933,6 +2933,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
             return {&vk_struct->extendedDynamicState, "VkPhysicalDeviceExtendedDynamicStateFeaturesEXT::extendedDynamicState"};
         }
 
+        case Feature::extendedFlags: {
+            auto vk_struct = const_cast<VkPhysicalDeviceExtendedFlagsFeaturesKHR*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceExtendedFlagsFeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceExtendedFlagsFeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->extendedFlags, "VkPhysicalDeviceExtendedFlagsFeaturesKHR::extendedFlags"};
+        }
+
         case Feature::extendedSparseAddressSpace: {
             auto vk_struct = const_cast<VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV*>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV>(*inout_pnext_chain));
@@ -4475,6 +4490,22 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
             }
             return {&vk_struct->multisampledRenderToSingleSampled,
                     "VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT::multisampledRenderToSingleSampled"};
+        }
+
+        case Feature::multisampledRenderToSwapchain: {
+            auto vk_struct = const_cast<VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->multisampledRenderToSwapchain,
+                    "VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT::multisampledRenderToSwapchain"};
         }
 
         case Feature::multiview:
@@ -8464,6 +8495,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
                 }
             }
             return {&vk_struct->videoEncodeAV1, "VkPhysicalDeviceVideoEncodeAV1FeaturesKHR::videoEncodeAV1"};
+        }
+
+        case Feature::videoEncodeFeedback2: {
+            auto vk_struct = const_cast<VkPhysicalDeviceVideoEncodeFeedback2FeaturesKHR*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceVideoEncodeFeedback2FeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceVideoEncodeFeedback2FeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->videoEncodeFeedback2, "VkPhysicalDeviceVideoEncodeFeedback2FeaturesKHR::videoEncodeFeedback2"};
         }
 
         case Feature::videoEncodeIntraRefresh: {

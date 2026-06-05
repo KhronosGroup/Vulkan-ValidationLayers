@@ -342,6 +342,8 @@ enum class Feature {
     extendedDynamicState3ViewportWScalingEnable,
     // VkPhysicalDeviceExtendedDynamicStateFeaturesEXT
     extendedDynamicState,
+    // VkPhysicalDeviceExtendedFlagsFeaturesKHR
+    extendedFlags,
     // VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV
     extendedSparseAddressSpace,
     // VkPhysicalDeviceExternalFormatResolveFeaturesANDROID
@@ -624,6 +626,8 @@ enum class Feature {
     multiDraw,
     // VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT
     multisampledRenderToSingleSampled,
+    // VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT
+    multisampledRenderToSwapchain,
     // VkPhysicalDeviceMultiviewFeatures, VkPhysicalDeviceVulkan11Features
     multiview,
     // VkPhysicalDeviceMultiviewFeatures, VkPhysicalDeviceVulkan11Features
@@ -1076,6 +1080,8 @@ enum class Feature {
     videoDecodeVP9,
     // VkPhysicalDeviceVideoEncodeAV1FeaturesKHR
     videoEncodeAV1,
+    // VkPhysicalDeviceVideoEncodeFeedback2FeaturesKHR
+    videoEncodeFeedback2,
     // VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR
     videoEncodeIntraRefresh,
     // VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR

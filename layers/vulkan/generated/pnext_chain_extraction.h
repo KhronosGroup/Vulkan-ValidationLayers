@@ -68,8 +68,11 @@ void *PnextChainExtract(const void */*in_pnext_chain*/, T &/*out*/) { assert(fal
 using PnextChainVkPhysicalDeviceImageFormatInfo2 = std::tuple<
 	VkDataGraphOpticalFlowImageFormatInfoARM,
 	VkImageCompressionControlEXT,
+	VkImageCreateFlags2CreateInfoKHR,
 	VkImageFormatListCreateInfo,
+	VkImageStencilUsage2CreateInfoKHR,
 	VkImageStencilUsageCreateInfo,
+	VkImageUsageFlags2CreateInfoKHR,
 	VkOpticalFlowImageFormatInfoNV,
 	VkPhysicalDeviceExternalImageFormatInfo,
 	VkPhysicalDeviceImageDrmFormatModifierInfoEXT,
