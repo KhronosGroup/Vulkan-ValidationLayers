@@ -13,6 +13,7 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include <algorithm>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/shader_object_helper.h"
@@ -406,6 +407,136 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSizeWorkgroupScope) 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10165", 3);
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10166");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-module-10169", 6);
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeLocalSizeIdSpecConstant) {
+    TEST_DESCRIPTION(
+        "Pre-specialization skips the unknown LocalSizeId; specialization misses all matching flexible-dimensions properties. "
+        "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12363");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixWorkgroupScope);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixFlexibleDimensions);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
+
+    constexpr uint32_t kRows = 32;
+    constexpr uint32_t kCols = 32;
+    constexpr uint32_t kK = 32;
+
+    VkPhysicalDeviceCooperativeMatrix2PropertiesNV props2 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props2);
+    VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props11);
+
+    const auto fixed_property_matches_mul_add = [&](const VkCooperativeMatrixPropertiesKHR& prop) {
+        return prop.scope == VK_SCOPE_WORKGROUP_KHR && prop.AType == VK_COMPONENT_TYPE_FLOAT16_KHR &&
+               prop.BType == VK_COMPONENT_TYPE_FLOAT16_KHR && prop.CType == VK_COMPONENT_TYPE_FLOAT16_KHR &&
+               prop.ResultType == VK_COMPONENT_TYPE_FLOAT16_KHR && prop.MSize == kRows && prop.NSize == kCols && prop.KSize == kK;
+    };
+    if (std::any_of(helper.coop_matrix_props.begin(), helper.coop_matrix_props.end(), fixed_property_matches_mul_add)) {
+        GTEST_SKIP() << "fixed workgroup scope property matches test matrix";
+    }
+
+    const auto flexible_property_matches_mul_add = [&](const VkCooperativeMatrixFlexibleDimensionsPropertiesNV& prop) {
+        return prop.scope == VK_SCOPE_WORKGROUP_KHR && prop.AType == VK_COMPONENT_TYPE_FLOAT16_KHR &&
+               prop.BType == VK_COMPONENT_TYPE_FLOAT16_KHR && prop.CType == VK_COMPONENT_TYPE_FLOAT16_KHR &&
+               prop.ResultType == VK_COMPONENT_TYPE_FLOAT16_KHR && (kRows % prop.MGranularity) == 0 &&
+               (kCols % prop.NGranularity) == 0 && (kK % prop.KGranularity) == 0;
+    };
+
+    const VkCooperativeMatrixFlexibleDimensionsPropertiesNV* flexible_prop = nullptr;
+    for (const auto& prop : helper.coop_matrix_flex_props) {
+        if (flexible_property_matches_mul_add(prop) &&
+            prop.workgroupInvocations <= props2.cooperativeMatrixWorkgroupScopeMaxWorkgroupSize &&
+            prop.workgroupInvocations <= m_device->Physical().limits_.maxComputeWorkGroupInvocations &&
+            prop.workgroupInvocations <= m_device->Physical().limits_.maxComputeWorkGroupSize[0]) {
+            flexible_prop = &prop;
+            break;
+        }
+    }
+    if (!flexible_prop) {
+        GTEST_SKIP() << "desired VkCooperativeMatrixFlexibleDimensionsPropertiesNV not found";
+    }
+
+    const uint32_t max_workgroup_size = std::min({props2.cooperativeMatrixWorkgroupScopeMaxWorkgroupSize,
+                                                  m_device->Physical().limits_.maxComputeWorkGroupInvocations,
+                                                  m_device->Physical().limits_.maxComputeWorkGroupSize[0]});
+    uint32_t spec_data = 0;
+    // Pick a subgroup-aligned workgroup size that satisfies the generic limits but no flexible-dimensions property.
+    for (uint32_t candidate = props11.subgroupSize; candidate <= max_workgroup_size;) {
+        const bool matches_any_flexible_property =
+            std::any_of(helper.coop_matrix_flex_props.begin(), helper.coop_matrix_flex_props.end(),
+                        [&](const VkCooperativeMatrixFlexibleDimensionsPropertiesNV& prop) {
+                            return flexible_property_matches_mul_add(prop) && prop.workgroupInvocations == candidate;
+                        });
+        if (!matches_any_flexible_property) {
+            spec_data = candidate;
+            break;
+        }
+        if (candidate > max_workgroup_size / 2) {
+            break;
+        }
+        candidate *= 2;
+    }
+    if (spec_data == 0) {
+        GTEST_SKIP() << "unable to find unsupported but otherwise valid workgroup invocation count";
+    }
+
+    const char* spv_source = R"asm(
+               OpCapability Shader
+               OpCapability Float16
+               OpCapability VulkanMemoryModel
+               OpCapability CooperativeMatrixKHR
+               OpExtension "SPV_KHR_cooperative_matrix"
+               OpExtension "SPV_KHR_vulkan_memory_model"
+               OpMemoryModel Logical Vulkan
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionModeId %main LocalSizeId %local_size_x %uint_1 %uint_1
+               OpDecorate %local_size_x SpecId 18
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %half = OpTypeFloat 16
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+    %uint_1 = OpConstant %uint 1
+     %uint_2 = OpConstant %uint 2
+    %uint_32 = OpConstant %uint 32
+%local_size_x = OpSpecConstant %uint 1
+     %v3uint = OpTypeVector %uint 3
+%gl_WorkGroupSize = OpSpecConstantComposite %v3uint %local_size_x %uint_1 %uint_1
+      %mat_a = OpTypeCooperativeMatrixKHR %half %uint_2 %uint_32 %uint_32 %uint_0
+      %mat_b = OpTypeCooperativeMatrixKHR %half %uint_2 %uint_32 %uint_32 %uint_1
+      %mat_c = OpTypeCooperativeMatrixKHR %half %uint_2 %uint_32 %uint_32 %uint_2
+%_ptr_Function_mat_a = OpTypePointer Function %mat_a
+%_ptr_Function_mat_b = OpTypePointer Function %mat_b
+%_ptr_Function_mat_c = OpTypePointer Function %mat_c
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+          %a = OpVariable %_ptr_Function_mat_a Function
+          %b = OpVariable %_ptr_Function_mat_b Function
+          %c = OpVariable %_ptr_Function_mat_c Function
+     %load_a = OpLoad %mat_a %a
+     %load_b = OpLoad %mat_b %b
+     %load_c = OpLoad %mat_c %c
+     %result = OpCooperativeMatrixMulAddKHR %mat_c %load_a %load_b %load_c
+               OpReturn
+               OpFunctionEnd
+    )asm";
+
+    const VkSpecializationMapEntry entry = {18, 0, sizeof(uint32_t)};
+    const VkSpecializationInfo spec_info = {1, &entry, sizeof(spec_data), &spec_data};
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM, &spec_info);
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10165", 3);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10166");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }

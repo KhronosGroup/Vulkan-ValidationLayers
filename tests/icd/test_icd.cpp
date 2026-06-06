@@ -1803,6 +1803,25 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixProperti
     return VK_SUCCESS;
 }
 
+static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+    VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties) {
+    if (!pProperties) {
+        *pPropertyCount = 1;
+    } else if (*pPropertyCount >= 1) {
+        pProperties[0].MGranularity = 16;
+        pProperties[0].NGranularity = 16;
+        pProperties[0].KGranularity = 16;
+        pProperties[0].AType = VK_COMPONENT_TYPE_FLOAT16_KHR;
+        pProperties[0].BType = VK_COMPONENT_TYPE_FLOAT16_KHR;
+        pProperties[0].CType = VK_COMPONENT_TYPE_FLOAT16_KHR;
+        pProperties[0].ResultType = VK_COMPONENT_TYPE_FLOAT16_KHR;
+        pProperties[0].saturatingAccumulation = VK_FALSE;
+        pProperties[0].scope = VK_SCOPE_WORKGROUP_KHR;
+        pProperties[0].workgroupInvocations = 64;
+    }
+    return VK_SUCCESS;
+}
+
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice,
                                                                                      uint32_t* pPropertyCount,
                                                                                      VkCooperativeVectorPropertiesNV* pProperties) {

@@ -6367,11 +6367,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateSurfaceOHOS(VkInstance instance, con
 }
 
 #endif  // VK_USE_PLATFORM_OHOS
-static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
-    VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties) {
-    return VK_SUCCESS;
-}
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
 static VKAPI_ATTR VkResult VKAPI_CALL GetMemoryMetalHandleEXT(VkDevice device,
                                                               const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,

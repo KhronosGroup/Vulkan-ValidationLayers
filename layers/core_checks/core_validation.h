@@ -938,7 +938,7 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const vvl::Pipeline& pipeline, const Location& loc) const;
     bool ValidateCooperativeMatrix(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                   const ShaderStageState& stage_state, const spirv::LocalSize& local_size,
+                                   const ShaderStageState& stage_state, const spirv::LocalSize& local_size, bool local_size_known,
                                    const Location& loc) const;
     bool ValidateCooperativeVector(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const Location& loc) const;

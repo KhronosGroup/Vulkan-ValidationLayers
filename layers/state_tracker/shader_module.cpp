@@ -1635,18 +1635,30 @@ std::shared_ptr<const EntryPoint> Module::FindEntrypoint(const char* name, VkSha
 // Because the following is legal, need the entry point
 //    OpEntryPoint GLCompute %main "name_a"
 //    OpEntryPoint GLCompute %main "name_b"
-// Assumes shader module contains no spec constants used to set the local size values
-LocalSize Module::FindLocalSize(const EntryPoint& entrypoint) const {
+LocalSize Module::FindLocalSize(const EntryPoint& entrypoint, bool* local_size_known) const {
     LocalSize local_size;
+    if (local_size_known) {
+        *local_size_known = true;
+    }
+
+    auto get_local_size_value = [this, local_size_known](uint32_t id) {
+        bool known = false;
+        uint32_t value = GetConstantValueById(id, &known);
+        if (!known && local_size_known) {
+            *local_size_known = false;
+        }
+        return value;
+    };
+
     // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
     // execution mode."
     if (static_data_.has_built_in_workgroup_size) {
         const Instruction* composite_def = FindDef(static_data_.built_in_workgroup_size_id);
-        if (composite_def->Opcode() == spv::OpConstantComposite) {
+        if (composite_def->Opcode() == spv::OpConstantComposite || composite_def->Opcode() == spv::OpSpecConstantComposite) {
             // VUID-WorkgroupSize-WorkgroupSize-04427 makes sure this is a OpTypeVector of int32
-            local_size.x = GetConstantValueById(composite_def->Word(3));
-            local_size.y = GetConstantValueById(composite_def->Word(4));
-            local_size.z = GetConstantValueById(composite_def->Word(5));
+            local_size.x = get_local_size_value(composite_def->Word(3));
+            local_size.y = get_local_size_value(composite_def->Word(4));
+            local_size.z = get_local_size_value(composite_def->Word(5));
             return local_size;
         }
     }
@@ -1655,9 +1667,9 @@ LocalSize Module::FindLocalSize(const EntryPoint& entrypoint) const {
         local_size = entrypoint.execution_mode.local_size;
     } else if (entrypoint.execution_mode.Has(ExecutionModeSet::local_size_id_bit)) {
         // Uses ExecutionModeLocalSizeId so need to resolve ID value
-        local_size.x = GetConstantValueById(entrypoint.execution_mode.local_size.x);
-        local_size.y = GetConstantValueById(entrypoint.execution_mode.local_size.y);
-        local_size.z = GetConstantValueById(entrypoint.execution_mode.local_size.z);
+        local_size.x = get_local_size_value(entrypoint.execution_mode.local_size.x);
+        local_size.y = get_local_size_value(entrypoint.execution_mode.local_size.y);
+        local_size.z = get_local_size_value(entrypoint.execution_mode.local_size.z);
     }
 
     return local_size;
@@ -1708,20 +1720,21 @@ const Instruction* Module::GetAnyConstantDef(uint32_t id) const {
     return value;
 }
 
-// Returns the constant value described by the instruction at |id|
-// Caller ensures there can't be a runtime array or specialization constants
-uint32_t Module::GetConstantValueById(uint32_t id) const {
+uint32_t Module::GetConstantValueById(uint32_t id, bool* known) const {
     const Instruction* value = GetAnyConstantDef(id);
+    const bool is_constant = value && value->Opcode() == spv::OpConstant;
+    if (known) {
+        *known = is_constant;
+    }
+    if (is_constant) {
+        return value->GetConstantValue();
+    }
 
     // If this hit, most likley a runtime array (probably from VK_EXT_descriptor_indexing)
     // or unhandled specialization constants
-    if (!value || value->Opcode() != spv::OpConstant) {
-        // TODO - still not fixed
-        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6293
-        return 1;
-    }
-
-    return value->GetConstantValue();
+    // TODO - still not fixed
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6293
+    return 1;
 }
 
 bool Module::GetBoolIfConstant(const spirv::Instruction& insn, bool* value) const {

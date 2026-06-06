@@ -290,7 +290,7 @@ static bool IsSignedIntEnum(const VkComponentTypeKHR component_type) {
 // (e.g. due to specialization constant usage).
 bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                            const ShaderStageState& stage_state, const spirv::LocalSize& local_size,
-                                           const Location& loc) const {
+                                           bool local_size_known, const Location& loc) const {
     bool skip = false;
     const uint64_t workgroup_size = local_size.x * local_size.y * local_size.z;
 
@@ -438,7 +438,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
             case spv::OpTypeCooperativeMatrixKHR: {
                 CoopMatType m(insn.ResultId(), module_state, IsSignedIntType(insn.Word(2)));
 
-                if ((entrypoint.stage & VK_SHADER_STAGE_COMPUTE_BIT) != 0) {
+                if ((entrypoint.stage & VK_SHADER_STAGE_COMPUTE_BIT) != 0 && local_size_known) {
                     if (!IsIntegerMultipleOf(local_size.x, effective_subgroup_size)) {
                         const auto vuid_string = m.scope == VK_SCOPE_SUBGROUP_KHR
                                                      ? "VUID-VkPipelineShaderStageCreateInfo-module-08987"
@@ -502,7 +502,8 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                     for (uint32_t i = 0; i < device_state->cooperative_matrix_flexible_dimensions_properties.size(); ++i) {
                         const auto& property = device_state->cooperative_matrix_flexible_dimensions_properties[i];
 
-                        if (property.scope == VK_SCOPE_WORKGROUP_KHR && workgroup_size != property.workgroupInvocations) {
+                        if (property.scope == VK_SCOPE_WORKGROUP_KHR && local_size_known &&
+                            workgroup_size != property.workgroupInvocations) {
                             continue;
                         }
 
@@ -636,7 +637,8 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                             valid &= property.saturatingAccumulation ==
                                      !!(flags & spv::CooperativeMatrixOperandsSaturatingAccumulationKHRMask);
 
-                            valid &= property.scope != VK_SCOPE_WORKGROUP_KHR || workgroup_size == property.workgroupInvocations;
+                            valid &= property.scope != VK_SCOPE_WORKGROUP_KHR || !local_size_known ||
+                                     workgroup_size == property.workgroupInvocations;
 
                             if (valid) {
                                 found_matching_flexible_prop = true;
@@ -2185,14 +2187,15 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
     const spirv::Module& module_state = *module_state_ptr;
     const spirv::EntryPoint& entrypoint = *entrypoint_ptr;
 
-    spirv::LocalSize local_size = module_state.FindLocalSize(entrypoint);
+    bool local_size_known = true;
+    spirv::LocalSize local_size = module_state.FindLocalSize(entrypoint, &local_size_known);
 
     skip |= ValidateImageWrite(module_state, entrypoint, loc);
     skip |= ValidateShaderExecutionModes(module_state, entrypoint, stage, pipeline, loc);
     skip |= ValidateBuiltInLimits(module_state, entrypoint, pipeline, loc);
     skip |= ValidatePushConstantUsage(module_state, entrypoint, pipeline, stage_state, loc);
     if (enabled_features.cooperativeMatrix) {
-        skip |= ValidateCooperativeMatrix(module_state, entrypoint, stage_state, local_size, loc);
+        skip |= ValidateCooperativeMatrix(module_state, entrypoint, stage_state, local_size, local_size_known, loc);
     }
     if (enabled_features.cooperativeVector) {
         skip |= ValidateCooperativeVector(module_state, entrypoint, loc);

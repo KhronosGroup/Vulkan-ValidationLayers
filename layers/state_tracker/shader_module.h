@@ -814,12 +814,12 @@ struct Module {
     std::string DescribeTypeInstruction(const Instruction &type_instr) const;
 
     std::shared_ptr<const EntryPoint> FindEntrypoint(const char *name, VkShaderStageFlagBits stageBits) const;
-    LocalSize FindLocalSize(const EntryPoint &entrypoint) const;
+    LocalSize FindLocalSize(const EntryPoint &entrypoint, bool *local_size_known = nullptr) const;
 
     uint32_t CalculateWorkgroupSharedMemory() const;
 
     const Instruction *GetAnyConstantDef(uint32_t id) const;
-    uint32_t GetConstantValueById(uint32_t id) const;
+    uint32_t GetConstantValueById(uint32_t id, bool *known = nullptr) const;
     bool GetBoolIfConstant(const spirv::Instruction &insn, bool *value) const;
     bool GetInt32IfConstant(const spirv::Instruction &insn, uint32_t *value) const;
 
