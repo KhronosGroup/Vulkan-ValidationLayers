@@ -2563,3 +2563,21 @@ TEST_F(NegativeQuery, QueryPoolResultsStride) {
                             VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeQuery, PrimitivesGeneratedQuerySize) {
+    AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
+    RETURN_IF_SKIP(Init());
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, 1u);
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 1u);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    uint32_t data = 0u;
+    m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
+    vk::GetQueryPoolResults(*m_device, query_pool, 0u, 1u, 1u, &data, sizeof(data), 0u);
+    m_errorMonitor->VerifyFound();
+}
