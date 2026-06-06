@@ -19,7 +19,8 @@
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "shader_templates.h"
 
-void GpuAVDescriptorHeap::CreateResourceHeap(VkDeviceSize app_size) {
+void GpuAVDescriptorHeap::CreateResourceHeap(VkDeviceSize app_size, bool reserved_range_in_front) {
+    resource_reserved_range_in_front_ = reserved_range_in_front;
     const VkDeviceSize heap_size = AlignResource(app_size) + heap_props.minResourceHeapReservedRange;
     VkBufferUsageFlags2CreateInfo buffer_usage = vku::InitStructHelper();
     buffer_usage.usage = VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT;
@@ -28,10 +29,14 @@ void GpuAVDescriptorHeap::CreateResourceHeap(VkDeviceSize app_size) {
     resource_heap_.Init(*m_device, vkt::Buffer::CreateInfo(heap_size, 0, {}, &buffer_usage),
                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
     resource_heap_data_ = static_cast<uint8_t*>(resource_heap_.Memory().Map());
+    if (resource_reserved_range_in_front_) {
+        resource_heap_data_ += heap_props.minResourceHeapReservedRange;
+    }
 }
 
-void GpuAVDescriptorHeap::CreateSamplerHeap(VkDeviceSize app_size, bool use_embedded_samplers) {
+void GpuAVDescriptorHeap::CreateSamplerHeap(VkDeviceSize app_size, bool use_embedded_samplers, bool reserved_range_in_front) {
     embedded_samplers = use_embedded_samplers;
+    sampler_reserved_range_in_front_ = reserved_range_in_front;
     const VkDeviceSize reserved_range =
         (embedded_samplers ? heap_props.minSamplerHeapReservedRangeWithEmbedded : heap_props.minSamplerHeapReservedRange);
     const VkDeviceSize heap_size = AlignSampler(app_size + reserved_range);
@@ -43,12 +48,20 @@ void GpuAVDescriptorHeap::CreateSamplerHeap(VkDeviceSize app_size, bool use_embe
     sampler_heap_.Init(*m_device, vkt::Buffer::CreateInfo(heap_size, 0, {}, &buffer_usage),
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
     sampler_heap_data_ = static_cast<uint8_t*>(sampler_heap_.Memory().Map());
+    if (sampler_reserved_range_in_front_) {
+        sampler_heap_data_ += reserved_range;
+    }
 }
 
 void GpuAVDescriptorHeap::BindResourceHeap() {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange = resource_heap_.AddressRange();
-    bind_resource_info.reservedRangeOffset = resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
+    if (resource_reserved_range_in_front_) {
+        bind_resource_info.reservedRangeOffset = 0;
+    } else {
+        bind_resource_info.reservedRangeOffset = resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
+    }
+
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 }
@@ -58,7 +71,11 @@ void GpuAVDescriptorHeap::BindSamplerHeap() {
         embedded_samplers ? heap_props.minSamplerHeapReservedRangeWithEmbedded : heap_props.minSamplerHeapReservedRange;
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange = sampler_heap_.AddressRange();
-    bind_resource_info.reservedRangeOffset = sampler_heap_.CreateInfo().size - min_reserved_range;
+    if (resource_reserved_range_in_front_) {
+        bind_resource_info.reservedRangeOffset = 0;
+    } else {
+        bind_resource_info.reservedRangeOffset = sampler_heap_.CreateInfo().size - min_reserved_range;
+    }
     bind_resource_info.reservedRangeSize = min_reserved_range;
     vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_resource_info);
 }

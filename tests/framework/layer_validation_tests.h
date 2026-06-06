@@ -297,8 +297,8 @@ class GpuAVDescriptorHeap : public GpuAVTest {
   public:
     void InitGpuAVDescriptorHeap(std::vector<VkLayerSettingEXT> layer_settings = {}, bool safe_mode = true);
 
-    void CreateResourceHeap(VkDeviceSize app_size);
-    void CreateSamplerHeap(VkDeviceSize app_size, bool use_embedded_samplers = false);
+    void CreateResourceHeap(VkDeviceSize app_size, bool reserved_range_in_front = false);
+    void CreateSamplerHeap(VkDeviceSize app_size, bool use_embedded_samplers = false, bool reserved_range_in_front = false);
 
     void BindResourceHeap();
     void BindSamplerHeap();
@@ -307,8 +307,10 @@ class GpuAVDescriptorHeap : public GpuAVTest {
 
     vkt::Buffer resource_heap_;
     uint8_t *resource_heap_data_ = nullptr;
+    bool resource_reserved_range_in_front_ = false;
     vkt::Buffer sampler_heap_;
     uint8_t *sampler_heap_data_ = nullptr;
+    bool sampler_reserved_range_in_front_ = false;
 
     VkDeviceSize AlignResource(VkDeviceSize offset);
     VkDeviceSize AlignSampler(VkDeviceSize offset);
@@ -360,8 +362,8 @@ class DescriptorHeapTest : public VkLayerTest {
   public:
     void InitBasicDescriptorHeap();
     void InitUntypedDescriptorHeap();
-    void CreateResourceHeap(VkDeviceSize app_size);
-    void CreateSamplerHeap(VkDeviceSize app_size, bool use_embedded_samplers = false);
+    void CreateResourceHeap(VkDeviceSize app_size, bool reserved_range_in_front = false);
+    void CreateSamplerHeap(VkDeviceSize app_size, bool use_embedded_samplers = false, bool reserved_range_in_front = false);
 
     void BindResourceHeap();
     void BindSamplerHeap();
@@ -375,8 +377,10 @@ class DescriptorHeapTest : public VkLayerTest {
 
     vkt::Buffer resource_heap_;
     uint8_t* resource_heap_data_ = nullptr;
+    bool resource_reserved_range_in_front_ = false;
     vkt::Buffer sampler_heap_;
-    uint8_t* sampler_heap_data_ = nullptr;
+    uint8_t *sampler_heap_data_ = nullptr;
+    bool sampler_reserved_range_in_front_ = false;
 
   private:
     bool embedded_samplers = false;
