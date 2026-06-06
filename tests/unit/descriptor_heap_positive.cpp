@@ -1839,7 +1839,7 @@ TEST_F(PositiveDescriptorHeap, NestedResourceInheritance) {
 
     m_command_buffer.Begin();
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_info);
-    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary1.handle());
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary2.handle());
     m_command_buffer.End();
 }
 
