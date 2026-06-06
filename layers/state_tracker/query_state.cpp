@@ -139,6 +139,13 @@ uint32_t QueryPool::GetQuerySize(VkQueryResultFlags flags) const {
             query_size = query_size_in_bytes * (query_items + query_avail_data);
             break;
 
+        case VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT:
+        case VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT:
+            // Primitive generated queries write one integer.
+            query_items = 1;
+            query_size = query_size_in_bytes * (query_items + query_avail_data);
+            break;
+
         case VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR:
             // Video encode feedback queries write one integer value for each bit that is enabled in
             // VkQueryPoolVideoEncodeFeedbackCreateInfoKHR::encodeFeedbackFlags when the pool is created
