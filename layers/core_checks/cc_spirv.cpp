@@ -3193,8 +3193,11 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                         vvl::GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::DescriptorHeapMapping_11312),
                         module_state.handle(), loc,
                         "does not have a pNext to VkShaderDescriptorSetAndBindingMappingInfoEXT, but %s is set and %s needs a "
-                        "mapping for shader %s.\n%s\n(Either pass in a valid VkShaderDescriptorSetAndBindingMappingInfoEXT or use "
-                        "VK_KHR_shader_untyped_pointers to not require a Set/Binding mapping in the SPIR-V)",
+                        "mapping for shader %s.\n%s\nHint: Either pass in a valid VkShaderDescriptorSetAndBindingMappingInfoEXT or "
+                        "use "
+                        "SPV_EXT_descriptor_heap to replace the traditional Set/Binding SPIR-V mapping. (SPV_EXT_descriptor_heap "
+                        "requires re-writing your shader and each shading language, if it is supported, will have a dedicated way "
+                        "to set it)",
                         pipeline ? "VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT" : "VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT",
                         resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str(),
                         PrintPNextChain(Struct::Empty, stage_state.GetPNext()).c_str());
