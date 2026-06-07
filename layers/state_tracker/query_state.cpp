@@ -159,11 +159,17 @@ uint32_t QueryPool::GetQuerySize(VkQueryResultFlags flags) const {
             query_size = sizeof(VkPerformanceCounterResultKHR) * query_items;
             break;
 
-        // These cases intentionally fall through to the default
-        case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:  // VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV
+        // These are zero only because no one has spent time to decide what they should return
+        case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:
+        case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV:
         case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR:
+        case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR:
+        case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR:
+        case VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT:
+        case VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT:
         case VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL:
-        default:
+        case VK_QUERY_TYPE_TIME_ELAPSED_QCOM:
+        case VK_QUERY_TYPE_MAX_ENUM:
             query_size = 0;
             break;
     }
