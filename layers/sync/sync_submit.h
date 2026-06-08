@@ -349,8 +349,8 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const override;
     AccessContext *GetCurrentAccessContext() override { return current_access_context_; }
     const AccessContext *GetCurrentAccessContext() const override { return current_access_context_; }
-    SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
-    const SyncEventsContext *GetCurrentEventsContext() const override { return &events_context_; }
+    SyncEventsContext& GetEventsContext() override { return events_context_; }
+    const SyncEventsContext& GetEventsContext() const override { return events_context_; }
 
     VkQueueFlags GetQueueFlags() const { return queue_state_->GetQueue()->GetQueueFlags(); }
 

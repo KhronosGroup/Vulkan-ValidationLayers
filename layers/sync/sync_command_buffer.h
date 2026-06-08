@@ -159,9 +159,9 @@ class CommandExecutionContext {
     virtual ~CommandExecutionContext() = default;
 
     virtual AccessContext *GetCurrentAccessContext() = 0;
-    virtual SyncEventsContext *GetCurrentEventsContext() = 0;
+    virtual SyncEventsContext& GetEventsContext() = 0;
     virtual const AccessContext *GetCurrentAccessContext() const = 0;
-    virtual const SyncEventsContext *GetCurrentEventsContext() const = 0;
+    virtual const SyncEventsContext& GetEventsContext() const = 0;
     virtual QueueId GetQueueId() const = 0;
     virtual VulkanTypedHandle Handle() const = 0;
     virtual ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const = 0;
@@ -217,7 +217,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const override;
     AccessContext *GetCurrentAccessContext() override { return current_context_; }
-    SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
+    SyncEventsContext& GetEventsContext() override { return events_context_; }
 
     const AccessContext *GetCurrentAccessContext() const override {
         // TODO: return a reference (update a lot of places!)
@@ -225,7 +225,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
         return current_context_;
     }
 
-    const SyncEventsContext *GetCurrentEventsContext() const override { return &events_context_; }
+    const SyncEventsContext& GetEventsContext() const override { return events_context_; }
     QueueId GetQueueId() const override;
 
     RenderPassAccessContext *GetCurrentRenderPassContext() { return current_renderpass_context_; }

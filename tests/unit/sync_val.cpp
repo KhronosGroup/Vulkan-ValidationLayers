@@ -4035,7 +4035,7 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
 
     m_command_buffer.Begin();
     m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    m_errorMonitor->SetDesiredError("SYNC-vkCmdSetEvent-missingbarrier-reset");
+    m_errorMonitor->SetDesiredError("SYNC-vkCmdSetEvent-reset-race");
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     m_errorMonitor->VerifyFound();
 
@@ -4049,14 +4049,14 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     // Need a barrier between set and a reset
-    m_errorMonitor->SetDesiredError("SYNC-vkCmdResetEvent-missingbarrier-set");
+    m_errorMonitor->SetDesiredError("SYNC-vkCmdResetEvent-set-race");
     m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
     m_command_buffer.Begin();
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    m_errorMonitor->SetDesiredError("SYNC-vkCmdSetEvent-missingbarrier-set");
+    m_errorMonitor->SetDesiredError("SYNC-vkCmdSetEvent-set-race");
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     m_errorMonitor->VerifyFound();
 
