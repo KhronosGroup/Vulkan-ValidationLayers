@@ -72,11 +72,6 @@ TEST_F(PositiveDescriptorHeapUntyped, BasicBuffer) {
 
     uint32_t src_data = 4321u;
 
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0u;
-    push_data_info.data.size = sizeof(uint32_t);
-    push_data_info.data.address = &src_data;
-
     VkPushConstantRange push_const_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)};
     VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
     pipeline_layout_info.pushConstantRangeCount = 1u;
@@ -86,7 +81,7 @@ TEST_F(PositiveDescriptorHeapUntyped, BasicBuffer) {
     m_command_buffer.Begin();
     vk::CmdPushConstants(m_command_buffer, pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &src_data);
     BindResourceHeap();
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(uint32_t), &src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -493,11 +488,6 @@ TEST_F(PositiveDescriptorHeapUntyped, SecondaryCmdBufferCompute) {
 
     uint32_t src_data = 4321u;
 
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0u;
-    push_data_info.data.size = sizeof(uint32_t);
-    push_data_info.data.address = &src_data;
-
     VkPushConstantRange push_const_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)};
     VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
     pipeline_layout_info.pushConstantRangeCount = 1u;
@@ -522,7 +512,7 @@ TEST_F(PositiveDescriptorHeapUntyped, SecondaryCmdBufferCompute) {
 
     secondary.Begin(&begin_info);
     vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    vk::CmdPushDataEXT(secondary, &push_data_info);
+    secondary.PushData(0, sizeof(uint32_t), &src_data);
     vk::CmdDispatch(secondary, 1, 1, 1);
     secondary.End();
 
@@ -584,11 +574,6 @@ TEST_F(PositiveDescriptorHeapUntyped, SecondaryCmdBufferGraphics) {
 
     uint32_t src_data = 4321u;
 
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0u;
-    push_data_info.data.size = sizeof(uint32_t);
-    push_data_info.data.address = &src_data;
-
     VkPushConstantRange push_const_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)};
     VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
     pipeline_layout_info.pushConstantRangeCount = 1u;
@@ -615,7 +600,7 @@ TEST_F(PositiveDescriptorHeapUntyped, SecondaryCmdBufferGraphics) {
 
     secondary.Begin(&begin_info);
     vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vk::CmdPushDataEXT(secondary, &push_data_info);
+    secondary.PushData(0, sizeof(uint32_t), &src_data);
     vk::CmdDraw(secondary, 3u, 1u, 0u, 0u);
     secondary.End();
 
@@ -736,11 +721,6 @@ TEST_F(PositiveDescriptorHeapUntyped, HardcodedOffsetIntoStruct) {
 
     uint32_t src_data = 4321u;
 
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0u;
-    push_data_info.data.size = sizeof(uint32_t);
-    push_data_info.data.address = &src_data;
-
     VkPushConstantRange push_const_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)};
     VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
     pipeline_layout_info.pushConstantRangeCount = 1u;
@@ -750,7 +730,7 @@ TEST_F(PositiveDescriptorHeapUntyped, HardcodedOffsetIntoStruct) {
     m_command_buffer.Begin();
     vk::CmdPushConstants(m_command_buffer, pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &src_data);
     BindResourceHeap();
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(uint32_t), &src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -837,11 +817,6 @@ TEST_F(PositiveDescriptorHeapUntyped, SingleElementNoArray) {
 
     uint32_t src_data = 4321u;
 
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0u;
-    push_data_info.data.size = sizeof(uint32_t);
-    push_data_info.data.address = &src_data;
-
     VkPushConstantRange push_const_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)};
     VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
     pipeline_layout_info.pushConstantRangeCount = 1u;
@@ -851,7 +826,7 @@ TEST_F(PositiveDescriptorHeapUntyped, SingleElementNoArray) {
     m_command_buffer.Begin();
     vk::CmdPushConstants(m_command_buffer, pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &src_data);
     BindResourceHeap();
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(uint32_t), &src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();

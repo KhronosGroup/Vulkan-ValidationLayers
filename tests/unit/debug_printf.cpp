@@ -6264,15 +6264,10 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapPushConstantOnly) {
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
     pipe.CreateComputePipeline(false);
 
-    uint32_t data = 4;
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0u;
-    push_data_info.data.address = &data;
-    push_data_info.data.size = sizeof(uint32_t);
-
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    uint32_t data = 4;
+    m_command_buffer.PushData(0, sizeof(uint32_t), &data);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 

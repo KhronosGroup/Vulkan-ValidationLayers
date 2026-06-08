@@ -33,7 +33,7 @@ void DescriptorHeapTest::CreateResourceHeap(VkDeviceSize app_size, bool reserved
     }
 }
 
-void DescriptorHeapTest::CreateSamplerHeap(VkDeviceSize app_size, bool use_embedded_samplers, bool reserved_range_in_front) {
+void DescriptorHeapTest::CreateSamplerHeap(VkDeviceSize app_size, bool reserved_range_in_front, bool use_embedded_samplers) {
     embedded_samplers = use_embedded_samplers;
     sampler_reserved_range_in_front_ = reserved_range_in_front;
     const VkDeviceSize reserved_range =

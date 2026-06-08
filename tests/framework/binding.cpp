@@ -2084,6 +2084,14 @@ void CommandBuffer::EndRendering() {
     }
 }
 
+void CommandBuffer::PushData(uint32_t offset, size_t size, const void* address) {
+    VkPushDataInfoEXT push_data = vku::InitStructHelper();
+    push_data.offset = offset;
+    push_data.data.address = address;
+    push_data.data.size = size;
+    vk::CmdPushDataEXT(handle(), &push_data);
+}
+
 void CommandBuffer::BindShaders(const vkt::Shader& vert_shader, const vkt::Shader& frag_shader) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
     vk::CmdBindShadersEXT(handle(), 1u, &stages[0], &vert_shader.handle());

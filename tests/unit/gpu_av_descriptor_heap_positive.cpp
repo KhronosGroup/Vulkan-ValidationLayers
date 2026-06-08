@@ -11,6 +11,7 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include <cstdint>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../utils/math_utils.h"
@@ -38,18 +39,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, BufferPointerOffset) {
     CreateResourceHeap(resource_stride);
 
     vkt::Buffer buffer(*m_device, sizeof(float) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-
-    VkHostAddressRangeEXT descriptor_host;
-    descriptor_host.address = resource_heap_data_;
-    descriptor_host.size = resource_stride;
-
-    VkDeviceAddressRangeEXT device_range = buffer.AddressRange();
-
-    VkResourceDescriptorInfoEXT descriptor_info;
-    descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+    WriteStoreBufferToHeap(buffer);
 
     char const *cs_source = R"glsl(
         #version 450
@@ -296,11 +286,6 @@ TEST_F(PositiveGpuAVDescriptorHeap, PushAddress) {
 
     VkDeviceAddress read_address = read_buffer.Address();
 
-    VkPushDataInfoEXT push_data = vku::InitStructHelper();
-    push_data.offset = read_offset;
-    push_data.data.address = &read_address;
-    push_data.data.size = sizeof(read_address);
-
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
@@ -313,7 +298,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, PushAddress) {
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 
-    vk::CmdPushDataEXT(m_command_buffer, &push_data);
+    m_command_buffer.PushData(read_offset, sizeof(read_address), &read_address);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
 
     m_command_buffer.EndRenderPass();
@@ -498,11 +483,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, ForceNullDescriptor) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
 
     uint32_t push_offset = 0;
-    VkPushDataInfoEXT push_data = vku::InitStructHelper();
-    push_data.offset = 8;
-    push_data.data.address = &push_offset;
-    push_data.data.size = sizeof(uint32_t);
-    vk::CmdPushDataEXT(m_command_buffer, &push_data);
+    m_command_buffer.PushData(8, sizeof(uint32_t), &push_offset);
 
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 

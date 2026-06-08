@@ -296,13 +296,8 @@ TEST_F(PositiveDescriptorHeap, GraphicsPushData) {
     pipe.gp_ci_.pStages = stages;
     pipe.CreateGraphicsPipeline(false);
 
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0;
-    push_data_info.data.size = sizeof(expected_value);
-    push_data_info.data.address = &expected_value;
-
     m_command_buffer.Begin();
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(expected_value), &expected_value);
     BindResourceHeap();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -464,11 +459,6 @@ TEST_F(PositiveDescriptorHeap, PushData) {
 
     uint32_t src_data = 4321u;
 
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0u;
-    push_data_info.data.size = sizeof(uint32_t);
-    push_data_info.data.address = &src_data;
-
     VkPushConstantRange push_const_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)};
     VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
     pipeline_layout_info.pushConstantRangeCount = 1u;
@@ -478,7 +468,7 @@ TEST_F(PositiveDescriptorHeap, PushData) {
     m_command_buffer.Begin();
     vk::CmdPushConstants(m_command_buffer, pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &src_data);
     BindResourceHeap();
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(uint32_t), &src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -917,7 +907,7 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSampler) {
     const VkDeviceSize image_offset = 0u;
     const VkDeviceSize buffer_offset = Align(heap_props.imageDescriptorSize, heap_props.resourceHeapAlignment);
     CreateResourceHeap(buffer_offset + heap_props.bufferDescriptorSize);
-    CreateSamplerHeap(heap_props.samplerDescriptorAlignment, true);
+    CreateSamplerHeap(heap_props.samplerDescriptorAlignment, false, true);
 
     vkt::Buffer buffer(*m_device, sizeof(float) * 4u, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -1177,17 +1167,12 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithPushIndex) {
     descriptor_heap_pipe.gp_ci_.pStages = stages;
     descriptor_heap_pipe.CreateGraphicsPipeline(false);
 
-    VkPushDataInfoEXT push_data = vku::InitStructHelper();
-    push_data.offset = push_data_offset;
-    push_data.data.address = &push_offset;
-    push_data.data.size = sizeof(uint32_t);
-
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_heap_pipe);
     BindResourceHeap();
-    vk::CmdPushDataEXT(m_command_buffer, &push_data);
+    m_command_buffer.PushData(push_data_offset, sizeof(uint32_t), &push_offset);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
 
     m_command_buffer.EndRenderPass();
@@ -1273,17 +1258,12 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndex) {
 
     VkDeviceAddress heap_index_address = heap_index.Address();
 
-    VkPushDataInfoEXT push_data = vku::InitStructHelper();
-    push_data.offset = push_offset;
-    push_data.data.address = &heap_index_address;
-    push_data.data.size = sizeof(heap_index_address);
-
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_heap_pipe);
     BindResourceHeap();
-    vk::CmdPushDataEXT(m_command_buffer, &push_data);
+    m_command_buffer.PushData(push_offset, sizeof(heap_index_address), &heap_index_address);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
 
     m_command_buffer.EndRenderPass();
@@ -1368,17 +1348,12 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndexArray) {
 
     VkDeviceAddress heap_index_address = heap_index.Address();
 
-    VkPushDataInfoEXT push_data = vku::InitStructHelper();
-    push_data.offset = push_offset;
-    push_data.data.address = &heap_index_address;
-    push_data.data.size = sizeof(heap_index_address);
-
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_heap_pipe);
     BindResourceHeap();
-    vk::CmdPushDataEXT(m_command_buffer, &push_data);
+    m_command_buffer.PushData(push_offset, sizeof(heap_index_address), &heap_index_address);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
 
     m_command_buffer.EndRenderPass();
@@ -1472,17 +1447,12 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapData) {
     descriptor_heap_pipe.gp_ci_.pStages = stages;
     descriptor_heap_pipe.CreateGraphicsPipeline(false);
 
-    VkPushDataInfoEXT push_data = vku::InitStructHelper();
-    push_data.offset = read_push_data_offset;
-    push_data.data.address = &read_push_offset;
-    push_data.data.size = sizeof(read_push_offset);
-
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_heap_pipe);
     BindResourceHeap();
-    vk::CmdPushDataEXT(m_command_buffer, &push_data);
+    m_command_buffer.PushData(read_push_data_offset, sizeof(read_push_offset), &read_push_offset);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
 
     m_command_buffer.EndRenderPass();
@@ -1572,17 +1542,13 @@ TEST_F(PositiveDescriptorHeap, MappingSourcePushData) {
     for (uint32_t i = 0; i < 4; ++i) {
         read_data[i] = i + 1;
     }
-    VkPushDataInfoEXT push_data = vku::InitStructHelper();
-    push_data.offset = read_offset;
-    push_data.data.address = read_data;
-    push_data.data.size = sizeof(uint32_t) * 4;
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_heap_pipe);
     BindResourceHeap();
-    vk::CmdPushDataEXT(m_command_buffer, &push_data);
+    m_command_buffer.PushData(read_offset, sizeof(uint32_t) * 4, read_data);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
 
     m_command_buffer.EndRenderPass();
@@ -1673,17 +1639,12 @@ TEST_F(PositiveDescriptorHeap, MappingSourcePushAddress) {
 
     VkDeviceAddress read_address = read_buffer.Address();
 
-    VkPushDataInfoEXT push_data = vku::InitStructHelper();
-    push_data.offset = read_offset;
-    push_data.data.address = &read_address;
-    push_data.data.size = sizeof(read_address);
-
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_heap_pipe);
     BindResourceHeap();
-    vk::CmdPushDataEXT(m_command_buffer, &push_data);
+    m_command_buffer.PushData(read_offset, sizeof(read_address), &read_address);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
 
     m_command_buffer.EndRenderPass();
@@ -1781,17 +1742,12 @@ TEST_F(PositiveDescriptorHeap, MappingSourceIndirectAddress) {
 
     VkDeviceAddress indirect_address = indirect_buffer.Address();
 
-    VkPushDataInfoEXT push_data = vku::InitStructHelper();
-    push_data.offset = read_offset;
-    push_data.data.address = &indirect_address;
-    push_data.data.size = sizeof(indirect_address);
-
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_heap_pipe);
     BindResourceHeap();
-    vk::CmdPushDataEXT(m_command_buffer, &push_data);
+    m_command_buffer.PushData(read_offset, sizeof(indirect_address), &indirect_address);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
 
     m_command_buffer.EndRenderPass();
@@ -2753,16 +2709,11 @@ TEST_F(PositiveDescriptorHeap, MappingSourceWithoutHeap) {
 
     VkDeviceAddress indirect_address = indirect_buffer.Address();
 
-    VkPushDataInfoEXT push_data = vku::InitStructHelper();
-    push_data.offset = read_offset;
-    push_data.data.address = &indirect_address;
-    push_data.data.size = sizeof(indirect_address);
-
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_heap_pipe);
-    vk::CmdPushDataEXT(m_command_buffer, &push_data);
+    m_command_buffer.PushData(read_offset, sizeof(indirect_address), &indirect_address);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
 
     m_command_buffer.EndRenderPass();
@@ -3227,14 +3178,6 @@ TEST_F(PositiveDescriptorHeap, DescriptorIndexing) {
 
     uint32_t push_data_uint[8] = {0, 1, 2, 4, 8, 16, 32, 64};
     VkDeviceAddress indirect_ubo = ubo_buffer.Address();
-    VkPushDataInfoEXT push_uint_info = vku::InitStructHelper();
-    push_uint_info.offset = 0;
-    push_uint_info.data.size = 32;
-    push_uint_info.data.address = push_data_uint;
-    VkPushDataInfoEXT push_ubo_info = vku::InitStructHelper();
-    push_ubo_info.offset = 32;
-    push_ubo_info.data.size = sizeof(VkDeviceAddress);
-    push_ubo_info.data.address = &indirect_ubo;
 
     {
         VkHostAddressRangeEXT descriptor_host{resource_heap_data_, static_cast<size_t>(resource_stride)};
@@ -3352,8 +3295,9 @@ TEST_F(PositiveDescriptorHeap, DescriptorIndexing) {
 
     m_command_buffer.Begin();
     BindResourceHeap();
-    vk::CmdPushDataEXT(m_command_buffer, &push_uint_info);
-    vk::CmdPushDataEXT(m_command_buffer, &push_ubo_info);
+    m_command_buffer.PushData(0, 32, push_data_uint);
+    m_command_buffer.PushData(32, sizeof(VkDeviceAddress), &indirect_ubo);
+
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
