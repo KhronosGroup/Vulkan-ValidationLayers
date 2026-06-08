@@ -2656,7 +2656,7 @@ TEST_F(NegativeVideoEncode, CreateQueryPoolEncodeFeedbackProfile) {
 
 TEST_F(NegativeVideoEncode, CreateQueryPoolUnsupportedEncodeFeedback) {
     TEST_DESCRIPTION("vkCreateQueryPool - missing VkQueryPoolVideoEncodeFeedbackCreateInfoKHR");
-
+    AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_FEEDBACK_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncode(), [](const VideoConfig& config) {
