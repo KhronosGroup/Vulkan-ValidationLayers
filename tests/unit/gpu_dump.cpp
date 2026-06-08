@@ -391,11 +391,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapDescriptorIndexing) {
     m_errorMonitor->VerifyFound();
 
     uint32_t push_data_uint = 1;
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0;
-    push_data_info.data.size = 4;
-    push_data_info.data.address = &push_data_uint;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(uint32_t), &push_data_uint);
 
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
     mapping.sourceData.pushIndex.heapOffset = 0;
@@ -424,9 +420,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapDescriptorIndexing) {
     m_errorMonitor->VerifyFound();
 
     VkDeviceAddress indirect_ubo_address = ubo_buffer.Address();
-    push_data_info.data.size = 8;
-    push_data_info.data.address = &indirect_ubo_address;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_ubo_address);
 
     if (m_device->Physical().limits_.minUniformBufferOffsetAlignment <= 4) {
         mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
@@ -642,10 +636,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeArrayIndexed) {
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 
     VkDeviceAddress indirect_ubo_address = ubo_buffer.Address();
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.data.size = 8;
-    push_data_info.data.address = &indirect_ubo_address;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_ubo_address);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
@@ -706,10 +697,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeIndirectArray) {
     ubo_data[3] = (uint32_t)resource_stride;
 
     VkDeviceAddress indirect_ubo_address = ubo_buffer.Address();
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.data.size = 8;
-    push_data_info.data.address = &indirect_ubo_address;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_ubo_address);
 
     VkDeviceSize max_descriptor_alignement = std::max(heap_props.bufferDescriptorAlignment, heap_props.imageDescriptorAlignment);
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
@@ -836,11 +824,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignment) {
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 
     uint32_t push_data_uint = 1;
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0;
-    push_data_info.data.size = 4;
-    push_data_info.data.address = &push_data_uint;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(uint32_t), &push_data_uint);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 2);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
@@ -903,10 +887,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectArray) {
     ubo_data[3] = (uint32_t)(resource_stride * 3) + 1;
 
     VkDeviceAddress indirect_ubo_address = ubo_buffer.Address();
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.data.size = 8;
-    push_data_info.data.address = &indirect_ubo_address;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_ubo_address);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange = descriptor_heap.AddressRange();
@@ -965,11 +946,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentHeapData) {
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 
     uint32_t push_data_uint = 1;
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0;
-    push_data_info.data.size = 4;
-    push_data_info.data.address = &push_data_uint;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(uint32_t), &push_data_uint);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT;
@@ -1040,11 +1017,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapWithoutDescriptor) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     float data[4] = {1.0, 2.0, 3.0, 4.0};
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0;
-    push_data_info.data.size = 16;
-    push_data_info.data.address = data;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, 16, data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_errorMonitor->SetDesiredInfo("GPU-DUMP");
@@ -1100,12 +1073,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentPushAddress) {
 
     vkt::Buffer ssbo_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     VkDeviceAddress read_address = ssbo_buffer.Address() + 1;
-
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0;
-    push_data_info.data.size = sizeof(VkDeviceAddress);
-    push_data_info.data.address = &read_address;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &read_address);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
@@ -1169,11 +1137,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectAddress) {
     *((VkDeviceAddress*)indirect_buffer.Memory().Map()) = ubo_buffer.Address() + 1;
 
     VkDeviceAddress indirect_address = indirect_buffer.Address();
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0;
-    push_data_info.data.size = sizeof(VkDeviceAddress);
-    push_data_info.data.address = &indirect_address;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_address);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
@@ -1236,10 +1200,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectIndex) {
     vkt::Buffer ubo_buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
 
     VkDeviceAddress indirect_ubo_address = ubo_buffer.Address() + 1;
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.data.size = 8;
-    push_data_info.data.address = &indirect_ubo_address;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_ubo_address);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
@@ -1296,10 +1257,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapIndirectIndexNoBuffer) {
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 
     VkDeviceAddress indirect_ubo_address = 0xBEEE0000;
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.data.size = 8;
-    push_data_info.data.address = &indirect_ubo_address;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_ubo_address);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;

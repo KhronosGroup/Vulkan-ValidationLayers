@@ -11,6 +11,7 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include <cstdint>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/shader_object_helper.h"
@@ -35,7 +36,7 @@ void GpuAVDescriptorHeap::CreateResourceHeap(VkDeviceSize app_size, bool reserve
     }
 }
 
-void GpuAVDescriptorHeap::CreateSamplerHeap(VkDeviceSize app_size, bool use_embedded_samplers, bool reserved_range_in_front) {
+void GpuAVDescriptorHeap::CreateSamplerHeap(VkDeviceSize app_size, bool reserved_range_in_front, bool use_embedded_samplers) {
     embedded_samplers = use_embedded_samplers;
     sampler_reserved_range_in_front_ = reserved_range_in_front;
     const VkDeviceSize reserved_range =
@@ -79,6 +80,16 @@ void GpuAVDescriptorHeap::BindSamplerHeap() {
     }
     bind_resource_info.reservedRangeSize = min_reserved_range;
     vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_resource_info);
+}
+
+void GpuAVDescriptorHeap::WriteStoreBufferToHeap(const vkt::Buffer& ssbo, uint32_t stride) {
+    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + (heap_props.bufferDescriptorSize * stride),
+                                          static_cast<size_t>(heap_props.bufferDescriptorSize)};
+    VkDeviceAddressRangeEXT device_range = ssbo.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
 }
 
 VkDeviceSize GpuAVDescriptorHeap::AlignResource(VkDeviceSize offset) {
@@ -885,18 +896,10 @@ TEST_F(NegativeGpuAVDescriptorHeap, ShaderObjects) {
 TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffset) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride);
+    CreateResourceHeap(resource_stride, true);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-
-    // we have reserved range in front of heap
-    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
-                                          static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+    WriteStoreBufferToHeap(ssbo_buffer);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(1, 3);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
@@ -927,13 +930,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffset) {
     pipe.CreateComputePipeline(false);
 
     m_command_buffer.Begin();
-
-    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange = resource_heap_.AddressRange();
-    bind_resource_info.reservedRangeOffset = 0;
-    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
-
+    BindResourceHeap();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -945,20 +942,12 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffset) {
 TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffsetDynamicIndex) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride * 2);
+    CreateResourceHeap(resource_stride * 2, true);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     auto ssbo_memory = (uint32_t*)ssbo_buffer.Memory().Map();
     ssbo_memory[0] = 3;
-
-    // we have reserved range in front of heap
-    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
-                                          static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+    WriteStoreBufferToHeap(ssbo_buffer);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 1);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
@@ -990,13 +979,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffsetDynamicIndex) {
     pipe.CreateComputePipeline(false);
 
     m_command_buffer.Begin();
-
-    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange = resource_heap_.AddressRange();
-    bind_resource_info.reservedRangeOffset = 0;
-    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
-
+    BindResourceHeap();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -1008,18 +991,10 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffsetDynamicIndex) {
 TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBMultipleBinding) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride);
+    CreateResourceHeap(resource_stride, true);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-
-    // we have reserved range in front of heap
-    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
-                                          static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+    WriteStoreBufferToHeap(ssbo_buffer);
 
     // Goal is to mix-match the set/binding and mapping index
     uint32_t oob_offset = (uint32_t)(heap_props.minResourceHeapReservedRange + resource_stride);
@@ -1071,13 +1046,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBMultipleBinding) {
     pipe.CreateComputePipeline(false);
 
     m_command_buffer.Begin();
-
-    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange = resource_heap_.AddressRange();
-    bind_resource_info.reservedRangeOffset = 0;
-    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
-
+    BindResourceHeap();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -1089,18 +1058,10 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBMultipleBinding) {
 TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBPushIndex) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride);
+    CreateResourceHeap(resource_stride, true);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-
-    // we have reserved range in front of heap
-    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
-                                          static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+    WriteStoreBufferToHeap(ssbo_buffer);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
@@ -1134,18 +1095,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBPushIndex) {
     m_command_buffer.Begin();
 
     uint32_t push_index = 512;
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 8;
-    push_data_info.data.size = 4;
-    push_data_info.data.address = &push_index;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(8, sizeof(uint32_t), &push_index);
 
-    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange = resource_heap_.AddressRange();
-    bind_resource_info.reservedRangeOffset = 0;
-    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
-
+    BindResourceHeap();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -1158,20 +1110,11 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBIndirectIndex) {
     TEST_DESCRIPTION("Also tests having different bindings and calling things twice");
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride * 4);
+    CreateResourceHeap(resource_stride * 4, true);
 
     vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
-
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-
-    // we have reserved range in front of heap
-    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
-                                          static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+    WriteStoreBufferToHeap(ssbo_buffer);
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
     mappings[0] = MakeSetAndBindingMapping(0, 0);
@@ -1226,46 +1169,27 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBIndirectIndex) {
     }
 
     VkDeviceAddress indirect_address = indirect_buffer.Address();
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 16;
-    push_data_info.data.size = sizeof(VkDeviceAddress);
-    push_data_info.data.address = &indirect_address;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(16, sizeof(VkDeviceAddress), &indirect_address);
 
-    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange = resource_heap_.AddressRange();
-    bind_resource_info.reservedRangeOffset = 0;
-    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    BindResourceHeap();
 
     // first pass good
     uint32_t a_index = 0;
     uint32_t b_index = 0;
-    push_data_info.data.size = 4;
-    push_data_info.offset = 0;
-    push_data_info.data.address = &a_index;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
-    push_data_info.offset = 4;
-    push_data_info.data.address = &b_index;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(uint32_t), &a_index);
+    m_command_buffer.PushData(4, sizeof(uint32_t), &b_index);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     // second pass
     a_index = 3;
-    push_data_info.offset = 0;
-    push_data_info.data.address = &a_index;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(uint32_t), &a_index);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     // third pass
     a_index = 0;
-    push_data_info.offset = 0;
-    push_data_info.data.address = &a_index;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(0, sizeof(uint32_t), &a_index);
     b_index = 3;
-    push_data_info.offset = 4;
-    push_data_info.data.address = &b_index;
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+    m_command_buffer.PushData(4, sizeof(uint32_t), &b_index);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     m_command_buffer.End();
@@ -1284,18 +1208,10 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBShaderObjects) {
     InitDynamicRenderTarget();
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride * 2);
+    CreateResourceHeap(resource_stride * 2, true);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-
-    // we have reserved range in front of heap
-    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
-                                          static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+    WriteStoreBufferToHeap(ssbo_buffer);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
@@ -1326,11 +1242,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBShaderObjects) {
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
 
-    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange = resource_heap_.AddressRange();
-    bind_resource_info.reservedRangeOffset = 0;
-    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    BindResourceHeap();
 
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     VkShaderStageFlagBits stages[2] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
@@ -1352,8 +1264,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOB) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
     const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
-    CreateResourceHeap(resource_stride);
-    CreateSamplerHeap(sampler_stride);
+    CreateResourceHeap(resource_stride, true);
+    CreateSamplerHeap(sampler_stride, true);
 
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     VkImageViewCreateInfo view_info = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_COLOR_BIT);
@@ -1361,17 +1273,14 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOB) {
     image_info.pView = &view_info;
     image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    // we have reserved range in front of heap
-    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
-                                          static_cast<size_t>(resource_stride)};
+    VkHostAddressRangeEXT descriptor_host{resource_heap_data_, static_cast<size_t>(resource_stride)};
     VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
     descriptor_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     descriptor_info.data.pImage = &image_info;
     vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    VkHostAddressRangeEXT sampler_host = {sampler_heap_data_ + heap_props.minSamplerHeapReservedRange,
-                                          static_cast<size_t>(sampler_stride)};
+    VkHostAddressRangeEXT sampler_host = {sampler_heap_data_, static_cast<size_t>(sampler_stride)};
     vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
@@ -1417,16 +1326,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOB) {
     pipe_sampler.CreateComputePipeline(false);
 
     m_command_buffer.Begin();
-
-    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange = resource_heap_.AddressRange();
-    bind_resource_info.reservedRangeOffset = 0;
-    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
-    bind_resource_info.heapRange = sampler_heap_.AddressRange();
-    bind_resource_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
-    vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_resource_info);
-
+    BindResourceHeap();
+    BindSamplerHeap();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_image);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
@@ -1443,8 +1344,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBCombinedImageSampler) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
     const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
-    CreateResourceHeap(resource_stride);
-    CreateSamplerHeap(sampler_stride);
+    CreateResourceHeap(resource_stride, true);
+    CreateSamplerHeap(sampler_stride, true);
 
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     VkImageViewCreateInfo view_info = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_COLOR_BIT);
@@ -1452,17 +1353,14 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBCombinedImageSampler) {
     image_info.pView = &view_info;
     image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    // we have reserved range in front of heap
-    VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + heap_props.minResourceHeapReservedRange,
-                                          static_cast<size_t>(resource_stride)};
+    VkHostAddressRangeEXT descriptor_host{resource_heap_data_, static_cast<size_t>(resource_stride)};
     VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
     descriptor_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     descriptor_info.data.pImage = &image_info;
     vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    VkHostAddressRangeEXT sampler_host = {sampler_heap_data_ + heap_props.minSamplerHeapReservedRange,
-                                          static_cast<size_t>(sampler_stride)};
+    VkHostAddressRangeEXT sampler_host = {sampler_heap_data_, static_cast<size_t>(sampler_stride)};
     vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
@@ -1504,15 +1402,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBCombinedImageSampler) {
     pipe_sampler.CreateComputePipeline(false);
 
     m_command_buffer.Begin();
-
-    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange = resource_heap_.AddressRange();
-    bind_resource_info.reservedRangeOffset = 0;
-    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
-    bind_resource_info.heapRange = sampler_heap_.AddressRange();
-    bind_resource_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
-    vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_resource_info);
+    BindResourceHeap();
+    BindSamplerHeap();
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_image);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -1697,12 +1588,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_ResourceOOBUntypedPointersStorageIm
     CreateResourceHeap(resource_stride);
 
     vkt::Buffer ssbo_buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+    WriteStoreBufferToHeap(ssbo_buffer);
 
     // Note - this looks the same in the "old" glslang code as well
     const char* cs_source = R"glsl(
@@ -1756,12 +1642,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersSampledImage) {
     CreateSamplerHeap(sampler_stride);
 
     vkt::Buffer ssbo_buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+    WriteStoreBufferToHeap(ssbo_buffer);
 
     // Note - this looks the same in the "old" glslang code as well
     const char* cs_source = R"glsl(
@@ -1856,13 +1737,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersOffsetId) {
     CreateResourceHeap(resource_stride * 2);
 
     vkt::Buffer buffer_0(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-
-    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_ + resource_stride, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = buffer_0.AddressRange();
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+    WriteStoreBufferToHeap(buffer_0, 2);
 
     // layout(storage_buffer) SSBO {
     //     uint a;

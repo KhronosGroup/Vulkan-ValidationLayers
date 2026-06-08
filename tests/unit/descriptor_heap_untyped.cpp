@@ -235,11 +235,6 @@ TEST_F(NegativeDescriptorHeapUntyped, SecondaryCmdBufferHeapMissingInheritance) 
 
     uint32_t src_data = 4321u;
 
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0u;
-    push_data_info.data.size = sizeof(uint32_t);
-    push_data_info.data.address = &src_data;
-
     VkPushConstantRange push_const_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)};
     VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
     pipeline_layout_info.pushConstantRangeCount = 1u;
@@ -260,7 +255,7 @@ TEST_F(NegativeDescriptorHeapUntyped, SecondaryCmdBufferHeapMissingInheritance) 
 
     secondary.Begin(&begin_info);
     vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vk::CmdPushDataEXT(secondary, &push_data_info);
+    secondary.PushData(0, sizeof(uint32_t), &src_data);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-11308");
     vk::CmdDraw(secondary, 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
@@ -313,11 +308,6 @@ TEST_F(NegativeDescriptorHeapUntyped, SecondaryCmdBufferResourceHeapUnbound) {
 
     uint32_t src_data = 4321u;
 
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0u;
-    push_data_info.data.size = sizeof(uint32_t);
-    push_data_info.data.address = &src_data;
-
     VkPushConstantRange push_const_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)};
     VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
     pipeline_layout_info.pushConstantRangeCount = 1u;
@@ -344,7 +334,7 @@ TEST_F(NegativeDescriptorHeapUntyped, SecondaryCmdBufferResourceHeapUnbound) {
 
     secondary.Begin(&begin_info);
     vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vk::CmdPushDataEXT(secondary, &push_data_info);
+    secondary.PushData(0, sizeof(uint32_t), &src_data);
     vk::CmdDraw(secondary, 3u, 1u, 0u, 0u);
     secondary.End();
 
