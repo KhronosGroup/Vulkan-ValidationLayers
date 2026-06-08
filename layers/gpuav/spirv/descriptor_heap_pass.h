@@ -40,7 +40,7 @@ class DescriptorHeapPass : public Pass {
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
-    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta, bool is_sampler);
+    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta, bool is_seperate_sampler);
     uint32_t CreateFunctionCallCombinedSampler(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
                                                const VkDescriptorSetAndBindingMappingEXT& mapping,
                                                const uint32_t descriptor_index_id);
@@ -49,6 +49,12 @@ class DescriptorHeapPass : public Pass {
 
     // < original ID, new CopyObject ID >
     vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;
+
+    // TODO - We should need to encode more things, if not, can remove this struct later
+    struct DescriptorEncoding {
+        uint32_t alignment = 0;
+    };
+    DescriptorEncoding GetDescriptorEncoding(const Variable& descriptor_var, bool is_seperate_sampler) const;
 
     // Function IDs to link in
     enum FunctionNames {
