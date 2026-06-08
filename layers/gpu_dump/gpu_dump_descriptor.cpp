@@ -46,7 +46,7 @@ namespace gpudump {
 bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const LastBound& last_bound) const {
     const vvl::CommandBuffer& cb_state = last_bound.cb_state;
     bool found_warning = false;
-    ss << "vkCmdBindDescriptorBuffersEXT last bound the following descriptor buffers:\n";
+    ss << "- vkCmdBindDescriptorBuffersEXT last bound the following descriptor buffers:\n";
     for (uint32_t binding_i = 0; binding_i < cb_state.descriptor_buffer.binding_info.size(); binding_i++) {
         const VkDeviceAddress address = cb_state.descriptor_buffer.binding_info[binding_i].address;
         ss << "  - pBindingInfos[" << std::dec << binding_i << "].address 0x" << std::hex << address << '\n';
@@ -66,12 +66,15 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
         bool operator<(const BindingInfo& other) const { return range.begin < other.range.begin; }
 
         void Print(std::ostringstream& binding_ss, bool robust_buffer) {
-            binding_ss << "    - Binding " << std::dec << index << " (" << string_VkDescriptorType(type) << ")";
-            binding_ss << ", offset: " << offset << ", range: " << string_range_hex(range) << " (";
+            binding_ss << "    - SPIR-V Binding " << std::dec << index << " [\"" << variable_name << "\"]\n";
+            binding_ss << "      - " << string_VkDescriptorType(type) << "\n";
+            binding_ss << "      - offset: " << offset << ", range: " << string_range_hex(range) << "\n";
+            binding_ss << "      - size: " << DescribeDescriptorBufferSize(robust_buffer, type) << " [0x" << std::hex << size
+                       << "]";
             if (count > 1) {
-                binding_ss << "descriptorCount [" << std::dec << count << "] * ";
+                binding_ss << " * descriptorCount [" << std::dec << count << "]";
             }
-            binding_ss << DescribeDescriptorBufferSize(robust_buffer, type) << " [" << std::dec << size << "])\n";
+            binding_ss << "\n";
         }
     };
 
@@ -86,10 +89,11 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
         bool operator<(const SetInfo& other) const { return range.begin < other.range.begin; }
 
         void Print(std::ostringstream& set_ss) {
-            set_ss << "  - Set " << std::dec << index << ", size: " << range.size() << " bytes, range: " << string_range_hex(range);
+            set_ss << "  - SPIR-V Set " << std::dec << index << "\n    - size: " << range.size()
+                   << " bytes, range: " << string_range_hex(range);
             if (binding_index != vvl::kNoIndex32) {
                 // Only print if there are multiple bindings
-                set_ss << " (pBindingInfos[" << std::dec << binding_index << "])";
+                set_ss << " (specified in pBindingInfos[" << std::dec << binding_index << "])";
             }
             set_ss << '\n';
         }
@@ -100,7 +104,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
     // Can be a push constant only shader, which is valid here
     // But if there are descriptors it is only valid if they are no accessed, which is warning territory
     if (!last_bound.desc_set_pipeline_layout) {
-        ss << "No VkPipelineLayout found from a previous vkCmdSetDescriptorBufferOffsetsEXT call\n";
+        ss << "- No VkPipelineLayout found from a previous vkCmdSetDescriptorBufferOffsetsEXT call\n";
 
         bool uses_descriptors = false;
         for (const ShaderStageState* stage : stages) {
@@ -110,20 +114,21 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
             }
         }
         if (uses_descriptors) {
-            ss << "[WARNING] no vkCmdSetDescriptorBufferOffsetsEXT was called so any accesses to the descriptors in the shader "
+            ss << "- [WARNING] no vkCmdSetDescriptorBufferOffsetsEXT was called so any accesses to the descriptors in the shader "
                   "will be invalid.\n";
             // quickly check if they set the wrong bind point (only for the more common one)
             if (last_bound.bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS &&
                 cb_state.GetLastBoundGraphics().desc_set_pipeline_layout) {
-                ss << "    vkCmdSetDescriptorBufferOffsetsEXT was called with VK_PIPELINE_BIND_POINT_GRAPHICS, did you mean "
+                ss << "    - vkCmdSetDescriptorBufferOffsetsEXT was called with VK_PIPELINE_BIND_POINT_GRAPHICS, did you mean "
                    << string_VkPipelineBindPoint(last_bound.bind_point) << "?\n";
             } else if (last_bound.bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
                        cb_state.GetLastBoundCompute().desc_set_pipeline_layout) {
-                ss << "    vkCmdSetDescriptorBufferOffsetsEXT was called with VK_PIPELINE_BIND_POINT_COMPUTE, did you mean "
+                ss << "    - vkCmdSetDescriptorBufferOffsetsEXT was called with VK_PIPELINE_BIND_POINT_COMPUTE, did you mean "
                    << string_VkPipelineBindPoint(last_bound.bind_point) << "?\n";
             } else if (last_bound.bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR &&
                        cb_state.GetLastBoundRayTracing().desc_set_pipeline_layout) {
-                ss << "    vkCmdSetDescriptorBufferOffsetsEXT was called with VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, did you mean "
+                ss << "    - vkCmdSetDescriptorBufferOffsetsEXT was called with VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, did you "
+                      "mean "
                    << string_VkPipelineBindPoint(last_bound.bind_point) << "?\n";
             }
             found_warning = true;
@@ -132,17 +137,22 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
     }
 
     const vvl::PipelineLayout& pipeline_layout = *last_bound.desc_set_pipeline_layout;
-    ss << "vkCmdSetDescriptorBufferOffsetsEXT has bound the following with " << dev_data.FormatHandle(pipeline_layout.VkHandle())
-       << ":\n";
+    ss << "- vkCmdSetDescriptorBufferOffsetsEXT last bound with " << dev_data.FormatHandle(pipeline_layout.VkHandle()) << "\n";
 
+    ss << "- Shader descriptors:\n";
     for (const ShaderStageState* stage : stages) {
         if (!stage->HasSpirv()) {
-            ss << "[No SPIR-V found for " << string_VkShaderStageFlagBits(stage->GetStage())
+            ss << "  - [No SPIR-V found for " << string_VkShaderStageFlagBits(stage->GetStage())
                << ", can't detect which descriptors are being accessed]\n";
             continue;
         }
         const spirv::EntryPoint& entry_point = *stage->entrypoint;
-        ss << entry_point.Describe() << "\n";
+        ss << "  " << entry_point.Describe();
+        // TODO - add util in ShaderStageState to get ShaderObject handle here
+        if (stage->module_state && stage->module_state->VkHandle() != VK_NULL_HANDLE) {
+            ss << " " << dev_data.FormatHandle(stage->module_state->VkHandle());
+        }
+        ss << "\n";
 
         std::vector<SetInfo> sorted_sets;
         sorted_sets.reserve(pipeline_layout.set_layouts.list.size());
@@ -166,21 +176,21 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
                 // Will print the invalid/unknown sets first, no need to sort these
                 if (!dsl || dsl->Destroyed()) {
                     ss << "  - [WARNING] Set " << std::dec << var_set
-                       << " VkDescriptorSetLayout was destroyed (TODO - Track more info in pipeline layout)";
+                       << " VkDescriptorSetLayout was destroyed (TODO - Track more info in pipeline layout)\n";
                     found_warning = true;
                     continue;
                 } else if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) == 0) {
                     ss << "  - [WARNING] Set " << std::dec << var_set
-                       << " was not created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT";
+                       << " was not created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT\n";
                     found_warning = true;
                     continue;
                 } else if (!descriptor_buffer_binding.has_value()) {
                     ss << "  - [WARNING] Set " << std::dec << var_set
-                       << " was never bound with offset. (WARNING - only valid if descriptor is not used in the shader";
+                       << " was never bound with offset. This is only valid if descriptor is not used in the shader";
                     if (dsl->HasImmutableSamplers()) {
                         ss << " or because all bindings are using Immutable Samplers";
                     }
-                    ss << ")\n";
+                    ss << "\n";
                     found_warning = true;
                     continue;
                 }
@@ -202,7 +212,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
             bool alias_binding = false;
             for (BindingInfo& info : set_info->bindings) {
                 if (info.index == var_binding && !info.variable_name.empty() && !resource_variable.debug_name.empty()) {
-                    info.variable_name = info.variable_name + ", \"" + resource_variable.debug_name + "\"";
+                    info.variable_name = info.variable_name + ", " + resource_variable.debug_name + "";
                     alias_binding = true;
                     break;
                 }
@@ -277,17 +287,21 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     const spirv::ResourceInterfaceVariable& resource_variable = *mapping_info.resource_variable;
     vvl::CommandBuffer::DescriptorHeap& heap = base.descriptor_heap;
 
-    ss << "    - SPIR-V Binding " << std::dec << resource_variable.decorations.binding << ", specified in pMappings["
-       << mapping_info.index << "]: binding count = " << mapping.bindingCount
-       << ", source: " << string_VkDescriptorMappingSourceEXT(mapping.source) << '\n';
+    const char* new_line = "\n        ";
+    const char* new_bullet_line = "\n      - ";
+
+    ss << "    - SPIR-V Binding " << std::dec << resource_variable.decorations.binding;
+    if (!resource_variable.debug_name.empty()) {
+        ss << " [\"" << resource_variable.debug_name << "\"]";
+    }
+
+    ss << new_bullet_line << "specified in pMappings[" << mapping_info.index << "]: binding count = " << mapping.bindingCount
+       << ", source: " << string_VkDescriptorMappingSourceEXT(mapping.source);
     const bool is_combined_image_sampler = resource_variable.is_combined_image_sampler;
     const bool is_sampler = resource_variable.is_sampler;
     const char* main_heap_type = is_sampler ? "Sampler" : "Resource";
     const vvl::range<VkDeviceAddress>& heap_range = is_sampler ? heap.sampler_range : heap.resource_range;
     const vvl::range<VkDeviceAddress>& heap_reserved = is_sampler ? heap.sampler_reserved : heap.resource_reserved;
-
-    const char* new_line = "\n        ";
-    const char* new_bullet_line = "\n      - ";
 
     const bool is_array = resource_variable.IsArray();
     const bool is_runtime_array = resource_variable.IsRuntimeArray();
@@ -491,7 +505,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         }
     };
 
-    ss << "      - ";
+    ss << new_bullet_line;
     if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
         const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping.sourceData.constantOffset;
 
