@@ -2316,6 +2316,7 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2DescriptorHeapMem) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
     VkMemoryBarrier2 barrier = vku::InitStructHelper();
@@ -2352,6 +2353,7 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2DescriptorHeapImg) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
     VkPipelineStageFlags2 flags[] = {VK_ACCESS_2_SAMPLER_HEAP_READ_BIT_EXT, VK_ACCESS_2_RESOURCE_HEAP_READ_BIT_EXT};
@@ -2396,6 +2398,7 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2DescriptorHeapBuf) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
     VkPipelineStageFlags2 flags[] = {VK_ACCESS_2_SAMPLER_HEAP_READ_BIT_EXT, VK_ACCESS_2_RESOURCE_HEAP_READ_BIT_EXT};
