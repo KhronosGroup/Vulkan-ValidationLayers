@@ -19,6 +19,8 @@
 
 #include <vulkan/utility/vk_format_utils.h>
 #include "error_message/error_location.h"
+#include "error_message/logging.h"
+#include "generated/error_location_helper.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
@@ -471,14 +473,12 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                                               ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11405"
                                           : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT)
                                               ? "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-11415"
-                                              : nullptr;
-                        if (vuid) {
-                            skip |= LogError(vuid, device, map_loc.dot(source_field).dot(Field::pEmbeddedSampler),
-                                             "contains VkDebugUtilsObjectNameInfoEXT structure with objectType "
-                                             "%s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
-                                             string_VkObjectType(object_name->objectType),
-                                             string_VkDescriptorMappingSourceEXT(mapping.source));
-                        }
+                                              : kVUIDUndefined;
+                        skip |= LogError(vuid, device, map_loc.dot(source_field).dot(Field::pEmbeddedSampler),
+                                         "contains VkDebugUtilsObjectNameInfoEXT structure with objectType "
+                                         "%s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
+                                         string_VkObjectType(object_name->objectType),
+                                         string_VkDescriptorMappingSourceEXT(mapping.source));
                     }
                     if (embedded_sampler->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT ||
                         embedded_sampler->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT) {
@@ -492,14 +492,31 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                                               ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11449"
                                           : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT)
                                               ? "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-11445"
-                                              : nullptr;
-                        if (vuid) {
-                            skip |= LogError(vuid, device,
-                                             map_loc.dot(source_field).dot(Field::pEmbeddedSampler).dot(Field::borderColor),
-                                             "is %s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
-                                             string_VkBorderColor(embedded_sampler->borderColor),
-                                             string_VkDescriptorMappingSourceEXT(mapping.source));
-                        }
+                                              : kVUIDUndefined;
+                        skip |=
+                            LogError(vuid, device, map_loc.dot(source_field).dot(Field::pEmbeddedSampler).dot(Field::borderColor),
+                                     "is %s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
+                                     string_VkBorderColor(embedded_sampler->borderColor),
+                                     string_VkDescriptorMappingSourceEXT(mapping.source));
+                    }
+                    if (vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(embedded_sampler->pNext)) {
+                        const auto vuid = (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT)
+                                              ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-12433"
+                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT)
+                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-12434"
+                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT)
+                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-12435"
+                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT)
+                                              ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-12436"
+                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT)
+                                              ? "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-12432"
+                                              : kVUIDUndefined;
+                        skip |= LogError(
+                            vuid, device, map_loc.dot(source_field).dot(Field::pEmbeddedSampler).dot(Field::pNext),
+                            "contains VkOpaqueCaptureDescriptorDataCreateInfoEXT\nVkDescriptorSetAndBindingMappingEXT::source = "
+                            "%s\n%s",
+                            string_VkDescriptorMappingSourceEXT(mapping.source),
+                            PrintPNextChain(Struct::VkSamplerCreateInfo, embedded_sampler->pNext).c_str());
                     }
                 }
             }

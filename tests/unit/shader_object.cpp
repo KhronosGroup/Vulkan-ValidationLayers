@@ -387,25 +387,29 @@ TEST_F(NegativeShaderObject, InvalidStage) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
-    createInfo.stage = VK_SHADER_STAGE_SUBPASS_SHADING_BIT_HUAWEI;
-    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    createInfo.codeSize = spv.size() * sizeof(spv[0]);
-    createInfo.pCode = spv.data();
-    createInfo.pName = "main";
+    VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
+    create_info.stage = VK_SHADER_STAGE_SUBPASS_SHADING_BIT_HUAWEI;
+    create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    create_info.codeSize = spv.size() * sizeof(spv[0]);
+    create_info.pCode = spv.data();
+    create_info.pName = "main";
 
     VkShaderEXT shader;
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-stage-parameter");  // skip stateless
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08425");
-    vk::CreateShadersEXT(*m_device, 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-stage-parameter");  // skip stateless
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08426");
+    create_info.stage = VK_SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI;
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
+    m_errorMonitor->VerifyFound();
 
-    createInfo.stage = VK_SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI;
-    vk::CreateShadersEXT(*m_device, 1u, &createInfo, nullptr, &shader);
-
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-stage-parameter");  // skip stateless
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-12445");
+    create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
