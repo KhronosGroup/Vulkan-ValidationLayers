@@ -2074,6 +2074,62 @@ TEST_F(NegativeDescriptorHeap, DescriptorSetAndBindingMappingShaderObject) {
     }
 }
 
+TEST_F(NegativeDescriptorHeap, OpaqueCaptureDescriptorDataCreateInfo) {
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    VkDescriptorSetAndBindingMappingEXT mapping = {};
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+    VkOpaqueCaptureDescriptorDataCreateInfoEXT opaque_capture = vku::InitStructHelper();
+    opaque_capture.opaqueCaptureDescriptorData = &mapping_info;
+
+    for (auto source :
+         {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
+          VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
+          VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT}) {
+        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+        mapping.source = source;
+
+        VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper(&opaque_capture);
+        const char* vuid = nullptr;
+
+        switch (source) {
+            case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT:
+                mapping.sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
+                vuid = "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-12432";
+                break;
+            case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT:
+                mapping.sourceData.pushIndex.pEmbeddedSampler = &embedded_sampler;
+                vuid = "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-12433";
+                break;
+            case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT:
+                mapping.sourceData.indirectIndex.pEmbeddedSampler = &embedded_sampler;
+                vuid = "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-12434";
+                break;
+            case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT:
+                mapping.sourceData.indirectIndexArray.pEmbeddedSampler = &embedded_sampler;
+                vuid = "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-12435";
+                break;
+            case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT:
+                mapping.sourceData.shaderRecordIndex.pEmbeddedSampler = &embedded_sampler;
+                vuid = "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-12436";
+                break;
+            default:
+                assert(0);
+        }
+
+        CreateComputePipelineHelper pipe(*this);
+        pipe.LateBindPipelineInfo();
+        pipe.cp_ci_.stage.pNext = &mapping_info;
+
+        m_errorMonitor->SetDesiredError(vuid);
+        pipe.CreateComputePipeline(false);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(NegativeDescriptorHeap, DescriptorMappingSourcePushIndex) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     VkDescriptorSetAndBindingMappingEXT mapping =

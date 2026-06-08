@@ -18,6 +18,7 @@
 #include "stateless/stateless_validation.h"
 #include <spirv/unified1/spirv.hpp>
 #include "utils/math_utils.h"
+#include "utils/vk_api_utils.h"
 
 namespace stateless {
 
@@ -206,6 +207,10 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
         } else if (create_info.stage == VK_SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI) {
             skip |= LogError("VUID-VkShaderCreateInfoEXT-stage-08426", device, create_info_loc.dot(Field::stage),
                              "is VK_SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI.");
+        } else if (create_info.stage & kShaderStageAllRayTracing) {
+            skip |= LogError("VUID-VkShaderCreateInfoEXT-stage-12445", device, create_info_loc.dot(Field::stage),
+                             "is %s (ray tracing stages are not supported with VK_EXT_shader_object).",
+                             string_VkShaderStageFlagBits(create_info.stage));
         }
 
         if ((create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0) {
