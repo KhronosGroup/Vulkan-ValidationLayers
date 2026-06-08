@@ -249,7 +249,7 @@ CommandExecutionContext::CommandExecutionContext(const SyncValidator& sync_valid
     : sync_state_(sync_validator), error_messages_(sync_validator.error_messages_), queue_flags_(queue_flags) {}
 
 bool CommandExecutionContext::ValidForSyncOps() const {
-    const bool valid = GetCurrentEventsContext() && GetCurrentAccessContext();
+    const bool valid = GetCurrentAccessContext();
     assert(valid);
     return valid;
 }
@@ -1362,7 +1362,7 @@ ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(vvl::Func comma
     return barrier_tag;
 }
 
-void CommandBufferAccessContext::RecordDestroyEvent(vvl::Event* event_state) { GetCurrentEventsContext()->Destroy(event_state); }
+void CommandBufferAccessContext::RecordDestroyEvent(vvl::Event* event_state) { GetEventsContext().Destroy(event_state); }
 
 void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBufferAccessContext& recorded_cb_context) {
     const AccessContext* recorded_context = recorded_cb_context.GetCurrentAccessContext();

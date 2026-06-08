@@ -29,6 +29,8 @@
 #include "utils/image_utils.h"
 #include "utils/sync_utils.h"
 
+using vvl::Func;
+
 namespace syncval {
 
 // Range generators for to allow event scope filtration to be limited to the top of the resource access traversal pipeline
@@ -556,12 +558,12 @@ void SyncOpPipelineBarrier::ReplayRecord(CommandExecutionContext& exec_context, 
         ApplyMultipleBarriers(exec_context, exec_tag);
     }
 
-    SyncEventsContext* events_context = exec_context.GetCurrentEventsContext();
+    SyncEventsContext& events_context = exec_context.GetEventsContext();
     if (barrier_set_.single_exec_scope) {
-        events_context->ApplyBarrier(barrier_set_.src_exec_scope, barrier_set_.dst_exec_scope, exec_tag);
+        events_context.ApplyBarrier(barrier_set_.src_exec_scope, barrier_set_.dst_exec_scope, exec_tag);
     } else {
         for (const auto& barrier : barrier_set_.memory_barriers) {
-            events_context->ApplyBarrier(barrier.src_exec_scope, barrier.dst_exec_scope, exec_tag);
+            events_context.ApplyBarrier(barrier.src_exec_scope, barrier.dst_exec_scope, exec_tag);
         }
     }
 }
@@ -660,13 +662,12 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext& exec_context, c
     const auto& sync_state = exec_context.GetSyncState();
     const QueueId queue_id = exec_context.GetQueueId();
 
-    const auto* events_context = exec_context.GetCurrentEventsContext();
-    assert(events_context);
+    const SyncEventsContext& events_context = exec_context.GetEventsContext();
     size_t barrier_set_index = 0;
     size_t barrier_set_incr = (barrier_sets_.size() == 1) ? 0 : 1;
     const Location loc(command_);
     for (const auto& event : events_) {
-        const auto* sync_event = events_context->Get(event.get());
+        const auto* sync_event = events_context.Get(event.get());
         const auto& barrier_set = barrier_sets_[barrier_set_index];
         if (!sync_event || !sync_event->first_scope) {
             barrier_set_index += barrier_set_incr;
@@ -679,40 +680,16 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext& exec_context, c
         }
 
         const VkEvent event_handle = sync_event->event->VkHandle();
-        // TODO add "destroyed" checks
 
-        const auto& src_exec_scope = barrier_set.src_exec_scope;
-
-        const auto ignore_reason = sync_event->IsIgnoredByWait(command_, src_exec_scope.mask_param);
-        if (ignore_reason) {
-            switch (ignore_reason) {
-                case SyncEventState::ResetWaitRace:
-                case SyncEventState::Reset2WaitRace: {
-                    break;
-                }
-                case SyncEventState::SetRace: {
-                    // Issue error message that Wait is waiting on an signal subject to race condition, and is thus ignored for
-                    // this event
-                    const char* const vuid = "SYNC-vkCmdWaitEvents-unsynchronized-setops";
-                    const char* const message =
-                        "%s Unsychronized %s calls result in race conditions w.r.t. event signalling, %s %s";
-                    const char* const reason = "First synchronization scope is undefined.";
-                    skip |= sync_state.LogError(vuid, event_handle, loc, message, sync_state.FormatHandle(event_handle).c_str(),
-                                                vvl::String(sync_event->last_command), reason, kIgnored);
-                    break;
-                }
-                case SyncEventState::MissingStageBits: {
-                    break;
-                }
-                case SyncEventState::SetVsWait2: {
-                    break;
-                }
-                case SyncEventState::MissingSetEvent: {
-                    break;
-                }
-                default:
-                    assert(ignore_reason == SyncEventState::NotIgnored);
-            }
+        // TODO: Cleanup this error message
+        if (sync_event->unsynchronized_set != vvl::Func::Empty) {
+            // Issue error message that Wait is waiting on an signal subject to race condition, and is thus ignored for
+            // this event
+            const char* const vuid = "SYNC-vkCmdWaitEvents-unsynchronized-setops";
+            const char* const message = "%s Unsychronized %s calls result in race conditions w.r.t. event signalling, %s %s";
+            const char* const reason = "First synchronization scope is undefined.";
+            skip |= sync_state.LogError(vuid, event_handle, loc, message, sync_state.FormatHandle(event_handle).c_str(),
+                                        vvl::String(sync_event->last_command), reason, kIgnored);
         }
         if (barrier_set.image_barriers.size()) {
             const auto& image_memory_barriers = barrier_set.image_barriers;
@@ -767,7 +744,7 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext& exec_context, Resou
         return;
     }
     AccessContext* access_context = exec_context.GetCurrentAccessContext();
-    SyncEventsContext* events_context = exec_context.GetCurrentEventsContext();
+    SyncEventsContext& events_context = exec_context.GetEventsContext();
     const QueueId queue_id = exec_context.GetQueueId();
 
     access_context->ResolveAllSubpassDependencies();
@@ -790,7 +767,7 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext& exec_context, Resou
         if (!event_shared) {
             continue;
         }
-        auto* sync_event = events_context->GetFromShared(event_shared);
+        auto* sync_event = events_context.GetFromShared(event_shared);
         if (!sync_event->first_scope) {
             continue;  // [core validation check]
         }
@@ -831,7 +808,7 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext& exec_context, Resou
         if (!event_shared.get()) {
             continue;
         }
-        auto* sync_event = events_context->GetFromShared(event_shared);
+        auto* sync_event = events_context.GetFromShared(event_shared);
         if (!sync_event->first_scope) {
             continue;  // [core validation check]
         }
@@ -890,11 +867,6 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext& exec_context, Resou
         sync_event->barriers |= dst.exec_scope;
 
         barrier_set_index += barrier_set_incr;
-
-        if (sync_event->IsIgnoredByWait(command_, barrier_set.src_exec_scope.mask_param)) {
-            // We ignored this wait, so we don't have any effective synchronization barriers for it.
-            sync_event->barriers = 0U;
-        }
     }
 
     // Update access states with collected barriers
@@ -921,50 +893,23 @@ bool SyncOpResetEvent::Validate(const CommandBufferAccessContext& cb_context) co
 }
 
 bool SyncOpResetEvent::DoValidate(const CommandExecutionContext& exec_context, const ResourceUsageTag base_tag) const {
-    auto* events_context = exec_context.GetCurrentEventsContext();
-    assert(events_context);
     bool skip = false;
-    if (!events_context) return skip;
 
-    const auto& sync_state = exec_context.GetSyncState();
-    const auto* sync_event = events_context->Get(event_);
-    if (!sync_event) return skip;  // Core, Lifetimes, or Param check needs to catch invalid events.
-
-    if (sync_event->last_command_tag > base_tag) return skip;  // if we validated this in recording of the secondary, don't repeat
-
-    const char* const set_wait =
-        "%s %s operation following %s without intervening execution barrier, is a race condition and may result in data "
-        "hazards.";
-    const char* message = set_wait;  // Only one message this call.
-    if (!sync_event->HasBarrier(exec_scope_.mask_param, exec_scope_.exec_scope)) {
-        const char* vuid = nullptr;
-        switch (sync_event->last_command) {
-            case vvl::Func::vkCmdSetEvent:
-            case vvl::Func::vkCmdSetEvent2KHR:
-            case vvl::Func::vkCmdSetEvent2:
-                // Needs a barrier between set and reset
-                vuid = "SYNC-vkCmdResetEvent-missingbarrier-set";
-                break;
-            case vvl::Func::vkCmdWaitEvents:
-            case vvl::Func::vkCmdWaitEvents2KHR:
-            case vvl::Func::vkCmdWaitEvents2: {
-                // Handled by core checks
-                break;
-            }
-            case vvl::Func::Empty:
-            case vvl::Func::vkCmdResetEvent:
-            case vvl::Func::vkCmdResetEvent2KHR:
-            case vvl::Func::vkCmdResetEvent2:
-                break;  // Valid, but nothing to do
-            default:
-                assert(false);
-                break;
-        }
-        if (vuid) {
-            const Location loc(command_);
-            skip |= sync_state.LogError(vuid, event_->Handle(), loc, message, sync_state.FormatHandle(event_->Handle()).c_str(),
-                                        CmdName(), vvl::String(sync_event->last_command));
-        }
+    const SyncValidator& sync_state = exec_context.GetSyncState();
+    const SyncEventsContext& events_context = exec_context.GetEventsContext();
+    const auto* sync_event = events_context.Get(event_);
+    if (!sync_event) {
+        return skip;
+    }
+    if (sync_event->last_command_tag > base_tag) {
+        return skip;  // if we validated this in recording of the secondary, don't repeat
+    }
+    if (IsValueIn(sync_event->last_command, {Func::vkCmdSetEvent, Func::vkCmdSetEvent2, Func::vkCmdSetEvent2KHR}) &&
+        !sync_event->HasBarrier(exec_scope_.mask_param, exec_scope_.exec_scope)) {
+        skip |= sync_state.LogError("SYNC-vkCmdResetEvent-set-race", event_->Handle(), command_,
+                                    "%s is reset after %s without an intervening execution dependency. This is a race condition "
+                                    "and may result in data hazards.",
+                                    sync_state.FormatHandle(event_->Handle()).c_str(), vvl::String(sync_event->last_command));
     }
     return skip;
 }
@@ -983,12 +928,12 @@ void SyncOpResetEvent::ReplayRecord(CommandExecutionContext& exec_context, Resou
     if (!exec_context.ValidForSyncOps()) {
         return;
     }
-    SyncEventsContext* events_context = exec_context.GetCurrentEventsContext();
+    SyncEventsContext& events_context = exec_context.GetEventsContext();
 
-    auto* sync_event = events_context->GetFromShared(event_);
+    auto* sync_event = events_context.GetFromShared(event_);
     if (!sync_event) {
         return;
-    }  // Core, Lifetimes, or Param check needs to catch invalid events.
+    }
 
     // Update the event state
     sync_event->last_command = command_;
@@ -1038,72 +983,44 @@ bool SyncOpSetEvent::ReplayValidate(ReplayState& replay, ResourceUsageTag record
 bool SyncOpSetEvent::DoValidate(const CommandExecutionContext& exec_context, const ResourceUsageTag base_tag) const {
     bool skip = false;
 
-    const auto& sync_state = exec_context.GetSyncState();
-    auto* events_context = exec_context.GetCurrentEventsContext();
-    assert(events_context);
-    if (!events_context) return skip;
+    const SyncValidator& sync_state = exec_context.GetSyncState();
+    const SyncEventsContext& events_context = exec_context.GetEventsContext();
 
-    const auto* sync_event = events_context->Get(event_);
-    if (!sync_event) return skip;  // Core, Lifetimes, or Param check needs to catch invalid events.
-
-    if (sync_event->last_command_tag >= base_tag) return skip;  // for replay we don't want to revalidate internal "last commmand"
-
-    const char* const reset_set =
-        "%s %s operation following %s without intervening execution barrier, is a race condition and may result in data "
-        "hazards.";
-    const char* const wait =
-        "%s %s operation following %s without intervening vkCmdResetEvent, may result in data hazard and is ignored.";
-
+    const auto* sync_event = events_context.Get(event_);
+    if (!sync_event) {
+        return skip;
+    }
+    if (sync_event->last_command_tag >= base_tag) {
+        return skip;  // for replay we don't want to revalidate internal "last commmand"
+    }
     if (!sync_event->HasBarrier(src_exec_scope_.mask_param, src_exec_scope_.exec_scope)) {
-        const char* vuid_stem = nullptr;
-        const char* message = nullptr;
-        switch (sync_event->last_command) {
-            case vvl::Func::vkCmdResetEvent:
-            case vvl::Func::vkCmdResetEvent2KHR:
-            case vvl::Func::vkCmdResetEvent2:
-                // Needs a barrier between reset and set
-                vuid_stem = "-missingbarrier-reset";
-                message = reset_set;
-                break;
-            case vvl::Func::vkCmdSetEvent:
-            case vvl::Func::vkCmdSetEvent2KHR:
-            case vvl::Func::vkCmdSetEvent2:
-                // Needs a barrier between set and set
-                vuid_stem = "-missingbarrier-set";
-                message = reset_set;
-                break;
-            case vvl::Func::vkCmdWaitEvents:
-            case vvl::Func::vkCmdWaitEvents2KHR:
-            case vvl::Func::vkCmdWaitEvents2:
-                // Needs a barrier or is in second execution scope
-                vuid_stem = "-missingbarrier-wait";
-                message = wait;
-                break;
-            default:
-                // The only other valid last command that wasn't one.
-                assert(sync_event->last_command == vvl::Func::Empty);
-                break;
-        }
-        if (vuid_stem) {
-            assert(nullptr != message);
-            const Location loc(command_);
-            std::string vuid("SYNC-");
-            vuid.append(CmdName()).append(vuid_stem);
-            skip |=
-                sync_state.LogError(vuid.c_str(), event_->Handle(), loc, message, sync_state.FormatHandle(event_->Handle()).c_str(),
-                                    CmdName(), vvl::String(sync_event->last_command));
+        const std::string vuid_prefix = std::string("SYNC-") + CmdName();
+        if (IsValueIn(sync_event->last_command, {Func::vkCmdResetEvent, Func::vkCmdResetEvent2, Func::vkCmdResetEvent2KHR})) {
+            skip |= sync_state.LogError(vuid_prefix + "-reset-race", event_->Handle(), command_,
+                                        "%s is set after %s without an intervening execution dependency. This is a race condition "
+                                        "and may result in data hazards.",
+                                        sync_state.FormatHandle(event_->Handle()).c_str(), vvl::String(sync_event->last_command));
+        } else if (IsValueIn(sync_event->last_command, {Func::vkCmdSetEvent, Func::vkCmdSetEvent2, Func::vkCmdSetEvent2KHR})) {
+            skip |= sync_state.LogError(vuid_prefix + "-set-race", event_->Handle(), command_,
+                                        "%s is set after a previous %s without an intervening execution dependency. This is a race "
+                                        "condition and may result in data hazards.",
+                                        sync_state.FormatHandle(event_->Handle()).c_str(), vvl::String(sync_event->last_command));
+        } else if (IsValueIn(sync_event->last_command,
+                             {Func::vkCmdWaitEvents, Func::vkCmdWaitEvents2, Func::vkCmdWaitEvents2KHR})) {
+            skip |= sync_state.LogError(vuid_prefix + "-wait", event_->Handle(), command_,
+                                        "%s is set after %s without intervening vkCmdResetEvent, may result in data hazard.",
+                                        sync_state.FormatHandle(event_->Handle()).c_str(), vvl::String(sync_event->last_command));
         }
     }
-
     return skip;
 }
 
 ResourceUsageTag SyncOpSetEvent::Record(CommandBufferAccessContext* cb_context) {
     const auto tag = cb_context->NextCommandTag(command_);
-    auto* events_context = cb_context->GetCurrentEventsContext();
+    SyncEventsContext& events_context = cb_context->GetEventsContext();
     const QueueId queue_id = cb_context->GetQueueId();
     assert(recorded_context_);
-    if (recorded_context_ && events_context) {
+    if (recorded_context_) {
         DoRecord(queue_id, tag, recorded_context_, events_context);
     }
     return tag;
@@ -1115,7 +1032,7 @@ void SyncOpSetEvent::ReplayRecord(CommandExecutionContext& exec_context, Resourc
     if (!exec_context.ValidForSyncOps()) {
         return;
     }
-    SyncEventsContext* events_context = exec_context.GetCurrentEventsContext();
+    SyncEventsContext& events_context = exec_context.GetEventsContext();
     AccessContext* access_context = exec_context.GetCurrentAccessContext();
     const QueueId queue_id = exec_context.GetQueueId();
 
@@ -1128,8 +1045,8 @@ void SyncOpSetEvent::ReplayRecord(CommandExecutionContext& exec_context, Resourc
 }
 
 void SyncOpSetEvent::DoRecord(QueueId queue_id, ResourceUsageTag tag, const std::shared_ptr<const AccessContext>& access_context,
-                              SyncEventsContext* events_context) const {
-    auto* sync_event = events_context->GetFromShared(event_);
+                              SyncEventsContext& events_context) const {
+    auto* sync_event = events_context.GetFromShared(event_);
     if (!sync_event) {
         return;
     }
@@ -1473,37 +1390,12 @@ void SyncEventsContext::AddReferencedTags(ResourceUsageTagSet& referenced) const
 
 SyncEventState::SyncEventState(const SyncEventState::EventPointer& event_state) : SyncEventState() {
     event = event_state;
-    destroyed = (event.get() == nullptr) || event_state->Destroyed();
 }
 
 void SyncEventState::ResetFirstScope() {
     first_scope.reset();
     scope = SyncExecScope();
     first_scope_tag = 0;
-}
-
-// Keep the "ignore this event" logic in same place for ValidateWait and RecordWait to use
-SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(vvl::Func command, VkPipelineStageFlags2 srcStageMask) const {
-    IgnoreReason reason = NotIgnored;
-
-    if ((vvl::Func::vkCmdWaitEvents2KHR == command || vvl::Func::vkCmdWaitEvents2 == command) &&
-        (vvl::Func::vkCmdSetEvent == last_command)) {
-        reason = SetVsWait2;
-    } else if ((last_command == vvl::Func::vkCmdResetEvent || last_command == vvl::Func::vkCmdResetEvent2KHR) &&
-               (barriers & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) == 0) {
-        reason = (last_command == vvl::Func::vkCmdResetEvent) ? ResetWaitRace : Reset2WaitRace;
-    } else if (unsynchronized_set != vvl::Func::Empty) {
-        reason = SetRace;
-    } else if (first_scope) {
-        const VkPipelineStageFlags2 missing_bits = scope.mask_param & ~srcStageMask;
-        // Note it is the "not missing bits" path that is the only "NotIgnored" path
-        if (missing_bits) {
-            reason = MissingStageBits;
-        }
-    } else {
-        reason = MissingSetEvent;
-    }
-    return reason;
 }
 
 bool SyncEventState::HasBarrier(VkPipelineStageFlags2 stageMask, VkPipelineStageFlags2 exec_scope_arg) const {
