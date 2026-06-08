@@ -23,8 +23,6 @@
 #include "gpuav/shaders/gpuav_error_codes.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
-#include "state_tracker/shader_module.h"
-#include "utils/descriptor_utils.h"
 
 namespace gpuav {
 
@@ -36,6 +34,9 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
         return;
     }
 
+    // TODO - See NegativeGpuAVDescriptorHeap.ResourceOOBRebindHeap
+    // This will provide false positive, instead of capturing the CommandBufferSubState here, we need to take snapshots of the last
+    // bound data, which in practice apps should only being binding once per command buffers.
     cb.on_instrumentation_error_logger_register_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
                                                                           const LastBound& last_bound) {
         CommandBufferSubState::InstrumentationErrorLogger inst_error_logger =
@@ -51,20 +52,109 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
 
                 std::ostringstream strm;
 
+                const uint32_t index = error_record[kInst_LogError_ParameterOffset_0];
+                const uint32_t offset = error_record[kInst_LogError_ParameterOffset_1];
+
+                const uint32_t alignment_encoding = error_record[kInst_LogError_ParameterOffset_2];
+                const uint32_t alignment_type =
+                    (alignment_encoding & kInst_DescriptorHeap_AlignmentTypeMask) >> kInst_DescriptorHeap_AlignmentTypeShift;
+                const uint32_t alignment_value = alignment_encoding & kInst_DescriptorHeap_AlignmentValueMask;
+
+                const bool is_buffer = alignment_type == kInst_DescriptorHeap_AlignmentType_Buffer;
+                const bool is_image = alignment_type == kInst_DescriptorHeap_AlignmentType_Image;
+                const bool is_sampler = alignment_type == kInst_DescriptorHeap_AlignmentType_Sampler;
+
+                VkDeviceAddress final_address =
+                    (is_sampler ? cb.base.descriptor_heap.sampler_range.begin : cb.base.descriptor_heap.resource_range.begin) +
+                    offset;
+
                 const uint32_t error_sub_code = GetSubError(error_record);
                 switch (error_sub_code) {
                     case kErrorSubCode_DescriptorHeap_HeapOOB: {
                         // TODO - Reverse info to get good error message
-                        const uint32_t index = error_record[kInst_LogError_ParameterOffset_0];
-                        const uint32_t offset = error_record[kInst_LogError_ParameterOffset_1];
-                        // TODO - Is this cb.heap data going to change if the heap is rebound? (do we need to save?)
-                        strm << "Index " << index << " is accessing an offset of " << offset
-                             << " which is OOB of the heap bound at " << string_range_hex(cb.base.descriptor_heap.resource_range)
-                             << " (size of " << cb.base.descriptor_heap.resource_range.size() << " bytes)";
+                        strm << "Index " << index << " is accessing the heap at offset 0x" << std::hex << offset << " (address 0x"
+                             << std::hex << final_address << ") which is OOB of the heap memory.\n";
                         out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_OOB_11309);
                         error_found = true;
                     } break;
+
+                    case kErrorSubCode_DescriptorHeap_ReservedRange: {
+                        strm << "Index " << index << " is accessing the heap at offset 0x" << std::hex << offset << " (address 0x"
+                             << std::hex << final_address
+                             << ") which is inside the reserved range.\nThe reserved range was bound at ";
+                        if (is_sampler) {
+                            strm << string_range_hex(cb.base.descriptor_heap.sampler_reserved) << " (size of 0x" << std::hex
+                                 << cb.base.descriptor_heap.sampler_reserved.size() << " bytes)\n";
+                        } else {
+                            strm << string_range_hex(cb.base.descriptor_heap.resource_reserved) << " (size of 0x" << std::hex
+                                 << cb.base.descriptor_heap.resource_reserved.size() << " bytes)\n";
+                        }
+                        out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_OOB_11309);
+                        error_found = true;
+                    } break;
+
+                    case kErrorSubCode_DescriptorHeap_DescriptorAlignment:
+                    case kErrorSubCode_DescriptorHeap_DescriptorAlignmentUntyped: {
+                        strm << "Index " << index << " is accessing the heap at offset 0x" << std::hex << offset << " (address 0x"
+                             << std::hex << final_address << ") which is not aligned to ";
+                        if (is_buffer) {
+                            strm << "bufferDescriptorAlignment";
+                        } else if (is_image) {
+                            strm << "imageDescriptorAlignment";
+                        } else if (is_sampler) {
+                            strm << "samplerDescriptorAlignment";
+                        }
+                        strm << " (0x" << std::hex << alignment_value << ")\n";
+
+                        if (error_sub_code == kErrorSubCode_DescriptorHeap_DescriptorAlignmentUntyped) {
+                            out_vuid_msg = alignment_type == kInst_DescriptorHeap_AlignmentType_Sampler
+                                               ? "VUID-RuntimeSpirv-Result-11340"
+                                               : "VUID-RuntimeSpirv-Result-11341";
+                        } else {
+                            vvl::ActionVUID action_vuid = is_buffer  ? vvl::ActionVUID::DESCRIPTOR_HEAP_ALIGNMENT_11297
+                                                          : is_image ? vvl::ActionVUID::DESCRIPTOR_HEAP_ALIGNMENT_11298
+                                                                     : vvl::ActionVUID::DESCRIPTOR_HEAP_ALIGNMENT_11299;
+                            out_vuid_msg = vvl::CreateActionVuid(loc.function, action_vuid);
+                        }
+                        error_found = true;
+                    } break;
+
+                    case kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment:
+                    case kErrorSubCode_DescriptorHeap_IndirectAddressPushAlignment: {
+                        // TODO - Preserve pushOffset instead of saving it through the shader
+                        const uint32_t push_offset = offset;  // alias param
+                        // TODO - this will report the wrong pushData, see above about capturing the cb state
+                        const VkDeviceAddress push_data = *((VkDeviceAddress*)&cb.push_data_value[push_offset]);
+
+                        if (error_sub_code == kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment) {
+                            strm << "Index " << index << " is ";
+                        }
+                        strm << "has a " << (is_sampler ? "samplerPushOffset" : "pushOffset") << " of 0x" << std::hex << push_offset
+                             << " which holds the VkDeviceAddress 0x" << std::hex << push_data << " which is not a multiple of ";
+                        if (error_sub_code == kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment) {
+                            strm << "4 needed to access the uint32_t in the indirect buffer\n";
+                        } else {
+                            strm << "8 needed to access the VkDeviceAddress in the indirect buffer\n";
+                        }
+
+                        vvl::ActionVUID action_vuid = (error_sub_code == kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment)
+                                                          ? vvl::ActionVUID::DESCRIPTOR_HEAP_INDIRECT_INDEX_PUSH_11300
+                                                          : vvl::ActionVUID::DESCRIPTOR_HEAP_INDIRECT_ADDRESS_PUSH_11304;
+                        out_vuid_msg = vvl::CreateActionVuid(loc.function, action_vuid);
+                        error_found = true;
+                    } break;
                 }
+
+                // Unless find otherwise, this information is useful for all errors
+                strm << "The " << (is_sampler ? "sampler" : "resource") << " heap was bound at ";
+                if (is_sampler) {
+                    strm << string_range_hex(cb.base.descriptor_heap.sampler_range) << " (size of 0x" << std::hex
+                         << cb.base.descriptor_heap.sampler_range.size() << " bytes)\n";
+                } else {
+                    strm << string_range_hex(cb.base.descriptor_heap.resource_range) << " (size of 0x" << std::hex
+                         << cb.base.descriptor_heap.resource_range.size() << " bytes)\n";
+                }
+
                 out_error_msg += strm.str();
                 return error_found;
             };
@@ -89,8 +179,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
         bound_resource_heap.reserved_begin = (uint32_t)(cb_heap.resource_reserved.begin - cb_heap.resource_range.begin);
         bound_resource_heap.reserved_end = (uint32_t)(cb_heap.resource_reserved.end - cb_heap.resource_range.begin);
         bound_sampler_heap.heap_size = (uint32_t)cb_heap.sampler_range.size();
-        bound_sampler_heap.reserved_begin = (uint32_t)(cb_heap.sampler_reserved.begin - cb_heap.sampler_reserved.begin);
-        bound_sampler_heap.reserved_end = (uint32_t)(cb_heap.sampler_reserved.end - cb_heap.sampler_reserved.begin);
+        bound_sampler_heap.reserved_begin = (uint32_t)(cb_heap.sampler_reserved.begin - cb_heap.sampler_range.begin);
+        bound_sampler_heap.reserved_end = (uint32_t)(cb_heap.sampler_reserved.end - cb_heap.sampler_range.begin);
 
         uint8_t* gpu_push_data_ptr = ((uint8_t*)buffer_range.offset_mapped_ptr) + bound_heap_info_size;
         memcpy(gpu_push_data_ptr, cb.push_data_value.data(), cb.push_data_value.size());

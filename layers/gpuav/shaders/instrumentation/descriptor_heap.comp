@@ -39,16 +39,22 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorHeap, sc
 } gpuav;
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT
-bool inst_heap_mapping_constant_offset(const uint inst_offset, const uint heap_offset, const uint heap_array_stride, const uint desc_index, const bool is_sampler) {
+bool inst_heap_mapping_constant_offset(const uint inst_offset, const uint heap_offset, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
     uint error = 0;
-    uint param_0 = 0;
 
     // TOOD - add descriptorSize as well
     uint offset = heap_offset + (desc_index * heap_array_stride);
     BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
     if (offset >= bound_heap_info.heap_size) {
         error = kErrorSubCode_DescriptorHeap_HeapOOB;
-        param_0 = offset;
+    } else if (offset >= bound_heap_info.reserved_begin &&
+               offset <= bound_heap_info.reserved_end &&
+               // when no reserved range
+               bound_heap_info.reserved_begin != bound_heap_info.reserved_end) {
+        error = kErrorSubCode_DescriptorHeap_ReservedRange;
+    } else if ((offset & ((desc_encoding & kInst_DescriptorHeap_AlignmentValueMask) - 1)) != 0) {
+        // alignment is guaranteed to be a power of 2
+        error = kErrorSubCode_DescriptorHeap_DescriptorAlignment;
     }
 
     if (error != 0) {
@@ -56,8 +62,8 @@ bool inst_heap_mapping_constant_offset(const uint inst_offset, const uint heap_o
                             inst_offset,
                             SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
                             desc_index,
-                            param_0,
-                            0
+                            offset,
+                            desc_encoding
                         );
 
         return false;
@@ -66,9 +72,8 @@ bool inst_heap_mapping_constant_offset(const uint inst_offset, const uint heap_o
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT
-bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const bool is_sampler) {
+bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
     uint error = 0;
-    uint param_0 = 0;
 
     uint push_index = gpuav.push_data[push_offset];
     uint offset = heap_offset + (push_index * heap_index_stride) + (desc_index * heap_array_stride);
@@ -76,7 +81,14 @@ bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset
     BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
     if (offset >= bound_heap_info.heap_size) {
         error = kErrorSubCode_DescriptorHeap_HeapOOB;
-        param_0 = offset;
+    } else if (offset >= bound_heap_info.reserved_begin &&
+               offset <= bound_heap_info.reserved_end &&
+               // when no reserved range
+               bound_heap_info.reserved_begin != bound_heap_info.reserved_end) {
+        error = kErrorSubCode_DescriptorHeap_ReservedRange;
+    } else if ((offset & ((desc_encoding & kInst_DescriptorHeap_AlignmentValueMask) - 1)) != 0) {
+        // alignment is guaranteed to be a power of 2
+        error = kErrorSubCode_DescriptorHeap_DescriptorAlignment;
     }
 
     if (error != 0) {
@@ -84,8 +96,8 @@ bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset
                             inst_offset,
                             SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
                             desc_index,
-                            param_0,
-                            0
+                            offset,
+                            desc_encoding
                         );
 
         return false;
@@ -94,21 +106,36 @@ bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT
-bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint address_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const bool is_sampler) {
+bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint address_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
     uint error = 0;
     uint param_0 = 0;
 
     // will generate [OpCompositeConstruct, OpBitcast, OpConvertUToPtr] which should be fine as a compromise keeping the push_data in a uint array
     uint64_t indirect_address = packUint2x32(uvec2(gpuav.push_data[push_offset], gpuav.push_data[push_offset + 1]));
-    IndirectBuffer indirect_buffer = IndirectBuffer(indirect_address);
+    if ((indirect_address & 3) != 0) {
+        error = kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment;
+        param_0 = push_offset;
+    } else {
+        IndirectBuffer indirect_buffer = IndirectBuffer(indirect_address);
 
-    uint indirect_index = indirect_buffer.data[address_offset];
-    uint offset = heap_offset + (indirect_index * heap_index_stride) + (desc_index * heap_array_stride);
+        uint indirect_index = indirect_buffer.data[address_offset];
+        uint offset = heap_offset + (indirect_index * heap_index_stride) + (desc_index * heap_array_stride);
 
-    BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
-    if (offset >= bound_heap_info.heap_size) {
-        error = kErrorSubCode_DescriptorHeap_HeapOOB;
-        param_0 = offset;
+        BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
+        if (offset >= bound_heap_info.heap_size) {
+            error = kErrorSubCode_DescriptorHeap_HeapOOB;
+            param_0 = offset;
+        } else if (offset >= bound_heap_info.reserved_begin &&
+                    offset <= bound_heap_info.reserved_end &&
+                    // when no reserved range
+                    bound_heap_info.reserved_begin != bound_heap_info.reserved_end) {
+            error = kErrorSubCode_DescriptorHeap_ReservedRange;
+            param_0 = offset;
+        } else if ((offset & ((desc_encoding & kInst_DescriptorHeap_AlignmentValueMask) - 1)) != 0) {
+            // alignment is guaranteed to be a power of 2
+            error = kErrorSubCode_DescriptorHeap_DescriptorAlignment;
+            param_0 = offset;
+        }
     }
 
     if (error != 0) {
@@ -117,7 +144,7 @@ bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_of
                             SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
                             desc_index,
                             param_0,
-                            0
+                            desc_encoding
                         );
 
         return false;
@@ -126,22 +153,36 @@ bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_of
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT
-bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint address_offset, const uint heap_index_stride, const uint desc_index, const bool is_sampler) {
+bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint address_offset, const uint heap_index_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
     uint error = 0;
     uint param_0 = 0;
 
     // will generate [OpCompositeConstruct, OpBitcast, OpConvertUToPtr] which should be fine as a compromise keeping the push_data in a uint array
     uint64_t indirect_address = packUint2x32(uvec2(gpuav.push_data[push_offset], gpuav.push_data[push_offset + 1]));
     IndirectBuffer indirect_buffer = IndirectBuffer(indirect_address);
+    if ((indirect_address & 3) != 0) {
+        error = kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment;
+        param_0 = push_offset;
+    } else {
+        uint indirect_offset = address_offset + desc_index;
+        uint indirect_index = indirect_buffer.data[indirect_offset];
+        uint offset = heap_offset + (indirect_index * heap_index_stride);
 
-    uint indirect_offset = address_offset + desc_index;
-    uint indirect_index = indirect_buffer.data[indirect_offset];
-    uint offset = heap_offset + (indirect_index * heap_index_stride);
-
-    BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
-    if (offset >= bound_heap_info.heap_size) {
-        error = kErrorSubCode_DescriptorHeap_HeapOOB;
-        param_0 = offset;
+        BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
+        if (offset >= bound_heap_info.heap_size) {
+            error = kErrorSubCode_DescriptorHeap_HeapOOB;
+            param_0 = offset;
+        } else if (offset >= bound_heap_info.reserved_begin &&
+                offset <= bound_heap_info.reserved_end &&
+                // when no reserved range
+                bound_heap_info.reserved_begin != bound_heap_info.reserved_end) {
+            error = kErrorSubCode_DescriptorHeap_ReservedRange;
+            param_0 = offset;
+        } else if ((offset & ((desc_encoding & kInst_DescriptorHeap_AlignmentValueMask) - 1)) != 0) {
+            // alignment is guaranteed to be a power of 2
+            error = kErrorSubCode_DescriptorHeap_DescriptorAlignment;
+            param_0 = offset;
+        }
     }
 
     if (error != 0) {
@@ -150,7 +191,7 @@ bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint h
                             SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
                             desc_index,
                             param_0,
-                            0
+                            desc_encoding
                         );
 
         return false;
@@ -175,19 +216,46 @@ bool inst_heap_mapping_push_address(const uint inst_offset, const uint push_addr
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT
 bool inst_heap_mapping_indirect_address(const uint inst_offset, const uint push_offset, const uint address_offset) {
-    return true; // Saving function offset space, but currently not used
+    uint error = 0;
+    uint param_0 = 0;
+
+    uint64_t indirect_address = packUint2x32(uvec2(gpuav.push_data[push_offset], gpuav.push_data[push_offset + 1]));
+    if ((indirect_address & 7) != 0) {
+        error = kErrorSubCode_DescriptorHeap_IndirectAddressPushAlignment;
+        param_0 = push_offset;
+    }
+
+    if (error != 0) {
+        error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
+                            0,
+                            param_0,
+                            // always will be a buffer
+                            kInst_DescriptorHeap_AlignmentType_Buffer << kInst_DescriptorHeap_AlignmentTypeShift
+                        );
+
+        return false;
+    }
+    return true;
 }
 
 // Untyped Pointers
-bool inst_heap_untyped(const uint inst_offset, const uint heap_offset, const uint address_stride, const uint desc_index, const bool is_sampler) {
+bool inst_heap_untyped(const uint inst_offset, const uint heap_offset, const uint address_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
     uint error = 0;
-    uint param_0 = 0;
 
     uint offset = heap_offset + (desc_index * address_stride);
     BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
     if (offset >= bound_heap_info.heap_size) {
         error = kErrorSubCode_DescriptorHeap_HeapOOB;
-        param_0 = offset;
+    } else if (offset >= bound_heap_info.reserved_begin &&
+               offset <= bound_heap_info.reserved_end &&
+               // when no reserved range
+               bound_heap_info.reserved_begin != bound_heap_info.reserved_end) {
+        error = kErrorSubCode_DescriptorHeap_ReservedRange;
+    } else if ((offset & ((desc_encoding & kInst_DescriptorHeap_AlignmentValueMask) - 1)) != 0) {
+        // alignment is guaranteed to be a power of 2
+        error = kErrorSubCode_DescriptorHeap_DescriptorAlignmentUntyped;
     }
 
     if (error != 0) {
@@ -195,8 +263,8 @@ bool inst_heap_untyped(const uint inst_offset, const uint heap_offset, const uin
                             inst_offset,
                             SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
                             desc_index,
-                            param_0,
-                            0
+                            offset,
+                            desc_encoding
                         );
 
         return false;

@@ -117,6 +117,10 @@ struct DeviceSettings {
     uint32_t debug_printf_buffer_size;
     // maxComputeSharedMemorySize limit
     uint32_t max_compute_shared_memory_size;
+    // Descriptor Heap alignmente;
+    uint32_t descriptor_alignment_sampler;
+    uint32_t descriptor_alignment_image;
+    uint32_t descriptor_alignment_buffer;
 };
 
 // When running the DebugPrintf pass, if we detect an instrumented shader has a printf call (for debugging) we can hold them until

@@ -82,6 +82,11 @@ const int kErrorSubCode_DescriptorClass_GeneralBufferCoopMatBounds = 3;
 // Descriptor Heap
 //
 const int kErrorSubCode_DescriptorHeap_HeapOOB = 1;
+const int kErrorSubCode_DescriptorHeap_ReservedRange = 2;
+const int kErrorSubCode_DescriptorHeap_DescriptorAlignment = 3;
+const int kErrorSubCode_DescriptorHeap_DescriptorAlignmentUntyped = 4;
+const int kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment = 5;
+const int kErrorSubCode_DescriptorHeap_IndirectAddressPushAlignment = 6;
 
 // Buffer Device Address
 //

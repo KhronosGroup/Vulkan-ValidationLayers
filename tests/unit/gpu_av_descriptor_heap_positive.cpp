@@ -39,7 +39,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, BufferPointerOffset) {
     CreateResourceHeap(resource_stride);
 
     vkt::Buffer buffer(*m_device, sizeof(float) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    WriteStoreBufferToHeap(buffer);
+    WriteBufferToHeap(buffer);
 
     char const *cs_source = R"glsl(
         #version 450
