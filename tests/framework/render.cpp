@@ -411,19 +411,34 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char* ext_name) {
     // Different tables need to be used for extension dependency lookup depending on whether `ext_name` refers to a device or
     // instance extension
     if (is_instance_ext) {
-        for (const auto& req : instance_info.requirements) {
-            if (0 == strncmp(req.name, "VK_VERSION", 10)) {
-                continue;
+        for (const auto& or_group : instance_info.requirements) {
+            bool satisfied = false;
+            for (const auto& req : or_group) {
+                if (0 == strncmp(req.name, "VK_VERSION", 10)) {
+                    satisfied = true;
+                    break;
+                }
+                if (AddRequestedInstanceExtensions(req.name)) {
+                    satisfied = true;
+                    break;
+                }
             }
-            if (!AddRequestedInstanceExtensions(req.name)) {
+            if (!satisfied) {
                 return false;
             }
         }
         m_instance_extension_names.push_back(ext_name);
     } else {
         const auto& info = m_device_extensions->GetInfo(extension);
-        for (const auto& req : info.requirements) {
-            if (!AddRequestedInstanceExtensions(req.name)) {
+        for (const auto& or_group : info.requirements) {
+            bool satisfied = false;
+            for (const auto& req : or_group) {
+                if (AddRequestedInstanceExtensions(req.name)) {
+                    satisfied = true;
+                    break;
+                }
+            }
+            if (!satisfied) {
                 return false;
             }
         }
@@ -479,8 +494,17 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char* dev_ext_name) {
     m_device_extension_names.push_back(dev_ext_name);
 
     const auto& info = m_device_extensions->GetInfo(extension);
-    for (const auto& req : info.requirements) {
-        if (!AddRequestedDeviceExtensions(req.name)) {
+    // Each entry is an "OR group" of alternatives - it is satisfied if any single one of them can be
+    // added. Every group must be satisfied (the groups are AND'ed).
+    for (const auto& or_group : info.requirements) {
+        bool satisfied = false;
+        for (const auto& req : or_group) {
+            if (AddRequestedDeviceExtensions(req.name)) {
+                satisfied = true;
+                break;
+            }
+        }
+        if (!satisfied) {
             return false;
         }
     }
