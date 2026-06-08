@@ -52,10 +52,15 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     sys.path.insert(0, registry_headers_path)
     try:
         from reg import Registry
-    except:
-        print("ModuleNotFoundError: No module named 'reg'") # normal python error message
-        print(f'{registry_headers_path} is not pointing to the Vulkan-Headers registry directory.')
-        print("Inside Vulkan-Headers there is a registry/reg.py file that is used.")
+    except Exception as e:
+        reg_path = os.path.join(registry_headers_path, 'reg.py')
+        if not os.path.isfile(reg_path):
+            print("ModuleNotFoundError: No module named 'reg'") # normal python error message
+            print(f'{registry_headers_path} is not pointing to the Vulkan-Headers registry directory.')
+            print("Inside Vulkan-Headers there is a registry/reg.py file that is used.")
+        else:
+            print(f'Found {reg_path}, but failed to import it:')
+            print(f'{type(e).__name__}: {e}')
         sys.exit(1) # Return without call stack so easy to spot error
 
     from base_generator import BaseGeneratorOptions

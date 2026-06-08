@@ -203,3 +203,27 @@ TEST_F(PositiveDebugExtensions, SwapchainImagesDebugMarker) {
         vk::DebugMarkerSetObjectTagEXT(device(), &name_info);
     }
 }
+
+TEST_F(PositiveDebugExtensions, VkDebugUtilsObjectNameInfoEXTExtendsCreateInfo) {
+    RETURN_IF_SKIP(Init());
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&name_info);
+    buffer_ci.size = 16 * sizeof(float);
+    buffer_ci.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    vkt::Buffer buffer(*m_device, buffer_ci);
+}
+
+TEST_F(PositiveDebugExtensions, VkDebugUtilsObjectTagInfoEXTExtendsCreateInfo) {
+    RETURN_IF_SKIP(Init());
+
+    VkDebugUtilsObjectTagInfoEXT tag_info = vku::InitStructHelper();
+    tag_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&tag_info);
+    buffer_ci.size = 16 * sizeof(float);
+    buffer_ci.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    vkt::Buffer buffer(*m_device, buffer_ci);
+}
