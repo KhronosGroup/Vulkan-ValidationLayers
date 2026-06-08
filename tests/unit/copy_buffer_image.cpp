@@ -3508,6 +3508,48 @@ TEST_F(NegativeCopyBufferImage, MissingQueueGraphicsSupport) {
     command_buffer.End();
 }
 
+TEST_F(NegativeCopyBufferImage, MissingQueueGraphicsSupportMS) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance8);
+    RETURN_IF_SKIP(Init());
+
+    const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    if (!non_graphics_queue_family_index) {
+        GTEST_SKIP() << "No suitable queue found.";
+    }
+    VkFormatProperties2 depth_format_properties2 = vku::InitStructHelper();
+    vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_D16_UNORM, &depth_format_properties2);
+
+    vkt::CommandPool command_pool(*m_device, non_graphics_queue_family_index.value());
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_D16_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image src_ds_image(*m_device, image_ci);
+    vkt::Image dst_ds_image(*m_device, image_ci);
+
+    command_buffer.Begin();
+
+    VkImageCopy image_copy;
+    image_copy.srcSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0u, 0u, 1u};
+    image_copy.srcOffset = {0, 0, 0};
+    image_copy.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0u, 0u, 1u};
+    image_copy.dstOffset = {0, 0, 0};
+    image_copy.extent = {32u, 32u, 1};
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-12449");
+    vk::CmdCopyImage(command_buffer, src_ds_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_ds_image,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
+    m_errorMonitor->VerifyFound();
+
+    command_buffer.End();
+}
+
 TEST_F(NegativeCopyBufferImage, BufferCopy) {
     RETURN_IF_SKIP(Init());
 
