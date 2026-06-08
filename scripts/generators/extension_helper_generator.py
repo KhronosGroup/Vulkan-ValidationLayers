@@ -26,55 +26,54 @@ from generators.generator_utils import PlatformGuardHelper
 # Need pyparsing because the Vulkan-Headers use it in dependencyBNF
 from pyparsing import ParseResults
 # From the Vulkan-Headers
+import parse_dependency
 from parse_dependency import dependencyBNF
 
-def parseExpr(expr): return dependencyBNF().parse_string(expr, parseAll=True)
-
-def dependCheck(pr: ParseResults, token, op, start_group, end_group) -> None:
+def exprToOrGroups(expr: str) -> list:
     """
-    Run a set of callbacks on a boolean expression.
+    Convert a dependency expression into a list of "OR groups" that are AND'ed together
+    (i.e. conjunctive normal form): the expression is satisfied only if every group is
+    satisfied, and a group is satisfied if any one of its members is present.
 
-    token: run on a non-operator, non-parenthetical token
-    op: run on an operator token
-    start_group: run on a '(' token
-    end_group: run on a ')' token
+    dependencyBNF's parse actions push the expression onto parse_dependency.exprStack in
+    postfix (RPN) order, with parentheses and redundant grouping already collapsed away -
+    so '((A))' is just 'A' and 'A+(B+C)' is just a run of '+' operators. That lets us build
+    the OR groups by walking the stack, without tracking nesting depth or flattening chains
+    of the same operator ourselves.
+
+    Every 'depends' expression reduces to AND-of-ORs once 'VK_VERSION_1_x' OR-alternatives
+    are stripped out (see the caller), so OR only ever joins plain values. If a future spec
+    expression ORs together AND-groups (which would need full CNF conversion, e.g. distributing
+    OR over AND) the assert below catches it at generation time, instead of silently producing
+    an incorrect requirement check.
     """
+    parse_dependency.exprStack = []
+    dependencyBNF().parse_string(expr, parseAll=True)
+    stack = parse_dependency.exprStack
 
-    for r in pr:
-        if isinstance(r, ParseResults):
-            start_group()
-            dependCheck(r, token, op, start_group, end_group)
-            end_group()
-        elif r in ',+':
-            op(r)
-        else:
-            token(r)
+    def build() -> list:
+        op = stack.pop()
+        if op == '+':  # AND: the requirement is the union of each operand's OR groups
+            rhs, lhs = build(), build()
+            return lhs + rhs
+        if op == ',':  # OR: merge both operands into a single group of plain values
+            rhs, lhs = build(), build()
+            assert len(lhs) == 1 and len(rhs) == 1, \
+                f'OR of an AND-group, full CNF conversion needed to handle: {expr}'
+            return [lhs[0] + rhs[0]]
+        return [[op]]  # leaf name -> a one-member OR group
 
-def exprValues(pr: ParseResults) -> list:
-    """
-    Return a list of all "values" (i.e., non-operators) in the parsed expression.
-    """
-
-    values = []
-    dependCheck(pr, lambda x: values.append(x), lambda x: None, lambda: None, lambda: None)
-    return values
-
-def exprToCpp(pr: ParseResults, opt = lambda x: x) -> str:
-    r = []
-    printExt = lambda x: r.append(opt(x))
-    printOp = lambda x: r.append(' && ' if x == '+' else ' || ')
-    openParen = lambda: r.append('(')
-    closeParen = lambda: r.append(')')
-    dependCheck(pr, printExt, printOp, openParen, closeParen)
-    return ''.join(r)
-
+    groups = build()
+    assert not stack, f'Unconsumed tokens in dependency expression: {expr}'
+    return groups
 
 class ExtensionHelperOutputGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
         # [ Feature name | name in struct InstanceExtensions ]
         self.fieldName = dict()
-        # [ Extension name : List[Extension | Version] ]
+        # [ Extension name : List[OR-group of Extension | Version] ] - the groups are AND'ed together,
+        # and a group is satisfied if any one of its members is enabled (conjunctive normal form)
         self.requiredExpression = dict()
 
     def generate(self):
@@ -82,20 +81,13 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             self.fieldName[extension.name] = extension.name.lower()
             self.requiredExpression[extension.name] = list()
             if extension.depends is not None:
-                # TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10208
-                # Need to handle something like (VK_KHR_present_id,VK_KHR_present_id2)
-                # Also have no way in exprValues to even detect it to make this check automatic
-                if extension.name == 'VK_NV_low_latency2':
-                    self.requiredExpression[extension.name].append(self.vk.extensions['VK_KHR_timeline_semaphore'])
-                    continue
-
                 # This is a work around for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5372
                 temp = re.sub(r',VK_VERSION_1_\d+', '', extension.depends)
                 # It can look like (VK_KHR_timeline_semaphore,VK_VERSION_1_2) or (VK_VERSION_1_2,VK_KHR_timeline_semaphore)
                 temp = re.sub(r'VK_VERSION_1_\d+,', '', temp)
-                for reqs in exprValues(parseExpr(temp)):
-                    feature = self.vk.extensions[reqs] if reqs in self.vk.extensions else self.vk.versions[reqs]
-                    self.requiredExpression[extension.name].append(feature)
+                for orGroup in exprToOrGroups(temp):
+                    features = [self.vk.extensions[name] if name in self.vk.extensions else self.vk.versions[name] for name in orGroup]
+                    self.requiredExpression[extension.name].append(features)
         for version in self.vk.versions.keys():
             self.fieldName[version] = version.lower().replace('version', 'feature_version')
 
@@ -163,7 +155,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             // Map of promoted extension information per version (a separate map exists for instance and device extensions).
             // The map is keyed by the version number (e.g. VK_API_VERSION_1_1) and each value is a pair consisting of the
             // version string (e.g. "VK_VERSION_1_1") and the set of name of the promoted extensions.
-            typedef vvl::unordered_map<uint32_t, std::pair<const char*, vvl::unordered_set<vvl::Extension>>> PromotedExtensionInfoMap;
+            using PromotedExtensionInfoMap = vvl::unordered_map<uint32_t, std::pair<const char*, vvl::unordered_set<vvl::Extension>>>;
             const PromotedExtensionInfoMap& GetInstancePromotionInfoMap();
             const PromotedExtensionInfoMap& GetDevicePromotionInfoMap();
 
@@ -207,7 +199,9 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 const ExtEnabled InstanceExtensions::*enabled;
                 const char *name;
             };
-            typedef std::vector<Requirement> RequirementVec;
+            // Only one requirement needs to be satisfied
+            using RequirementOrGroup = small_vector<Requirement, 1>;
+            using RequirementVec = std::vector<RequirementOrGroup>;
             struct Info {
                 Info(ExtEnabled InstanceExtensions::*state_, const RequirementVec requirements_)
                     : state(state_), requirements(requirements_) {}
@@ -234,7 +228,9 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 const ExtEnabled DeviceExtensions::*enabled;
                 const char *name;
             };
-            typedef std::vector<Requirement> RequirementVec;
+            // Only one requirement needs to be satisfied
+            using RequirementOrGroup = std::vector<Requirement>;
+            using RequirementVec = std::vector<RequirementOrGroup>;
             struct Info {
                 Info(ExtEnabled DeviceExtensions::*state_, const RequirementVec requirements_)
                     : state(state_), requirements(requirements_) {}
@@ -504,7 +500,8 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             # This is only done to match whitespace from before code we refactored
             if self.requiredExpression[extension.name]:
                 reqs += '{\n'
-                reqs += ',\n'.join([f'{{&InstanceExtensions::{self.fieldName[feature.name]}, {feature.nameString}}}' for feature in self.requiredExpression[extension.name]])
+                reqs += ',\n'.join(['{' + ','.join(f'{{&InstanceExtensions::{self.fieldName[feature.name]}, {feature.nameString}}}' for feature in orGroup) + '}'
+                                    for orGroup in self.requiredExpression[extension.name]])
                 reqs += '}'
             out.append(f'{{vvl::Extension::_{extension.name}, Info(&InstanceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
         out.extend(guard_helper.add_guard(None))
@@ -525,7 +522,8 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             # This is only done to match whitespace from before code we refactored
             if self.requiredExpression[extension.name]:
                 reqs += '{\n'
-                reqs += ',\n'.join([f'{{&DeviceExtensions::{self.fieldName[feature.name]}, {feature.nameString}}}' for feature in self.requiredExpression[extension.name]])
+                reqs += ',\n'.join(['{' + ','.join(f'{{&DeviceExtensions::{self.fieldName[feature.name]}, {feature.nameString}}}' for feature in orGroup) + '}'
+                                    for orGroup in self.requiredExpression[extension.name]])
                 reqs += '}'
             out.append(f'{{vvl::Extension::_{extension.name}, Info(&DeviceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
         out.extend(guard_helper.add_guard(None))

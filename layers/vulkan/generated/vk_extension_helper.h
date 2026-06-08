@@ -51,7 +51,7 @@ enum ExtEnabled : unsigned char {
 // Map of promoted extension information per version (a separate map exists for instance and device extensions).
 // The map is keyed by the version number (e.g. VK_API_VERSION_1_1) and each value is a pair consisting of the
 // version string (e.g. "VK_VERSION_1_1") and the set of name of the promoted extensions.
-typedef vvl::unordered_map<uint32_t, std::pair<const char*, vvl::unordered_set<vvl::Extension>>> PromotedExtensionInfoMap;
+using PromotedExtensionInfoMap = vvl::unordered_map<uint32_t, std::pair<const char*, vvl::unordered_set<vvl::Extension>>>;
 const PromotedExtensionInfoMap& GetInstancePromotionInfoMap();
 const PromotedExtensionInfoMap& GetDevicePromotionInfoMap();
 
@@ -138,7 +138,9 @@ struct InstanceExtensions {
         const ExtEnabled InstanceExtensions::* enabled;
         const char* name;
     };
-    typedef std::vector<Requirement> RequirementVec;
+    // Only one requirement needs to be satisfied
+    using RequirementOrGroup = small_vector<Requirement, 1>;
+    using RequirementVec = std::vector<RequirementOrGroup>;
     struct Info {
         Info(ExtEnabled InstanceExtensions::* state_, const RequirementVec requirements_)
             : state(state_), requirements(requirements_) {}
@@ -587,7 +589,9 @@ struct DeviceExtensions : public InstanceExtensions {
         const ExtEnabled DeviceExtensions::* enabled;
         const char* name;
     };
-    typedef std::vector<Requirement> RequirementVec;
+    // Only one requirement needs to be satisfied
+    using RequirementOrGroup = std::vector<Requirement>;
+    using RequirementVec = std::vector<RequirementOrGroup>;
     struct Info {
         Info(ExtEnabled DeviceExtensions::* state_, const RequirementVec requirements_)
             : state(state_), requirements(requirements_) {}
