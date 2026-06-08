@@ -389,11 +389,12 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                           {VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT,
                            VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT}) &&
                 (mapping.resourceMask & VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT) == 0) {
-                LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11356", device, map_loc.dot(Field::resourceMask),
-                         "is %s (missing "
-                         "VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT).\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
-                         string_VkSpirvResourceTypeFlagsEXT(mapping.resourceMask).c_str(),
-                         string_VkDescriptorMappingSourceEXT(mapping.source));
+                skip |=
+                    LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11356", device, map_loc.dot(Field::resourceMask),
+                             "is %s (missing "
+                             "VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT).\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
+                             string_VkSpirvResourceTypeFlagsEXT(mapping.resourceMask).c_str(),
+                             string_VkDescriptorMappingSourceEXT(mapping.source));
             }
             const VkSpirvResourceTypeFlagsEXT valid_resource_buffer_and_as =
                 VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT | VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT |
@@ -401,10 +402,10 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
             if ((mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT ||
                  mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT) &&
                 ((mapping.resourceMask & valid_resource_buffer_and_as) == 0)) {
-                LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11357", device, map_loc.dot(Field::resourceMask),
-                         "is %s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
-                         string_VkSpirvResourceTypeFlagsEXT(mapping.resourceMask).c_str(),
-                         string_VkDescriptorMappingSourceEXT(mapping.source));
+                skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11357", device, map_loc.dot(Field::resourceMask),
+                                 "is %s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
+                                 string_VkSpirvResourceTypeFlagsEXT(mapping.resourceMask).c_str(),
+                                 string_VkDescriptorMappingSourceEXT(mapping.source));
             }
             auto get_use_combined_image_sampler_index = [mapping]() {
                 switch (mapping.source) {
@@ -440,10 +441,10 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT}) &&
                 get_use_combined_image_sampler_index() != VK_FALSE &&
                 ((mapping.resourceMask & valid_mask_sampling_resource) == 0)) {
-                LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11358", device, map_loc.dot(Field::resourceMask),
-                         "is %s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
-                         string_VkSpirvResourceTypeFlagsEXT(mapping.resourceMask).c_str(),
-                         string_VkDescriptorMappingSourceEXT(mapping.source));
+                skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11358", device, map_loc.dot(Field::resourceMask),
+                                 "is %s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
+                                 string_VkSpirvResourceTypeFlagsEXT(mapping.resourceMask).c_str(),
+                                 string_VkDescriptorMappingSourceEXT(mapping.source));
             }
             if (IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT,
                                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
