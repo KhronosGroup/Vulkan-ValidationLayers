@@ -24,8 +24,15 @@
 #include "gpuav/shaders/gpuav_error_codes.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "state_tracker/cmd_buffer_state.h"
 
 namespace gpuav {
+
+// Way to hold the last snapshot
+struct DescriptorChecksHeapCbState {
+    vko::BufferRange last_bound_heap_info_resource;
+    vko::BufferRange last_bound_heap_info_sampler;
+};
 
 void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubState& cb) {
     if (!gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) {
@@ -35,14 +42,56 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
         return;
     }
 
-    // TODO - See NegativeGpuAVDescriptorHeap.ResourceOOBRebindHeap
-    // This will provide false positive, instead of capturing the CommandBufferSubState here, we need to take snapshots of the last
-    // bound data, which in practice apps should only being binding once per command buffers.
+    DescriptorHeapBindings& desc_heap_bindings = cb.shared_resources_cache.GetOrCreate<DescriptorHeapBindings>();
+
+    desc_heap_bindings.on_update_bound_descriptor_heap.emplace_back(
+        [](Validator& gpuav, CommandBufferSubState& cb, DescriptorHeapBindings::BindingCommand& desc_binding_cmd, bool is_sampler) {
+            DescriptorChecksHeapCbState& dc_cb_state = cb.shared_resources_cache.GetOrCreate<DescriptorChecksHeapCbState>();
+
+            auto& cb_heap = cb.base.descriptor_heap;
+            assert(cb_heap.resource_range.size() < (VkDeviceAddress)vvl::kU32Max);
+            assert(cb_heap.sampler_range.size() < (VkDeviceAddress)vvl::kU32Max);
+
+            if (is_sampler) {
+                dc_cb_state.last_bound_heap_info_sampler =
+                    cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(glsl::BoundHeapInfo));
+                dc_cb_state.last_bound_heap_info_sampler.Clear();
+                auto desc_heap_info = static_cast<glsl::BoundHeapInfo*>(dc_cb_state.last_bound_heap_info_sampler.offset_mapped_ptr);
+
+                desc_heap_info->heap_size = (uint32_t)cb_heap.sampler_range.size();
+                desc_heap_info->reserved_begin = (uint32_t)(cb_heap.sampler_reserved.begin - cb_heap.sampler_range.begin);
+                desc_heap_info->reserved_end = (uint32_t)(cb_heap.sampler_reserved.end - cb_heap.sampler_range.begin);
+            } else {
+                dc_cb_state.last_bound_heap_info_resource =
+                    cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(glsl::BoundHeapInfo));
+                dc_cb_state.last_bound_heap_info_resource.Clear();
+                auto desc_heap_info =
+                    static_cast<glsl::BoundHeapInfo*>(dc_cb_state.last_bound_heap_info_resource.offset_mapped_ptr);
+
+                desc_heap_info->heap_size = (uint32_t)cb_heap.resource_range.size();
+                desc_heap_info->reserved_begin = (uint32_t)(cb_heap.resource_reserved.begin - cb_heap.resource_range.begin);
+                desc_heap_info->reserved_end = (uint32_t)(cb_heap.resource_reserved.end - cb_heap.resource_range.begin);
+            }
+
+            // Data for the GPU
+            desc_binding_cmd.bound_heap_info_resource = dc_cb_state.last_bound_heap_info_resource;
+            desc_binding_cmd.bound_heap_info_sampler = dc_cb_state.last_bound_heap_info_sampler;
+            // Data for the CPU (since the command buffer might updated)
+            desc_binding_cmd.heap_cb_state = cb_heap;
+        });
+
     cb.on_instrumentation_error_logger_register_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
                                                                           const LastBound& last_bound) {
+        // Capture the last index into the snapshot on record time
+        uint32_t heap_binding_index = vvl::kNoIndex32;
+        DescriptorHeapBindings* desc_heap_bindings = cb.shared_resources_cache.TryGet<DescriptorHeapBindings>();
+        if (desc_heap_bindings && !desc_heap_bindings->bound_heap_snapshots.empty()) {
+            heap_binding_index = uint32_t(desc_heap_bindings->bound_heap_snapshots.size() - 1);
+        }
+
         CommandBufferSubState::InstrumentationErrorLogger inst_error_logger =
-            [&cb](Validator& gpuav, const Location& loc, const uint32_t* error_record, const InstrumentedShader*,
-                  std::string& out_error_msg, std::string& out_vuid_msg) {
+            [&cb, heap_binding_index](Validator& gpuav, const Location& loc, const uint32_t* error_record,
+                                      const InstrumentedShader*, std::string& out_error_msg, std::string& out_vuid_msg) {
                 using namespace glsl;
 
                 bool error_found = false;
@@ -52,6 +101,13 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 error_found = true;
 
                 std::ostringstream strm;
+
+                // The user might have called vkCmdBindResourceHeap since recording, need to get the version at record time
+                const vvl::CommandBuffer::DescriptorHeap* heap_cb_state = nullptr;
+                if (heap_binding_index != vvl::kNoIndex32) {
+                    const DescriptorHeapBindings& desc_heap_bindings = cb.shared_resources_cache.Get<DescriptorHeapBindings>();
+                    heap_cb_state = &desc_heap_bindings.bound_heap_snapshots[heap_binding_index].heap_cb_state;
+                }
 
                 const uint32_t index = error_record[kInst_LogError_ParameterOffset_0];
                 const uint32_t offset = error_record[kInst_LogError_ParameterOffset_1];
@@ -65,9 +121,10 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 const bool is_image = desc_type & gpuav::descriptor::TYPE_IMAGE_MASK;
                 const bool is_sampler = desc_type == gpuav::descriptor::TYPE_SAMPLER;
 
-                VkDeviceAddress heap_address =
-                    (is_sampler ? cb.base.descriptor_heap.sampler_range.begin : cb.base.descriptor_heap.resource_range.begin) +
-                    offset;
+                VkDeviceAddress heap_address = 0;
+                if (heap_cb_state) {
+                    heap_address = (is_sampler ? heap_cb_state->sampler_range.begin : heap_cb_state->resource_range.begin) + offset;
+                }
 
                 const uint32_t error_sub_code = GetSubError(error_record);
                 switch (error_sub_code) {
@@ -80,15 +137,16 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     } break;
 
                     case kErrorSubCode_DescriptorHeap_ReservedRange: {
+                        assert(heap_cb_state);
                         strm << "Index " << index << " is accessing the heap at offset 0x" << std::hex << offset << " (address 0x"
                              << std::hex << heap_address
                              << ") which is inside the reserved range.\nThe reserved range was bound at ";
                         if (is_sampler) {
-                            strm << string_range_hex(cb.base.descriptor_heap.sampler_reserved) << " (size of 0x" << std::hex
-                                 << cb.base.descriptor_heap.sampler_reserved.size() << " bytes)\n";
+                            strm << string_range_hex(heap_cb_state->sampler_reserved) << " (size of 0x" << std::hex
+                                 << heap_cb_state->sampler_reserved.size() << " bytes)\n";
                         } else {
-                            strm << string_range_hex(cb.base.descriptor_heap.resource_reserved) << " (size of 0x" << std::hex
-                                 << cb.base.descriptor_heap.resource_reserved.size() << " bytes)\n";
+                            strm << string_range_hex(heap_cb_state->resource_reserved) << " (size of 0x" << std::hex
+                                 << heap_cb_state->resource_reserved.size() << " bytes)\n";
                         }
                         out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_OOB_11309);
                         error_found = true;
@@ -176,18 +234,18 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 // Unless find otherwise, this information is useful for all errors
                 strm << "The " << (is_sampler ? "sampler" : "resource") << " heap was ";
                 if (is_sampler) {
-                    if (!cb.base.descriptor_heap.sampler_bound) {
+                    if (!heap_cb_state || !heap_cb_state->sampler_bound) {
                         strm << "not bound with vkCmdBindSamplerHeapEXT";
                     } else {
-                        strm << "bound at " << string_range_hex(cb.base.descriptor_heap.sampler_range) << " (size of 0x" << std::hex
-                             << cb.base.descriptor_heap.sampler_range.size() << " bytes)\n";
+                        strm << "bound at " << string_range_hex(heap_cb_state->sampler_range) << " (size of 0x" << std::hex
+                             << heap_cb_state->sampler_range.size() << " bytes)\n";
                     }
                 } else {
-                    if (!cb.base.descriptor_heap.resource_bound) {
+                    if (!heap_cb_state || !heap_cb_state->resource_bound) {
                         strm << "not bound with vkCmdBindResourceHeapEXT";
                     } else {
-                        strm << "bound at " << string_range_hex(cb.base.descriptor_heap.resource_range) << " (size of 0x"
-                             << std::hex << cb.base.descriptor_heap.resource_range.size() << " bytes)\n";
+                        strm << "bound at " << string_range_hex(heap_cb_state->resource_range) << " (size of 0x" << std::hex
+                             << heap_cb_state->resource_range.size() << " bytes)\n";
                     }
                 }
 
@@ -201,22 +259,18 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
     cb.on_instrumentation_common_desc_update_functions.emplace_back([&gpuav](CommandBufferSubState& cb, const LastBound& last_bound,
                                                                              const Location&,
                                                                              CommonDescriptorUpdate& out_update) mutable {
-        const uint32_t bound_heap_info_size = sizeof(glsl::BoundHeapInfo) * 2;
+        const uint32_t bound_heap_info_size = sizeof(VkDeviceAddress) * 2;
         uint32_t buffer_size = bound_heap_info_size + (uint32_t)gpuav.phys_dev_ext_props.descriptor_heap_props.maxPushDataSize;
         vko::BufferRange buffer_range = cb.gpu_resources_manager.GetHostCoherentBufferRange(buffer_size);
 
-        glsl::BoundHeapInfo* bound_heap_info = (glsl::BoundHeapInfo*)buffer_range.offset_mapped_ptr;
-        glsl::BoundHeapInfo& bound_resource_heap = bound_heap_info[0];
-        glsl::BoundHeapInfo& bound_sampler_heap = bound_heap_info[1];
-        auto& cb_heap = cb.base.descriptor_heap;
-        assert(cb_heap.resource_range.size() < (VkDeviceAddress)vvl::kU32Max);
-        assert(cb_heap.sampler_range.size() < (VkDeviceAddress)vvl::kU32Max);
-        bound_resource_heap.heap_size = (uint32_t)cb_heap.resource_range.size();
-        bound_resource_heap.reserved_begin = (uint32_t)(cb_heap.resource_reserved.begin - cb_heap.resource_range.begin);
-        bound_resource_heap.reserved_end = (uint32_t)(cb_heap.resource_reserved.end - cb_heap.resource_range.begin);
-        bound_sampler_heap.heap_size = (uint32_t)cb_heap.sampler_range.size();
-        bound_sampler_heap.reserved_begin = (uint32_t)(cb_heap.sampler_reserved.begin - cb_heap.sampler_range.begin);
-        bound_sampler_heap.reserved_end = (uint32_t)(cb_heap.sampler_reserved.end - cb_heap.sampler_range.begin);
+        VkDeviceAddress* bound_heap_info = (VkDeviceAddress*)buffer_range.offset_mapped_ptr;
+
+        // If these are zero that is valid, core validation gives error if heap is not set when needed
+        DescriptorChecksHeapCbState* dc_cb_state = cb.shared_resources_cache.TryGet<DescriptorChecksHeapCbState>();
+        if (dc_cb_state) {
+            bound_heap_info[0] = dc_cb_state->last_bound_heap_info_resource.offset_address;
+            bound_heap_info[1] = dc_cb_state->last_bound_heap_info_sampler.offset_address;
+        }
 
         uint8_t* gpu_push_data_ptr = ((uint8_t*)buffer_range.offset_mapped_ptr) + bound_heap_info_size;
         memcpy(gpu_push_data_ptr, cb.push_data_value.data(), cb.push_data_value.size());

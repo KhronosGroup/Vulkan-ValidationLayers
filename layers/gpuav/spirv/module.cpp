@@ -944,6 +944,10 @@ void Module::LinkFunctions(const LinkInfo& info) {
                 continue;
             } else if (decoration->Word(2) == spv::DecorationLinkageAttributes) {
                 continue;  // remove linkage info
+            } else if (decoration->Word(2) == spv::DecorationAliasedPointer) {
+                // The way descriptor_heap.comp has to choose between the heap/sampler causes these to be generated, while we know
+                // they are not going to be aliased and the 'restrict' keyword seems to not be working as desired
+                continue;
             } else if (decoration->Word(2) == spv::DecorationDescriptorSet) {
                 // only should be one DescriptorSet to update
                 decoration->UpdateWord(3, settings_.output_buffer_descriptor_set);

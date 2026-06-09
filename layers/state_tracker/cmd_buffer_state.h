@@ -745,6 +745,9 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
                              uint32_t size, const void *values);
     void RecordPushData(const VkPushDataInfoEXT& push_data_info, const Location& loc);
 
+    void RecordBindResourceHeap(const Location& loc);
+    void RecordBindSamplerHeap(const Location& loc);
+
     void RecordBeginConditionalRendering(const Location &loc);
     void RecordEndConditionalRendering(const Location &loc);
 
@@ -922,6 +925,9 @@ class CommandBufferSubState {
 
     virtual void ClearPushConstants() {}
     virtual void ClearPushData() {}
+
+    virtual void RecordBindResourceHeap() {}
+    virtual void RecordBindSamplerHeap() {}
 
     virtual void RecordBeginRendering(const VkRenderingInfo &rendering_info, const Location &loc) {}
     virtual void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin, const VkSubpassBeginInfo &subpass_begin_info,
