@@ -16,8 +16,8 @@
  */
 #pragma once
 
+#include "sync/sync_op.h"
 #include "sync/sync_render_pass.h"
-#include "sync/sync_reporting.h"
 #include "state_tracker/cmd_buffer_state.h"
 
 struct RecordObject;
@@ -179,14 +179,6 @@ class CommandExecutionContext {
 class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProvider {
   public:
     using SyncOpPointer = std::shared_ptr<SyncOpBase>;
-    constexpr static SyncAccessIndex kResolveRead = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ;
-    constexpr static SyncAccessIndex kResolveWrite = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
-    constexpr static SyncOrdering kColorResolveOrder = SyncOrdering::kColorAttachment;
-    // Although depth resolve runs on the color attachment output stage and uses color accesses, depth accesses
-    // still participate in the ordering. That's why using raster and not only color attachment ordering
-    constexpr static SyncOrdering kDepthStencilResolveOrder = SyncOrdering::kRaster;
-
-    constexpr static SyncOrdering kStoreOrder = SyncOrdering::kRaster;
 
     struct SyncOpEntry {
         ResourceUsageTag tag;

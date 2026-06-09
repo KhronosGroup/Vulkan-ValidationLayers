@@ -39,6 +39,16 @@ namespace syncval {
 constexpr VkImageAspectFlags kColorAspects =
     VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
 
+constexpr SyncAccessIndex kResolveRead = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ;
+constexpr SyncAccessIndex kResolveWrite = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
+constexpr SyncOrdering kColorResolveOrder = SyncOrdering::kColorAttachment;
+
+// Although depth resolve runs on the color attachment output stage and uses color accesses, depth accesses
+// still participate in the ordering. That's why using raster and not only color attachment ordering
+constexpr SyncOrdering kDepthStencilResolveOrder = SyncOrdering::kRaster;
+
+constexpr SyncOrdering kStoreOrder = SyncOrdering::kRaster;
+
 struct ShaderStageAccesses {
     SyncAccessIndex sampled_read;
     SyncAccessIndex storage_read;

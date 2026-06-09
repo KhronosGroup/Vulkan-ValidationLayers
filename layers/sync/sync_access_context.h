@@ -458,7 +458,7 @@ class AccessContext {
     // lazily when the access state's barrier information is needed.
     // Global barriers track VkMemoryBarrier barriers and execution dependencies, including
     // those from image or buffer barriers.
-    static constexpr uint32_t kMaxGlobaBarrierDefCount = 8;
+    static constexpr uint32_t kMaxGlobalBarrierDefCount = 8;
     struct GlobalBarrierDef {
         SyncBarrier barrier;
         // The i-th bit indicates whether the source stage of this barrier
@@ -466,7 +466,7 @@ class AccessContext {
         uint32_t chain_mask = 0;
     };
     QueueId global_barriers_queue_ = kQueueIdInvalid;
-    GlobalBarrierDef global_barrier_defs_[kMaxGlobaBarrierDefCount];
+    GlobalBarrierDef global_barrier_defs_[kMaxGlobalBarrierDefCount];
     uint32_t global_barrier_def_count_ = 0;
     std::vector<uint32_t> global_barriers_;
 
