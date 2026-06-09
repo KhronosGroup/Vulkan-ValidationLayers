@@ -2163,6 +2163,38 @@ TEST_F(NegativeDescriptorHeap, DescriptorMappingSourcePushIndex) {
     }
 }
 
+TEST_F(NegativeDescriptorHeap, DescriptorMappingSourcePushDataLimit) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+    {
+        mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT;
+        mapping.sourceData.pushDataOffset = (uint32_t)heap_props.maxPushDataSize;
+
+        CreateComputePipelineHelper pipe(*this);
+        pipe.LateBindPipelineInfo();
+        pipe.cp_ci_.stage.pNext = &mapping_info;
+
+        m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-pushDataOffset-limit");
+        pipe.CreateComputePipeline(false);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
+        mapping.sourceData.pushAddressOffset = (uint32_t)heap_props.maxPushDataSize;
+
+        CreateComputePipelineHelper pipe(*this);
+        pipe.LateBindPipelineInfo();
+        pipe.cp_ci_.stage.pNext = &mapping_info;
+
+        m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-pushAddressOffset-limit");
+        pipe.CreateComputePipeline(false);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(NegativeDescriptorHeap, DescriptorMappingSourceIndirectIndex) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
