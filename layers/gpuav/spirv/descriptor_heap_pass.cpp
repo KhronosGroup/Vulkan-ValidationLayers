@@ -127,6 +127,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         }
     }
 
+    bool has_embedded_sampler = false;
     assert(descriptor_var.IsDescriptor());
     const VkDescriptorSetAndBindingMappingEXT* mapping = GetMapping(descriptor_var.interface_);
     if (!mapping) {
@@ -162,6 +163,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
                                 inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
         const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping->sourceData.constantOffset;
+        has_embedded_sampler = map_data.pEmbeddedSampler != nullptr;
 
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
         const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.heapArrayStride).Id();
@@ -174,6 +176,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
                                 inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
         const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping->sourceData.pushIndex;
+        has_embedded_sampler = map_data.pEmbeddedSampler != nullptr;
 
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
         // VU enforces pushOffset to multiple of 4, and the GLSL is using a uint array
@@ -189,6 +192,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
                                 inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
         const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping->sourceData.indirectIndex;
+        has_embedded_sampler = map_data.pEmbeddedSampler != nullptr;
 
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
         // VU enforces pushOffset to multiple of 8, and the GLSL is using a uint array
@@ -206,6 +210,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
             inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
         const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data = mapping->sourceData.indirectIndexArray;
+        has_embedded_sampler = map_data.pEmbeddedSampler != nullptr;
 
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
         // VU enforces pushOffset to multiple of 8, and the GLSL is using a uint array
@@ -273,7 +278,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
     module_.need_log_error_ = true;
 
     // If there is a sampler, we have another descriptor at this spot we need to validate
-    if (!is_seperate_sampler && meta.access_path.HasSampler()) {
+    if (!is_seperate_sampler && meta.access_path.HasSampler() && !has_embedded_sampler) {
         const uint32_t valid_image = function_result;
         uint32_t valid_sampler = 0;
         if (meta.access_path.is_combined_image_sampler) {
