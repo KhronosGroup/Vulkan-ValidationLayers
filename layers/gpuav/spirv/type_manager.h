@@ -204,6 +204,9 @@ struct AccessPath {
 
     // TODO - Need to handle OffsetIdEXT correctly, this is a dumb hack
     uint32_t heap_offset_member_index = 0;
+
+    // As defined in gpuav_descriptor_validation.h
+    uint8_t descriptor_type = 0;
 };
 
 // In charge of tracking all Types, Constants, and Variable in the module.

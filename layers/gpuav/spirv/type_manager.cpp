@@ -18,6 +18,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include "containers/container_utils.h"
 #include "generated/spirv_grammar_helper.h"
+#include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "module.h"
 
 namespace gpuav {
@@ -882,6 +883,12 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
         }
 
         if (next_access_chain->Opcode() == spv::OpBufferPointerEXT) {
+            spv::StorageClass buffer_ptr_sc = FindTypeById(next_access_chain->TypeId())->inst_.StorageClass();
+            // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4858
+            // It should be a bug to use 1.0 BufferBlock
+            path.descriptor_type = buffer_ptr_sc == spv::StorageClassStorageBuffer ? gpuav::descriptor::TYPE_STORAGE_BUFFER
+                                                                                   : gpuav::descriptor::TYPE_UNIFORM_BUFFER;
+
             const uint32_t buffer_pointer_id = next_access_chain->Operand(0);
             // For now assume this is a 1D array into the descriptor array
             // https://gitlab.khronos.org/spirv/SPIR-V/-/issues/942
@@ -891,7 +898,7 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
             const uint32_t untyped_variable_id = next_access_chain->Operand(1);
             path.variable = FindVariableById(untyped_variable_id);
         } else if (next_access_chain->Opcode() == spv::OpImageTexelPointer) {
-            // Storage Images (and image atomics)
+            path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_STORAGE;
             const Instruction* access_chain_inst = function.FindInstruction(next_access_chain->Operand(0));
             if (access_chain_inst && access_chain_inst->IsNonPtrAccessChain()) {
                 next_access_chain = access_chain_inst;
@@ -968,6 +975,61 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
             path.sampler_descriptor_index_id = next_access_chain->Operand(index_0_operand);
         }
     }
+
+    // no way this can ever be a sampler
+    const uint8_t invalid_type = gpuav::descriptor::TYPE_SAMPLER;
+    if (path.descriptor_type == invalid_type) {
+        if (image_access) {
+            const Type* image_type = FindTypeById(path.image_load_inst->TypeId());
+            assert(image_type && (image_type->spv_type_ == SpvType::kImage || image_type->spv_type_ == SpvType::kSampledImage));
+
+            if (image_type->spv_type_ == SpvType::kSampledImage) {
+                path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_SAMPLED;
+            } else {
+                const bool is_sampled_without_sampler = image_type->inst_.Word(7) == 2;
+                spv::Dim image_dim = spv::Dim(image_type->inst_.Word(3));
+                if (is_sampled_without_sampler) {
+                    if (image_dim == spv::DimSubpassData) {
+                        path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_INPUT_ATTACHMENT;
+                    } else if (image_dim == spv::DimBuffer) {
+                        path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_TEXEL_BUFFER_STORAGE;
+                    } else {
+                        path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_STORAGE;
+                    }
+                } else if (image_dim == spv::DimBuffer) {
+                    path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_TEXEL_BUFFER_UNIFORM;
+                } else {
+                    path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_SAMPLED;
+                }
+            }
+        } else if (path.access_type->spv_type_ == SpvType::kAccelerationStructureKHR) {
+            path.descriptor_type = gpuav::descriptor::TYPE_ACCELERATION_STRUCTURE;
+        } else {
+            spv::StorageClass access_sc = FindTypeById(path.ac_list.front()->TypeId())->inst_.StorageClass();
+            if (access_sc == spv::StorageClassStorageBuffer) {
+                path.descriptor_type = gpuav::descriptor::TYPE_STORAGE_BUFFER;
+            } else if (access_sc == spv::StorageClassUniform) {
+                path.descriptor_type = gpuav::descriptor::TYPE_UNIFORM_BUFFER;
+
+                // handles the dumb issue where 1.0 shaders "Uniform" could be really a Storage Buffer
+                // https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/extensions/shader_features.adoc#vk_khr_storage_buffer_storage_class
+                const uint32_t spirv_version_1_3 = 0x00010300;  // Vulkan 1.1
+                if (module_.header_.version < spirv_version_1_3) {
+                    // Here we have a Vulkan 1.0 shader and need to just make sure there is no BufferBlock on the struct
+                    const uint32_t block_type_id =
+                        path.pointer_type->IsArray() ? path.pointer_type->inst_.Operand(0) : path.pointer_type->Id();
+                    for (const auto& annotation : module_.annotations_) {
+                        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == block_type_id &&
+                            spv::Decoration(annotation->Word(2)) == spv::DecorationBufferBlock) {
+                            path.descriptor_type = gpuav::descriptor::TYPE_STORAGE_BUFFER;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    assert(path.descriptor_type != invalid_type);
 
     return path;
 }

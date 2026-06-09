@@ -2086,7 +2086,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, BufferDescriptorAlignmentUntypedPointers) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Result-11341");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-bufferDescriptorAlignment-11384");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -2282,6 +2282,263 @@ TEST_F(NegativeGpuAVDescriptorHeap, IndirectAddressPushDataAlignment) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11304");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, MappingAddressBufferAlignment) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 2);
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    WriteBufferToHeap(ssbo_buffer);
+    vkt::Buffer ubo_buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+    WriteBufferToHeap(ubo_buffer, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
+    mappings[0].sourceData.pushAddressOffset = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
+    mappings[1].sourceData.pushAddressOffset = 8;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(set = 0, binding = 1) uniform B { uint b; };
+        void main() {
+            a = b;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.CreateComputePipeline(false);
+
+    VkDeviceAddress ssbo_address = ssbo_buffer.Address() + 1;
+    VkDeviceAddress ubo_address = ubo_buffer.Address() + 0;
+
+    m_command_buffer.Begin();
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &ssbo_address);  // bad
+    m_command_buffer.PushData(8, sizeof(VkDeviceAddress), &ubo_address);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    ssbo_address = ssbo_buffer.Address() + 0;
+    ubo_address = ubo_buffer.Address() + 1;
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &ssbo_address);
+    m_command_buffer.PushData(8, sizeof(VkDeviceAddress), &ubo_address);  // bad
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11441");  // ubo
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11442");  // ssbo
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, MappingIndirectAddressBufferAlignment) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 2);
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    WriteBufferToHeap(ssbo_buffer);
+    vkt::Buffer ubo_buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+    WriteBufferToHeap(ubo_buffer, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
+    mappings[0].sourceData.indirectAddress.pushOffset = 0;
+    mappings[0].sourceData.indirectAddress.addressOffset = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
+    mappings[1].sourceData.indirectAddress.pushOffset = 0;
+    mappings[1].sourceData.indirectAddress.addressOffset = 8;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(set = 0, binding = 1) uniform B { uint b; };
+        void main() {
+            a = b;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.CreateComputePipeline(false);
+
+    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+    VkDeviceAddress* indirect_data = (VkDeviceAddress*)indirect_buffer.Memory().Map();
+    indirect_data[0] = ssbo_buffer.Address() + 1;
+    indirect_data[1] = ubo_buffer.Address();
+    indirect_data[2] = ssbo_buffer.Address();
+    indirect_data[3] = ubo_buffer.Address() + 1;
+    VkDeviceAddress indirect_address = indirect_buffer.Address();
+
+    m_command_buffer.Begin();
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_address);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    indirect_address += (sizeof(VkDeviceAddress) * 2);
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_address);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11441");  // ubo
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11442");  // ssbo
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, IndirectIndexNullIndirect) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    CreateResourceHeap(heap_props.bufferDescriptorSize);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
+    mapping.sourceData.indirectIndex.pushOffset = 0;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        void main() {
+            a = 2;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.CreateComputePipeline(false);
+
+    VkDeviceAddress null_address = 0;
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &null_address);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    // TODO - should be VUID-vkCmdDispatch-None-11301
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Heap-IndirectBuffer-Null");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, PushAddressNullIndirect) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
+    mapping.sourceData.pushAddressOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        void main() {
+            a = 2;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.CreateComputePipeline(false);
+
+    VkDeviceAddress null_address = 0;
+
+    m_command_buffer.Begin();
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &null_address);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    // TODO - should be VUID-vkCmdDispatch-None-11302
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Heap-IndirectBuffer-Null");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, IndirectAddressNullIndirect) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
+    mapping.sourceData.indirectAddress.pushOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        void main() {
+            a = 2;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.CreateComputePipeline(false);
+
+    VkDeviceAddress null_address = 0;
+
+    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+    VkDeviceAddress* indirect_data = (VkDeviceAddress*)indirect_buffer.Memory().Map();
+    indirect_data[0] = null_address;
+    VkDeviceAddress indirect_address = indirect_buffer.Address();
+
+    m_command_buffer.Begin();
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &null_address);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_address);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    m_command_buffer.End();
+    // TODO - should be VUID-vkCmdDispatch-None-11305
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Heap-IndirectBuffer-Null");
+    // TODO - should be VUID-vkCmdDispatch-None-11306
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Heap-IndirectBuffer-Null");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

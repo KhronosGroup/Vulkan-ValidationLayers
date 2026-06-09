@@ -50,12 +50,6 @@ class DescriptorHeapPass : public Pass {
     // < original ID, new CopyObject ID >
     vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;
 
-    // TODO - We should need to encode more things, if not, can remove this struct later
-    struct DescriptorEncoding {
-        uint32_t alignment = 0;
-    };
-    DescriptorEncoding GetDescriptorEncoding(const Variable& descriptor_var, bool is_seperate_sampler) const;
-
     // Function IDs to link in
     enum FunctionNames {
         MAPPING_CONSTANT_OFFSET = 0,
