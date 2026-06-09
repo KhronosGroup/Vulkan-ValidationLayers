@@ -4736,3 +4736,32 @@ TEST_F(PositiveSyncVal, CmdSetEventAfterHostReset) {
     event.Reset();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveSyncVal, BinaryWaitWithTopOfPipeStage) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12397");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer dst_buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferCopy copy_region = {};
+    copy_region.size = 256;
+
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, VK_WHOLE_SIZE, 0x42);
+    m_command_buffer.End();
+
+    vkt::CommandBuffer copy_command_buffer(*m_device, m_command_pool);
+    copy_command_buffer.Begin();
+    vk::CmdCopyBuffer(copy_command_buffer, buffer, dst_buffer, 1, &copy_region);
+    copy_command_buffer.End();
+
+    vkt::Semaphore semaphore(*m_device);
+    m_default_queue->Submit(m_command_buffer, vkt::Signal(semaphore));
+
+    // Semaphore access scope are defined as all device accesses.
+    // It does not matter which accesses are allowed on specific stage.
+    // For example, no access is happening on TOP_OF_PIPE/BOTTOM_OF_PIPE stages.
+    m_default_queue->Submit(copy_command_buffer, vkt::Wait(semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT));
+    m_default_queue->Wait();
+}
