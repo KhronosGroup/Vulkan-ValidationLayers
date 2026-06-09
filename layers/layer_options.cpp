@@ -1,6 +1,7 @@
 /* Copyright (c) 2020-2026 The Khronos Group Inc.
  * Copyright (c) 2020-2026 Valve Corporation
  * Copyright (c) 2020-2026 LunarG, Inc.
+ * Copyright (c) 2026 RasterGrid Kft.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -593,6 +594,7 @@ enum VkLayerDbgActionBits {
     VK_DBG_LAYER_ACTION_LOG_MSG = 0x00000002,
     VK_DBG_LAYER_ACTION_BREAK = 0x00000004,
     VK_DBG_LAYER_ACTION_DEBUG_OUTPUT = 0x00000008,
+    VK_DBG_LAYER_ACTION_FAIL = 0x00000010,
     VK_DBG_LAYER_ACTION_DEFAULT = 0x40000000,
 };
 using VkLayerDbgActionFlags = VkFlags;
@@ -656,6 +658,7 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings* settings_data, VkuL
         {std::string("VK_DBG_LAYER_ACTION_LOG_MSG"), VK_DBG_LAYER_ACTION_LOG_MSG},
         {std::string("VK_DBG_LAYER_ACTION_BREAK"), VK_DBG_LAYER_ACTION_BREAK},
         {std::string("VK_DBG_LAYER_ACTION_DEBUG_OUTPUT"), VK_DBG_LAYER_ACTION_DEBUG_OUTPUT},
+        {std::string("VK_DBG_LAYER_ACTION_FAIL"), VK_DBG_LAYER_ACTION_FAIL},
         {std::string("VK_DBG_LAYER_ACTION_DEFAULT"), VK_DBG_LAYER_ACTION_DEFAULT}};
     for (const auto& element : debug_actions_list) {
         auto enum_value = debug_actions_option.find(element);
@@ -671,7 +674,8 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings* settings_data, VkuL
                     "\"" + element +
                     "\" was not a valid option for VK_LAYER_DEBUG_ACTION (ignoring).\nValid options are "
                     "[VK_DBG_LAYER_ACTION_IGNORE, VK_DBG_LAYER_ACTION_CALLBACK, VK_DBG_LAYER_ACTION_LOG_MSG, "
-                    "VK_DBG_LAYER_ACTION_BREAK, VK_DBG_LAYER_ACTION_DEBUG_OUTPUT, VK_DBG_LAYER_ACTION_DEFAULT]");
+                    "VK_DBG_LAYER_ACTION_BREAK, VK_DBG_LAYER_ACTION_DEBUG_OUTPUT, VK_DBG_LAYER_ACTION_FAIL, "
+                    "VK_DBG_LAYER_ACTION_DEFAULT]");
             }
         }
     }
@@ -822,6 +826,13 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings* settings_data, VkuL
     messenger = VK_NULL_HANDLE;
     if (debug_action & VK_DBG_LAYER_ACTION_BREAK) {
         dbg_create_info.pfnUserCallback = MessengerBreakCallback;
+        dbg_create_info.pUserData = nullptr;
+        LayerCreateMessengerCallback(debug_report, default_layer_callback, &dbg_create_info, &messenger);
+    }
+
+    messenger = VK_NULL_HANDLE;
+    if (debug_action & VK_DBG_LAYER_ACTION_FAIL) {
+        dbg_create_info.pfnUserCallback = MessengerFailCallback;
         dbg_create_info.pUserData = nullptr;
         LayerCreateMessengerCallback(debug_report, default_layer_callback, &dbg_create_info, &messenger);
     }
