@@ -72,6 +72,8 @@ class TestIcdGenerator(BaseGenerator):
             'vkGetPhysicalDeviceExternalFenceProperties',
             'vkGetPhysicalDeviceExternalBufferProperties',
             'vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM',
+            'vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM',
+            'vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM',
             'vkGetBufferMemoryRequirements',
             'vkGetBufferMemoryRequirements2',
             'vkGetDeviceBufferMemoryRequirements',

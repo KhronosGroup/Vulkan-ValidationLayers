@@ -14,7 +14,7 @@
 
 class PositiveDataGraph : public DataGraphTest {};
 
-void DataGraphTest::InitBasicDataGraph() {
+void DataGraphTest::InitBasicDataGraph(bool optical_flow) {
     SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredExtensions(VK_ARM_DATA_GRAPH_EXTENSION_NAME);
@@ -24,6 +24,10 @@ void DataGraphTest::InitBasicDataGraph() {
     AddRequiredFeature(vkt::Feature::shaderTensorAccess);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     AddRequiredFeature(vkt::Feature::shaderInt8);
+    if (optical_flow) {
+        AddRequiredExtensions(VK_ARM_DATA_GRAPH_OPTICAL_FLOW_EXTENSION_NAME);
+        AddRequiredFeature(vkt::Feature::dataGraphOpticalFlow);
+    }
     RETURN_IF_SKIP(Init());
 }
 
@@ -319,5 +323,36 @@ TEST_F(PositiveDataGraph, CmdDispatchDescriptorBuffer) {
                                          &offset);
     vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDataGraph, OpticalFlow) {
+    TEST_DESCRIPTION("Execute a datagraph with an optical flow node");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = optical_flow.dg_pipeline_;
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    session.GetMemoryReqs();
+    CheckSessionMemory(session);
+
+    auto& bind_point_reqs = session.BindPointReqs();
+    std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
+    session.AllocSessionMem(device_mem);
+    auto session_bind_infos = InitSessionBindInfo(session, device_mem);
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
+    optical_flow_di.meanFlowL1NormHint =
+        optical_flow.optical_flow_ci_.height;  // must be less than or equal to optical_flow_ci.height/optical_flow_ci.width
+    VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.dg_pipeline_);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.PipelineLayout(), 0, 1,
+                              optical_flow.DescriptorSet(), 0, nullptr);
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, &pipeline_di);
     m_command_buffer.End();
 }
