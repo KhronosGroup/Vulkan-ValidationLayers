@@ -209,18 +209,44 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                              "is %" PRIu32 " (not 1).\nVkDescriptorSetAndBindingMappingEXT::source = %s", mapping.bindingCount,
                              string_VkDescriptorMappingSourceEXT(mapping.source));
         }
-        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT &&
-            !IsIntegerMultipleOf(mapping.sourceData.pushDataOffset, 4)) {
-            skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11246", device, data_loc.dot(Field::pushDataOffset),
+        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) {
+            if (!IsIntegerMultipleOf(mapping.sourceData.pushDataOffset, 4)) {
+                skip |=
+                    LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11246", device, data_loc.dot(Field::pushDataOffset),
                              "(%" PRIu32 ") is not a multiple of 4\nVkDescriptorSetAndBindingMappingEXT::source = %s",
                              mapping.sourceData.pushDataOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+
+            if (mapping.sourceData.pushDataOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 4) {
+                // VU being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8350
+                skip |= LogError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-pushDataOffset-limit", device,
+                                 data_loc.dot(Field::pushDataOffset),
+                                 "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
+                                 ") - 4\nVkDescriptorSetAndBindingMappingEXT::source = %s\nHint - pushDataOffset points to data "
+                                 "inside the push data at and this is currently going to access OOB",
+                                 mapping.sourceData.pushDataOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                                 string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
         }
-        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT &&
-            !IsIntegerMultipleOf(mapping.sourceData.pushAddressOffset, 8)) {
-            skip |=
-                LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11247", device, data_loc.dot(Field::pushAddressOffset),
-                         "(%" PRIu32 ") is not a multiple of 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
-                         mapping.sourceData.pushAddressOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT) {
+            if (!IsIntegerMultipleOf(mapping.sourceData.pushAddressOffset, 8)) {
+                skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11247", device,
+                                 data_loc.dot(Field::pushAddressOffset),
+                                 "(%" PRIu32 ") is not a multiple of 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 mapping.sourceData.pushAddressOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+
+            if (mapping.sourceData.pushAddressOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 8) {
+                // VU being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8350
+                skip |= LogError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-pushAddressOffset-limit", device,
+                                 data_loc.dot(Field::pushAddressOffset),
+                                 "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
+                                 ") - 8\nVkDescriptorSetAndBindingMappingEXT::source = %s\nHint - pushAddressOffset points to an "
+                                 "address (8 bytes) "
+                                 "inside the push data, this is currently going to access OOB.",
+                                 mapping.sourceData.pushAddressOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                                 string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
         }
         if ((mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT ||
              mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT) &&
