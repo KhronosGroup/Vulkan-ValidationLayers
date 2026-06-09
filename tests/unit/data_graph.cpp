@@ -2323,3 +2323,34 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongQueue) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDataGraph, OpticalFlowWrongHint) {
+    TEST_DESCRIPTION("Execute optical flow with a wrong meanFlowL1NormHint value");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = optical_flow.dg_pipeline_;
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+
+    auto& bind_point_reqs = session.BindPointReqs();
+    std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
+    session.AllocSessionMem(device_mem);
+    auto session_bind_infos = InitSessionBindInfo(session, device_mem);
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    // set a hint that is too high
+    VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
+    optical_flow_di.meanFlowL1NormHint = optical_flow.optical_flow_ci_.height + 1;
+    VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.dg_pipeline_);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.PipelineLayout(), 0, 1,
+                              optical_flow.DescriptorSet(), 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineOpticalFlowDispatchInfoARM-meanFlowL1NormHint-09976");
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, &pipeline_di);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
