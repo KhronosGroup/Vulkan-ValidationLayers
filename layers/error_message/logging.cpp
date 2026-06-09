@@ -1,6 +1,7 @@
 /* Copyright (c) 2015-2026 The Khronos Group Inc.
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2026 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -743,6 +744,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback([[maybe_unused]] VkDebugUt
 #endif
 
     return false;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL MessengerFailCallback([[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                                                     [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT message_type,
+                                                     [[maybe_unused]] const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+                                                     [[maybe_unused]] void* user_data) {
+    return true;
 }
 
 static std::string CreateDefaultCallbackMessage(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,

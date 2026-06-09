@@ -1381,6 +1381,11 @@
                             "key": "VK_DBG_LAYER_ACTION_BREAK",
                             "label": "Break",
                             "description": "Trigger a breakpoint if a debugger is in use."
+                        },
+                        {
+                            "key": "VK_DBG_LAYER_ACTION_FAIL",
+                            "label": "Fail",
+                            "description": "Fail the command with VK_ERROR_VALIDATION_FAILED_EXT (prevents invalid commands from reaching the ICD)."
                         }
                     ],
                     "default": [
