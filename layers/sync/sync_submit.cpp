@@ -417,6 +417,16 @@ void QueueBatchContext::EndRenderPassReplayCleanup(ReplayState& replay) {
     current_access_context_ = &access_context_;
 }
 
+// Batch barrier ops don't modify in place, and thus don't need to hold pending state, and also are *never* layout transitions.
+struct BatchBarrierOp {
+    SyncBarrier barrier;
+    BarrierScope barrier_scope;
+
+    BatchBarrierOp(QueueId queue_id, const SyncBarrier& barrier) : barrier(barrier), barrier_scope(barrier, queue_id) {}
+
+    void operator()(AccessState* access_state) const { access_state->ApplyBarrier(barrier_scope, barrier); }
+};
+
 void QueueBatchContext::ResolvePresentSemaphoreWait(const SignalInfo& signal_info, const PresentedImages& presented_images) {
     assert(signal_info.batch);
 

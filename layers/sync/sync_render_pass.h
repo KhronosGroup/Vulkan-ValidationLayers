@@ -17,20 +17,23 @@
 
 #pragma once
 
-#include <vulkan/vulkan.h>
-
 #include "sync/sync_common.h"
 #include "sync/sync_access_context.h"
-#include "sync/sync_op.h"
+#include "error_message/error_location.h"
+#include <vulkan/utility/vk_safe_struct.hpp>
+#include <vulkan/vulkan.h>
 #include <optional>
 
 struct LastBound;
 
 namespace vvl {
 class CommandBuffer;
-}
+class RenderPass;
+}  // namespace vvl
 
 namespace syncval {
+
+class CommandBufferAccessContext;
 
 enum class AttachmentType { kColor, kDepth, kStencil };
 

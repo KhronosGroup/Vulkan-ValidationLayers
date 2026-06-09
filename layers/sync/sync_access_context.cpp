@@ -166,7 +166,7 @@ void AccessContext::RegisterGlobalBarrier(const SyncBarrier& barrier, QueueId qu
     // Register a new def if this barrier is encountered for the first time
     if (def_index == global_barrier_def_count_) {
         // Flush global barriers if all def slots are in use
-        if (global_barrier_def_count_ == kMaxGlobaBarrierDefCount) {
+        if (global_barrier_def_count_ == kMaxGlobalBarrierDefCount) {
             for (auto& [_, access] : access_state_map_) {
                 ApplyGlobalBarriers(access);
                 access.next_global_barrier_index = 0;  // to match state after reset
