@@ -1935,6 +1935,24 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
     return skip;
 }
 
+void SyncValidator::PostCallRecordResetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
+    if (auto event_state = Get<vvl::Event>(event)) {
+        const auto all_batches = GetAllQueueBatchContexts();
+        for (const auto& batch : all_batches) {
+            SyncEventsContext& events_context = batch->GetEventsContext();
+            if (SyncEventState* sync_event = events_context.GetFromShared(event_state)) {
+                sync_event->last_command = record_obj.location.function;
+                sync_event->unsynchronized_set = vvl::Func::Empty;
+                sync_event->ResetFirstScope();
+                sync_event->barriers = 0;
+            }
+        }
+    }
+}
+
 bool SyncValidator::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                const ErrorObject& error_obj) const {
     bool skip = false;

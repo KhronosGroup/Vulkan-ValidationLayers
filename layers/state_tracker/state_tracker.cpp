@@ -4141,6 +4141,19 @@ void DeviceState::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bi
     PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 }
 
+void DeviceState::PostCallRecordResetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
+    if (auto event_state = Get<Event>(event)) {
+        event_state->signaled = false;
+        event_state->signal_dependency_info.reset();
+        event_state->signal_src_stage_mask = VK_PIPELINE_STAGE_NONE;
+        event_state->signaling_queue = VK_NULL_HANDLE;
+        event_state->last_signaling_command = vvl::Func::vkResetEvent;
+    }
+}
+
 void DeviceState::PostCallRecordSetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {
     if (record_obj.result != VK_SUCCESS) {
         return;

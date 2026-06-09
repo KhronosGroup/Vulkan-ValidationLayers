@@ -4714,3 +4714,25 @@ TEST_F(PositiveSyncVal, ClearAttachmentOnlyDepthAttachment2) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, CmdSetEventAfterHostReset) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11288");
+    RETURN_IF_SKIP(InitSyncVal());
+    if (IsPlatformMockICD()) {
+        // Mock does not track event signal status and vkGetEventStatus does not work
+        GTEST_SKIP() << "Test not supported by MockICD (event signal tracking)";
+    }
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_command_buffer.End();
+
+    event.Reset();
+    m_default_queue->Submit(m_command_buffer);
+    while (event.GetStatus() != VK_EVENT_SET);
+
+    event.Reset();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}

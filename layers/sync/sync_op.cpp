@@ -667,7 +667,7 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext& exec_context, c
     size_t barrier_set_incr = (barrier_sets_.size() == 1) ? 0 : 1;
     const Location loc(command_);
     for (const auto& event : events_) {
-        const auto* sync_event = events_context.Get(event.get());
+        const auto* sync_event = events_context.Get(event);
         const auto& barrier_set = barrier_sets_[barrier_set_index];
         if (!sync_event || !sync_event->first_scope) {
             barrier_set_index += barrier_set_incr;

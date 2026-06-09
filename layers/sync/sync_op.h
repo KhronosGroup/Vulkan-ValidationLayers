@@ -86,14 +86,13 @@ class SyncEventsContext {
         return find_it->second.get();
     }
 
-    const SyncEventState *Get(const vvl::Event *event_state) const {
-        const auto find_it = map_.find(event_state);
+    const SyncEventState* Get(const SyncEventState::EventPointer& event_state) const {
+        const auto find_it = map_.find(event_state.get());
         if (find_it == map_.end()) {
             return nullptr;
         }
         return find_it->second.get();
     }
-    const SyncEventState *Get(const SyncEventState::EventPointer &event_state) const { return Get(event_state.get()); }
 
     void ApplyBarrier(const SyncExecScope &src, const SyncExecScope &dst, ResourceUsageTag tag);
     void ApplyTaggedWait(VkQueueFlags queue_flags, ResourceUsageTag tag);

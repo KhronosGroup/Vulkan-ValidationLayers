@@ -405,6 +405,7 @@ class SyncValidator : public vvl::DeviceProxy {
     bool PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR *pEncodeInfo,
                                           const ErrorObject &error_obj) const override;
 
+    void PostCallRecordResetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) override;
     bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                     const ErrorObject &error_obj) const override;
     void PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
