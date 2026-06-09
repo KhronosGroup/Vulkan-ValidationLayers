@@ -153,6 +153,10 @@ void CommandBufferSubState::RecordPushData(const VkPushDataInfoEXT& push_data_in
 
 void CommandBufferSubState::ClearPushData() { push_data_value.clear(); }
 
+void CommandBufferSubState::RecordBindResourceHeap() { descriptor::UpdateBoundDescriptorHeap(gpuav_, *this, false); }
+
+void CommandBufferSubState::RecordBindSamplerHeap() { descriptor::UpdateBoundDescriptorHeap(gpuav_, *this, true); }
+
 void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT*) { valcmd::FlushValidationCmds(gpuav_, *this); }
 
 void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo*, const Location&) {

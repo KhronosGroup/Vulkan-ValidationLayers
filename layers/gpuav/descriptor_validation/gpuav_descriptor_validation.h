@@ -31,6 +31,8 @@ namespace descriptor {
 void UpdateBoundDescriptors(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint pipeline_bind_point,
                             const Location& loc);
 
+void UpdateBoundDescriptorHeap(Validator& gpuav, CommandBufferSubState& cb_state, bool is_sampler);
+
 // We need a way to emulate the VkDescriptorType enum to cover all the "real" types (those seen in
 // vkGetPhysicalDeviceDescriptorSizeEXT).
 //

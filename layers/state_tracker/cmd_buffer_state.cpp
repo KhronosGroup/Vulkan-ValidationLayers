@@ -2296,6 +2296,20 @@ void CommandBuffer::RecordPushData(const VkPushDataInfoEXT& push_data_info, cons
     }
 }
 
+void CommandBuffer::RecordBindResourceHeap(const Location& loc) {
+    RecordCommand(loc);
+    for (auto& item : sub_states_) {
+        item.second->RecordBindResourceHeap();
+    }
+}
+
+void CommandBuffer::RecordBindSamplerHeap(const Location& loc) {
+    RecordCommand(loc);
+    for (auto& item : sub_states_) {
+        item.second->RecordBindSamplerHeap();
+    }
+}
+
 void CommandBuffer::RecordBeginConditionalRendering(const Location& loc) {
     RecordCommand(loc);
     conditional_rendering_active = true;

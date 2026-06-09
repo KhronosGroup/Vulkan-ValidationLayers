@@ -18,8 +18,10 @@
 
 #pragma once
 
+#include <array>
 #include <vector>
 
+#include "containers/small_vector.h"
 #include "external/inplace_function.h"
 #include "gpuav/instrumentation/descriptor_checks_classic.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
@@ -138,6 +140,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordPushData(const VkPushDataInfoEXT& push_data_info) final;
     void ClearPushData() final;
 
+    void RecordBindResourceHeap() final;
+    void RecordBindSamplerHeap() final;
+
     void RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo) final;
     void RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc) final;
 
@@ -201,6 +206,28 @@ class DescriptorSetBindings {
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, BindingCommand &)>;
     std::vector<OnDescriptorSetBindingFunc> on_update_bound_descriptor_sets;
     std::vector<BindingCommand> descriptor_set_binding_commands;
+};
+
+// Track descriptor heaps bound in a command buffer
+class DescriptorHeapBindings {
+  public:
+    // Each time vkCmdBindResourceHeap/vkCmdBindSamplerHeap is called, we store the current state of the command buffer in here
+    struct BindingCommand {
+        // Hold SSBO buffer to be viewed by the GPU
+        vko::BufferRange bound_heap_info_resource{};  // type BoundHeapInfo
+        vko::BufferRange bound_heap_info_sampler{};   // type BoundHeapInfo
+
+        // These are copies of the CPU StateTracking as it has all the information we want for the error message, but too much data
+        // to bring the GPU
+        vvl::CommandBuffer::DescriptorHeap heap_cb_state;
+    };
+    // Most common case we will have 1 call to vkCmdBindResourceHeap and vkCmdBindSamplerHeap only
+    small_vector<BindingCommand, 2> bound_heap_snapshots;
+
+    // Callback system to route the state tracking into the single file doing all the logic
+    using OnDescriptorHeapBindingFunc =
+        stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb, BindingCommand&, bool)>;
+    std::vector<OnDescriptorHeapBindingFunc> on_update_bound_descriptor_heap;
 };
 
 class QueueSubState : public vvl::QueueSubState {

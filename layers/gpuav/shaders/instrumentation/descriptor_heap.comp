@@ -21,7 +21,7 @@
 #include "common_descriptor_sets.h"
 #include "error_payload.h"
 
-struct BoundHeapInfo {
+layout(buffer_reference, scalar) buffer BoundHeapInfo {
     uint heap_size;
     uint reserved_begin;
     uint reserved_end;

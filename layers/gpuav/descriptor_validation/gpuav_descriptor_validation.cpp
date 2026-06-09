@@ -59,5 +59,20 @@ void UpdateBoundDescriptors(Validator& gpuav, CommandBufferSubState& cb_state, V
     }
     desc_set_bindings->descriptor_set_binding_commands.emplace_back(std::move(descriptor_binding_cmd));
 }
+
+// This whole function is just here to route the logic in a single file (descriptor_checks_heap.cpp)
+void UpdateBoundDescriptorHeap(Validator& gpuav, CommandBufferSubState& cb_state, bool is_sampler) {
+    DescriptorHeapBindings* desc_heap_bindings = cb_state.shared_resources_cache.TryGet<DescriptorHeapBindings>();
+    if (!desc_heap_bindings) {
+        // will hit for things like DebugPrintf which don't create on registering
+        return;
+    }
+    DescriptorHeapBindings::BindingCommand bound_heap_snapshot{};
+    for (auto& func : desc_heap_bindings->on_update_bound_descriptor_heap) {
+        func(gpuav, cb_state, bound_heap_snapshot, is_sampler);
+    }
+    desc_heap_bindings->bound_heap_snapshots.emplace_back(std::move(bound_heap_snapshot));
+}
+
 }  // namespace descriptor
 }  // namespace gpuav

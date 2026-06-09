@@ -6923,6 +6923,9 @@ void DeviceState::PostCallRecordCmdBindSamplerHeapEXT(VkCommandBuffer commandBuf
 
     cb_state->SetDescriptorMode(DescriptorModeHeap, record_obj.location.function);
     TrackDeviceAddressRange(*cb_state, range, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT);
+
+    // try to move more of the above state in here
+    cb_state->RecordBindSamplerHeap(record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
@@ -6944,6 +6947,9 @@ void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBu
 
     cb_state->SetDescriptorMode(DescriptorModeHeap, record_obj.location.function);
     TrackDeviceAddressRange(*cb_state, range, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT);
+
+    // try to move more of the above state in here
+    cb_state->RecordBindResourceHeap(record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
