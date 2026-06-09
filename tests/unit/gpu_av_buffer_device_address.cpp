@@ -327,7 +327,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819", "VkBuffer.*size: 36 bytes");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
