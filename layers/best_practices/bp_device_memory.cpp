@@ -45,7 +45,8 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         if (!IsExtEnabled(extensions.vk_ext_pageable_device_local_memory) &&
-            !vku::FindStructInPNextChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext)) {
+            (!IsExtEnabled(extensions.vk_ext_memory_priority) ||
+             !vku::FindStructInPNextChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext))) {
             skip |= LogPerformanceWarning(
                 "BestPractices-NVIDIA-AllocateMemory-SetPriority", device, error_obj.location,
                 "%s Use VkMemoryPriorityAllocateInfoEXT to provide the operating system information on the allocations that "
