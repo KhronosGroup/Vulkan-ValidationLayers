@@ -361,6 +361,22 @@ TEST_F(PositiveBestPractices, ResetEventBeforeSetMultipleSubmits2) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveBestPractices, HostResetEventBeforeSet) {
+    TEST_DESCRIPTION("Set event two times with host reset in between");
+    RETURN_IF_SKIP(InitBestPractices());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    event.Reset();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveBestPractices, ResetEventFromSecondary) {
     TEST_DESCRIPTION("Set event two times with reset in between executed from a secondary command buffer");
     RETURN_IF_SKIP(InitBestPractices());
