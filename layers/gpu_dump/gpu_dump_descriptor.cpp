@@ -297,11 +297,13 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
     ss << new_bullet_line << "specified in pMappings[" << mapping_info.index << "]: binding count = " << mapping.bindingCount
        << ", source: " << string_VkDescriptorMappingSourceEXT(mapping.source);
-    const bool is_combined_image_sampler = resource_variable.is_combined_image_sampler;
     const bool is_sampler = resource_variable.is_sampler;
     const char* main_heap_type = is_sampler ? "Sampler" : "Resource";
     const vvl::range<VkDeviceAddress>& heap_range = is_sampler ? heap.sampler_range : heap.resource_range;
     const vvl::range<VkDeviceAddress>& heap_reserved = is_sampler ? heap.sampler_reserved : heap.resource_reserved;
+
+    // Will be false if mapping uses embedded samplers instead
+    bool dump_sampler = resource_variable.is_combined_image_sampler;
 
     const bool is_array = resource_variable.IsArray();
     const bool is_runtime_array = resource_variable.IsRuntimeArray();
@@ -315,7 +317,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     VkDeviceSize descriptor_size = 0;
     VkDeviceSize sampler_descriptor_size = dev_data.phys_dev_ext_props.descriptor_heap_props.samplerDescriptorSize;
     if (descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
-        assert(is_combined_image_sampler);
+        assert(resource_variable.is_combined_image_sampler);
         // not valid to query this type, we just want the "resource" portion as the sampler is handled itself later
         descriptor_type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         descriptor_size = dev_data.phys_dev_ext_props.descriptor_heap_props.imageDescriptorSize;
@@ -557,7 +559,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
         warn_oob(index_zero_offset + descriptor_size, false);
 
-        if (is_combined_image_sampler) {
+        dump_sampler &= map_data.pEmbeddedSampler == nullptr;
+        if (dump_sampler) {
             ss << new_bullet_line << "samplerHeapOffset: 0x" << std::hex << map_data.samplerHeapOffset
                << ", samplerHeapArrayStride: 0x" << map_data.samplerHeapArrayStride;
             index_zero_offset = map_data.samplerHeapOffset;
@@ -667,7 +670,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         }
         warn_oob(index_zero_offset + descriptor_size, false);
 
-        if (is_combined_image_sampler) {
+        dump_sampler &= map_data.pEmbeddedSampler == nullptr;
+        if (dump_sampler) {
             ss << new_bullet_line << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", samplerHeapOffset: 0x"
                << map_data.samplerHeapOffset << ", samplerHeapIndexStride: 0x" << map_data.samplerHeapIndexStride
                << ", samplerHeapArrayStride: 0x" << map_data.samplerHeapArrayStride;
@@ -816,7 +820,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
         warn_oob(map_data.heapOffset + descriptor_size, false);
 
-        if (is_combined_image_sampler) {
+        dump_sampler &= map_data.pEmbeddedSampler == nullptr;
+        if (dump_sampler) {
             push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.samplerPushOffset]);
             final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
 
@@ -991,7 +996,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         }
         warn_oob(map_data.heapOffset + descriptor_size, false);
 
-        if (is_combined_image_sampler) {
+        dump_sampler &= map_data.pEmbeddedSampler == nullptr;
+        if (dump_sampler) {
             push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.samplerPushOffset]);
             final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
 
@@ -1131,7 +1137,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         const VkDescriptorMappingSourceShaderRecordIndexEXT& map_data = mapping.sourceData.shaderRecordIndex;
         ss << "heapOffset: 0x" << std::hex << map_data.heapOffset << ", shaderRecordOffset: 0x" << map_data.shaderRecordOffset
            << ", heapIndexStride: 0x" << map_data.heapIndexStride << ", heapArrayStride: 0x" << map_data.heapArrayStride;
-        if (is_combined_image_sampler) {
+
+        dump_sampler &= map_data.pEmbeddedSampler == nullptr;
+        if (dump_sampler) {
             ss << new_bullet_line << "samplerHeapOffset: 0x" << std::hex << map_data.samplerHeapOffset
                << ", samplerShaderRecordOffset: 0x" << map_data.samplerShaderRecordOffset << ", samplerHeapIndexStride: 0x"
                << map_data.samplerHeapIndexStride << ", samplerHeapArrayStride: 0x" << map_data.samplerHeapArrayStride;
@@ -1145,7 +1153,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     }
 
     if (descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM) {
-        if (is_combined_image_sampler) {
+        if (dump_sampler) {
             ss << new_bullet_line << "Descriptor size: 0x" << std::hex << descriptor_size << " (imageDescriptorSize) and 0x"
                << sampler_descriptor_size << " (samplerDescriptorAlignment)";
         } else {
