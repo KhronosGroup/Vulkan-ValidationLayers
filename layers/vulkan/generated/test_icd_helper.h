@@ -6270,12 +6270,6 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphProcessin
     const VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM* pQueueFamilyDataGraphProcessingEngineInfo,
     VkQueueFamilyDataGraphProcessingEnginePropertiesARM* pQueueFamilyDataGraphProcessingEngineProperties) {}
 
-static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
-    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-    const VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties, VkBaseOutStructure* pProperties) {
-    return VK_SUCCESS;
-}
-
 static VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer,
                                                                         VkImageAspectFlags aspectMask) {}
 
@@ -6429,14 +6423,6 @@ static VKAPI_ATTR void VKAPI_CALL CmdEndRendering2EXT(VkCommandBuffer commandBuf
 
 static VKAPI_ATTR void VKAPI_CALL CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
                                                            const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo) {}
-
-static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
-    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-    const VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties,
-    const VkDataGraphOpticalFlowImageFormatInfoARM* pOpticalFlowImageFormatInfo, uint32_t* pFormatCount,
-    VkDataGraphOpticalFlowImageFormatPropertiesARM* pImageFormatProperties) {
-    return VK_SUCCESS;
-}
 
 static VKAPI_ATTR void VKAPI_CALL CmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
                                                                    const VkComputeOccupancyPriorityParametersNV* pParameters) {}
