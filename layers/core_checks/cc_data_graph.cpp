@@ -426,5 +426,23 @@ bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandB
     skip |=
         ValidateDataGraphOperations(*last_bound_state.pipeline_state, cb_state.command_pool->queueFamilyIndex, error_obj.location);
 
+    const auto* optical_flow_di =
+        pInfo ? vku::FindStructInPNextChain<VkDataGraphPipelineOpticalFlowDispatchInfoARM>(pInfo->pNext) : nullptr;
+
+    if (optical_flow_di) {
+        const Location pinfo_loc = error_obj.location.dot(Field::pInfo);
+        const Location hint_loc = pinfo_loc.pNext(Struct::VkDataGraphPipelineOpticalFlowDispatchInfoARM, Field::meanFlowL1NormHint);
+        const auto* optical_flow_ci = vku::FindStructInPNextChain<VkDataGraphPipelineOpticalFlowCreateInfoARM>(
+            last_bound_state.pipeline_state->DataGraphCreateInfo().pNext);
+        ASSERT_AND_RETURN_SKIP(optical_flow_ci);
+        if (optical_flow_di->meanFlowL1NormHint != 0 &&
+            optical_flow_di->meanFlowL1NormHint > std::max(optical_flow_ci->width, optical_flow_ci->height)) {
+            skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowDispatchInfoARM-meanFlowL1NormHint-09976", objlist, hint_loc,
+                             "(%" PRIu32 ") is greater than the maximum of the width (%" PRIu32 ") or height (%" PRIu32
+                             ") of the input image.",
+                             optical_flow_di->meanFlowL1NormHint, optical_flow_ci->width, optical_flow_ci->height);
+        }
+    }
+
     return skip;
 }
