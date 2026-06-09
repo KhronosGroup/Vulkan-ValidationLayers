@@ -18,6 +18,7 @@
 #include "containers/limits.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "gpuav/core/gpuav.h"
+#include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
@@ -56,15 +57,15 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 const uint32_t offset = error_record[kInst_LogError_ParameterOffset_1];
 
                 const uint32_t alignment_encoding = error_record[kInst_LogError_ParameterOffset_2];
-                const uint32_t alignment_type =
-                    (alignment_encoding & kInst_DescriptorHeap_AlignmentTypeMask) >> kInst_DescriptorHeap_AlignmentTypeShift;
+                const uint32_t desc_type =
+                    (alignment_encoding & kInst_DescriptorHeap_DescriptorTypeMask) >> kInst_DescriptorHeap_DescriptorTypeShift;
                 const uint32_t alignment_value = alignment_encoding & kInst_DescriptorHeap_AlignmentValueMask;
 
-                const bool is_buffer = alignment_type == kInst_DescriptorHeap_AlignmentType_Buffer;
-                const bool is_image = alignment_type == kInst_DescriptorHeap_AlignmentType_Image;
-                const bool is_sampler = alignment_type == kInst_DescriptorHeap_AlignmentType_Sampler;
+                const bool is_buffer = desc_type & gpuav::descriptor::TYPE_BUFFER_MASK;
+                const bool is_image = desc_type & gpuav::descriptor::TYPE_IMAGE_MASK;
+                const bool is_sampler = desc_type == gpuav::descriptor::TYPE_SAMPLER;
 
-                VkDeviceAddress final_address =
+                VkDeviceAddress heap_address =
                     (is_sampler ? cb.base.descriptor_heap.sampler_range.begin : cb.base.descriptor_heap.resource_range.begin) +
                     offset;
 
@@ -73,14 +74,14 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     case kErrorSubCode_DescriptorHeap_HeapOOB: {
                         // TODO - Reverse info to get good error message
                         strm << "Index " << index << " is accessing the heap at offset 0x" << std::hex << offset << " (address 0x"
-                             << std::hex << final_address << ") which is OOB of the heap memory.\n";
+                             << std::hex << heap_address << ") which is OOB of the heap memory.\n";
                         out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_OOB_11309);
                         error_found = true;
                     } break;
 
                     case kErrorSubCode_DescriptorHeap_ReservedRange: {
                         strm << "Index " << index << " is accessing the heap at offset 0x" << std::hex << offset << " (address 0x"
-                             << std::hex << final_address
+                             << std::hex << heap_address
                              << ") which is inside the reserved range.\nThe reserved range was bound at ";
                         if (is_sampler) {
                             strm << string_range_hex(cb.base.descriptor_heap.sampler_reserved) << " (size of 0x" << std::hex
@@ -96,7 +97,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     case kErrorSubCode_DescriptorHeap_DescriptorAlignment:
                     case kErrorSubCode_DescriptorHeap_DescriptorAlignmentUntyped: {
                         strm << "Index " << index << " is accessing the heap at offset 0x" << std::hex << offset << " (address 0x"
-                             << std::hex << final_address << ") which is not aligned to ";
+                             << std::hex << heap_address << ") which is not aligned to ";
                         if (is_buffer) {
                             strm << "bufferDescriptorAlignment";
                         } else if (is_image) {
@@ -107,9 +108,9 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         strm << " (0x" << std::hex << alignment_value << ")\n";
 
                         if (error_sub_code == kErrorSubCode_DescriptorHeap_DescriptorAlignmentUntyped) {
-                            out_vuid_msg = alignment_type == kInst_DescriptorHeap_AlignmentType_Sampler
-                                               ? "VUID-RuntimeSpirv-Result-11340"
-                                               : "VUID-RuntimeSpirv-Result-11341";
+                            out_vuid_msg = is_sampler ? "VUID-RuntimeSpirv-samplerDescriptorAlignment-11348"
+                                           : is_image ? "VUID-RuntimeSpirv-imageDescriptorAlignment-11349"
+                                                      : "VUID-RuntimeSpirv-bufferDescriptorAlignment-11384";
                         } else {
                             vvl::ActionVUID action_vuid = is_buffer  ? vvl::ActionVUID::DESCRIPTOR_HEAP_ALIGNMENT_11297
                                                           : is_image ? vvl::ActionVUID::DESCRIPTOR_HEAP_ALIGNMENT_11298
@@ -143,16 +144,51 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         out_vuid_msg = vvl::CreateActionVuid(loc.function, action_vuid);
                         error_found = true;
                     } break;
+
+                    case kErrorSubCode_DescriptorHeap_AddressBufferAlignment: {
+                        const bool is_uniform = desc_type == gpuav::descriptor::TYPE_UNIFORM_BUFFER;
+                        const uint64_t final_address =
+                            *reinterpret_cast<const uint64_t*>(error_record + kInst_LogError_ParameterOffset_0);
+
+                        strm << "has a final of 0x" << std::hex << final_address << " which is not aligned to "
+                             << (is_uniform ? "minUniformBufferOffsetAlignment" : "minStorageBufferOffsetAlignment") << " (0x"
+                             << (is_uniform ? gpuav.phys_dev_props.limits.minUniformBufferOffsetAlignment
+                                            : gpuav.phys_dev_props.limits.minStorageBufferOffsetAlignment)
+                             << ")\n";
+
+                        vvl::ActionVUID action_vuid = (is_uniform)
+                                                          ? vvl::ActionVUID::DESCRIPTOR_HEAP_ADDRESS_BUFFER_ALIGNMENT_11441
+                                                          : vvl::ActionVUID::DESCRIPTOR_HEAP_ADDRESS_BUFFER_ALIGNMENT_11442;
+                        out_vuid_msg = vvl::CreateActionVuid(loc.function, action_vuid);
+                        error_found = true;
+                    } break;
+
+                    case kErrorSubCode_DescriptorHeap_InvalidDeviceAddress: {
+                        // Quick error to catch everything
+                        // TODO - sort by mapping and provide proper VUID for each
+                        strm << "Try to do an indirect buffer, but the indirect address is null.\n";
+                        // is 11301, 11302, 11305, 11306, and 11319 depending on the mapping
+                        out_vuid_msg = "UNASSIGNED-Heap-IndirectBuffer-Null";
+                        error_found = true;
+                    } break;
                 }
 
                 // Unless find otherwise, this information is useful for all errors
-                strm << "The " << (is_sampler ? "sampler" : "resource") << " heap was bound at ";
+                strm << "The " << (is_sampler ? "sampler" : "resource") << " heap was ";
                 if (is_sampler) {
-                    strm << string_range_hex(cb.base.descriptor_heap.sampler_range) << " (size of 0x" << std::hex
-                         << cb.base.descriptor_heap.sampler_range.size() << " bytes)\n";
+                    if (!cb.base.descriptor_heap.sampler_bound) {
+                        strm << "not bound with vkCmdBindSamplerHeapEXT";
+                    } else {
+                        strm << "bound at " << string_range_hex(cb.base.descriptor_heap.sampler_range) << " (size of 0x" << std::hex
+                             << cb.base.descriptor_heap.sampler_range.size() << " bytes)\n";
+                    }
                 } else {
-                    strm << string_range_hex(cb.base.descriptor_heap.resource_range) << " (size of 0x" << std::hex
-                         << cb.base.descriptor_heap.resource_range.size() << " bytes)\n";
+                    if (!cb.base.descriptor_heap.resource_bound) {
+                        strm << "not bound with vkCmdBindResourceHeapEXT";
+                    } else {
+                        strm << "bound at " << string_range_hex(cb.base.descriptor_heap.resource_range) << " (size of 0x"
+                             << std::hex << cb.base.descriptor_heap.resource_range.size() << " bytes)\n";
+                    }
                 }
 
                 out_error_msg += strm.str();

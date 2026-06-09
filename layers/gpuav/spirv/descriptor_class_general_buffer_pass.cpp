@@ -119,18 +119,6 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         is_descriptor_array ? meta.access_path.pointer_type->inst_.Operand(0) : meta.access_path.pointer_type->Id();
     assert(type_manager_.FindTypeById(meta.descriptor_block_type_id)->spv_type_ == SpvType::kStruct && "unexpected block type");
 
-    // Check for deprecated storage block form
-    if (storage_class == spv::StorageClassUniform) {
-        const bool block_found = GetDecoration(meta.descriptor_block_type_id, spv::DecorationBlock) != nullptr;
-
-        // If block decoration not found, verify deprecated form of SSBO
-        if (!block_found) {
-            assert(GetDecoration(meta.descriptor_block_type_id, spv::DecorationBufferBlock) != nullptr &&
-                   "block decoration not found");
-            storage_class = spv::StorageClassStorageBuffer;
-        }
-    }
-
     if (meta.access_path.variable->interface_.set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;

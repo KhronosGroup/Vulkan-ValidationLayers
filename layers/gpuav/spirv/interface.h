@@ -117,6 +117,9 @@ struct DeviceSettings {
     uint32_t debug_printf_buffer_size;
     // maxComputeSharedMemorySize limit
     uint32_t max_compute_shared_memory_size;
+    // minUniformBufferOffsetAlignment and minStorageBufferOffsetAlignment limit
+    uint32_t min_uniform_buffer_alignment;
+    uint32_t min_storage_buffer_alignment;
     // Descriptor Heap alignmente;
     uint32_t descriptor_alignment_sampler;
     uint32_t descriptor_alignment_image;

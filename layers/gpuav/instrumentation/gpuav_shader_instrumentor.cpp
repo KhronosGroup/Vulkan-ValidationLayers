@@ -281,6 +281,8 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateI
     instrumentation_device_settings_.debug_printf_buffer_size = gpuav_settings.debug_printf_buffer_size;
     instrumentation_device_settings_.max_compute_shared_memory_size = phys_dev_props.limits.maxComputeSharedMemorySize;
     // Not sure why these are VkDeviceSize in the spec
+    instrumentation_device_settings_.min_uniform_buffer_alignment = (uint32_t)phys_dev_props.limits.minUniformBufferOffsetAlignment;
+    instrumentation_device_settings_.min_storage_buffer_alignment = (uint32_t)phys_dev_props.limits.minStorageBufferOffsetAlignment;
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
         instrumentation_device_settings_.descriptor_alignment_sampler =
             (uint32_t)phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment;

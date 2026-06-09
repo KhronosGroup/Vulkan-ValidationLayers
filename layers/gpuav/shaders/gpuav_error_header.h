@@ -135,16 +135,12 @@ const int kInst_DescriptorIndexing_IndexMask = 0x7FFFFFF;
 // Descriptor Heap
 // ---
 // This dword is split up as
-// | 31 ........ 30 | 29 ............. 0 |
-// | Alignment Type | Alignment Value    |
-// We only allow for 32 sets (see kDebugInputBindlessMaxDescSets)
-// We use a LUT per set that knows which binding the "global" Descriptor Index value lives
-const int kInst_DescriptorHeap_AlignmentTypeShift = 30;
-const int kInst_DescriptorHeap_AlignmentTypeMask = 0x3 << kInst_DescriptorHeap_AlignmentTypeShift;
-const int kInst_DescriptorHeap_AlignmentValueMask = 0x3FFFFFFF;
-const int kInst_DescriptorHeap_AlignmentType_Sampler = 0x0;  // samplerDescriptorAlignment
-const int kInst_DescriptorHeap_AlignmentType_Image = 0x1;    // imageDescriptorAlignment
-const int kInst_DescriptorHeap_AlignmentType_Buffer = 0x2;   // bufferDescriptorAlignment
+// | 31 ......... 28 | 27 ........... 0 |
+// | Descriptor Type | Alignment Value  |
+// Descriptor Type is 4 bits defined in gpuav_descriptor_validation.h
+const int kInst_DescriptorHeap_DescriptorTypeShift = 28;
+const int kInst_DescriptorHeap_DescriptorTypeMask = 0xF << kInst_DescriptorHeap_DescriptorTypeShift;
+const int kInst_DescriptorHeap_AlignmentValueMask = 0xFFFFFFF;
 
 // Buffer device addresses
 // ---

@@ -690,6 +690,10 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::DESCRIPTOR_HEAP_INDIRECT_INDEX_PUSH_11300: suffix = "None-11300"; break;
         // ### VUID-vkCmdDraw-None-11304
         case ActionVUID::DESCRIPTOR_HEAP_INDIRECT_ADDRESS_PUSH_11304: suffix = "None-11304"; break;
+        // ### VUID-vkCmdDraw-None-11441
+        case ActionVUID::DESCRIPTOR_HEAP_ADDRESS_BUFFER_ALIGNMENT_11441: suffix = "None-11441"; break;
+        // ### VUID-vkCmdDraw-None-11442
+        case ActionVUID::DESCRIPTOR_HEAP_ADDRESS_BUFFER_ALIGNMENT_11442: suffix = "None-11442"; break;
         // ### VUID-vkCmdDrawIndirectCount-countBuffer-02717
         case ActionVUID::INDIRECT_COUNT_LIMIT: suffix = "countBuffer-02717"; break;
     }

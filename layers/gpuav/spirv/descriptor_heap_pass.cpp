@@ -17,10 +17,12 @@
 #include <vulkan/vulkan_core.h>
 #include "containers/container_utils.h"
 #include "generated/spirv_grammar_helper.h"
+#include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "link.h"
 #include "module.h"
 #include <cassert>
+#include <cstdint>
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
 
@@ -68,38 +70,6 @@ const VkDescriptorSetAndBindingMappingEXT* DescriptorHeapPass::GetMapping(const 
     return nullptr;
 }
 
-DescriptorHeapPass::DescriptorEncoding DescriptorHeapPass::GetDescriptorEncoding(const Variable& descriptor_var,
-                                                                                 bool is_seperate_sampler) const {
-    DescriptorEncoding encoding;
-
-    // This should be good enough to quickly know if image vs buffer (detecting sampler is easier)
-    // Texel Buffer are UniformConstant and spec'ed as imageDescriptorAlignment
-    const bool is_sampler = is_seperate_sampler;
-    const bool is_buffer = descriptor_var.StorageClass() == spv::StorageClassUniform ||
-                           descriptor_var.StorageClass() == spv::StorageClassStorageBuffer;
-    const bool is_image = !is_buffer && !is_sampler;
-
-    uint32_t type_mask = 0;
-    uint32_t alignment_value = 0;
-    if (is_buffer) {
-        type_mask = glsl::kInst_DescriptorHeap_AlignmentType_Buffer;
-        alignment_value = module_.settings_.descriptor_alignment_buffer;
-    } else if (is_image) {
-        type_mask = glsl::kInst_DescriptorHeap_AlignmentType_Image;
-        alignment_value = module_.settings_.descriptor_alignment_image;
-    } else if (is_sampler) {
-        type_mask = glsl::kInst_DescriptorHeap_AlignmentType_Sampler;
-        alignment_value = module_.settings_.descriptor_alignment_sampler;
-    } else {
-        assert(false);
-    }
-
-    encoding.alignment = (type_mask << glsl::kInst_DescriptorHeap_AlignmentTypeShift) |
-                         (alignment_value & glsl::kInst_DescriptorHeap_AlignmentValueMask);
-
-    return encoding;
-}
-
 uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
                                                 bool is_seperate_sampler) {
     const Variable& descriptor_var = is_seperate_sampler ? *meta.access_path.sampler_variable : *meta.access_path.variable;
@@ -111,8 +81,18 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
     const uint32_t is_sampler_id = type_manager_.GetConstantBool(is_seperate_sampler).Id();
 
-    DescriptorEncoding descriptor_encoding = GetDescriptorEncoding(descriptor_var, is_seperate_sampler);
-    const uint32_t desc_alignment_id = type_manager_.GetConstantUInt32(descriptor_encoding.alignment).Id();
+    const bool is_buffer = meta.access_path.descriptor_type & gpuav::descriptor::TYPE_BUFFER_MASK;
+    const bool is_sampler = is_seperate_sampler;
+    const bool is_image = !is_buffer && !is_sampler;
+
+    uint32_t desc_alignment_value = is_buffer  ? module_.settings_.descriptor_alignment_buffer
+                                    : is_image ? module_.settings_.descriptor_alignment_image
+                                               : module_.settings_.descriptor_alignment_sampler;
+
+    const uint32_t desc_type = is_sampler ? gpuav::descriptor::TYPE_SAMPLER : meta.access_path.descriptor_type;
+    const uint32_t desc_encoding = (desc_type << glsl::kInst_DescriptorHeap_DescriptorTypeShift) |
+                                   (desc_alignment_value & glsl::kInst_DescriptorHeap_AlignmentValueMask);
+    const uint32_t desc_encoding_id = type_manager_.GetConstantUInt32(desc_encoding).Id();
 
     uint32_t function_result = module_.TakeNextId();
     const uint32_t bool_type = type_manager_.GetTypeBool().Id();
@@ -178,7 +158,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
 
         block.CreateInstruction(spv::OpFunctionCall,
                                 {bool_type, function_result, function_def, inst_position_id, heap_offset_id, array_stride_id,
-                                 descriptor_index_id, desc_alignment_id, is_sampler_id},
+                                 descriptor_index_id, desc_encoding_id, is_sampler_id},
                                 inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
         const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping->sourceData.constantOffset;
@@ -190,7 +170,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
 
         block.CreateInstruction(spv::OpFunctionCall,
                                 {bool_type, function_result, function_def, inst_position_id, heap_offset_id, heap_array_stride_id,
-                                 descriptor_index_id, desc_alignment_id, is_sampler_id},
+                                 descriptor_index_id, desc_encoding_id, is_sampler_id},
                                 inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
         const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping->sourceData.pushIndex;
@@ -205,7 +185,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
 
         block.CreateInstruction(spv::OpFunctionCall,
                                 {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id,
-                                 heap_index_stride_id, heap_array_stride_id, descriptor_index_id, desc_alignment_id, is_sampler_id},
+                                 heap_index_stride_id, heap_array_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id},
                                 inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
         const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping->sourceData.indirectIndex;
@@ -222,7 +202,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         block.CreateInstruction(
             spv::OpFunctionCall,
             {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id, address_offset_id,
-             heap_index_stride_id, heap_array_stride_id, descriptor_index_id, desc_alignment_id, is_sampler_id},
+             heap_index_stride_id, heap_array_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id},
             inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
         const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data = mapping->sourceData.indirectIndexArray;
@@ -237,7 +217,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
 
         block.CreateInstruction(spv::OpFunctionCall,
                                 {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id,
-                                 address_offset_id, heap_index_stride_id, descriptor_index_id, desc_alignment_id, is_sampler_id},
+                                 address_offset_id, heap_index_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id},
                                 inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
         const VkDescriptorMappingSourceHeapDataEXT& map_data = mapping->sourceData.heapData;
@@ -255,23 +235,35 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         const uint32_t function_def = GetLinkFunctionId(MAPPING_PUSH_DATA);
         block.CreateInstruction(spv::OpFunctionCall, {bool_type, function_result, function_def}, inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT) {
-        const uint32_t push_address_offset_id = type_manager_.GetConstantUInt32(mapping->sourceData.pushAddressOffset / 4).Id();
+        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(mapping->sourceData.pushAddressOffset / 4).Id();
+
+        const bool is_uniform = meta.access_path.descriptor_type == gpuav::descriptor::TYPE_UNIFORM_BUFFER;
+        const uint32_t buffer_alignment =
+            is_uniform ? module_.settings_.min_uniform_buffer_alignment : module_.settings_.min_storage_buffer_alignment;
+        const uint32_t buffer_alignment_id = type_manager_.GetConstantUInt32(buffer_alignment).Id();
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_PUSH_ADDRESS);
 
-        block.CreateInstruction(spv::OpFunctionCall,
-                                {bool_type, function_result, function_def, inst_position_id, push_address_offset_id}, inst_it);
-
+        block.CreateInstruction(
+            spv::OpFunctionCall,
+            {bool_type, function_result, function_def, inst_position_id, push_offset_id, buffer_alignment_id, desc_encoding_id},
+            inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
         const VkDescriptorMappingSourceIndirectAddressEXT& map_data = mapping->sourceData.indirectAddress;
 
         const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
         const uint32_t address_offset_id = type_manager_.GetConstantUInt32(map_data.addressOffset / 4).Id();
 
+        const bool is_uniform = meta.access_path.descriptor_type == gpuav::descriptor::TYPE_UNIFORM_BUFFER;
+        const uint32_t buffer_alignment =
+            is_uniform ? module_.settings_.min_uniform_buffer_alignment : module_.settings_.min_storage_buffer_alignment;
+        const uint32_t buffer_alignment_id = type_manager_.GetConstantUInt32(buffer_alignment).Id();
+
         const uint32_t function_def = GetLinkFunctionId(MAPPING_INDIRECT_ADDRESS);
 
         block.CreateInstruction(spv::OpFunctionCall,
-                                {bool_type, function_result, function_def, inst_position_id, push_offset_id, address_offset_id},
+                                {bool_type, function_result, function_def, inst_position_id, push_offset_id, address_offset_id,
+                                 buffer_alignment_id, desc_encoding_id},
                                 inst_it);
 
     } else {
@@ -379,7 +371,9 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
     if (!meta.access_path.IsValid() || !meta.access_path.variable->IsDescriptor()) {
         return false;
     }
-
+    if (meta.access_path.descriptor_type == gpuav::descriptor::TYPE_ACCELERATION_STRUCTURE) {
+        return false;  // not supported yet
+    }
     meta.target_instruction = &inst;
 
     return true;

@@ -115,6 +115,9 @@ bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_of
     if ((indirect_address & 3) != 0) {
         error = kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment;
         param_0 = push_offset;
+    } else if (indirect_address == 0) {
+        // not full coverage, but likely the most common wrong device address
+        error = kErrorSubCode_DescriptorHeap_InvalidDeviceAddress;
     } else {
         IndirectBuffer indirect_buffer = IndirectBuffer(indirect_address);
 
@@ -163,6 +166,9 @@ bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint h
     if ((indirect_address & 3) != 0) {
         error = kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment;
         param_0 = push_offset;
+    } else if (indirect_address == 0) {
+        // not full coverage, but likely the most common wrong device address
+        error = kErrorSubCode_DescriptorHeap_InvalidDeviceAddress;
     } else {
         uint indirect_offset = address_offset + desc_index;
         uint indirect_index = indirect_buffer.data[indirect_offset];
@@ -210,29 +216,68 @@ bool inst_heap_mapping_push_data() {
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT
-bool inst_heap_mapping_push_address(const uint inst_offset, const uint push_address_offset) {
-    return true; // Saving function offset space, but currently not used
-}
-
-// VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT
-bool inst_heap_mapping_indirect_address(const uint inst_offset, const uint push_offset, const uint address_offset) {
+bool inst_heap_mapping_push_address(const uint inst_offset, const uint push_offset, const uint buffer_alignment, const uint desc_encoding) {
     uint error = 0;
     uint param_0 = 0;
+    uint param_1 = 0;
 
     uint64_t indirect_address = packUint2x32(uvec2(gpuav.push_data[push_offset], gpuav.push_data[push_offset + 1]));
-    if ((indirect_address & 7) != 0) {
-        error = kErrorSubCode_DescriptorHeap_IndirectAddressPushAlignment;
-        param_0 = push_offset;
+    if ((indirect_address & (buffer_alignment - 1)) != 0) {
+        error = kErrorSubCode_DescriptorHeap_AddressBufferAlignment;
+        param_0 = uint(indirect_address);
+        param_1 = uint(indirect_address >> 32u);
+    } else if (indirect_address == 0) {
+        // not full coverage, but likely the most common wrong device address
+        error = kErrorSubCode_DescriptorHeap_InvalidDeviceAddress;
     }
 
     if (error != 0) {
         error_payload = ErrorPayload(
                             inst_offset,
                             SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
-                            0,
                             param_0,
-                            // always will be a buffer
-                            kInst_DescriptorHeap_AlignmentType_Buffer << kInst_DescriptorHeap_AlignmentTypeShift
+                            param_1,
+                            desc_encoding
+                        );
+
+        return false;
+    }
+    return true;
+}
+
+// VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT
+bool inst_heap_mapping_indirect_address(const uint inst_offset, const uint push_offset, const uint address_offset, const uint buffer_alignment, const uint desc_encoding) {
+    uint error = 0;
+    uint param_0 = 0;
+    uint param_1 = 0;
+
+    uint64_t indirect_address = packUint2x32(uvec2(gpuav.push_data[push_offset], gpuav.push_data[push_offset + 1]));
+    if ((indirect_address & 7) != 0) {
+        error = kErrorSubCode_DescriptorHeap_IndirectAddressPushAlignment;
+        param_1 = push_offset;
+    } else if (indirect_address == 0) {
+        // not full coverage, but likely the most common wrong device address
+        error = kErrorSubCode_DescriptorHeap_InvalidDeviceAddress;
+    } else {
+        IndirectBuffer indirect_buffer = IndirectBuffer(indirect_address);
+        uint64_t resource_address = packUint2x32(uvec2(indirect_buffer.data[address_offset], indirect_buffer.data[address_offset + 1]));
+        if ((resource_address & (buffer_alignment - 1)) != 0) {
+            error = kErrorSubCode_DescriptorHeap_AddressBufferAlignment;
+            param_0 = uint(resource_address);
+            param_1 = uint(resource_address >> 32u);
+        } else if (resource_address == 0) {
+            // not full coverage, but likely the most common wrong device address
+            error = kErrorSubCode_DescriptorHeap_InvalidDeviceAddress;
+        }
+    }
+
+    if (error != 0) {
+        error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
+                            param_0,
+                            param_1,
+                            desc_encoding
                         );
 
         return false;
