@@ -393,9 +393,19 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                 }
             }
             if (!found) {
-                warn_ss << new_bullet_line << "[WARNING] BUFFER TYPE - the indirect address (0x" << std::hex << address
+                if (buffer_states.size() == 1) {
+                    const vvl::Buffer& buffer_state = *buffer_states.front();
+                    warn_ss << new_bullet_line << "[WARNING] BUFFER TYPE - the indirect address (0x" << std::hex << address
+                            << ") belongs to " << buffer_state.Describe(dev_data) << ", but that VkBuffer was created with usage "
+                            << string_VkBufferUsageFlags2(buffer_state.usage)
+                            << " (missing VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT) and any access to this descriptor will be "
+                               "invalid";
+                } else {
+                    warn_ss
+                        << new_bullet_line << "[WARNING] BUFFER TYPE - the indirect address (0x" << std::hex << address
                         << ") is not accessing any VkBuffer created with VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT and any access to "
                            "this descriptor will be invalid";
+                }
             }
         }
     };
