@@ -54,12 +54,19 @@ std::vector<uint8_t> GpuDump::CopyDataFromMemory(VkDeviceAddress memory_addresss
             //  aligned to a value like 64, so if the buffer is only 64 bytes, you will now be accessing data over it
             DispatchMapMemory(device, memory_state.VkHandle(), offset, VK_WHOLE_SIZE, 0, (void**)&data_ptr);
 
-            // Skip checking if coherent memory or not
-            VkMappedMemoryRange memory_range = vku::InitStructHelper();
-            memory_range.memory = memory_state.VkHandle();
-            memory_range.offset = offset;
-            memory_range.size = copy_size;
-            DispatchInvalidateMappedMemoryRanges(device, 1, &memory_range);
+            if (memory_state.cache_non_coherent) {
+                const VkDeviceSize atom_size = phys_dev_props.limits.nonCoherentAtomSize;
+                uint64_t aligned_offset = offset & ~(atom_size - 1);
+                if (aligned_offset < offset) {
+                    aligned_offset = offset;
+                }
+
+                VkMappedMemoryRange memory_range = vku::InitStructHelper();
+                memory_range.memory = memory_state.VkHandle();
+                memory_range.offset = aligned_offset;
+                memory_range.size = VK_WHOLE_SIZE;
+                DispatchInvalidateMappedMemoryRanges(device, 1, &memory_range);
+            }
         }
 
         data_ptr += offset;
