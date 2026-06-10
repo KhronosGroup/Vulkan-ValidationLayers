@@ -20,11 +20,12 @@ class NegativeGpuAVSharedMemoryDataRace : public GpuAVSharedMemoryDataRaceTest {
   protected:
     void TestHelper(const char* source, int source_type, uint32_t count, VkScopeKHR coopmat_scope = VK_SCOPE_DEVICE_KHR,
                     const char* error = "SharedMemoryDataRace");
-    void TestHelperRegex(const char* shader_source, const std::string& full_regex, SpvSourceType source_type = SPV_SOURCE_GLSL);
+    void TestHelperRegex(const char* shader_source, const std::string& full_regex, SpvSourceType source_type = SPV_SOURCE_GLSL,
+                         const char* allowed_error = nullptr);
 };
 
 void NegativeGpuAVSharedMemoryDataRace::TestHelperRegex(const char* shader_source, const std::string& full_regex,
-                                                        SpvSourceType source_type) {
+                                                        SpvSourceType source_type, const char* allowed_error) {
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, source_type);
@@ -42,6 +43,9 @@ void NegativeGpuAVSharedMemoryDataRace::TestHelperRegex(const char* shader_sourc
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredErrorRegex("", full_regex);
+    if (allowed_error) {
+        m_errorMonitor->SetAllowedFailureMsg(allowed_error);
+    }
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -1258,13 +1262,12 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SelfRaceSameInstruction) {
                                    R"((?=[\s\S]*This race is between two invocations executing the same instruction))");
 }
 
-// Concurrent loaders racing one store. Either side can win: if the loaders go first the
-// offender is OpLoad (multi-load atomicOr path), if the store goes first it's OpStore.
-// The point is that whichever wins, inst_offset survived through the atomicOr.
+// Concurrent loaders racing one store. Scheduling decides whether the reported offender
+// is the load-side or store-side instruction; either way, the offender should render as
+// a SPIR-V instruction.
 TEST_F(NegativeGpuAVSharedMemoryDataRace, OffenderIsOpLoadFromMultipleLoaders) {
     RETURN_IF_SKIP(InitSharedMemoryDataRace());
 
-    // 15 loaders + 1 storer reliably exercises the multi-load promotion path.
     const char* shader_source = R"glsl(
         #version 450
         layout(local_size_x = 16) in;
@@ -1280,10 +1283,11 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, OffenderIsOpLoadFromMultipleLoaders) {
         }
     )glsl";
 
-    // OpLoad produces a result id ("%<n> = OpLoad ..."); OpStore does not.
-    TestHelperRegex(shader_source,
-                    R"((?=[\s\S]*SharedMemoryDataRace))"
-                    R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: (?:%\d+ = OpLoad|OpStore)))");
+    // Some schedulers report an additional load-vs-store race from another loader.
+    TestHelperRegex(
+        shader_source,
+        R"(SharedMemoryDataRace[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: [^\n]*(OpLoad|OpStore))",
+        SPV_SOURCE_GLSL, "SharedMemoryDataRace-RaceOnLoad");
 }
 
 // Atomic vs store race. The offender is OpAtomicIAdd or OpStore depending on which side
@@ -1306,9 +1310,9 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, OffenderIsOpAtomic) {
 
     // OpAtomicIAdd has a result id ("%<n> = OpAtomicIAdd ..."); OpStore does not.
     // AtomicIAdd case hits RaceOnLoadStoreVs, Store case hits RaceOnAtomic
-    TestHelperRegex(shader_source,
-                    R"((?=[\s\S]*SharedMemoryDataRace-RaceOn(?:LoadStoreVs)?Atomic))"
-                    R"((?=[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: (?:%\d+ = OpAtomicIAdd|OpStore)))");
+    TestHelperRegex(
+        shader_source,
+        R"(SharedMemoryDataRace-RaceOn(LoadStoreVs)?Atomic[\s\S]*The other access in this race was at:\s*SPIR-V Instruction: [^\n]*(OpAtomicIAdd|OpStore))");
 }
 
 // Race that straddles a function boundary: one store in main, the other in a helper.

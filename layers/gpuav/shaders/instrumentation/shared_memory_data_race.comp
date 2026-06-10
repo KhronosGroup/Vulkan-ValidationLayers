@@ -122,6 +122,9 @@ void inst_do_load(const in uint start, const in uint idx, const in uint inst_off
     }
 
     ret = atomicExchange(shadow[start + idx], PACK_SHADOW(0, thread_id, inst_offset));
+    if (ret == SENTINEL) {
+        return;
+    }
     uint ret_no_offset = ret & FLAG_AND_TID_MASK;
     if ((ret & ATOMIC_BIT) != 0) {
         REPORT_RACE(kErrorSubCode_SharedMemoryDataRace_RaceOnLoadStoreVsAtomic, inst_offset, thread_id, ret, variable_idx);

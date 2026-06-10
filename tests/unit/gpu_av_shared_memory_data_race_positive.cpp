@@ -53,7 +53,7 @@ void PositiveGpuAVSharedMemoryDataRace::TestHelper(const char* shader_source, in
     pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, env, (SpvSourceType)source_type);
     pipe.CreateComputePipeline();
 
-    vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_.UpdateDescriptorSets();
 
@@ -274,6 +274,30 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, MultiLoad) {
     TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
+TEST_F(PositiveGpuAVSharedMemoryDataRace, FirstLoadThenSameInvocationStore) {
+    const char* shader_source = R"glsl(
+        #version 450
+
+        layout(set = 0, binding = 0) buffer Output {
+            uint data[];
+        } output_buffer;
+
+        layout(local_size_x = 2) in;
+        shared uint temp[2];
+        void main() {
+            uint index = gl_LocalInvocationIndex;
+            temp[index] = index;
+            barrier();
+
+            uint value = temp[index];
+            temp[index] = value + 1;
+            output_buffer.data[index] = temp[index];
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
+}
+
 TEST_F(PositiveGpuAVSharedMemoryDataRace, VectorArrayBarrier) {
     const char* shader_source = R"glsl(
         #version 450
@@ -375,6 +399,39 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangBasic) {
     )slang";
 
     TestHelper(shader_source, SPV_SOURCE_SLANG);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangIssue12415) {
+    TEST_DESCRIPTION(
+        "Regression test for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12415. A first load from a "
+        "shared-memory slot after a barrier must not treat the previous SENTINEL shadow value as a real loader and later report a "
+        "false race against a same-invocation store.");
+
+    const char* shader_source = R"slang(
+        RWStructuredBuffer<uint> outputBuffer;
+
+        groupshared uint g_scratch[64];
+
+        [shader("compute")]
+        [numthreads(64, 1, 1)]
+        void main(uint3 gtid : SV_GroupThreadID, uint3 dtid : SV_DispatchThreadID)
+        {
+            g_scratch[gtid.x] = gtid.x;
+            GroupMemoryBarrierWithGroupSync();
+
+            if ((gtid.x & 1) == 0)
+            {
+                uint a = g_scratch[gtid.x];
+                uint b = g_scratch[gtid.x + 1];
+                g_scratch[gtid.x] = a + b;
+            }
+
+            GroupMemoryBarrierWithGroupSync();
+            outputBuffer[dtid.x] = g_scratch[gtid.x];
+        }
+    )slang";
+
+    TestHelper(shader_source, SPV_SOURCE_SLANG, SPV_ENV_VULKAN_1_2);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangNestedStruct) {
