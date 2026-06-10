@@ -14,6 +14,7 @@
  */
 
 #include "type_manager.h"
+#include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include <spirv/unified1/spirv.hpp>
 #include "containers/container_utils.h"
@@ -986,20 +987,17 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
             if (image_type->spv_type_ == SpvType::kSampledImage) {
                 path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_SAMPLED;
             } else {
-                const bool is_sampled_without_sampler = image_type->inst_.Word(7) == 2;
-                spv::Dim image_dim = spv::Dim(image_type->inst_.Word(3));
-                if (is_sampled_without_sampler) {
-                    if (image_dim == spv::DimSubpassData) {
-                        path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_INPUT_ATTACHMENT;
-                    } else if (image_dim == spv::DimBuffer) {
-                        path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_TEXEL_BUFFER_STORAGE;
-                    } else {
-                        path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_STORAGE;
-                    }
-                } else if (image_dim == spv::DimBuffer) {
-                    path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_TEXEL_BUFFER_UNIFORM;
-                } else {
+                const VkDescriptorType image_descriptor_type = image_type->inst_.GetImageType();
+                if (image_descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
                     path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_SAMPLED;
+                } else if (image_descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
+                    path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_INPUT_ATTACHMENT;
+                } else if (image_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
+                    path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_STORAGE;
+                } else if (image_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
+                    path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_TEXEL_BUFFER_STORAGE;
+                } else if (image_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
+                    path.descriptor_type = gpuav::descriptor::TYPE_IMAGE_TEXEL_BUFFER_UNIFORM;
                 }
             }
         } else if (path.access_type->spv_type_ == SpvType::kAccelerationStructureKHR) {

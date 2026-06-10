@@ -14,14 +14,42 @@
  * limitations under the License.
  */
 #pragma once
+#include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include "chassis/layer_object_id.h"
+#include "containers/custom_containers.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
 
 namespace gpudump {
 class GpuDump;
 struct MappingInfo;
+
+struct HeapAccess {
+    VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
+    // These are zero because if not found, it means it is implicitly zero
+    // This also allows for better hashes being the same
+    uint32_t heap_offset = 0;
+    uint32_t array_stride = 0;
+    uint32_t descriptor_index = vvl::kNoIndex32;
+
+    struct compare {
+        bool operator()(HeapAccess const& lhs, HeapAccess const& rhs) const {
+            return lhs.descriptor_type == rhs.descriptor_type && lhs.heap_offset == rhs.heap_offset &&
+                   lhs.array_stride == rhs.array_stride && lhs.descriptor_index == rhs.descriptor_index;
+        }
+    };
+
+    // We don't want duplicate accesses being spammed
+    struct hash {
+        std::size_t operator()(HeapAccess const& access) const {
+            hash_util::HashCombiner hc;
+            hc << access.descriptor_type << access.heap_offset << access.array_stride << access.descriptor_index;
+            return hc.Value();
+        }
+    };
+};
+using HeapAccesses = vvl::unordered_set<HeapAccess, HeapAccess::hash, HeapAccess::compare>;
 
 class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
@@ -45,6 +73,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     // Return true if warning found
     bool DumpDescriptorHeap(std::ostringstream& ss, const LastBound& last_bound) const;
     bool DumpDescriptorHeapMapping(std::ostringstream& ss, const MappingInfo& mapping_info) const;
+    vvl::unordered_map<uint32_t, HeapAccesses> DumpDescriptorHeapUntypedFindAccess(const spirv::Module& module,
+                                                                                   const spirv::EntryPoint& entrypoint) const;
+    bool DumpDescriptorHeapUntyped(std::ostringstream& ss, const ShaderStageState& stage) const;
 
     bool DumpCopyMemoryIndirectCommon(std::ostringstream& ss, uint32_t copy_count,
                                       VkStridedDeviceAddressRangeKHR copy_address_range) const;

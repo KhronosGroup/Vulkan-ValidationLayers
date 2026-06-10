@@ -98,6 +98,9 @@ void DecorationBase::AddId(uint32_t decoration, uint32_t id) {
         case spv::DecorationOffsetIdEXT:
             offset_id = id;
             break;
+        case spv::DecorationArrayStrideIdEXT:
+            array_stride_id = id;
+            break;
         default:
             break;
     }
@@ -1019,6 +1022,12 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 } else if (insn.Word(2) == spv::DecorationSpecId) {
                     id_to_spec_id[target_id] = insn.Word(3);
                 }
+            } break;
+            case spv::OpDecorateId: {
+                const uint32_t target_id = insn.Word(1);
+                decorations[target_id].AddId(insn.Word(2), insn.Word(3));
+                // TODO - Not adding to decoration_inst until find a reason
+                // (loops using it likely assume it is only OpDecorate)
             } break;
             case spv::OpMemberDecorate: {
                 const uint32_t target_id = insn.Word(1);
