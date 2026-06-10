@@ -291,14 +291,10 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
 
         layout(set = 0, binding = 0) uniform foo {
             IndexBuffer data;
-            int nReads;
         } in_buffer;
 
         void main() {
-            uvec3 readvec;
-            for (int i=0; i < in_buffer.nReads; ++i) {
-                readvec = in_buffer.data.indices[i];
-            }
+            const uvec3 readvec = in_buffer.data.indices[0];
         }
     )glsl";
 
@@ -306,18 +302,17 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
-    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    vkt::Buffer uniform_buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
-    // Hold only 3 indices
-    vkt::Buffer block_buffer(*m_device, 36, 0, vkt::device_address);
-    VkDeviceAddress block_ptr = block_buffer.Address();
-    const uint32_t n_reads = 4;  // uvec3[0] to uvec3[3]
+    // Holds only one uvec3
+    vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint32_t), 0, vkt::device_address);
+    // Address read by buffer if sizeof(uvec3) below index buffer address
+    VkDeviceAddress offset_index_buffer_ptr = index_buffer.Address() - (3 * sizeof(uint32_t));
 
-    uint8_t* in_buffer_ptr = (uint8_t*)in_buffer.Memory().Map();
-    memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
-    memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(uint32_t));
+    uint8_t* uniform_buffer_ptr = (uint8_t*)uniform_buffer.Memory().Map();
+    memcpy(uniform_buffer_ptr, &offset_index_buffer_ptr, sizeof(VkDeviceAddress));
 
-    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
     pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -327,7 +322,16 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredErrorRegex("VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819", "VkBuffer.*size: 36 bytes");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819",
+                                         R"(.*is above address by 12 bytes.*\n.*VkBuffer.*size: 12 bytes.*)");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+
+    offset_index_buffer_ptr = index_buffer.Address() + (3 * sizeof(uint32_t));
+    memcpy(uniform_buffer_ptr, &offset_index_buffer_ptr, sizeof(VkDeviceAddress));
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819",
+                                         R"(.*is below address by 1 byte.*\n.*VkBuffer.*size: 12 bytes.*)");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
