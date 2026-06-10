@@ -328,9 +328,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     // TODO - Make common util if others need it
     VkDeviceSize required_alignment = 0;
     vvl::Field alignment_name = vvl::Field::Empty;
-    if (descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
-        required_alignment = 256;  // from spec
-    } else if (descriptor_type == VK_DESCRIPTOR_TYPE_TENSOR_ARM) {
+    if (descriptor_type == VK_DESCRIPTOR_TYPE_TENSOR_ARM) {
         required_alignment = dev_data.phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorAlignment;
         alignment_name = vvl::Field::tensorDescriptorAlignment;
     } else if (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLER) {
@@ -341,7 +339,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                           VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER})) {
         required_alignment = dev_data.phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment;
         alignment_name = vvl::Field::imageDescriptorAlignment;
-    } else if (IsValueIn(descriptor_type, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER})) {
+    } else if (IsValueIn(descriptor_type, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                           VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR})) {
         required_alignment = dev_data.phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment;
         alignment_name = vvl::Field::bufferDescriptorAlignment;
     }
@@ -467,7 +466,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                 warn_ss << ", to the first element of the array,";
             }
             warn_ss << " is not aligned to ";
-            if (alignment_name != vvl::Field::Empty) {
+            if (alignment_name == vvl::Field::Empty) {
+                warn_ss << "[UNKNOWN type]";
+            } else {
                 warn_ss << String(alignment_name) << " ";
             }
             warn_ss << "(0x" << std::hex << required_alignment << ") and any access to this descriptor will be invalid";
