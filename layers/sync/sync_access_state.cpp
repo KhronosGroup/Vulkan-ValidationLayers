@@ -873,10 +873,10 @@ void AccessState::ApplySemaphore(const SemaphoreScope& signal, const SemaphoreSc
         }
     }
     if (last_write.has_value() &&
-        last_write->WriteOrDependencyChainInSourceScope(signal.queue, signal.exec_scope, signal.valid_accesses)) {
+        last_write->WriteOrDependencyChainInSourceScope(signal.queue, signal.exec_scope, signal.stage_mask_accesses)) {
         // Will deflect RAW wait queue, WAW needs a chained barrier on wait queue
         read_execution_barriers = wait.exec_scope;
-        last_write->barriers = wait.valid_accesses;
+        last_write->barriers = wait.stage_mask_accesses;
     } else {
         read_execution_barriers = VK_PIPELINE_STAGE_2_NONE;
         if (last_write.has_value()) last_write->barriers.reset();

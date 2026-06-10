@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2026 The Khronos Group Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,19 +23,25 @@ namespace syncval {
 
 struct SyncExecScope {
     // The xxxStageMask parameter passed by the caller
-    VkPipelineStageFlags2 mask_param = 0;
+    VkPipelineStageFlags2 stage_mask = VK_PIPELINE_STAGE_2_NONE;
 
-    // All earlier or later stages that would be affected by a barrier using this scope
-    VkPipelineStageFlags2 exec_scope = 0;
+    // Stage mask with meta stages expanded, then extended with earlier/later stages.
+    // Used for execution dependency checks
+    VkPipelineStageFlags2 exec_scope = VK_PIPELINE_STAGE_2_NONE;
 
-    // All accesses that can be used with this scope
-    SyncAccessFlags valid_accesses;
+    // All accesses supported by stage_mask.
+    // Used for pipeline barriers to intersect access masks
+    SyncAccessFlags stage_mask_accesses;
+
+    // All accesses supported by exec_scope.
+    // Used for semaphore wait/signal access scopes
+    SyncAccessFlags exec_scope_accesses;
 
     static SyncExecScope MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2 src_stage_mask,
                                  VkPipelineStageFlags2 disabled_feature_mask = 0);
     static SyncExecScope MakeDst(VkQueueFlags queue_flags, VkPipelineStageFlags2 src_stage_mask);
 
-    bool operator==(const SyncExecScope &other) const;
+    bool operator==(const SyncExecScope& other) const;
     size_t Hash() const;
 };
 
@@ -50,9 +56,9 @@ struct SyncBarrier {
     VkAccessFlags2 original_dst_access = VK_ACCESS_2_NONE;
 
     SyncBarrier() = default;
-    SyncBarrier(const SyncExecScope &src_exec, const SyncExecScope &dst_exec);
-    SyncBarrier(const SyncExecScope &src_exec, const SyncExecScope &dst_exec, const AllAccess &);
-    SyncBarrier(const SyncExecScope &src_exec, VkAccessFlags2 src_access_mask, const SyncExecScope &dst_exec,
+    SyncBarrier(const SyncExecScope& src_exec, const SyncExecScope& dst_exec);
+    SyncBarrier(const SyncExecScope& src_exec, const SyncExecScope& dst_exec, const AllAccess&);
+    SyncBarrier(const SyncExecScope& src_exec, VkAccessFlags2 src_access_mask, const SyncExecScope& dst_exec,
                 VkAccessFlags2 dst_access_mask);
     SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &barrier);
     SyncBarrier(const std::vector<SyncBarrier> &barriers);

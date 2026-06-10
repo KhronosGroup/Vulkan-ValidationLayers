@@ -409,9 +409,9 @@ std::string ErrorMessages::ImageBarrierError(const HazardResult& hazard, const C
 
     std::ostringstream ss;
     ss << "\npImageMemoryBarriers[" << barrier.barrier_index << "]: {\n";
-    ss << "  srcStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.src_exec_scope.mask_param) << ",\n";
+    ss << "  srcStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.src_exec_scope.stage_mask) << ",\n";
     ss << "  srcAccessMask = " << string_VkAccessFlags2(barrier.barrier.original_src_access) << ",\n";
-    ss << "  dstStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.dst_exec_scope.mask_param) << ",\n";
+    ss << "  dstStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.dst_exec_scope.stage_mask) << ",\n";
     ss << "  dstAccessMask = " << string_VkAccessFlags2(barrier.barrier.original_dst_access) << ",\n";
     ss << "}\n";
     additional_info.message_end_text = ss.str();

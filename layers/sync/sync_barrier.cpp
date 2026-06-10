@@ -87,46 +87,62 @@ static SyncAccessFlags AccessScope(const SyncAccessFlags& stage_scope, VkAccessF
 
 namespace syncval {
 
-SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2 mask_param,
+SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2 stage_mask,
                                      VkPipelineStageFlags2 disabled_feature_mask) {
-    const VkPipelineStageFlags2 expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags, disabled_feature_mask);
+    const VkPipelineStageFlags2 expanded_mask = sync_utils::ExpandPipelineStages(stage_mask, queue_flags, disabled_feature_mask);
 
     SyncExecScope result;
-    result.mask_param = mask_param;
+    result.stage_mask = stage_mask;
     result.exec_scope = sync_utils::AddEarlierPipelineStages(expanded_mask);
-    result.valid_accesses = AccessScopeByStage(expanded_mask);
+    result.stage_mask_accesses = AccessScopeByStage(expanded_mask);
+    result.exec_scope_accesses = AccessScopeByStage(result.exec_scope);
 
-    // ALL_COMMANDS stage includes all accesses performed by the gpu, not only accesses defined by the stages
-    if (mask_param & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) {
-        result.valid_accesses |= SYNC_IMAGE_LAYOUT_TRANSITION_BIT;
+    // ALL_COMMANDS stage includes all operations performed by the gpu, not only operations that run on the stages.
+    // BOTTOM_OF_PIPE has no accesses of its own, so does not add to stage_mask_accesses, but in the context of
+    // semaphoer scopes it adds to exec_scope_accesses
+    if (stage_mask & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) {
+        result.stage_mask_accesses |= SYNC_IMAGE_LAYOUT_TRANSITION_BIT;
+    }
+    if (stage_mask & (VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT)) {
+        result.exec_scope_accesses |= SYNC_IMAGE_LAYOUT_TRANSITION_BIT;
     }
     return result;
 }
 
-SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFlags2 mask_param) {
-    const VkPipelineStageFlags2 expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags);
+SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFlags2 stage_mask) {
+    const VkPipelineStageFlags2 expanded_mask = sync_utils::ExpandPipelineStages(stage_mask, queue_flags);
 
     SyncExecScope result;
-    result.mask_param = mask_param;
+    result.stage_mask = stage_mask;
     result.exec_scope = sync_utils::AddLaterPipelineStages(expanded_mask);
-    result.valid_accesses = AccessScopeByStage(expanded_mask);
+    result.stage_mask_accesses = AccessScopeByStage(expanded_mask);
+    result.exec_scope_accesses = AccessScopeByStage(result.exec_scope);
 
-    // ALL_COMMANDS stage includes all accesses performed by the gpu, not only accesses defined by the stages
-    if (mask_param & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) {
-        result.valid_accesses |= SYNC_IMAGE_LAYOUT_TRANSITION_BIT;
+    // ALL_COMMANDS stage includes all accesses performed by the gpu, not only accesses defined by the stages.
+    // TOP_OF_PIPE has no accesses of its own, so does not add to stage_mask_accesses, but in the context of
+    // semaphore scopes it adds to exec_scope_accesses
+    if (stage_mask & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) {
+        result.stage_mask_accesses |= SYNC_IMAGE_LAYOUT_TRANSITION_BIT;
+    }
+    if (stage_mask & (VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT)) {
+        result.exec_scope_accesses |= SYNC_IMAGE_LAYOUT_TRANSITION_BIT;
     }
     return result;
 }
 
 bool SyncExecScope::operator==(const SyncExecScope& other) const {
-    return mask_param == other.mask_param && exec_scope == other.exec_scope && valid_accesses == other.valid_accesses;
+    // Check that the fields are packed without gaps so we can use fast memcmp.
+    // If not true, switch to memberwise compare
+    static_assert(sizeof(SyncExecScope) == 64, "Gap detected, use memberwise compare");
+    return memcmp(this, &other, sizeof(SyncExecScope)) == 0;
 }
 
 size_t SyncExecScope::Hash() const {
     hash_util::HashCombiner hc;
-    hc << mask_param;
+    hc << stage_mask;
     hc << exec_scope;
-    valid_accesses.HashCombine(hc);
+    stage_mask_accesses.HashCombine(hc);
+    exec_scope_accesses.HashCombine(hc);
     return hc.Value();
 }
 
@@ -135,16 +151,15 @@ SyncBarrier::SyncBarrier(const SyncExecScope& src_exec, const SyncExecScope& dst
 
 SyncBarrier::SyncBarrier(const SyncExecScope& src_exec, const SyncExecScope& dst_exec, const SyncBarrier::AllAccess&)
     : src_exec_scope(src_exec),
-      src_access_scope(src_exec.valid_accesses),
+      src_access_scope(src_exec.stage_mask_accesses),
       dst_exec_scope(dst_exec),
-      dst_access_scope(dst_exec.valid_accesses) {
-
+      dst_access_scope(dst_exec.stage_mask_accesses) {
     // No accesses are happening on TOP_OF_PIPE/BOTTOM_OF_PIPE stages
-    // (valid_accesses bitmask is empty). Explicitly enforce the spec
+    // (stage_mask_accesses bitmask is empty). Explicitly enforce the spec
     // rule that access scopes of semaphore operations include all
     // device accesses.
     //
-    // NOTE: we still use valid_accesses for other scenarios and implementation
+    // NOTE: we still use stage_mask_accesses for other scenarios and implementation
     // in some cases relies on this (for example,
     // NegativeSyncValTimelineSemaphore.WaitAfterSignalStageMismatch will fail
     // if we use all device accesss for access scopes uncoditionally).
@@ -152,10 +167,10 @@ SyncBarrier::SyncBarrier(const SyncExecScope& src_exec, const SyncExecScope& dst
     // TODO: if we find new issues we might need to rework implementation so
     // for semaphore operations, the src/dst access scopes always include all
     // device accesses
-    if (src_exec.mask_param & VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT) {
+    if (src_exec.stage_mask & VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT) {
         src_access_scope = syncAccessReadMask | syncAccessWriteMask;
     }
-    if (dst_exec.mask_param & VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT) {
+    if (dst_exec.stage_mask & VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT) {
         dst_access_scope = syncAccessReadMask | syncAccessWriteMask;
     }
 }
@@ -163,10 +178,10 @@ SyncBarrier::SyncBarrier(const SyncExecScope& src_exec, const SyncExecScope& dst
 SyncBarrier::SyncBarrier(const SyncExecScope& src_exec, VkAccessFlags2 src_access_mask, const SyncExecScope& dst_exec,
                          VkAccessFlags2 dst_access_mask)
     : src_exec_scope(src_exec),
-      src_access_scope(AccessScope(src_exec.valid_accesses, src_access_mask)),
+      src_access_scope(AccessScope(src_exec.stage_mask_accesses, src_access_mask)),
       original_src_access(src_access_mask),
       dst_exec_scope(dst_exec),
-      dst_access_scope(AccessScope(dst_exec.valid_accesses, dst_access_mask)),
+      dst_access_scope(AccessScope(dst_exec.stage_mask_accesses, dst_access_mask)),
       original_dst_access(dst_access_mask) {}
 
 SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2& subpass) {
@@ -174,22 +189,22 @@ SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2& s
     if (barrier) {
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier->srcStageMask);
         src_exec_scope = src;
-        src_access_scope = AccessScope(src.valid_accesses, barrier->srcAccessMask);
+        src_access_scope = AccessScope(src.stage_mask_accesses, barrier->srcAccessMask);
         original_src_access = barrier->srcAccessMask;
 
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier->dstStageMask);
         dst_exec_scope = dst;
-        dst_access_scope = AccessScope(dst.valid_accesses, barrier->dstAccessMask);
+        dst_access_scope = AccessScope(dst.stage_mask_accesses, barrier->dstAccessMask);
         original_dst_access = barrier->dstAccessMask;
     } else {
         auto src = SyncExecScope::MakeSrc(queue_flags, subpass.srcStageMask);
         src_exec_scope = src;
-        src_access_scope = AccessScope(src.valid_accesses, subpass.srcAccessMask);
+        src_access_scope = AccessScope(src.stage_mask_accesses, subpass.srcAccessMask);
         original_src_access = subpass.srcAccessMask;
 
         auto dst = SyncExecScope::MakeDst(queue_flags, subpass.dstStageMask);
         dst_exec_scope = dst;
-        dst_access_scope = AccessScope(dst.valid_accesses, subpass.dstAccessMask);
+        dst_access_scope = AccessScope(dst.stage_mask_accesses, subpass.dstAccessMask);
         original_dst_access = subpass.dstAccessMask;
     }
 }

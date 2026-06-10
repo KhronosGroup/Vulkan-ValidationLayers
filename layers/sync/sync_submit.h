@@ -70,7 +70,7 @@ struct SignalInfo {
     // Batch from the signal's first scope. It is null for a host signal (vkSignalSemaphore)
     std::shared_ptr<QueueBatchContext> batch;
 
-    // Use the first_scope.valid_accesses for the first access scope of non-host signals.
+    // Use the first_scope.stage_mask_accesses for the first access scope of non-host signals.
     // first_scope.queue is kQueueIdInvalid for a host signal (vkSignalSemaphore)
     SemaphoreScope first_scope;
 

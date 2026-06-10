@@ -216,9 +216,10 @@ class ApplyAcquireNextSemaphoreAction {
     // and initialization of globals between compilation units is undefined. Instead they get initialized
     // on the first use (it's important to ensure this first use is also not initialization of some global!).
     static const SyncExecScope& getPresentSrcScope() {
-        static const SyncExecScope kPresentSrcScope{VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL,  // mask_param (unused)
+        static const SyncExecScope kPresentSrcScope{VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL,  // stage_mask (unused)
                                                     VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL,  // exec_scope
-                                                    getPresentValidAccesses()};                      // valid_accesses
+                                                    getPresentValidAccesses(),                       // stage_mask_accesses
+                                                    getPresentValidAccesses()};                      // exec_scope_accesses
         return kPresentSrcScope;
     }
     static const SyncAccessFlags& getPresentValidAccesses() {
