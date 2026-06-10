@@ -22,6 +22,7 @@
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 struct PositiveSyncValTimelineSemaphore : public VkSyncValTest {};
+struct PositiveSyncValBinarySemaphore : public VkSyncValTest {};
 
 TEST_F(PositiveSyncValTimelineSemaphore, WaitInitialValue) {
     TEST_DESCRIPTION("Wait on the initial value");
@@ -895,5 +896,187 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitBeforeSinglaBlocksAnotherSubmit) {
     queue1->Submit(command_buffer, vkt::TimelineSignal(timeline, 1));
 
     queue1->Submit(vkt::no_cmd, vkt::TimelineSignal(timeline, 2));
+    m_device->Wait();
+}
+
+TEST_F(PositiveSyncValBinarySemaphore, SemaphoreScopeIncludesAllAccesses) {
+    TEST_DESCRIPTION("Semaphore access scopes include all device accesses, not only accesses supported by the stage mask");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    vkt::Image image(*m_device, 64, 64, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView image_view = image.CreateView();
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer dst_buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer StorageBuffer {
+            uint value;
+        } data;
+        void main() {
+            data.value = 1;
+            gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+    )glsl";
+
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &format;
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT}});
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, 256, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    // Write to storage buffer from VERTEX_SHADER
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
+                              0, nullptr);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    // Read storage buffer from COPY_STAGE
+    vkt::CommandBuffer copy_command_buffer(*m_device, m_command_pool);
+    copy_command_buffer.Begin();
+    copy_command_buffer.Copy(buffer, dst_buffer);
+    copy_command_buffer.End();
+
+    vkt::Semaphore semaphore(*m_device);
+
+    // Specify FRAGMENT_SHADER stage to test that semaphore signal includes *all* device accesses.
+    // In case of regression we can expect that only FRAGMENT_SHADER accesses are included, but this
+    // won't synchronize VERTEX_SHADER writes to storage buffer and will result in READ_AFTER_WRITE hazard
+    m_default_queue->Submit2(m_command_buffer, vkt::Signal(semaphore, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT));
+
+    m_default_queue->Submit2(copy_command_buffer, vkt::Wait(semaphore, VK_PIPELINE_STAGE_2_COPY_BIT));
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncValBinarySemaphore, SemaphoreScopeIncludesAllAccessesTwoQueues) {
+    TEST_DESCRIPTION("Semaphore access scopes include all device accesses, not only accesses supported by the stage mask");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer dst_buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 256, 0x42);
+    m_command_buffer.End();
+
+    m_second_command_buffer.Begin();
+    m_second_command_buffer.Copy(buffer, dst_buffer);
+    m_second_command_buffer.End();
+
+    vkt::Semaphore semaphore(*m_device);
+
+    // Specify BOTTOM_OF_PIPE stage to test that semaphore signal includes *all* device accesses.
+    // There are no accesses on BOTTOM_OF_PIPE stage, but it does not define the semaphore access scope.
+    m_default_queue->Submit2(m_command_buffer, vkt::Signal(semaphore, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT));
+
+    m_second_queue->Submit2(m_second_command_buffer, vkt::Wait(semaphore));
+    m_device->Wait();
+}
+
+TEST_F(PositiveSyncValBinarySemaphore, SemaphoreScopeIncludesAllAccessesTwoQueues2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 256, 0x42);
+    m_command_buffer.End();
+
+    m_second_command_buffer.Begin();
+    vk::CmdFillBuffer(m_second_command_buffer, buffer, 0, 256, 0x24);
+    m_second_command_buffer.End();
+
+    vkt::Semaphore semaphore(*m_device);
+
+    m_default_queue->Submit2(m_command_buffer, vkt::Signal(semaphore, VK_PIPELINE_STAGE_2_TRANSFER_BIT));
+
+    // TOP_OF_PIPE has no accesses of its own, but semaphore wait access scope still includes all device accesses
+    m_second_queue->Submit2(m_second_command_buffer, vkt::Wait(semaphore, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT));
+    m_device->Wait();
+}
+
+TEST_F(PositiveSyncValBinarySemaphore, SemaphoreScopeIncludesLayoutTransition) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+    layout_transition.srcAccessMask = VK_ACCESS_2_NONE;
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    layout_transition.dstAccessMask = VK_ACCESS_2_NONE;
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(layout_transition);
+    m_command_buffer.End();
+
+    VkBufferImageCopy region = {};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {64, 64, 1};
+
+    m_second_command_buffer.Begin();
+    vk::CmdCopyImageToBuffer(m_second_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, 1, &region);
+    m_second_command_buffer.End();
+
+    vkt::Semaphore semaphore(*m_device);
+
+    // BOTTOM_OF_PIPE has no accesses of its own, but semaphore access scope still
+    // includes all device accesses, which includes layout transition accesses
+    m_default_queue->Submit2(m_command_buffer, vkt::Signal(semaphore, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT));
+
+    m_second_queue->Submit2(m_second_command_buffer, vkt::Wait(semaphore));
     m_device->Wait();
 }
