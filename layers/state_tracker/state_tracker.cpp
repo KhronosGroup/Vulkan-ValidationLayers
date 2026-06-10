@@ -2263,6 +2263,31 @@ bool DeviceState::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipe
     return skip;
 }
 
+void DeviceState::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                       const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                       const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                       chassis::CreateGraphicsPipelines& chassis_state) {
+    // Can't call in PreCallValidate as that is a const function
+    //
+    // Normally this would be called during
+    //    Add(std::move(pipeline_states[i]));
+    // but we do the notify first to create subset
+    for (uint32_t i = 0; i < count; i++) {
+        NotifyCreatedPipeline(*pipeline_states[i]);
+    }
+}
+
+// GPL was the worst thing ever added... we have to make MORE hacks around the fact we create a Pipeline state object in
+// PreCallValidate. The goal of this is go ahead of create the PipelineSubState such that GPU-AV can use it in PreCallRecord...I'm
+// just as mad as you are reading this that we have this.
+void DeviceState::NotifyCreatedPipeline(vvl::Pipeline& pipeline_state) {
+    // Normally called on Add()
+    for (auto& item : proxies) {
+        item.second.Created(pipeline_state);
+    }
+}
+
 void DeviceState::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                         const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                         const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -2307,6 +2332,16 @@ bool DeviceState::PreCallValidateCreateComputePipelines(VkDevice device, VkPipel
             &pCreateInfos[i], pipeline_cache, Get<PipelineLayout>(pCreateInfos[i].layout), &chassis_state.stateless_data));
     }
     return false;
+}
+
+void DeviceState::PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                      const VkComputePipelineCreateInfo* pCreateInfos,
+                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                      const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                      chassis::CreateComputePipelines& chassis_state) {
+    for (uint32_t i = 0; i < count; i++) {
+        NotifyCreatedPipeline(*pipeline_states[i]);
+    }
 }
 
 void DeviceState::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -2395,6 +2430,17 @@ bool DeviceState::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, V
             &pCreateInfos[i], pipeline_cache, Get<PipelineLayout>(pCreateInfos[i].layout), chassis_state.stateless_data));
     }
     return false;
+}
+
+void DeviceState::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                            VkPipelineCache pipelineCache, uint32_t count,
+                                                            const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
+                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                            const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                            chassis::CreateRayTracingPipelinesKHR& chassis_state) {
+    for (uint32_t i = 0; i < count; i++) {
+        NotifyCreatedPipeline(*pipeline_states[i]);
+    }
 }
 
 void DeviceState::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,

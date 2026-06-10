@@ -962,6 +962,11 @@ class DeviceState : public vvl::BaseDevice {
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                chassis::CreateComputePipelines& chassis_state) const override;
+    void PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                             const VkComputePipelineCreateInfo* pCreateInfos,
+                                             const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                             const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                             chassis::CreateComputePipelines& chassis_state) override;
     void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                               const VkComputePipelineCreateInfo* pCreateInfos,
                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -1019,6 +1024,11 @@ class DeviceState : public vvl::BaseDevice {
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                 const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                 chassis::CreateGraphicsPipelines& chassis_state) const override;
+    void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                              const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                              const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                              const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                              chassis::CreateGraphicsPipelines& chassis_state) override;
     void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -1090,6 +1100,12 @@ class DeviceState : public vvl::BaseDevice {
                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                      const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                      chassis::CreateRayTracingPipelinesKHR& chassis_state) const override;
+    void PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                   VkPipelineCache pipelineCache, uint32_t count,
+                                                   const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
+                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                   const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                   chassis::CreateRayTracingPipelinesKHR& chassis_state) override;
     void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                     VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
@@ -2249,11 +2265,14 @@ class DeviceState : public vvl::BaseDevice {
     // When adding a new state tracker, make sure to add to DestroyObjectMaps()
 
     // For state objects that have sub states.  Requires the definition of DeviceProxy, which is below.
-    template <typename State, std::enable_if_t<HasSubStates<State>::value, bool> = true>
+    // vvl::Pipeline are special... because GPL, duh
+    template <typename State, std::enable_if_t<HasSubStates<State>::value && !std::is_same_v<State, vvl::Pipeline>, bool> = true>
     void NotifyCreated(State& state_object);
 
-    template <typename State, std::enable_if_t<!HasSubStates<State>::value, bool> = true>
+    template <typename State, std::enable_if_t<!HasSubStates<State>::value || std::is_same_v<State, vvl::Pipeline>, bool> = true>
     void NotifyCreated(State& state_object) {}
+
+    void NotifyCreatedPipeline(vvl::Pipeline& pipeline_state);
 
     std::atomic<uint32_t> object_id_{1};  // 0 is an invalid id
 
@@ -2426,10 +2445,11 @@ class DeviceProxy : public vvl::BaseDevice {
     virtual void DebugCapture() {}
 };
 
-template <typename State, std::enable_if_t<HasSubStates<State>::value, bool>>
+template <typename State, std::enable_if_t<HasSubStates<State>::value && !std::is_same_v<State, vvl::Pipeline>, bool>>
 void DeviceState::NotifyCreated(State& state_object) {
     for (auto& item : proxies) {
         item.second.Created(state_object);
     }
 }
+
 }  // namespace vvl

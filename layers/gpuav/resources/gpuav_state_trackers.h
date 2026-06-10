@@ -436,10 +436,18 @@ class PipelineSubState : public vvl::PipelineSubState {
     void AddHandleToDestroy(VkPipeline pipeline);
     VkPipelineLayout GetPipelineLayoutUnion(const Location &loc, vvl::DescriptorMode mode) const;
 
-  private:
+    // We create a VkShaderModule that is instrumented and it needs to be destroyed before leaving the pipeline call
+    std::vector<VkShaderModule> shader_modules;
+
+    gpuav::spirv::InstrumentationStatus status;
+    // When we instrument GPL at link time, we need to hold the libraries created by GPU-AV so they can be re-used
+    VkPipeline instrumented_pipeline_lib = VK_NULL_HANDLE;
+
     // Multiple threads can record multiple commands using the same pipeline,
     // so layout recreation and deferred pipeline destruction have to be thread safe
     mutable std::mutex mutex_{};
+
+  private:
     mutable VkPipelineLayout recreated_layout_ = VK_NULL_HANDLE;
     Validator &gpuav_;
     VkPipeline uninstrumented_pipeline = VK_NULL_HANDLE;
