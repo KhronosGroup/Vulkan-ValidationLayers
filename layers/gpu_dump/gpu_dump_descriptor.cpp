@@ -336,12 +336,12 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     } else if (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLER) {
         required_alignment = dev_data.phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment;
         alignment_name = vvl::Field::samplerDescriptorAlignment;
-    } else if (IsValueIn(descriptor_type, {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-                                           VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE})) {
+    } else if (IsValueIn(descriptor_type,
+                         {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                          VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER})) {
         required_alignment = dev_data.phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment;
         alignment_name = vvl::Field::imageDescriptorAlignment;
-    } else if (IsValueIn(descriptor_type, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                           VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER})) {
+    } else if (IsValueIn(descriptor_type, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER})) {
         required_alignment = dev_data.phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment;
         alignment_name = vvl::Field::bufferDescriptorAlignment;
     }
@@ -379,6 +379,51 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                 assert(false);
             }
             warn_ss << " and any access to this descriptor will be invalid";
+        }
+    };
+
+    auto warn_indirect_uniform_usage = [&](VkDeviceAddress address) {
+        auto buffer_states = dev_data.GetBuffersByAddress(address);
+        // warning elsewhere if this is empty
+        if (!buffer_states.empty()) {
+            bool found = false;
+            for (const auto& buffer_state : buffer_states) {
+                if (buffer_state->usage & VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                warn_ss << new_bullet_line << "[WARNING] BUFFER TYPE - the indirect address (0x" << std::hex << address
+                        << ") is not accessing any VkBuffer created with VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT and any access to "
+                           "this descriptor will be invalid";
+            }
+        }
+    };
+
+    auto warn_resource_buffer_usage = [&](VkDeviceAddress address) {
+        // Core validation ensure this for the given mappings
+        assert((resource_variable.is_storage_buffer && descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) ||
+               (resource_variable.is_uniform_buffer && descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER));
+        auto buffer_states = dev_data.GetBuffersByAddress(address);
+        // warning elsewhere if this is empty
+        if (!buffer_states.empty()) {
+            const VkBufferUsageFlagBits2 search_usage =
+                resource_variable.is_storage_buffer ? VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT : VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT;
+            bool found = false;
+            for (const auto& buffer_state : buffer_states) {
+                if (buffer_state->usage & search_usage) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                warn_ss << new_bullet_line << "[WARNING] BUFFER TYPE - the resource address (0x" << std::hex << address
+                        << ") is not accessing any VkBuffer created with "
+                        << (resource_variable.is_storage_buffer ? "VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT"
+                                                                : "VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT")
+                        << " and any access to this descriptor will be invalid";
+            }
         }
     };
 
@@ -736,6 +781,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         VkDeviceAddress final_indirect_address = push_indirect_address + map_data.addressOffset;
 
         warn_alignment_scalar_indirect(final_indirect_address, 4);
+        warn_indirect_uniform_usage(final_indirect_address);
 
         std::vector<uint8_t> indirect_index_data = dev_data.CopyDataFromMemory(final_indirect_address, 4);
         bool know_ubo = !indirect_index_data.empty();
@@ -826,6 +872,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
 
             warn_alignment_scalar_indirect(final_indirect_address, 4);
+            warn_indirect_uniform_usage(final_indirect_address);
 
             indirect_index_data = dev_data.CopyDataFromMemory(final_indirect_address, 4);
             know_ubo = !indirect_index_data.empty();
@@ -917,6 +964,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         VkDeviceAddress final_indirect_address = push_indirect_address + map_data.addressOffset;
 
         warn_alignment_scalar_indirect(final_indirect_address, 4);
+        warn_indirect_uniform_usage(final_indirect_address);
 
         ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset
            << ", heapOffset: 0x" << map_data.heapOffset << ", heapIndexStride: 0x" << map_data.heapIndexStride;
@@ -1002,6 +1050,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
 
             warn_alignment_scalar_indirect(final_indirect_address, 4);
+            warn_indirect_uniform_usage(final_indirect_address);
 
             ss << new_bullet_line << "samplerPushOffset: 0x" << std::hex << map_data.samplerPushOffset
                << ", samplerAddressOffset: 0x" << map_data.samplerAddressOffset << ", samplerHeapOffset: 0x"
@@ -1110,6 +1159,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         ss << new_line << "Indirect Adresss 0x" << indirect_address;
 
         warn_alignment_indirect_address(indirect_address);
+        warn_resource_buffer_usage(indirect_address);
         warn_indirect_buffer |= dev_data.ListBuffers(ss, indirect_address, 3, true);
 
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
@@ -1122,6 +1172,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
            << map_data.addressOffset << ")";
 
         warn_alignment_scalar_indirect(final_indirect_address, 8);
+        warn_indirect_uniform_usage(final_indirect_address);
         warn_indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
         std::vector<uint8_t> indirect_address_data = dev_data.CopyDataFromMemory(final_indirect_address, 8);
@@ -1130,6 +1181,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             ss << new_line << "Resource Adresss 0x" << resource_address;
 
             warn_alignment_indirect_address(resource_address, true);
+            warn_resource_buffer_usage(resource_address);
             warn_indirect_buffer |= dev_data.ListBuffers(ss, resource_address, 3, true);
         }
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
