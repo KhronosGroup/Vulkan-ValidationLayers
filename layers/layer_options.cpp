@@ -751,16 +751,16 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings* settings_data, VkuL
                 }
             }
         } else if (!settings_data->gpu_dump_settings->to_stdout) {
-            if ((report_flags & kInformationBit) == 0) {
+            const bool has_info_bit = (report_flags & kInformationBit) != 0;
+            const bool has_warn_bit = (report_flags & kWarningBit) != 0;
+            // If the user ONLY wants warning, don't turn on info
+            // If they forgot both, turn both on
+            if (!has_info_bit && !has_warn_bit) {
                 setting_warnings.emplace_back(
-                    "GPU Dump logs to the Information message severity, enabling Information level logging otherwise the message "
+                    "GPU Dump logs to both the Warning and Information message severity, enabling both Warning and Information "
+                    "level logging otherwise the message "
                     "will not be seen.");
                 report_flags |= kInformationBit;
-            }
-            if ((report_flags & kWarningBit) == 0) {
-                setting_warnings.emplace_back(
-                    "GPU Dump can log to the Warning message severity, enabling Warning level logging otherwise the message "
-                    "will not be seen.");
                 report_flags |= kWarningBit;
             }
         }
