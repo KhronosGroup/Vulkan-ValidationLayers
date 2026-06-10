@@ -16,6 +16,7 @@
  */
 #pragma once
 
+#include <vulkan/vulkan.h>
 #include <cassert>
 #include <cstdint>
 #include <string>
@@ -81,6 +82,7 @@ class Instruction {
     bool IsAccessChain() const;
     bool IsUntypedAccessChain() const;
     // Helpers for OpTypeImage
+    VkDescriptorType GetImageType() const;
     bool IsTensor() const;
     bool IsConstant() const;
     bool IsSpecConstant() const;

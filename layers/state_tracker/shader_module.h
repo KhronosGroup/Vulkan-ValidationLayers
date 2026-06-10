@@ -89,7 +89,9 @@ struct DecorationBase {
 
     uint32_t offset = kInvalidValue;
     uint32_t offset_id = kInvalidValue;  // OffsetIdEXT
+    uint32_t array_stride_id = kInvalidValue;  // ArrayStrideIdEXT
     uint32_t GetOffset(const Module& module_state) const;
+    uint32_t GetArrayStride(const Module& module_state) const;
 
     // A given object can only have a single BuiltIn OpDecoration
     spv::BuiltIn built_in = kInvalidBuiltIn;
@@ -569,6 +571,7 @@ struct EntryPoint {
 
     // All ids that can be accessed from the entry point
     // being accessed doesn't guarantee it is statically used
+    // TODO - Break this into a Function struct
     const vvl::unordered_set<uint32_t> accessible_ids;
 
     // only one Push Constant block is allowed per entry point

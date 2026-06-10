@@ -16,6 +16,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include <sstream>
 #include "state_tracker/shader_instruction.h"
+#include <vulkan/vulkan_core.h>
 #include "generated/spirv_grammar_helper.h"
 #include "state_tracker/shader_module.h"
 
@@ -212,6 +213,25 @@ bool Instruction::IsUntypedAccessChain() const {
            opcode == spv::OpUntypedPtrAccessChainKHR || opcode == spv::OpUntypedInBoundsPtrAccessChainKHR;
 }
 
+VkDescriptorType Instruction::GetImageType() const {
+    assert(Opcode() == spv::OpTypeImage);
+    const bool is_sampled_without_sampler = Word(7) == 2;
+    spv::Dim image_dim = spv::Dim(Word(3));
+    if (is_sampled_without_sampler) {
+        if (image_dim == spv::DimSubpassData) {
+            return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+        } else if (image_dim == spv::DimBuffer) {
+            return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+        } else {
+            return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        }
+    } else if (image_dim == spv::DimBuffer) {
+        return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+    } else {
+        return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    }
+}
+
 bool Instruction::IsTensor() const { return (Opcode() == spv::OpTypeTensorARM); }
 
 // Returns "any" constant
@@ -255,6 +275,7 @@ spv::StorageClass Instruction::StorageClass() const {
         case spv::OpTypePointer:
         case spv::OpTypeForwardPointer:
         case spv::OpTypeUntypedPointerKHR:
+        case spv::OpTypeBufferEXT:
             storage_class = static_cast<spv::StorageClass>(Word(2));
             break;
         case spv::OpVariable:

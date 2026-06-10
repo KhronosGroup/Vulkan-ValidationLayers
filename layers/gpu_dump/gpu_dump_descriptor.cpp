@@ -14,31 +14,38 @@
  * limitations under the License.
  */
 
-#include "containers/container_utils.h"
-#include "containers/limits.h"
-#include "error_message/log_message_type.h"
-#include "generated/error_location_helper.h"
 #include "gpu_dump_state.h"
 #include "gpu_dump.h"
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include <iostream>
+#include <spirv-tools/libspirv.hpp>
+#include <spirv-tools/optimizer.hpp>
+#include <spirv/unified1/spirv.hpp>
 #include <sstream>
 #include <algorithm>
+#include <vector>
 #include "containers/range.h"
 #include "containers/small_vector.h"
+#include "containers/container_utils.h"
+#include "containers/custom_containers.h"
+#include "containers/limits.h"
 #include "generated/dispatch_functions.h"
+#include "error_message/log_message_type.h"
+#include "generated/error_location_helper.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/descriptor_mode.h"
 #include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/pipeline_state.h"
+#include "state_tracker/shader_instruction.h"
 #include "state_tracker/shader_module.h"
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/state_tracker.h"
 #include "utils/math_utils.h"
 #include "utils/descriptor_utils.h"
+#include "utils/spirv_tools_utils.h"
 
 namespace gpudump {
 
@@ -282,6 +289,40 @@ static const vvl::Buffer* GetLargestBuffer(const GpuDump& dev_data, uint64_t add
     return longer_buffer;
 }
 
+static VkDeviceSize GetDescriptorAlignment(VkDescriptorType type, const vvl::DeviceExtensionProperties& phys_dev_ext_props) {
+    if (type == VK_DESCRIPTOR_TYPE_TENSOR_ARM) {
+        return phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorAlignment;
+    } else if (type == VK_DESCRIPTOR_TYPE_SAMPLER) {
+        return phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment;
+    } else if (IsValueIn(type,
+                         {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                          VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER})) {
+        return phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment;
+    } else if (IsValueIn(type, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR})) {
+        return phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment;
+    }
+    assert(false);
+    return 0;
+}
+
+static vvl::Field GetDescriptorAlignmentField(VkDescriptorType type) {
+    if (type == VK_DESCRIPTOR_TYPE_TENSOR_ARM) {
+        return vvl::Field::tensorDescriptorAlignment;
+    } else if (type == VK_DESCRIPTOR_TYPE_SAMPLER) {
+        return vvl::Field::samplerDescriptorAlignment;
+    } else if (IsValueIn(type,
+                         {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                          VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER})) {
+        return vvl::Field::imageDescriptorAlignment;
+    } else if (IsValueIn(type, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR})) {
+        return vvl::Field::bufferDescriptorAlignment;
+    }
+    assert(false);
+    return vvl::Field::Empty;
+}
+
 bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, const MappingInfo& mapping_info) const {
     const VkDescriptorSetAndBindingMappingEXT& mapping = *mapping_info.mapping;
     const spirv::ResourceInterfaceVariable& resource_variable = *mapping_info.resource_variable;
@@ -325,25 +366,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         descriptor_size = dev_data.device_state->cached_descriptor_size.GetSize(descriptor_type);
     }
 
-    // TODO - Make common util if others need it
-    VkDeviceSize required_alignment = 0;
-    vvl::Field alignment_name = vvl::Field::Empty;
-    if (descriptor_type == VK_DESCRIPTOR_TYPE_TENSOR_ARM) {
-        required_alignment = dev_data.phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorAlignment;
-        alignment_name = vvl::Field::tensorDescriptorAlignment;
-    } else if (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLER) {
-        required_alignment = dev_data.phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment;
-        alignment_name = vvl::Field::samplerDescriptorAlignment;
-    } else if (IsValueIn(descriptor_type,
-                         {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                          VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER})) {
-        required_alignment = dev_data.phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment;
-        alignment_name = vvl::Field::imageDescriptorAlignment;
-    } else if (IsValueIn(descriptor_type, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                           VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR})) {
-        required_alignment = dev_data.phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment;
-        alignment_name = vvl::Field::bufferDescriptorAlignment;
-    }
+    VkDeviceSize required_alignment = GetDescriptorAlignment(descriptor_type, dev_data.phys_dev_ext_props);
+    vvl::Field alignment_name = GetDescriptorAlignmentField(descriptor_type);
 
     // attempts to catch obvious OOB offsets in mappings
     std::ostringstream warn_ss;
@@ -1256,6 +1280,308 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     return found_warning;
 }
 
+static uint32_t GetUntypedSize(const spirv::Module& module, const spirv::Instruction& size_inst, VkDeviceSize descriptor_size) {
+    if (size_inst.Opcode() == spv::OpConstantSizeOfEXT) {
+        const spirv::Instruction* constant_type_inst = module.FindDef(size_inst.Word(3));
+        if (!IsValueIn((spv::Op)constant_type_inst->Opcode(), {spv::OpTypeBufferEXT, spv::OpTypeImage, spv::OpTypeSampler})) {
+            assert(false);  // assumptions
+            return 0;
+        }
+        return (uint32_t)descriptor_size;
+    } else if (size_inst.Opcode() == spv::OpConstant) {
+        return size_inst.GetConstantValue();
+    } else if (size_inst.Opcode() == spv::OpSpecConstantOp) {
+        // TODO - We will need some sort of internal constant folding here... fun!
+        return 0;
+    }
+    assert(false);  // assumptions
+    return 0;
+}
+
+static uint32_t GetUntypedHeapOffset(const spirv::Module& module, const spirv::Instruction& access_chain,
+                                     const spirv::Instruction& base_type_inst, VkDeviceSize descriptor_size) {
+    if (base_type_inst.Opcode() != spv::OpTypeStruct) {
+        return 0;
+    }
+
+    const uint32_t struct_id = base_type_inst.ResultId();
+    for (const auto& type_struct : module.static_data_.type_structs) {
+        if (type_struct->id == struct_id) {
+            uint32_t struct_member = module.FindDef(access_chain.Word(5))->GetConstantValue();
+            const auto& member = type_struct->members[struct_member];
+            if (member.decorations->offset != vvl::kNoIndex32) {
+                return member.decorations->offset;
+            }
+            const spirv::Instruction* offset_id_inst = module.FindDef(member.decorations->offset_id);
+            return GetUntypedSize(module, *offset_id_inst, descriptor_size);
+        }
+    }
+    assert(false);
+    return 0;
+}
+
+static uint32_t GetUntypedArrayStride(const spirv::Module& module, const spirv::Instruction& access_chain,
+                                      const spirv::Instruction& base_type_inst, VkDeviceSize descriptor_size) {
+    uint32_t type_array_id = vvl::kNoIndex32;
+    if (base_type_inst.Opcode() == spv::OpTypeBufferEXT) {
+        return 0;  // single element
+    } else if (base_type_inst.Opcode() == spv::OpTypeStruct) {
+        // required to be a constant into the struct
+        uint32_t struct_member = module.FindDef(access_chain.Word(5))->GetConstantValue();
+        type_array_id = base_type_inst.Word(2 + struct_member);
+    } else if (base_type_inst.IsArray()) {
+        type_array_id = base_type_inst.ResultId();
+    }
+    const auto decoration_set = module.GetDecorationSet(type_array_id);
+    if (decoration_set.array_stride_id == spirv::kInvalidValue) {
+        return 0; // struct with no array in it
+    }
+
+    const spirv::Instruction* array_stride_inst = module.FindDef(decoration_set.array_stride_id);
+    return GetUntypedSize(module, *array_stride_inst, descriptor_size);
+}
+
+static uint32_t GetUntypedDescriptorIndex(const spirv::Module& module, const spirv::Instruction& access_chain,
+                                          const spirv::Instruction& base_type_inst) {
+    const spirv::Instruction* index_inst = nullptr;
+    if (base_type_inst.Opcode() == spv::OpTypeBufferEXT) {
+        return 0;  // single element
+    } else if (base_type_inst.IsArray()) {
+        if (access_chain.Length() < 6) {
+            return 0;  // implicit zero index
+        } else {
+            index_inst = module.FindDef(access_chain.Word(5));
+        }
+    } else if (base_type_inst.Opcode() == spv::OpTypeStruct) {
+        if (access_chain.Length() < 7) {
+            return 0;  // implicit zero index
+        } else {
+            index_inst = module.FindDef(access_chain.Word(6));
+        }
+    }
+
+    uint32_t descriptor_index = vvl::kNoIndex32;
+    if (index_inst) {
+        module.GetInt32IfConstant(*index_inst, &descriptor_index);
+    }
+    return descriptor_index;
+}
+
+static uint32_t GetUntypedVariableId(const spirv::Module& module, const spirv::Instruction& access_chain) {
+    assert(access_chain.Opcode() == spv::OpUntypedAccessChainKHR);
+
+    const spirv::Instruction* base_inst = module.FindDef(access_chain.Word(4));
+    if (base_inst->Opcode() != spv::OpUntypedVariableKHR) {
+        assert(false);  // assumptions
+        return vvl::kNoIndex32;
+    }
+    return base_inst->ResultId();
+}
+
+// "Friends to let friends become compiler engineers" ~Spencer
+vvl::unordered_map<uint32_t, HeapAccesses> CommandBufferSubState::DumpDescriptorHeapUntypedFindAccess(
+    const spirv::Module& module, const spirv::EntryPoint& entrypoint) const {
+    vvl::unordered_map<uint32_t, HeapAccesses> accesses;
+
+    auto add_access = [&](const VkDescriptorType descriptor_type, const spirv::Instruction& ac_inst) {
+        const VkDeviceSize descriptor_size = dev_data.device_state->cached_descriptor_size.GetSize(descriptor_type);
+        assert(ac_inst.Opcode() == spv::OpUntypedAccessChainKHR);
+        // Totally asserts a 1D array access here
+        // https://gitlab.khronos.org/spirv/SPIR-V/-/issues/942
+        const spirv::Instruction* base_type_inst = module.FindDef(ac_inst.Word(3));
+        if (base_type_inst->Opcode() != spv::OpTypeBufferEXT && base_type_inst->Opcode() != spv::OpTypeStruct &&
+            !base_type_inst->IsArray()) {
+            assert(false);
+            return;
+        }
+
+        const uint32_t heap_offset = GetUntypedHeapOffset(module, ac_inst, *base_type_inst, descriptor_size);
+
+        const uint32_t array_stride_value = GetUntypedArrayStride(module, ac_inst, *base_type_inst, descriptor_size);
+
+        const uint32_t descriptor_index = GetUntypedDescriptorIndex(module, ac_inst, *base_type_inst);
+
+        const uint32_t variable_id = GetUntypedVariableId(module, ac_inst);
+        if (variable_id == vvl::kNoIndex32) {
+            return;
+        }
+
+        accesses[variable_id].insert(HeapAccess{descriptor_type, heap_offset, array_stride_value, descriptor_index});
+    };
+
+    for (auto accessible_id : entrypoint.accessible_ids) {
+        const spirv::Instruction* inst = module.FindDef(accessible_id);
+
+        if (inst->Opcode() == spv::OpBufferPointerEXT) {
+            const spirv::Instruction* ac_inst = module.FindDef(inst->Word(3));
+            if (ac_inst->Opcode() != spv::OpUntypedAccessChainKHR) {
+                assert(false);  // assumptions
+                continue;
+            }
+
+            // Ignore old BufferBlock + Uniform
+            const VkDescriptorType descriptor_type = module.FindDef(inst->TypeId())->StorageClass() == spv::StorageClassUniform
+                                                         ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+                                                         : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            add_access(descriptor_type, *ac_inst);
+        } else if (inst->Opcode() == spv::OpSampledImage) {
+            const spirv::Instruction* image_load = module.FindDef(inst->Word(3));
+            if (image_load->Opcode() == spv::OpLoad) {
+                const spirv::Instruction* ac_inst = module.FindDef(image_load->Word(3));
+                if (ac_inst->Opcode() != spv::OpUntypedAccessChainKHR) {
+                    assert(false);  // assumptions
+                    continue;
+                }
+
+                add_access(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, *ac_inst);
+            }
+
+            const spirv::Instruction* sampler_load = module.FindDef(inst->Word(4));
+            if (sampler_load->Opcode() == spv::OpLoad) {
+                const spirv::Instruction* ac_inst = module.FindDef(sampler_load->Word(3));
+                if (ac_inst->Opcode() != spv::OpUntypedAccessChainKHR) {
+                    assert(false);  // assumptions
+                    continue;
+                }
+
+                add_access(VK_DESCRIPTOR_TYPE_SAMPLER, *ac_inst);
+            }
+        }
+    }
+    return accesses;
+}
+
+bool CommandBufferSubState::DumpDescriptorHeapUntyped(std::ostringstream& ss, const ShaderStageState& stage) const {
+    bool found_warning = false;
+
+    std::shared_ptr<const spirv::Module> module_state_ptr = stage.spirv_state;
+    std::shared_ptr<const spirv::EntryPoint> entrypoint_ptr = stage.entrypoint;
+
+    // TODO - try to not to have to call spirv-opt here
+    auto const& specialization_info = stage.GetSpecializationInfo();
+    if (module_state_ptr->static_data_.has_specialization_constants && specialization_info != nullptr &&
+        specialization_info->mapEntryCount > 0 && specialization_info->pMapEntries != nullptr) {
+        spvtools::OptimizerOptions spirv_options;
+        spvtools::Optimizer optimizer(PickSpirvEnv(dev_data.api_version, IsExtEnabled(dev_data.extensions.vk_khr_spirv_1_4)));
+
+        // Gather the specialization-constant values.
+        auto const& specialization_data = reinterpret_cast<uint8_t const*>(specialization_info->pData);
+        std::unordered_map<uint32_t, std::vector<uint32_t>> id_value_map;
+        id_value_map.reserve(specialization_info->mapEntryCount);
+
+        // < spec_id, map_entry_index >
+        vvl::unordered_map<uint32_t, uint32_t> spec_constant_data;
+
+        for (const auto& [result_id, spec_id] : module_state_ptr->static_data_.id_to_spec_id) {
+            for (uint32_t i = 0; i < specialization_info->mapEntryCount; i++) {
+                if (specialization_info->pMapEntries[i].constantID != spec_id) {
+                    continue;
+                }
+                const VkSpecializationMapEntry map_entry = specialization_info->pMapEntries[i];
+                if ((map_entry.offset + map_entry.size) <= specialization_info->dataSize) {
+                    // Allocate enough room for ceil(map_entry.size / 4) to store entries
+                    std::vector<uint32_t> entry_data((map_entry.size + 4 - 1) / 4, 0);
+                    uint8_t* out_p = reinterpret_cast<uint8_t*>(entry_data.data());
+                    const uint8_t* const start_in_p = specialization_data + map_entry.offset;
+                    const uint8_t* const end_in_p = start_in_p + map_entry.size;
+
+                    std::copy(start_in_p, end_in_p, out_p);
+                    id_value_map.emplace(map_entry.constantID, std::move(entry_data));
+                }
+                break;
+            }
+        }
+        optimizer.RegisterPass(spvtools::CreateSetSpecConstantDefaultValuePass(id_value_map));
+        optimizer.RegisterPass(spvtools::CreateFreezeSpecConstantValuePass());
+        optimizer.RegisterPass(spvtools::CreateFoldSpecConstantOpAndCompositePass());
+
+        std::vector<uint32_t> specialized_spirv;
+        auto const optimized =
+            optimizer.Run(module_state_ptr->words_.data(), module_state_ptr->words_.size(), &specialized_spirv, spirv_options);
+        if (optimized) {
+            module_state_ptr =
+                std::make_shared<spirv::Module>(vvl::make_span<const uint32_t>(specialized_spirv.data(), specialized_spirv.size()));
+            entrypoint_ptr = module_state_ptr->FindEntrypoint(entrypoint_ptr->name.c_str(), entrypoint_ptr->stage);
+        }
+    }
+
+    const spirv::Module& module = *module_state_ptr;
+    const spirv::EntryPoint& entrypoint = *entrypoint_ptr;
+
+    // The idea is to go through and find all the access and afterwards sort/group them to make sense to the user
+    // < variable id, [accesses]>
+    vvl::unordered_map<uint32_t, HeapAccesses> accesses = DumpDescriptorHeapUntypedFindAccess(module, entrypoint);
+
+    // We print out the variables, but the real "value" comes from scaning the accesses
+    // (due to how untyped pointers work)
+    for (const spirv::ResourceInterfaceVariable& resource_variable : entrypoint.resource_interface_variables) {
+        if (!resource_variable.IsHeap()) {
+            continue;
+        }
+        ss << "  - " << resource_variable.DescribeDescriptor() << " accesses detected:\n";
+        auto it = accesses.find(resource_variable.id);
+        if (it == accesses.end()) {
+            ss << "    - No accesses found to this heap variable\n";
+            continue;
+        }
+
+        const bool is_sampler = resource_variable.is_sampler_heap;
+        auto heap_range = is_sampler ? base.descriptor_heap.sampler_range : base.descriptor_heap.resource_range;
+        auto reserve_range = is_sampler ? base.descriptor_heap.sampler_reserved : base.descriptor_heap.resource_reserved;
+
+        for (const HeapAccess& access : it->second) {
+            ss << "    - heap offset: 0x" << std::hex << access.heap_offset;
+            if (access.array_stride != 0) {
+                ss << ", array stride: 0x" << access.array_stride;
+            }
+
+            const bool dynamic_index = access.descriptor_index == vvl::kNoIndex32;
+            VkDeviceSize final_address = vvl::kNoIndex32;
+            if (!dynamic_index) {
+                if (access.descriptor_index != 0) {
+                    ss << ", array index[" << std::dec << access.descriptor_index << "]\n";
+                } else if (access.array_stride != 0) {
+                    ss << ", single element\n";  // if not array stride, this is pointless
+                }
+                const VkDeviceSize final_offset = access.heap_offset + (access.array_stride * access.descriptor_index);
+                final_address = heap_range.begin + final_offset;
+                ss << "      - " << (is_sampler ? "Sampler" : "Resource") << " heap address: 0x" << std::hex << final_address
+                   << '\n';
+            } else {
+                ss << " (dynamic index)\n";
+            }
+
+            VkDeviceSize descriptor_size = dev_data.device_state->cached_descriptor_size.GetSize(access.descriptor_type);
+            ss << "      - descriptor size: 0x" << std::hex << descriptor_size << " ("
+               << string_VkDescriptorType(access.descriptor_type) << ")\n";
+
+            // if we know the real address, see if invalid
+            if (final_address != vvl::kNoIndex32) {
+                if (final_address > heap_range.end) {
+                    ss << "      - [WARNING] OUT OF BOUNDS - the descriptor is not in the " << (is_sampler ? "sampler" : "resource")
+                       << " heap\n";
+                    found_warning = true;
+                }
+                vvl::range<VkDeviceAddress> final_range{final_address, final_address + descriptor_size};
+                if (final_range.intersects(reserve_range)) {
+                    ss << "      - [WARNING] RESERVED RANGE - this descriptor overlaps with the reserved range\n";
+                    found_warning = true;
+                }
+
+                VkDeviceSize required_alignment = GetDescriptorAlignment(access.descriptor_type, dev_data.phys_dev_ext_props);
+                if (!IsPointerAligned(final_address, required_alignment)) {
+                    vvl::Field alignment_name = GetDescriptorAlignmentField(access.descriptor_type);
+                    ss << "      - [WARNING] MISALIGNED - the descriptor is not aligned to " << String(alignment_name);
+                    ss << " (0x" << std::hex << required_alignment << ")\n";
+                    found_warning = true;
+                }
+            }
+        }
+    }
+
+    return found_warning;
+}
+
 bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const LastBound& last_bound) const {
     bool found_warning = false;
     const vvl::CommandBuffer& cb_state = last_bound.cb_state;
@@ -1309,13 +1635,15 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
         // Want to sort and print all the mappings for a given Set together
         std::map<uint32_t, std::vector<MappingInfo>> mapping_info_map;
 
+        // possible to have a mix-and-match
+        bool has_non_heap = false;
+        bool has_heap = false;
         for (const spirv::ResourceInterfaceVariable& resource_variable : entry_point.resource_interface_variables) {
             if (resource_variable.IsHeap()) {
-                // TODO detect offsets from start of heap and other info
-                ss << "  - " << resource_variable.DescribeDescriptor();
-                continue;
+                has_heap = true;
+                continue;  // handled later
             }
-
+            has_non_heap = true;
             const uint32_t var_set = resource_variable.decorations.set;
 
             for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
@@ -1327,7 +1655,7 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
             }
         }
 
-        if (mapping_info_map.empty()) {
+        if (mapping_info_map.empty() && has_non_heap) {
             ss << "    - No VkDescriptorSetAndBindingMappingEXT were found for this shader\n";
             continue;
         }
@@ -1338,6 +1666,10 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
             for (const MappingInfo& set_info : mapping_info_list) {
                 found_warning |= DumpDescriptorHeapMapping(ss, set_info);
             }
+        }
+
+        if (has_heap) {
+            found_warning |= DumpDescriptorHeapUntyped(ss, *stage);
         }
     }
     return found_warning;
