@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 #include "state_tracker/device_memory_state.h"
+#include <vulkan/vulkan_core.h>
 
 #include <algorithm>
 #include "utils/assert_utils.h"
@@ -101,6 +102,8 @@ DeviceMemory::DeviceMemory(VkDeviceMemory handle, const VkMemoryAllocateInfo* in
       mappable((memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0),
       unprotected((memory_type.propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) == 0),
       multi_instance(IsMultiInstance(allocate_info, memory_heap, physical_device_count)),
+      cache_non_coherent(((memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) != 0) &&
+                         ((memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)),
       dedicated(dedicated_binding),
       mapped_range{},
 #ifdef VK_USE_PLATFORM_METAL_EXT

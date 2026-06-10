@@ -43,6 +43,7 @@ class DeviceMemory : public StateObject {
     const bool mappable;
     const bool unprotected;     // can't be used for protected memory
     const bool multi_instance;  // Allocated from MULTI_INSTANCE heap or having more than one deviceMask bit set
+    const bool cache_non_coherent;  // will need flush/invalidate if used
     const VulkanTypedHandle dedicated;
 
     MemRange mapped_range;
