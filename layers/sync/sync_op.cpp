@@ -629,7 +629,7 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext& cb_context) co
         const auto& barrier_set = barrier_sets_[barrier_set_index];
         if (barrier_set.single_exec_scope) {
             const Location loc(command_);
-            if (barrier_set.src_exec_scope.mask_param & VK_PIPELINE_STAGE_HOST_BIT) {
+            if (barrier_set.src_exec_scope.stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
                 const std::string vuid = std::string("SYNC-") + std::string(CmdName()) + std::string("-hostevent-unsupported");
                 sync_state.LogInfo(vuid, command_buffer_handle, loc,
                                    "srcStageMask includes %s, unsupported by synchronization validation.",
@@ -638,7 +638,7 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext& cb_context) co
                 const auto& barriers = barrier_set.memory_barriers;
                 for (size_t barrier_index = 0; barrier_index < barriers.size(); barrier_index++) {
                     const auto& barrier = barriers[barrier_index];
-                    if (barrier.src_exec_scope.mask_param & VK_PIPELINE_STAGE_HOST_BIT) {
+                    if (barrier.src_exec_scope.stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
                         const std::string vuid =
                             std::string("SYNC-") + std::string(CmdName()) + std::string("-hostevent-unsupported");
 
@@ -732,7 +732,7 @@ ResourceUsageTag SyncOpWaitEvents::Record(CommandBufferAccessContext* cb_context
 static SyncBarrier RestrictToEvent(const SyncBarrier& barrier, const SyncEventState& sync_event) {
     SyncBarrier result = barrier;
     result.src_exec_scope.exec_scope = sync_event.scope.exec_scope & barrier.src_exec_scope.exec_scope;
-    result.src_access_scope = sync_event.scope.valid_accesses & barrier.src_access_scope;
+    result.src_access_scope = sync_event.scope.stage_mask_accesses & barrier.src_access_scope;
     return result;
 }
 
@@ -863,7 +863,7 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext& exec_context, Resou
 
         // Apply the global barrier to the event itself (for race condition tracking)
         // Events don't happen at a stage, so we need to store the unexpanded ALL_COMMANDS if set for inter-event-calls
-        sync_event->barriers = dst.mask_param & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        sync_event->barriers = dst.stage_mask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
         sync_event->barriers |= dst.exec_scope;
 
         barrier_set_index += barrier_set_incr;
@@ -905,7 +905,7 @@ bool SyncOpResetEvent::DoValidate(const CommandExecutionContext& exec_context, c
         return skip;  // if we validated this in recording of the secondary, don't repeat
     }
     if (IsValueIn(sync_event->last_command, {Func::vkCmdSetEvent, Func::vkCmdSetEvent2, Func::vkCmdSetEvent2KHR}) &&
-        !sync_event->HasBarrier(exec_scope_.mask_param, exec_scope_.exec_scope)) {
+        !sync_event->HasBarrier(exec_scope_.stage_mask, exec_scope_.exec_scope)) {
         skip |= sync_state.LogError("SYNC-vkCmdResetEvent-set-race", event_->Handle(), command_,
                                     "%s is reset after %s without an intervening execution dependency. This is a race condition "
                                     "and may result in data hazards.",
@@ -993,7 +993,7 @@ bool SyncOpSetEvent::DoValidate(const CommandExecutionContext& exec_context, con
     if (sync_event->last_command_tag >= base_tag) {
         return skip;  // for replay we don't want to revalidate internal "last commmand"
     }
-    if (!sync_event->HasBarrier(src_exec_scope_.mask_param, src_exec_scope_.exec_scope)) {
+    if (!sync_event->HasBarrier(src_exec_scope_.stage_mask, src_exec_scope_.exec_scope)) {
         const std::string vuid_prefix = std::string("SYNC-") + CmdName();
         if (IsValueIn(sync_event->last_command, {Func::vkCmdResetEvent, Func::vkCmdResetEvent2, Func::vkCmdResetEvent2KHR})) {
             skip |= sync_state.LogError(vuid_prefix + "-reset-race", event_->Handle(), command_,
@@ -1056,7 +1056,7 @@ void SyncOpSetEvent::DoRecord(QueueId queue_id, ResourceUsageTag tag, const std:
     //     Stuff1; SetEvent; Stuff2; SetEvent; WaitEvents;
     // WaitEvents cannot know which of Stuff1, Stuff2, or both has completed execution.
 
-    if (!sync_event->HasBarrier(src_exec_scope_.mask_param, src_exec_scope_.exec_scope)) {
+    if (!sync_event->HasBarrier(src_exec_scope_.stage_mask, src_exec_scope_.exec_scope)) {
         sync_event->unsynchronized_set = sync_event->last_command;
         sync_event->ResetFirstScope();
     } else if (!sync_event->first_scope) {
@@ -1351,7 +1351,7 @@ vvl::span<AccessContext> ReplayState::RenderPassReplayState::GetSubpassContexts(
 }
 
 void SyncEventsContext::ApplyBarrier(const SyncExecScope& src, const SyncExecScope& dst, ResourceUsageTag tag) {
-    const bool all_commands_bit = 0 != (src.mask_param & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    const bool all_commands_bit = 0 != (src.stage_mask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     for (auto& event_pair : map_) {
         assert(event_pair.second);  // Shouldn't be storing empty
         auto& sync_event = *event_pair.second;
@@ -1359,7 +1359,7 @@ void SyncEventsContext::ApplyBarrier(const SyncExecScope& src, const SyncExecSco
         // But only if occuring before the tag
         if (((sync_event.barriers & src.exec_scope) || all_commands_bit) && (sync_event.last_command_tag <= tag)) {
             sync_event.barriers |= dst.exec_scope;
-            sync_event.barriers |= dst.mask_param & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+            sync_event.barriers |= dst.stage_mask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
         }
     }
 }
