@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2026 The Khronos Group Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 #include "../framework/sync_val_tests.h"
 
 struct NegativeSyncValTimelineSemaphore : public VkSyncValTest {};
+struct NegativeSyncValBinarySemaphore : public VkSyncValTest {};
 
 TEST_F(NegativeSyncValTimelineSemaphore, WaitInitialValue) {
     TEST_DESCRIPTION("Wait on the initial value");
@@ -351,5 +352,36 @@ TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits4) {
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
     m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(semaphore, 1));
     m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}
+
+TEST_F(NegativeSyncValBinarySemaphore, WaitStageMismatchTwoQueues) {
+    TEST_DESCRIPTION("Hazard due to semaphore wait stage mask mismatch");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_second_command_buffer.Begin();
+    vk::CmdFillBuffer(m_second_command_buffer, buffer, 0, 256, 0x42);
+    m_second_command_buffer.End();
+
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 256, 0x24);
+    m_command_buffer.End();
+
+    vkt::Semaphore semaphore(*m_device);
+    m_second_queue->Submit2(m_second_command_buffer, vkt::Signal(semaphore, VK_PIPELINE_STAGE_2_TRANSFER_BIT));
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    // The wait stage does not include TRANSFER, so the second fill is not synchronized by the semaphore wait
+    m_default_queue->Submit2(m_command_buffer, vkt::Wait(semaphore, VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT));
+    m_errorMonitor->VerifyFound();
+
     m_device->Wait();
 }

@@ -151,29 +151,9 @@ SyncBarrier::SyncBarrier(const SyncExecScope& src_exec, const SyncExecScope& dst
 
 SyncBarrier::SyncBarrier(const SyncExecScope& src_exec, const SyncExecScope& dst_exec, const SyncBarrier::AllAccess&)
     : src_exec_scope(src_exec),
-      src_access_scope(src_exec.stage_mask_accesses),
+      src_access_scope(src_exec.exec_scope_accesses),
       dst_exec_scope(dst_exec),
-      dst_access_scope(dst_exec.stage_mask_accesses) {
-    // No accesses are happening on TOP_OF_PIPE/BOTTOM_OF_PIPE stages
-    // (stage_mask_accesses bitmask is empty). Explicitly enforce the spec
-    // rule that access scopes of semaphore operations include all
-    // device accesses.
-    //
-    // NOTE: we still use stage_mask_accesses for other scenarios and implementation
-    // in some cases relies on this (for example,
-    // NegativeSyncValTimelineSemaphore.WaitAfterSignalStageMismatch will fail
-    // if we use all device accesss for access scopes uncoditionally).
-    //
-    // TODO: if we find new issues we might need to rework implementation so
-    // for semaphore operations, the src/dst access scopes always include all
-    // device accesses
-    if (src_exec.stage_mask & VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT) {
-        src_access_scope = syncAccessReadMask | syncAccessWriteMask;
-    }
-    if (dst_exec.stage_mask & VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT) {
-        dst_access_scope = syncAccessReadMask | syncAccessWriteMask;
-    }
-}
+      dst_access_scope(dst_exec.exec_scope_accesses) {}
 
 SyncBarrier::SyncBarrier(const SyncExecScope& src_exec, VkAccessFlags2 src_access_mask, const SyncExecScope& dst_exec,
                          VkAccessFlags2 dst_access_mask)
