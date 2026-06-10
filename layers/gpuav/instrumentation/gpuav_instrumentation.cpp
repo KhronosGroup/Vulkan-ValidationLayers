@@ -363,7 +363,8 @@ void UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_st
 
 static bool WasInstrumented(const LastBound& last_bound) {
     if (last_bound.pipeline_state) {
-        return last_bound.pipeline_state->instrumentation_data.status.is_instrumented;
+        const PipelineSubState& pipeline_sub_state = SubState(*last_bound.pipeline_state);
+        return pipeline_sub_state.status.is_instrumented;
     }
     for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
         const auto stage = static_cast<ShaderObjectStage>(i);

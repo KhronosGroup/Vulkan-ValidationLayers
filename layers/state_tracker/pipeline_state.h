@@ -152,21 +152,6 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
 
     const uint32_t descriptor_heap_embedded_samplers_count;
 
-    // TODO - Because we have hack to create a pipeline at PreCallValidate time (for GPL) we have no proper way to create inherited
-    // state objects of the pipeline This is to make it clear that while currently everyone has to allocate this memory, it is only
-    // meant for GPU-AV
-    struct InstrumentationData {
-        // We create a VkShaderModule that is instrumented and it needs to be destroyed before leaving the pipeline call
-        std::vector<VkShaderModule> shader_modules;
-        gpuav::spirv::InstrumentationStatus status;
-        // When we instrument GPL at link time, we need to hold the libraries created by GPU-AV
-        // so they can be re-used
-        VkPipeline instrumented_pipeline_lib = VK_NULL_HANDLE;
-        // We need to lock the pipelines when doig GPL
-        // while we have one in vvl::ShaderModule GPL needs it also at the pipeline library scope
-        std::mutex mutex;
-    } instrumentation_data;
-
     Pipeline(const DeviceState &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
              std::shared_ptr<const vvl::PipelineLayout> &&layout,

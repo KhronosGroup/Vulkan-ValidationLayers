@@ -407,7 +407,8 @@ void AnalyzeAndGenerateMessage(Validator& gpuav, VkCommandBuffer command_buffer,
 
 static bool HasDebugPrintf(const LastBound& last_bound) {
     if (last_bound.pipeline_state) {
-        return last_bound.pipeline_state->instrumentation_data.status.has_debug_printf;
+        const PipelineSubState& pipeline_sub_state = SubState(*last_bound.pipeline_state);
+        return pipeline_sub_state.status.has_debug_printf;
     }
     for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
         const auto stage = static_cast<ShaderObjectStage>(i);
