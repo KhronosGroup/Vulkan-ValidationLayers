@@ -55,7 +55,6 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                 const bool is_struct = ((payload >> kInst_BuffAddrAccess_PayloadShiftIsStruct) & 1) != 0;
 
                 const uint64_t address = *reinterpret_cast<const uint64_t*>(error_record + kInst_LogError_ParameterOffset_0);
-                NearestBufferResult nearest = gpuav.GetNearestBuffersByAddress(address);
                 const uint32_t error_sub_code = GetSubError(error_record);
                 switch (error_sub_code) {
                     case kErrorSubCode_BufferDeviceAddress_UnallocRef: {
@@ -74,16 +73,22 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                                   "to the source language or tooling to detect that and reflect it in the SPIR-V.";
                         }
 
+                        const NearestBufferResult nearest = gpuav.GetNearestBuffersByAddress(address);
+                        auto plural = [&](uint64_t counter) -> const char* { return counter > 1 ? "s" : ""; };
                         if (!nearest.above_buffers.empty()) {
-                            ss << "\nAbove committed device address range " << vvl::string_range_hex(nearest.above_range)
-                               << " has buffers:";
+                            const VkDeviceAddress offset = nearest.above_range.begin - address;
+                            ss << "\nNearest above committed device address range " << vvl::string_range_hex(nearest.above_range)
+                               << " is above address by " << std::dec << offset << " byte" << plural(offset) << " and has buffer"
+                               << plural(nearest.above_buffers.size()) << ":";
                             for (const auto buffer : nearest.above_buffers) {
                                 ss << "\n  " << buffer->Describe(gpuav);
                             }
                         }
                         if (!nearest.below_buffers.empty()) {
-                            ss << "\nBelow committed device address range " << vvl::string_range_hex(nearest.below_range)
-                               << " has buffers:";
+                            const VkDeviceAddress offset = address - nearest.below_range.end + 1;
+                            ss << "\nNearest below committed device address range " << vvl::string_range_hex(nearest.below_range)
+                               << " is below address by " << std::dec << offset << " byte" << plural(offset) << " and has buffer"
+                               << plural(nearest.below_buffers.size()) << ":";
                             for (const auto buffer : nearest.below_buffers) {
                                 ss << "\n  " << buffer->Describe(gpuav);
                             }
@@ -96,6 +101,13 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                         const uint32_t alignment = (payload & kInst_BuffAddrAccess_PayloadMaskAccessInfo);
                         ss << "Unaligned pointer access: The " << access_type << " at buffer device address 0x" << std::hex
                            << address << " is not aligned to the instruction Aligned operand of " << std::dec << alignment << '.';
+                        if (auto buffers = gpuav.GetBuffersByAddress(address); !buffers.empty()) {
+                            ss << "\nAddress belongs to the follwing buffer(s):\n";
+                            for (const auto buffer : buffers) {
+                                ss << "\n  " << buffer->Describe(gpuav);
+                            }
+                        }
+                        // else it's an invalid address, handled by error logic above
                         out_vuid_msg = "VUID-RuntimeSpirv-PhysicalStorageBuffer64-06315";
 
                     } break;
