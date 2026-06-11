@@ -17,7 +17,7 @@
 
 #include "state_tracker/event_state.h"
 
-bool EventSignalingState::HasKnownEffect(const EventSignalingState* prior_state) const {
+bool EventSignalState::HasKnownEffect(const EventSignalState* prior_state) const {
     // After a reset, later signal/reset commands define the event state
     if (was_reset) {
         return true;
@@ -28,9 +28,9 @@ bool EventSignalingState::HasKnownEffect(const EventSignalingState* prior_state)
     return is_prior_unsignaled;
 }
 
-void UpdateEventSignalingStates(EventSignalingStateMap& accumulated_states, const EventSignalingStateMap& recorded_states) {
+void UpdateEventSignalStates(EventSignalStateMap& accumulated_states, const EventSignalStateMap& recorded_states) {
     for (const auto& [event, recorded_state] : recorded_states) {
-        EventSignalingState& accumulated_state = accumulated_states[event];
+        EventSignalState& accumulated_state = accumulated_states[event];
 
         const bool keep_accumulated_state = accumulated_state.signaled && !recorded_state.was_reset;
         if (keep_accumulated_state) {

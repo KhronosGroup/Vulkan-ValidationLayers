@@ -207,7 +207,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     std::vector<VkOffset2D> fragment_density_offsets;
 
     // Event state tracking
-    EventSignalingStateMap event_signaling_states;
+    EventSignalStateMap event_signal_states;
     EventWaitStateMap event_wait_states;
     std::vector<WaitEventSubmitInfo> wait_event_submit_infos;
     std::vector<WaitEvent2SubmitInfo> wait_event2_submit_infos;

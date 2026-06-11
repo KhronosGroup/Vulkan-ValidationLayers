@@ -25,7 +25,7 @@
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <optional>
 
-struct EventSignalingState {
+struct EventSignalState {
     // Tracks how the event signaling state changes as command buffer recording progresses.
     // When recording is finished, this is the event state at the end of the command buffer
     bool signaled = false;
@@ -52,7 +52,7 @@ struct EventSignalingState {
     // are also ignored. We do not currently keep data associated with unsignals,
     // (and for signals we store stage mask/dependency info). Update this if we
     // need to track associated unsignal data.
-    bool HasKnownEffect(const EventSignalingState* prior_state = nullptr) const;
+    bool HasKnownEffect(const EventSignalState* prior_state = nullptr) const;
 };
 
 struct EventWaitState {
@@ -60,10 +60,10 @@ struct EventWaitState {
     vvl::Func last_wait_command = vvl::Func::Empty;
 };
 
-using EventSignalingStateMap = vvl::unordered_map<VkEvent, EventSignalingState>;
+using EventSignalStateMap = vvl::unordered_map<VkEvent, EventSignalState>;
 using EventWaitStateMap = vvl::unordered_map<VkEvent, EventWaitState>;
 
-void UpdateEventSignalingStates(EventSignalingStateMap& accumulated_states, const EventSignalingStateMap& recorded_states);
+void UpdateEventSignalStates(EventSignalStateMap& accumulated_states, const EventSignalStateMap& recorded_states);
 
 namespace vvl {
 
