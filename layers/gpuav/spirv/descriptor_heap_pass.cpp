@@ -19,6 +19,7 @@
 #include "generated/spirv_grammar_helper.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/shaders/gpuav_error_header.h"
+#include "instrumentation_status.h"
 #include "link.h"
 #include "module.h"
 #include <cassert>
@@ -29,6 +30,7 @@
 #include "generated/gpuav_offline_spirv.h"
 #include "pass.h"
 #include "type_manager.h"
+#include "utils/math_utils.h"
 
 namespace gpuav {
 namespace spirv {
@@ -55,24 +57,38 @@ uint32_t DescriptorHeapPass::GetLinkFunctionId(const FunctionNames func_name) {
 }
 
 // TODO - if we find this slow, we could pre-sort all the mappings
-const VkDescriptorSetAndBindingMappingEXT* DescriptorHeapPass::GetMapping(const DescriptorInterface& interface) const {
+// TODO - not handling ResourceMask
+const uint32_t kMappingIndexInvalid = 0xFFFFFFFF;
+uint32_t DescriptorHeapPass::GetMapping(const Variable& variable) const {
+    const DescriptorInterface& interface = variable.interface_;
     if (interface.IsHeap()) {
-        return nullptr;
+        return glsl::kInst_DescriptorHeap_MappingIndexUntyped;
     }
-    for (uint32_t map_i = 0; map_i < module_.interface_.mapping_info->mappingCount; map_i++) {
-        const VkDescriptorSetAndBindingMappingEXT& mapping = module_.interface_.mapping_info->pMappings[map_i];
+
+    for (uint32_t i = 0; i < module_.interface_.mapping_info->mappingCount; i++) {
+        const VkDescriptorSetAndBindingMappingEXT& mapping = module_.interface_.mapping_info->pMappings[i];
         const uint32_t last_binding = mapping.firstBinding + mapping.bindingCount;
         if (mapping.descriptorSet == interface.set && interface.binding >= mapping.firstBinding &&
             interface.binding < last_binding) {
-            return &mapping;
+            const uint32_t encode_index = (uint32_t)module_.out_status.device.heap_mappings.size();
+            module_.out_status.device.heap_mappings.emplace_back(HeapMappingStatus{i, interface.binding, variable.Id(), mapping});
+
+            if (encode_index >= glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
+                module_.InternalWarning(Name(),
+                                        "Tried to use an index into VkShaderDescriptorSetAndBindingMappingInfoEXT::pMapping that "
+                                        "is over 64k and not able to "
+                                        "track. Please report an issue as we made assumption no one would this many mappings!");
+            }
+            return encode_index;
         }
     }
-    return nullptr;
+
+    assert(false);
+    return kMappingIndexInvalid;
 }
 
 uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
                                                 bool is_seperate_sampler) {
-    const Variable& descriptor_var = is_seperate_sampler ? *meta.access_path.sampler_variable : *meta.access_path.variable;
     const uint32_t descriptor_index =
         is_seperate_sampler ? meta.access_path.sampler_descriptor_index_id : meta.access_path.descriptor_index_id;
     const uint32_t descriptor_index_id = CastToUint32(descriptor_index, block, inst_it);  // might be int32
@@ -81,18 +97,34 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
     const uint32_t is_sampler_id = type_manager_.GetConstantBool(is_seperate_sampler).Id();
 
-    const bool is_buffer = meta.access_path.descriptor_type & gpuav::descriptor::TYPE_BUFFER_MASK;
-    const bool is_sampler = is_seperate_sampler;
-    const bool is_image = !is_buffer && !is_sampler;
+    const VkDescriptorSetAndBindingMappingEXT* mapping = nullptr;
 
-    uint32_t desc_alignment_value = is_buffer  ? module_.settings_.descriptor_alignment_buffer
-                                    : is_image ? module_.settings_.descriptor_alignment_image
-                                               : module_.settings_.descriptor_alignment_sampler;
+    // We try and encode a lot of information in a single uint32_t
+    uint32_t desc_encoding_id = 0;
+    {
+        const bool is_buffer = meta.access_path.descriptor_type & gpuav::descriptor::TYPE_BUFFER_MASK;
+        const bool is_sampler = is_seperate_sampler;
+        const bool is_image = !is_buffer && !is_sampler;
 
-    const uint32_t desc_type = is_sampler ? gpuav::descriptor::TYPE_SAMPLER : meta.access_path.descriptor_type;
-    const uint32_t desc_encoding = (desc_type << glsl::kInst_DescriptorHeap_DescriptorTypeShift) |
-                                   (desc_alignment_value & glsl::kInst_DescriptorHeap_AlignmentValueMask);
-    const uint32_t desc_encoding_id = type_manager_.GetConstantUInt32(desc_encoding).Id();
+        const uint32_t desc_type = is_sampler ? gpuav::descriptor::TYPE_SAMPLER : meta.access_path.descriptor_type;
+
+        const uint32_t desc_alignment_value = is_buffer  ? module_.settings_.descriptor_alignment_buffer
+                                              : is_image ? module_.settings_.descriptor_alignment_image
+                                                         : module_.settings_.descriptor_alignment_sampler;
+        const uint32_t desc_alignment_shift = GetAlignmentShift(desc_alignment_value);
+        assert(desc_alignment_shift <= glsl::kInst_DescriptorHeap_AlignmentShiftMask);
+
+        const uint32_t mapping_index_encoded = is_seperate_sampler ? meta.mapping_index_sampler : meta.mapping_index_resource;
+        mapping = (mapping_index_encoded == glsl::kInst_DescriptorHeap_MappingIndexUntyped)
+                      ? nullptr
+                      : &module_.out_status.device.heap_mappings[mapping_index_encoded].mapping_data;
+
+        const uint32_t desc_encoding = (desc_type << glsl::kInst_DescriptorHeap_DescriptorTypeShift) |
+                                       (mapping_index_encoded << glsl::kInst_DescriptorHeap_MappingIndexShift) |
+                                       (desc_alignment_shift & glsl::kInst_DescriptorHeap_AlignmentShiftMask);
+
+        desc_encoding_id = type_manager_.GetConstantUInt32(desc_encoding).Id();
+    }
 
     uint32_t function_result = module_.TakeNextId();
     const uint32_t bool_type = type_manager_.GetTypeBool().Id();
@@ -128,11 +160,8 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
     }
 
     bool has_embedded_sampler = false;
-    assert(descriptor_var.IsDescriptor());
-    const VkDescriptorSetAndBindingMappingEXT* mapping = GetMapping(descriptor_var.interface_);
     if (!mapping) {
-        assert(descriptor_var.interface_.IsHeap());
-
+        // Untyped
         uint32_t heap_offset_id = 0;
         const Type* descriptor_array = nullptr;
         if (meta.access_path.pointer_type->spv_type_ == SpvType::kStruct) {
@@ -379,6 +408,16 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
     if (meta.access_path.descriptor_type == gpuav::descriptor::TYPE_ACCELERATION_STRUCTURE) {
         return false;  // not supported yet
     }
+
+    // We look for mappings here incase we can't find it, we can skip safely
+    meta.mapping_index_resource = GetMapping(*meta.access_path.variable);
+    if (meta.access_path.sampler_variable) {
+        meta.mapping_index_sampler = GetMapping(*meta.access_path.sampler_variable);
+    }
+    if (meta.mapping_index_resource == kMappingIndexInvalid || meta.mapping_index_sampler == kMappingIndexInvalid) {
+        return false;
+    }
+
     meta.target_instruction = &inst;
 
     return true;

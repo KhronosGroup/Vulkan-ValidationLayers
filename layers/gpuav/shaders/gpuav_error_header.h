@@ -135,12 +135,21 @@ const int kInst_DescriptorIndexing_IndexMask = 0x7FFFFFF;
 // Descriptor Heap
 // ---
 // This dword is split up as
-// | 31 ......... 28 | 27 ........... 0 |
-// | Descriptor Type | Alignment Value  |
-// Descriptor Type is 4 bits defined in gpuav_descriptor_validation.h
+// | 31 ......... 28 | 27 ...........20 | 19 ........ 4 | 3 ........... 0 |
+// | Descriptor Type | Unused (for now) | Mapping Index | Alignment Shift |
+// - |Descriptor Type| is 4 bits defined in gpuav_descriptor_validation.h
+// - |Mapping Index| is the index into VkShaderDescriptorSetAndBindingMappingInfoEXT::pMapping
+//   this is to allow us to get the information that state tracking already has for the error message
+// - |Alignment Shift| is used to store the exponent to shift to get the alignment
+//    ex. if alignment is 16, we store 4 (1 << 4)
+//    Note - Alignment MUST be a power of 2 according the the spec
+//    Note - Alignment value SHOULD be at max 256, (this will support 32k anyway)
 const int kInst_DescriptorHeap_DescriptorTypeShift = 28;
 const int kInst_DescriptorHeap_DescriptorTypeMask = 0xF << kInst_DescriptorHeap_DescriptorTypeShift;
-const int kInst_DescriptorHeap_AlignmentValueMask = 0xFFFFFFF;
+const int kInst_DescriptorHeap_MappingIndexShift = 4;
+const int kInst_DescriptorHeap_MappingIndexMask = 0xFFFF << kInst_DescriptorHeap_MappingIndexShift;
+const int kInst_DescriptorHeap_MappingIndexUntyped = 0xFFFF;  // used to notify we are using untyped pointers here (no mapping)
+const int kInst_DescriptorHeap_AlignmentShiftMask = 0xF;
 
 // Buffer device addresses
 // ---

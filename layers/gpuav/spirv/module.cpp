@@ -39,13 +39,15 @@ static constexpr uint32_t kLinkedInstruction = vvl::kNoIndex32;
 // This constructor is really our "parse incoming SPIR-V" logic for GPU-AV
 // It will build up the Module object which will be modified, and when done, dumpped back out to SPIR-V
 Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const DeviceSettings& settings,
-               const InstrumentationInterface& interface, const DeviceFeatures& enabled_features)
+               const InstrumentationInterface& interface, const DeviceFeatures& enabled_features,
+               spirv::InstrumentationStatus& out_status)
     : type_manager_(*this),
       settings_(settings),
       interface_(interface),
       enabled_features_(enabled_features),
       has_bindless_descriptors_(interface.instrumentation_dsl.has_bindless_descriptors),
-      debug_report_(debug_report) {
+      debug_report_(debug_report),
+      out_status(out_status) {
     spirv_iterator it = words.begin();
     header_.magic_number = *it++;
     header_.version = *it++;

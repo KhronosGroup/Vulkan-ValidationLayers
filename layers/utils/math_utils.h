@@ -201,3 +201,14 @@ static inline uint32_t GetSmallestGreaterOrEquallPowerOfTwo(uint32_t v) {
     return v;
 }
 
+// Used to get how many bits to shift to get value
+// if alignment is |16| this returns |4| (1 << 4)
+constexpr uint32_t GetAlignmentShift(uint32_t value) {
+    assert(IsPowerOfTwo(value));
+    uint32_t shift = 0;
+    while (value > 1) {
+        value >>= 1;
+        ++shift;
+    }
+    return shift;
+}

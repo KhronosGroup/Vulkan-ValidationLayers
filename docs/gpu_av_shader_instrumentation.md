@@ -165,3 +165,31 @@ sample(imageArray[8], c);  // access 3
 Here we normally check all 3 access for being valid and safely wrap it in a `if` statement so the application will not crash. With `unsafe mode` we will only check the first access to `imageArray[8]` because it is valid, it will save the exponential cost of compiling to check the rest.
 
 The goal with `unsafe mode` is to help people get going with GPU-AV by making it faster, If they are still finding a crash with `unsafe mode`, it hopefully can be isolated so they can then turn off `unsafe mode` to do the full validaition without crashing. A future extension will hopefully provide another mechanism to stop the shader upon the first invalid access.
+
+## Instrumentation Status
+
+In Vulkan 1.0, when you have two descriptors in your shader like:
+
+```glsl
+layout(set = 3, binding = 0) buffer {} a;
+layout(set = 2, binding = 1) sampler b;
+```
+
+what really happens is that the compiler needs to load these descriptors from memory; it must provide a "mapping interface" so the driver knows where to put the descriptors later at draw time.
+
+GPU-AV has evolved such that we need to do a similar thing!
+
+With most workflows, there are three points in time we care about:
+
+1. At shader instrumentation (pipeline creation)
+2. At draw time (when everything is bound and ready to go)
+3. During error message (post queue submit)
+
+The goal is to pass data through these stages. The easiest but most expensive approach is to simply have the data logged in the error message on the GPU. There is a lot of data known on the CPU (from state tracking) that we want to move across the timeline, so we use an `Instrumentation Status` object to map it.
+
+Each pass will output information during shader instrumentation to the `Instrumentation Status` object.
+
+The `Instrumentation Status` is broken into 2 parts
+
+1. `Host` - things that will be needed at draw time on the CPU
+2. `Device` - things that will be used in the error message and will use the `unique_shader_id` key to get the data

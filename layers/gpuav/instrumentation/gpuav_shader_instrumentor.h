@@ -16,6 +16,7 @@
  */
 #pragma once
 
+#include "gpuav/spirv/instrumentation_status.h"
 #include "state_tracker/descriptor_mode.h"
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/state_tracker.h"
@@ -67,6 +68,8 @@ struct InstrumentedShader {
     VkShaderEXT shader_object;
     // We keep the original SPIR-V so we can match up where the error occurred to map to shader source files
     std::vector<uint32_t> original_spirv;
+
+    gpuav::spirv::InstrumentationStatus::Device status;
 };
 
 // Historically this was an common interface to both GPU-AV and DebugPrintf before the were merged together.
@@ -199,7 +202,7 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
 
     // Function that will hook into the SPIR-V instrumentation passes.
     void InstrumentShader(const vvl::span<const uint32_t>& input_spirv, const spirv::InstrumentationInterface& interface,
-                          spirv::InstrumentationStatus& status, std::vector<uint32_t>& out_instrumented_spirv);
+                          spirv::InstrumentationStatus& out_status, std::vector<uint32_t>& out_instrumented_spirv);
 
   public:
     void SetupClassicDescriptor(const Location &loc);

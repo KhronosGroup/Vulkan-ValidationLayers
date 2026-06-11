@@ -21,6 +21,7 @@
 #include "interface.h"
 #include "function_basic_block.h"
 #include "type_manager.h"
+#include "gpuav/spirv/instrumentation_status.h"
 
 class DebugReport;
 struct DeviceFeatures;
@@ -43,7 +44,8 @@ struct ModuleHeader {
 class Module {
   public:
     Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const DeviceSettings& settings,
-           const InstrumentationInterface& interface, const DeviceFeatures& enabled_features);
+           const InstrumentationInterface& interface, const DeviceFeatures& enabled_features,
+           spirv::InstrumentationStatus& out_status);
 
     // Memory that holds all the actual SPIR-V data, replicate the "Logical Layout of a Module" of SPIR-V.
     // Divided into sections to make easier to modify each part at different times, but still keeps it simple to write out all the
@@ -126,6 +128,8 @@ class Module {
 
     // Used by SharedMemoryDataRacePass, linked by Module::LinkFunctions
     uint32_t shared_memory_shadow_variable_id_ = 0;
+
+    spirv::InstrumentationStatus& out_status;
 
   private:
     // This is here to emulate the
