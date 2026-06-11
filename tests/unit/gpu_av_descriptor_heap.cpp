@@ -2448,8 +2448,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, IndirectIndexNullIndirect) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
-    // TODO - should be VUID-vkCmdDispatch-None-11301
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Heap-IndirectBuffer-Null");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11301");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -2487,8 +2486,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, PushAddressNullIndirect) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
-    // TODO - should be VUID-vkCmdDispatch-None-11302
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Heap-IndirectBuffer-Null");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11302");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -2535,10 +2533,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, IndirectAddressNullIndirect) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     m_command_buffer.End();
-    // TODO - should be VUID-vkCmdDispatch-None-11305
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Heap-IndirectBuffer-Null");
-    // TODO - should be VUID-vkCmdDispatch-None-11306
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Heap-IndirectBuffer-Null");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11305");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11306");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

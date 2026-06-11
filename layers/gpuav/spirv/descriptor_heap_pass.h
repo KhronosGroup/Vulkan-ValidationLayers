@@ -37,6 +37,10 @@ class DescriptorHeapPass : public Pass {
         const Instruction* target_instruction = nullptr;
 
         AccessPath access_path;
+
+        // Internal encoded index to map into InstrumentationStatus::Device
+        uint32_t mapping_index_resource = 0;
+        uint32_t mapping_index_sampler = 0;
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
@@ -45,7 +49,7 @@ class DescriptorHeapPass : public Pass {
                                                const VkDescriptorSetAndBindingMappingEXT& mapping,
                                                const uint32_t descriptor_index_id);
 
-    const VkDescriptorSetAndBindingMappingEXT* GetMapping(const DescriptorInterface& interface) const;
+    uint32_t GetMapping(const Variable& variable) const;
 
     // < original ID, new CopyObject ID >
     vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;

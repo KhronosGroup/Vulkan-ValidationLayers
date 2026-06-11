@@ -23,24 +23,46 @@
 // Instead we have the shader instrumentation return some "status" information that later at draw time,
 // the CPU code can just look and match it.
 
+#include <vulkan/vulkan_core.h>
+#include <vector>
+
 namespace gpuav {
 namespace spirv {
 
-// Goal is this needs to be very light when empty.
-//
-// Note, things like |unique_shader_id| don't work in here as this object can both be used for a shaderModule and pipeline,
-// while something like |unique_shader_id| is tied to only a single shader.
-struct InstrumentationStatus {
-    // if anything was instrumented at all
-    bool is_instrumented = false;
+struct HeapMappingStatus {
+    uint32_t mapping_index = 0;  // index into pMappings[]
+    uint32_t binding = 0;        // the mapping_data doesn't encode the exact binding
+    uint32_t variable_id = 0;
+    VkDescriptorSetAndBindingMappingEXT mapping_data;
+};
 
-    // Prevent allocating DebugPrintf buffers if the shader didn't use it
-    bool has_debug_printf = false;
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/gpu_av_shader_instrumentation.md#instrumentation-status
+//
+// Goal is this needs to be very light when empty.
+struct InstrumentationStatus {
+    // Things that will be used at draw time on the CPU
+    //
+    // Note, things like |unique_shader_id| don't work in here as this object can both be used for a shaderModule and pipeline,
+    // while something like |unique_shader_id| is tied to only a single shader.
+    struct Host {
+        // if anything was instrumented at all
+        bool is_instrumented = false;
+
+        // Prevent allocating DebugPrintf buffers if the shader didn't use it
+        bool has_debug_printf = false;
+    } host;
+
+    // Things that will be read back only on an error message
+    // This data is tied to a single shader, keyed on |unique_shader_id|
+    struct Device {
+        // The mappings used, index is encoded into the shader
+        std::vector<HeapMappingStatus> heap_mappings;
+    } device;
 
     // For things like pipeline/GPL we want to add on information we find from a single shader/library
     void Append(InstrumentationStatus other) {
-        is_instrumented |= other.is_instrumented;
-        has_debug_printf |= other.has_debug_printf;
+        host.is_instrumented |= other.host.is_instrumented;
+        host.has_debug_printf |= other.host.has_debug_printf;
     }
 };
 
