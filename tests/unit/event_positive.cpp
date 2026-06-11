@@ -617,3 +617,28 @@ TEST_F(PositiveEvent, ResetAfterWaitSecondaryReset) {
     m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveEvent, HostReset) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7970");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
+    command_buffer.Begin();
+    command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    command_buffer.End();
+    m_default_queue->SubmitAndWait(command_buffer);
+
+    event.Reset();
+
+    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
+    command_buffer2.Begin();
+    command_buffer2.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    command_buffer2.WaitEvent(event, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+    command_buffer2.End();
+    m_default_queue->SubmitAndWait(command_buffer2);
+}
