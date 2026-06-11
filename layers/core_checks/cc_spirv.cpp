@@ -3328,30 +3328,37 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
 
                 // Combined Image Sampler is only spot we need to check twice
                 if (base_opcode == spv::OpTypeSampledImage) {
+                    bool has_embedded_sampler = false;
                     if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
                         const auto& source_data = mapping.sourceData.constantOffset;
                         info.offset = source_data.samplerHeapOffset;
                         info.array_stride = source_data.samplerHeapArrayStride;
+                        has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
                     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
                         const auto& source_data = mapping.sourceData.pushIndex;
                         info.offset = source_data.samplerHeapOffset;
                         info.array_stride = source_data.samplerHeapArrayStride;
+                        has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
                     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
                         const auto& source_data = mapping.sourceData.indirectIndex;
                         info.offset = source_data.samplerHeapOffset;
                         info.array_stride = source_data.samplerHeapArrayStride;
+                        has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
                     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
                         const auto& source_data = mapping.sourceData.indirectIndexArray;
                         info.offset = source_data.samplerHeapOffset;
+                        has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
                     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
                         const auto& source_data = mapping.sourceData.shaderRecordIndex;
                         info.offset = source_data.samplerHeapOffset;
                         info.array_stride = source_data.samplerHeapArrayStride;
+                        has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
                     }
 
                     info.align = phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment;
 
-                    if (!IsIntegerMultipleOf(info.offset, info.align) || !IsIntegerMultipleOf(info.array_stride, info.align)) {
+                    if (!has_embedded_sampler &&
+                        (!IsIntegerMultipleOf(info.offset, info.align) || !IsIntegerMultipleOf(info.array_stride, info.align))) {
                         const Field source_field = vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source);
 
                         std::stringstream ss;
@@ -3387,10 +3394,13 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                         }
                     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
                         const auto& source_data = mapping.sourceData.pushIndex;
-                        if (source_data.heapOffset == 0 && source_data.pushOffset == 0 && source_data.heapArrayStride == 0 &&
-                            source_data.heapIndexStride == 0 &&
+                        const bool zero_heap = source_data.heapOffset == 0 && source_data.pushOffset == 0 &&
+                                               source_data.heapArrayStride == 0 && source_data.heapIndexStride == 0;
+                        const bool non_zero_sampler =
+                            !source_data.pEmbeddedSampler &&
                             (source_data.samplerHeapOffset != 0 || source_data.samplerPushOffset != 0 ||
-                             source_data.samplerHeapArrayStride != 0 || source_data.samplerHeapIndexStride != 0)) {
+                             source_data.samplerHeapArrayStride != 0 || source_data.samplerHeapIndexStride != 0);
+                        if (zero_heap && non_zero_sampler) {
                             skip |= LogError(
                                 "WARNING-VkDescriptorSetAndBindingMappingEXT-pushIndex-sampler", module_state.handle(),
                                 mapping_loc.dot(Field::source),
@@ -3404,11 +3414,15 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                         }
                     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
                         const auto& source_data = mapping.sourceData.indirectIndex;
-                        if (source_data.heapOffset == 0 && source_data.pushOffset == 0 && source_data.addressOffset == 0 &&
-                            source_data.heapArrayStride == 0 && source_data.heapIndexStride == 0 &&
+                        const bool zero_heap = source_data.heapOffset == 0 && source_data.pushOffset == 0 &&
+                                               source_data.addressOffset == 0 && source_data.heapArrayStride == 0 &&
+                                               source_data.heapIndexStride == 0;
+                        const bool non_zero_heap =
+                            !source_data.pEmbeddedSampler &
                             (source_data.samplerHeapOffset != 0 || source_data.samplerPushOffset != 0 ||
                              source_data.samplerAddressOffset != 0 || source_data.samplerHeapArrayStride != 0 ||
-                             source_data.samplerHeapIndexStride != 0)) {
+                             source_data.samplerHeapIndexStride != 0);
+                        if (zero_heap && non_zero_heap) {
                             skip |= LogError(
                                 "WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndex-sampler", module_state.handle(),
                                 mapping_loc.dot(Field::source),
@@ -3423,10 +3437,13 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                         }
                     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
                         const auto& source_data = mapping.sourceData.indirectIndexArray;
-                        if (source_data.heapOffset == 0 && source_data.pushOffset == 0 && source_data.addressOffset == 0 &&
-                            source_data.heapIndexStride == 0 &&
+                        const bool zero_heap = source_data.heapOffset == 0 && source_data.pushOffset == 0 &&
+                                               source_data.addressOffset == 0 && source_data.heapIndexStride == 0;
+                        const bool non_zero_heap =
+                            !source_data.pEmbeddedSampler &&
                             (source_data.samplerHeapOffset != 0 || source_data.samplerPushOffset != 0 ||
-                             source_data.samplerAddressOffset != 0 || source_data.samplerHeapIndexStride != 0)) {
+                             source_data.samplerAddressOffset != 0 || source_data.samplerHeapIndexStride != 0);
+                        if (zero_heap && non_zero_heap) {
                             skip |= LogError(
                                 "WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndexArray-sampler", module_state.handle(),
                                 mapping_loc.dot(Field::source),

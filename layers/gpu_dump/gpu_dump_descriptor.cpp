@@ -692,7 +692,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         }
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
         const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping.sourceData.pushIndex;
-        uint32_t push_index = *((uint32_t*)&push_data_value[map_data.pushOffset]);
+        // This is caught by core validation already
+        uint32_t push_index =
+            map_data.pushOffset < push_data_value.size() ? *((uint32_t*)&push_data_value[map_data.pushOffset]) : 0xBAD00B;
 
         ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", heapOffset: 0x" << map_data.heapOffset
            << ", heapIndexStride: 0x" << map_data.heapIndexStride << ", heapArrayStride: 0x" << map_data.heapArrayStride;
@@ -752,7 +754,11 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
         dump_sampler &= map_data.pEmbeddedSampler == nullptr;
         if (dump_sampler) {
-            ss << new_bullet_line << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", samplerHeapOffset: 0x"
+            push_index = map_data.samplerPushOffset < push_data_value.size()
+                             ? *((uint32_t*)&push_data_value[map_data.samplerPushOffset])
+                             : 0xBAD00B;
+
+            ss << new_bullet_line << "samplerPushOffset: 0x" << std::hex << map_data.samplerPushOffset << ", samplerHeapOffset: 0x"
                << map_data.samplerHeapOffset << ", samplerHeapIndexStride: 0x" << map_data.samplerHeapIndexStride
                << ", samplerHeapArrayStride: 0x" << map_data.samplerHeapArrayStride;
             ss << new_line << "pushIndex: 0x" << push_index;
@@ -812,7 +818,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         }
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
         const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping.sourceData.indirectIndex;
-        VkDeviceAddress push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.pushOffset]);
+        VkDeviceAddress push_indirect_address =
+            map_data.pushOffset < push_data_value.size() ? *((VkDeviceAddress*)&push_data_value[map_data.pushOffset]) : 0xBAD00B;
+
         VkDeviceAddress final_indirect_address = push_indirect_address + map_data.addressOffset;
 
         warn_alignment_scalar_indirect(final_indirect_address, 4);
@@ -903,7 +911,10 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
         dump_sampler &= map_data.pEmbeddedSampler == nullptr;
         if (dump_sampler) {
-            push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.samplerPushOffset]);
+            push_indirect_address = map_data.samplerPushOffset < push_data_value.size()
+                                        ? *((VkDeviceAddress*)&push_data_value[map_data.samplerPushOffset])
+                                        : 0xBAD00B;
+
             final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
 
             warn_alignment_scalar_indirect(final_indirect_address, 4);
@@ -995,7 +1006,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         }
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
         const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data = mapping.sourceData.indirectIndexArray;
-        VkDeviceAddress push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.pushOffset]);
+        VkDeviceAddress push_indirect_address =
+            map_data.pushOffset < push_data_value.size() ? *((VkDeviceAddress*)&push_data_value[map_data.pushOffset]) : 0xBAD00B;
         VkDeviceAddress final_indirect_address = push_indirect_address + map_data.addressOffset;
 
         warn_alignment_scalar_indirect(final_indirect_address, 4);
@@ -1084,7 +1096,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
         dump_sampler &= map_data.pEmbeddedSampler == nullptr;
         if (dump_sampler) {
-            push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.samplerPushOffset]);
+            push_indirect_address = map_data.samplerPushOffset < push_data_value.size()
+                                        ? *((VkDeviceAddress*)&push_data_value[map_data.samplerPushOffset])
+                                        : 0xBAD00B;
             final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
 
             warn_alignment_scalar_indirect(final_indirect_address, 4);
@@ -1173,7 +1187,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         }
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
         const VkDescriptorMappingSourceHeapDataEXT& map_data = mapping.sourceData.heapData;
-        uint32_t push_data = *((uint32_t*)&push_data_value[map_data.pushOffset]);
+        uint32_t push_data =
+            map_data.pushOffset < push_data_value.size() ? *((uint32_t*)&push_data_value[map_data.pushOffset]) : 0xBAD00B;
 
         ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", heapOffset: 0x" << map_data.heapOffset;
         ss << new_line << "Push data at 0x" << std::hex << map_data.pushOffset << ": 0x" << push_data;
@@ -1195,7 +1210,10 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) {
         ss << "pushDataOffset: 0x" << std::hex << mapping.sourceData.pushDataOffset;
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT) {
-        uint64_t indirect_address = *((uint64_t*)&push_data_value[mapping.sourceData.pushAddressOffset]);
+        uint64_t indirect_address = mapping.sourceData.pushAddressOffset < push_data_value.size()
+                                        ? *((uint64_t*)&push_data_value[mapping.sourceData.pushAddressOffset])
+                                        : 0xBAD00B;
+
         ss << "pushAddressOffset: 0x" << std::hex << mapping.sourceData.pushAddressOffset;
         ss << new_line << "Indirect Adresss 0x" << indirect_address;
 
@@ -1205,7 +1223,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
         const VkDescriptorMappingSourceIndirectAddressEXT& map_data = mapping.sourceData.indirectAddress;
-        VkDeviceAddress push_indirect_address = *((VkDeviceAddress*)&push_data_value[map_data.pushOffset]);
+        VkDeviceAddress push_indirect_address =
+            map_data.pushOffset < push_data_value.size() ? *((VkDeviceAddress*)&push_data_value[map_data.pushOffset]) : 0xBAD00B;
+
         VkDeviceAddress final_indirect_address = push_indirect_address + map_data.addressOffset;
 
         ss << "pushOffset: 0x" << std::hex << map_data.pushOffset << ", addressOffset: 0x" << map_data.addressOffset;

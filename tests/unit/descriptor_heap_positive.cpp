@@ -3446,3 +3446,35 @@ TEST_F(PositiveDescriptorHeap, ReservedRangeInFront) {
         }
     }
 }
+
+TEST_F(PositiveDescriptorHeap, EmbeddedSamplerAlignment) {
+    TEST_DESCRIPTION("Ignore invalid sampler mappings when using embedded samplers");
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 1);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.samplerHeapOffset = 1;
+    mapping.sourceData.constantOffset.samplerHeapArrayStride = 1;
+    mapping.sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 1) uniform sampler2D tex;
+        void main() {
+            vec4 color = textureLod(tex, vec2(gl_GlobalInvocationID.xy), 0);
+        }
+    )glsl";
+    VkShaderObj cs_module(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    pipe.CreateComputePipeline(false);
+}
