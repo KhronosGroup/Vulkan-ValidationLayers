@@ -2028,6 +2028,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                       const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                           const VkDependencyInfoKHR* pDependencyInfos, const ErrorObject& error_obj) const override;
+    bool ValidateWaitEventDependencyFlags(VkDependencyFlags dependency_flags, const LogObjectList& objlist,
+                                          const Location& dep_info_loc) const;
     bool PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                        const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,

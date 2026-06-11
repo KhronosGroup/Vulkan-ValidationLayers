@@ -518,7 +518,17 @@ bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& qu
         skip |=
             core.LogError("VUID-vkCmdWaitEvents2-pEvents-03837", objlist, loc, "%s: %s was set by %s.", vvl::String(wait_command),
                           core.FormatHandle(event_state->Handle()).c_str(), vvl::String(signal_command));
+    } else {
+        const VkPipelineStageFlags2 union_src_stage_mask = sync_utils::GetExecScopes(*wait_dependency_info.ptr()).src;
+        if ((union_src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) == 0 &&
+            !IsValueIn(signal_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
+            const LogObjectList objlist(cb_state.Handle(), event_state->Handle());
+            skip |= core.LogError("VUID-vkCmdWaitEvents2-pEvents-03841", objlist, loc,
+                                  "contains %s but %s was not set by vkCmdSetEvent2.", vvl::String(wait_command),
+                                  core.FormatHandle(wait_event).c_str());
+        }
     }
+
     if (signal_dependency_info.has_value()) {
         const bool signal_has_asymmetric = (signal_dependency_info->dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) != 0;
         const bool wait_has_asymmetric = (wait_dependency_info.dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) != 0;
@@ -1597,6 +1607,31 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
     return skip;
 }
 
+bool CoreChecks::ValidateWaitEventDependencyFlags(VkDependencyFlags dependency_flags, const LogObjectList& objlist,
+                                                  const Location& dep_info_loc) const {
+    bool skip = false;
+    const VkDependencyFlags allowed_flags = VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR;
+    if ((dependency_flags & ~allowed_flags) != 0) {
+        const bool is_transfer_use_all_only =
+            dependency_flags == VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR;
+
+        if (!enabled_features.maintenance8) {
+            skip |= LogError("VUID-vkCmdWaitEvents2-dependencyFlags-10394", objlist, dep_info_loc.dot(Field::dependencyFlags),
+                             "is (%s).%s", string_VkDependencyFlags(dependency_flags).c_str(),
+                             is_transfer_use_all_only
+                                 ? " To use VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR, the "
+                                   "maintenance8 feature must be enabled."
+                                 : "");
+        } else if (!is_transfer_use_all_only) {
+            skip |= LogError("VUID-vkCmdWaitEvents2-maintenance8-10205", objlist, dep_info_loc.dot(Field::dependencyFlags),
+                             "(%s) but only VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR and "
+                             "VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR are allowed.",
+                             string_VkDependencyFlags(dependency_flags).c_str());
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                                const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const {
     bool skip = false;
@@ -1616,38 +1651,26 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
     for (uint32_t i = 0; i < eventCount && !skip; i++) {
         const LogObjectList objlist(commandBuffer, pEvents[i]);
         const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfos, i);
+        const VkDependencyInfo& dep_info = pDependencyInfos[i];
 
-        const VkDependencyFlags dependency_flags = pDependencyInfos[i].dependencyFlags;
-        const VkDependencyFlags allowed_flags = VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR;
-        if ((dependency_flags & ~allowed_flags) != 0) {
-            const bool is_transfer_use_all_only =
-                dependency_flags == VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR;
+        skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, dep_info);
+        skip |= ValidateWaitEventDependencyFlags(dep_info.dependencyFlags, objlist, dep_info_loc);
 
-            if (!enabled_features.maintenance8) {
-                skip |= LogError("VUID-vkCmdWaitEvents2-dependencyFlags-10394", objlist, dep_info_loc.dot(Field::dependencyFlags),
-                                 "is (%s).%s", string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str(),
-                                 is_transfer_use_all_only
-                                     ? " To use VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR, the "
-                                       "maintenance8 feature must be enabled."
-                                     : "");
-            } else if (!is_transfer_use_all_only) {
-                skip |= LogError("VUID-vkCmdWaitEvents2-maintenance8-10205", objlist, dep_info_loc.dot(Field::dependencyFlags),
-                                 "(%s) but only VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR and "
-                                 "VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR are allowed.",
-                                 string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str());
-            }
-        } else if ((pDependencyInfos[i].dependencyFlags & ~allowed_flags) != 0) {
-            skip |= LogError("VUID-vkCmdWaitEvents2-dependencyFlags-10394", objlist, dep_info_loc.dot(Field::dependencyFlags),
-                             "is (%s).", string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str());
-        }
-        skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, pDependencyInfos[i]);
+        const EventSignalState* signal_state = vvl::Find(cb_sub_state.event_signal_states, pEvents[i]);
 
-        if (const EventSignalState* signal_state = vvl::Find(cb_sub_state.event_signal_states, pEvents[i])) {
+        if (signal_state) {
             // Set-wait version mismatch is always reported.
             // Do not try to determine whether signal is ignored
             if (signal_state->last_signaling_command == vvl::Func::vkCmdSetEvent) {
                 skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03837", pEvents[i], error_obj.location, "%s was set by %s.",
                                  FormatHandle(pEvents[i]).c_str(), vvl::String(signal_state->last_signaling_command));
+            } else {
+                const VkPipelineStageFlags2 union_src_stage_mask = sync_utils::GetExecScopes(dep_info).src;
+                if ((union_src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) == 0 &&
+                    !IsValueIn(signal_state->last_signaling_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
+                    skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03841", pEvents[i], error_obj.location,
+                                     "%s was not set by vkCmdSetEvent2.", FormatHandle(pEvents[i]).c_str());
+                }
             }
         }
     }
