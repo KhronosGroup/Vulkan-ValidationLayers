@@ -1158,6 +1158,9 @@
                 "VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR": {
                     "videoEncodeIntraRefresh": true
                 },
+                "VkPhysicalDeviceVideoEncodeFeedback2FeaturesKHR": {
+                    "videoEncodeFeedback2": true
+                },
                 "VkPhysicalDeviceVideoEncodeAV1FeaturesKHR": {
                     "videoEncodeAV1": true
                 },
@@ -2732,6 +2735,7 @@
                 "VK_KHR_video_encode_queue": 1,
                 "VK_KHR_video_encode_quantization_map": 1,
                 "VK_KHR_video_encode_intra_refresh": 1,
+                "VK_KHR_video_encode_feedback2": 1,
                 "VK_KHR_video_maintenance1": 1,
                 "VK_KHR_video_maintenance2": 1,
                 "VK_KHR_video_queue": 1,
@@ -9434,7 +9438,14 @@
                             "supportedEncodeFeedbackFlags": [
                                 "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
                                 "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR",
-                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_HAS_OVERRIDES_BIT_KHR"
+                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_HAS_OVERRIDES_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_AVERAGE_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MIN_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MAX_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTRA_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTER_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_SKIPPED_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_PICTURE_PARTITION_COUNT_BIT_KHR"
                             ]
                         },
                         "VkVideoEncodeH264CapabilitiesKHR": {
@@ -9478,6 +9489,14 @@
                             "maxIntraRefreshActiveReferencePictures": 2,
                             "partitionIndependentIntraRefreshRegions": true,
                             "nonRectangularIntraRefreshRegions": false
+                        },
+                        "VkVideoEncodeFeedback2CapabilitiesKHR": {
+                            "maxPerPartitionFeedbackEntries": 8,
+                            "supportedPerPartitionEncodeFeedbackFlags": [
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_STATUS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR"
+                            ]
                         }
                     }
                 },
@@ -9509,7 +9528,13 @@
                             },
                             "supportedEncodeFeedbackFlags": [
                                 "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
-                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR"
+                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_AVERAGE_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MIN_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MAX_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTRA_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_SKIPPED_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_PICTURE_PARTITION_COUNT_BIT_KHR"
                             ]
                         },
                         "VkVideoEncodeH264CapabilitiesKHR": {
@@ -9550,6 +9575,13 @@
                             "maxIntraRefreshActiveReferencePictures": 1,
                             "partitionIndependentIntraRefreshRegions": false,
                             "nonRectangularIntraRefreshRegions": true
+                        },
+                        "VkVideoEncodeFeedback2CapabilitiesKHR": {
+                            "maxPerPartitionFeedbackEntries": 8,
+                            "supportedPerPartitionEncodeFeedbackFlags": [
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_STATUS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR"
+                            ]
                         }
                     }
                 },
@@ -9577,7 +9609,14 @@
                             },
                             "supportedEncodeFeedbackFlags": [
                                 "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
-                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR"
+                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_AVERAGE_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MIN_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MAX_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTRA_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTER_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_SKIPPED_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_PICTURE_PARTITION_COUNT_BIT_KHR"
                             ]
                         },
                         "VkVideoEncodeH264CapabilitiesKHR": {
@@ -9614,6 +9653,14 @@
                             "maxIntraRefreshActiveReferencePictures": 0,
                             "partitionIndependentIntraRefreshRegions": false,
                             "nonRectangularIntraRefreshRegions": false
+                        },
+                        "VkVideoEncodeFeedback2CapabilitiesKHR": {
+                            "maxPerPartitionFeedbackEntries": 8,
+                            "supportedPerPartitionEncodeFeedbackFlags": [
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_STATUS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR"
+                            ]
                         }
                     }
                 },
@@ -9734,7 +9781,14 @@
                             },
                             "supportedEncodeFeedbackFlags": [
                                 "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
-                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR"
+                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_AVERAGE_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MIN_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MAX_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTRA_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTER_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_SKIPPED_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_PICTURE_PARTITION_COUNT_BIT_KHR"
                             ]
                         },
                         "VkVideoEncodeH265CapabilitiesKHR": {
@@ -9790,6 +9844,14 @@
                             "maxIntraRefreshActiveReferencePictures": 2,
                             "partitionIndependentIntraRefreshRegions": true,
                             "nonRectangularIntraRefreshRegions": false
+                        },
+                        "VkVideoEncodeFeedback2CapabilitiesKHR": {
+                            "maxPerPartitionFeedbackEntries": 8,
+                            "supportedPerPartitionEncodeFeedbackFlags": [
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_STATUS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR"
+                            ]
                         }
                     }
                 },
@@ -9819,7 +9881,14 @@
                             },
                             "supportedEncodeFeedbackFlags": [
                                 "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
-                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR"
+                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_AVERAGE_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MIN_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MAX_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTRA_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTER_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_SKIPPED_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_PICTURE_PARTITION_COUNT_BIT_KHR"
                             ]
                         },
                         "VkVideoEncodeH265CapabilitiesKHR": {
@@ -9870,6 +9939,14 @@
                             "maxIntraRefreshActiveReferencePictures": 1,
                             "partitionIndependentIntraRefreshRegions": false,
                             "nonRectangularIntraRefreshRegions": true
+                        },
+                        "VkVideoEncodeFeedback2CapabilitiesKHR": {
+                            "maxPerPartitionFeedbackEntries": 8,
+                            "supportedPerPartitionEncodeFeedbackFlags": [
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_STATUS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR"
+                            ]
                         }
                     }
                 },
@@ -9902,7 +9979,14 @@
                             "supportedEncodeFeedbackFlags": [
                                 "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
                                 "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR",
-                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_HAS_OVERRIDES_BIT_KHR"
+                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_HAS_OVERRIDES_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_AVERAGE_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MIN_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MAX_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTRA_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTER_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_SKIPPED_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_PICTURE_PARTITION_COUNT_BIT_KHR"
                             ]
                         },
                         "VkVideoEncodeH265CapabilitiesKHR": {
@@ -9948,6 +10032,14 @@
                             "maxIntraRefreshActiveReferencePictures": 0,
                             "partitionIndependentIntraRefreshRegions": false,
                             "nonRectangularIntraRefreshRegions": false
+                        },
+                        "VkVideoEncodeFeedback2CapabilitiesKHR": {
+                            "maxPerPartitionFeedbackEntries": 8,
+                            "supportedPerPartitionEncodeFeedbackFlags": [
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_STATUS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR"
+                            ]
                         }
                     }
                 },
@@ -10069,7 +10161,14 @@
                             },
                             "supportedEncodeFeedbackFlags": [
                                 "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
-                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR"
+                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_AVERAGE_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MIN_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MAX_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTRA_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTER_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_SKIPPED_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_PICTURE_PARTITION_COUNT_BIT_KHR"
                             ]
                         },
                         "VkVideoEncodeAV1CapabilitiesKHR": {
@@ -10128,6 +10227,14 @@
                             "maxIntraRefreshActiveReferencePictures": 2,
                             "partitionIndependentIntraRefreshRegions": true,
                             "nonRectangularIntraRefreshRegions": false
+                        },
+                        "VkVideoEncodeFeedback2CapabilitiesKHR": {
+                            "maxPerPartitionFeedbackEntries": 8,
+                            "supportedPerPartitionEncodeFeedbackFlags": [
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_STATUS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR"
+                            ]
                         }
                     }
                 },
@@ -10157,7 +10264,14 @@
                             },
                             "supportedEncodeFeedbackFlags": [
                                 "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
-                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR"
+                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_AVERAGE_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MIN_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MAX_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTRA_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTER_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_SKIPPED_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_PICTURE_PARTITION_COUNT_BIT_KHR"
                             ]
                         },
                         "VkVideoEncodeAV1CapabilitiesKHR": {
@@ -10221,6 +10335,14 @@
                             "maxIntraRefreshActiveReferencePictures": 1,
                             "partitionIndependentIntraRefreshRegions": false,
                             "nonRectangularIntraRefreshRegions": false
+                        },
+                        "VkVideoEncodeFeedback2CapabilitiesKHR": {
+                            "maxPerPartitionFeedbackEntries": 8,
+                            "supportedPerPartitionEncodeFeedbackFlags": [
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_STATUS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR"
+                            ]
                         }
                     }
                 },
@@ -10254,7 +10376,14 @@
                             "supportedEncodeFeedbackFlags": [
                                 "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
                                 "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR",
-                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_HAS_OVERRIDES_BIT_KHR"
+                                "VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_HAS_OVERRIDES_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_AVERAGE_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MIN_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_MAX_QUANTIZATION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTRA_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_INTER_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_SKIPPED_PIXELS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_FEEDBACK_PICTURE_PARTITION_COUNT_BIT_KHR"
                             ]
                         },
                         "VkVideoEncodeAV1CapabilitiesKHR": {
@@ -10312,6 +10441,14 @@
                             "maxIntraRefreshActiveReferencePictures": 0,
                             "partitionIndependentIntraRefreshRegions": false,
                             "nonRectangularIntraRefreshRegions": false
+                        },
+                        "VkVideoEncodeFeedback2CapabilitiesKHR": {
+                            "maxPerPartitionFeedbackEntries": 8,
+                            "supportedPerPartitionEncodeFeedbackFlags": [
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_STATUS_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR",
+                                "VK_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR"
+                            ]
                         }
                     }
                 },

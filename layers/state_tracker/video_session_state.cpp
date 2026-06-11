@@ -1,5 +1,5 @@
-/* Copyright (c) 2022-2024 The Khronos Group Inc.
- * Copyright (c) 2022-2024 RasterGrid Kft.
+/* Copyright (c) 2022-2026 The Khronos Group Inc.
+ * Copyright (c) 2022-2026 RasterGrid Kft.
  * Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -245,6 +245,9 @@ void VideoProfileDesc::InitCapabilities(VkPhysicalDevice physical_device) {
 
         capabilities_.encode_ext.intra_refresh = vku::InitStructHelper(capabilities_.base.pNext);
         capabilities_.base.pNext = &capabilities_.encode_ext.intra_refresh;
+
+        capabilities_.encode_ext.feedback2 = vku::InitStructHelper(capabilities_.base.pNext);
+        capabilities_.base.pNext = &capabilities_.encode_ext.feedback2;
     }
 
     VkResult result = DispatchGetPhysicalDeviceVideoCapabilitiesKHR(physical_device, &profile_.base, &capabilities_.base);

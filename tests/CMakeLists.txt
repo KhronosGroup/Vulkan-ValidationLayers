@@ -287,6 +287,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/video_encode_h265_positive.cpp
     unit/video_encode_intra_refresh.cpp
     unit/video_encode_intra_refresh_positive.cpp
+    unit/video_encode_feedback2.cpp
+    unit/video_encode_feedback2_positive.cpp
     unit/video_encode_quantization_map.cpp
     unit/video_encode_quantization_map_positive.cpp
     unit/viewport_inheritance.cpp
