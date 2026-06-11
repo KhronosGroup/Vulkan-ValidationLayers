@@ -335,6 +335,45 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
                                  pnext_chain_msg, "VkQueryPoolVideoEncodeFeedbackCreateInfoKHR");
             }
 
+            if (encode_feedback_info != nullptr) {
+                const auto kAllVideoEncodeFeedback2Flags =
+                    VK_VIDEO_ENCODE_FEEDBACK_AVERAGE_QUANTIZATION_BIT_KHR | VK_VIDEO_ENCODE_FEEDBACK_MIN_QUANTIZATION_BIT_KHR |
+                    VK_VIDEO_ENCODE_FEEDBACK_MAX_QUANTIZATION_BIT_KHR | VK_VIDEO_ENCODE_FEEDBACK_INTRA_PIXELS_BIT_KHR |
+                    VK_VIDEO_ENCODE_FEEDBACK_INTER_PIXELS_BIT_KHR | VK_VIDEO_ENCODE_FEEDBACK_SKIPPED_PIXELS_BIT_KHR |
+                    VK_VIDEO_ENCODE_FEEDBACK_PICTURE_PARTITION_COUNT_BIT_KHR;
+
+                auto enabled_encode_feedback2_flags = encode_feedback_info->encodeFeedbackFlags & kAllVideoEncodeFeedback2Flags;
+                if (enabled_encode_feedback2_flags && !enabled_features.videoEncodeFeedback2) {
+                    LogError("VUID-VkQueryPoolCreateInfo-queryType-12437", device,
+                             create_info_loc.pNext(Struct::VkQueryPoolVideoEncodeFeedbackCreateInfoKHR, Field::encodeFeedbackFlags),
+                             "contains %s but the videoEncodeFeedback2 device feature is not enabled.",
+                             string_VkVideoEncodeFeedbackFlagsKHR(enabled_encode_feedback2_flags).c_str());
+                }
+            }
+
+            auto encode_per_partition_feedback_info =
+                vku::FindStructInPNextChain<VkQueryPoolVideoEncodePerPartitionFeedbackCreateInfoKHR>(pCreateInfo->pNext);
+            const Location encode_per_partition_feedback_info_loc =
+                create_info_loc.pNext(Struct::VkQueryPoolVideoEncodePerPartitionFeedbackCreateInfoKHR);
+
+            if (encode_per_partition_feedback_info != nullptr) {
+                if (encode_per_partition_feedback_info->maxPerPartitionFeedbackEntries != 0 &&
+                    !enabled_features.videoEncodeFeedback2) {
+                    LogError("VUID-VkQueryPoolCreateInfo-queryType-12438", device,
+                             encode_per_partition_feedback_info_loc.dot(Field::maxPerPartitionFeedbackEntries),
+                             "(%u) is not zero but the videoEncodeFeedback2 device feature is not enabled.",
+                             encode_per_partition_feedback_info->maxPerPartitionFeedbackEntries);
+                }
+
+                if (encode_per_partition_feedback_info->maxPerPartitionFeedbackEntries != 0 &&
+                    encode_per_partition_feedback_info->perPartitionEncodeFeedbackFlags == 0) {
+                    LogError("VUID-VkQueryPoolCreateInfo-queryType-12439", device,
+                             encode_per_partition_feedback_info_loc.dot(Field::maxPerPartitionFeedbackEntries),
+                             "(%u) is not zero but perPartitionEncodeFeedbackFlags is zero.",
+                             encode_per_partition_feedback_info->maxPerPartitionFeedbackEntries);
+                }
+            }
+
             bool video_profile_valid = false;
             if (video_profile) {
                 if (core::ValidateVideoProfileInfo(*this, video_profile, error_obj,
@@ -364,6 +403,34 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
                                      "as indicated by VkVideoEncodeCapabilitiesKHR::supportedEncodeFeedbackFlags (%s).",
                                      string_VkVideoEncodeFeedbackFlagsKHR(requested_flags).c_str(),
                                      string_VkVideoEncodeFeedbackFlagsKHR(supported_flags).c_str());
+                    }
+                }
+
+                if (encode_per_partition_feedback_info != nullptr) {
+                    const auto &feedback2_caps = profile_desc.GetCapabilities().encode_ext.feedback2;
+
+                    if (encode_per_partition_feedback_info->maxPerPartitionFeedbackEntries >
+                        feedback2_caps.maxPerPartitionFeedbackEntries) {
+                        LogError(
+                            "VUID-VkQueryPoolCreateInfo-queryType-12440", device,
+                            encode_per_partition_feedback_info_loc.dot(Field::maxPerPartitionFeedbackEntries),
+                            "(%u) is greater than the VkVideoEncodeFeedback2CapabilitiesKHR::maxPerPartitionFeedbackEntries (%u) "
+                            "supported by the video profile (%s).",
+                            encode_per_partition_feedback_info->maxPerPartitionFeedbackEntries,
+                            feedback2_caps.maxPerPartitionFeedbackEntries, string_VideoProfileDesc(profile_desc).c_str());
+                    }
+
+                    auto requested_flags = encode_per_partition_feedback_info->perPartitionEncodeFeedbackFlags;
+                    auto supported_flags = feedback2_caps.supportedPerPartitionEncodeFeedbackFlags;
+                    if ((requested_flags & supported_flags) != requested_flags) {
+                        LogError("VUID-VkQueryPoolCreateInfo-queryType-12441", device,
+                                 encode_per_partition_feedback_info_loc.dot(Field::perPartitionEncodeFeedbackFlags),
+                                 "(%s) contains flags that are not supported as reported in "
+                                 "VkVideoEncodeFeedback2CapabilitiesKHR::supportedPerPartitionEncodeFeedbackFlags (%s) "
+                                 "supported by the video profile (%s).",
+                                 string_VkVideoEncodePerPartitionFeedbackFlagsKHR(requested_flags).c_str(),
+                                 string_VkVideoEncodePerPartitionFeedbackFlagsKHR(supported_flags).c_str(),
+                                 string_VideoProfileDesc(profile_desc).c_str());
                     }
                 }
             }

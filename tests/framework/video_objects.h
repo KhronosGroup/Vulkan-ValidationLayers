@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022-2025 The Khronos Group Inc.
- * Copyright (c) 2022-2025 RasterGrid Kft.
+ * Copyright (c) 2022-2026 The Khronos Group Inc.
+ * Copyright (c) 2022-2026 RasterGrid Kft.
  * Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -138,6 +138,9 @@ class VideoConfig {
     }
     const VkVideoEncodeIntraRefreshCapabilitiesKHR* EncodeIntraRefreshCaps() const {
         return vku::FindStructInPNextChain<VkVideoEncodeIntraRefreshCapabilitiesKHR>(caps_.pNext);
+    }
+    const VkVideoEncodeFeedback2CapabilitiesKHR* EncodeFeedback2Caps() const {
+        return vku::FindStructInPNextChain<VkVideoEncodeFeedback2CapabilitiesKHR>(caps_.pNext);
     }
 
     const VkVideoEncodeAV1CapabilitiesKHR* EncodeCapsAV1() const {
@@ -3164,6 +3167,8 @@ class VkVideoLayerTest : public VkLayerTest {
         AddOptionalExtensions(VK_KHR_VIDEO_ENCODE_H265_EXTENSION_NAME);
         AddOptionalExtensions(VK_KHR_VIDEO_ENCODE_AV1_EXTENSION_NAME);
 
+        AddOptionalExtensions(VK_KHR_VIDEO_ENCODE_FEEDBACK_2_EXTENSION_NAME);
+
         for (auto feature : required_features_) {
             VkLayerTest::AddRequiredFeature(feature);
         }
@@ -3628,6 +3633,10 @@ class VkVideoLayerTest : public VkLayerTest {
         auto encode_intra_refresh_caps = new vku::safe_VkVideoEncodeIntraRefreshCapabilitiesKHR();
         encode_intra_refresh_caps->pNext = encode_caps->pNext;
         encode_caps->pNext = encode_intra_refresh_caps;
+
+        auto encode_feedback2_caps = new vku::safe_VkVideoEncodeFeedback2CapabilitiesKHR();
+        encode_feedback2_caps->pNext = encode_caps->pNext;
+        encode_caps->pNext = encode_feedback2_caps;
     }
 
     void InitDecodeH264Configs(uint32_t queueFamilyIndex) {
@@ -4066,7 +4075,8 @@ class VkVideoLayerTest : public VkLayerTest {
     bool initialized_{false};
     bool protected_no_fault_supported_{false};
     std::unordered_set<vkt::Feature> required_features_{vkt::Feature::synchronization2};
-    std::unordered_set<vkt::Feature> optional_features_{vkt::Feature::videoEncodeAV1, vkt::Feature::videoDecodeVP9};
+    std::unordered_set<vkt::Feature> optional_features_{vkt::Feature::videoEncodeAV1, vkt::Feature::videoDecodeVP9,
+                                                        vkt::Feature::videoEncodeFeedback2};
 
     VideoConfig default_config_{};
     VideoConfig config_invalid_{};

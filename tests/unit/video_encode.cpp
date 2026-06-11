@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022-2025 The Khronos Group Inc.
- * Copyright (c) 2022-2025 RasterGrid Kft.
+ * Copyright (c) 2022-2026 The Khronos Group Inc.
+ * Copyright (c) 2022-2026 RasterGrid Kft.
  * Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2659,15 +2659,20 @@ TEST_F(NegativeVideoEncode, CreateQueryPoolUnsupportedEncodeFeedback) {
     AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_FEEDBACK_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
+    const auto kAllVideoEncodeBaseFeedbackFlags = VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR |
+                                                  VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR |
+                                                  VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_HAS_OVERRIDES_BIT_KHR;
+
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncode(), [](const VideoConfig& config) {
-        return config.EncodeCaps()->supportedEncodeFeedbackFlags != AllVkVideoEncodeFeedbackFlagBitsKHR;
+        return (config.EncodeCaps()->supportedEncodeFeedbackFlags & kAllVideoEncodeBaseFeedbackFlags) !=
+               kAllVideoEncodeBaseFeedbackFlags;
     }));
     if (!config) {
         GTEST_SKIP() << "Test requires a video encode profile that does not support all encode feedback flags";
     }
 
     auto encode_feedback_info = vku::InitStruct<VkQueryPoolVideoEncodeFeedbackCreateInfoKHR>(config.Profile());
-    encode_feedback_info.encodeFeedbackFlags = AllVkVideoEncodeFeedbackFlagBitsKHR;
+    encode_feedback_info.encodeFeedbackFlags = kAllVideoEncodeBaseFeedbackFlags;
 
     auto create_info = vku::InitStruct<VkQueryPoolCreateInfo>(&encode_feedback_info);
     create_info.queryType = VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR;

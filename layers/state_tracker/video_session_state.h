@@ -1,5 +1,5 @@
-/* Copyright (c) 2022-2024 The Khronos Group Inc.
- * Copyright (c) 2022-2024 RasterGrid Kft.
+/* Copyright (c) 2022-2026 The Khronos Group Inc.
+ * Copyright (c) 2022-2026 RasterGrid Kft.
  * Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -102,6 +102,7 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
             struct {
                 VkVideoEncodeQuantizationMapCapabilitiesKHR quantization_map;
                 VkVideoEncodeIntraRefreshCapabilitiesKHR intra_refresh;
+                VkVideoEncodeFeedback2CapabilitiesKHR feedback2;
             } encode_ext;
         };
     };
