@@ -688,8 +688,9 @@ void CommandBufferSubState::RecordWaitEvent2(VkEvent event, const VkDependencyIn
     event_wait_states[event] = EventWaitState{barriers, loc.function};
 
     EventSignalState* signal_state = vvl::Find(event_signal_states, event);
-    const bool already_validated = signal_state && signal_state->was_reset;
+    const bool already_validated = signal_state && signal_state->HasKnownEffect();
     const bool submit_validation = !already_validated;
+
     if (submit_validation) {
         WaitEvent2SubmitInfo submit_info;
         submit_info.wait_event = event;

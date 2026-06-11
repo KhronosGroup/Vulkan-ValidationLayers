@@ -279,8 +279,28 @@ TEST_F(PositiveEvent, PrimaryResetSecondarySetAndWait) {
     m_command_buffer.ResetEvent(event);
     m_command_buffer.ExecuteCommands(secondary);
     m_command_buffer.End();
+}
 
-    m_default_queue->SubmitAndWait(m_command_buffer);
+TEST_F(PositiveEvent, PrimaryResetSecondarySetAndWait2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.SetEvent2(event, barrier);
+    secondary.WaitEvent2(event, barrier);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.ResetEvent2(event);
+    m_command_buffer.ExecuteCommands(secondary);
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveEvent, SecondaryWaitTwoEvents) {
