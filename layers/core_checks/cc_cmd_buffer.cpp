@@ -1131,8 +1131,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer& 
 }
 
 // Return the signal stage mask when it can be identified from recorded state
-static std::optional<VkPipelineStageFlags2> ResolveKnownSignalStageMask(VkEvent event, const EventSignalingState* prior_state,
-                                                                        const EventSignalingState* secondary_state) {
+static std::optional<VkPipelineStageFlags2> ResolveKnownSignalStageMask(VkEvent event, const EventSignalState* prior_state,
+                                                                        const EventSignalState* secondary_state) {
     if (secondary_state && secondary_state->HasKnownEffect(prior_state)) {
         if (secondary_state->signaled) {
             return secondary_state->signal_src_stage_mask;
@@ -1148,7 +1148,7 @@ static std::optional<VkPipelineStageFlags2> ResolveKnownSignalStageMask(VkEvent 
 // Return the last signaling command and does not take into acccount if it was ignored or not.
 // This is used for the set-wait version mismatch. The current validation logic considers
 // version mismtach to be an issue even if the command is ignored.
-static vvl::Func ResolveSignalingCommand(const EventSignalingState* prior_state, const EventSignalingState* secondary_state) {
+static vvl::Func ResolveSignalingCommand(const EventSignalState* prior_state, const EventSignalState* secondary_state) {
     if (secondary_state) {
         return secondary_state->last_signaling_command;
     }
@@ -1159,10 +1159,10 @@ static vvl::Func ResolveSignalingCommand(const EventSignalingState* prior_state,
 }
 
 // Return true when recorded state proves the event is unsignaled at the wait
-static bool IsKnownUnsignaled(VkEvent event, const EventSignalingStateMap& prior_signaling_states,
-                              const EventSignalingStateMap& secondary_signaling_states) {
-    const EventSignalingState* prior_state = vvl::Find(prior_signaling_states, event);
-    const EventSignalingState* secondary_state = vvl::Find(secondary_signaling_states, event);
+static bool IsKnownUnsignaled(VkEvent event, const EventSignalStateMap& prior_signal_states,
+                              const EventSignalStateMap& secondary_signal_states) {
+    const EventSignalState* prior_state = vvl::Find(prior_signal_states, event);
+    const EventSignalState* secondary_state = vvl::Find(secondary_signal_states, event);
 
     if (secondary_state && secondary_state->HasKnownEffect(prior_state)) {
         return !secondary_state->signaled;
@@ -1172,7 +1172,7 @@ static bool IsKnownUnsignaled(VkEvent event, const EventSignalingStateMap& prior
 
 bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBufferSubState& secondary_cb_sub_state,
                                                           const Location& secondary_cb_loc,
-                                                          EventSignalingStateMap& local_signaling_states) const {
+                                                          EventSignalStateMap& local_signal_states) const {
     bool skip = false;
     for (const WaitEventSubmitInfo& secondary_wait : secondary_cb_sub_state.wait_event_submit_infos) {
         VkPipelineStageFlags signals_src_stage_mask = VK_PIPELINE_STAGE_NONE;
@@ -1180,8 +1180,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBuf
         bool found_known_signals = false;
 
         for (VkEvent event : secondary_wait.wait_events) {
-            const EventSignalingState* local_state = vvl::Find(local_signaling_states, event);
-            const EventSignalingState* secondary_state = vvl::Find(secondary_wait.signaling_states, event);
+            const EventSignalState* local_state = vvl::Find(local_signal_states, event);
+            const EventSignalState* secondary_state = vvl::Find(secondary_wait.signal_states, event);
 
             // Validate set-wait version mismatch
             const vvl::Func signal_command = ResolveSignalingCommand(local_state, secondary_state);
@@ -1195,7 +1195,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBuf
             if (auto stage_mask = ResolveKnownSignalStageMask(event, local_state, secondary_state)) {
                 signals_src_stage_mask |= *stage_mask;
                 found_known_signals = true;
-            } else if (IsKnownUnsignaled(event, local_signaling_states, secondary_wait.signaling_states)) {
+            } else if (IsKnownUnsignaled(event, local_signal_states, secondary_wait.signal_states)) {
                 // Contribute 0 (nothing) to signals_src_stage_mask
             } else {
                 can_validate_stage_mask = false;
@@ -1224,9 +1224,9 @@ bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBuf
     for (const WaitEvent2SubmitInfo& secondary_wait : secondary_cb_sub_state.wait_event2_submit_infos) {
         // Set-wait version mismatch is always reported. Do not try to determine whether signal is ignored
         vvl::Func signaling_command = vvl::Func::Empty;
-        if (secondary_wait.signaling_state.has_value() && secondary_wait.signaling_state->signaled) {
-            signaling_command = secondary_wait.signaling_state->last_signaling_command;
-        } else if (const EventSignalingState* local_state = vvl::Find(local_signaling_states, secondary_wait.wait_event);
+        if (secondary_wait.signal_state.has_value() && secondary_wait.signal_state->signaled) {
+            signaling_command = secondary_wait.signal_state->last_signaling_command;
+        } else if (const EventSignalState* local_state = vvl::Find(local_signal_states, secondary_wait.wait_event);
                    local_state && local_state->signaled) {
             signaling_command = local_state->last_signaling_command;
         }
@@ -1236,7 +1236,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBuf
                              FormatHandle(secondary_wait.wait_event).c_str(), vvl::String(signaling_command));
         }
     }
-    UpdateEventSignalingStates(local_signaling_states, secondary_cb_sub_state.event_signaling_states);
+    UpdateEventSignalStates(local_signal_states, secondary_cb_sub_state.event_signal_states);
     return skip;
 }
 
@@ -1517,7 +1517,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     }
 
     vvl::unordered_map<VkCommandBuffer, uint32_t> duplicate_secondary_cb;
-    EventSignalingStateMap local_signaling_states = cb_sub_state.event_signaling_states;
+    EventSignalStateMap local_signal_states = cb_sub_state.event_signal_states;
     bool suspended_render_pass_instance =
         cb_state.last_suspend_state == vvl::CommandBuffer::SuspendState::Suspended && !cb_state.active_render_pass;
 
@@ -1640,7 +1640,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         skip |= ValidateSecondaryCommandBufferState(cb_state, secondary_sub_state, secondary_cb_loc);
         skip |= ValidateSecondaryCommandBufferQuery(cb_state, secondary_cb_state, secondary_cb_loc);
         skip |= ValidateSecondaryCommandBufferLayout(cb_state, secondary_cb_state, secondary_cb_loc);
-        skip |= ValidateSecondaryCommandBufferWaitEvents(secondary_sub_state, secondary_cb_loc, local_signaling_states);
+        skip |= ValidateSecondaryCommandBufferWaitEvents(secondary_sub_state, secondary_cb_loc, local_signal_states);
     }
 
     return skip;

@@ -587,7 +587,7 @@ void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, co
 }
 
 void CommandBufferSubState::RecordSetEvent(VkEvent event, VkPipelineStageFlags stage_mask) {
-    if (EventSignalingState* state = vvl::Find(event_signaling_states, event)) {
+    if (EventSignalState* state = vvl::Find(event_signal_states, event)) {
         if (!state->signaled) {
             state->signaled = true;
             state->signal_src_stage_mask = stage_mask;
@@ -595,16 +595,16 @@ void CommandBufferSubState::RecordSetEvent(VkEvent event, VkPipelineStageFlags s
             // Keep was_reset unchanged
         }
     } else {
-        EventSignalingState new_state;
+        EventSignalState new_state;
         new_state.signaled = true;
         new_state.signal_src_stage_mask = stage_mask;
         new_state.last_signaling_command = vvl::Func::vkCmdSetEvent;
-        event_signaling_states.insert(std::make_pair(event, std::move(new_state)));
+        event_signal_states.insert(std::make_pair(event, std::move(new_state)));
     }
 }
 
 void CommandBufferSubState::RecordSetEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {
-    if (EventSignalingState* state = vvl::Find(event_signaling_states, event)) {
+    if (EventSignalState* state = vvl::Find(event_signal_states, event)) {
         if (!state->signaled) {
             state->signaled = true;
             state->signal_dependency_info.emplace(&dependency_info);
@@ -612,19 +612,19 @@ void CommandBufferSubState::RecordSetEvent2(VkEvent event, const VkDependencyInf
             // Keep was_reset unchanged
         }
     } else {
-        EventSignalingState new_state;
+        EventSignalState new_state;
         new_state.signaled = true;
         new_state.signal_dependency_info.emplace(&dependency_info);
         new_state.last_signaling_command = loc.function;
-        event_signaling_states.insert(std::make_pair(event, std::move(new_state)));
+        event_signal_states.insert(std::make_pair(event, std::move(new_state)));
     }
 }
 
 void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags2, const Location& loc) {
-    EventSignalingState& signaling_state = event_signaling_states[event];
-    signaling_state = {};
-    signaling_state.was_reset = true;
-    signaling_state.last_signaling_command = loc.function;
+    EventSignalState& signal_state = event_signal_states[event];
+    signal_state = {};
+    signal_state.was_reset = true;
+    signal_state.last_signaling_command = loc.function;
     event_wait_states.erase(event);
 }
 
@@ -655,19 +655,19 @@ static VkPipelineStageFlags2 GetNewEventBarriersFromDependency(VkPipelineStageFl
 void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask,
                                              VkPipelineStageFlags dst_stage_mask, const Location& loc) {
     bool submit_validation = false;
-    EventSignalingStateMap signaling_states;
+    EventSignalStateMap signal_states;
 
     const VkPipelineStageFlags2 barriers = MakeEventBarriers(dst_stage_mask, base.GetQueueFlags());
 
     for (VkEvent event : events) {
         event_wait_states[event] = EventWaitState{barriers, loc.function};
 
-        EventSignalingState* signaling_state = vvl::Find(event_signaling_states, event);
-        if (signaling_state) {
-            signaling_states.emplace(event, *signaling_state);
+        EventSignalState* signal_state = vvl::Find(event_signal_states, event);
+        if (signal_state) {
+            signal_states.emplace(event, *signal_state);
         }
         // NOTE: the same logic is used by the validation phase
-        const bool already_validated = signaling_state && signaling_state->HasKnownEffect();
+        const bool already_validated = signal_state && signal_state->HasKnownEffect();
         if (!already_validated) {
             submit_validation = true;
         }
@@ -676,7 +676,7 @@ void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, Vk
         WaitEventSubmitInfo submit_info;
         submit_info.wait_events.assign(events.begin(), events.end());
         submit_info.wait_src_stage_mask = src_stage_mask;
-        submit_info.signaling_states = std::move(signaling_states);
+        submit_info.signal_states = std::move(signal_states);
         submit_info.wait_command = loc.function;
         wait_event_submit_infos.emplace_back(std::move(submit_info));
     }
@@ -687,15 +687,15 @@ void CommandBufferSubState::RecordWaitEvent2(VkEvent event, const VkDependencyIn
     const VkPipelineStageFlags2 barriers = MakeEventBarriers(dst_stage_mask, base.GetQueueFlags());
     event_wait_states[event] = EventWaitState{barriers, loc.function};
 
-    EventSignalingState* signaling_state = vvl::Find(event_signaling_states, event);
-    const bool already_validated = signaling_state && signaling_state->was_reset;
+    EventSignalState* signal_state = vvl::Find(event_signal_states, event);
+    const bool already_validated = signal_state && signal_state->was_reset;
     const bool submit_validation = !already_validated;
     if (submit_validation) {
         WaitEvent2SubmitInfo submit_info;
         submit_info.wait_event = event;
         submit_info.wait_dependency_info = &dependency_info;
-        if (signaling_state) {
-            submit_info.signaling_state = *signaling_state;
+        if (signal_state) {
+            submit_info.signal_state = *signal_state;
         }
         submit_info.wait_command = loc.function;
         wait_event2_submit_infos.emplace_back(std::move(submit_info));
@@ -1210,7 +1210,7 @@ void CommandBufferSubState::ResetCBState() {
     custom_primitive_restart_index = 0;
 
     push_data_mask.clear();
-    event_signaling_states.clear();
+    event_signal_states.clear();
     event_wait_states.clear();
 
     // Submit time validation
@@ -1236,32 +1236,32 @@ void CommandBufferSubState::ResetCBState() {
 }
 
 static std::optional<WaitEventSubmitInfo> BuildSubmitTimeWaitInfo(const WaitEventSubmitInfo& secondary_wait,
-                                                                  const EventSignalingStateMap& primary_states) {
-    EventSignalingStateMap wait_signaling_states;
-    bool all_signaling_states_known = true;
+                                                                  const EventSignalStateMap& primary_states) {
+    EventSignalStateMap wait_signal_states;
+    bool all_signal_states_known = true;
     for (VkEvent event : secondary_wait.wait_events) {
-        const EventSignalingState* primary_state = vvl::Find(primary_states, event);
-        const EventSignalingState* secondary_state = vvl::Find(secondary_wait.signaling_states, event);
+        const EventSignalState* primary_state = vvl::Find(primary_states, event);
+        const EventSignalState* secondary_state = vvl::Find(secondary_wait.signal_states, event);
 
         const bool primary_state_known = primary_state && primary_state->HasKnownEffect();
         const bool secondary_state_known = secondary_state && secondary_state->HasKnownEffect(primary_state);
         if (secondary_state_known || (!primary_state && secondary_state)) {
-            wait_signaling_states[event] = *secondary_state;
+            wait_signal_states[event] = *secondary_state;
         } else if (primary_state) {
-            wait_signaling_states[event] = *primary_state;
+            wait_signal_states[event] = *primary_state;
         }
 
         const bool state_known = primary_state_known || secondary_state_known;
         if (!state_known) {
-            all_signaling_states_known = false;
+            all_signal_states_known = false;
         }
     }
-    if (all_signaling_states_known) {
+    if (all_signal_states_known) {
         // Record-time validation already had enough information, no need to schedule submit-time validation
         return {};
     }
     WaitEventSubmitInfo wait = secondary_wait;
-    wait.signaling_states = std::move(wait_signaling_states);
+    wait.signal_states = std::move(wait_signal_states);
     return wait;
 }
 
@@ -1272,17 +1272,17 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_c
     }
 
     for (const WaitEventSubmitInfo& secondary_wait : secondary_sub_state.wait_event_submit_infos) {
-        if (auto wait = BuildSubmitTimeWaitInfo(secondary_wait, event_signaling_states)) {
+        if (auto wait = BuildSubmitTimeWaitInfo(secondary_wait, event_signal_states)) {
             wait_event_submit_infos.emplace_back(std::move(*wait));
         }
     }
     for (const WaitEvent2SubmitInfo& secondary_wait : secondary_sub_state.wait_event2_submit_infos) {
-        const bool found_signaling_state = vvl::Contains(event_signaling_states, secondary_wait.wait_event);
-        if (!found_signaling_state) {
+        const bool found_signal_state = vvl::Contains(event_signal_states, secondary_wait.wait_event);
+        if (!found_signal_state) {
             wait_event2_submit_infos.emplace_back(secondary_wait);
         }
     }
-    UpdateEventSignalingStates(event_signaling_states, secondary_sub_state.event_signaling_states);
+    UpdateEventSignalStates(event_signal_states, secondary_sub_state.event_signal_states);
 
     // We don't currently merge secondary wait state precisely. Use a simplified model
     // that clears the current wait state and keeps only the secondary's final wait state.
@@ -1328,14 +1328,14 @@ void CommandBufferSubState::Submit(vvl::Queue& queue_state, uint32_t perf_submit
     }
 
     // Update global vvl:Event state with signaling state at the end of the command buffer
-    for (const auto& [event, signaling_state] : event_signaling_states) {
+    for (const auto& [event, signal_state] : event_signal_states) {
         if (auto event_state = base.dev_data.Get<vvl::Event>(event)) {
-            if (signaling_state.signaled) {
-                const bool can_signal = !event_state->signaled || signaling_state.was_reset;
+            if (signal_state.signaled) {
+                const bool can_signal = !event_state->signaled || signal_state.was_reset;
                 if (can_signal) {
                     event_state->signaled = true;
-                    event_state->signal_src_stage_mask = signaling_state.signal_src_stage_mask;
-                    event_state->signal_dependency_info = signaling_state.signal_dependency_info;
+                    event_state->signal_src_stage_mask = signal_state.signal_src_stage_mask;
+                    event_state->signal_dependency_info = signal_state.signal_dependency_info;
                     event_state->signaling_queue = queue_state.VkHandle();
                 }
             } else {
@@ -1344,7 +1344,7 @@ void CommandBufferSubState::Submit(vvl::Queue& queue_state, uint32_t perf_submit
                 event_state->signal_dependency_info.reset();
                 event_state->signaling_queue = VK_NULL_HANDLE;
             }
-            event_state->last_signaling_command = signaling_state.last_signaling_command;
+            event_state->last_signaling_command = signal_state.last_signaling_command;
         }
     }
 

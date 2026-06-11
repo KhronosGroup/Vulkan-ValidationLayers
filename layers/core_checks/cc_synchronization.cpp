@@ -401,13 +401,13 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location& signal_semaph
 }
 
 static bool ValidateEventQueueMismatch(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
-                                       const vvl::Event& event_state, const EventSignalingStateMap& submit_signaling_states,
+                                       const vvl::Event& event_state, const EventSignalStateMap& submit_signal_states,
                                        const Location& loc) {
     bool skip = false;
 
     // Check if prior command buffers from this submit contain signaling operation.
     // If yes, then everything is on the same queue
-    if (vvl::Contains(submit_signaling_states, event_state.VkHandle())) {
+    if (vvl::Contains(submit_signal_states, event_state.VkHandle())) {
         return skip;
     }
     // Check global event state
@@ -422,15 +422,15 @@ static bool ValidateEventQueueMismatch(const CoreChecks& core, const vvl::Queue&
 }
 
 bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
-                                   EventSignalingStateMap& submit_signaling_states, const Location& loc) const {
+                                   EventSignalStateMap& submit_signal_states, const Location& loc) const {
     bool skip = false;
 
     VkPipelineStageFlags signals_src_stage_mask = 0;
     bool set_wait_version_mismatch = false;  // if version mismatch is detected some other validations make no sense
     for (VkEvent event : wait_events) {
         if (auto event_state = core.Get<vvl::Event>(event)) {
-            if (!vvl::Contains(signaling_states, event)) {
-                skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, submit_signaling_states, loc);
+            if (!vvl::Contains(signal_states, event)) {
+                skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, submit_signal_states, loc);
             }
             // NOTE: for unsignaled events the signal_src_stage_mask is NONE
             VkPipelineStageFlags2 stage_mask = 0;
@@ -441,14 +441,14 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& que
                 last_signal = event_state->signaled;
                 signal_command = event_state->last_signaling_command;
             }
-            if (const auto* submit_signaling = vvl::Find(submit_signaling_states, event)) {
+            if (const auto* submit_signaling = vvl::Find(submit_signal_states, event)) {
                 if (!last_signal || submit_signaling->HasKnownEffect()) {
                     stage_mask = submit_signaling->signal_src_stage_mask;
                 }
                 last_signal = submit_signaling->signal_src_stage_mask;
                 signal_command = submit_signaling->last_signaling_command;
             }
-            if (const auto* cb_signaling = vvl::Find(signaling_states, event)) {
+            if (const auto* cb_signaling = vvl::Find(signal_states, event)) {
                 if (!last_signal || cb_signaling->HasKnownEffect()) {
                     stage_mask = cb_signaling->signal_src_stage_mask;
                 }
@@ -490,7 +490,7 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& que
 }
 
 bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
-                                    EventSignalingStateMap& submit_signaling_states, const Location& loc) const {
+                                    EventSignalStateMap& submit_signal_states, const Location& loc) const {
     bool skip = false;
 
     auto event_state = core.Get<vvl::Event>(wait_event);
@@ -498,16 +498,16 @@ bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& qu
         return skip;
     }
 
-    skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, submit_signaling_states, loc);
+    skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, submit_signal_states, loc);
 
     std::optional<vku::safe_VkDependencyInfo> signal_dependency_info;
     vvl::Func signal_command = vvl::Func::Empty;
-    if (signaling_state.has_value()) {
-        signal_dependency_info = signaling_state->signal_dependency_info;
-        signal_command = signaling_state->last_signaling_command;
-    } else if (const auto* submit_signaling_state = vvl::Find(submit_signaling_states, wait_event)) {
-        signal_dependency_info = submit_signaling_state->signal_dependency_info;
-        signal_command = submit_signaling_state->last_signaling_command;
+    if (signal_state.has_value()) {
+        signal_dependency_info = signal_state->signal_dependency_info;
+        signal_command = signal_state->last_signaling_command;
+    } else if (const auto* submit_signal_state = vvl::Find(submit_signal_states, wait_event)) {
+        signal_dependency_info = submit_signal_state->signal_dependency_info;
+        signal_command = submit_signal_state->last_signaling_command;
     } else {
         signal_dependency_info = event_state->signal_dependency_info;
         signal_command = event_state->last_signaling_command;
@@ -1567,21 +1567,21 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
         bool can_validate_stage_mask = true;
         VkPipelineStageFlags signals_src_stage_mask = VK_PIPELINE_STAGE_NONE;
         for (uint32_t i = 0; i < eventCount; i++) {
-            const EventSignalingState* signaling_state = vvl::Find(cb_sub_state.event_signaling_states, pEvents[i]);
+            const EventSignalState* signal_state = vvl::Find(cb_sub_state.event_signal_states, pEvents[i]);
 
             // Record phase also uses this logic to determine stage mask validation status
-            if (!signaling_state || !signaling_state->HasKnownEffect()) {
+            if (!signal_state || !signal_state->HasKnownEffect()) {
                 can_validate_stage_mask = false;
             } else {
-                signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(signaling_state->signal_src_stage_mask);
+                signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(signal_state->signal_src_stage_mask);
             }
 
             // Set-wait version mismatch is always reported.
             // Do not try to determine whether signal is ignored
-            if (signaling_state &&
-                IsValueIn(signaling_state->last_signaling_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
+            if (signal_state &&
+                IsValueIn(signal_state->last_signaling_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
                 skip |= LogError("VUID-vkCmdWaitEvents-pEvents-03847", pEvents[i], error_obj.location, "%s was set by %s.",
-                                 FormatHandle(pEvents[i]).c_str(), vvl::String(signaling_state->last_signaling_command));
+                                 FormatHandle(pEvents[i]).c_str(), vvl::String(signal_state->last_signaling_command));
             }
         }
         if (can_validate_stage_mask) {
@@ -1642,12 +1642,12 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
         }
         skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, pDependencyInfos[i]);
 
-        if (const EventSignalingState* signaling_state = vvl::Find(cb_sub_state.event_signaling_states, pEvents[i])) {
+        if (const EventSignalState* signal_state = vvl::Find(cb_sub_state.event_signal_states, pEvents[i])) {
             // Set-wait version mismatch is always reported.
             // Do not try to determine whether signal is ignored
-            if (signaling_state->last_signaling_command == vvl::Func::vkCmdSetEvent) {
+            if (signal_state->last_signaling_command == vvl::Func::vkCmdSetEvent) {
                 skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03837", pEvents[i], error_obj.location, "%s was set by %s.",
-                                 FormatHandle(pEvents[i]).c_str(), vvl::String(signaling_state->last_signaling_command));
+                                 FormatHandle(pEvents[i]).c_str(), vvl::String(signal_state->last_signaling_command));
             }
         }
     }
