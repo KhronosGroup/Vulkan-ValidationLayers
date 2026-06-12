@@ -500,13 +500,15 @@ bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& qu
 
     skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, submit_signal_states, loc);
 
+    const auto* submit_signal_state = vvl::Find(submit_signal_states, wait_event);
+
     std::optional<vku::safe_VkDependencyInfo> signal_dependency_info;
     vvl::Func signal_command = vvl::Func::Empty;
 
     signal_dependency_info = event_state->signal_dependency_info;
     signal_command = event_state->last_signaling_command;
     bool last_signal = event_state->signaled;
-    if (const auto* submit_signal_state = vvl::Find(submit_signal_states, wait_event)) {
+    if (submit_signal_state) {
         if (!last_signal || submit_signal_state->HasKnownEffect()) {
             signal_dependency_info = submit_signal_state->signal_dependency_info;
             signal_command = submit_signal_state->last_signaling_command;
@@ -520,8 +522,16 @@ bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& qu
         }
     }
 
-    if (signal_command == vvl::Func::vkSetEvent) {
-        const VkPipelineStageFlags2 union_src_stage_mask = sync_utils::GetExecScopes(*wait_dependency_info.ptr()).src;
+    const VkPipelineStageFlags2 union_src_stage_mask = sync_utils::GetExecScopes(*wait_dependency_info.ptr()).src;
+    const bool local_unsignaled = submit_signal_state && submit_signal_state->HasKnownEffect() && !submit_signal_state->signaled;
+
+    if (union_src_stage_mask == VK_PIPELINE_STAGE_2_HOST_BIT && (local_unsignaled || !event_state->signaled)) {
+        const LogObjectList objlist(cb_state.Handle(), event_state->Handle());
+        skip |= core.LogError("VUID-vkCmdWaitEvents2-pEvents-03840", objlist, loc,
+                              "contains %s and the first synchronization scope specified by pDependencyInfos is "
+                              "VK_PIPELINE_STAGE_2_HOST_BIT but %s is not signaled",
+                              vvl::String(wait_command), core.FormatHandle(event_state->Handle()).c_str());
+    } else if (signal_command == vvl::Func::vkSetEvent) {
         if ((union_src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) == 0) {
             const LogObjectList objlist(cb_state.Handle(), event_state->Handle());
             skip |= core.LogError("VUID-vkCmdWaitEvents2-pEvents-03839", objlist, loc,
@@ -542,7 +552,6 @@ bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& qu
             core.LogError("VUID-vkCmdWaitEvents2-pEvents-03837", objlist, loc, "%s: %s was set by %s.", vvl::String(wait_command),
                           core.FormatHandle(event_state->Handle()).c_str(), vvl::String(signal_command));
     } else if (!IsValueIn(signal_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
-        const VkPipelineStageFlags2 union_src_stage_mask = sync_utils::GetExecScopes(*wait_dependency_info.ptr()).src;
         if ((union_src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) == 0) {
             const LogObjectList objlist(cb_state.Handle(), event_state->Handle());
             skip |= core.LogError("VUID-vkCmdWaitEvents2-pEvents-03841", objlist, loc,
@@ -576,7 +585,6 @@ bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& qu
         }
 
         if (wait_has_asymmetric && signal_dependency_info->memoryBarrierCount && signal_dependency_info->pMemoryBarriers) {
-            const VkPipelineStageFlags2 union_src_stage_mask = sync_utils::GetExecScopes(*wait_dependency_info.ptr()).src;
             if (union_src_stage_mask != signal_dependency_info->pMemoryBarriers[0].srcStageMask) {
                 const LogObjectList objlist(cb_state.Handle(), wait_event);
                 skip |=
@@ -1678,21 +1686,27 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
         skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, dep_info);
         skip |= ValidateWaitEventDependencyFlags(dep_info.dependencyFlags, objlist, dep_info_loc);
 
-        const EventSignalState* signal_state = vvl::Find(cb_sub_state.event_signal_states, pEvents[i]);
-
-        if (signal_state) {
-            // Set-wait version mismatch is always reported.
-            // Do not try to determine whether signal is ignored
+        if (const EventSignalState* signal_state = vvl::Find(cb_sub_state.event_signal_states, pEvents[i])) {
+            const VkPipelineStageFlags2 union_src_stage_mask = sync_utils::GetExecScopes(dep_info).src;
             if (signal_state->last_signaling_command == vvl::Func::vkCmdSetEvent) {
-                skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03837", pEvents[i], error_obj.location, "%s was set by %s.",
+                // Set-wait version mismatch is always reported.
+                // Do not try to determine whether signal is ignored
+                skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03837", objlist, error_obj.location, "%s was set by %s.",
                                  FormatHandle(pEvents[i]).c_str(), vvl::String(signal_state->last_signaling_command));
             } else {
-                const VkPipelineStageFlags2 union_src_stage_mask = sync_utils::GetExecScopes(dep_info).src;
                 if ((union_src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) == 0 &&
                     !IsValueIn(signal_state->last_signaling_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
-                    skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03841", pEvents[i], error_obj.location,
+                    skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03841", objlist, error_obj.location,
                                      "%s was not set by vkCmdSetEvent2.", FormatHandle(pEvents[i]).c_str());
                 }
+            }
+            if (union_src_stage_mask == VK_PIPELINE_STAGE_2_HOST_BIT && signal_state->HasKnownEffect() && !signal_state->signaled) {
+                skip |=
+                    LogError("VUID-vkCmdWaitEvents2-pEvents-03840", objlist, error_obj.location,
+                             "pEvents[%" PRIu32
+                             "] (%s) is not signaled, but the first synchronization scope specified by pDependencyInfos[%" PRIu32
+                             "] includes only host operations",
+                             i, FormatHandle(pEvents[i]).c_str(), i);
             }
         }
     }

@@ -1240,20 +1240,29 @@ bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBuf
         } else {
             const VkPipelineStageFlags2 union_src_stage_mask =
                 sync_utils::GetExecScopes(*secondary_wait.wait_dependency_info.ptr()).src;
-            if ((union_src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) == 0) {
-                const EventSignalState* signal_state = nullptr;
-                if (secondary_state && secondary_state->HasKnownEffect(local_state)) {
-                    signal_state = secondary_state;
-                } else if (local_state && local_state->HasKnownEffect()) {
-                    signal_state = local_state;
-                }
-
-                if (signal_state &&
-                    !IsValueIn(signal_state->last_signaling_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
-                    const LogObjectList objlist(secondary_cb_sub_state.Handle(), secondary_wait.wait_event);
-                    skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03841", objlist, secondary_cb_loc,
-                                     "contains %s but %s was not set by vkCmdSetEvent2.", vvl::String(secondary_wait.wait_command),
-                                     FormatHandle(secondary_wait.wait_event).c_str());
+            const EventSignalState* signal_state = nullptr;
+            if (secondary_state && secondary_state->HasKnownEffect(local_state)) {
+                signal_state = secondary_state;
+            } else if (local_state && local_state->HasKnownEffect()) {
+                signal_state = local_state;
+            }
+            if (signal_state) {
+                if ((union_src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) == 0) {
+                    if (!IsValueIn(signal_state->last_signaling_command,
+                                   {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
+                        const LogObjectList objlist(secondary_cb_sub_state.Handle(), secondary_wait.wait_event);
+                        skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03841", objlist, secondary_cb_loc,
+                                         "contains %s but %s was not set by vkCmdSetEvent2.",
+                                         vvl::String(secondary_wait.wait_command), FormatHandle(secondary_wait.wait_event).c_str());
+                    }
+                } else if (union_src_stage_mask == VK_PIPELINE_STAGE_2_HOST_BIT) {
+                    if (signal_state->HasKnownEffect() && !signal_state->signaled) {
+                        const LogObjectList objlist(secondary_cb_sub_state.Handle(), secondary_wait.wait_event);
+                        skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03840", objlist, secondary_cb_loc,
+                                         "contains %s and the first synchronization scope specified by pDependencyInfos is "
+                                         "VK_PIPELINE_STAGE_2_HOST_BIT but %s is not signaled",
+                                         vvl::String(secondary_wait.wait_command), FormatHandle(secondary_wait.wait_event).c_str());
+                    }
                 }
             }
         }
