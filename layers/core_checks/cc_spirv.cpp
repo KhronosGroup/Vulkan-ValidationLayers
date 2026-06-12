@@ -3639,6 +3639,20 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                         entrypoint.Describe().c_str(), msg.str().c_str());
                 }
             }
+
+            if (IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT,
+                                           VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT,
+                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT})) {
+                if ((stage_state.GetStage() & kShaderStageAllRayTracing) == 0) {
+                    const char* vuid =
+                        pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-12454" : "VUID-VkShaderCreateInfoEXT-pNext-12454";
+                    skip |= LogError(vuid, module_state.handle(), mapping_loc.dot(Field::source),
+                                     "(%s) is used to map to descriptor %s in %s, but the stage is not a ray tracing stage. "
+                                     "(Shader record are only for ray tracing workflows)",
+                                     string_VkDescriptorMappingSourceEXT(mapping.source),
+                                     resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str());
+                }
+            }
         }
 
         if (!found_mapping) {
