@@ -1446,3 +1446,64 @@ TEST_F(NegativeGpuDump, DescriptorHeapUntypedPointers) {
 
     m_command_buffer.End();
 }
+
+TEST_F(NegativeGpuDump, DescriptorHeapBindingCount) {
+    RETURN_IF_SKIP(InitDescriptorHeap());
+
+    // We want to easily control it for testing
+    if (heap_props.minResourceHeapReservedRange != 0) {
+        GTEST_SKIP() << "minResourceHeapReservedRange is not zero";
+    }
+
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    VkDeviceSize heap_size = Align((resource_stride * 3), resource_stride);
+    vkt::Buffer resource_heap(*m_device, heap_size, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 5);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mapping.sourceData.constantOffset.heapArrayStride = (uint32_t)resource_stride;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; } x[2];
+        layout(set = 0, binding = 2) buffer B { uint b; } y[3];
+        void main() {
+            x[0].a = 2;
+            y[0].b = 2;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    char const* cs_source2 = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer X { uint d; } x;
+        layout(set = 0, binding = 1) buffer Y { uint d; } y;
+        layout(set = 0, binding = 2) buffer Z { uint d; } z;
+        layout(set = 0, binding = 4) buffer W { uint d; } w;
+        void main() {
+            x.d = y.d + z.d + w.d;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = resource_heap.AddressRange();
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    m_errorMonitor->SetDesiredWarning("OUT OF BOUNDS");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe2);
+    m_errorMonitor->SetDesiredWarning("OUT OF BOUNDS");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
