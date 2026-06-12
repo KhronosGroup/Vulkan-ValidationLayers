@@ -6260,6 +6260,7 @@ const char* String(Extension extension) {
     {"VK_HUAWEI_invocation_mask", 26},
     {"VK_HUAWEI_subpass_shading", 26},
     {"VK_IMG_filter_cubic", 20},
+    {"VK_IMG_filter_linear_2d", 24},
     {"VK_IMG_format_pvrtc", 20},
     {"VK_IMG_relaxed_line_rasterization", 34},
     {"VK_INTEL_performance_query", 27},

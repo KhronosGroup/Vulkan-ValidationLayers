@@ -6242,6 +6242,7 @@ enum class Extension {
     _VK_HUAWEI_invocation_mask,
     _VK_HUAWEI_subpass_shading,
     _VK_IMG_filter_cubic,
+    _VK_IMG_filter_linear_2d,
     _VK_IMG_format_pvrtc,
     _VK_IMG_relaxed_line_rasterization,
     _VK_INTEL_performance_query,
