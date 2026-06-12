@@ -20,6 +20,7 @@
 #include "containers/custom_containers.h"
 #include "containers/limits.h"
 #include "function_basic_block.h"
+#include "generated/device_features.h"
 #include "generated/spirv_grammar_helper.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "error_message/logging.h"
@@ -28,7 +29,6 @@
 
 #include <iostream>
 
-#include "generated/device_features.h"
 #include "utils/vk_api_utils.h"
 
 namespace gpuav {
@@ -39,12 +39,10 @@ static constexpr uint32_t kLinkedInstruction = vvl::kNoIndex32;
 // This constructor is really our "parse incoming SPIR-V" logic for GPU-AV
 // It will build up the Module object which will be modified, and when done, dumpped back out to SPIR-V
 Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const DeviceSettings& settings,
-               const InstrumentationInterface& interface, const DeviceFeatures& enabled_features,
-               spirv::InstrumentationStatus& out_status)
+               const InstrumentationInterface& interface, spirv::InstrumentationStatus& out_status)
     : type_manager_(*this),
       settings_(settings),
       interface_(interface),
-      enabled_features_(enabled_features),
       has_bindless_descriptors_(interface.instrumentation_dsl.has_bindless_descriptors),
       debug_report_(debug_report),
       out_status(out_status) {
@@ -1005,7 +1003,7 @@ void Module::PostProcess() {
     // Found that QueueFamily was added to mostly solve this, if a device doesn't support Device scope we could use QueueFamily, the
     // issue is that the GLSL we have is static and if we use QueueFamily then we "need" the MemoryModel enabled
     if (HasCapability(spv::CapabilityVulkanMemoryModel)) {
-        if (!enabled_features_.vulkanMemoryModelDeviceScope) {
+        if (!settings_.enabled_features->vulkanMemoryModelDeviceScope) {
             InternalError(
                 "GPU-SHADER-INSTRUMENT-SUPPORT",
                 "vulkanMemoryModelDeviceScope feature is not supported, but need to let us call atomicAdd to the output buffer");
