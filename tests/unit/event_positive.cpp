@@ -662,3 +662,42 @@ TEST_F(PositiveEvent, HostReset) {
     command_buffer2.End();
     m_default_queue->SubmitAndWait(command_buffer2);
 }
+
+TEST_F(PositiveEvent, WaitWithOnlyHostDependency) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+    event.Set();
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+
+    m_command_buffer.Begin();
+    m_command_buffer.WaitEvent2(event, barrier);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveEvent, WaitWithOnlyHostDependencySecondary) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+    event.Set();
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.WaitEvent2(event, barrier);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.ExecuteCommands(secondary);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
