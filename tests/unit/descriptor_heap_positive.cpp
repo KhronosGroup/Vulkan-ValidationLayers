@@ -9,6 +9,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <spirv-tools/libspirv.h>
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include "shader_helper.h"
@@ -84,15 +85,7 @@ TEST_F(PositiveDescriptorHeap, Basic) {
             b = 4;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     BindResourceHeap();
@@ -211,15 +204,7 @@ TEST_F(PositiveDescriptorHeap, ComputeBuffer) {
             result[gl_LocalInvocationID.x] = data[gl_LocalInvocationID.x];
         }
     )glsl";
-
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     BindResourceHeap();
@@ -447,15 +432,7 @@ TEST_F(PositiveDescriptorHeap, PushData) {
             a = b;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     uint32_t src_data = 4321u;
 
@@ -711,10 +688,6 @@ TEST_F(PositiveDescriptorHeap, Sampler) {
             data = texture(sampler2D(tex, sampl), vec2(0.5f));
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
     mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT);
@@ -734,10 +707,7 @@ TEST_F(PositiveDescriptorHeap, Sampler) {
     mapping_info.mappingCount = 3u;
     mapping_info.pMappings = mappings;
 
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
 
@@ -833,10 +803,6 @@ TEST_F(PositiveDescriptorHeap, CombinedImageSampler) {
             data = texture(tex, vec2(0.5f));
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
@@ -851,10 +817,7 @@ TEST_F(PositiveDescriptorHeap, CombinedImageSampler) {
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
 
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
 
@@ -948,10 +911,6 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSampler) {
             data = texture(sampler2D(tex, sampl), vec2(0.5f));
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
     mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT);
@@ -970,10 +929,7 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSampler) {
     mapping_info.mappingCount = 3u;
     mapping_info.pMappings = mappings;
 
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
 
@@ -1078,15 +1034,7 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSamplerNoBoundHeap) {
             result[gl_LocalInvocationIndex] = int(color.r);
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     // Don't need to call vkCmdBindSamplerHeapEXT if only using embedded
     m_command_buffer.Begin();
@@ -1820,7 +1768,7 @@ TEST_F(PositiveDescriptorHeap, ConstantMemoryAccess) {
 	        data[0] = 4u;
         }
     )glsl";
-    VkShaderObj cs_module1 = VkShaderObj(*m_device, cs_source1, VK_SHADER_STAGE_COMPUTE_BIT);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source1, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     char const* cs_source2 = R"glsl(
         #version 450
@@ -1832,19 +1780,7 @@ TEST_F(PositiveDescriptorHeap, ConstantMemoryAccess) {
             atomicExchange(data[0], 4u);
         }
     )glsl";
-    VkShaderObj cs_module2 = VkShaderObj(*m_device, cs_source2, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
-    flags2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &flags2_ci);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module1.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
-    pipe.Destroy();
-
-    pipe.cp_ci_.stage.module = cs_module2;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
 }
 
 TEST_F(PositiveDescriptorHeap, ConstantImageMemoryAccess) {
@@ -1879,15 +1815,7 @@ TEST_F(PositiveDescriptorHeap, ConstantImageMemoryAccess) {
 	        data = texture(sampler2D(tex[7], sampl), vec2(0.5f));
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
-    flags2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &flags2_ci);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 }
 
 TEST_F(PositiveDescriptorHeap, CmdPushData) {
@@ -2066,15 +1994,7 @@ TEST_F(PositiveDescriptorHeap, ResourceMask) {
             imageStore(readWriteImage, ivec2(0, 0), color);
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     BindResourceHeap();
@@ -2216,7 +2136,7 @@ TEST_F(PositiveDescriptorHeap, ResourceMaskSameBinding) {
     mapping_info.mappingCount = 8;
     mapping_info.pMappings = mappings;
 
-    const std::string spirv = R"(
+    const char* spirv = R"(
                OpCapability Shader
                OpCapability StorageImageWriteWithoutFormat
           %1 = OpExtInstImport "GLSL.std.450"
@@ -2351,16 +2271,7 @@ TEST_F(PositiveDescriptorHeap, ResourceMaskSameBinding) {
                OpReturn
                OpFunctionEnd
     )";
-
-    VkShaderObj cs_module = VkShaderObj::CreateFromASM(this, spirv.c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, spirv, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     BindResourceHeap();
@@ -2428,7 +2339,6 @@ TEST_F(PositiveDescriptorHeap, UboAndSsboBindings) {
             Ssbo15.data = Ubo15.data;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
 
     VkDescriptorSetAndBindingMappingEXT mappings[32];
     for (uint32_t i = 0; i < 16; ++i) {
@@ -2459,13 +2369,7 @@ TEST_F(PositiveDescriptorHeap, UboAndSsboBindings) {
     mapping_info.mappingCount = 32;
     mapping_info.pMappings = mappings;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
 }
 
 TEST_F(PositiveDescriptorHeap, NonConstantMemoryAccess) {
@@ -2494,6 +2398,7 @@ TEST_F(PositiveDescriptorHeap, NonConstantMemoryAccess) {
 	        data[index] = 4u;
         }
     )glsl";
+    vkt::HeapComputePipeline pipe1(*m_device, cs_source1, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     char const* cs_source2 = R"glsl(
         #version 450
@@ -2508,18 +2413,7 @@ TEST_F(PositiveDescriptorHeap, NonConstantMemoryAccess) {
 	        ssbos[37].data[index] = 4u;
         }
     )glsl";
-
-    for (uint32_t i = 0; i < 2; ++i) {
-        VkShaderObj cs_module = VkShaderObj(*m_device, i == 0 ? cs_source1 : cs_source2, VK_SHADER_STAGE_COMPUTE_BIT);
-
-        VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
-        flags2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-        CreateComputePipelineHelper pipe(*this, &flags2_ci);
-        pipe.cp_ci_.layout = VK_NULL_HANDLE;
-        pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-        pipe.CreateComputePipeline(false);
-    }
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
 }
 
 TEST_F(PositiveDescriptorHeap, PartitionedAccelerationStructure) {
@@ -2558,8 +2452,6 @@ TEST_F(PositiveDescriptorHeap, ComputeTensor) {
     AddRequiredFeature(vkt::Feature::shaderTensorAccess);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    // the shader uses 1 tensor and 1 buffer
-
     VkTensorDescriptionARM tensor_desc = vku::InitStructHelper();
     static std::vector<int64_t> dimensions{2};
     tensor_desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
@@ -2597,8 +2489,6 @@ TEST_F(PositiveDescriptorHeap, ComputeTensor) {
     const VkDeviceSize resource_heap_size = resource_heap_tracker;
     CreateResourceHeap(resource_heap_size);
 
-    // populate the descriptors
-
     constexpr uint32_t n_resources = 2;
     VkHostAddressRangeEXT descriptor_ranges[n_resources];
     VkResourceDescriptorInfoEXT descriptor_infos[n_resources];
@@ -2627,23 +2517,11 @@ TEST_F(PositiveDescriptorHeap, ComputeTensor) {
 
     vk::WriteResourceDescriptorsEXT(*m_device, n_resources, descriptor_infos, descriptor_ranges);
 
-    // create the pipeline
-
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = n_resources;
     mapping_info.pMappings = mappings;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    VkShaderObj cs_module = VkShaderObj(*m_device, kMinimalTensorGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    CreateComputePipelineHelper pipe(*m_device, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
-
-    // create command buffer, bind everything, dispatch and execute
+    vkt::HeapComputePipeline pipe(*m_device, kMinimalTensorGlsl, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     BindResourceHeap();
@@ -3130,15 +3008,7 @@ TEST_F(PositiveDescriptorHeap, NullDescriptorBuffer) {
             b = a;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     BindResourceHeap();
@@ -3246,7 +3116,6 @@ TEST_F(PositiveDescriptorHeap, DescriptorIndexing) {
             ssbo[12] = indirect_index_array[3].data;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkDescriptorSetAndBindingMappingEXT mappings[5];
     mappings[0] = MakeSetAndBindingMapping(0, 0);  // SSBO
@@ -3286,12 +3155,7 @@ TEST_F(PositiveDescriptorHeap, DescriptorIndexing) {
     mapping_info.mappingCount = 5u;
     mapping_info.pMappings = mappings;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     BindResourceHeap();
@@ -3375,10 +3239,6 @@ TEST_F(PositiveDescriptorHeap, ReservedRangeInFront) {
             data = texture(tex, vec2(0.5f));
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
     const uint32_t resourceReservedRangeOffset = static_cast<uint32_t>(heap_props.minResourceHeapReservedRange);
     const uint32_t samplerReservedRangeOffset = static_cast<uint32_t>(heap_props.minSamplerHeapReservedRange);
@@ -3398,10 +3258,7 @@ TEST_F(PositiveDescriptorHeap, ReservedRangeInFront) {
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
 
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
 
@@ -3505,12 +3362,5 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSamplerAlignment) {
             vec4 color = textureLod(tex, vec2(gl_GlobalInvocationID.xy), 0);
         }
     )glsl";
-    VkShaderObj cs_module(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 }

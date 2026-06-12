@@ -349,9 +349,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapDescriptorIndexing) {
             ssbo[ssbo[0].index].data = 0;
         }
     )glsl";
-    VkShaderObj cs_module_static = VkShaderObj(*m_device, cs_source_static, VK_SHADER_STAGE_COMPUTE_BIT);
-    VkShaderObj cs_module_runtime = VkShaderObj(*m_device, cs_source_runtime, VK_SHADER_STAGE_COMPUTE_BIT);
-
     m_command_buffer.Begin();
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
@@ -369,24 +366,15 @@ TEST_F(NegativeGpuDump, DescriptorHeapDescriptorIndexing) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     // CONSTANT_DATA Static array, can detect OOB
-    CreateComputePipelineHelper pipe1(*this, &pipeline_create_flags_2_create_info);
-    pipe1.cp_ci_.stage = cs_module_static.GetStageCreateInfo(&mapping_info);
-    pipe1.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe1.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe1(*m_device, cs_source_static, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe1);
     m_errorMonitor->SetDesiredWarning("OUT OF BOUNDS");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
     // CONSTANT_DATA runtime array, can't detect OOB
-    CreateComputePipelineHelper pipe2(*this, &pipeline_create_flags_2_create_info);
-    pipe2.cp_ci_.stage = cs_module_runtime.GetStageCreateInfo(&mapping_info);
-    pipe2.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe2.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe2);
     m_errorMonitor->SetDesiredInfo("GPU-DUMP");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -402,20 +390,14 @@ TEST_F(NegativeGpuDump, DescriptorHeapDescriptorIndexing) {
     mapping.sourceData.pushIndex.heapArrayStride = (uint32_t)resource_stride;
 
     // PUSH_INDEX Static array
-    CreateComputePipelineHelper pipe3(*this, &pipeline_create_flags_2_create_info);
-    pipe3.cp_ci_.stage = cs_module_static.GetStageCreateInfo(&mapping_info);
-    pipe3.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe3.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe3(*m_device, cs_source_static, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe3);
     m_errorMonitor->SetDesiredWarning("OUT OF BOUNDS");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
     // PUSH_INDEX runtime array
-    CreateComputePipelineHelper pipe4(*this, &pipeline_create_flags_2_create_info);
-    pipe4.cp_ci_.stage = cs_module_runtime.GetStageCreateInfo(&mapping_info);
-    pipe4.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe4.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe4(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe4);
     m_errorMonitor->SetDesiredInfo("GPU-DUMP");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -433,20 +415,14 @@ TEST_F(NegativeGpuDump, DescriptorHeapDescriptorIndexing) {
         mapping.sourceData.indirectIndex.heapArrayStride = (uint32_t)resource_stride;
 
         // INDIRECT_INDEX Static array
-        CreateComputePipelineHelper pipe5(*this, &pipeline_create_flags_2_create_info);
-        pipe5.cp_ci_.stage = cs_module_static.GetStageCreateInfo(&mapping_info);
-        pipe5.cp_ci_.layout = VK_NULL_HANDLE;
-        pipe5.CreateComputePipeline(false);
+        vkt::HeapComputePipeline pipe5(*m_device, cs_source_static, SPV_ENV_VULKAN_1_0, &mapping_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe5);
         m_errorMonitor->SetDesiredWarning("OUT OF BOUNDS");
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_errorMonitor->VerifyFound();
 
         // INDIRECT_INDEX runtime array
-        CreateComputePipelineHelper pipe6(*this, &pipeline_create_flags_2_create_info);
-        pipe6.cp_ci_.stage = cs_module_runtime.GetStageCreateInfo(&mapping_info);
-        pipe6.cp_ci_.layout = VK_NULL_HANDLE;
-        pipe6.CreateComputePipeline(false);
+        vkt::HeapComputePipeline pipe6(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_0, &mapping_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe6);
         m_errorMonitor->SetDesiredInfo("GPU-DUMP");
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -461,20 +437,14 @@ TEST_F(NegativeGpuDump, DescriptorHeapDescriptorIndexing) {
     mapping.sourceData.indirectIndexArray.pEmbeddedSampler = nullptr;
 
     // INDIRECT_INDEX_ARRAY Static array
-    CreateComputePipelineHelper pipe7(*this, &pipeline_create_flags_2_create_info);
-    pipe7.cp_ci_.stage = cs_module_static.GetStageCreateInfo(&mapping_info);
-    pipe7.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe7.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe7(*m_device, cs_source_static, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe7);
     m_errorMonitor->SetDesiredWarning("OUT OF BOUNDS");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
     // INDIRECT_INDEX_ARRAY runtime array
-    CreateComputePipelineHelper pipe8(*this, &pipeline_create_flags_2_create_info);
-    pipe8.cp_ci_.stage = cs_module_runtime.GetStageCreateInfo(&mapping_info);
-    pipe8.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe8.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe8(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe8);
     m_errorMonitor->SetDesiredInfo("GPU-DUMP");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -505,7 +475,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeNonArray) {
             data = 0;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -524,13 +493,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeNonArray) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredWarning("RESERVED RANGE");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -561,7 +524,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeArray) {
             x[0].data = 0;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -581,13 +543,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeArray) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredWarning("RESERVED RANGE");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -618,7 +574,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeArrayIndexed) {
             x[0].data = 0;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -649,13 +604,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeArrayIndexed) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredWarning("RESERVED RANGE");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -686,7 +635,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeIndirectArray) {
             x[0].data = 0;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -716,14 +664,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeIndirectArray) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    // CONSTANT_DATA Static array, can detect OOB
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredWarning("RESERVED RANGE");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -752,7 +693,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapSampler) {
 	        vec4 data = texture(sampler2D(t, s[2]), vec2(0.5f));
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -777,13 +717,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapSampler) {
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredWarning("OUT OF BOUNDS");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -817,7 +751,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignment) {
             data = x[0].y;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -839,13 +772,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignment) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredWarning("MISALIGNED");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -876,7 +803,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectArray) {
             x[0].data = 0;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -903,13 +829,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectArray) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredWarning("MISALIGNED");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -939,7 +859,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentHeapData) {
             uint x = data;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -959,13 +878,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentHeapData) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     //
     m_errorMonitor->SetDesiredInfo("GPU-DUMP");
@@ -1065,7 +978,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentPushAddress) {
             data = 0;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -1085,13 +997,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentPushAddress) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredWarning("MISALIGNED");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -1126,7 +1032,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectAddress) {
             uint a = data;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -1150,13 +1055,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectAddress) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredWarning("MISALIGNED");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -1191,7 +1090,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectIndex) {
             uint a = data;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -1213,13 +1111,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectIndex) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredWarning("MISALIGNED");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -1250,7 +1142,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapIndirectIndexNoBuffer) {
             uint a = data;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -1271,13 +1162,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapIndirectIndexNoBuffer) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredWarning("[WARNING] No VkBuffer found at 0xbeef0000");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -1307,10 +1192,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapCombinedImageSampler) {
             vec4 data = texture(tex, vec2(0.5f));
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
@@ -1322,10 +1203,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapCombinedImageSampler) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -1357,7 +1235,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapZeroArrayStride) {
             ssbo[0].data = 0;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -1376,13 +1253,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapZeroArrayStride) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredWarning("ZERO ARRAY STRIDE");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -1413,7 +1284,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapIndirectIndexBufferType) {
             uint a = data;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -1436,13 +1306,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapIndirectIndexBufferType) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredWarning("BUFFER TYPE");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -1472,7 +1336,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapPushAddressBufferType) {
             b = a;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_command_buffer.Begin();
 
@@ -1492,13 +1355,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapPushAddressBufferType) {
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -1557,7 +1414,6 @@ TEST_F(NegativeGpuDump, DescriptorHeapUntypedPointers) {
             vec4 data2 = texture(sampler2D(heapT[b], heapS[1]), vec2(0));
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
 
     m_command_buffer.Begin();
 
@@ -1579,13 +1435,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapUntypedPointers) {
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
 
     uint32_t push_data = 0;
