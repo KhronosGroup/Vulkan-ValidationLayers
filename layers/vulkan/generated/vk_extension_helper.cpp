@@ -466,6 +466,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_HUAWEI_hdr_vivid", vvl::Extension::_VK_HUAWEI_hdr_vivid},
         {"VK_NV_cooperative_matrix2", vvl::Extension::_VK_NV_cooperative_matrix2},
         {"VK_ARM_pipeline_opacity_micromap", vvl::Extension::_VK_ARM_pipeline_opacity_micromap},
+        {"VK_IMG_filter_linear_2d", vvl::Extension::_VK_IMG_filter_linear_2d},
         {"VK_EXT_external_memory_metal", vvl::Extension::_VK_EXT_external_memory_metal},
         {"VK_ARM_performance_counters_by_region", vvl::Extension::_VK_ARM_performance_counters_by_region},
         {"VK_ARM_shader_instrumentation", vvl::Extension::_VK_ARM_shader_instrumentation},
@@ -2198,6 +2199,9 @@ static const DeviceExtensionsInfoMap& GetDeviceInfoMap() {
         {vvl::Extension::_VK_ARM_pipeline_opacity_micromap,
          Info(&DeviceExtensions::vk_arm_pipeline_opacity_micromap,
               {{{{&DeviceExtensions::vk_ext_opacity_micromap, VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME}}}})},
+        {vvl::Extension::_VK_IMG_filter_linear_2d,
+         Info(&DeviceExtensions::vk_img_filter_linear_2d,
+              {{{{&DeviceExtensions::vk_khr_format_feature_flags2, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME}}}})},
 #ifdef VK_USE_PLATFORM_METAL_EXT
         {vvl::Extension::_VK_EXT_external_memory_metal,
          Info(&DeviceExtensions::vk_ext_external_memory_metal,

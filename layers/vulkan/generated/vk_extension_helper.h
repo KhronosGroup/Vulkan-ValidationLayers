@@ -556,6 +556,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_huawei_hdr_vivid{kNotSupported};
     ExtEnabled vk_nv_cooperative_matrix2{kNotSupported};
     ExtEnabled vk_arm_pipeline_opacity_micromap{kNotSupported};
+    ExtEnabled vk_img_filter_linear_2d{kNotSupported};
     ExtEnabled vk_ext_external_memory_metal{kNotSupported};
     ExtEnabled vk_arm_performance_counters_by_region{kNotSupported};
     ExtEnabled vk_arm_shader_instrumentation{kNotSupported};
@@ -1063,6 +1064,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_HUAWEI_hdr_vivid:
         case vvl::Extension::_VK_NV_cooperative_matrix2:
         case vvl::Extension::_VK_ARM_pipeline_opacity_micromap:
+        case vvl::Extension::_VK_IMG_filter_linear_2d:
         case vvl::Extension::_VK_EXT_external_memory_metal:
         case vvl::Extension::_VK_ARM_performance_counters_by_region:
         case vvl::Extension::_VK_ARM_shader_instrumentation:
