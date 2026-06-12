@@ -213,6 +213,19 @@ bool Instruction::IsUntypedAccessChain() const {
            opcode == spv::OpUntypedPtrAccessChainKHR || opcode == spv::OpUntypedInBoundsPtrAccessChainKHR;
 }
 
+// These are all things known that do a memory access
+bool Instruction::IsMemoryAccess() const {
+    const uint32_t opcode = Opcode();
+    if (opcode == spv::OpImageTexelPointer || opcode == spv::OpImage) {
+        // OpImageTexelPointer is for image atomics handled at the atomic instruction
+        // OpImage is describing an action, rather than the input to or the output from an action.
+        return false;
+    }
+
+    return opcode == spv::OpLoad || opcode == spv::OpStore || opcode == spv::OpCooperativeMatrixLoadKHR ||
+           opcode == spv::OpCooperativeMatrixStoreKHR || AtomicOperation(opcode) || (OpcodeImageAccessPosition(opcode) != 0);
+}
+
 VkDescriptorType Instruction::GetImageType() const {
     assert(Opcode() == spv::OpTypeImage);
     const bool is_sampled_without_sampler = Word(7) == 2;

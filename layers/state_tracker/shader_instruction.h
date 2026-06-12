@@ -81,6 +81,7 @@ class Instruction {
     bool IsNonPtrAccessChain() const;
     bool IsAccessChain() const;
     bool IsUntypedAccessChain() const;
+    bool IsMemoryAccess() const;
     // Helpers for OpTypeImage
     VkDescriptorType GetImageType() const;
     bool IsTensor() const;
