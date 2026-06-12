@@ -298,7 +298,7 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                 skip |= LogError("VUID-VkDescriptorMappingSourceIndirectIndexEXT-pushOffset-11260", device,
                                  data_loc.dot(Field::indirectIndex).dot(Field::pushOffset),
                                  "(%" PRIu32 ") is not a multiple of 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
-                                 mapping.sourceData.indirectIndex.pushOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+                                 indirect_index.pushOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
             }
             if (indirect_index.pushOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 8) {
                 skip |= LogError(

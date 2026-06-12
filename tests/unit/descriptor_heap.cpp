@@ -2195,6 +2195,60 @@ TEST_F(NegativeDescriptorHeap, DescriptorMappingSourcePushDataLimit) {
     }
 }
 
+TEST_F(NegativeDescriptorHeap, DescriptorMappingSourcePushDataLimitSampler) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+        void main() {
+            vec4 color = textureLod(tex, vec2(gl_GlobalInvocationID.xy), 0);
+        }
+    )glsl";
+    VkShaderObj cs_module(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
+    mapping.sourceData.pushIndex.samplerPushOffset = (uint32_t)heap_props.maxPushDataSize;
+
+    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-pushIndex-limit");
+    pipe.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+
+    mapping.sourceData.pushIndex.samplerPushOffset = 1;
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-pushIndex-multiple");
+    pipe.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+    mapping.sourceData.pushIndex.samplerPushOffset = 0;  // clear union values
+
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
+    mapping.sourceData.indirectIndex.samplerPushOffset = (uint32_t)heap_props.maxPushDataSize;
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-indirectIndex-limit");
+    pipe.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+
+    mapping.sourceData.indirectIndex.samplerPushOffset = 1;
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-indirectIndex-multiple");
+    pipe.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+    mapping.sourceData.indirectIndex.samplerPushOffset = 0;  // clear union values
+
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT;
+    mapping.sourceData.indirectIndexArray.samplerAddressOffset = 1;
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-indirectIndex-addressOffset");
+    pipe.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptorHeap, DescriptorMappingSourceIndirectIndex) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
