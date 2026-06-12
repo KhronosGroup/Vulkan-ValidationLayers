@@ -2120,3 +2120,26 @@ TEST_F(PositiveDynamicRendering, LibrariesViewMask) {
     pipe_ci.layout = lib1.gp_ci_.layout;
     vkt::Pipeline pipe(*m_device, pipe_ci);
 }
+
+TEST_F(PositiveDynamicRendering, UnusedColorAttachmentMixedSamples) {
+    AddRequiredExtensions(VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingUnusedAttachments);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    InitDynamicRenderTarget();
+
+    VkAttachmentSampleCountInfoNV samples_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&samples_info);
+    CreatePipelineHelper pipeline(*this, &pipeline_rendering_info);
+    pipeline.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipeline.gp_ci_.pColorBlendState = nullptr;
+    pipeline.cb_ci_.attachmentCount = 0;
+    pipeline.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
