@@ -3175,6 +3175,222 @@ bool CoreChecks::ValidateDataGraphOperations(const vvl::Pipeline& pipeline, uint
     return skip;
 }
 
+// VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_*
+bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                     const spirv::ResourceInterfaceVariable& resource_variable,
+                                                     const VkDescriptorSetAndBindingMappingEXT& mapping,
+                                                     const Location& mapping_loc) const {
+    bool skip = false;
+    const uint32_t base_opcode = resource_variable.base_type.Opcode();
+
+    struct MappingSourceInfo {
+        uint32_t offset = 0;
+        uint32_t array_stride = 0;
+        const char* vuid = nullptr;
+        VkDeviceSize align = 0;
+        Field align_field = Field::Empty;
+    } info;
+
+    if (base_opcode == spv::OpTypeSampledImage) {
+        info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-12406";
+        info.align = phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment;
+        info.align_field = Field::imageDescriptorAlignment;
+    } else if (base_opcode == spv::OpTypeImage) {
+        info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-11251";
+        info.align = phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment;
+        info.align_field = Field::imageDescriptorAlignment;
+    } else if (base_opcode == spv::OpTypeStruct) {
+        info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-11252";
+        info.align = phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment;
+        info.align_field = Field::bufferDescriptorAlignment;
+    } else if (base_opcode == spv::OpTypeSampler) {
+        info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-11253";
+        info.align = phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment;
+        info.align_field = Field::samplerDescriptorAlignment;
+    } else if (base_opcode == spv::OpTypeTensorARM) {
+        info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-11390";
+        info.align = phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorAlignment;
+        info.align_field = Field::tensorDescriptorAlignment;
+    } else {
+        return skip;
+    }
+
+    if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
+        const auto& source_data = mapping.sourceData.constantOffset;
+        info.offset = source_data.heapOffset;
+        info.array_stride = source_data.heapArrayStride;
+    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
+        const auto& source_data = mapping.sourceData.pushIndex;
+        info.offset = source_data.heapOffset;
+        info.array_stride = source_data.heapArrayStride;
+    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
+        const auto& source_data = mapping.sourceData.indirectIndex;
+        info.offset = source_data.heapOffset;
+        info.array_stride = source_data.heapArrayStride;
+    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
+        const auto& source_data = mapping.sourceData.indirectIndexArray;
+        info.offset = source_data.heapOffset;
+    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
+        const auto& source_data = mapping.sourceData.shaderRecordIndex;
+        info.offset = source_data.heapOffset;
+        info.array_stride = source_data.heapArrayStride;
+    }
+
+    if (mapping.source != VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT && resource_variable.IsArray() &&
+        info.array_stride == 0) {
+        // Tried to ban in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4815
+        // but we wrote tests, so this is allowed and will work, just high chance not what people intend to do.
+        skip |= LogWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-heapArrayStride-zero", module_state.handle(),
+                           mapping_loc.dot(Field::source),
+                           "(%s) is used to map descriptor %s in %s which is a descriptor array, but heapArrayStride is zero. This "
+                           "mean every index of the descriptor array will be the same descriptor, which is likely not desired.",
+                           string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
+                           entrypoint.Describe().c_str());
+    }
+
+    if (!IsIntegerMultipleOf(info.offset, info.align) || !IsIntegerMultipleOf(info.array_stride, info.align)) {
+        const Field source_field = vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source);
+
+        std::stringstream ss;
+        ss << "(" << string_VkDescriptorMappingSourceEXT(mapping.source) << ") is used to map descriptor "
+           << resource_variable.DescribeDescriptor() << " in " << entrypoint.Describe() << " but it is unaligned.\n"
+           << String(source_field) << ".heapOffset (" << info.offset << ") ";
+        if (mapping.source != VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
+            ss << "and " << String(source_field) << ".heapArrayStride (" << info.array_stride << ") both ";
+        }
+        ss << "must be zero or aligned with " << String(info.align_field) << " (" << info.align << ")";
+
+        skip |= LogError(info.vuid, module_state.handle(), mapping_loc.dot(Field::source), "%s", ss.str().c_str());
+    }
+
+    // Combined Image Sampler is only spot we need to check twice
+    if (base_opcode == spv::OpTypeSampledImage) {
+        bool has_embedded_sampler = false;
+        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
+            const auto& source_data = mapping.sourceData.constantOffset;
+            info.offset = source_data.samplerHeapOffset;
+            info.array_stride = source_data.samplerHeapArrayStride;
+            has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
+        } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
+            const auto& source_data = mapping.sourceData.pushIndex;
+            info.offset = source_data.samplerHeapOffset;
+            info.array_stride = source_data.samplerHeapArrayStride;
+            has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
+        } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
+            const auto& source_data = mapping.sourceData.indirectIndex;
+            info.offset = source_data.samplerHeapOffset;
+            info.array_stride = source_data.samplerHeapArrayStride;
+            has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
+        } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
+            const auto& source_data = mapping.sourceData.indirectIndexArray;
+            info.offset = source_data.samplerHeapOffset;
+            has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
+        } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
+            const auto& source_data = mapping.sourceData.shaderRecordIndex;
+            info.offset = source_data.samplerHeapOffset;
+            info.array_stride = source_data.samplerHeapArrayStride;
+            has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
+        }
+
+        info.align = phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment;
+
+        if (!has_embedded_sampler &&
+            (!IsIntegerMultipleOf(info.offset, info.align) || !IsIntegerMultipleOf(info.array_stride, info.align))) {
+            const Field source_field = vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source);
+
+            std::stringstream ss;
+            ss << "(" << string_VkDescriptorMappingSourceEXT(mapping.source) << ") is used to map descriptor "
+               << resource_variable.DescribeDescriptor() << " in " << entrypoint.Describe() << " but it is unaligned.\n"
+               << String(source_field) << ".samplerHeapOffset (" << info.offset << ") ";
+            if (mapping.source != VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
+                ss << "and " << String(source_field) << ".samplerHeapArrayStride (" << info.array_stride << ") both ";
+            }
+            ss << "must be zero or aligned with samplerDescriptorAlignment (" << info.align << ")";
+
+            skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11254", module_state.handle(),
+                             mapping_loc.dot(Field::source), "%s", ss.str().c_str());
+        }
+    } else if (base_opcode == spv::OpTypeSampler) {
+        // It is VERY easy to think samplerHeapOffset is for mapping to the sampler heap, but that is wrong, it is only
+        // for combined image samplers... so try and guide people as likely a mistake.
+        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
+            const auto& source_data = mapping.sourceData.constantOffset;
+            if (source_data.heapOffset == 0 && source_data.heapArrayStride == 0 &&
+                (source_data.samplerHeapOffset != 0 || source_data.samplerHeapArrayStride != 0)) {
+                skip |= LogError("WARNING-VkDescriptorSetAndBindingMappingEXT-constantOffset-sampler", module_state.handle(),
+                                 mapping_loc.dot(Field::source),
+                                 "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are "
+                                 "setting samplerHeapOffset/samplerHeapArrayStride instead of "
+                                 "heapOffset/heapArrayStride.\nThe samplerHeapOffset field is there to map the sampler "
+                                 "portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
+                                 "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
+                                 string_VkDescriptorMappingSourceEXT(mapping.source),
+                                 resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str());
+            }
+        } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
+            const auto& source_data = mapping.sourceData.pushIndex;
+            const bool zero_heap = source_data.heapOffset == 0 && source_data.pushOffset == 0 && source_data.heapArrayStride == 0 &&
+                                   source_data.heapIndexStride == 0;
+            const bool non_zero_sampler = !source_data.pEmbeddedSampler &&
+                                          (source_data.samplerHeapOffset != 0 || source_data.samplerPushOffset != 0 ||
+                                           source_data.samplerHeapArrayStride != 0 || source_data.samplerHeapIndexStride != 0);
+            if (zero_heap && non_zero_sampler) {
+                skip |= LogError("WARNING-VkDescriptorSetAndBindingMappingEXT-pushIndex-sampler", module_state.handle(),
+                                 mapping_loc.dot(Field::source),
+                                 "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are setting "
+                                 "samplerHeapOffset/samplerPushOffset/samplerHeapArrayStride/samplerHeapIndexStride instead of "
+                                 "heapOffset/pushOffset/heapArrayStride/heapIndexStride.\nThe samplerHeapOffset field is there to "
+                                 "map the sampler portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
+                                 "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
+                                 string_VkDescriptorMappingSourceEXT(mapping.source),
+                                 resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str());
+            }
+        } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
+            const auto& source_data = mapping.sourceData.indirectIndex;
+            const bool zero_heap = source_data.heapOffset == 0 && source_data.pushOffset == 0 && source_data.addressOffset == 0 &&
+                                   source_data.heapArrayStride == 0 && source_data.heapIndexStride == 0;
+            const bool non_zero_heap =
+                !source_data.pEmbeddedSampler & (source_data.samplerHeapOffset != 0 || source_data.samplerPushOffset != 0 ||
+                                                 source_data.samplerAddressOffset != 0 || source_data.samplerHeapArrayStride != 0 ||
+                                                 source_data.samplerHeapIndexStride != 0);
+            if (zero_heap && non_zero_heap) {
+                skip |=
+                    LogError("WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndex-sampler", module_state.handle(),
+                             mapping_loc.dot(Field::source),
+                             "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are setting "
+                             "samplerHeapOffset/samplerPushOffset/samplerAddressOffset/samplerHeapArrayStride/"
+                             "samplerHeapIndexStride instead of "
+                             "heapOffset/pushOffset/addressOffset/heapArrayStride/heapIndexStride.\nThe samplerHeapOffset field "
+                             "is there to map the sampler portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
+                             "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
+                             string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
+                             entrypoint.Describe().c_str());
+            }
+        } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
+            const auto& source_data = mapping.sourceData.indirectIndexArray;
+            const bool zero_heap = source_data.heapOffset == 0 && source_data.pushOffset == 0 && source_data.addressOffset == 0 &&
+                                   source_data.heapIndexStride == 0;
+            const bool non_zero_heap =
+                !source_data.pEmbeddedSampler && (source_data.samplerHeapOffset != 0 || source_data.samplerPushOffset != 0 ||
+                                                  source_data.samplerAddressOffset != 0 || source_data.samplerHeapIndexStride != 0);
+            if (zero_heap && non_zero_heap) {
+                skip |=
+                    LogError("WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndexArray-sampler", module_state.handle(),
+                             mapping_loc.dot(Field::source),
+                             "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are setting "
+                             "samplerHeapOffset/samplerPushOffset/samplerAddressOffset/samplerHeapIndexStride instead of "
+                             "heapOffset/pushOffset/addressOffset/heapIndexStride.\nThe samplerHeapOffset field is there to map "
+                             "the sampler portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
+                             "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
+                             string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
+                             entrypoint.Describe().c_str());
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::Module& module_state,
                                                                   const spirv::EntryPoint& entrypoint,
                                                                   const vvl::Pipeline* pipeline,
@@ -3228,7 +3444,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
 
         bool found_mapping = false;
         for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
-            const auto& mapping = mapping_info->pMappings[i];
+            const VkDescriptorSetAndBindingMappingEXT& mapping = mapping_info->pMappings[i];
             if (!IsResourceVaribleInMapping(mapping, resource_variable)) {
                 continue;
             }
@@ -3243,220 +3459,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
                                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT,
                                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT})) {
-                const uint32_t base_opcode = resource_variable.base_type.Opcode();
-
-                struct MappingSourceInfo {
-                    uint32_t offset = 0;
-                    uint32_t array_stride = 0;
-                    const char* vuid = nullptr;
-                    VkDeviceSize align = 0;
-                    Field align_field = Field::Empty;
-                } info;
-
-                if (base_opcode == spv::OpTypeSampledImage) {
-                    info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-12406";
-                    info.align = phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment;
-                    info.align_field = Field::imageDescriptorAlignment;
-                } else if (base_opcode == spv::OpTypeImage) {
-                    info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-11251";
-                    info.align = phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment;
-                    info.align_field = Field::imageDescriptorAlignment;
-                } else if (base_opcode == spv::OpTypeStruct) {
-                    info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-11252";
-                    info.align = phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment;
-                    info.align_field = Field::bufferDescriptorAlignment;
-                } else if (base_opcode == spv::OpTypeSampler) {
-                    info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-11253";
-                    info.align = phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment;
-                    info.align_field = Field::samplerDescriptorAlignment;
-                } else if (base_opcode == spv::OpTypeTensorARM) {
-                    info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-11390";
-                    info.align = phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorAlignment;
-                    info.align_field = Field::tensorDescriptorAlignment;
-                } else {
-                    continue;
-                }
-
-                if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
-                    const auto& source_data = mapping.sourceData.constantOffset;
-                    info.offset = source_data.heapOffset;
-                    info.array_stride = source_data.heapArrayStride;
-                } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
-                    const auto& source_data = mapping.sourceData.pushIndex;
-                    info.offset = source_data.heapOffset;
-                    info.array_stride = source_data.heapArrayStride;
-                } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
-                    const auto& source_data = mapping.sourceData.indirectIndex;
-                    info.offset = source_data.heapOffset;
-                    info.array_stride = source_data.heapArrayStride;
-                } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
-                    const auto& source_data = mapping.sourceData.indirectIndexArray;
-                    info.offset = source_data.heapOffset;
-                } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
-                    const auto& source_data = mapping.sourceData.shaderRecordIndex;
-                    info.offset = source_data.heapOffset;
-                    info.array_stride = source_data.heapArrayStride;
-                }
-
-                if (mapping.source != VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT &&
-                    resource_variable.IsArray() && info.array_stride == 0) {
-                    // Tried to ban in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4815
-                    // but we wrote tests, so this is allowed and will work, just high chance not what people intend to do.
-                    skip |= LogWarning(
-                        "WARNING-VkDescriptorSetAndBindingMappingEXT-heapArrayStride-zero", module_state.handle(),
-                        mapping_loc.dot(Field::source),
-                        "(%s) is used to map descriptor %s in %s which is a descriptor array, but heapArrayStride is zero. This "
-                        "mean every index of the descriptor array will be the same descriptor, which is likely not desired.",
-                        string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
-                        entrypoint.Describe().c_str());
-                }
-
-                if (!IsIntegerMultipleOf(info.offset, info.align) || !IsIntegerMultipleOf(info.array_stride, info.align)) {
-                    const Field source_field = vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source);
-
-                    std::stringstream ss;
-                    ss << "(" << string_VkDescriptorMappingSourceEXT(mapping.source) << ") is used to map descriptor "
-                       << resource_variable.DescribeDescriptor() << " in " << entrypoint.Describe() << " but it is unaligned.\n"
-                       << String(source_field) << ".heapOffset (" << info.offset << ") ";
-                    if (mapping.source != VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
-                        ss << "and " << String(source_field) << ".heapArrayStride (" << info.array_stride << ") both ";
-                    }
-                    ss << "must be zero or aligned with " << String(info.align_field) << " (" << info.align << ")";
-
-                    skip |= LogError(info.vuid, module_state.handle(), mapping_loc.dot(Field::source), "%s", ss.str().c_str());
-                }
-
-                // Combined Image Sampler is only spot we need to check twice
-                if (base_opcode == spv::OpTypeSampledImage) {
-                    bool has_embedded_sampler = false;
-                    if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
-                        const auto& source_data = mapping.sourceData.constantOffset;
-                        info.offset = source_data.samplerHeapOffset;
-                        info.array_stride = source_data.samplerHeapArrayStride;
-                        has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
-                    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
-                        const auto& source_data = mapping.sourceData.pushIndex;
-                        info.offset = source_data.samplerHeapOffset;
-                        info.array_stride = source_data.samplerHeapArrayStride;
-                        has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
-                    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
-                        const auto& source_data = mapping.sourceData.indirectIndex;
-                        info.offset = source_data.samplerHeapOffset;
-                        info.array_stride = source_data.samplerHeapArrayStride;
-                        has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
-                    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
-                        const auto& source_data = mapping.sourceData.indirectIndexArray;
-                        info.offset = source_data.samplerHeapOffset;
-                        has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
-                    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
-                        const auto& source_data = mapping.sourceData.shaderRecordIndex;
-                        info.offset = source_data.samplerHeapOffset;
-                        info.array_stride = source_data.samplerHeapArrayStride;
-                        has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
-                    }
-
-                    info.align = phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment;
-
-                    if (!has_embedded_sampler &&
-                        (!IsIntegerMultipleOf(info.offset, info.align) || !IsIntegerMultipleOf(info.array_stride, info.align))) {
-                        const Field source_field = vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source);
-
-                        std::stringstream ss;
-                        ss << "(" << string_VkDescriptorMappingSourceEXT(mapping.source) << ") is used to map descriptor "
-                           << resource_variable.DescribeDescriptor() << " in " << entrypoint.Describe() << " but it is unaligned.\n"
-                           << String(source_field) << ".samplerHeapOffset (" << info.offset << ") ";
-                        if (mapping.source != VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
-                            ss << "and " << String(source_field) << ".samplerHeapArrayStride (" << info.array_stride << ") both ";
-                        }
-                        ss << "must be zero or aligned with samplerDescriptorAlignment (" << info.align << ")";
-
-                        skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11254", module_state.handle(),
-                                         loc.pNext(Struct::VkShaderDescriptorSetAndBindingMappingInfoEXT, Field::pMappings, i)
-                                             .dot(Field::source),
-                                         "%s", ss.str().c_str());
-                    }
-                } else if (base_opcode == spv::OpTypeSampler) {
-                    // It is VERY easy to think samplerHeapOffset is for mapping to the sampler heap, but that is wrong, it is only
-                    // for combined image samplers... so try and guide people as likely a mistake.
-                    if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
-                        const auto& source_data = mapping.sourceData.constantOffset;
-                        if (source_data.heapOffset == 0 && source_data.heapArrayStride == 0 &&
-                            (source_data.samplerHeapOffset != 0 || source_data.samplerHeapArrayStride != 0)) {
-                            skip |= LogError("WARNING-VkDescriptorSetAndBindingMappingEXT-constantOffset-sampler",
-                                             module_state.handle(), mapping_loc.dot(Field::source),
-                                             "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are "
-                                             "setting samplerHeapOffset/samplerHeapArrayStride instead of "
-                                             "heapOffset/heapArrayStride.\nThe samplerHeapOffset field is there to map the sampler "
-                                             "portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
-                                             "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
-                                             string_VkDescriptorMappingSourceEXT(mapping.source),
-                                             resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str());
-                        }
-                    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
-                        const auto& source_data = mapping.sourceData.pushIndex;
-                        const bool zero_heap = source_data.heapOffset == 0 && source_data.pushOffset == 0 &&
-                                               source_data.heapArrayStride == 0 && source_data.heapIndexStride == 0;
-                        const bool non_zero_sampler =
-                            !source_data.pEmbeddedSampler &&
-                            (source_data.samplerHeapOffset != 0 || source_data.samplerPushOffset != 0 ||
-                             source_data.samplerHeapArrayStride != 0 || source_data.samplerHeapIndexStride != 0);
-                        if (zero_heap && non_zero_sampler) {
-                            skip |= LogError(
-                                "WARNING-VkDescriptorSetAndBindingMappingEXT-pushIndex-sampler", module_state.handle(),
-                                mapping_loc.dot(Field::source),
-                                "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are setting "
-                                "samplerHeapOffset/samplerPushOffset/samplerHeapArrayStride/samplerHeapIndexStride instead of "
-                                "heapOffset/pushOffset/heapArrayStride/heapIndexStride.\nThe samplerHeapOffset field is there to "
-                                "map the sampler portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
-                                "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
-                                string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
-                                entrypoint.Describe().c_str());
-                        }
-                    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
-                        const auto& source_data = mapping.sourceData.indirectIndex;
-                        const bool zero_heap = source_data.heapOffset == 0 && source_data.pushOffset == 0 &&
-                                               source_data.addressOffset == 0 && source_data.heapArrayStride == 0 &&
-                                               source_data.heapIndexStride == 0;
-                        const bool non_zero_heap =
-                            !source_data.pEmbeddedSampler &
-                            (source_data.samplerHeapOffset != 0 || source_data.samplerPushOffset != 0 ||
-                             source_data.samplerAddressOffset != 0 || source_data.samplerHeapArrayStride != 0 ||
-                             source_data.samplerHeapIndexStride != 0);
-                        if (zero_heap && non_zero_heap) {
-                            skip |= LogError(
-                                "WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndex-sampler", module_state.handle(),
-                                mapping_loc.dot(Field::source),
-                                "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are setting "
-                                "samplerHeapOffset/samplerPushOffset/samplerAddressOffset/samplerHeapArrayStride/"
-                                "samplerHeapIndexStride instead of "
-                                "heapOffset/pushOffset/addressOffset/heapArrayStride/heapIndexStride.\nThe samplerHeapOffset field "
-                                "is there to map the sampler portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
-                                "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
-                                string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
-                                entrypoint.Describe().c_str());
-                        }
-                    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
-                        const auto& source_data = mapping.sourceData.indirectIndexArray;
-                        const bool zero_heap = source_data.heapOffset == 0 && source_data.pushOffset == 0 &&
-                                               source_data.addressOffset == 0 && source_data.heapIndexStride == 0;
-                        const bool non_zero_heap =
-                            !source_data.pEmbeddedSampler &&
-                            (source_data.samplerHeapOffset != 0 || source_data.samplerPushOffset != 0 ||
-                             source_data.samplerAddressOffset != 0 || source_data.samplerHeapIndexStride != 0);
-                        if (zero_heap && non_zero_heap) {
-                            skip |= LogError(
-                                "WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndexArray-sampler", module_state.handle(),
-                                mapping_loc.dot(Field::source),
-                                "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are setting "
-                                "samplerHeapOffset/samplerPushOffset/samplerAddressOffset/samplerHeapIndexStride instead of "
-                                "heapOffset/pushOffset/addressOffset/heapIndexStride.\nThe samplerHeapOffset field is there to map "
-                                "the sampler portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
-                                "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
-                                string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
-                                entrypoint.Describe().c_str());
-                        }
-                    }
-                }
+                skip |= ValidateDescriptorMappingSourceHeap(module_state, entrypoint, resource_variable, mapping, mapping_loc);
             } else if (IsValueIn(mapping.source,
                                  {VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT,
                                   VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT})) {
