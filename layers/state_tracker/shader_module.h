@@ -486,7 +486,7 @@ struct ResourceInterfaceVariable : public VariableBase {
         bool is_read_without_format{false};   // For storage images
         bool is_write_without_format{false};  // For storage images
 
-        // If a variable is used as a function argument, but never actually used, it will be found in EntryPoint::accessible_ids so
+        // If a variable is used as a function argument, but never actually used, it will be found in EntryPoint::accessible so
         // we need to have a dedicated mark if it was accessed.
         // We use this for variable hashing, but the VariableBase has the helper functions to read this value.
         uint32_t access_mask{AccessBit::empty};
@@ -569,10 +569,18 @@ struct EntryPoint {
     // Values found while gather the Accessible Ids
     bool emit_vertex_geometry;
 
-    // All ids that can be accessed from the entry point
-    // being accessed doesn't guarantee it is statically used
-    // TODO - Break this into a Function struct
-    const vvl::unordered_set<uint32_t> accessible_ids;
+    // With multiple entry points we want to make sure we only look for instructions found in those entrypoints. These are all the
+    // list of various instructions that have been found looking through all statically reachable functions in the module
+    struct Accessible {
+        vvl::unordered_set<const Instruction*> variables;
+        vvl::unordered_set<const Instruction*> access_chains;
+        // Only is filled when OpCapability UntypedPointersKHR is set (to save lots of memory!)
+        // When there is no more types, we need the root memory access
+        vvl::unordered_set<const Instruction*> memory_accesses;
+        // VK_ARM_data_graph
+        vvl::unordered_set<const Instruction*> graph_constant;
+    };
+    const Accessible accessible;
 
     // only one Push Constant block is allowed per entry point
     // (This assumption is broken with VK_NV_push_constant_bank, but not fully supported)
@@ -581,7 +589,6 @@ struct EntryPoint {
     std::shared_ptr<const TaskPayloadVariable> task_payload_variable;
     const std::vector<ResourceInterfaceVariable> resource_interface_variables;
     const std::vector<StageInterfaceVariable> stage_interface_variables;
-    const std::vector<const Instruction *> datagraph_constants;
 
     bool uses_tosa_1_0{false};
 
@@ -626,13 +633,11 @@ struct EntryPoint {
     std::string Describe() const;
 
   protected:
-    static vvl::unordered_set<uint32_t> GetAccessibleIds(const Module &module_state, EntryPoint &entrypoint);
+    static Accessible GetAccessibleIds(const Module& module_state, EntryPoint& entrypoint);
     static std::vector<StageInterfaceVariable> GetStageInterfaceVariables(const Module &module_state, EntryPoint &entrypoint,
                                                                           const ParsedInfo &parsed);
-    static std::vector<ResourceInterfaceVariable> GetResourceInterfaceVariables(const Module &module_state, EntryPoint &entrypoint,
-                                                                                const ParsedInfo &parsed);
-    static std::vector<const Instruction*> GetDataGraphConstants(const Module& module_state, EntryPoint& entrypoint,
-                                                                 const ParsedInfo& parsed);
+    static std::vector<ResourceInterfaceVariable> GetResourceInterfaceVariables(const Module& module_state, EntryPoint& entrypoint,
+                                                                                const ParsedInfo& parsed);
 
     static bool IsBuiltInWritten(spv::BuiltIn built_in, const Module &module_state, const StageInterfaceVariable &variable,
                                  const ParsedInfo &parsed);

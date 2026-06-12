@@ -767,28 +767,11 @@ const Constant& TypeManager::GetConstantNull(const Type& type) {
     return AddConstant(std::move(new_inst), type);
 }
 
-static bool IsAccessInstruction(const Instruction& inst) {
-    const spv::Op opcode = (spv::Op)inst.Opcode();
-    if (IsValueIn(opcode, {spv::OpLoad, spv::OpStore, spv::OpCooperativeMatrixLoadKHR, spv::OpCooperativeMatrixStoreKHR})) {
-        return true;
-    } else if (IsValueIn(opcode, {spv::OpImageTexelPointer, spv::OpImage})) {
-        // OpImageTexelPointer is for image atomics handled at the atomic instruction
-        // OpImage is describing an action, rather than the input to or the output from an action.
-        return false;
-    } else if (AtomicOperation(opcode)) {
-        return true;  // any atomic
-    } else if (OpcodeImageAccessPosition(opcode) != 0) {
-        return true;  // image access
-    }
-
-    return false;
-}
-
 // |ignore_image_sampler_skip| used for passes that don't care about safe_mode that want to ignore until we fix support
 const AccessPath TypeManager::BuildAccessPath(const Function& function, const Instruction& inst, bool ignore_image_sampler_skip) {
     AccessPath path;
 
-    if (!IsAccessInstruction(inst)) {
+    if (!inst.IsMemoryAccess()) {
         return path;
     }
 

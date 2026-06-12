@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "generated/spirv_grammar_helper.h"
 #include "gpu_dump_state.h"
 #include "gpu_dump.h"
 #include <vulkan/vk_enum_string_helper.h>
@@ -1409,42 +1410,82 @@ vvl::unordered_map<uint32_t, HeapAccesses> CommandBufferSubState::DumpDescriptor
         accesses[variable_id].insert(HeapAccess{descriptor_type, heap_offset, array_stride_value, descriptor_index});
     };
 
-    for (auto accessible_id : entrypoint.accessible_ids) {
-        const spirv::Instruction* inst = module.FindDef(accessible_id);
+    for (const spirv::Instruction* memory_access_inst : entrypoint.accessible.memory_accesses) {
+        // Basically there are 2 flows, images and non-images
+        uint32_t ptr_id = OpcodeImageAccessPosition(memory_access_inst->Opcode());
+        const bool image_access = ptr_id != 0;
 
-        if (inst->Opcode() == spv::OpBufferPointerEXT) {
-            const spirv::Instruction* ac_inst = module.FindDef(inst->Word(3));
-            if (ac_inst->Opcode() != spv::OpUntypedAccessChainKHR) {
-                assert(false);  // assumptions
+        if (image_access) {
+            const spirv::Instruction* sampler_load_inst = nullptr;
+
+            const spirv::Instruction* next_inst = module.FindDef(memory_access_inst->Word(ptr_id));
+            while (next_inst && (next_inst->Opcode() == spv::OpSampledImage || next_inst->Opcode() == spv::OpImage ||
+                                 next_inst->Opcode() == spv::OpCopyObject)) {
+                if (next_inst->Opcode() == spv::OpSampledImage) {
+                    sampler_load_inst = module.FindDef(next_inst->Operand(1));
+                }
+                next_inst = module.FindDef(next_inst->Operand(0));
+            }
+            const spirv::Instruction* image_load_inst = next_inst;
+            if (!image_load_inst || image_load_inst->Opcode() != spv::OpLoad) {
+                assert(false);
                 continue;
             }
 
-            // Ignore old BufferBlock + Uniform
-            const VkDescriptorType descriptor_type = module.FindDef(inst->TypeId())->StorageClass() == spv::StorageClassUniform
-                                                         ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-                                                         : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            add_access(descriptor_type, *ac_inst);
-        } else if (inst->Opcode() == spv::OpSampledImage) {
-            const spirv::Instruction* image_load = module.FindDef(inst->Word(3));
-            if (image_load->Opcode() == spv::OpLoad) {
-                const spirv::Instruction* ac_inst = module.FindDef(image_load->Word(3));
+            // From here two types of images, sampled and non-sampled images
+            if (sampler_load_inst) {
+                // TODO - Assertion sampled images are 1D
+                const spirv::Instruction* ac_inst = module.FindDef(image_load_inst->Word(3));
                 if (ac_inst->Opcode() != spv::OpUntypedAccessChainKHR) {
                     assert(false);  // assumptions
                     continue;
                 }
-
                 add_access(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, *ac_inst);
-            }
 
-            const spirv::Instruction* sampler_load = module.FindDef(inst->Word(4));
-            if (sampler_load->Opcode() == spv::OpLoad) {
-                const spirv::Instruction* ac_inst = module.FindDef(sampler_load->Word(3));
+                ac_inst = module.FindDef(sampler_load_inst->Word(3));
+                if (ac_inst->Opcode() != spv::OpUntypedAccessChainKHR) {
+                    assert(false);  // assumptions
+                    continue;
+                }
+                add_access(VK_DESCRIPTOR_TYPE_SAMPLER, *ac_inst);
+            } else {
+                const spirv::Instruction* image_type = module.FindDef(image_load_inst->TypeId());
+                assert(image_type->Opcode() == spv::OpTypeImage);
+                const VkDescriptorType image_descriptor_type = image_type->GetImageType();
+
+                const spirv::Instruction* ac_inst = module.FindDef(image_load_inst->Word(3));
+                if (ac_inst->Opcode() != spv::OpUntypedAccessChainKHR) {
+                    assert(false);  // assumptions
+                    continue;
+                }
+                add_access(image_descriptor_type, *ac_inst);
+            }
+        } else {
+            // |Operand 0| works for both Store/Load
+            ptr_id = memory_access_inst->Operand(0);
+
+            // We need to walk down possibly multiple chained OpAccessChains
+            const spirv::Instruction* next_access_chain = module.FindDef(ptr_id);
+            while (next_access_chain && next_access_chain->IsNonPtrAccessChain()) {
+                const uint32_t base_operand = next_access_chain->IsUntypedAccessChain() ? 1 : 0;
+                const uint32_t access_chain_base_id = next_access_chain->Operand(base_operand);
+                next_access_chain = module.FindDef(access_chain_base_id);
+            }
+            const spirv::Instruction* base_type = next_access_chain;
+
+            if (base_type && base_type->Opcode() == spv::OpBufferPointerEXT) {
+                const spirv::Instruction* ac_inst = module.FindDef(base_type->Word(3));
                 if (ac_inst->Opcode() != spv::OpUntypedAccessChainKHR) {
                     assert(false);  // assumptions
                     continue;
                 }
 
-                add_access(VK_DESCRIPTOR_TYPE_SAMPLER, *ac_inst);
+                // Ignore old BufferBlock + Uniform
+                const VkDescriptorType descriptor_type =
+                    module.FindDef(base_type->TypeId())->StorageClass() == spv::StorageClassUniform
+                        ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+                        : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                add_access(descriptor_type, *ac_inst);
             }
         }
     }

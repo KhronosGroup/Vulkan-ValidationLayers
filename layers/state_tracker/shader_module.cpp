@@ -441,48 +441,6 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
             // This is not an access of memory, but counts as static usage of the variable
             result.insert(insn.Word(3));
             break;
-        case spv::OpSampledImage:
-        case spv::OpImageSampleImplicitLod:
-        case spv::OpImageSampleExplicitLod:
-        case spv::OpImageSampleDrefImplicitLod:
-        case spv::OpImageSampleDrefExplicitLod:
-        case spv::OpImageSampleProjImplicitLod:
-        case spv::OpImageSampleProjExplicitLod:
-        case spv::OpImageSampleProjDrefImplicitLod:
-        case spv::OpImageSampleProjDrefExplicitLod:
-        case spv::OpImageFetch:
-        case spv::OpImageGather:
-        case spv::OpImageDrefGather:
-        case spv::OpImageRead:
-        case spv::OpImage:
-        case spv::OpImageQueryFormat:
-        case spv::OpImageQueryOrder:
-        case spv::OpImageQuerySizeLod:
-        case spv::OpImageQuerySize:
-        case spv::OpImageQueryLod:
-        case spv::OpImageQueryLevels:
-        case spv::OpImageQuerySamples:
-        case spv::OpImageSparseSampleImplicitLod:
-        case spv::OpImageSparseSampleExplicitLod:
-        case spv::OpImageSparseSampleDrefImplicitLod:
-        case spv::OpImageSparseSampleDrefExplicitLod:
-        case spv::OpImageSparseSampleProjImplicitLod:
-        case spv::OpImageSparseSampleProjExplicitLod:
-        case spv::OpImageSparseSampleProjDrefImplicitLod:
-        case spv::OpImageSparseSampleProjDrefExplicitLod:
-        case spv::OpImageSparseFetch:
-        case spv::OpImageSparseGather:
-        case spv::OpImageSparseDrefGather:
-        case spv::OpImageTexelPointer:
-        case spv::OpFragmentFetchAMD:
-        case spv::OpFragmentMaskFetchAMD:
-            // Note: we only explore parts of the image which might actually contain ids we care about for the above analyses.
-            //  - NOT the shader input/output interfaces.
-            result.insert(insn.Word(3));  // Image or sampled image
-            break;
-        case spv::OpImageWrite:
-            result.insert(insn.Word(1));  // Image -- different operand order to above
-            break;
         case spv::OpFunctionCall:
             for (uint32_t i = 3; i < insn.Length(); i++) {
                 result.insert(insn.Word(i));  // fn itself, and all args
@@ -503,7 +461,15 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
         default: {
             if (AtomicOperation(insn.Opcode())) {
                 result.insert(insn.Operand(0));  // ptr
+            } else {
+                // Note: we only explore parts of the image which might actually contain ids we care about for the above analyses.
+                //  - NOT the shader input/output interfaces.
+                uint32_t image_access = OpcodeImageAccessPosition(insn.Opcode());
+                if (image_access != 0) {
+                    result.insert(insn.Word(image_access));  // Image or sampled image
+                }
             }
+
             break;
         }
     }
@@ -615,13 +581,19 @@ std::string EntryPoint::Describe() const {
     return ss.str().c_str();
 }
 
-vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_state, EntryPoint& entrypoint) {
-    vvl::unordered_set<uint32_t> result_ids;
+EntryPoint::Accessible EntryPoint::GetAccessibleIds(const Module& module_state, EntryPoint& entrypoint) {
+    Accessible accessible;
+
+    const bool is_untyped = module_state.HasCapability(spv::CapabilityUntypedPointersKHR);
+
+    vvl::unordered_set<uint32_t> seen_ids;
 
     // For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint.
     // This is important for identifying the set of shader resources actually used by an entrypoint.
     vvl::unordered_set<uint32_t> worklist;
+
     if (entrypoint.entrypoint_insn.Opcode() == spv::OpGraphEntryPointARM) {
+        // Note - graph entry will not find untyped pointer memory access
         FindPointersAndObjects(entrypoint.entrypoint_insn, worklist);
     }
 
@@ -632,8 +604,12 @@ vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_s
     worklist.insert(entrypoint.id);
     while (!worklist.empty()) {
         auto worklist_id_iter = worklist.begin();
-        auto worklist_id = *worklist_id_iter;
+        const uint32_t worklist_id = *worklist_id_iter;
         worklist.erase(worklist_id_iter);
+
+        if (!seen_ids.insert(worklist_id).second) {
+            continue;  // If we already saw this id, we don't want to walk it again.
+        }
 
         const Instruction* next_insn = module_state.FindDef(worklist_id);
         if (!next_insn) {
@@ -641,19 +617,29 @@ vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_s
             // that we may not care about.
             continue;
         }
+        const uint32_t next_opcode = next_insn->Opcode();
 
-        // Try to add to the output set
-        if (!result_ids.insert(worklist_id).second) {
-            continue;  // If we already saw this id, we don't want to walk it again.
+        if (next_insn->IsAccessChain()) {
+            accessible.access_chains.insert(next_insn);
+        } else if (next_opcode == spv::OpVariable || next_opcode == spv::OpUntypedVariableKHR) {
+            accessible.variables.insert(next_insn);
+        } else if (next_opcode == spv::OpGraphConstantARM) {
+            accessible.graph_constant.insert(next_insn);
         }
 
-        if (entry_exit_pairs.find(next_insn->Opcode()) != entry_exit_pairs.end()) {
-            const auto& exit = entry_exit_pairs[next_insn->Opcode()];
+        if (entry_exit_pairs.find(next_opcode) != entry_exit_pairs.end()) {
+            const uint32_t exit = entry_exit_pairs[next_opcode];
             // Scan whole body of the function
             while (++next_insn, next_insn->Opcode() != exit) {
-                const auto& insn = *next_insn;
+                const Instruction& insn = *next_insn;
                 // Build up list of accessible ID
                 FindPointersAndObjects(insn, worklist);
+
+                // The way FindPointersAndObjects function works is we find things "up" in the SSA and return it back. For memory
+                // accesses, this is where things "start" and will never be added to |worklist|
+                if (is_untyped && insn.IsMemoryAccess()) {
+                    accessible.memory_accesses.insert(&insn);
+                }
 
                 // Gather any instructions info that is only for the EntryPoint and not whole module
                 switch (insn.Opcode()) {
@@ -668,7 +654,7 @@ vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_s
         }
     }
 
-    return result_ids;
+    return accessible;
 }
 
 std::vector<StageInterfaceVariable> EntryPoint::GetStageInterfaceVariables(const Module& module_state, EntryPoint& entrypoint,
@@ -702,39 +688,20 @@ std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables
                                                                                  const ParsedInfo& parsed) {
     std::vector<ResourceInterfaceVariable> variables;
 
-    // Now that the accessible_ids list is known, fill in any information that can be statically known per EntryPoint
-    for (const auto& accessible_id : entrypoint.accessible_ids) {
-        const Instruction& insn = *module_state.FindDef(accessible_id);
-        if (insn.Opcode() != spv::OpVariable && insn.Opcode() != spv::OpUntypedVariableKHR) {
-            continue;
-        }
-        const uint32_t storage_class = insn.StorageClass();
+    // Now that the accessible list is known, fill in any information that can be statically known per EntryPoint
+    for (const Instruction* insn : entrypoint.accessible.variables) {
+        const uint32_t storage_class = insn->StorageClass();
         // These are the only storage classes that interface with a descriptor
         // see vkspec.html#interfaces-resources-descset
         if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
             storage_class == spv::StorageClassStorageBuffer || storage_class == spv::StorageClassTileAttachmentQCOM) {
-            variables.emplace_back(module_state, entrypoint, insn, parsed);
+            variables.emplace_back(module_state, entrypoint, *insn, parsed);
         } else if (storage_class == spv::StorageClassPushConstant) {
             entrypoint.push_constant_variable =
-                std::make_shared<PushConstantVariable>(module_state, insn, entrypoint.stage, parsed);
+                std::make_shared<PushConstantVariable>(module_state, *insn, entrypoint.stage, parsed);
         }
     }
     return variables;
-}
-
-std::vector<const Instruction*> EntryPoint::GetDataGraphConstants(const Module& module_state, EntryPoint& entrypoint,
-                                                                  const ParsedInfo& parsed) {
-    std::vector<const Instruction*> constants;
-    // Check to skip to not spend time if not using VK_ARM_data_graph
-    if (parsed.has_graph_constant_arm) {
-        for (const auto& accessible_id : entrypoint.accessible_ids) {
-            const Instruction& insn = *module_state.FindDef(accessible_id);
-            if (insn.Opcode() == spv::OpGraphConstantARM) {
-                constants.push_back(&insn);
-            }
-        }
-    }
-    return constants;
 }
 
 StaticImageAccess::StaticImageAccess(const Module& module_state, const Instruction& insn,
@@ -866,10 +833,9 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
       name(is_data_graph ? entrypoint_insn.GetAsString(2) : entrypoint_insn.GetAsString(3)),
       execution_mode(module_state.GetExecutionModeSet(id)),
       emit_vertex_geometry(false),
-      accessible_ids(GetAccessibleIds(module_state, *this)),
+      accessible(GetAccessibleIds(module_state, *this)),
       resource_interface_variables(GetResourceInterfaceVariables(module_state, *this, parsed)),
       stage_interface_variables(GetStageInterfaceVariables(module_state, *this, parsed)),
-      datagraph_constants(GetDataGraphConstants(module_state, *this, parsed)),
       uses_tosa_1_0(parsed.uses_tosa_1_0),
       only_entry_point(parsed.total_entry_points == 1) {
     // Tried to just create this map in GetResourceInterfaceVariables() but ran into errors because the function is static
@@ -2667,22 +2633,19 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
         }
     }
 
-    for (const auto& accessible_id : entrypoint.accessible_ids) {
-        const Instruction* pointer = module_state.FindDef(accessible_id);
-        if (pointer->IsAccessChain()) {
-            const spirv::Instruction* base = module_state.FindDef(pointer->Word(3));
-            if (base->Opcode() == spv::OpVariable && type_id == base->Word(1)) {
-                const spirv::Instruction* base_pointer = module_state.FindDef(base->Word(1));
-                const spirv::Instruction* base_type = module_state.FindDef(base_pointer->Word(3));
-                if (base_type->IsArray()) {
-                    // Taking only the first index (word 4) as that one is used to access arrays of descriptors
-                    const spirv::Instruction* access_op = module_state.FindDef(pointer->Word(4));
-                    const auto access_opcode = (spv::Op)access_op->Opcode();
-                    if (!IsValueIn(access_opcode, {spv::OpConstant, spv::OpSpecConstant, spv::OpConstantComposite})) {
-                        all_constant_integral_expressions = false;
-                        non_constant_id = accessible_id;
-                        break;
-                    }
+    for (const Instruction* pointer : entrypoint.accessible.access_chains) {
+        const spirv::Instruction* base = module_state.FindDef(pointer->Word(3));
+        if (base->Opcode() == spv::OpVariable && type_id == base->Word(1)) {
+            const spirv::Instruction* base_pointer = module_state.FindDef(base->Word(1));
+            const spirv::Instruction* base_type = module_state.FindDef(base_pointer->Word(3));
+            if (base_type->IsArray()) {
+                // Taking only the first index (word 4) as that one is used to access arrays of descriptors
+                const spirv::Instruction* access_op = module_state.FindDef(pointer->Word(4));
+                const auto access_opcode = (spv::Op)access_op->Opcode();
+                if (!IsValueIn(access_opcode, {spv::OpConstant, spv::OpSpecConstant, spv::OpConstantComposite})) {
+                    all_constant_integral_expressions = false;
+                    non_constant_id = pointer->ResultId();
+                    break;
                 }
             }
         }

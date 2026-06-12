@@ -2999,7 +2999,7 @@ bool CoreChecks::ValidateDataGraphConstants(const spirv::Module& module_spirv, c
 
     // loop over spirv constant definitions
     std::vector<bool> pConstant_matched(dg_shader_ci.constantCount, false);
-    for (auto constant_instr : entry_point.datagraph_constants) {
+    for (auto constant_instr : entry_point.accessible.graph_constant) {
         const spirv::Instruction& tensor_type_instr = *module_spirv.FindDef(constant_instr->TypeId());
 
         // the following checks are only for tensors. Any type other than tensor will throw an error executing spirv-val, which
