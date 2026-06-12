@@ -502,26 +502,48 @@ bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& qu
 
     std::optional<vku::safe_VkDependencyInfo> signal_dependency_info;
     vvl::Func signal_command = vvl::Func::Empty;
+
+    signal_dependency_info = event_state->signal_dependency_info;
+    signal_command = event_state->last_signaling_command;
+    bool last_signal = event_state->signaled;
+    if (const auto* submit_signal_state = vvl::Find(submit_signal_states, wait_event)) {
+        if (!last_signal || submit_signal_state->HasKnownEffect()) {
+            signal_dependency_info = submit_signal_state->signal_dependency_info;
+            signal_command = submit_signal_state->last_signaling_command;
+        }
+        last_signal = submit_signal_state->signaled;
+    }
     if (signal_state.has_value()) {
-        signal_dependency_info = signal_state->signal_dependency_info;
-        signal_command = signal_state->last_signaling_command;
-    } else if (const auto* submit_signal_state = vvl::Find(submit_signal_states, wait_event)) {
-        signal_dependency_info = submit_signal_state->signal_dependency_info;
-        signal_command = submit_signal_state->last_signaling_command;
-    } else {
-        signal_dependency_info = event_state->signal_dependency_info;
-        signal_command = event_state->last_signaling_command;
+        if (!last_signal || signal_state->HasKnownEffect()) {
+            signal_dependency_info = signal_state->signal_dependency_info;
+            signal_command = signal_state->last_signaling_command;
+        }
     }
 
-    if (signal_command == vvl::Func::vkCmdSetEvent) {
+    if (signal_command == vvl::Func::vkSetEvent) {
+        const VkPipelineStageFlags2 union_src_stage_mask = sync_utils::GetExecScopes(*wait_dependency_info.ptr()).src;
+        if ((union_src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) == 0) {
+            const LogObjectList objlist(cb_state.Handle(), event_state->Handle());
+            skip |= core.LogError("VUID-vkCmdWaitEvents2-pEvents-03839", objlist, loc,
+                                  "contains %s and %s was signaled by vkSetEvent, but the first synchronization scope specified "
+                                  "by pDependencyInfos does not include VK_PIPELINE_STAGE_2_HOST_BIT",
+                                  vvl::String(wait_command), core.FormatHandle(event_state->Handle()).c_str());
+        } else if (union_src_stage_mask != VK_PIPELINE_STAGE_2_HOST_BIT) {
+            const LogObjectList objlist(cb_state.Handle(), event_state->Handle());
+            skip |= core.LogError("VUID-vkCmdWaitEvents2-pEvents-03839", objlist, loc,
+                                  "contains %s and %s was signaled by vkSetEvent, but the first synchronization scope specified "
+                                  "by pDependencyInfos includes other stages than VK_PIPELINE_STAGE_2_HOST_BIT: %s",
+                                  vvl::String(wait_command), core.FormatHandle(event_state->Handle()).c_str(),
+                                  string_VkPipelineStageFlags2(union_src_stage_mask).c_str());
+        }
+    } else if (signal_command == vvl::Func::vkCmdSetEvent) {
         const LogObjectList objlist(cb_state.Handle(), event_state->Handle());
         skip |=
             core.LogError("VUID-vkCmdWaitEvents2-pEvents-03837", objlist, loc, "%s: %s was set by %s.", vvl::String(wait_command),
                           core.FormatHandle(event_state->Handle()).c_str(), vvl::String(signal_command));
-    } else {
+    } else if (!IsValueIn(signal_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
         const VkPipelineStageFlags2 union_src_stage_mask = sync_utils::GetExecScopes(*wait_dependency_info.ptr()).src;
-        if ((union_src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) == 0 &&
-            !IsValueIn(signal_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
+        if ((union_src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) == 0) {
             const LogObjectList objlist(cb_state.Handle(), event_state->Handle());
             skip |= core.LogError("VUID-vkCmdWaitEvents2-pEvents-03841", objlist, loc,
                                   "contains %s but %s was not set by vkCmdSetEvent2.", vvl::String(wait_command),

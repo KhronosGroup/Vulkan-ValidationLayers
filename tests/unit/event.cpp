@@ -749,7 +749,7 @@ TEST_F(NegativeEvent, DISABLED_WaitEventThenSet) {
     m_default_queue->Submit(m_command_buffer);
 
     m_errorMonitor->SetDesiredError("VUID-vkSetEvent-event-09543");
-    vk::SetEvent(device(), event);
+    event.Set();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1486,5 +1486,96 @@ TEST_F(NegativeEvent, WaitWithoutSetSubmit) {
     monitor_.SetDesiredError("VUID-vkCmdWaitEvents2-pEvents-03841");
     m_default_queue->Submit(m_command_buffer);
     monitor_.VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeEvent, HostSetBarrierScope) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+    event.Set();
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    m_command_buffer.Begin();
+    m_command_buffer.WaitEvent2(event, barrier);
+    m_command_buffer.End();
+
+    // Barrier source stage mask must be HOST stages
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-pEvents-03839");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeEvent, HostSetBarrierScope2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+    event.Set();
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT;
+
+    m_command_buffer.Begin();
+    m_command_buffer.WaitEvent2(event, barrier);
+    m_command_buffer.End();
+
+    // Barrier source stage mask must be HOST stages
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-pEvents-03839");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeEvent, HostSetBarrierScopeSeconary) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+    event.Set();
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.WaitEvent2(event, barrier);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.ExecuteCommands(secondary);
+    m_command_buffer.End();
+
+    // Barrier source stage mask must be HOST stages
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-pEvents-03839");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeEvent, HostSetAndIgnoresDeviceSet) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+    event.Set();
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent2(event, barrier);
+    m_command_buffer.WaitEvent2(event, barrier);
+    m_command_buffer.End();
+
+    // CmdSetEvent2 is ignored because the event is already signaled by the host.
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-pEvents-03839");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
