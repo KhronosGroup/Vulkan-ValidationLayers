@@ -291,6 +291,7 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateI
         instrumentation_device_settings_.descriptor_alignment_buffer =
             (uint32_t)phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment;
     }
+    instrumentation_device_settings_.enabled_features = &modified_features;
 }
 
 void GpuShaderInstrumentor::Cleanup() {
@@ -1777,8 +1778,7 @@ void GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
         DumpSpirvToFile(non_instrumented_spirv_file.string(), input_spirv.data(), input_spirv.size());
     }
 
-    // TODO - move |modified_features| into |interface|
-    spirv::Module module(input_spirv, debug_report, instrumentation_device_settings_, interface, modified_features, out_status);
+    spirv::Module module(input_spirv, debug_report, instrumentation_device_settings_, interface, out_status);
 
     bool modified = false;
 

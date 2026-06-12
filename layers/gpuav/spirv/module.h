@@ -44,8 +44,7 @@ struct ModuleHeader {
 class Module {
   public:
     Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const DeviceSettings& settings,
-           const InstrumentationInterface& interface, const DeviceFeatures& enabled_features,
-           spirv::InstrumentationStatus& out_status);
+           const InstrumentationInterface& interface, spirv::InstrumentationStatus& out_status);
 
     // Memory that holds all the actual SPIR-V data, replicate the "Logical Layout of a Module" of SPIR-V.
     // Divided into sections to make easier to modify each part at different times, but still keeps it simple to write out all the
@@ -99,8 +98,6 @@ class Module {
     const InstrumentationInterface& interface_;
 
     bool use_bda_ = false;
-
-    const DeviceFeatures& enabled_features_;
 
     // We only care about the entrypoint the pipeline shader stage / shader object is targeting
     // This is the ID both found in OpEntryPoint and the result ID of OpFunction

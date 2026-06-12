@@ -156,7 +156,7 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
                     p_meta.double_bitmask |= 1 << p_meta.expanded_parameter_count;
                 }
 
-                if (!module_.enabled_features_.shaderInt64) {
+                if (!module_.settings_.enabled_features->shaderInt64) {
                     module_.InternalError(
                         "DEBUG-PRINTF-INT64-SUPPORT",
                         "shaderInt64 feature is not supported, but is required to cast a 64-bit float to a 64-bit int "

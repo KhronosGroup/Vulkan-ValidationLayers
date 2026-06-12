@@ -40,8 +40,8 @@ const static OfflineFunction kOfflineFunctionCoopMat = {"inst_descriptor_class_g
 
 DescriptorClassGeneralBufferPass::DescriptorClassGeneralBufferPass(Module& module)
     : Pass(module, kOfflineModule),
-      has_robustness(module.enabled_features_.robustBufferAccess),
-      has_coop_mat_robustness(module.enabled_features_.cooperativeMatrixRobustBufferAccess) {
+      has_robustness(module.settings_.enabled_features->robustBufferAccess),
+      has_coop_mat_robustness(module.settings_.enabled_features->cooperativeMatrixRobustBufferAccess) {
     module.use_bda_ = true;
 }
 

@@ -24,6 +24,7 @@
 // This header is designed as the interface that can be shared between the instrumentation passes and the rest of GPU-AV
 
 struct Location;
+struct DeviceFeatures;
 
 namespace spirv {
 struct Module;
@@ -124,6 +125,8 @@ struct DeviceSettings {
     uint32_t descriptor_alignment_sampler;
     uint32_t descriptor_alignment_image;
     uint32_t descriptor_alignment_buffer;
+
+    const DeviceFeatures* enabled_features;
 };
 
 // When running the DebugPrintf pass, if we detect an instrumented shader has a printf call (for debugging) we can hold them until
