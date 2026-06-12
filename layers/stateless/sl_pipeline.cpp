@@ -218,14 +218,13 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
             }
 
             if (mapping.sourceData.pushDataOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 4) {
-                // VU being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8350
-                skip |= LogError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-pushDataOffset-limit", device,
-                                 data_loc.dot(Field::pushDataOffset),
-                                 "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
-                                 ") - 4\nVkDescriptorSetAndBindingMappingEXT::source = %s\nHint - pushDataOffset points to data "
-                                 "inside the push data at and this is currently going to access OOB",
-                                 mapping.sourceData.pushDataOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
-                                 string_VkDescriptorMappingSourceEXT(mapping.source));
+                skip |=
+                    LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12452", device, data_loc.dot(Field::pushDataOffset),
+                             "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
+                             ") - 4\nVkDescriptorSetAndBindingMappingEXT::source = %s\nHint - pushDataOffset points to data "
+                             "inside the push data at and this is currently going to access OOB",
+                             mapping.sourceData.pushDataOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                             string_VkDescriptorMappingSourceEXT(mapping.source));
             }
         }
         if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT) {
@@ -237,8 +236,7 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
             }
 
             if (mapping.sourceData.pushAddressOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 8) {
-                // VU being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8350
-                skip |= LogError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-pushAddressOffset-limit", device,
+                skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12453", device,
                                  data_loc.dot(Field::pushAddressOffset),
                                  "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
                                  ") - 8\nVkDescriptorSetAndBindingMappingEXT::source = %s\nHint - pushAddressOffset points to an "
@@ -491,13 +489,13 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                     const auto* object_name = vku::FindStructInPNextChain<VkDebugUtilsObjectNameInfoEXT>(embedded_sampler->pNext);
                     if (object_name && object_name->objectType != VK_OBJECT_TYPE_UNKNOWN) {
                         const auto vuid = (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-11402"
+                                              ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-11415"
                                           : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-11403"
+                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-11415"
                                           : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-11404"
+                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-11415"
                                           : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11405"
+                                              ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11415"
                                           : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT)
                                               ? "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-11415"
                                               : kVUIDUndefined;
@@ -510,13 +508,13 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                     if (embedded_sampler->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT ||
                         embedded_sampler->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT) {
                         const auto vuid = (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-11446"
+                                              ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-11445"
                                           : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-11447"
+                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-11445"
                                           : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-11448"
+                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-11445"
                                           : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11449"
+                                              ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11445"
                                           : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT)
                                               ? "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-11445"
                                               : kVUIDUndefined;
@@ -528,13 +526,13 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                     }
                     if (vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(embedded_sampler->pNext)) {
                         const auto vuid = (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-12433"
+                                              ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-12432"
                                           : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-12434"
+                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-12432"
                                           : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-12435"
+                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-12432"
                                           : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-12436"
+                                              ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-12432"
                                           : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT)
                                               ? "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-12432"
                                               : kVUIDUndefined;

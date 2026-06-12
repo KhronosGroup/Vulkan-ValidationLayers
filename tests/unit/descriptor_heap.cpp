@@ -1951,19 +1951,19 @@ TEST_F(NegativeDescriptorHeap, DescriptorSetAndBindingMappingPipeline) {
                 break;
             case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT:
                 mapping.sourceData.shaderRecordIndex.pEmbeddedSampler = &embedded_sampler;
-                vuid = "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11405";
+                vuid = "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11415";
                 break;
             case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT:
                 mapping.sourceData.pushIndex.pEmbeddedSampler = &embedded_sampler;
-                vuid = "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-11402";
+                vuid = "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-11415";
                 break;
             case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT:
                 mapping.sourceData.indirectIndex.pEmbeddedSampler = &embedded_sampler;
-                vuid = "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-11403";
+                vuid = "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-11415";
                 break;
             case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT:
                 mapping.sourceData.indirectIndexArray.pEmbeddedSampler = &embedded_sampler;
-                vuid = "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-11404";
+                vuid = "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-11415";
                 break;
             default:
                 assert(0);
@@ -1997,19 +1997,19 @@ TEST_F(NegativeDescriptorHeap, DescriptorSetAndBindingMappingPipeline) {
                     break;
                 case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT:
                     mapping.sourceData.shaderRecordIndex.pEmbeddedSampler = &embedded_sampler;
-                    vuid = "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11449";
+                    vuid = "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11445";
                     break;
                 case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT:
                     mapping.sourceData.pushIndex.pEmbeddedSampler = &embedded_sampler;
-                    vuid = "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-11446";
+                    vuid = "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-11445";
                     break;
                 case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT:
                     mapping.sourceData.indirectIndex.pEmbeddedSampler = &embedded_sampler;
-                    vuid = "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-11447";
+                    vuid = "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-11445";
                     break;
                 case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT:
                     mapping.sourceData.indirectIndexArray.pEmbeddedSampler = &embedded_sampler;
-                    vuid = "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-11448";
+                    vuid = "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-11445";
                     break;
                 default:
                     assert(0);
@@ -2102,19 +2102,19 @@ TEST_F(NegativeDescriptorHeap, OpaqueCaptureDescriptorDataCreateInfo) {
                 break;
             case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT:
                 mapping.sourceData.pushIndex.pEmbeddedSampler = &embedded_sampler;
-                vuid = "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-12433";
+                vuid = "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-12432";
                 break;
             case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT:
                 mapping.sourceData.indirectIndex.pEmbeddedSampler = &embedded_sampler;
-                vuid = "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-12434";
+                vuid = "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-12432";
                 break;
             case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT:
                 mapping.sourceData.indirectIndexArray.pEmbeddedSampler = &embedded_sampler;
-                vuid = "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-12435";
+                vuid = "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-12432";
                 break;
             case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT:
                 mapping.sourceData.shaderRecordIndex.pEmbeddedSampler = &embedded_sampler;
-                vuid = "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-12436";
+                vuid = "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-12432";
                 break;
             default:
                 assert(0);
@@ -2177,7 +2177,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorMappingSourcePushDataLimit) {
         pipe.LateBindPipelineInfo();
         pipe.cp_ci_.stage.pNext = &mapping_info;
 
-        m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-pushDataOffset-limit");
+        m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12452");
         pipe.CreateComputePipeline(false);
         m_errorMonitor->VerifyFound();
     }
@@ -2189,7 +2189,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorMappingSourcePushDataLimit) {
         pipe.LateBindPipelineInfo();
         pipe.cp_ci_.stage.pNext = &mapping_info;
 
-        m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-pushAddressOffset-limit");
+        m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12453");
         pipe.CreateComputePipeline(false);
         m_errorMonitor->VerifyFound();
     }
