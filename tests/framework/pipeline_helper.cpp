@@ -301,8 +301,7 @@ CreateComputePipelineHelper::CreateComputePipelineHelper(vkt::Device& device, vo
     // default VkDevice, can be overwritten if multi-device tests
     device_ = &device;
 
-    cp_ci_ = vku::InitStructHelper();
-    cp_ci_.pNext = pNext;
+    cp_ci_ = vku::InitStructHelper(pNext);
 
     // InitDescriptorSetInfo
     dsl_bindings_.emplace_back(VkDescriptorSetLayoutBinding{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr});
@@ -466,6 +465,21 @@ SimpleGPL::SimpleGPL(VkLayerTest& test, VkPipelineLayout layout, const char* ver
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
     pipe_.Init(*device, exe_pipe_ci);
+}
+
+HeapComputePipeline::HeapComputePipeline(vkt::Device& device, const char* source, const spv_target_env env,
+                                         const VkShaderDescriptorSetAndBindingMappingInfoEXT* mapping_info,
+                                         SpvSourceType source_type, const VkSpecializationInfo* specialization_info) {
+    VkShaderObj cs_module(device, source, VK_SHADER_STAGE_COMPUTE_BIT, env, source_type, specialization_info);
+
+    VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
+    flags2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    VkComputePipelineCreateInfo pipe_ci = vku::InitStructHelper(&flags2_ci);
+    pipe_ci.flags = 0;
+    pipe_ci.layout = VK_NULL_HANDLE;
+    pipe_ci.stage = cs_module.GetStageCreateInfo((void*)mapping_info);
+    pipe_.Init(device, pipe_ci);
 }
 
 }  // namespace vkt

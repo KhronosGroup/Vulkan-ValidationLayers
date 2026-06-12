@@ -10,6 +10,8 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include "shader_helper.h"
+#include "shader_templates.h"
 #include "utils/math_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
@@ -3164,28 +3166,15 @@ TEST_F(NegativeDescriptorHeap, OpTypeImage) {
         }
     )slang";
 
-    VkShaderObj cs_modules[2];
-    cs_modules[0] = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_modules[1] = VkShaderObj(*m_device, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_SLANG);
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     for (int i = 0; i < 4; i++) {
-        CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-        pipe.cp_ci_.layout = VK_NULL_HANDLE;
-        if (i < 2) {
-            pipe.cp_ci_.stage = cs_modules[0].GetStageCreateInfo();
-        } else {
-            pipe.cp_ci_.stage = cs_modules[1].GetStageCreateInfo();
-        }
-        pipe.cp_ci_.stage.pNext = &mapping_info;
+        SpvSourceType source_type = (i < 2) ? SPV_SOURCE_GLSL : SPV_SOURCE_SLANG;
+        const char* spirv = (i < 2) ? cs_source : slang_shader;
 
         mappings.sourceData.constantOffset.heapOffset = (i % 2 == 0) ? 1 : 0;
         mappings.sourceData.constantOffset.heapArrayStride = (i % 2 == 0) ? 0 : 1;
 
         m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11251");
-        pipe.CreateComputePipeline(false);
+        vkt::HeapComputePipeline pipe(*m_device, spirv, SPV_ENV_VULKAN_1_0, &mapping_info, source_type);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -3201,9 +3190,6 @@ TEST_F(NegativeDescriptorHeap, MappedPushIsBlockUniform) {
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mappings;
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
     const char* cs_source = R"glsl(
         #version 450
@@ -3228,20 +3214,12 @@ TEST_F(NegativeDescriptorHeap, MappedPushIsBlockUniform) {
         }
     )slang";
 
-    VkShaderObj cs_modules[2];
-    cs_modules[0] = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_modules[1] = VkShaderObj(*m_device, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_SLANG);
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_modules[0].GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11315");
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 
-    pipe.cp_ci_.stage = cs_modules[1].GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11315");
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe2(*m_device, slang_shader, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3260,9 +3238,6 @@ TEST_F(NegativeDescriptorHeap, MappedStructLessThanMaxPushDataSize) {
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 2;
     mapping_info.pMappings = mappings;
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
     std::stringstream cs_source;
     cs_source << R"glsl(
@@ -3297,23 +3272,13 @@ TEST_F(NegativeDescriptorHeap, MappedStructLessThanMaxPushDataSize) {
         }
     )slang";
 
-    VkShaderObj cs_modules[2];
-    cs_modules[0] = VkShaderObj(*m_device, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_modules[1] =
-        VkShaderObj(*m_device, slang_shader.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_SLANG);
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_modules[0].GetStageCreateInfo();
-    pipe.cp_ci_.stage.pNext = &mapping_info;
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11316");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11315");
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source.str().c_str(), SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 
-    pipe.cp_ci_.stage = cs_modules[1].GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11315");
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe2(*m_device, slang_shader.str().c_str(), SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3393,22 +3358,15 @@ TEST_F(NegativeDescriptorHeap, OpTypeStruct) {
         }
     )slang";
 
-    VkShaderObj cs_modules[2];
-    cs_modules[0] = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_modules[1] = VkShaderObj(*m_device, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_SLANG);
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     for (int i = 0; i < 4; i++) {
-        CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-        pipe.cp_ci_.stage = cs_modules[i / 2].GetStageCreateInfo(&mapping_info);
+        SpvSourceType source_type = (i < 2) ? SPV_SOURCE_GLSL : SPV_SOURCE_SLANG;
+        const char* spirv = (i < 2) ? cs_source : slang_shader;
 
         mappings.sourceData.constantOffset.heapOffset = (i % 2 == 0) ? 1 : 0;
         mappings.sourceData.constantOffset.heapArrayStride = (i % 2 == 0) ? 0 : 1;
 
         m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11252");
-        pipe.CreateComputePipeline(false);
+        vkt::HeapComputePipeline pipe(*m_device, spirv, SPV_ENV_VULKAN_1_0, &mapping_info, source_type);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -3502,29 +3460,29 @@ TEST_F(NegativeDescriptorHeap, OpTypeSampler) {
         }
     )slang";
 
-    VkShaderObj cs_modules[4];
-    cs_modules[0] = VkShaderObj(*m_device, cs_source0, VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_modules[1] = VkShaderObj(*m_device, cs_source1, VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_modules[2] = VkShaderObj(*m_device, slang_shader0, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_SLANG);
-    cs_modules[3] = VkShaderObj(*m_device, slang_shader1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_SLANG);
+    mappings[1].sourceData.constantOffset.heapOffset = 1;
+    mappings[1].sourceData.constantOffset.heapArrayStride = 0;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11253");
+    vkt::HeapComputePipeline pipe(*m_device, cs_source0, SPV_ENV_VULKAN_1_0, &mapping_info);
+    m_errorMonitor->VerifyFound();
 
-    for (int j = 0; j < 4; j++) {
-        VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-        pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = 0;
+    mappings[1].sourceData.constantOffset.heapArrayStride = 1;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11253");
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source1, SPV_ENV_VULKAN_1_0, &mapping_info);
+    m_errorMonitor->VerifyFound();
 
-        for (int i = 0; i < 2; i++) {
-            CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-            pipe.cp_ci_.layout = VK_NULL_HANDLE;
-            pipe.cp_ci_.stage = cs_modules[j].GetStageCreateInfo(&mapping_info);
+    mappings[1].sourceData.constantOffset.heapOffset = 1;
+    mappings[1].sourceData.constantOffset.heapArrayStride = 0;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11253");
+    vkt::HeapComputePipeline pipe3(*m_device, slang_shader0, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
+    m_errorMonitor->VerifyFound();
 
-            mappings[1].sourceData.constantOffset.heapOffset = (i == 0) ? 1 : 0;
-            mappings[1].sourceData.constantOffset.heapArrayStride = (i == 0) ? 0 : 1;
-
-            m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11253");
-            pipe.CreateComputePipeline(false);
-            m_errorMonitor->VerifyFound();
-        }
-    }
+    mappings[1].sourceData.constantOffset.heapOffset = 0;
+    mappings[1].sourceData.constantOffset.heapArrayStride = 1;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11253");
+    vkt::HeapComputePipeline pipe4(*m_device, slang_shader1, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, OpTypeSampledImageAlignedSampler) {
@@ -3571,23 +3529,15 @@ TEST_F(NegativeDescriptorHeap, OpTypeSampledImageAlignedSampler) {
         }
     )slang";
 
-    VkShaderObj cs_modules[2];
-    cs_modules[0] = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_modules[1] = VkShaderObj(*m_device, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_SLANG);
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     for (int i = 0; i < 4; i++) {
-        CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-        pipe.cp_ci_.layout = VK_NULL_HANDLE;
-        pipe.cp_ci_.stage = cs_modules[i / 2].GetStageCreateInfo(&mapping_info);
+        SpvSourceType source_type = (i < 2) ? SPV_SOURCE_GLSL : SPV_SOURCE_SLANG;
+        const char* spirv = (i < 2) ? cs_source : slang_shader;
 
         mappings[1].sourceData.constantOffset.samplerHeapOffset = (i % 2 == 0) ? 1 : 0;
         mappings[1].sourceData.constantOffset.samplerHeapArrayStride = (i % 2 == 0) ? 0 : 1;
 
         m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11254");
-        pipe.CreateComputePipeline(false);
+        vkt::HeapComputePipeline pipe(*m_device, spirv, SPV_ENV_VULKAN_1_0, &mapping_info, source_type);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -3623,20 +3573,11 @@ TEST_F(NegativeDescriptorHeap, OpTypeSampledImageAlignedImage) {
         }
     )glsl";
 
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-
     mappings[1].sourceData.constantOffset.heapOffset = 1;
     mappings[1].sourceData.constantOffset.heapArrayStride = 0;
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12406");
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3654,16 +3595,8 @@ TEST_F(NegativeDescriptorHeap, NoMappingStruct) {
             x[0].result[gl_LocalInvocationID.x] = y[0].data[gl_LocalInvocationID.x];
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3767,23 +3700,13 @@ TEST_F(NegativeDescriptorHeap, NoMappingComputePipeline) {
             x[0][dispatchThreadID.x] = y[0][dispatchThreadID.x];
         }
     )slang";
+    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    m_errorMonitor->VerifyFound();
 
-    VkShaderObj cs_modules[2];
-    cs_modules[0] = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_modules[1] = VkShaderObj(*m_device, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_SLANG);
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-
-    for (uint32_t i = 0; i < 2; ++i) {
-        pipe.cp_ci_.stage = cs_modules[i].GetStageCreateInfo(&mapping_info);
-        m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
-        pipe.CreateComputePipeline(false);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
+    vkt::HeapComputePipeline pipe2(*m_device, slang_shader, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappings) {
@@ -3822,16 +3745,8 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappings) {
             result = 0;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3863,16 +3778,8 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsAllUsed) {
             a_3 = 0;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3914,16 +3821,8 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsMostUsed) {
             a_9 = 0;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3965,16 +3864,8 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsMany) {
             a_9 = 0;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4085,20 +3976,9 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerReservedArea) {
         }
     )slang";
 
-    VkShaderObj cs_modules[2];
-    cs_modules[0] = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_modules[1] = VkShaderObj(*m_device, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_SLANG);
-
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipeline pipe2(*m_device, slang_shader, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
     for (int i = 0; i < 2; ++i) {
-        VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-        pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-        CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-        pipe.cp_ci_.layout = VK_NULL_HANDLE;
-        pipe.cp_ci_.stage = cs_modules[i].GetStageCreateInfo(&mapping_info);
-
-        pipe.CreateComputePipeline(false);
-
         m_command_buffer.Begin();
 
         VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
@@ -4108,7 +3988,7 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerReservedArea) {
         vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 
         vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_info);
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, i == 0 ? pipe : pipe2);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-pBindInfo-11375");
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_errorMonitor->VerifyFound();
@@ -4159,11 +4039,6 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerArray) {
         }
     )slang";
 
-    VkShaderObj cs_modules[2] = {};
-    cs_modules[0] = VkShaderObj(*m_device, cs_source_glsl, VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_modules[1] = VkShaderObj(*m_device, cs_source_hlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_SLANG);
-    m_errorMonitor->VerifyFound();
-
     const VkDeviceSize bdsize = 2 * heap_props.samplerDescriptorSize + heap_props.minSamplerHeapReservedRangeWithEmbedded;
     vkt::Buffer buffer(*m_device, bdsize, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
 
@@ -4199,18 +4074,13 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerArray) {
     mapping_info.mappingCount = 3;
     mapping_info.pMappings = mappings;
 
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11399");
+    vkt::HeapComputePipeline pipe(*m_device, cs_source_glsl, SPV_ENV_VULKAN_1_0, &mapping_info);
+    m_errorMonitor->VerifyFound();
 
-    for (int i = 0; i < 2; ++i) {
-        CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-        pipe.cp_ci_.layout = VK_NULL_HANDLE;
-        pipe.cp_ci_.stage = cs_modules[i].GetStageCreateInfo(&mapping_info);
-
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11399");
-        pipe.CreateComputePipeline(false);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11399");
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source_hlsl, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, PushDataAssignedPipeline) {
@@ -4256,22 +4126,8 @@ TEST_F(NegativeDescriptorHeap, PushDataAssignedPipeline) {
         mapping_info.mappingCount = 1;
         mapping_info.pMappings = &mappings;
 
-        VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-        VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-        pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-        CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-        pipe.cp_ci_.layout = VK_NULL_HANDLE;
-        pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-
+        vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
         std::vector<uint8_t> payload(4);
-        VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-        push_data_info.data.address = payload.data();
-        push_data_info.data.size = payload.size();
-        push_data_info.offset = 0;
-
-        pipe.CreateComputePipeline(false);
 
         m_command_buffer.Begin();
 
@@ -4283,7 +4139,7 @@ TEST_F(NegativeDescriptorHeap, PushDataAssignedPipeline) {
 
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
         if (i != 0) {
-            vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
+            m_command_buffer.PushData(0, payload.size(), payload.data());
         }
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -4770,15 +4626,7 @@ TEST_F(NegativeDescriptorHeap, PushDataRange) {
             a = b;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange = descriptor_heap.AddressRange();
@@ -4911,18 +4759,9 @@ TEST_F(NegativeDescriptorHeap, NonConstantImageMemoryAccess) {
 	        data = texture(sampler2D(tex[index], sampl), vec2(0.5f));
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
-    flags2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &flags2_ci);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11318");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4946,17 +4785,8 @@ TEST_F(NegativeDescriptorHeap, ArrayLengthOnMappingSourceAddress) {
 	        data[0] = data.length();
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
-    flags2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &flags2_ci);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11378");
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4989,13 +4819,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCount) {
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
-    flags2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-    CreateComputePipelineHelper pipe(*this, &flags2_ci);
-    pipe.LateBindPipelineInfo();
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage.pNext = &mapping_info;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, kMinimalShaderGlsl, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
     for (uint32_t i = 0; i < sampler_count; i++) {
@@ -5048,14 +4872,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountPipeline) {
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.LateBindPipelineInfo();
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage.pNext = &mapping_info;
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, kMinimalShaderGlsl, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_errorMonitor->VerifyFound();
 
@@ -5236,20 +5053,15 @@ TEST_F(NegativeDescriptorHeap, NonConstantMemoryAccess) {
         }
     )glsl";
 
-    for (uint32_t i = 0; i < 2; ++i) {
-        VkShaderObj cs_module = VkShaderObj(*m_device, i == 0 ? cs_source1 : cs_source2, VK_SHADER_STAGE_COMPUTE_BIT);
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11318");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
+    vkt::HeapComputePipeline pipe(*m_device, cs_source1, SPV_ENV_VULKAN_1_0, &mapping_info);
+    m_errorMonitor->VerifyFound();
 
-        VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
-        flags2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-        CreateComputePipelineHelper pipe(*this, &flags2_ci);
-        pipe.cp_ci_.layout = VK_NULL_HANDLE;
-        pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11318");
-        m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
-        pipe.CreateComputePipeline(false);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11318");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, UsagesValidation) {
@@ -5370,9 +5182,6 @@ TEST_F(NegativeDescriptorHeap, MappedPushIsBlockUniformArray) {
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mappings;
 
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     const char* cs_source = R"glsl(
         #version 450
         layout(local_size_x = 1) in;
@@ -5384,14 +5193,8 @@ TEST_F(NegativeDescriptorHeap, MappedPushIsBlockUniformArray) {
             uvec4 b = y[1].x[0];
         }
     )glsl";
-
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11315");
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -5581,11 +5384,6 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferSamplerHeapUnbound) {
             data = texture(sampler2D(tex, sampl), vec2(0.5f));
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkDescriptorSetAndBindingMappingEXT mappings[3];
     mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
@@ -5604,10 +5402,7 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferSamplerHeapUnbound) {
     mapping_info.mappingCount = 3u;
     mapping_info.pMappings = mappings;
 
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -5691,15 +5486,7 @@ TEST_F(NegativeDescriptorHeap, UnboundResourceHeap) {
             b = 4;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
@@ -5819,15 +5606,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorBufferInvalidatingHeap) {
             b = 4;
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
@@ -5989,8 +5768,6 @@ TEST_F(NegativeDescriptorHeap, DescriptorIndexingHeapData) {
             result = ubo[result].data;
         }
     )glsl";
-    VkShaderObj cs_module_static = VkShaderObj(*m_device, cs_source_static, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-    VkShaderObj cs_module_runtime = VkShaderObj(*m_device, cs_source_runtime, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 1);
@@ -6004,25 +5781,16 @@ TEST_F(NegativeDescriptorHeap, DescriptorIndexingHeapData) {
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe1(*this, &pipeline_create_flags_2_create_info);
-    pipe1.cp_ci_.stage = cs_module_static.GetStageCreateInfo(&mapping_info);
-    pipe1.cp_ci_.layout = VK_NULL_HANDLE;
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
-    pipe1.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source_static, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 
-    CreateComputePipelineHelper pipe2(*this, &pipeline_create_flags_2_create_info);
-    pipe2.cp_ci_.stage = cs_module_runtime.GetStageCreateInfo(&mapping_info);
-    pipe2.cp_ci_.layout = VK_NULL_HANDLE;
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4804#note_605752
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
-    pipe2.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -6058,9 +5826,6 @@ TEST_F(NegativeDescriptorHeap, DescriptorIndexingPushData) {
             result = ubo[result].data;
         }
     )glsl";
-    VkShaderObj cs_module_static = VkShaderObj(*m_device, cs_source_static, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-    VkShaderObj cs_module_runtime = VkShaderObj(*m_device, cs_source_runtime, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 1);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT;
@@ -6072,25 +5837,16 @@ TEST_F(NegativeDescriptorHeap, DescriptorIndexingPushData) {
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe1(*this, &pipeline_create_flags_2_create_info);
-    pipe1.cp_ci_.stage = cs_module_static.GetStageCreateInfo(&mapping_info);
-    pipe1.cp_ci_.layout = VK_NULL_HANDLE;
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
-    pipe1.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source_static, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 
-    CreateComputePipelineHelper pipe2(*this, &pipeline_create_flags_2_create_info);
-    pipe2.cp_ci_.stage = cs_module_runtime.GetStageCreateInfo(&mapping_info);
-    pipe2.cp_ci_.layout = VK_NULL_HANDLE;
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4804#note_605752
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
-    pipe2.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -6126,9 +5882,6 @@ TEST_F(NegativeDescriptorHeap, DescriptorIndexingPushAddress) {
             result = ubo[result].data;
         }
     )glsl";
-    VkShaderObj cs_module_static = VkShaderObj(*m_device, cs_source_static, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-    VkShaderObj cs_module_runtime = VkShaderObj(*m_device, cs_source_runtime, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 1);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
@@ -6140,25 +5893,16 @@ TEST_F(NegativeDescriptorHeap, DescriptorIndexingPushAddress) {
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe1(*this, &pipeline_create_flags_2_create_info);
-    pipe1.cp_ci_.stage = cs_module_static.GetStageCreateInfo(&mapping_info);
-    pipe1.cp_ci_.layout = VK_NULL_HANDLE;
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
-    pipe1.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source_static, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 
-    CreateComputePipelineHelper pipe2(*this, &pipeline_create_flags_2_create_info);
-    pipe2.cp_ci_.stage = cs_module_runtime.GetStageCreateInfo(&mapping_info);
-    pipe2.cp_ci_.layout = VK_NULL_HANDLE;
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4804#note_605752
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
-    pipe2.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -6194,8 +5938,6 @@ TEST_F(NegativeDescriptorHeap, DescriptorIndexingIndirectAddress) {
             result = ubo[result].data;
         }
     )glsl";
-    VkShaderObj cs_module_static = VkShaderObj(*m_device, cs_source_static, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-    VkShaderObj cs_module_runtime = VkShaderObj(*m_device, cs_source_runtime, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 1);
@@ -6209,25 +5951,16 @@ TEST_F(NegativeDescriptorHeap, DescriptorIndexingIndirectAddress) {
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreateComputePipelineHelper pipe1(*this, &pipeline_create_flags_2_create_info);
-    pipe1.cp_ci_.stage = cs_module_static.GetStageCreateInfo(&mapping_info);
-    pipe1.cp_ci_.layout = VK_NULL_HANDLE;
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
-    pipe1.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source_static, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 
-    CreateComputePipelineHelper pipe2(*this, &pipeline_create_flags_2_create_info);
-    pipe2.cp_ci_.stage = cs_module_runtime.GetStageCreateInfo(&mapping_info);
-    pipe2.cp_ci_.layout = VK_NULL_HANDLE;
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4804#note_605752
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
-    pipe2.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -6306,11 +6039,6 @@ TEST_F(NegativeDescriptorHeap, CombinedImageSamplerMissingSamplerHeap) {
             data = texture(tex, vec2(0.5f));
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
@@ -6324,10 +6052,7 @@ TEST_F(NegativeDescriptorHeap, CombinedImageSamplerMissingSamplerHeap) {
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
 
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -6433,10 +6158,6 @@ TEST_F(NegativeDescriptorHeap, SamplerMappingWarning) {
             vec4 data3 = texture(sampler2D(t, s3), vec2(0.0f));
         }
     )glsl";
-    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
     VkDescriptorSetAndBindingMappingEXT mappings[5];
     mappings[0] = MakeSetAndBindingMapping(1, 0);
@@ -6464,13 +6185,10 @@ TEST_F(NegativeDescriptorHeap, SamplerMappingWarning) {
     mapping_info.mappingCount = 5u;
     mapping_info.pMappings = mappings;
 
-    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.cp_ci_.layout = VK_NULL_HANDLE;
-    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
     m_errorMonitor->SetDesiredWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-constantOffset-sampler");
     m_errorMonitor->SetDesiredWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-pushIndex-sampler");
     m_errorMonitor->SetDesiredWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndex-sampler");
     m_errorMonitor->SetDesiredWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndexArray-sampler");
-    pipe.CreateComputePipeline(false);
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
