@@ -1589,6 +1589,11 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
                              "has different srcQueueFamilyIndex (%" PRIu32 ") and dstQueueFamilyIndex (%" PRIu32 ").",
                              pImageMemoryBarriers[i].srcQueueFamilyIndex, pImageMemoryBarriers[i].dstQueueFamilyIndex);
         }
+        if (cb_state->active_render_pass) {
+            const ImageBarrier barrier(pImageMemoryBarriers[i], srcStageMask, dstStageMask);
+            const Location barrier_loc = error_obj.location.dot(Field::pImageMemoryBarriers, i);
+            skip |= ValidateRenderPassInstanceNoLayoutChange(objlist, barrier_loc, barrier.oldLayout, barrier.newLayout);
+        }
     }
 
     if (cb_state->active_render_pass && ((srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) != 0)) {
@@ -1686,6 +1691,13 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
         skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, dep_info);
         skip |= ValidateWaitEventDependencyFlags(dep_info.dependencyFlags, objlist, dep_info_loc);
 
+        if (cb_state->active_render_pass) {
+            for (uint32_t barrier_index = 0; barrier_index < dep_info.imageMemoryBarrierCount; barrier_index++) {
+                const ImageBarrier barrier(dep_info.pImageMemoryBarriers[barrier_index]);
+                const Location barrier_loc = dep_info_loc.dot(Field::pImageMemoryBarriers, barrier_index);
+                skip |= ValidateRenderPassInstanceNoLayoutChange(objlist, barrier_loc, barrier.oldLayout, barrier.newLayout);
+            }
+        }
         if (const EventSignalState* signal_state = vvl::Find(cb_sub_state.event_signal_states, pEvents[i])) {
             const VkPipelineStageFlags2 union_src_stage_mask = sync_utils::GetExecScopes(dep_info).src;
             if (signal_state->last_signaling_command == vvl::Func::vkCmdSetEvent) {

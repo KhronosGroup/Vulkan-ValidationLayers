@@ -1555,6 +1555,8 @@ const vvl::unordered_map<ImageError, std::vector<Entry>>& GetImageErrorsMap() {
          {
              {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-oldLayout-01181"},
              {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-oldLayout-01181"},
+             {Key(Func::vkCmdWaitEvents), "VUID-vkCmdWaitEvents-oldLayout-01181"},
+             {Key(Func::vkCmdWaitEvents2), "VUID-vkCmdWaitEvents2-oldLayout-01181"},
          }},
         {ImageError::kDynamicRenderingLocalReadNew,
          {
