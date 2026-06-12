@@ -938,6 +938,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                    const Location& loc) const;
     bool ValidateCooperativeVector(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const Location& loc) const;
+    bool ValidateDescriptorMappingSourceHeap(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                             const spirv::ResourceInterfaceVariable& resource_variable,
+                                             const VkDescriptorSetAndBindingMappingEXT& mapping, const Location& mapping_loc) const;
     bool ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                                           const vvl::Pipeline* pipeline, const ShaderStageState& stage_state,
                                                           const Location& loc) const;
