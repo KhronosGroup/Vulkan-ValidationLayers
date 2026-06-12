@@ -181,6 +181,10 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                     mapping_j.resourceMask == VK_SPIRV_RESOURCE_TYPE_ALL_EXT) {
                     ss << "Hint: If using VK_SPIRV_RESOURCE_TYPE_ALL_EXT then different descriptor types will overlap each if "
                           "trying to use an array of descriptors. Instead only set resourceMask for what is needed.\n";
+                } else if (mapping_i.resourceMask == VK_SPIRV_RESOURCE_TYPE_ALL_EXT ||
+                           mapping_j.resourceMask == VK_SPIRV_RESOURCE_TYPE_ALL_EXT) {
+                    ss << "Hint: Using VK_SPIRV_RESOURCE_TYPE_ALL_EXT is a mask for all resources, so if you are trying to share "
+                          "this set/binding, then set the resourceMask for only what is needed.\n";
                 } else if (mapping_i.resourceMask == mapping_j.resourceMask) {
                     ss << "Hint: If using a descriptor of array such as\n\tlayout(binding = 0) uniform sampler2D "
                           "foo[8];\n\tlayout(binding = 2) uniform sampler2D bar;\nfoo[2] and bar are actually mapping to the same "

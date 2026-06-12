@@ -6415,6 +6415,45 @@ TEST_F(NegativeDescriptorHeap, ReadOnlyStorageBufferHlsl) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptorHeap, ComputeShaderRecordMapping) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[0].sourceData.constantOffset.heapArrayStride = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT;
+    mappings[1].sourceData.shaderRecordAddressOffset = 0;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(set = 0, binding = 1) buffer B { uint b; };
+        void main() {
+            a = 2;
+            b = 4;
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-12454");
+    pipe.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptorHeap, SamplerMappingWarning) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
