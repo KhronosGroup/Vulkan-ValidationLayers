@@ -4116,18 +4116,21 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBoun
             const auto* attachment = attachment_info.image_view;
             if (!attachment) {
                 continue;
-            } else if (attachment_info.IsColor() &&
-                       sample_count_info->pColorAttachmentSamples[attachment_info.type_index] != attachment->samples) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), attachment->Handle(),
-                                            attachment->create_info.image);
-                skip |=
-                    LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_COLOR_SAMPLE_06185), objlist, loc,
-                             "%s was created with an image sample count (%s) which does not match the corresponding "
-                             "VkAttachmentSampleCountInfoAMD::pColorAttachmentSamples[%" PRIu32 "] (%s)",
-                             attachment_info.Describe(cb_state, i).c_str(), string_VkSampleCountFlagBits(attachment->samples),
-                             attachment_info.type_index,
-                             string_VkSampleCountFlagBits(sample_count_info->pColorAttachmentSamples[attachment_info.type_index]));
-
+            } else if (attachment_info.IsColor()) {
+                const bool has_color_samples = sample_count_info->pColorAttachmentSamples &&
+                                               attachment_info.type_index < sample_count_info->colorAttachmentCount;
+                if (has_color_samples &&
+                    sample_count_info->pColorAttachmentSamples[attachment_info.type_index] != attachment->samples) {
+                    const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), attachment->Handle(),
+                                                attachment->create_info.image);
+                    skip |= LogError(
+                        CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_COLOR_SAMPLE_06185), objlist, loc,
+                        "%s was created with an image sample count (%s) which does not match the corresponding "
+                        "VkAttachmentSampleCountInfoAMD::pColorAttachmentSamples[%" PRIu32 "] (%s)",
+                        attachment_info.Describe(cb_state, i).c_str(), string_VkSampleCountFlagBits(attachment->samples),
+                        attachment_info.type_index,
+                        string_VkSampleCountFlagBits(sample_count_info->pColorAttachmentSamples[attachment_info.type_index]));
+                }
             } else if (attachment_info.IsDepthOrStencil() &&
                        sample_count_info->depthStencilAttachmentSamples != attachment->samples) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), attachment->Handle(),
