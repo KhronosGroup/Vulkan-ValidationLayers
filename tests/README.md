@@ -3,7 +3,7 @@
 The Validation Layers use [Google Test (gtest)](https://github.com/google/googletest) for testing the
 Validation Layers. This helps make sure all new changes are correct and prevent regressions.
 
-The following is information how to setup and run the tests. There is seperate documentation for [creating tests](../docs/creating_tests.md).
+The following is information how to setup and run the tests. There is separate documentation for [creating tests](../docs/creating_tests.md).
 
 ## Building the tests
 
