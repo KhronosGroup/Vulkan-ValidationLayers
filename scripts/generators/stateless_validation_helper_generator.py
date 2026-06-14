@@ -32,7 +32,6 @@ from string import Template
 @dataclass
 class ExtendedFlag:
     struct: str
-    member: Member
 
 # The way we generate this code is "clever" (aka not fun to debug)
 #
@@ -405,30 +404,30 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         for member in (m for s in self.vk.structs.values() for m in s.members):
-                member.extendedFlag = None
+            member.extendedFlag = None
 
         buffer_usage2 = self.vk.structs['VkBufferUsageFlags2CreateInfo']
         pipe_flags2 = self.vk.structs['VkPipelineCreateFlags2CreateInfo']
         image_flags2 = self.vk.structs['VkImageCreateFlags2CreateInfoKHR']
         image_usage2 = self.vk.structs['VkImageUsageFlags2CreateInfoKHR']
-        self.vk.structs['VkBufferCreateInfo'].members[4].extendedFlag = ExtendedFlag(struct=buffer_usage2.name, member=buffer_usage2.members[2])
-        self.vk.structs['VkPhysicalDeviceExternalBufferInfo'].members[3].extendedFlag = ExtendedFlag(struct=buffer_usage2.name, member=buffer_usage2.members[2])
-        self.vk.structs['VkDescriptorBufferBindingInfoEXT'].members[3].extendedFlag =ExtendedFlag(struct=buffer_usage2.name, member=buffer_usage2.members[2])
-        self.vk.structs['VkComputePipelineCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct=pipe_flags2.name, member=pipe_flags2.members[2])
-        self.vk.structs['VkGraphicsPipelineCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct=pipe_flags2.name, member=pipe_flags2.members[2])
-        self.vk.structs['VkRayTracingPipelineCreateInfoNV'].members[2].extendedFlag = ExtendedFlag(struct=pipe_flags2.name, member=pipe_flags2.members[2])
-        self.vk.structs['VkRayTracingPipelineCreateInfoKHR'].members[2].extendedFlag = ExtendedFlag(struct=pipe_flags2.name, member=pipe_flags2.members[2])
+        self.vk.structs['VkBufferCreateInfo'].members[4].extendedFlag = ExtendedFlag(struct=buffer_usage2.name)
+        self.vk.structs['VkPhysicalDeviceExternalBufferInfo'].members[3].extendedFlag = ExtendedFlag(struct=buffer_usage2.name)
+        self.vk.structs['VkDescriptorBufferBindingInfoEXT'].members[3].extendedFlag =ExtendedFlag(struct=buffer_usage2.name)
+        self.vk.structs['VkComputePipelineCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct=pipe_flags2.name)
+        self.vk.structs['VkGraphicsPipelineCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct=pipe_flags2.name)
+        self.vk.structs['VkRayTracingPipelineCreateInfoNV'].members[2].extendedFlag = ExtendedFlag(struct=pipe_flags2.name)
+        self.vk.structs['VkRayTracingPipelineCreateInfoKHR'].members[2].extendedFlag = ExtendedFlag(struct=pipe_flags2.name)
 
-        self.vk.structs['VkImageCreateInfo'].members[2].flagsextend = ExtendedFlag(struct=image_flags2.name, member=image_flags2.members[2])
-        self.vk.structs['VkImageCreateInfo'].members[10].flagsextend = ExtendedFlag(struct=image_usage2.name, member=image_usage2.members[2])
-        self.vk.structs['VkSurfaceCapabilitiesKHR'].members[9].flagsextend = ExtendedFlag(struct=image_usage2.name, member=image_usage2.members[2])
-        self.vk.structs['VkSwapchainCreateInfoKHR'].members[9].flagsextend = ExtendedFlag(struct=image_usage2.name, member=image_usage2.members[2])
-        self.vk.structs['VkPhysicalDeviceImageFormatInfo2'].members[5].flagsextend = ExtendedFlag(struct=image_usage2.name, member=image_usage2.members[2])
-        self.vk.structs['VkPhysicalDeviceImageFormatInfo2'].members[6].flagsextend = ExtendedFlag(struct=image_flags2.name, member=image_flags2.members[2])
-        self.vk.structs['VkPhysicalDeviceSparseImageFormatInfo2'].members[5].flagsextend = ExtendedFlag(struct=image_usage2.name, member=image_usage2.members[2])
-        self.vk.structs['VkFramebufferAttachmentImageInfo'].members[2].flagsextend = ExtendedFlag(struct=image_flags2.name, member=image_flags2.members[2])
-        self.vk.structs['VkFramebufferAttachmentImageInfo'].members[3].flagsextend = ExtendedFlag(struct=image_usage2.name, member=image_usage2.members[2])
-        self.vk.structs['VkPhysicalDeviceVideoFormatInfoKHR'].members[2].flagsextend = ExtendedFlag(struct=image_usage2.name, member=image_usage2.members[2])
+        self.vk.structs['VkImageCreateInfo'].members[2].flagsextend = ExtendedFlag(struct=image_flags2.name)
+        self.vk.structs['VkImageCreateInfo'].members[10].flagsextend = ExtendedFlag(struct=image_usage2.name)
+        self.vk.structs['VkSurfaceCapabilitiesKHR'].members[9].flagsextend = ExtendedFlag(struct=image_usage2.name)
+        self.vk.structs['VkSwapchainCreateInfoKHR'].members[9].flagsextend = ExtendedFlag(struct=image_usage2.name)
+        self.vk.structs['VkPhysicalDeviceImageFormatInfo2'].members[5].flagsextend = ExtendedFlag(struct=image_usage2.name)
+        self.vk.structs['VkPhysicalDeviceImageFormatInfo2'].members[6].flagsextend = ExtendedFlag(struct=image_flags2.name)
+        self.vk.structs['VkPhysicalDeviceSparseImageFormatInfo2'].members[5].flagsextend = ExtendedFlag(struct=image_usage2.name)
+        self.vk.structs['VkFramebufferAttachmentImageInfo'].members[2].flagsextend = ExtendedFlag(struct=image_flags2.name)
+        self.vk.structs['VkFramebufferAttachmentImageInfo'].members[3].flagsextend = ExtendedFlag(struct=image_usage2.name)
+        self.vk.structs['VkPhysicalDeviceVideoFormatInfoKHR'].members[2].flagsextend = ExtendedFlag(struct=image_usage2.name)
         for member in (m for s in self.vk.structs.values() for m in s.members):
             if member.extendedFlag:
                 self.extended_structs.add(member.extendedFlag.struct)
