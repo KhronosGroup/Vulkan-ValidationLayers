@@ -74,22 +74,6 @@ Location GetUsageLocation(const VkImageCreateInfo& create_info, const Location& 
     return loc.dot(vvl::Field::usage);
 }
 
-VkBufferUsageFlags2 GetBufferViewCreateFlags(const VkBufferViewCreateInfo& create_info) {
-    const auto extended = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
-    if (extended) {
-        return extended->usage;
-    }
-    return static_cast<VkBufferUsageFlags2>(create_info.flags);
-}
-
-Location GetFlagsLocation(const VkBufferViewCreateInfo& create_info, const Location& loc) {
-    const auto extended = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
-    if (extended) {
-        return loc.pNext(vvl::Struct::VkBufferUsageFlags2CreateInfo).dot(vvl::Field::usage);
-    }
-    return loc.dot(vvl::Field::flags);
-}
-
 VkPipelineCreateFlags2 GetPipelineCreateFlags(const VkComputePipelineCreateInfo& create_info) {
     const auto extended = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(create_info.pNext);
     if (extended) {

@@ -32,9 +32,6 @@ Location GetFlagsLocation(const VkImageCreateInfo& create_info, const Location& 
 VkImageUsageFlags2KHR GetImageUsageFlags(const VkImageCreateInfo& create_info);
 Location GetUsageLocation(const VkImageCreateInfo& create_info, const Location& loc);
 
-VkBufferUsageFlags2 GetBufferViewCreateFlags(const VkBufferViewCreateInfo& create_info);
-Location GetFlagsLocation(const VkBufferViewCreateInfo& create_info, const Location& loc);
-
 VkPipelineCreateFlags2 GetPipelineCreateFlags(const VkComputePipelineCreateInfo& create_info);
 Location GetFlagsLocation(const VkComputePipelineCreateInfo& create_info, const Location& loc);
 
