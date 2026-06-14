@@ -285,6 +285,11 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 if (mapping_info) {
                     ss << "Mapped with pMapping[" << std::dec << heap_status->mapping_index << "] with "
                        << string_VkDescriptorMappingSourceEXT(mapping_info->source) << std::hex;
+                    const uint32_t bind_offset = heap_status->binding - mapping_info->firstBinding;
+                    if (bind_offset != 0) {
+                        ss << " (firstBindng: " << mapping_info->firstBinding << ", bindingCount: " << mapping_info->bindingCount
+                           << ")";
+                    }
                     if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
                         const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping_info->sourceData.constantOffset;
                         ss << "\n  - heapOffset = 0x" << map_data.heapOffset;

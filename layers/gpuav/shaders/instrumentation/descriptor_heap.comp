@@ -48,7 +48,7 @@ bool inst_heap_mapping_constant_offset(const uint inst_offset, const uint heap_o
     if (offset >= bound_heap_info.heap_size) {
         error = kErrorSubCode_DescriptorHeap_HeapOOB;
     } else if (offset >= bound_heap_info.reserved_begin &&
-               offset <= bound_heap_info.reserved_end &&
+               offset < bound_heap_info.reserved_end &&
                // when no reserved range
                bound_heap_info.reserved_begin != bound_heap_info.reserved_end) {
         error = kErrorSubCode_DescriptorHeap_ReservedRange;
@@ -82,7 +82,7 @@ bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset
     if (offset >= bound_heap_info.heap_size) {
         error = kErrorSubCode_DescriptorHeap_HeapOOB;
     } else if (offset >= bound_heap_info.reserved_begin &&
-               offset <= bound_heap_info.reserved_end &&
+               offset < bound_heap_info.reserved_end &&
                // when no reserved range
                bound_heap_info.reserved_begin != bound_heap_info.reserved_end) {
         error = kErrorSubCode_DescriptorHeap_ReservedRange;
@@ -128,7 +128,7 @@ bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_of
             error = kErrorSubCode_DescriptorHeap_HeapOOB;
             param_0 = offset;
         } else if (offset >= bound_heap_info.reserved_begin &&
-                    offset <= bound_heap_info.reserved_end &&
+                    offset < bound_heap_info.reserved_end &&
                     // when no reserved range
                     bound_heap_info.reserved_begin != bound_heap_info.reserved_end) {
             error = kErrorSubCode_DescriptorHeap_ReservedRange;
@@ -177,7 +177,7 @@ bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint h
             error = kErrorSubCode_DescriptorHeap_HeapOOB;
             param_0 = offset;
         } else if (offset >= bound_heap_info.reserved_begin &&
-                offset <= bound_heap_info.reserved_end &&
+                offset < bound_heap_info.reserved_end &&
                 // when no reserved range
                 bound_heap_info.reserved_begin != bound_heap_info.reserved_end) {
             error = kErrorSubCode_DescriptorHeap_ReservedRange;
@@ -291,7 +291,7 @@ bool inst_heap_untyped(const uint inst_offset, const uint heap_offset, const uin
     if (offset >= bound_heap_info.heap_size) {
         error = kErrorSubCode_DescriptorHeap_HeapOOB;
     } else if (offset >= bound_heap_info.reserved_begin &&
-               offset <= bound_heap_info.reserved_end &&
+               offset < bound_heap_info.reserved_end &&
                // when no reserved range
                bound_heap_info.reserved_begin != bound_heap_info.reserved_end) {
         error = kErrorSubCode_DescriptorHeap_ReservedRange;

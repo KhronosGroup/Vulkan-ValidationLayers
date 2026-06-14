@@ -56,10 +56,67 @@ uint32_t DescriptorHeapPass::GetLinkFunctionId(const FunctionNames func_name) {
     return GetLinkFunction(link_function_id_[func_name], kOfflineFunction[func_name]);
 }
 
+// Unfortunately this is a duplicate of the util function because there is no spirv::ResourceInterfaceVariable
+bool DescriptorHeapPass::ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type, const AccessPath& access_path,
+                                                    bool is_sampler) const {
+    if (resource_type == VK_SPIRV_RESOURCE_TYPE_ALL_EXT) {
+        return true;
+    }
+
+    // cant use |descriptor_type| as its only for the image resource here
+    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT) != 0 && is_sampler) {
+        return true;
+    }
+    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT) != 0 &&
+        (access_path.descriptor_type == gpuav::descriptor::TYPE_IMAGE_SAMPLED)) {
+        return true;
+    }
+    if (access_path.descriptor_type == gpuav::descriptor::TYPE_IMAGE_STORAGE ||
+        access_path.descriptor_type == gpuav::descriptor::TYPE_IMAGE_TEXEL_BUFFER_STORAGE ||
+        access_path.descriptor_type == gpuav::descriptor::TYPE_IMAGE_INPUT_ATTACHMENT) {
+        // NonWritable must be on the OpVariable, not the OpTypeStruct
+        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4789
+        const bool nonwritable = GetDecoration(access_path.variable->Id(), spv::DecorationNonWritable) != nullptr;
+        if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT) != 0 && nonwritable) {
+            return true;
+        }
+        if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT) != 0 && !nonwritable) {
+            return true;
+        }
+    }
+
+    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT) != 0 && access_path.is_combined_image_sampler) {
+        return true;
+    }
+    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT) != 0 &&
+        access_path.descriptor_type == gpuav::descriptor::TYPE_UNIFORM_BUFFER) {
+        return true;
+    }
+    if (access_path.descriptor_type == gpuav::descriptor::TYPE_STORAGE_BUFFER) {
+        // NonWritable must be on the OpVariable, not the OpTypeStruct
+        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4789
+        const bool nonwritable = GetDecoration(access_path.variable->Id(), spv::DecorationNonWritable) != nullptr;
+        if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT) != 0 && nonwritable) {
+            return true;
+        }
+        if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT) != 0 && !nonwritable) {
+            return true;
+        }
+    }
+    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT) != 0 &&
+        access_path.descriptor_type == gpuav::descriptor::TYPE_ACCELERATION_STRUCTURE) {
+        return true;
+    }
+
+    // TODO - VK_SPIRV_RESOURCE_TYPE_TENSOR_BIT_ARM
+
+    return false;
+}
+
 // TODO - if we find this slow, we could pre-sort all the mappings
-// TODO - not handling ResourceMask
 const uint32_t kMappingIndexInvalid = 0xFFFFFFFF;
-uint32_t DescriptorHeapPass::GetMapping(const Variable& variable) const {
+uint32_t DescriptorHeapPass::GetMapping(const AccessPath& access_path, bool is_sampler) const {
+    const Variable& variable = is_sampler ? *access_path.sampler_variable : *access_path.variable;
     const DescriptorInterface& interface = variable.interface_;
     if (interface.IsHeap()) {
         return glsl::kInst_DescriptorHeap_MappingIndexUntyped;
@@ -69,7 +126,7 @@ uint32_t DescriptorHeapPass::GetMapping(const Variable& variable) const {
         const VkDescriptorSetAndBindingMappingEXT& mapping = module_.interface_.mapping_info->pMappings[i];
         const uint32_t last_binding = mapping.firstBinding + mapping.bindingCount;
         if (mapping.descriptorSet == interface.set && interface.binding >= mapping.firstBinding &&
-            interface.binding < last_binding) {
+            interface.binding < last_binding && ResourceTypeMatchesBinding(mapping.resourceMask, access_path, is_sampler)) {
             const uint32_t encode_index = (uint32_t)module_.out_status.device.heap_mappings.size();
             module_.out_status.device.heap_mappings.emplace_back(HeapMappingStatus{i, interface.binding, variable.Id(), mapping});
 
@@ -89,6 +146,7 @@ uint32_t DescriptorHeapPass::GetMapping(const Variable& variable) const {
 
 uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
                                                 bool is_seperate_sampler) {
+    const Variable& descriptor_variable = is_seperate_sampler ? *meta.access_path.sampler_variable : *meta.access_path.variable;
     const uint32_t descriptor_index =
         is_seperate_sampler ? meta.access_path.sampler_descriptor_index_id : meta.access_path.descriptor_index_id;
     const uint32_t descriptor_index_id = CastToUint32(descriptor_index, block, inst_it);  // might be int32
@@ -159,9 +217,11 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         }
     }
 
+    const uint32_t binding_offset = mapping ? descriptor_variable.interface_.binding - mapping->firstBinding : 0;
+
     bool has_embedded_sampler = false;
     if (!mapping) {
-        // Untyped
+        assert(descriptor_variable.interface_.IsHeap());  // Untyped
         uint32_t heap_offset_id = 0;
         const Type* descriptor_array = nullptr;
         if (meta.access_path.pointer_type->spv_type_ == SpvType::kStruct) {
@@ -194,7 +254,8 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping->sourceData.constantOffset;
         has_embedded_sampler = map_data.pEmbeddedSampler != nullptr;
 
-        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
+        const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.heapArrayStride);
+        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
         const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.heapArrayStride).Id();
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_CONSTANT_OFFSET);
@@ -207,7 +268,8 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping->sourceData.pushIndex;
         has_embedded_sampler = map_data.pEmbeddedSampler != nullptr;
 
-        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
+        const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.heapArrayStride);
+        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
         // VU enforces pushOffset to multiple of 4, and the GLSL is using a uint array
         const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
         const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.heapIndexStride).Id();
@@ -223,7 +285,8 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping->sourceData.indirectIndex;
         has_embedded_sampler = map_data.pEmbeddedSampler != nullptr;
 
-        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
+        const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.heapArrayStride);
+        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
         // VU enforces pushOffset to multiple of 8, and the GLSL is using a uint array
         const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
         const uint32_t address_offset_id = type_manager_.GetConstantUInt32(map_data.addressOffset / 4).Id();
@@ -244,7 +307,8 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
         // VU enforces pushOffset to multiple of 8, and the GLSL is using a uint array
         const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
-        const uint32_t address_offset_id = type_manager_.GetConstantUInt32(map_data.addressOffset / 4).Id();
+        const uint32_t frist_index_offset = (map_data.addressOffset / 4) + binding_offset;
+        const uint32_t address_offset_id = type_manager_.GetConstantUInt32(frist_index_offset).Id();
         const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.heapIndexStride).Id();
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_INDIRECT_INDEX_ARRAY);
@@ -336,13 +400,16 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
     const uint32_t is_sampler_id = type_manager_.GetConstantBool(true).Id();
     const uint32_t desc_alignment_id = type_manager_.GetConstantUInt32(module_.settings_.descriptor_alignment_sampler).Id();
 
+    const uint32_t binding_offset = meta.access_path.variable->interface_.binding - mapping.firstBinding;
+
     uint32_t function_result = module_.TakeNextId();
     const uint32_t bool_type = type_manager_.GetTypeBool().Id();
 
     if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
         const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping.sourceData.constantOffset;
 
-        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.samplerHeapOffset).Id();
+        const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.samplerHeapOffset);
+        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
         const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapArrayStride).Id();
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_CONSTANT_OFFSET);
@@ -354,10 +421,11 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
         const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping.sourceData.pushIndex;
 
-        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
-        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
-        const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.heapIndexStride).Id();
-        const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.heapArrayStride).Id();
+        const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.samplerHeapOffset);
+        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
+        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.samplerPushOffset / 4).Id();
+        const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapIndexStride).Id();
+        const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapArrayStride).Id();
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_PUSH_INDEX);
 
@@ -368,7 +436,8 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
         const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping.sourceData.indirectIndex;
 
-        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.samplerHeapOffset).Id();
+        const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.samplerHeapOffset);
+        const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
         const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.samplerPushOffset / 4).Id();
         const uint32_t address_offset_id = type_manager_.GetConstantUInt32(map_data.samplerAddressOffset / 4).Id();
         const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapIndexStride).Id();
@@ -386,7 +455,8 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
 
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.samplerHeapOffset).Id();
         const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.samplerPushOffset / 4).Id();
-        const uint32_t address_offset_id = type_manager_.GetConstantUInt32(map_data.samplerAddressOffset / 4).Id();
+        const uint32_t frist_index_offset = (map_data.samplerAddressOffset / 4) + binding_offset;
+        const uint32_t address_offset_id = type_manager_.GetConstantUInt32(frist_index_offset).Id();
         const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapIndexStride).Id();
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_INDIRECT_INDEX_ARRAY);
@@ -410,9 +480,9 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
     }
 
     // We look for mappings here incase we can't find it, we can skip safely
-    meta.mapping_index_resource = GetMapping(*meta.access_path.variable);
+    meta.mapping_index_resource = GetMapping(meta.access_path, false);
     if (meta.access_path.sampler_variable) {
-        meta.mapping_index_sampler = GetMapping(*meta.access_path.sampler_variable);
+        meta.mapping_index_sampler = GetMapping(meta.access_path, true);
     }
     if (meta.mapping_index_resource == kMappingIndexInvalid || meta.mapping_index_sampler == kMappingIndexInvalid) {
         return false;

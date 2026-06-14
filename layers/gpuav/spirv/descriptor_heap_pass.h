@@ -49,7 +49,9 @@ class DescriptorHeapPass : public Pass {
                                                const VkDescriptorSetAndBindingMappingEXT& mapping,
                                                const uint32_t descriptor_index_id);
 
-    uint32_t GetMapping(const Variable& variable) const;
+    bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type, const AccessPath& access_path,
+                                    bool is_sampler) const;
+    uint32_t GetMapping(const AccessPath& access_path, bool is_sampler) const;
 
     // < original ID, new CopyObject ID >
     vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;
