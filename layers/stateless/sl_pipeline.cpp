@@ -209,9 +209,14 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                       {VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT,
                        VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT}) &&
             mapping.bindingCount != 1) {
-            skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11245", device, map_loc.dot(Field::bindingCount),
-                             "is %" PRIu32 " (not 1).\nVkDescriptorSetAndBindingMappingEXT::source = %s", mapping.bindingCount,
-                             string_VkDescriptorMappingSourceEXT(mapping.source));
+            skip |= LogError(
+                "VUID-VkDescriptorSetAndBindingMappingEXT-source-11245", device, map_loc.dot(Field::bindingCount),
+                "is %" PRIu32
+                " (not 1).\nVkDescriptorSetAndBindingMappingEXT::source = %s\nHint: %s, which is nonsense and therefor disallowed.",
+                mapping.bindingCount, string_VkDescriptorMappingSourceEXT(mapping.source),
+                mapping.bindingCount == 0 ? "bindingCount of zero would mean this mapping is never going to be valid"
+                                          : "Since these mappings aren't allowed to use descriptor indexing, trying to use "
+                                            "bindingCount greater than 1 would mean all the bindings would share this mapping");
         }
         if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) {
             if (!IsIntegerMultipleOf(mapping.sourceData.pushDataOffset, 4)) {
