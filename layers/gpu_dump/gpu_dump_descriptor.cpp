@@ -1151,7 +1151,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             ss << new_bullet_line << "samplerPushOffset: 0x" << std::hex << map_data.samplerPushOffset
                << ", samplerAddressOffset: 0x" << map_data.samplerAddressOffset << ", samplerHeapOffset: 0x"
                << map_data.samplerHeapOffset << ", samplerHeapIndexStride: 0x" << map_data.samplerHeapIndexStride;
-            push_indirect_address = push_indirect_address = get_push_data(map_data.samplerPushOffset, 8);
+            push_indirect_address = get_push_data(map_data.samplerPushOffset, 8);
 
             final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
             if (is_alias) {
