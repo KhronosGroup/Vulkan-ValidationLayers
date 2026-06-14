@@ -658,6 +658,7 @@ struct StatelessData {
     std::vector<const Instruction *> transform_feedback_stream_inst;
     std::vector<const Instruction *> fma_inst;
     std::vector<const Instruction *> tensor_inst;
+    std::vector<const Instruction *> image_texel_pointer_inst;
 
     // simpler to just track all OpExecutionModeId and parse things needed later
     std::vector<const Instruction *> execution_mode_id_inst;

@@ -153,6 +153,26 @@ class Instruction {
 #endif
 };
 
+namespace ImageProcUsageBit {
+    constexpr uint32_t kNone = 0;
+    // VK_QCOM_image_processing
+    constexpr uint32_t kSampleWeighted = 1 << 0;
+    constexpr uint32_t kBoxFilter = 1 << 1;
+    constexpr uint32_t kBlockMatchSsd = 1 << 2;
+    constexpr uint32_t kBlockMatchSad = 1 << 3;
+    // VK_QCOM_image_processing2
+    constexpr uint32_t kBlockMatchWindowSsd = 1 << 4;
+    constexpr uint32_t kBlockMatchWindowSad = 1 << 5;
+    constexpr uint32_t kBlockMatchGatherSsd = 1 << 6;
+    constexpr uint32_t kBlockMatchGatherSad = 1 << 7;
+    // Aggregate
+    constexpr uint32_t kBlockMatchWindow = kBlockMatchWindowSsd | kBlockMatchWindowSad |
+                                           kBlockMatchGatherSsd | kBlockMatchGatherSad;
+    constexpr uint32_t kBlockMatch = kBlockMatchSsd | kBlockMatchSad | kBlockMatchWindow;
+    constexpr uint32_t kNonBoxFilter = kSampleWeighted | kBlockMatch;
+    constexpr uint32_t kImageSampled = kSampleWeighted | kBoxFilter | kBlockMatch;
+}  // namespace ImageProcUsageBit
+
 // All information about a OpImage* instructions
 //
 // It is deliberately here to showcase how it is independent of the module itself
@@ -167,6 +187,9 @@ struct ImageInstruction {
     // Only need to check if one access has explicit signedness, mixing should be caught in spirv-val
     bool is_sign_extended = false;
     bool is_zero_extended = false;
+
+    // Image processing instruction usage mask
+    uint32_t image_proc_usage_mask = ImageProcUsageBit::kNone;
 
     explicit ImageInstruction(const uint32_t* words);
     ImageInstruction(){};  // used for static variables to set defaults

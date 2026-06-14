@@ -624,6 +624,31 @@ ImageInstruction::ImageInstruction(const uint32_t* words) {
         case spv::OpAtomicExchange:
             break;
 
+        case spv::OpImageSampleWeightedQCOM:
+            image_proc_usage_mask |= ImageProcUsageBit::kSampleWeighted;
+            break;
+        case spv::OpImageBoxFilterQCOM:
+            image_proc_usage_mask |= ImageProcUsageBit::kBoxFilter;
+            break;
+        case spv::OpImageBlockMatchSADQCOM:
+            image_proc_usage_mask |= ImageProcUsageBit::kBlockMatchSad;
+            break;
+        case spv::OpImageBlockMatchSSDQCOM:
+            image_proc_usage_mask |= ImageProcUsageBit::kBlockMatchSsd;
+            break;
+        case spv::OpImageBlockMatchGatherSADQCOM:
+            image_proc_usage_mask |= ImageProcUsageBit::kBlockMatchGatherSad;
+            break;
+        case spv::OpImageBlockMatchGatherSSDQCOM:
+            image_proc_usage_mask |= ImageProcUsageBit::kBlockMatchGatherSsd;
+            break;
+        case spv::OpImageBlockMatchWindowSADQCOM:
+            image_proc_usage_mask |= ImageProcUsageBit::kBlockMatchWindowSad;
+            break;
+        case spv::OpImageBlockMatchWindowSSDQCOM:
+            image_proc_usage_mask |= ImageProcUsageBit::kBlockMatchWindowSsd;
+            break;
+
         case spv::OpImageSparseTexelsResident:
             assert(false);  // This is not a proper OpImage* instruction, has no OpImage operand
             break;

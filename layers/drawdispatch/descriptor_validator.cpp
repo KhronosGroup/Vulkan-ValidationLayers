@@ -801,6 +801,18 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                          FormatHandle(image_view).c_str(), DescribeInstruction().c_str());
     }
 
+    if (!dev_proxy.enabled_features.tileShadingImageProcessing &&
+        !sampler_states.empty() && resource_variable.storage_class == spv::StorageClassTileAttachmentQCOM &&
+        (resource_variable.info.image_insn.image_proc_usage_mask & spirv::ImageProcUsageBit::kImageSampled) != 0) {
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
+        skip |= LogError("VUID-RuntimeSpirv-tileShadingImageProcessing-10712", objlist, loc.Get(),
+                         "the %s is TileAttachmentQCOM storage class, it is backed by %s which is "
+                         "consumed by image-processing instruction, but "
+                         "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingImageProcessing isn't enabled.%s",
+                         DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                         FormatHandle(image_view).c_str(), DescribeInstruction().c_str());
+    }
+
     // If the Image View is invalid, the combined sampler mayb have the same issue
     if (skip) return skip;
 

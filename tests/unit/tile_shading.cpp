@@ -2983,3 +2983,855 @@ TEST_F(NegativeTileShading, TileShadingSampledAttachmentsFeatureNotEnabled) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeTileShading, MaxTileShadingRateDepth) {
+    TEST_DESCRIPTION("Launch a compute pass with TileShadingRateQCOM.z exceeding "
+                     "VkPhysicalDeviceTileShadingPropertiesQCOM::maxTileShadingRate::depth.");
+    AddRequiredExtensions(VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileProperties);
+    AddRequiredFeature(vkt::Feature::tileShadingDispatchTile);
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Don't support query dynamic tile properties on Vulkan Mock Device, skipping test.";
+    }
+
+    InitTileShadingRenderTarget();
+
+    uint32_t tile_prop_count = 0;
+    std::vector<VkTilePropertiesQCOM> tile_props{};
+    vk::GetFramebufferTilePropertiesQCOM(device(), m_tile_shading_framebuffer, &tile_prop_count, nullptr);
+    tile_props.resize(tile_prop_count, vku::InitStructHelper());
+    vk::GetFramebufferTilePropertiesQCOM(device(), m_tile_shading_framebuffer, &tile_prop_count, tile_props.data());
+
+    uint32_t invalid_depth = 1;
+    for (uint32_t index = 0; index < tile_prop_count; ++index) {
+        invalid_depth = std::max(invalid_depth, tile_props[index].tileSize.depth);
+    }
+    invalid_depth <<= 1;
+
+    const std::string cs_source = R"asm(
+                OpCapability Shader
+                OpCapability TileShadingQCOM
+                OpExtension "SPV_QCOM_tile_shading"
+                OpMemoryModel Logical GLSL450
+                OpEntryPoint GLCompute %main "main"
+                OpExecutionMode %main TileShadingRateQCOM 1 1 )asm" + std::to_string(invalid_depth) + '\n' +
+                R"asm(
+        %void = OpTypeVoid
+           %3 = OpTypeFunction %void
+        %main = OpFunction %void None %3
+           %5 = OpLabel
+                OpReturn
+                OpFunctionEnd
+    )asm";
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM};
+    compute_pipe.CreateComputePipeline();
+
+    VkClearValue clear_color{};
+    clear_color.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea = {{0,0}, tile_shading_rp_config.rt_size};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_color;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+    VkDispatchTileInfoQCOM dispatch_tile_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-z-10704");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-tileSize-10705");
+    vk::CmdDispatchTileQCOM(m_command_buffer, &dispatch_tile_info);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, MaxTileShadingRateDepthInDynamicRendering) {
+    TEST_DESCRIPTION("Launch a compute pass with TileShadingRateQCOM.z exceeding "
+                     "VkPhysicalDeviceTileShadingPropertiesQCOM::maxTileShadingRate::depth.");
+    AddRequiredExtensions(VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileProperties);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::tileShadingDispatchTile);
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Don't support query dynamic tile properties on Vulkan Mock Device, skipping test.";
+    }
+
+    tile_shading_rp_config.rt_size = {512, 512};
+    InitTileShadingRenderTarget();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = m_color_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_ci = vku::InitStructHelper();
+    tile_shading_ci.flags = VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM;
+    tile_shading_ci.tileApronSize = {0, 0};
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&tile_shading_ci);
+    rendering_info.renderArea = {{0, 0}, tile_shading_rp_config.rt_size};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkTilePropertiesQCOM tile_props = vku::InitStructHelper();
+    vk::GetDynamicRenderingTilePropertiesQCOM(device(), &rendering_info, &tile_props);
+    const uint32_t invalid_depth = tile_props.tileSize.depth << 1;
+
+    const std::string cs_source = R"asm(
+                OpCapability Shader
+                OpCapability TileShadingQCOM
+                OpExtension "SPV_QCOM_tile_shading"
+                OpMemoryModel Logical GLSL450
+                OpEntryPoint GLCompute %main "main"
+                OpExecutionMode %main TileShadingRateQCOM 1 1 )asm" + std::to_string(invalid_depth) + '\n' +
+                R"asm(
+        %void = OpTypeVoid
+           %3 = OpTypeFunction %void
+        %main = OpFunction %void None %3
+           %5 = OpLabel
+                OpReturn
+                OpFunctionEnd
+    )asm";
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM};
+    compute_pipe.CreateComputePipeline();
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+    VkDispatchTileInfoQCOM dispatch_tile_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-z-10704");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-tileSize-10705");
+    vk::CmdDispatchTileQCOM(m_command_buffer, &dispatch_tile_info);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, TileImageConsumedByTexelPointerOpButAtomicOpsFeatureNotEnabled) {
+    TEST_DESCRIPTION("Use OpImageTexelPointer that consumes an image variable with TileAttachmentQCOM storage class, "
+                     "but tileShadingAtomicOps is not enabled.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    const char* cs_source = R"asm(
+                OpCapability Shader
+                OpCapability TileShadingQCOM
+                OpExtension "SPV_QCOM_tile_shading"
+                OpMemoryModel Logical GLSL450
+                OpEntryPoint GLCompute %main "main" %tile_img
+                OpExecutionMode %main TileShadingRateQCOM 1 1 1
+                OpDecorate %tile_img DescriptorSet 0
+                OpDecorate %tile_img Binding 0
+        %void = OpTypeVoid
+          %fn = OpTypeFunction %void
+        %uint = OpTypeInt 32 0
+         %int = OpTypeInt 32 1
+       %v2int = OpTypeVector %int 2
+       %int_0 = OpConstant %int 0
+       %coord = OpConstantComposite %v2int %int_0 %int_0
+      %uint_0 = OpConstant %uint 0
+    %image_ty = OpTypeImage %uint 2D 0 0 0 2 R32ui
+ %tile_ptr_ty = OpTypePointer TileAttachmentQCOM %image_ty
+    %tile_img = OpVariable %tile_ptr_ty TileAttachmentQCOM
+%texel_ptr_ty = OpTypePointer Image %uint
+        %main = OpFunction %void None %fn
+       %label = OpLabel
+         %ptr = OpImageTexelPointer %texel_ptr_ty %tile_img %coord %uint_0
+                OpReturn
+                OpFunctionEnd
+    )asm";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImage-10706");
+    VkShaderObj cs{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM};
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTileShading, TileImageConsumedByTexelPointerOpViaAccessChainButAtomicOpsFeatureNotEnabled) {
+    TEST_DESCRIPTION("Use OpImageTexelPointer on a tile attachment image pointer obtained via OpAccessChain, "
+                     "but tileShadingAtomicOps feature is not enabled.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    const char* cs_source = R"asm(
+                OpCapability Shader
+                OpCapability TileShadingQCOM
+                OpExtension "SPV_QCOM_tile_shading"
+                OpMemoryModel Logical GLSL450
+                OpEntryPoint GLCompute %main "main" %tile_img
+                OpExecutionMode %main TileShadingRateQCOM 1 1 1
+                OpDecorate %tile_img DescriptorSet 0
+                OpDecorate %tile_img Binding 0
+        %void = OpTypeVoid
+          %fn = OpTypeFunction %void
+        %uint = OpTypeInt 32 0
+         %int = OpTypeInt 32 1
+       %v2int = OpTypeVector %int 2
+       %int_0 = OpConstant %int 0
+       %int_1 = OpConstant %int 1
+       %coord = OpConstantComposite %v2int %int_0 %int_0
+      %uint_0 = OpConstant %uint 0
+    %image_ty = OpTypeImage %uint 2D 0 0 0 2 R32ui
+      %arr_ty = OpTypeArray %image_ty %int_1
+ %tile_ptr_ty = OpTypePointer TileAttachmentQCOM %arr_ty
+  %img_ptr_ty = OpTypePointer TileAttachmentQCOM %image_ty
+    %tile_img = OpVariable %tile_ptr_ty TileAttachmentQCOM
+%texel_ptr_ty = OpTypePointer Image %uint
+        %main = OpFunction %void None %fn
+       %label = OpLabel
+      %elem_p = OpAccessChain %img_ptr_ty %tile_img %int_0
+         %ptr = OpImageTexelPointer %texel_ptr_ty %elem_p %coord %uint_0
+                OpReturn
+                OpFunctionEnd
+    )asm";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImage-10706");
+    VkShaderObj cs{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM};
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTileShading, TileImageAtomicOpButAtomicOpsFeatureNotEnabled) {
+    TEST_DESCRIPTION("Execute an image atomic operation on a tile attachment, "
+                     "but tileShadingAtomicOps feature is not enabled.");
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    const char* cs_source = R"glsl(
+        #version 460
+
+        #extension GL_QCOM_tile_shading : require
+
+        layout(shading_rate_xQCOM = 1, shading_rate_yQCOM = 1, shading_rate_zQCOM = 1) in;
+        layout(set = 0, binding = 0, tile_attachmentQCOM, r32ui) uniform uimage2D tile_img;
+
+        void main() {
+            imageAtomicExchange(tile_img, ivec2(0, 0), 1u);
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImage-10706");
+    VkShaderObj cs{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL};
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTileShading, UseSampleWeightedImageOpButTileShadingImageProcessingNotEnabled) {
+    TEST_DESCRIPTION("Use OpImageSampleWeightedQCOM with an OpTypeSampledImage declared in the TileAttachmentQCOM storage class, "
+                     "but tileShadingImageProcessing is not enabled.");
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::textureSampleWeighted);
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    const auto query_format_features2 = [this] (VkFormat format) {
+        VkFormatProperties3 format_props3 = vku::InitStructHelper();
+        VkFormatProperties2 format_props2 = vku::InitStructHelper(&format_props3);
+        vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &format_props2);
+        return format_props3.optimalTilingFeatures;
+    };
+
+    VkFormat sampled_format = VK_FORMAT_UNDEFINED;
+    for (VkFormat format : {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8_UNORM, VK_FORMAT_R16G16_UNORM}) {
+        const auto features = query_format_features2(format);
+        if ((features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
+            (features & VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM) != 0) {
+            sampled_format = format;
+            break;
+        }
+    }
+    VkFormat weight_format = VK_FORMAT_UNDEFINED;
+    for (VkFormat format : {VK_FORMAT_R16_SFLOAT, VK_FORMAT_R32_SFLOAT, VK_FORMAT_R8_UNORM}) {
+        const auto features = query_format_features2(format);
+        if ((features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
+            (features & VK_FORMAT_FEATURE_2_WEIGHT_IMAGE_BIT_QCOM) != 0) {
+            weight_format = format;
+            break;
+        }
+    }
+    if (sampled_format == VK_FORMAT_UNDEFINED || weight_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Failed to find a format supporting OpImageSampleWeightedQCOM, skipping test.";
+    }
+
+    InitTileShadingRenderTarget();
+
+    VkPhysicalDeviceImageProcessingPropertiesQCOM image_processing_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(image_processing_props);
+
+    VkImageCreateInfo weight_image_ci = vku::InitStructHelper();
+    weight_image_ci.imageType = VK_IMAGE_TYPE_2D;
+    weight_image_ci.format = weight_format;
+    weight_image_ci.extent = {image_processing_props.maxWeightFilterDimension.width,
+                              image_processing_props.maxWeightFilterDimension.height, 1};
+    weight_image_ci.mipLevels = 1;
+    weight_image_ci.arrayLayers = 1;
+    weight_image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    weight_image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    weight_image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM;
+    vkt::Image weight_image{*m_device, weight_image_ci};
+
+    VkImageViewSampleWeightCreateInfoQCOM weight_view_weight_ci = vku::InitStructHelper();
+    weight_view_weight_ci.filterCenter = {0, 0};
+    weight_view_weight_ci.filterSize = image_processing_props.maxWeightFilterDimension;
+    weight_view_weight_ci.numPhases = 1;
+    VkImageViewCreateInfo weight_view_ci = vku::InitStructHelper(&weight_view_weight_ci);
+    weight_view_ci.image = weight_image;
+    weight_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    weight_view_ci.format = weight_format;
+    weight_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkt::ImageView weight_view{*m_device, weight_view_ci};
+
+    VkSamplerCreateInfo sampler_ci = vku::InitStructHelper();
+    sampler_ci.flags = VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM;
+    sampler_ci.magFilter = VK_FILTER_NEAREST;
+    sampler_ci.minFilter = VK_FILTER_NEAREST;
+    sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_ci.addressModeV = sampler_ci.addressModeU;
+    sampler_ci.addressModeW = sampler_ci.addressModeU;
+    vkt::Sampler sampler{*m_device, sampler_ci};
+
+    const char* cs_source = R"glsl(
+        #version 460
+
+        #extension GL_QCOM_image_processing: require
+        #extension GL_QCOM_tile_shading : require
+
+        layout(shading_rate_xQCOM = 1, shading_rate_yQCOM = 1, shading_rate_zQCOM = 1) in;
+        layout(set = 0, binding = 0, tile_attachmentQCOM) uniform sampler2D sampled_tex;
+        layout(set = 0, binding = 1) uniform texture2DArray weight_tex;
+        layout(set = 0, binding = 2) uniform sampler processing_sampler;
+
+        void main() {
+            vec4 result = textureWeightedQCOM(
+                sampled_tex,
+                vec2(0.5, 0.5),
+                sampler2DArray(weight_tex, processing_sampler)
+            );
+        }
+    )glsl";
+
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkComputePipelineCreateInfo-layout-07990");
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL};
+    compute_pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}
+    };
+    compute_pipe.CreateComputePipeline();
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(0, m_color_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                          VK_IMAGE_LAYOUT_GENERAL);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(1, weight_view, nullptr,
+                                                          VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(2, nullptr, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    compute_pipe.descriptor_set_.UpdateDescriptorSets();
+
+    VkClearValue clear_color{};
+    clear_color.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea = {{0,0}, tile_shading_rp_config.rt_size};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_color;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                              compute_pipe.pipeline_layout_, 0, 1,
+                              &compute_pipe.descriptor_set_.set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-tileShadingImageProcessing-10712");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, UseBoxFilterImageOpButTileShadingImageProcessingNotEnabled) {
+    TEST_DESCRIPTION("Use OpImageBoxFilterQCOM with an OpTypeSampledImage declared in TileAttachmentQCOM storage class, "
+                     "but tileShadingImageProcessing is not enabled.");
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::textureBoxFilter);
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    const auto query_format_features2 = [this] (VkFormat format) {
+        VkFormatProperties3 format_props3 = vku::InitStructHelper();
+        VkFormatProperties2 format_props2 = vku::InitStructHelper(&format_props3);
+        vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &format_props2);
+        return format_props3.optimalTilingFeatures;
+    };
+
+    VkFormat sampled_format = VK_FORMAT_UNDEFINED;
+    for (VkFormat format : {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8_UNORM, VK_FORMAT_R16G16_UNORM}) {
+        const auto features = query_format_features2(format);
+        if ((features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
+            (features & VK_FORMAT_FEATURE_2_BOX_FILTER_SAMPLED_BIT_QCOM) != 0) {
+            sampled_format = format;
+            break;
+        }
+    }
+    if (sampled_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Failed to find a format supporting OpImageBoxFilterQCOM, skipping test.";
+    }
+
+    InitTileShadingRenderTarget();
+
+    VkSamplerCreateInfo sampler_ci = vku::InitStructHelper();
+    sampler_ci.flags = VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM;
+    sampler_ci.magFilter = VK_FILTER_NEAREST;
+    sampler_ci.minFilter = VK_FILTER_NEAREST;
+    sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_ci.addressModeV = sampler_ci.addressModeU;
+    sampler_ci.addressModeW = sampler_ci.addressModeU;
+    vkt::Sampler sampler{*m_device, sampler_ci};
+
+    const char* cs_source = R"glsl(
+        #version 460
+
+        #extension GL_QCOM_image_processing: require
+        #extension GL_QCOM_tile_shading : require
+
+        layout(shading_rate_xQCOM = 1, shading_rate_yQCOM = 1, shading_rate_zQCOM = 1) in;
+        layout(set = 0, binding = 0, tile_attachmentQCOM) uniform sampler2D sampled_tex;
+
+        void main() {
+            vec4 result = textureBoxFilterQCOM(
+                sampled_tex,
+                vec2(0.5, 0.5),
+                vec2(2.0, 2.0)
+            );
+        }
+    )glsl";
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL};
+    compute_pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
+    compute_pipe.CreateComputePipeline();
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(0, m_color_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                          VK_IMAGE_LAYOUT_GENERAL);
+    compute_pipe.descriptor_set_.UpdateDescriptorSets();
+
+    VkClearValue clear_color{};
+    clear_color.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea = {{0,0}, tile_shading_rp_config.rt_size};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_color;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                              compute_pipe.pipeline_layout_, 0, 1,
+                              &compute_pipe.descriptor_set_.set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-tileShadingImageProcessing-10712");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, UseBlockMatchImageOpButTileShadingImageProcessingNotEnabled) {
+    TEST_DESCRIPTION("Use OpImageBlockMatchSADQCOM and OpImageBlockMatchSSDQCOM with an OpTypeSampledImage declared in "
+                     "TileAttachmentQCOM storage class as the target image, but tileShadingImageProcessing is not enabled.");
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::textureBlockMatch);
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    const auto query_format_features2 = [this](VkFormat format) {
+        VkFormatProperties3 format_props3 = vku::InitStructHelper();
+        VkFormatProperties2 format_props2 = vku::InitStructHelper(&format_props3);
+        vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &format_props2);
+        return format_props3.optimalTilingFeatures;
+    };
+
+    VkFormat sampled_format = VK_FORMAT_UNDEFINED;
+    for (VkFormat format : {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8_UNORM, VK_FORMAT_R16_UNORM}) {
+        const auto features = query_format_features2(format);
+        if ((features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
+            (features & VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM) != 0) {
+            sampled_format = format;
+            break;
+        }
+    }
+    if (sampled_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Failed to find a format supporting OpImageBlockMatchSADQCOM, skipping test.";
+    }
+
+    tile_shading_rp_config.format = sampled_format;
+    tile_shading_rp_config.block_match_usage = true;
+    InitTileShadingRenderTarget();
+
+    vkt::Image ref_image{*m_device, tile_shading_rp_config.rt_size.width, tile_shading_rp_config.rt_size.height, sampled_format,
+                         VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM};
+    vkt::ImageView ref_view = ref_image.CreateView();
+
+    VkSamplerCreateInfo sampler_ci = vku::InitStructHelper();
+    sampler_ci.flags = VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM;
+    sampler_ci.unnormalizedCoordinates = VK_TRUE;
+    sampler_ci.magFilter = VK_FILTER_NEAREST;
+    sampler_ci.minFilter = VK_FILTER_NEAREST;
+    sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_ci.addressModeV = sampler_ci.addressModeU;
+    sampler_ci.addressModeW = sampler_ci.addressModeU;
+    vkt::Sampler sampler{*m_device, sampler_ci};
+
+    const char* cs_source = R"glsl(
+        #version 460
+
+        #extension GL_QCOM_image_processing: require
+        #extension GL_QCOM_tile_shading : require
+
+        layout(shading_rate_xQCOM = 1, shading_rate_yQCOM = 1, shading_rate_zQCOM = 1) in;
+        layout(set = 0, binding = 0, tile_attachmentQCOM) uniform texture2D target_tex;
+        layout(set = 0, binding = 1) uniform texture2D ref_tex;
+        layout(set = 0, binding = 2) uniform sampler processing_sampler;
+
+        void main() {
+            uvec2 target_coord = uvec2(0, 0);
+            uvec2 ref_coord = uvec2(4, 4);
+            uvec2 block_size = uvec2(4, 4);
+            vec4 result1 = textureBlockMatchSADQCOM(
+                sampler2D(target_tex, processing_sampler), target_coord,
+                sampler2D(ref_tex, processing_sampler), ref_coord,
+                block_size
+            );
+            vec4 result2 = textureBlockMatchSSDQCOM(
+                sampler2D(target_tex, processing_sampler), target_coord,
+                sampler2D(ref_tex, processing_sampler), ref_coord,
+                block_size
+            );
+        }
+    )glsl";
+
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkComputePipelineCreateInfo-layout-07990");
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL};
+    compute_pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}
+    };
+    compute_pipe.CreateComputePipeline();
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(0, m_color_view, nullptr,
+                                                          VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, VK_IMAGE_LAYOUT_GENERAL);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(1, ref_view, nullptr,
+                                                          VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, VK_IMAGE_LAYOUT_GENERAL);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(2, nullptr, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    compute_pipe.descriptor_set_.UpdateDescriptorSets();
+
+    VkClearValue clear_color{};
+    clear_color.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea = {{0, 0}, tile_shading_rp_config.rt_size};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_color;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                              compute_pipe.pipeline_layout_, 0, 1,
+                              &compute_pipe.descriptor_set_.set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-tileShadingImageProcessing-10712");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, UseBlockMatchWindowImageOpButTileShadingImageProcessingNotEnabled) {
+    TEST_DESCRIPTION("Use OpImageBlockMatchWindowSSDQCOM and OpImageBlockMatchWindowSADQCOM with an OpTypeSampledImage in "
+                     "TileAttachmentQCOM storage class as the target image, but tileShadingImageProcessing is not enabled.");
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::textureBlockMatch);
+    AddRequiredFeature(vkt::Feature::textureBlockMatch2);
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    const auto query_format_features2 = [this] (VkFormat format) {
+        VkFormatProperties3 format_props3 = vku::InitStructHelper();
+        VkFormatProperties2 format_props2 = vku::InitStructHelper(&format_props3);
+        vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &format_props2);
+        return format_props3.optimalTilingFeatures;
+    };
+
+    VkFormat sampled_format = VK_FORMAT_UNDEFINED;
+    for (VkFormat format : {VK_FORMAT_R8_UNORM, VK_FORMAT_R16G16B16A16_UNORM, VK_FORMAT_R8G8B8A8_UNORM}) {
+        const auto features = query_format_features2(format);
+        if ((features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
+            (features & VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM) != 0) {
+            sampled_format = format;
+            break;
+        }
+    }
+    if (sampled_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Failed to find a format supporting OpImageBlockMatchWindowSSDQCOM, skipping test.";
+    }
+
+    VkPhysicalDeviceImageProcessing2PropertiesQCOM image_processing2_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(image_processing2_props);
+
+    tile_shading_rp_config.format = sampled_format;
+    tile_shading_rp_config.block_match_usage = true;
+    InitTileShadingRenderTarget();
+
+    vkt::Image ref_image{*m_device, tile_shading_rp_config.rt_size.width, tile_shading_rp_config.rt_size.height, sampled_format,
+                         VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM};
+    vkt::ImageView ref_view = ref_image.CreateView();
+
+    VkSamplerBlockMatchWindowCreateInfoQCOM block_match_window_ci = vku::InitStructHelper();
+    block_match_window_ci.windowExtent = image_processing2_props.maxBlockMatchWindow;
+    block_match_window_ci.windowCompareMode = VK_BLOCK_MATCH_WINDOW_COMPARE_MODE_MIN_QCOM;
+    VkSamplerCreateInfo sampler_ci = vku::InitStructHelper(&block_match_window_ci);
+    sampler_ci.flags = VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM;
+    sampler_ci.unnormalizedCoordinates = VK_TRUE;
+    sampler_ci.magFilter = VK_FILTER_NEAREST;
+    sampler_ci.minFilter = VK_FILTER_NEAREST;
+    sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_ci.addressModeV = sampler_ci.addressModeU;
+    sampler_ci.addressModeW = sampler_ci.addressModeU;
+    vkt::Sampler sampler{*m_device, sampler_ci};
+
+    const char* cs_source = R"glsl(
+        #version 460
+
+        #extension GL_QCOM_image_processing: require
+        #extension GL_QCOM_image_processing2: require
+        #extension GL_QCOM_tile_shading : require
+
+        layout(shading_rate_xQCOM = 1, shading_rate_yQCOM = 1, shading_rate_zQCOM = 1) in;
+        layout(set = 0, binding = 0, tile_attachmentQCOM) uniform texture2D target_tex;
+        layout(set = 0, binding = 1) uniform texture2D ref_tex;
+        layout(set = 0, binding = 2) uniform sampler processing_sampler;
+
+        void main() {
+            uvec2 target_coord = uvec2(0, 0);
+            uvec2 ref_coord = uvec2(0, 0);
+            uvec2 block_size = uvec2(4, 4);
+            vec4 result1 = textureBlockMatchWindowSSDQCOM(
+                sampler2D(target_tex, processing_sampler), target_coord,
+                sampler2D(ref_tex, processing_sampler), ref_coord,
+                block_size
+            );
+            vec4 result2 = textureBlockMatchWindowSADQCOM(
+                sampler2D(target_tex, processing_sampler), target_coord,
+                sampler2D(ref_tex, processing_sampler), ref_coord,
+                block_size
+            );
+        }
+    )glsl";
+
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkComputePipelineCreateInfo-layout-07990");
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL};
+    compute_pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}
+    };
+    compute_pipe.CreateComputePipeline();
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(0, m_color_view, nullptr,
+                                                          VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, VK_IMAGE_LAYOUT_GENERAL);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(1, ref_view, nullptr,
+                                                          VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, VK_IMAGE_LAYOUT_GENERAL);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(2, nullptr, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    compute_pipe.descriptor_set_.UpdateDescriptorSets();
+
+    VkClearValue clear_color{};
+    clear_color.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea = {{0, 0}, tile_shading_rp_config.rt_size};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_color;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                              compute_pipe.pipeline_layout_, 0, 1,
+                              &compute_pipe.descriptor_set_.set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-tileShadingImageProcessing-10712");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTileShading, UseBlockMatchGatherImageOpButTileShadingImageProcessingNotEnabled) {
+    TEST_DESCRIPTION("Use OpImageBlockMatchGatherSSDQCOM and OpImageBlockMatchGatherSADQCOM with an OpTypeSampledImage declared in "
+                     "TileAttachmentQCOM storage class as the target image, but tileShadingImageProcessing is not enabled.");
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::textureBlockMatch);
+    AddRequiredFeature(vkt::Feature::textureBlockMatch2);
+    RETURN_IF_SKIP(InitBasicTileShading());
+
+    const auto query_format_features2 = [this] (VkFormat format) {
+        VkFormatProperties3 format_props3 = vku::InitStructHelper();
+        VkFormatProperties2 format_props2 = vku::InitStructHelper(&format_props3);
+        vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &format_props2);
+        return format_props3.optimalTilingFeatures;
+    };
+
+    VkFormat sampled_format = VK_FORMAT_UNDEFINED;
+    for (VkFormat format : {VK_FORMAT_R8_UNORM, VK_FORMAT_R16G16B16A16_UNORM, VK_FORMAT_R8G8B8A8_UNORM}) {
+        const auto features = query_format_features2(format);
+        if ((features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
+            (features & VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM) != 0) {
+            sampled_format = format;
+            break;
+        }
+    }
+    if (sampled_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Failed to find a format supporting OpImageBlockMatchGatherSSDQCOM, skipping test.";
+    }
+
+    VkPhysicalDeviceImageProcessing2PropertiesQCOM image_processing2_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(image_processing2_props);
+
+    tile_shading_rp_config.format = sampled_format;
+    tile_shading_rp_config.block_match_usage = true;
+    InitTileShadingRenderTarget();
+
+    vkt::Image ref_image{*m_device, tile_shading_rp_config.rt_size.width, tile_shading_rp_config.rt_size.height, sampled_format,
+                         VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM};
+    vkt::ImageView ref_view = ref_image.CreateView();
+
+    VkSamplerBlockMatchWindowCreateInfoQCOM block_match_window_ci = vku::InitStructHelper();
+    block_match_window_ci.windowExtent = image_processing2_props.maxBlockMatchWindow;
+    block_match_window_ci.windowCompareMode = VK_BLOCK_MATCH_WINDOW_COMPARE_MODE_MIN_QCOM;
+    VkSamplerCreateInfo sampler_ci = vku::InitStructHelper(&block_match_window_ci);
+    sampler_ci.flags = VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM;
+    sampler_ci.unnormalizedCoordinates = VK_TRUE;
+    sampler_ci.magFilter = VK_FILTER_NEAREST;
+    sampler_ci.minFilter = VK_FILTER_NEAREST;
+    sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_ci.addressModeV = sampler_ci.addressModeU;
+    sampler_ci.addressModeW = sampler_ci.addressModeU;
+    vkt::Sampler sampler{*m_device, sampler_ci};
+
+    const char* cs_source = R"glsl(
+        #version 460
+
+        #extension GL_QCOM_image_processing: require
+        #extension GL_QCOM_image_processing2: require
+        #extension GL_QCOM_tile_shading : require
+
+        layout(shading_rate_xQCOM = 1, shading_rate_yQCOM = 1, shading_rate_zQCOM = 1) in;
+        layout(set = 0, binding = 0, tile_attachmentQCOM) uniform texture2D target_tex;
+        layout(set = 0, binding = 1) uniform texture2D ref_tex;
+        layout(set = 0, binding = 2) uniform sampler processing_sampler;
+
+        void main() {
+            uvec2 target_coord = uvec2(0, 0);
+            uvec2 ref_coord = uvec2(0, 0);
+            uvec2 block_size = uvec2(4, 4);
+            vec4 result1 = textureBlockMatchGatherSSDQCOM(
+                sampler2D(target_tex, processing_sampler), target_coord,
+                sampler2D(ref_tex, processing_sampler), ref_coord,
+                block_size
+            );
+            vec4 result2 = textureBlockMatchGatherSADQCOM(
+                sampler2D(target_tex, processing_sampler), target_coord,
+                sampler2D(ref_tex, processing_sampler), ref_coord,
+                block_size
+            );
+        }
+    )glsl";
+
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkComputePipelineCreateInfo-layout-07990");
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL};
+    compute_pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}
+    };
+    compute_pipe.CreateComputePipeline();
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(0, m_color_view, nullptr,
+                                                          VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, VK_IMAGE_LAYOUT_GENERAL);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(1, ref_view, nullptr,
+                                                          VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, VK_IMAGE_LAYOUT_GENERAL);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(2, nullptr, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    compute_pipe.descriptor_set_.UpdateDescriptorSets();
+
+    VkClearValue clear_color{};
+    clear_color.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper();
+    rp_begin_info.renderPass = m_tile_shading_render_pass;
+    rp_begin_info.framebuffer = m_tile_shading_framebuffer;
+    rp_begin_info.renderArea = {{0, 0}, tile_shading_rp_config.rt_size};
+    rp_begin_info.clearValueCount = 1;
+    rp_begin_info.pClearValues = &clear_color;
+
+    VkPerTileBeginInfoQCOM per_tile_begin_info = vku::InitStructHelper();
+    VkPerTileEndInfoQCOM per_tile_end_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin_info);
+    vk::CmdBeginPerTileExecutionQCOM(m_command_buffer, &per_tile_begin_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                              compute_pipe.pipeline_layout_, 0, 1,
+                              &compute_pipe.descriptor_set_.set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-tileShadingImageProcessing-10712");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndPerTileExecutionQCOM(m_command_buffer, &per_tile_end_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}

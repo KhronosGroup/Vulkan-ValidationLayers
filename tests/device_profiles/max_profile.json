@@ -2340,6 +2340,12 @@
                         "height": 64
                     }
                 },
+                "VkPhysicalDeviceImageProcessing2PropertiesQCOM": {
+                    "maxBlockMatchWindow": {
+                        "width": 32,
+                        "height": 32
+                    }
+                },
                 "VkPhysicalDeviceExternalFormatResolvePropertiesANDROID": {
                     "nullColorAttachmentWithExternalFormatResolve": false
                 },
@@ -3206,6 +3212,8 @@
                             "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT",
                             "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
                             "VK_FORMAT_FEATURE_2_WEIGHT_IMAGE_BIT_QCOM",
+                            "VK_FORMAT_FEATURE_2_BOX_FILTER_SAMPLED_BIT_QCOM",
+                            "VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM",
                             "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR",
                             "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR"
                         ],
@@ -3866,7 +3874,9 @@
                             "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_INPUT_BIT_KHR",
                             "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_DPB_BIT_KHR",
                             "VK_FORMAT_FEATURE_2_COPY_IMAGE_INDIRECT_DST_BIT_KHR",
-                            "VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM"
+                            "VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM",
+                            "VK_FORMAT_FEATURE_2_BOX_FILTER_SAMPLED_BIT_QCOM",
+                            "VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM"
                         ],
                         "bufferFeatures": [
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",

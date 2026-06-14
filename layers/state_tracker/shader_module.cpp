@@ -815,12 +815,24 @@ StaticImageAccess::StaticImageAccess(const Module& module_state, const Instructi
         }
     };
 
-    const uint32_t image_operand = OpcodeImageAccessPosition(image_opcode);
+    // VK_QCOM_image_processing
+    const bool has_image_proc = ((image_insn.image_proc_usage_mask & ImageProcUsageBit::kImageSampled) != 0);
+
+    const uint32_t image_operand = has_image_proc ? 3 : OpcodeImageAccessPosition(image_opcode);
     assert(image_operand != 0);
     const Instruction* find_insn = module_state.FindDef(insn.Word(image_operand));
     walk_to_variables(find_insn, false);
     for (const auto* sampler_insn : sampler_insn_to_search) {
         walk_to_variables(sampler_insn, true);
+    }
+
+    // Need to walk again for the reference/weights
+    if (has_image_proc && ((image_insn.image_proc_usage_mask & ImageProcUsageBit::kNonBoxFilter) != 0)) {
+        const Instruction* ref_insn = module_state.FindDef(insn.Word(5));
+        walk_to_variables(ref_insn, false);
+        for (const auto* sampler_insn : sampler_insn_to_search) {
+            walk_to_variables(sampler_insn, true);
+        }
     }
 }
 
@@ -1096,7 +1108,15 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
             case spv::OpImageSparseFetch:
             case spv::OpImageSparseGather:
             case spv::OpFragmentFetchAMD:
-            case spv::OpFragmentMaskFetchAMD: {
+            case spv::OpFragmentMaskFetchAMD:
+            case spv::OpImageSampleWeightedQCOM:
+            case spv::OpImageBoxFilterQCOM:
+            case spv::OpImageBlockMatchSADQCOM:
+            case spv::OpImageBlockMatchSSDQCOM:
+            case spv::OpImageBlockMatchGatherSADQCOM:
+            case spv::OpImageBlockMatchGatherSSDQCOM:
+            case spv::OpImageBlockMatchWindowSADQCOM:
+            case spv::OpImageBlockMatchWindowSSDQCOM: {
                 image_instructions.push_back(&insn);
                 break;
             }
@@ -1144,6 +1164,15 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 // All Image atomics go through here.
                 // Currrently only interested if used/accessed
                 image_instructions.push_back(&insn);
+                if (stateless_data) {
+                    stateless_data->image_texel_pointer_inst.push_back(&insn);
+                }
+                break;
+            }
+            case spv::OpUntypedImageTexelPointerEXT: {
+                if (stateless_data) {
+                    stateless_data->image_texel_pointer_inst.push_back(&insn);
+                }
                 break;
             }
             case spv::OpTypeStruct: {
@@ -2544,6 +2573,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                 info.image_insn.is_sampler_offset |= image_access.image_insn.is_sampler_offset;
                 info.image_insn.is_sign_extended |= image_access.image_insn.is_sign_extended;
                 info.image_insn.is_zero_extended |= image_access.image_insn.is_zero_extended;
+                info.image_insn.image_proc_usage_mask |= image_access.image_insn.image_proc_usage_mask;
 
                 access_mask |= image_access.access_mask;
 
