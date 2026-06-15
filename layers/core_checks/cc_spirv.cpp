@@ -1554,6 +1554,13 @@ struct ShaderResourceType {
             if (descriptor_type_set.count(VK_DESCRIPTOR_TYPE_TENSOR_ARM)) {
                 ss << "\n - VK_DESCRIPTOR_TYPE_TENSOR_ARM is an OpTypeTensorARM in UniformConstant";
             }
+            if (descriptor_type_set.count(VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM)) {
+                ss << "\n - VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM is an OpTypeImage, with Sampled = 1, in UniformConstant";
+            }
+            if (descriptor_type_set.count(VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM)) {
+                ss << "\n - VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM is an OpTypeImage, with Sampled = 1 and Arrayed = 1, in "
+                      "UniformConstant";
+            }
             ss << "\nFull list of mappings can be found at "
                   "https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-resources-storage-class-correspondence";
         }

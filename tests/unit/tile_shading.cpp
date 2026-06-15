@@ -3325,7 +3325,6 @@ TEST_F(NegativeTileShading, UseSampleWeightedImageOpButTileShadingImageProcessin
         }
     )glsl";
 
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkComputePipelineCreateInfo-layout-07990");
     CreateComputePipelineHelper compute_pipe{*this};
     compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL};
     compute_pipe.dsl_bindings_ = {
@@ -3538,7 +3537,6 @@ TEST_F(NegativeTileShading, UseBlockMatchImageOpButTileShadingImageProcessingNot
         }
     )glsl";
 
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkComputePipelineCreateInfo-layout-07990");
     CreateComputePipelineHelper compute_pipe{*this};
     compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL};
     compute_pipe.dsl_bindings_ = {
@@ -3665,7 +3663,6 @@ TEST_F(NegativeTileShading, UseBlockMatchWindowImageOpButTileShadingImageProcess
         }
     )glsl";
 
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkComputePipelineCreateInfo-layout-07990");
     CreateComputePipelineHelper compute_pipe{*this};
     compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL};
     compute_pipe.dsl_bindings_ = {
@@ -3792,7 +3789,6 @@ TEST_F(NegativeTileShading, UseBlockMatchGatherImageOpButTileShadingImageProcess
         }
     )glsl";
 
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkComputePipelineCreateInfo-layout-07990");
     CreateComputePipelineHelper compute_pipe{*this};
     compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL};
     compute_pipe.dsl_bindings_ = {
