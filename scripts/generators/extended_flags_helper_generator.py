@@ -61,22 +61,24 @@ class ExtendedFlagsHelperOutputGenerator(BaseGenerator):
 
         # Todo: move to vulkan object
         self.vk.structs['VkBufferCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct='VkBufferUsageFlags2CreateInfo')
-        self.vk.structs['VkBufferViewCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct= 'VkBufferUsageFlags2CreateInfo')
-        self.vk.structs['VkImageCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct='VkImageCreateFlags2CreateInfoKHR')
-        self.vk.structs['VkImageCreateInfo'].members[10].extendedFlag = ExtendedFlag(struct='VkImageUsageFlags2CreateInfoKHR')
+        self.vk.structs['VkDescriptorBufferBindingInfoEXT'].members[2].extendedFlag = ExtendedFlag(struct= 'VkBufferUsageFlags2CreateInfo')
+        self.vk.structs['VkPhysicalDeviceExternalBufferInfo'].members[3].extendedFlag = ExtendedFlag(struct= 'VkBufferUsageFlags2CreateInfo')
+
         self.vk.structs['VkComputePipelineCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct= 'VkPipelineCreateFlags2CreateInfo')
         self.vk.structs['VkGraphicsPipelineCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct= 'VkPipelineCreateFlags2CreateInfo')
-        self.vk.structs['VkSwapchainCreateInfoKHR'].members[9].extendedFlag = ExtendedFlag(struct= 'VkImageUsageFlags2CreateInfoKHR')
-        self.vk.structs['VkPhysicalDeviceImageFormatInfo2'].members[5].extendedFlag = ExtendedFlag(struct= 'VkImageUsageFlags2CreateInfoKHR')
-        self.vk.structs['VkPhysicalDeviceImageFormatInfo2'].members[6].extendedFlag = ExtendedFlag(struct= 'VkImageCreateFlags2CreateInfoKHR')
-        self.vk.structs['VkPhysicalDeviceSparseImageFormatInfo2'].members[5].extendedFlag = ExtendedFlag(struct= 'VkImageUsageFlags2CreateInfoKHR')
-        self.vk.structs['VkPhysicalDeviceExternalBufferInfo'].members[3].extendedFlag = ExtendedFlag(struct= 'VkBufferUsageFlags2CreateInfo')
         self.vk.structs['VkRayTracingPipelineCreateInfoNV'].members[2].extendedFlag = ExtendedFlag(struct= 'VkPipelineCreateFlags2CreateInfo')
         self.vk.structs['VkRayTracingPipelineCreateInfoKHR'].members[2].extendedFlag = ExtendedFlag(struct= 'VkPipelineCreateFlags2CreateInfo')
+
+        self.vk.structs['VkImageCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct='VkImageCreateFlags2CreateInfoKHR')
+        self.vk.structs['VkPhysicalDeviceImageFormatInfo2'].members[6].extendedFlag = ExtendedFlag(struct= 'VkImageCreateFlags2CreateInfoKHR')
         self.vk.structs['VkFramebufferAttachmentImageInfo'].members[2].extendedFlag = ExtendedFlag(struct= 'VkImageCreateFlags2CreateInfoKHR')
+
+        self.vk.structs['VkImageCreateInfo'].members[10].extendedFlag = ExtendedFlag(struct='VkImageUsageFlags2CreateInfoKHR')
+        self.vk.structs['VkSwapchainCreateInfoKHR'].members[9].extendedFlag = ExtendedFlag(struct= 'VkImageUsageFlags2CreateInfoKHR')
+        self.vk.structs['VkPhysicalDeviceImageFormatInfo2'].members[5].extendedFlag = ExtendedFlag(struct= 'VkImageUsageFlags2CreateInfoKHR')
+        self.vk.structs['VkPhysicalDeviceSparseImageFormatInfo2'].members[5].extendedFlag = ExtendedFlag(struct= 'VkImageUsageFlags2CreateInfoKHR')
         self.vk.structs['VkFramebufferAttachmentImageInfo'].members[3].extendedFlag = ExtendedFlag(struct= 'VkImageUsageFlags2CreateInfoKHR')
         self.vk.structs['VkPhysicalDeviceVideoFormatInfoKHR'].members[2].extendedFlag = ExtendedFlag(struct= 'VkImageUsageFlags2CreateInfoKHR')
-        self.vk.structs['VkDescriptorBufferBindingInfoEXT'].members[2].extendedFlag = ExtendedFlag(struct= 'VkBufferUsageFlags2CreateInfo')
 
         if self.filename == 'extended_flags_helper_generator.h':
             out.append(self.generateHeader())
@@ -95,8 +97,6 @@ class ExtendedFlagsHelperOutputGenerator(BaseGenerator):
 
         for struct in [x for x in self.vk.structs.values()]:
             for member in [x for x in struct.members if x.extendedFlag]:
-                if (struct.name == 'VkSurfaceCapabilitiesKHR'):
-                    continue
                 extend_struct = self.vk.structs[member.extendedFlag.struct]
                 member_type_name = member.type[2:]
                 assert(len(extend_struct.members) == 3)
@@ -116,8 +116,6 @@ class ExtendedFlagsHelperOutputGenerator(BaseGenerator):
 
         for struct in [x for x in self.vk.structs.values()]:
             for member in [x for x in struct.members if x.extendedFlag]:
-                if (struct.name == 'VkSurfaceCapabilitiesKHR'):
-                    continue
                 extend_struct = self.vk.structs[member.extendedFlag.struct]
                 member_type_name = member.type[2:]
                 assert(len(extend_struct.members) == 3)

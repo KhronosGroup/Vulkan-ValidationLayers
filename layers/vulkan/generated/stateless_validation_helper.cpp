@@ -10213,10 +10213,11 @@ bool Device::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateIn
                                             allowed_structs_VkBufferCreateInfo.data(), GeneratedVulkanHeaderVersion,
                                             "VUID-VkBufferCreateInfo-pNext-pNext", "VUID-VkBufferCreateInfo-sType-unique", true);
 
-        skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBufferCreateFlagBits,
-                                      AllVkBufferCreateFlagBits, pCreateInfo->flags, kOptionalFlags,
-                                      "VUID-VkBufferCreateInfo-flags-parameter", nullptr, false);
-
+        if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pCreateInfo->pNext)) {
+            skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBufferCreateFlagBits,
+                                          AllVkBufferCreateFlagBits, pCreateInfo->flags, kOptionalFlags,
+                                          "VUID-VkBufferCreateInfo-flags-parameter", nullptr, false);
+        }
         skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::sharingMode), vvl::Enum::VkSharingMode,
                                            pCreateInfo->sharingMode, "VUID-VkBufferCreateInfo-sharingMode-parameter");
     }
@@ -14630,10 +14631,11 @@ bool Device::PreCallValidateGetDeviceBufferMemoryRequirements(VkDevice device, c
                                             allowed_structs_VkBufferCreateInfo.data(), GeneratedVulkanHeaderVersion,
                                             "VUID-VkBufferCreateInfo-pNext-pNext", "VUID-VkBufferCreateInfo-sType-unique", true);
 
-            skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBufferCreateFlagBits,
-                                          AllVkBufferCreateFlagBits, pInfo->pCreateInfo->flags, kOptionalFlags,
-                                          "VUID-VkBufferCreateInfo-flags-parameter", nullptr, false);
-
+            if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pInfo->pCreateInfo->pNext)) {
+                skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBufferCreateFlagBits,
+                                              AllVkBufferCreateFlagBits, pInfo->pCreateInfo->flags, kOptionalFlags,
+                                              "VUID-VkBufferCreateInfo-flags-parameter", nullptr, false);
+            }
             skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::sharingMode), vvl::Enum::VkSharingMode,
                                                pInfo->pCreateInfo->sharingMode, "VUID-VkBufferCreateInfo-sharingMode-parameter");
         }
@@ -26108,10 +26110,11 @@ bool Device::PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA(
                                             GeneratedVulkanHeaderVersion, "VUID-VkBufferCreateInfo-pNext-pNext",
                                             "VUID-VkBufferCreateInfo-sType-unique", true);
 
-        skip |= context.ValidateFlags(createInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBufferCreateFlagBits,
-                                      AllVkBufferCreateFlagBits, pBufferConstraintsInfo->createInfo.flags, kOptionalFlags,
-                                      "VUID-VkBufferCreateInfo-flags-parameter", nullptr, false);
-
+        if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pBufferConstraintsInfo->createInfo.pNext)) {
+            skip |= context.ValidateFlags(createInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBufferCreateFlagBits,
+                                          AllVkBufferCreateFlagBits, pBufferConstraintsInfo->createInfo.flags, kOptionalFlags,
+                                          "VUID-VkBufferCreateInfo-flags-parameter", nullptr, false);
+        }
         skip |= context.ValidateRangedEnum(createInfo_loc.dot(Field::sharingMode), vvl::Enum::VkSharingMode,
                                            pBufferConstraintsInfo->createInfo.sharingMode,
                                            "VUID-VkBufferCreateInfo-sharingMode-parameter");
