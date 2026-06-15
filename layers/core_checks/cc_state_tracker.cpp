@@ -662,6 +662,9 @@ void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, Vk
     for (VkEvent event : events) {
         event_wait_states[event] = EventWaitState{barriers, loc.function};
 
+        // Track only the first wait command for this event
+        event_wait_commands.insert({event, loc.function});
+
         EventSignalState* signal_state = vvl::Find(event_signal_states, event);
         if (signal_state) {
             signal_states.emplace(event, *signal_state);
@@ -686,6 +689,9 @@ void CommandBufferSubState::RecordWaitEvent2(VkEvent event, const VkDependencyIn
     const VkPipelineStageFlags2 dst_stage_mask = sync_utils::GetExecScopes(dependency_info).dst;
     const VkPipelineStageFlags2 barriers = MakeEventBarriers(dst_stage_mask, base.GetQueueFlags());
     event_wait_states[event] = EventWaitState{barriers, loc.function};
+
+    // Track only the first wait command for this event
+    event_wait_commands.insert({event, loc.function});
 
     EventSignalState* signal_state = vvl::Find(event_signal_states, event);
     const bool already_validated = signal_state && signal_state->HasKnownEffect();
@@ -1213,6 +1219,7 @@ void CommandBufferSubState::ResetCBState() {
     push_data_mask.clear();
     event_signal_states.clear();
     event_wait_states.clear();
+    event_wait_commands.clear();
 
     // Submit time validation
     queue_submit_functions.clear();
@@ -1294,6 +1301,10 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_c
         event_wait_states[event] = wait_state;
     }
 
+    for (const auto& [event, wait_command] : secondary_sub_state.event_wait_commands) {
+        event_wait_commands.insert({event, wait_command});
+    }
+
     for (auto& function : secondary_sub_state.queue_submit_functions) {
         queue_submit_functions.push_back(function);
     }
@@ -1366,8 +1377,16 @@ void CommandBufferSubState::Submit(vvl::Queue& queue_state, uint32_t perf_submit
 }
 
 void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
-    for (const auto& submission : submissions) {
+    for (auto& submission : submissions) {
         submit_time_tracker->ProcessQueueSubmission(VkHandle(), submission);
+
+        // Register pending event wait commands
+        for (const auto& cb_info : submission.cb_submissions) {
+            CommandBufferSubState& cb_sub_state = SubState(*cb_info.cb);
+            for (const auto& [event, wait_command] : cb_sub_state.event_wait_commands) {
+                submission.event_wait_commands.insert({event, wait_command});
+            }
+        }
     }
 }
 

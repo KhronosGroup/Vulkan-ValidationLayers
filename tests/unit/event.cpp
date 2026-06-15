@@ -126,6 +126,22 @@ TEST_F(NegativeEvent, StageMaskResetEvent) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeEvent, StageMaskHostResetEvent) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    event.Reset();
+
+    m_command_buffer.Begin();
+    m_command_buffer.WaitEvent(event);
+    m_command_buffer.End();
+    monitor_.SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-01158");
+    m_default_queue->Submit(m_command_buffer);
+    monitor_.VerifyFound();
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeEvent, StageMaskResetEventSecondary) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
@@ -1747,4 +1763,115 @@ TEST_F(NegativeEvent, WaitEventsLayoutTransitionInsideRenderPass2) {
     monitor_.VerifyFound();
     m_command_buffer.EndRendering();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, HostResetPendingWait) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.WaitEvent(event);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+
+    monitor_.SetDesiredError("VUID-vkResetEvent-event-03821");
+    event.Reset();
+    monitor_.VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeEvent, HostResetPendingWait2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent2(event, barrier);
+    m_command_buffer.WaitEvent2(event, barrier);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+
+    monitor_.SetDesiredError("VUID-vkResetEvent-event-03822");
+    event.Reset();
+    monitor_.VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeEvent, HostResetMultiplePendingWaits) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+    vkt::Fence fence(*m_device);
+
+    event.Set();
+
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
+    command_buffer.Begin();
+    command_buffer.WaitEvent(event, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    command_buffer.End();
+
+    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
+    command_buffer2.Begin();
+    command_buffer2.WaitEvent(event, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    command_buffer2.End();
+
+    m_default_queue->Submit(command_buffer, fence);
+    m_default_queue->Submit(command_buffer2);
+
+    fence.Wait(kWaitTimeout);
+
+    monitor_.SetDesiredError("VUID-vkResetEvent-event-03821");
+    event.Reset();
+    monitor_.VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeEvent, HostResetPendingWaitAndReset) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.WaitEvent(event);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 0, nullptr);
+    m_command_buffer.ResetEvent(event);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+
+    monitor_.SetDesiredError("VUID-vkResetEvent-event-03821");
+    event.Reset();
+    monitor_.VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeEvent, HostResetPendingWaitSecondary) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.SetEvent(event);
+    secondary.WaitEvent(event);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.ExecuteCommands(secondary);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+
+    monitor_.SetDesiredError("VUID-vkResetEvent-event-03821");
+    event.Reset();
+    monitor_.VerifyFound();
+    m_default_queue->Wait();
 }
