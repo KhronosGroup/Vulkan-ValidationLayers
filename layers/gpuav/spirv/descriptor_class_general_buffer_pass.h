@@ -45,8 +45,6 @@ class DescriptorClassGeneralBufferPass : public Pass {
         // Capture the upper bound offset into the struct the instruction accesses
         // Will be zero if we can't determine it (or in Safe Mode)
         uint32_t access_offset = 0;
-
-        CooperativeMatrixAccess coop_mat_access{};
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);

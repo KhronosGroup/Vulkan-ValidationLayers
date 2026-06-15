@@ -904,6 +904,11 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
     }
     assert(path.pointer_type);
 
+    // The way CoopMat works, we need to get the size here as the type is not found in the access chains
+    if (opcode == spv::OpCooperativeMatrixLoadKHR || opcode == spv::OpCooperativeMatrixStoreKHR) {
+        path.coop_mat = BuildCooperativeMatrixAccess(function, inst);
+    }
+
     // Everything else is just for descriptor variable access
     if (!path.variable->IsDescriptor()) {
         return path;
@@ -1004,6 +1009,50 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
     assert(path.descriptor_type != invalid_type);
 
     return path;
+}
+
+// Unlike a normal load/store where we get the size by looking at the type that is loaded/stored,
+// With CoopMat, we need both the OpTypeCooperativeMatrixKHR and the OpCooperativeMatrixLoadKHR/OpCooperativeMatrixStoreKHR together
+// to calculate the access size.
+const CooperativeMatrixAccess TypeManager::BuildCooperativeMatrixAccess(const Function& function, const Instruction& inst) {
+    CooperativeMatrixAccess info;
+
+    // TODO - When adding Coop Mat to Descriptor Indexing, will likely want a better way to signal things than this bool
+    info.used = true;
+
+    info.is_load = inst.Opcode() == spv::OpCooperativeMatrixLoadKHR;  // else is store
+
+    // For stores, we assume the Object operand points to a load to get the type
+    uint32_t coop_mat_type_id = info.is_load ? inst.TypeId() : function.FindInstruction(inst.Word(2))->TypeId();
+    info.type = FindTypeById(coop_mat_type_id);
+    assert(info.type && info.type->spv_type_ == SpvType::kCooperativeMatrixKHR);
+
+    // Currently we don't save/cache the size of each type because we still need to extract the rows/column info. This the tradeoff
+    // of having a simplified single Type class
+    const Type* component_type = FindTypeById(info.type->inst_.Word(2));
+    info.component_size = GetTypeBytesSize(*component_type);
+
+    const Constant* rows_const = FindConstantById(info.type->inst_.Word(4));
+    const Constant* columns_const = FindConstantById(info.type->inst_.Word(5));
+    assert(rows_const && !rows_const->is_spec_constant_ && columns_const && !columns_const->is_spec_constant_);
+    info.rows = rows_const->inst_.Operand(0);
+    info.columns = columns_const->inst_.Operand(0);
+
+    info.stride_id = info.is_load ? inst.Word(5) : inst.Word(4);
+    if (const Constant* stride = FindConstantById(info.stride_id)) {
+        info.stride_value = stride->inst_.Operand(0);
+    } else {
+        info.stride_value = 0;
+    }
+
+    const uint32_t memory_layout_id = info.is_load ? inst.Word(4) : inst.Word(3);
+    const Constant* memory_layout = FindConstantById(memory_layout_id);
+    assert(memory_layout && !memory_layout->is_spec_constant_);
+    const uint32_t memory_layout_value = memory_layout->inst_.Operand(0);
+    info.is_row_major = memory_layout_value == spv::CooperativeMatrixLayoutRowMajorKHR;
+    assert(info.is_row_major || memory_layout_value == spv::CooperativeMatrixLayoutColumnMajorKHR);
+
+    return info;
 }
 
 const Variable& TypeManager::AddVariable(std::unique_ptr<Instruction> new_inst, const Type& type) {

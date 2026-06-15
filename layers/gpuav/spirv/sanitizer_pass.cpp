@@ -413,7 +413,7 @@ bool SanitizerPass::RequiresInstrumentation(const Function& function, const Inst
         meta.result_type = type_manager_.FindTypeById(inst.TypeId());
         return true;
     } else if (opcode == spv::OpCooperativeMatrixLoadKHR || opcode == spv::OpCooperativeMatrixStoreKHR) {
-        CooperativeMatrixAccess cma = GetCooperativeMatrixAccess(inst, function);
+        CooperativeMatrixAccess cma = type_manager_.BuildCooperativeMatrixAccess(function, inst);
         const uint32_t natural_alignment = (cma.is_row_major ? cma.columns : cma.rows) * cma.component_size;
         const uint32_t required_alignment = natural_alignment < 16 ? natural_alignment : 16;
         if (required_alignment <= 1) {
