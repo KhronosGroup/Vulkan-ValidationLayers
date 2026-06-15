@@ -2434,3 +2434,47 @@ TEST_F(NegativeGpuAVDescriptorHeap, DifferentMappingResourceMask) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceHeapDataOOB) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4861");
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    CreateResourceHeap(heap_props.bufferDescriptorSize + 256, true);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    WriteBufferToHeap(ssbo_buffer);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT;
+    mappings[1].sourceData.heapData.heapOffset = 0;
+    mappings[1].sourceData.heapData.pushOffset = 0;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(set = 0, binding = 1) uniform B { uint b; };
+        void main() {
+            a = b;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    uint32_t push_offset = (uint32_t)resource_heap_.CreateInfo().size;
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    m_command_buffer.PushData(0, sizeof(uint32_t), &push_offset);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
