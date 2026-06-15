@@ -1189,7 +1189,7 @@ bool CoreChecks::ValidateCopyUpdateDescriptorTypes(const VkCopyDescriptorSet& up
                                      "(%" PRIu32
                                      ") is type VK_DESCRIPTOR_TYPE_SAMPLER, but the dstSet was created with a non-null "
                                      "pImmutableSamplers.\nAt descriptor (%" PRIu32 ") of descriptorCount (%" PRIu32
-                                     "), starting at srcArrayElement (%" PRIu32 ")",
+                                     "), starting at dstArrayElement (%" PRIu32 ")",
                                      update.dstBinding, di, update.descriptorCount, update.dstArrayElement);
                 }
             }
