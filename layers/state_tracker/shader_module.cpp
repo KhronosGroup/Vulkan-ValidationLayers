@@ -2443,6 +2443,12 @@ VkDescriptorType ResourceInterfaceVariable::GetPotentialDescriptorType() const {
     } else if (is_sampler) {
         return VK_DESCRIPTOR_TYPE_SAMPLER;
     } else if (is_sampled_image) {
+        if ((info.image_insn.image_proc_usage_mask & ImageProcUsageBit::kBlockMatch) != 0) {
+            return VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM;
+        } else if ((info.image_insn.image_proc_usage_mask & ImageProcUsageBit::kSampleWeighted) != 0 &&
+                   info.is_image_array) {
+            return VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM;
+        }
         return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     } else if (is_combined_image_sampler) {
         return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -2462,9 +2468,16 @@ vvl::unordered_set<VkDescriptorType> ResourceInterfaceVariable::GetAllDescriptor
         // See PositivePipeline.CombinedImageSamplerConsumedAsSampler
         types.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     } else if (is_sampled_image) {
-        types.insert(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-        // See PositivePipeline.CombinedImageSamplerConsumedAsImage
-        types.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        if ((info.image_insn.image_proc_usage_mask & ImageProcUsageBit::kBlockMatch) != 0) {
+            types.insert(VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM);
+        } else if ((info.image_insn.image_proc_usage_mask & ImageProcUsageBit::kSampleWeighted) != 0 &&
+                   info.is_image_array) {
+            types.insert(VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM);
+        } else {
+            types.insert(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+            // See PositivePipeline.CombinedImageSamplerConsumedAsImage
+            types.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        }
     } else if (is_storage_buffer) {
         types.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
         types.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
