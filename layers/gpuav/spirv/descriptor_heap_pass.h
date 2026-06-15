@@ -52,9 +52,17 @@ class DescriptorHeapPass : public Pass {
     bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type, const AccessPath& access_path,
                                     bool is_sampler) const;
     uint32_t GetMapping(const AccessPath& access_path, bool is_sampler) const;
+    uint32_t GetInternalPushData(BasicBlock& block, InstructionIt* inst_it, uint32_t offset);
 
     // < original ID, new CopyObject ID >
     vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;
+
+    struct PushConstant {
+        uint32_t array_id = 0;
+        uint32_t uint_pointer_id = 0;
+        uint32_t variable_id = 0;
+        uint32_t user_pc_var_id = 0;  // when we use untyped pointers on user
+    } pc;
 
     // Function IDs to link in
     enum FunctionNames {

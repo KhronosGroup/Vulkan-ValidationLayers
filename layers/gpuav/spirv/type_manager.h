@@ -240,6 +240,7 @@ class TypeManager {
     const Type& GetTypeSampledImage(const Type& image_type);
     const Type& GetTypePointer(spv::StorageClass storage_class, const Type& pointer_type, bool get_explicit_layout = true);
     const Type& GetTypePointerBuiltInInput(spv::BuiltIn built_in);
+    const Type& GetTypeUntypedPointer(spv::StorageClass storage_class);
 
     // Returns the total size in 'bytes' of any OpType*
     uint32_t GetTypeBytesSize(const Type& type);
@@ -273,6 +274,7 @@ class TypeManager {
     const Variable& AddVariable(std::unique_ptr<Instruction> new_inst, const Type& type);
     const Variable* FindVariableById(uint32_t id) const;
     const Variable* FindPushConstantVariable() const;
+    void AddPushConstantVariable();
     const std::vector<const Variable*>& GetSharedMemoryVariables() const { return shared_memory_variables_; }
     const std::vector<const Variable*>& GetTaskPayloadVariables() const { return task_payload_variables_; }
 

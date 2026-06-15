@@ -214,6 +214,8 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
         it += length;
     }
 
+    type_manager_.AddPushConstantVariable();
+
     // From a dump of 400k production shaders found
     //   - the most OpFunction created was 135, the mean was 2.4
     //   - the most Instruction count was 125k, the mean was 1500

@@ -109,9 +109,6 @@ struct BoundHeapInfo {
 struct DescriptorHeapEncoding {
     BoundHeapInfo* bound_resource_heap;
     BoundHeapInfo* bound_sampler_heap;
-    // TODO - We are holding a copy of the push data here, we really should be able to get this from the shader, but will involve
-    // some SPIR-V trickery
-    void* push_data;
 };
 
 // To make things easy we make everything in GLSL a 32-bit stream to read later.

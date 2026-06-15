@@ -15,6 +15,7 @@
 
 #include "type_manager.h"
 #include <vulkan/vulkan_core.h>
+#include <cassert>
 #include <cstdint>
 #include <spirv/unified1/spirv.hpp>
 #include "containers/container_utils.h"
@@ -458,6 +459,14 @@ const Type& TypeManager::GetTypePointerBuiltInInput(spv::BuiltIn built_in) {
             return *(id_to_type_.begin()->second);
         }
     }
+}
+
+// Just currently always make a new one
+const Type& TypeManager::GetTypeUntypedPointer(spv::StorageClass storage_class) {
+    const uint32_t type_id = module_.TakeNextId();
+    auto new_inst = std::make_unique<Instruction>(3, spv::OpTypeUntypedPointerKHR);
+    new_inst->Fill({type_id, uint32_t(storage_class)});
+    return AddType(std::move(new_inst), SpvType::kUntypedPointerKHR);
 }
 
 uint32_t TypeManager::GetTypeBytesSize(const Type& type) {
@@ -1017,7 +1026,18 @@ const Variable& TypeManager::AddVariable(std::unique_ptr<Instruction> new_inst, 
     } else if (new_variable->StorageClass() == spv::StorageClassOutput) {
         output_variables_.push_back(new_variable);
     } else if (new_variable->StorageClass() == spv::StorageClassPushConstant) {
-        push_constant_variable_ = new_variable;
+        // This is found in the entrypoint starting in 1.4
+        const uint32_t spirv_version_1_4 = 0x00010400;
+        if (module_.header_.version < spirv_version_1_4) {
+            if (!push_constant_variable_) {
+                push_constant_variable_ = new_variable;
+            } else {
+                assert(module_.entry_points_.size() > 1);
+                module_.InternalWarning(
+                    "AddVariable",
+                    "Found 2 different OpVariable, can't determine which entrypoint, can be fixed updating SPIR-V to 1.4+");
+            }
+        }
     } else if (new_variable->StorageClass() == spv::StorageClassWorkgroup) {
         shared_memory_variables_.push_back(new_variable);
     } else if (new_variable->StorageClass() == spv::StorageClassTaskPayloadWorkgroupEXT) {
@@ -1035,6 +1055,23 @@ const Variable* TypeManager::FindVariableById(uint32_t id) const {
 }
 
 const Variable* TypeManager::FindPushConstantVariable() const { return push_constant_variable_; }
+
+void TypeManager::AddPushConstantVariable() {
+    const uint32_t spirv_version_1_4 = 0x00010400;
+    if (module_.header_.version >= spirv_version_1_4) {
+        const Instruction* entry_point = module_.GetTargetEntryPoint();
+        uint32_t word = entry_point->GetEntryPointInterfaceStart();
+        const uint32_t total_words = entry_point->Length();
+        for (; word < total_words; word++) {
+            const uint32_t interface_id = entry_point->Word(word);
+            const Variable* variable = FindVariableById(interface_id);
+            if (variable && variable->StorageClass() == spv::StorageClassPushConstant) {
+                push_constant_variable_ = variable;
+                return;
+            }
+        }
+    }
+}
 
 Type::Meta Type::SetMeta(SpvType spv_type, const Instruction& inst, const TypeManager& type_manager) {
     Meta m{};  // Zero-initialize (unions don't zero-init automatically)
