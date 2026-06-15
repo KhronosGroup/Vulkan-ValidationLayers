@@ -219,7 +219,6 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
 
                         uint32_t push_offset = 0;
                         if (mapping_info) {
-                            // TODO - Preserve pushOffset instead of saving it through the shader
                             if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
                                 push_offset = mapping_info->sourceData.indirectAddress.pushOffset;
                             } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
@@ -229,7 +228,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                                 push_offset = is_sampler ? mapping_info->sourceData.indirectIndexArray.samplerPushOffset
                                                          : mapping_info->sourceData.indirectIndexArray.pushOffset;
                             }
-                            ss << "0x" << std::hex << push_offset;
+                            ss << std::dec << push_offset;
                         } else {
                             ss << "(unknown offset)";
                         }
@@ -304,42 +303,42 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     }
                     if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
                         const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping_info->sourceData.constantOffset;
-                        ss << "\n  - heapOffset = 0x" << map_data.heapOffset;
+                        ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
                         ss << "\n  - heapArrayStride = 0x" << map_data.heapArrayStride;
                         // TODO - have way to know if combined image sampler
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
                         const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping_info->sourceData.pushIndex;
-                        ss << "\n  - heapOffset = 0x" << map_data.heapOffset;
-                        ss << "\n  - pushOffset = 0x" << map_data.pushOffset;
-                        ss << "\n  - heapIndexStride = 0x" << map_data.heapIndexStride;
+                        ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
+                        ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
+                        ss << "\n  - heapIndexStride = 0x" << std::hex << map_data.heapIndexStride;
                         ss << "\n  - heapArrayStride = 0x" << map_data.heapArrayStride;
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
                         const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping_info->sourceData.indirectIndex;
-                        ss << "\n  - heapOffset = 0x" << map_data.heapOffset;
-                        ss << "\n  - pushOffset = 0x" << map_data.pushOffset;
-                        ss << "\n  - addressOffset = 0x" << map_data.addressOffset;
+                        ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
+                        ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
+                        ss << "\n  - addressOffset = 0x" << std::hex << map_data.addressOffset;
                         ss << "\n  - heapIndexStride = 0x" << map_data.heapIndexStride;
                         ss << "\n  - heapArrayStride = 0x" << map_data.heapArrayStride;
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
                         const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data =
                             mapping_info->sourceData.indirectIndexArray;
-                        ss << "\n  - heapOffset = 0x" << map_data.heapOffset;
-                        ss << "\n  - pushOffset = 0x" << map_data.pushOffset;
-                        ss << "\n  - addressOffset = 0x" << map_data.addressOffset;
+                        ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
+                        ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
+                        ss << "\n  - addressOffset = 0x" << std::hex << map_data.addressOffset;
                         ss << "\n  - heapIndexStride = 0x" << map_data.heapIndexStride;
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
                         const VkDescriptorMappingSourceHeapDataEXT& map_data = mapping_info->sourceData.heapData;
-                        ss << "\n  - heapOffset = 0x" << map_data.heapOffset;
-                        ss << "\n  - pushOffset = 0x" << map_data.pushOffset << " (which loaded the value 0x"
-                           << error_record[kInst_LogError_ParameterOffset_0] << ")";
+                        ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
+                        ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset << " (which loaded the value 0x"
+                           << std::hex << error_record[kInst_LogError_ParameterOffset_0] << ")";
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) {
-                        ss << "\n  - pushDataOffset = 0x" << mapping_info->sourceData.pushDataOffset;
+                        ss << "\n  - pushDataOffset = " << std::dec << mapping_info->sourceData.pushDataOffset;
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT) {
-                        ss << "\n  - pushAddressOffset = 0x" << mapping_info->sourceData.pushAddressOffset;
+                        ss << "\n  - pushAddressOffset = " << std::dec << mapping_info->sourceData.pushAddressOffset;
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
                         const VkDescriptorMappingSourceIndirectAddressEXT& map_data = mapping_info->sourceData.indirectAddress;
-                        ss << "\n  - pushOffset = 0x" << map_data.pushOffset;
-                        ss << "\n  - addressOffset = 0x" << map_data.addressOffset;
+                        ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
+                        ss << "\n  - addressOffset = 0x" << std::hex << map_data.addressOffset;
                     }
                     ss << "\n";
                 }
