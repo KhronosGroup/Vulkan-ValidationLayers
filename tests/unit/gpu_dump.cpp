@@ -18,6 +18,7 @@
 #include "pipeline_helper.h"
 #include "shader_helper.h"
 #include "shader_templates.h"
+#include "test_framework.h"
 #include "utils/math_utils.h"
 
 static const VkLayerSettingEXT kAllDumpSettings[3] = {
@@ -1505,5 +1506,79 @@ TEST_F(NegativeGpuDump, DescriptorHeapBindingCount) {
     m_errorMonitor->SetDesiredWarning("OUT OF BOUNDS");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+// TODO - Handle proper support
+TEST_F(NegativeGpuDump, DISABLED_UntypedPointersMultiDimensional) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/spirv/SPIR-V/-/issues/942");
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitDescriptorHeap());
+
+    // We want to easily control it for testing
+    if (heap_props.minResourceHeapReservedRange != 0 || heap_props.minSamplerHeapReservedRange != 0) {
+        GTEST_SKIP() << "heapReservedRange is not zero";
+    }
+
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    VkDeviceSize heap_size = Align((resource_stride * 8), resource_stride);
+    vkt::Buffer resource_heap(*m_device, heap_size, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
+
+    // layout(descriptor_heap) buffer Heap { uint data; } heap[3][3];
+    // void main() {
+    //     heap[1][2].data = 42;
+    // }
+    const char* cs_source = R"asm(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %Heap Block
+               OpMemberDecorate %Heap 0 Offset 0
+               OpDecorateId %out_array ArrayStrideIdEXT %buf_size
+               OpDecorateId %in_array ArrayStrideIdEXT %stride_3
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %uint_0 = OpConstant %uint 0
+      %uint_1 = OpConstant %uint 1
+      %uint_2 = OpConstant %uint 2
+      %uint_3 = OpConstant %uint 3
+    %uint_42 = OpConstant %uint 42
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+       %Heap = OpTypeStruct %uint
+%_ptr_StorageBuffer = OpTypeUntypedPointerKHR StorageBuffer
+   %buf_type = OpTypeBufferEXT StorageBuffer
+   %buf_size = OpConstantSizeOfEXT %uint %buf_type
+   %stride_3 = OpSpecConstantOp %int IMul %buf_size %uint_3
+ %in_array = OpTypeArray %buf_type %uint_3
+%out_array = OpTypeArray %in_array %uint_3
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %15 = OpUntypedAccessChainKHR %_ptr_UniformConstant %out_array %resource_heap %uint_1 %uint_2
+         %19 = OpBufferPointerEXT %_ptr_StorageBuffer %15
+         %20 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %Heap %19 %uint_0
+               OpStore %20 %uint_42
+               OpReturn
+               OpFunctionEnd
+    )asm";
+
+    m_command_buffer.Begin();
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = resource_heap.AddressRange();
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }
