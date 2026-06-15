@@ -19,6 +19,7 @@
 #include "gpu_dump.h"
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_core.h>
+#include <cassert>
 #include <cstdint>
 #include <iostream>
 #include <spirv-tools/libspirv.hpp>
@@ -1351,6 +1352,49 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     return found_warning;
 }
 
+// if we hit this, its because of OpConstantSizeOfEXT can't be folded (https://godbolt.org/z/3z6Pao4sf)
+// TODO - We will need some sort of internal constant folding here... fun!
+// ... for now lets make assumption only thing people will use here is IMul/IAdd/Isub and just do some folding
+static uint32_t GetConstantFoldValue(const spirv::Module& module, const spirv::Instruction& spec_constant_op,
+                                     VkDeviceSize descriptor_size) {
+    const uint32_t spec_op = spec_constant_op.Word(3);
+    if (spec_op != spv::OpIMul && spec_op != spv::OpIAdd && spec_op != spv::OpISub) {
+        assert(false);  // hit another case
+        return 0;
+    }
+
+    const spirv::Instruction& operand_0_inst = *module.FindDef(spec_constant_op.Word(4));
+    const spirv::Instruction& operand_1_inst = *module.FindDef(spec_constant_op.Word(5));
+
+    uint32_t operand_0 = 0;
+    if (operand_0_inst.Opcode() == spv::OpConstantSizeOfEXT) {
+        operand_0 = (uint32_t)descriptor_size;
+    } else if (operand_0_inst.Opcode() == spv::OpSpecConstantOp) {
+        operand_0 = GetConstantFoldValue(module, operand_0_inst, descriptor_size);
+    } else {
+        operand_0 = operand_0_inst.GetConstantValue();
+    }
+
+    uint32_t operand_1 = 0;
+    if (operand_1_inst.Opcode() == spv::OpConstantSizeOfEXT) {
+        operand_1 = (uint32_t)descriptor_size;
+    } else if (operand_1_inst.Opcode() == spv::OpSpecConstantOp) {
+        operand_1 = GetConstantFoldValue(module, operand_1_inst, descriptor_size);
+    } else {
+        operand_1 = operand_1_inst.GetConstantValue();
+    }
+
+    if (spec_op == spv::OpIMul) {
+        return operand_0 * operand_1;
+    } else if (spec_op == spv::OpIAdd) {
+        return operand_0 + operand_1;
+    } else if (spec_op == spv::OpISub) {
+        return operand_0 - operand_1;
+    }
+    assert(false);
+    return 0;
+}
+
 static uint32_t GetUntypedSize(const spirv::Module& module, const spirv::Instruction& size_inst, VkDeviceSize descriptor_size) {
     if (size_inst.Opcode() == spv::OpConstantSizeOfEXT) {
         const spirv::Instruction* constant_type_inst = module.FindDef(size_inst.Word(3));
@@ -1362,8 +1406,7 @@ static uint32_t GetUntypedSize(const spirv::Module& module, const spirv::Instruc
     } else if (size_inst.Opcode() == spv::OpConstant) {
         return size_inst.GetConstantValue();
     } else if (size_inst.Opcode() == spv::OpSpecConstantOp) {
-        // TODO - We will need some sort of internal constant folding here... fun!
-        return 0;
+        return GetConstantFoldValue(module, size_inst, descriptor_size);
     }
     assert(false);  // assumptions
     return 0;
@@ -1457,8 +1500,6 @@ vvl::unordered_map<uint32_t, HeapAccesses> CommandBufferSubState::DumpDescriptor
     auto add_access = [&](const VkDescriptorType descriptor_type, const spirv::Instruction& ac_inst) {
         const VkDeviceSize descriptor_size = dev_data.device_state->cached_descriptor_size.GetSize(descriptor_type);
         assert(ac_inst.Opcode() == spv::OpUntypedAccessChainKHR);
-        // Totally asserts a 1D array access here
-        // https://gitlab.khronos.org/spirv/SPIR-V/-/issues/942
         const spirv::Instruction* base_type_inst = module.FindDef(ac_inst.Word(3));
         if (base_type_inst->Opcode() != spv::OpTypeBufferEXT && base_type_inst->Opcode() != spv::OpTypeStruct &&
             !base_type_inst->IsArray()) {
@@ -1506,17 +1547,9 @@ vvl::unordered_map<uint32_t, HeapAccesses> CommandBufferSubState::DumpDescriptor
             if (sampler_load_inst) {
                 // TODO - Assertion sampled images are 1D
                 const spirv::Instruction* ac_inst = module.FindDef(image_load_inst->Word(3));
-                if (ac_inst->Opcode() != spv::OpUntypedAccessChainKHR) {
-                    assert(false);  // assumptions
-                    continue;
-                }
                 add_access(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, *ac_inst);
 
                 ac_inst = module.FindDef(sampler_load_inst->Word(3));
-                if (ac_inst->Opcode() != spv::OpUntypedAccessChainKHR) {
-                    assert(false);  // assumptions
-                    continue;
-                }
                 add_access(VK_DESCRIPTOR_TYPE_SAMPLER, *ac_inst);
             } else {
                 const spirv::Instruction* image_type = module.FindDef(image_load_inst->TypeId());
@@ -1524,10 +1557,6 @@ vvl::unordered_map<uint32_t, HeapAccesses> CommandBufferSubState::DumpDescriptor
                 const VkDescriptorType image_descriptor_type = image_type->GetImageType();
 
                 const spirv::Instruction* ac_inst = module.FindDef(image_load_inst->Word(3));
-                if (ac_inst->Opcode() != spv::OpUntypedAccessChainKHR) {
-                    assert(false);  // assumptions
-                    continue;
-                }
                 add_access(image_descriptor_type, *ac_inst);
             }
         } else {
@@ -1544,17 +1573,13 @@ vvl::unordered_map<uint32_t, HeapAccesses> CommandBufferSubState::DumpDescriptor
             const spirv::Instruction* base_type = next_access_chain;
 
             if (base_type && base_type->Opcode() == spv::OpBufferPointerEXT) {
-                const spirv::Instruction* ac_inst = module.FindDef(base_type->Word(3));
-                if (ac_inst->Opcode() != spv::OpUntypedAccessChainKHR) {
-                    assert(false);  // assumptions
-                    continue;
-                }
-
                 // Ignore old BufferBlock + Uniform
                 const VkDescriptorType descriptor_type =
                     module.FindDef(base_type->TypeId())->StorageClass() == spv::StorageClassUniform
                         ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
                         : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+
+                const spirv::Instruction* ac_inst = module.FindDef(base_type->Word(3));
                 add_access(descriptor_type, *ac_inst);
             }
         }
@@ -1673,10 +1698,12 @@ bool CommandBufferSubState::DumpDescriptorHeapUntyped(std::ostringstream& ss, co
                        << " heap\n";
                     found_warning = true;
                 }
-                vvl::range<VkDeviceAddress> final_range{final_address, final_address + descriptor_size};
-                if (final_range.intersects(reserve_range)) {
-                    ss << "      - [WARNING] RESERVED RANGE - this descriptor overlaps with the reserved range\n";
-                    found_warning = true;
+                if (!reserve_range.empty()) {
+                    vvl::range<VkDeviceAddress> final_range{final_address, final_address + descriptor_size};
+                    if (final_range.intersects(reserve_range)) {
+                        ss << "      - [WARNING] RESERVED RANGE - this descriptor overlaps with the reserved range\n";
+                        found_warning = true;
+                    }
                 }
 
                 VkDeviceSize required_alignment = GetDescriptorAlignment(access.descriptor_type, dev_data.phys_dev_ext_props);
