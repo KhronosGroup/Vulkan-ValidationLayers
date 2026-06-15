@@ -776,3 +776,73 @@ TEST_F(PositiveEvent, WaitEventsSameLayoutInsideRenderPass2) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveEvent, HostResetAfterWait) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    vkt::Fence fence(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.WaitEvent(event);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer, fence);
+
+    // Wait for fence to create execution dependency between event Wait and host Reset
+    fence.Wait(kWaitTimeout);
+
+    event.Reset();
+}
+
+TEST_F(PositiveEvent, HostResetAfterWait2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent2(event, barrier);
+    m_command_buffer.WaitEvent2(event, barrier);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+
+    // Wait for the queue to create execution dependency between event and host Reset
+    m_default_queue->Wait();
+
+    event.Reset();
+}
+
+TEST_F(PositiveEvent, HostResetAfterWait3) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+    vkt::Event event2(*m_device);
+
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
+    command_buffer.Begin();
+    command_buffer.SetEvent(event);
+    command_buffer.WaitEvent(event);
+    command_buffer.End();
+
+    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
+    command_buffer2.Begin();
+    command_buffer2.SetEvent(event2);
+    command_buffer2.WaitEvent(event2);
+    command_buffer2.End();
+
+    m_default_queue->SubmitAndWait(command_buffer);
+    m_default_queue->Submit(command_buffer2);
+
+    // We have command_buffer2 pending (with event2), but the first event was set
+    // and waited on in the first command buffer, so it is safe to call host reset
+    // on the first event
+    event.Reset();
+    m_default_queue->Wait();
+}

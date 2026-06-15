@@ -62,6 +62,7 @@ struct EventWaitState {
 
 using EventSignalStateMap = vvl::unordered_map<VkEvent, EventSignalState>;
 using EventWaitStateMap = vvl::unordered_map<VkEvent, EventWaitState>;
+using EventWaitCommandMap = vvl::unordered_map<VkEvent, vvl::Func>;
 
 void UpdateEventSignalStates(EventSignalStateMap& accumulated_states, const EventSignalStateMap& recorded_states);
 

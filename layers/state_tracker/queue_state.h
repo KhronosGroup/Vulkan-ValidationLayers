@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "state_tracker/event_state.h"
 #include "state_tracker/state_object.h"
 #include "state_tracker/fence_state.h"
 #include "state_tracker/semaphore_state.h"
@@ -70,6 +71,9 @@ struct QueueSubmission {
 
     // Swapchain is not null if this submission represents QueuePresent request
     std::shared_ptr<Swapchain> swapchain;
+
+    // Pending event waits for host reset validation
+    EventWaitCommandMap event_wait_commands;
 
     LocationCapture loc;
     uint64_t seq{0};
@@ -165,6 +169,8 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     // Find a timeline wait that does not have a resolving signal submitted yet.
     // Check submissions up to and including until_seq.
     std::optional<SemaphoreInfo> FindTimelineWaitWithoutResolvingSignal(uint64_t until_seq) const;
+
+    vvl::Func GetPendingEventWaitCommand(VkEvent event) const;
 
     // VVL needs helps to retire submsissions on present-only queue that does not use explicit host synchronization
     void UpdatePresentOnlyQueueProgress(const DeviceState &device_state);

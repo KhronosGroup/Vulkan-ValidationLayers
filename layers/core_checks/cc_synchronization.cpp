@@ -1828,6 +1828,19 @@ bool CoreChecks::PreCallValidateResetEvent(VkDevice device, VkEvent event, const
             skip |= LogError("VUID-vkResetEvent-event-03823", event, error_obj.location.dot(Field::event),
                              "(%s) was created with VK_EVENT_CREATE_DEVICE_ONLY_BIT.", FormatHandle(event).c_str());
         }
+
+        vvl::Func pending_wait_command = vvl::Func::Empty;
+        AnyOf<vvl::Queue>([event, &pending_wait_command](const vvl::Queue& queue_state) {
+            pending_wait_command = queue_state.GetPendingEventWaitCommand(event);
+            return pending_wait_command != vvl::Func::Empty;
+        });
+        if (pending_wait_command != vvl::Func::Empty) {
+            const char* vuid = (pending_wait_command == vvl::Func::vkCmdWaitEvents) ? "VUID-vkResetEvent-event-03821"
+                                                                                    : "VUID-vkResetEvent-event-03822";
+            skip |= LogError(vuid, event, error_obj.location,
+                             "%s was reset on the host, but a previously submitted %s command is still pending.",
+                             FormatHandle(event).c_str(), vvl::String(pending_wait_command));
+        }
     }
     return skip;
 }

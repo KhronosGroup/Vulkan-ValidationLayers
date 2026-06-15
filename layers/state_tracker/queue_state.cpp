@@ -23,6 +23,7 @@
 #include "state_tracker/wsi_state.h"
 #include "containers/small_vector.h"
 #include "containers/small_container.h"
+#include "containers/container_utils.h"
 
 #include "profiling/profiling.h"
 
@@ -200,6 +201,16 @@ std::optional<vvl::SemaphoreInfo> vvl::Queue::FindTimelineWaitWithoutResolvingSi
     return {};
 }
 
+vvl::Func vvl::Queue::GetPendingEventWaitCommand(VkEvent event) const {
+    auto guard = Lock();
+    for (const QueueSubmission& submission : submissions_) {
+        if (const vvl::Func* wait_command = vvl::Find(submission.event_wait_commands, event)) {
+            return *wait_command;
+        }
+    }
+    return vvl::Func::Empty;
+}
+
 // The submissions on present-only queue can be retired without explicit fence/semaphore sync.
 // For example, application's main loop uses AcquireNextImage and also waits on the frame fence
 // to sync with the main app queue (different than a present one). This ensures completion of
@@ -314,9 +325,6 @@ void vvl::Queue::Retire(QueueSubmission& submission) {
     for (auto& signal : submission.signal_semaphores) {
         signal.semaphore->RetireSignal(signal.payload);
     }
-    if (submission.fence) {
-        submission.fence->Retire();
-    }
 }
 
 void vvl::Queue::ThreadFunc() {
@@ -333,12 +341,22 @@ void vvl::Queue::ThreadFunc() {
         Retire(*submission);
         // wake up anyone waiting for this submission to be retired
         {
+            std::shared_ptr<Fence> fence;
             std::promise<void> completed;
             {
                 auto guard = Lock();
+                fence = std::move(submission->fence);
                 completed = std::move(submission->completed);
                 submissions_.pop_front();
             }
+
+            // Retire the fence after removing the submission from the queue (submissions_.pop_front).
+            // This ensures the completed QueueSubmission is not visible after vkWaitForFences
+            if (fence) {
+                fence->Retire();
+            }
+
+            // Unblock waiting QueueWaitIdle/DeviceWaitIdle
             completed.set_value();
         }
     }
