@@ -406,9 +406,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         for member in (m for s in self.vk.structs.values() for m in s.members):
             member.extendedFlag = None
 
-        self.vk.structs['VkBufferCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct='VkBufferUsageFlags2CreateInfo')
+        self.vk.structs['VkBufferCreateInfo'].members[4].extendedFlag = ExtendedFlag(struct='VkBufferUsageFlags2CreateInfo')
         self.vk.structs['VkDescriptorBufferBindingInfoEXT'].members[2].extendedFlag = ExtendedFlag(struct= 'VkBufferUsageFlags2CreateInfo')
-        self.vk.structs['VkPhysicalDeviceExternalBufferInfo'].members[3].extendedFlag = ExtendedFlag(struct= 'VkBufferUsageFlags2CreateInfo')
+        self.vk.structs['VkPhysicalDeviceExternalBufferInfo'].members[2].extendedFlag = ExtendedFlag(struct= 'VkBufferUsageFlags2CreateInfo')
 
         self.vk.structs['VkComputePipelineCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct= 'VkPipelineCreateFlags2CreateInfo')
         self.vk.structs['VkGraphicsPipelineCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct= 'VkPipelineCreateFlags2CreateInfo')

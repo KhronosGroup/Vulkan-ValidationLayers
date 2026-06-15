@@ -10213,11 +10213,10 @@ bool Device::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateIn
                                             allowed_structs_VkBufferCreateInfo.data(), GeneratedVulkanHeaderVersion,
                                             "VUID-VkBufferCreateInfo-pNext-pNext", "VUID-VkBufferCreateInfo-sType-unique", true);
 
-        if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pCreateInfo->pNext)) {
-            skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBufferCreateFlagBits,
-                                          AllVkBufferCreateFlagBits, pCreateInfo->flags, kOptionalFlags,
-                                          "VUID-VkBufferCreateInfo-flags-parameter", nullptr, false);
-        }
+        skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBufferCreateFlagBits,
+                                      AllVkBufferCreateFlagBits, pCreateInfo->flags, kOptionalFlags,
+                                      "VUID-VkBufferCreateInfo-flags-parameter", nullptr, false);
+
         skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::sharingMode), vvl::Enum::VkSharingMode,
                                            pCreateInfo->sharingMode, "VUID-VkBufferCreateInfo-sharingMode-parameter");
     }
@@ -13152,10 +13151,11 @@ bool Instance::PreCallValidateGetPhysicalDeviceExternalBufferProperties(
             allowed_structs_VkPhysicalDeviceExternalBufferInfo.data(), GeneratedVulkanHeaderVersion,
             "VUID-VkPhysicalDeviceExternalBufferInfo-pNext-pNext", "VUID-VkPhysicalDeviceExternalBufferInfo-sType-unique", true);
 
-        skip |= context.ValidateFlags(pExternalBufferInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBufferCreateFlagBits,
-                                      AllVkBufferCreateFlagBits, pExternalBufferInfo->flags, kOptionalFlags,
-                                      "VUID-VkPhysicalDeviceExternalBufferInfo-flags-parameter", nullptr, true);
-
+        if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pExternalBufferInfo->pNext)) {
+            skip |= context.ValidateFlags(pExternalBufferInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBufferCreateFlagBits,
+                                          AllVkBufferCreateFlagBits, pExternalBufferInfo->flags, kOptionalFlags,
+                                          "VUID-VkPhysicalDeviceExternalBufferInfo-flags-parameter", nullptr, true);
+        }
         skip |= context.ValidateFlags(pExternalBufferInfo_loc.dot(Field::handleType),
                                       vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits, AllVkExternalMemoryHandleTypeFlagBits,
                                       pExternalBufferInfo->handleType, kRequiredSingleBit,
@@ -14631,11 +14631,10 @@ bool Device::PreCallValidateGetDeviceBufferMemoryRequirements(VkDevice device, c
                                             allowed_structs_VkBufferCreateInfo.data(), GeneratedVulkanHeaderVersion,
                                             "VUID-VkBufferCreateInfo-pNext-pNext", "VUID-VkBufferCreateInfo-sType-unique", true);
 
-            if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pInfo->pCreateInfo->pNext)) {
-                skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBufferCreateFlagBits,
-                                              AllVkBufferCreateFlagBits, pInfo->pCreateInfo->flags, kOptionalFlags,
-                                              "VUID-VkBufferCreateInfo-flags-parameter", nullptr, false);
-            }
+            skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBufferCreateFlagBits,
+                                          AllVkBufferCreateFlagBits, pInfo->pCreateInfo->flags, kOptionalFlags,
+                                          "VUID-VkBufferCreateInfo-flags-parameter", nullptr, false);
+
             skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::sharingMode), vvl::Enum::VkSharingMode,
                                                pInfo->pCreateInfo->sharingMode, "VUID-VkBufferCreateInfo-sharingMode-parameter");
         }
@@ -26110,11 +26109,10 @@ bool Device::PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA(
                                             GeneratedVulkanHeaderVersion, "VUID-VkBufferCreateInfo-pNext-pNext",
                                             "VUID-VkBufferCreateInfo-sType-unique", true);
 
-        if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pBufferConstraintsInfo->createInfo.pNext)) {
-            skip |= context.ValidateFlags(createInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBufferCreateFlagBits,
-                                          AllVkBufferCreateFlagBits, pBufferConstraintsInfo->createInfo.flags, kOptionalFlags,
-                                          "VUID-VkBufferCreateInfo-flags-parameter", nullptr, false);
-        }
+        skip |= context.ValidateFlags(createInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBufferCreateFlagBits,
+                                      AllVkBufferCreateFlagBits, pBufferConstraintsInfo->createInfo.flags, kOptionalFlags,
+                                      "VUID-VkBufferCreateInfo-flags-parameter", nullptr, false);
+
         skip |= context.ValidateRangedEnum(createInfo_loc.dot(Field::sharingMode), vvl::Enum::VkSharingMode,
                                            pBufferConstraintsInfo->createInfo.sharingMode,
                                            "VUID-VkBufferCreateInfo-sharingMode-parameter");
