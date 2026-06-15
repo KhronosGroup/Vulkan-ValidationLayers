@@ -325,9 +325,10 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_RESOURCE_HEAP_DATA);
 
-        block.CreateInstruction(spv::OpFunctionCall,
-                                {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id},
-                                inst_it);
+        block.CreateInstruction(
+            spv::OpFunctionCall,
+            {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id, desc_encoding_id},
+            inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) {
         // TODO - is there any GPU-AV needed for this mapping?
         const uint32_t function_def = GetLinkFunctionId(MAPPING_PUSH_DATA);

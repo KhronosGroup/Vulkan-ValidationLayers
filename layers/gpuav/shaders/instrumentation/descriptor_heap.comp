@@ -204,8 +204,34 @@ bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint h
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT
-bool inst_heap_mapping_resource_heap_data(const uint inst_offset, const uint heap_offset, const uint push_offset) {
-    return true; // Saving function offset space, but currently not used
+bool inst_heap_mapping_resource_heap_data(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint desc_encoding) {
+    uint error = 0;
+
+    uint push_index = gpuav.push_data[push_offset];
+    uint offset = heap_offset + push_index;
+
+    BoundHeapInfo bound_heap_info = gpuav.bound_resource_heap;
+    if (offset >= bound_heap_info.heap_size) {
+        error = kErrorSubCode_DescriptorHeap_HeapOOB;
+    } else if (offset >= bound_heap_info.reserved_begin &&
+               offset < bound_heap_info.reserved_end &&
+               // when no reserved range
+               bound_heap_info.reserved_begin != bound_heap_info.reserved_end) {
+        error = kErrorSubCode_DescriptorHeap_ReservedRange;
+    }
+
+    if (error != 0) {
+        error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
+                            push_index,
+                            offset,
+                            desc_encoding
+                        );
+
+        return false;
+    }
+    return true;
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT

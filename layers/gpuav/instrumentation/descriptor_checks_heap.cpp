@@ -147,20 +147,32 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     ss << "\"] ";
                 }
 
+                // We have 3 options
+                // 1. Repeat error message logic for each mapping
+                // 2. Report different subcode per mapping
+                // 3. Just have a few boolean to know which mapping it came from
+                const bool is_source_heap_data =
+                    mapping_info && mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT;
+
                 const uint32_t error_sub_code = GetSubError(error_record);
                 switch (error_sub_code) {
                     case kErrorSubCode_DescriptorHeap_HeapOOB: {
-                        ss << "descriptor index " << index << " is accessing the heap at offset 0x" << std::hex << offset
-                           << " (address 0x" << std::hex << heap_address << ") which is OOB of the heap memory.\n";
+                        if (!is_source_heap_data) {
+                            ss << "descriptor index " << index << " ";
+                        }
+                        ss << "is accessing the heap at offset 0x" << std::hex << offset << " (address 0x" << std::hex
+                           << heap_address << ") which is OOB of the heap memory.\n";
                         out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_OOB_11309);
                         error_found = true;
                     } break;
 
                     case kErrorSubCode_DescriptorHeap_ReservedRange: {
                         assert(heap_cb_state);
-                        ss << "descriptor index " << index << " is accessing the heap at offset 0x" << std::hex << offset
-                           << " (address 0x" << std::hex << heap_address
-                           << ") which is inside the reserved range.\nThe reserved range was bound at ";
+                        if (!is_source_heap_data) {
+                            ss << "descriptor index " << index << " ";
+                        }
+                        ss << "is accessing the heap at offset 0x" << std::hex << offset << " (address 0x" << std::hex
+                           << heap_address << ") which is inside the reserved range.\nThe reserved range was bound at ";
                         if (is_sampler) {
                             ss << string_range_hex(heap_cb_state->sampler_reserved) << " (size of 0x" << std::hex
                                << heap_cb_state->sampler_reserved.size() << " bytes)\n";
@@ -318,7 +330,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
                         const VkDescriptorMappingSourceHeapDataEXT& map_data = mapping_info->sourceData.heapData;
                         ss << "\n  - heapOffset = 0x" << map_data.heapOffset;
-                        ss << "\n  - pushOffset = 0x" << map_data.pushOffset;
+                        ss << "\n  - pushOffset = 0x" << map_data.pushOffset << " (which loaded the value 0x"
+                           << error_record[kInst_LogError_ParameterOffset_0] << ")";
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) {
                         ss << "\n  - pushDataOffset = 0x" << mapping_info->sourceData.pushDataOffset;
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT) {
