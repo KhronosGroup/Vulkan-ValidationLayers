@@ -59,7 +59,7 @@ std::vector<uint32_t> TraceRayPass::GetTlasValidationFunctionCallInstructions(co
         return {};
     }
 
-    const AccessPath access_path = type_manager_.BuildAccessPath(function, *as_op_load_inst, true);
+    const AccessPath access_path = type_manager_.BuildAccessPath(function, *as_op_load_inst);
     if (!access_path.IsValid()) {
         return {};
     }

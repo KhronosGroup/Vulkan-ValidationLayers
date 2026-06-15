@@ -305,7 +305,7 @@ class GpuAVDescriptorHeap : public GpuAVTest {
 
     void WriteBufferToHeap(const vkt::Buffer& buffer, uint32_t stride = 0,
                            VkDescriptorType type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    void WriteImageToHeap(const vkt::Image& image, uint32_t stride = 0);
+    void WriteImageToHeap(const vkt::Image& image, uint32_t stride = 0, VkDescriptorType type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 
     VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
 
