@@ -60,8 +60,7 @@ void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, Ins
     const Constant& desc_set_constant = type_manager_.GetConstantUInt32(interface.set);
     const uint32_t desc_index_id = CastToUint32(meta.access_path.descriptor_index_id, block, inst_it);  // might be int32
 
-    const uint32_t descriptor_offset_id =
-        GetLastByte(*meta.access_path.pointer_type, meta.access_path.ac_list, meta.coop_mat_access, block, inst_it);
+    const uint32_t descriptor_offset_id = GetLastByte(meta.access_path, block, inst_it);
 
     const auto& layout_lut = module_.interface_.instrumentation_dsl.set_index_to_bindings_layout_lut;
     BindingLayout binding_layout = layout_lut[interface.set][interface.binding];
@@ -71,7 +70,7 @@ void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, Ins
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
     const uint32_t function_result = module_.TakeNextId();
-    const bool is_coop_mat = meta.coop_mat_access.used;
+    const bool is_coop_mat = meta.access_path.coop_mat.used;
     const uint32_t function_def = GetLinkFunctionId(is_coop_mat);
     const uint32_t void_type = type_manager_.GetTypeVoid().Id();
 
@@ -124,14 +123,9 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         return false;
     }
 
-    // The way CoopMat works, we need to get the size here as the type is not found in the access chains
-    if (is_coop_mat) {
-        meta.coop_mat_access = GetCooperativeMatrixAccess(inst, function);
-    }
-
     if (!module_.settings_.safe_mode) {
-        meta.access_offset =
-            FindOffsetInStruct(meta.descriptor_block_type_id, &meta.coop_mat_access, is_descriptor_array, meta.access_path.ac_list);
+        meta.access_offset = FindOffsetInStruct(meta.descriptor_block_type_id, &meta.access_path.coop_mat, is_descriptor_array,
+                                                meta.access_path.ac_list);
     }
 
     // Save information to be used to make the Function

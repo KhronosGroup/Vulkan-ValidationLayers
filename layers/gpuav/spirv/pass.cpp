@@ -336,13 +336,13 @@ uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool c
 // Find outermost buffer type and its access chain index.
 // Because access chains indexes can be runtime values, we need to build arithmetic logic in the SPIR-V to get the runtime value of
 // the indexing
-uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const Instruction*>& access_chain_insts,
-                           const CooperativeMatrixAccess& coop_mat_access, BasicBlock& block, InstructionIt* inst_it) {
-    assert(!access_chain_insts.empty());
+uint32_t Pass::GetLastByte(const AccessPath& access_path, BasicBlock& block, InstructionIt* inst_it) {
+    assert(!access_path.ac_list.empty());
     uint32_t current_type_id = 0;
     const uint32_t reset_ac_word = 4;  // points to first "Index" operand of an OpAccessChain
     uint32_t ac_word_index = reset_ac_word;
 
+    const Type& descriptor_type = *access_path.pointer_type;
     if (descriptor_type.IsArray()) {
         current_type_id = descriptor_type.inst_.Operand(0);
         ac_word_index++;  // this jumps over the array of descriptors so we first start on the descriptor itself
@@ -372,7 +372,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
     // }
     //
     // it will get us to 20 bytes
-    auto access_chain_iter = access_chain_insts.begin();
+    auto access_chain_iter = access_path.ac_list.begin();
 
     // This occurs in things like Slang where they have a single OpAccessChain for the descriptor
     // (GLSL/HLSL will combine 2 indexes into the last OpAccessChain)
@@ -381,7 +381,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
         ac_word_index = reset_ac_word;
     }
 
-    while (access_chain_iter != access_chain_insts.end()) {
+    while (access_chain_iter != access_path.ac_list.end()) {
         const uint32_t ac_index_id = (*access_chain_iter)->Word(ac_word_index);
         uint32_t current_offset_id = 0;
 
@@ -492,7 +492,8 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
     uint32_t accessed_type_size = 0;
 
     // For CooperativeMatrix the |current_type_id| will be an an Int or Float as that is the element type being accessed
-    if (coop_mat_access.used) {
+    if (access_path.coop_mat.used) {
+        const CooperativeMatrixAccess& coop_mat_access = access_path.coop_mat;
         // The stride here could be constant, so if it is, just use it, otherwise will need to build it via SPIR-V
         if (coop_mat_access.stride_value != 0) {
             accessed_type_size = coop_mat_access.Size();
@@ -689,50 +690,6 @@ uint32_t Pass::FindOffsetInStruct(uint32_t struct_id, const CooperativeMatrixAcc
     last_byte_offset += last_byte_index;
 
     return last_byte_offset;
-}
-
-// Unlike a normal load/store where we get the size by looking at the type that is loaded/stored,
-// With CoopMat, we need both the OpTypeCooperativeMatrixKHR and the OpCooperativeMatrixLoadKHR/OpCooperativeMatrixStoreKHR together
-// to calculate the access size.
-CooperativeMatrixAccess Pass::GetCooperativeMatrixAccess(const Instruction& inst, const Function& function) const {
-    CooperativeMatrixAccess info;
-
-    // TODO - When adding Coop Mat to Descriptor Indexing, will likely want a better way to signal things than this bool
-    info.used = true;
-
-    info.is_load = inst.Opcode() == spv::OpCooperativeMatrixLoadKHR;  // else is store
-
-    // For stores, we assume the Object operand points to a load to get the type
-    uint32_t coop_mat_type_id = info.is_load ? inst.TypeId() : function.FindInstruction(inst.Word(2))->TypeId();
-    info.type = type_manager_.FindTypeById(coop_mat_type_id);
-    assert(info.type && info.type->spv_type_ == SpvType::kCooperativeMatrixKHR);
-
-    // Currently we don't save/cache the size of each type because we still need to extract the rows/column info. This the tradeoff
-    // of having a simplified single Type class
-    const Type* component_type = type_manager_.FindTypeById(info.type->inst_.Word(2));
-    info.component_size = type_manager_.GetTypeBytesSize(*component_type);
-
-    const Constant* rows_const = type_manager_.FindConstantById(info.type->inst_.Word(4));
-    const Constant* columns_const = type_manager_.FindConstantById(info.type->inst_.Word(5));
-    assert(rows_const && !rows_const->is_spec_constant_ && columns_const && !columns_const->is_spec_constant_);
-    info.rows = rows_const->inst_.Operand(0);
-    info.columns = columns_const->inst_.Operand(0);
-
-    info.stride_id = info.is_load ? inst.Word(5) : inst.Word(4);
-    if (const Constant* stride = type_manager_.FindConstantById(info.stride_id)) {
-        info.stride_value = stride->inst_.Operand(0);
-    } else {
-        info.stride_value = 0;
-    }
-
-    const uint32_t memory_layout_id = info.is_load ? inst.Word(4) : inst.Word(3);
-    const Constant* memory_layout = type_manager_.FindConstantById(memory_layout_id);
-    assert(memory_layout && !memory_layout->is_spec_constant_);
-    const uint32_t memory_layout_value = memory_layout->inst_.Operand(0);
-    info.is_row_major = memory_layout_value == spv::CooperativeMatrixLayoutRowMajorKHR;
-    assert(info.is_row_major || memory_layout_value == spv::CooperativeMatrixLayoutColumnMajorKHR);
-
-    return info;
 }
 
 // Generate code to convert integer id to 32bit, if needed.

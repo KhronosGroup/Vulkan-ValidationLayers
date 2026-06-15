@@ -19,6 +19,7 @@
 #include <memory>
 #include "containers/custom_containers.h"
 #include "containers/limits.h"
+#include "cooperative_matrix.h"
 #include "state_tracker/shader_instruction.h"
 #include "generated/spirv_grammar_helper.h"
 
@@ -207,6 +208,8 @@ struct AccessPath {
 
     // As defined in gpuav_descriptor_validation.h
     uint8_t descriptor_type = 0;
+
+    CooperativeMatrixAccess coop_mat{};
 };
 
 // In charge of tracking all Types, Constants, and Variable in the module.
@@ -269,6 +272,7 @@ class TypeManager {
     const Constant& GetConstantNull(const Type& type);
 
     const AccessPath BuildAccessPath(const Function& function, const Instruction& inst);
+    const CooperativeMatrixAccess BuildCooperativeMatrixAccess(const Function& function, const Instruction& inst);
 
     const Variable& AddVariable(std::unique_ptr<Instruction> new_inst, const Type& type);
     const Variable* FindVariableById(uint32_t id) const;
