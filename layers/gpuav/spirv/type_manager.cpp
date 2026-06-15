@@ -767,8 +767,7 @@ const Constant& TypeManager::GetConstantNull(const Type& type) {
     return AddConstant(std::move(new_inst), type);
 }
 
-// |ignore_image_sampler_skip| used for passes that don't care about safe_mode that want to ignore until we fix support
-const AccessPath TypeManager::BuildAccessPath(const Function& function, const Instruction& inst, bool ignore_image_sampler_skip) {
+const AccessPath TypeManager::BuildAccessPath(const Function& function, const Instruction& inst) {
     AccessPath path;
 
     if (!inst.IsMemoryAccess()) {
@@ -798,14 +797,6 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
     // This is just loading the image handle, this alone is the not the access.
     // There will be an access (OpImageWrite, OpImageSampleImplicitLod, etc) later which has the real access information
     if (opcode == spv::OpLoad && image_sampler_access) {
-        return path;
-    }
-
-    // TODO - Need to add Storage Image support (https://gitlab.khronos.org/vulkan/vulkan/-/issues/3977)
-    // TODO - we currently don't handle storage image/sampled/samplers in safe mode as we put a OpConstantNull in the OpPhi which
-    // doesn't make sense as it needs to be a OpTypeImage. The way around this will be having a null descriptor ready and point
-    // there in the case it is wrong
-    if (!ignore_image_sampler_skip && module_.settings_.safe_mode && image_sampler_access) {
         return path;
     }
 

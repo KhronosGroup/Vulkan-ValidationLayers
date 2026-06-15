@@ -95,7 +95,7 @@ void GpuAVDescriptorHeap::WriteBufferToHeap(const vkt::Buffer& buffer, uint32_t 
 }
 
 // Currently used for simple Sampled Images
-void GpuAVDescriptorHeap::WriteImageToHeap(const vkt::Image& image, uint32_t stride) {
+void GpuAVDescriptorHeap::WriteImageToHeap(const vkt::Image& image, uint32_t stride, VkDescriptorType type) {
     VkImageViewCreateInfo view_info = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_COLOR_BIT);
     VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
     image_info.pView = &view_info;
@@ -104,7 +104,7 @@ void GpuAVDescriptorHeap::WriteImageToHeap(const vkt::Image& image, uint32_t str
     VkHostAddressRangeEXT descriptor_host{resource_heap_data_ + (heap_props.imageDescriptorSize * stride),
                                           static_cast<size_t>(heap_props.imageDescriptorSize)};
     VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_info.type = type;
     descriptor_info.data.pImage = &image_info;
     vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
 }
@@ -1397,6 +1397,45 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBCombinedImageSampler) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBStorageImage) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
+    CreateResourceHeap(resource_stride, true);
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+    WriteImageToHeap(image, 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 2);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mapping.sourceData.constantOffset.heapArrayStride = (uint32_t)resource_stride;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0, r32ui) uniform uimage2D good_si;
+        layout(set = 0, binding = 1, r32ui) uniform uimage2D bad_si;
+        void main() {
+            uvec4 texel = imageLoad(bad_si, ivec2(0, 0));
+            imageStore(good_si, ivec2(1, 1), texel * 2);
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    // VUID-vkCmdDispatch-None-11309
+    m_errorMonitor->SetDesiredError("bad_si");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBuffer) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
@@ -1529,8 +1568,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBufferAtomics) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - See not in DescriptorHeapPass, need a way to return a "safe" null descriptor
-TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_ResourceOOBUntypedPointersStorageImage) {
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersStorageImage) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());

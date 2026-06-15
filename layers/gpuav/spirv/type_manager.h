@@ -268,7 +268,7 @@ class TypeManager {
     const Constant& GetConstantZeroVector(const Type& vector_type);
     const Constant& GetConstantNull(const Type& type);
 
-    const AccessPath BuildAccessPath(const Function& function, const Instruction& inst, bool ignore_image_sampler_skip = false);
+    const AccessPath BuildAccessPath(const Function& function, const Instruction& inst);
 
     const Variable& AddVariable(std::unique_ptr<Instruction> new_inst, const Type& type);
     const Variable* FindVariableById(uint32_t id) const;
