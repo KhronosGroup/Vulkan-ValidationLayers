@@ -141,19 +141,37 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module& module_state, co
                                            const vvl::Pipeline* pipeline, const ShaderStageState& stage_state,
                                            const Location& loc) const {
     bool skip = false;
+    const auto push_constant_variable = entrypoint.push_constant_variable;
+    if (!push_constant_variable) {
+        return skip;
+    }
 
     if (stage_state.descriptor_heap_mode) {
-        return skip;
+        // In DescriptorModeClassic, this is normally caught binding pipeline layouts (with ranges in them)
+        const VkDeviceSize max_size = phys_dev_ext_props.descriptor_heap_props.maxPushDataSize;
+        if (push_constant_variable->size > max_size) {
+            skip |= LogError("VUID-RuntimeSpirv-maxPushDataSize-12455", module_state.handle(), loc,
+                             "shader %s defines a push constant statically (\"%s\") that block size %" PRIu32
+                             " is larger than maxPushDataSize (%" PRIu64 ").\nEven if only bytes [0:%" PRIu64
+                             "] are accessed, compilers may need to allocate the amount of memory declared statically.",
+                             stage_state.entrypoint->Describe().c_str(), push_constant_variable->debug_name.c_str(),
+                             push_constant_variable->size, max_size, max_size - 1);
+        } else if ((push_constant_variable->offset + push_constant_variable->size) > max_size) {
+            skip |= LogError("VUID-RuntimeSpirv-maxPushDataSize-12455", module_state.handle(), loc,
+                             "shader %s defines a push constant statically (\"%s\") that block offset (%" PRIu32
+                             ") + size (%" PRIu32 ") is larger than maxPushDataSize (%" PRIu64 ").\nEven if only bytes [%" PRIu32
+                             ":%" PRIu64 "] are accessed, compilers may need to allocate the amount of memory declared statically.",
+                             stage_state.entrypoint->Describe().c_str(), push_constant_variable->debug_name.c_str(),
+                             push_constant_variable->offset, push_constant_variable->size, max_size, push_constant_variable->offset,
+                             max_size - 1);
+        }
+        return skip;  // rest is testing against the pipeline layout
     } else if (module_state.static_data_.has_specialization_constants) {
         // TODO - Workaround for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
         return skip;
     }
 
     const VkShaderStageFlagBits stage = entrypoint.stage;
-    const auto push_constant_variable = entrypoint.push_constant_variable;
-    if (!push_constant_variable) {
-        return skip;
-    }
 
     PushConstantRangesId shader_object_push_constant_ranges_id;
     std::vector<VkPushConstantRange> const* push_constant_ranges;

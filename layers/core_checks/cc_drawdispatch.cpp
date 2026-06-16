@@ -2210,50 +2210,52 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound& las
 }
 
 bool CoreChecks::ValidateActionStatePushConstantDescriptorHeap(const vvl::CommandBuffer& cb_state,
-                                                               const spirv::EntryPoint* entry_point,
+                                                               const ShaderStageState& stage_state,
                                                                const VkPipelineBindPoint bind_point, const Location& loc) const {
     bool skip = false;
-    if (!entry_point || !entry_point->push_constant_variable) {
+    if (!stage_state.entrypoint || !stage_state.entrypoint->push_constant_variable) {
+        return skip;  // no static push constant in shader
+    }
+
+    const auto& pc_variable = *stage_state.entrypoint->push_constant_variable;
+    if (pc_variable.size == 0) {
         return skip;
     }
 
-    const auto& pc_variable = *entry_point->push_constant_variable;
-    if (pc_variable.size > 0) {
-        const auto& cb_sub_state = core::SubState(cb_state);
+    const auto& cb_sub_state = core::SubState(cb_state);
 
-        const uint32_t begin = pc_variable.offset;
-        const uint32_t end = begin + pc_variable.size - 1;
+    const uint32_t begin = pc_variable.offset;
+    const uint32_t end = begin + pc_variable.size - 1;
 
-        if (!cb_sub_state.push_data_mask.empty()) {
-            const uint32_t size = static_cast<uint32_t>(cb_sub_state.push_data_mask.size());
-            // Find the first range of bytes which were not set
-            uint32_t unset_start = size;
-            uint32_t unset_end = end;
-            for (uint32_t i = begin; i <= end; i++) {
-                if (i >= size || !cb_sub_state.push_data_mask[i]) {
-                    if (unset_start == size) {
-                        unset_start = i;
-                    }
-                } else if (unset_start != size) {
-                    unset_end = i - 1;
-                    break;
+    if (!cb_sub_state.push_data_mask.empty()) {
+        const uint32_t size = static_cast<uint32_t>(cb_sub_state.push_data_mask.size());
+        // Find the first range of bytes which were not set
+        uint32_t unset_start = size;
+        uint32_t unset_end = end;
+        for (uint32_t i = begin; i <= end; i++) {
+            if (i >= size || !cb_sub_state.push_data_mask[i]) {
+                if (unset_start == size) {
+                    unset_start = i;
                 }
+            } else if (unset_start != size) {
+                unset_end = i - 1;
+                break;
             }
-            if (unset_start != size) {
-                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11376),
-                                 cb_state.GetObjectList(bind_point), loc,
-                                 "shader %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
-                                 "), but vkCmdPushDataEXT was never called for range [%" PRIu32 ", %" PRIu32 ").",
-                                 entry_point->Describe().c_str(), pc_variable.offset, pc_variable.offset + pc_variable.size,
-                                 unset_start, unset_end);
-            }
-        } else {
+        }
+        if (unset_start != size) {
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11376),
                              cb_state.GetObjectList(bind_point), loc,
                              "shader %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
-                             "), while there was no call to vkCmdPushDataEXT.",
-                             entry_point->Describe().c_str(), pc_variable.offset, pc_variable.offset + pc_variable.size);
+                             "), but vkCmdPushDataEXT was never called for range [%" PRIu32 ", %" PRIu32 ").",
+                             stage_state.entrypoint->Describe().c_str(), pc_variable.offset, pc_variable.offset + pc_variable.size,
+                             unset_start, unset_end);
         }
+    } else {
+        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11376), cb_state.GetObjectList(bind_point),
+                         loc,
+                         "shader %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
+                         "), while there was no call to vkCmdPushDataEXT.",
+                         stage_state.entrypoint->Describe().c_str(), pc_variable.offset, pc_variable.offset + pc_variable.size);
     }
 
     return skip;
@@ -2276,48 +2278,43 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound& last_bound_sta
     if (pipeline) {
         if (pipeline->descriptor_heap_mode) {
             for (const auto& stage_state : pipeline->stage_states) {
-                skip |= ValidateActionStatePushConstantDescriptorHeap(cb_state, stage_state.entrypoint.get(),
-                                                                      last_bound_state.bind_point, loc);
+                skip |= ValidateActionStatePushConstantDescriptorHeap(cb_state, stage_state, last_bound_state.bind_point, loc);
             }
-        }
-        auto const& pipeline_layout = pipeline->PipelineLayoutState();
-        if (pipeline_layout) {
+        } else if (const auto pipeline_layout = pipeline->PipelineLayoutState()) {
             if (!cb_state.push_constant_ranges_layout ||
                 (pipeline_layout->push_constant_ranges_layout == cb_state.push_constant_ranges_layout)) {
-                for (const auto& stage : pipeline->stage_states) {
-                    if (!stage.entrypoint || !stage.entrypoint->push_constant_variable) {
+                for (const auto& stage_state : pipeline->stage_states) {
+                    if (!stage_state.entrypoint || !stage_state.entrypoint->push_constant_variable) {
                         continue;  // no static push constant in shader
                     }
 
                     // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
                     if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
                         const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle(), pipeline->Handle());
-                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PUSH_CONSTANT_08601), objlist, loc,
-                                         "shader %s uses push-constant statically but vkCmdPushConstants was not called yet for "
-                                         "%s bound by vkCmdBindPipeline.",
-                                         stage.entrypoint->Describe().c_str(), FormatHandle(pipeline_layout->Handle()).c_str());
+                        skip |=
+                            LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PUSH_CONSTANT_08601), objlist, loc,
+                                     "shader %s uses push-constant statically but vkCmdPushConstants was not called yet for "
+                                     "%s bound by vkCmdBindPipeline.",
+                                     stage_state.entrypoint->Describe().c_str(), FormatHandle(pipeline_layout->Handle()).c_str());
                     }
                 }
             }
         }
-    } else {
-        if (!cb_state.push_constant_ranges_layout) {
-            for (const auto& shader_object : last_bound_state.shader_object_states) {
-                if (!shader_object || !shader_object->stage.entrypoint ||
-                    !shader_object->stage.entrypoint->push_constant_variable) {
-                    continue;
-                }
-                if (shader_object->descriptor_heap_mode) {
-                    skip |= ValidateActionStatePushConstantDescriptorHeap(cb_state, shader_object->stage.entrypoint.get(),
-                                                                          last_bound_state.bind_point, loc);
-                } else {
-                    // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
-                    if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
-                        const LogObjectList objlist(cb_state.Handle(), shader_object->Handle());
-                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PUSH_CONSTANT_08601), objlist, loc,
-                                         "shader %s uses push-constant statically but vkCmdPushConstants was not called yet.",
-                                         shader_object->stage.entrypoint->Describe().c_str());
-                    }
+    } else if (!cb_state.push_constant_ranges_layout) {
+        for (const auto& shader_object : last_bound_state.shader_object_states) {
+            if (!shader_object || !shader_object->stage.entrypoint || !shader_object->stage.entrypoint->push_constant_variable) {
+                continue;  // no static push constant in shader
+            }
+            if (shader_object->descriptor_heap_mode) {
+                skip |=
+                    ValidateActionStatePushConstantDescriptorHeap(cb_state, shader_object->stage, last_bound_state.bind_point, loc);
+            } else {
+                // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
+                if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
+                    const LogObjectList objlist(cb_state.Handle(), shader_object->Handle());
+                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PUSH_CONSTANT_08601), objlist, loc,
+                                     "shader %s uses push-constant statically but vkCmdPushConstants was not called yet.",
+                                     shader_object->stage.entrypoint->Describe().c_str());
                 }
             }
         }
