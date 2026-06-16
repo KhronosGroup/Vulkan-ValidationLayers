@@ -4526,7 +4526,7 @@ bool CoreChecks::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device,
         if (template_state != nullptr && encode_quality_level != template_state->GetEncodeQualityLevel()) {
             const LogObjectList objlist(device, pCreateInfo->videoSessionParametersTemplate, pCreateInfo->videoSession);
             skip |=
-                LogError("VUID-VkVideoSessionParametersCreateInfoKHR-videoSessionParametersTemplate-08310)", objlist,
+                LogError("VUID-VkVideoSessionParametersCreateInfoKHR-videoSessionParametersTemplate-08310", objlist,
                          create_info_loc.pNext(Struct::VkVideoEncodeQualityLevelInfoKHR, Field::qualityLevel),
                          "(%" PRIu32 ") does not match the video encode quality level (%" PRIu32 ") template %s was created with.",
                          encode_quality_level, template_state->GetEncodeQualityLevel(),
