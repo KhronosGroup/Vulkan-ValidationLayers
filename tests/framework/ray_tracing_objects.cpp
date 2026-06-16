@@ -2025,6 +2025,8 @@ void Pipeline::AddLibrary(const Pipeline& library) {
 
 void Pipeline::AddDynamicState(VkDynamicState dynamic_state) { dynamic_states.emplace_back(dynamic_state); }
 
+void Pipeline::SetShaderRecordSize(uint32_t shader_record_size) { shader_record_size_ = shader_record_size; }
+
 void Pipeline::Build() {
     BuildPipeline();
     BuildSbt();
@@ -2198,18 +2200,18 @@ void Pipeline::BuildSbt() {
 
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
     test_.GetPhysicalDeviceProperties2(rt_pipeline_props);
-    const uint32_t handle_size_aligned =
-        Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupHandleAlignment);
+    const uint32_t sbt_shader_size = rt_pipeline_props.shaderGroupHandleSize + shader_record_size_;
+    const uint32_t sbt_shader_size_aligned = Align(sbt_shader_size, rt_pipeline_props.shaderGroupHandleAlignment);
 
     // Since every ray generation entry in the ray tracing shader headers buffer can be the start of the ray gen SBT,
     // they all have to be aligned to shaderGroupBaseAlignment (which may be smaller than the handle size)
     const VkDeviceSize ray_gen_shaders_sbt_entry_byte_size =
-        GetRayGenShaderGroupsCount() * Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupBaseAlignment);
+        GetRayGenShaderGroupsCount() * Align(sbt_shader_size, rt_pipeline_props.shaderGroupBaseAlignment);
     // For miss and closest hit shaders, we consider that the corresponding SBTs always start at the first miss/closest hit entry
     // => only it needs to be aligned to shaderGroupBaseAlignment,
     // and within miss/closes hit entries alignment is shaderGroupHandleAlignment
-    const VkDeviceSize miss_shaders_sbt_entry_byte_size = GetMissShaderGroupsCount() * handle_size_aligned;
-    const VkDeviceSize hit_shaders_sbt_entry_byte_size = GetHitShaderGroupsCount() * handle_size_aligned;
+    const VkDeviceSize miss_shaders_sbt_entry_byte_size = GetMissShaderGroupsCount() * sbt_shader_size_aligned;
+    const VkDeviceSize hit_shaders_sbt_entry_byte_size = GetHitShaderGroupsCount() * sbt_shader_size_aligned;
     VkDeviceSize sbt_buffer_size = ray_gen_shaders_sbt_entry_byte_size;
     sbt_buffer_size = Align<VkDeviceSize>(sbt_buffer_size, rt_pipeline_props.shaderGroupBaseAlignment);
     sbt_buffer_size += miss_shaders_sbt_entry_byte_size;
@@ -2230,8 +2232,8 @@ void Pipeline::BuildSbt() {
     void* sbt_buffer_ptr = sbt_buffer_base_ptr;
     (void)sbt_buffer_base_ptr;
     size_t sbt_buffer_space_left = static_cast<size_t>(sbt_buffer_info.size);
-    std::vector<uint8_t> sbt_host_storage = GetRayTracingShaderGroupHandles();
-    uint8_t* const sbt_host_storage_ptr = sbt_host_storage.data();
+    std::vector<uint8_t> rt_shader_group_handles = GetRayTracingShaderGroupHandles();
+    uint8_t* const rt_shader_group_handles_ptr = rt_shader_group_handles.data();
 
 #ifdef VVL_DEBUG_LOG_SBT
     std::cout << __FUNCTION__ << "\n===\n\n";
@@ -2257,8 +2259,7 @@ void Pipeline::BuildSbt() {
     {
         void* ray_gen_sbt = nullptr;
         for (size_t ray_gen_i = 0; ray_gen_i < ray_gen_group_handle_indices.size(); ++ray_gen_i) {
-            if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
-                            sbt_buffer_space_left)) {
+            if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, sbt_shader_size, sbt_buffer_ptr, sbt_buffer_space_left)) {
                 assert(false);
                 return;
             }
@@ -2266,23 +2267,22 @@ void Pipeline::BuildSbt() {
                 ray_gen_sbt = sbt_buffer_ptr;
             }
             uint8_t* ray_gen_handle =
-                sbt_host_storage_ptr + rt_pipeline_props.shaderGroupHandleSize * ray_gen_group_handle_indices[ray_gen_i];
-            std::memcpy(sbt_buffer_ptr, ray_gen_handle, rt_pipeline_props.shaderGroupHandleSize);
-            sbt_buffer_ptr = (uint8_t*)sbt_buffer_ptr + rt_pipeline_props.shaderGroupHandleSize;
-            sbt_buffer_space_left -= rt_pipeline_props.shaderGroupHandleSize;
+                rt_shader_group_handles_ptr + rt_pipeline_props.shaderGroupHandleSize * ray_gen_group_handle_indices[ray_gen_i];
+            std::memcpy(sbt_buffer_ptr, ray_gen_handle, sbt_shader_size);
+            sbt_buffer_ptr = (uint8_t*)sbt_buffer_ptr + sbt_shader_size;
+            sbt_buffer_space_left -= sbt_shader_size;
         }
         (void)ray_gen_sbt;
 
 #ifdef VVL_DEBUG_LOG_SBT
         {
             std::cout << "Ray Gen groups SBT entry: offset = 0 | size = " << ray_gen_shaders_sbt_entry_byte_size << '\n';
-            const uint32_t break_every = rt_pipeline_props.shaderGroupHandleSize;
+            const uint32_t break_every = Align(sbt_shader_size, rt_pipeline_props.shaderGroupBaseAlignment);
             const auto original_fmt_flags = std::cout.flags();
             std::cout << "Ray Gen shader group handles:\n";
             size_t line_i = 0;
-            for (size_t byte_i = 0;
-                 byte_i < ray_gen_group_handle_indices.size() * Align<VkDeviceSize>(rt_pipeline_props.shaderGroupHandleSize,
-                                                                                    rt_pipeline_props.shaderGroupBaseAlignment);
+            for (size_t byte_i = 0; byte_i < ray_gen_group_handle_indices.size() *
+                                                 Align<VkDeviceSize>(sbt_shader_size, rt_pipeline_props.shaderGroupBaseAlignment);
                  ++byte_i) {
                 if (byte_i > 0 && (byte_i % break_every == 0)) {
                     std::cout << std::endl;
@@ -2313,16 +2313,14 @@ void Pipeline::BuildSbt() {
     // Fill Miss shader groups
     // ---
     if (GetMissShaderGroupsCount() > 0) {
-        if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
-                        sbt_buffer_space_left)) {
+        if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, sbt_shader_size, sbt_buffer_ptr, sbt_buffer_space_left)) {
             assert(false);
             return;
         }
 
         void* miss_sbt = nullptr;
         for (size_t miss_i = 0; miss_i < miss_group_handle_indices.size(); ++miss_i) {
-            if (!std::align(rt_pipeline_props.shaderGroupHandleAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
-                            sbt_buffer_space_left)) {
+            if (!std::align(rt_pipeline_props.shaderGroupHandleAlignment, sbt_shader_size, sbt_buffer_ptr, sbt_buffer_space_left)) {
                 assert(false);
                 return;
             }
@@ -2331,10 +2329,10 @@ void Pipeline::BuildSbt() {
             }
 
             uint8_t* miss_handle =
-                sbt_host_storage_ptr + rt_pipeline_props.shaderGroupHandleSize * miss_group_handle_indices[miss_i];
-            std::memcpy(sbt_buffer_ptr, miss_handle, rt_pipeline_props.shaderGroupHandleSize);
-            sbt_buffer_ptr = (uint8_t*)sbt_buffer_ptr + rt_pipeline_props.shaderGroupHandleSize;
-            sbt_buffer_space_left -= rt_pipeline_props.shaderGroupHandleSize;
+                rt_shader_group_handles_ptr + rt_pipeline_props.shaderGroupHandleSize * miss_group_handle_indices[miss_i];
+            std::memcpy(sbt_buffer_ptr, miss_handle, sbt_shader_size);
+            sbt_buffer_ptr = (uint8_t*)sbt_buffer_ptr + sbt_shader_size;
+            sbt_buffer_space_left -= sbt_shader_size;
         }
         (void)miss_sbt;
 
@@ -2342,11 +2340,11 @@ void Pipeline::BuildSbt() {
         {
             std::cout << "Miss shader groups SBT entry: offset = " << ((uint64_t)miss_sbt - (uint64_t)sbt_buffer_base_ptr)
                       << " | size = " << miss_shaders_sbt_entry_byte_size << '\n';
-            const uint32_t break_every = rt_pipeline_props.shaderGroupHandleSize;
+            const uint32_t break_every = sbt_shader_size_aligned;
             const auto original_fmt_flags = std::cout.flags();
             std::cout << "Miss shader group handles:\n";
             size_t line_i = 0;
-            for (size_t byte_i = 0; byte_i < miss_group_handle_indices.size() * handle_size_aligned; ++byte_i) {
+            for (size_t byte_i = 0; byte_i < miss_group_handle_indices.size() * sbt_shader_size_aligned; ++byte_i) {
                 if (byte_i > 0 && (byte_i % break_every == 0)) {
                     std::cout << std::endl;
                 }
@@ -2376,16 +2374,14 @@ void Pipeline::BuildSbt() {
     // Fill Hit shader groups
     // ---
     if (GetHitShaderGroupsCount() > 0) {
-        if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
-                        sbt_buffer_space_left)) {
+        if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, sbt_shader_size, sbt_buffer_ptr, sbt_buffer_space_left)) {
             assert(false);
             return;
         }
 
         void* hit_sbt = nullptr;
         for (size_t hit_i = 0; hit_i < hit_group_handle_indices.size(); ++hit_i) {
-            if (!std::align(rt_pipeline_props.shaderGroupHandleAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
-                            sbt_buffer_space_left)) {
+            if (!std::align(rt_pipeline_props.shaderGroupHandleAlignment, sbt_shader_size, sbt_buffer_ptr, sbt_buffer_space_left)) {
                 assert(false);
                 return;
             }
@@ -2393,10 +2389,11 @@ void Pipeline::BuildSbt() {
                 hit_sbt = sbt_buffer_ptr;
             }
 
-            uint8_t* hit_handle = sbt_host_storage_ptr + rt_pipeline_props.shaderGroupHandleSize * hit_group_handle_indices[hit_i];
-            std::memcpy(sbt_buffer_ptr, hit_handle, rt_pipeline_props.shaderGroupHandleSize);
-            sbt_buffer_ptr = (uint8_t*)sbt_buffer_ptr + rt_pipeline_props.shaderGroupHandleSize;
-            sbt_buffer_space_left -= rt_pipeline_props.shaderGroupHandleSize;
+            uint8_t* hit_handle =
+                rt_shader_group_handles_ptr + rt_pipeline_props.shaderGroupHandleSize * hit_group_handle_indices[hit_i];
+            std::memcpy(sbt_buffer_ptr, hit_handle, sbt_shader_size);
+            sbt_buffer_ptr = (uint8_t*)sbt_buffer_ptr + sbt_shader_size;
+            sbt_buffer_space_left -= sbt_shader_size;
         }
         (void)hit_sbt;
 
@@ -2404,11 +2401,11 @@ void Pipeline::BuildSbt() {
         {
             std::cout << "Hit shader groups SBT entry: offset = " << ((uint64_t)hit_sbt - (uint64_t)sbt_buffer_base_ptr)
                       << " | size = " << hit_shaders_sbt_entry_byte_size << '\n';
-            const uint32_t break_every = rt_pipeline_props.shaderGroupHandleSize;
+            const uint32_t break_every = sbt_shader_size_aligned;
             const auto original_fmt_flags = std::cout.flags();
             std::cout << "Hit shader group handles:\n";
             size_t line_i = 0;
-            for (size_t byte_i = 0; byte_i < hit_group_handle_indices.size() * handle_size_aligned; ++byte_i) {
+            for (size_t byte_i = 0; byte_i < hit_group_handle_indices.size() * sbt_shader_size_aligned; ++byte_i) {
                 if (byte_i > 0 && (byte_i % break_every == 0)) {
                     std::cout << std::endl;
                 }
@@ -2438,6 +2435,54 @@ void Pipeline::BuildSbt() {
     sbt_buffer_.Memory().Unmap();
 }
 
+void Pipeline::UpdateRayGenShaderRecord(uint32_t ray_gen_i, void* data, size_t size) {
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
+    test_.GetPhysicalDeviceProperties2(rt_pipeline_props);
+    const uint32_t sbt_ray_gen_shader_size = rt_pipeline_props.shaderGroupHandleSize + shader_record_size_;
+    const uint32_t sbt_ray_gen_shader_size_aligned = Align(sbt_ray_gen_shader_size, rt_pipeline_props.shaderGroupBaseAlignment);
+
+    auto sbt_buffer_ptr = (uint8_t*)sbt_buffer_.Memory().Map();
+    const uint32_t offset = ray_gen_i * sbt_ray_gen_shader_size_aligned + rt_pipeline_props.shaderGroupHandleSize;
+    auto sbt_ray_gen_shader_record_start_ptr = sbt_buffer_ptr + offset;
+    std::memcpy(sbt_ray_gen_shader_record_start_ptr, data, size);
+}
+
+void Pipeline::UpdateMissShaderRecord(uint32_t miss_i, void* data, size_t size) {
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
+    test_.GetPhysicalDeviceProperties2(rt_pipeline_props);
+    const uint32_t sbt_shader_size = rt_pipeline_props.shaderGroupHandleSize + shader_record_size_;
+    const uint32_t sbt_ray_gen_shader_size_aligned = Align(sbt_shader_size, rt_pipeline_props.shaderGroupBaseAlignment);
+    const uint32_t sbt_shader_size_aligned = Align(sbt_shader_size, rt_pipeline_props.shaderGroupHandleAlignment);
+
+    uint32_t offset = (GetRayGenShaderGroupsCount() * sbt_ray_gen_shader_size_aligned);
+    offset = Align(offset, rt_pipeline_props.shaderGroupBaseAlignment);
+    offset += (miss_i * sbt_shader_size_aligned) + rt_pipeline_props.shaderGroupHandleSize;
+
+    auto sbt_buffer_ptr = (uint8_t*)sbt_buffer_.Memory().Map();
+    auto sbt_miss_shader_record_start_ptr = sbt_buffer_ptr + offset;
+    std::memcpy(sbt_miss_shader_record_start_ptr, data, size);
+    sbt_buffer_.Memory().Unmap();
+}
+
+void Pipeline::UpdateHitShaderRecord(uint32_t hit_i, void* data, size_t size) {
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
+    test_.GetPhysicalDeviceProperties2(rt_pipeline_props);
+    const uint32_t sbt_shader_size = rt_pipeline_props.shaderGroupHandleSize + shader_record_size_;
+    const uint32_t sbt_ray_gen_shader_size_aligned = Align(sbt_shader_size, rt_pipeline_props.shaderGroupBaseAlignment);
+    const uint32_t sbt_shader_size_aligned = Align(sbt_shader_size, rt_pipeline_props.shaderGroupHandleAlignment);
+
+    uint32_t offset = (GetRayGenShaderGroupsCount() * sbt_ray_gen_shader_size_aligned);
+    offset = Align(offset, rt_pipeline_props.shaderGroupBaseAlignment);
+    offset += (GetMissShaderGroupsCount() * sbt_shader_size_aligned);
+    offset = Align(offset, rt_pipeline_props.shaderGroupBaseAlignment);
+    offset += (hit_i * sbt_shader_size_aligned) + rt_pipeline_props.shaderGroupHandleSize;
+
+    auto sbt_buffer_ptr = (uint8_t*)sbt_buffer_.Memory().Map();
+    auto sbt_miss_shader_record_start_ptr = sbt_buffer_ptr + offset;
+    std::memcpy(sbt_miss_shader_record_start_ptr, data, size);
+    sbt_buffer_.Memory().Unmap();
+}
+
 void Pipeline::DeferBuild() {
     assert(deferred_op_ == VK_NULL_HANDLE);
     const VkResult result = vk::CreateDeferredOperationKHR(device_->handle(), nullptr, &deferred_op_);
@@ -2457,10 +2502,10 @@ vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt(uint32_t ray_gen_shader_i /*= 0*
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&rt_pipeline_props);
     vk::GetPhysicalDeviceProperties2(device_->Physical(), &props2);
 
-    const uint32_t handle_size_base_aligned =
-        Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupBaseAlignment);
-    const uint32_t handle_size_aligned =
-        Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupHandleAlignment);
+    const uint32_t sbt_shader_size_base_aligned =
+        Align(rt_pipeline_props.shaderGroupHandleSize + shader_record_size_, rt_pipeline_props.shaderGroupBaseAlignment);
+    const uint32_t sbt_shader_size_aligned =
+        Align(rt_pipeline_props.shaderGroupHandleSize + shader_record_size_, rt_pipeline_props.shaderGroupHandleAlignment);
 
     const VkDeviceAddress sbt_base_address = sbt_buffer_.Address();
     VkDeviceAddress sbt_address = sbt_base_address;
@@ -2473,10 +2518,10 @@ vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt(uint32_t ray_gen_shader_i /*= 0*
 
     // Can only have one ray generation shader
     VkStridedDeviceAddressRegionKHR ray_gen_sbt{};
-    ray_gen_sbt.deviceAddress = sbt_address + ray_gen_shader_i * handle_size_base_aligned;
-    ray_gen_sbt.stride = handle_size_base_aligned;
-    ray_gen_sbt.size = handle_size_base_aligned;
-    sbt_address += GetRayGenShaderGroupsCount() * handle_size_base_aligned;
+    ray_gen_sbt.deviceAddress = sbt_address + ray_gen_shader_i * sbt_shader_size_base_aligned;
+    ray_gen_sbt.stride = sbt_shader_size_base_aligned;
+    ray_gen_sbt.size = sbt_shader_size_base_aligned;
+    sbt_address += GetRayGenShaderGroupsCount() * sbt_shader_size_base_aligned;
 #ifdef VVL_DEBUG_LOG_SBT
     std::cout << "Ray Gen groups SBT entry: @ = " << ray_gen_sbt.deviceAddress
               << " (offset from base = " << ray_gen_sbt.deviceAddress - sbt_base_address << ") | stride = " << ray_gen_sbt.stride
@@ -2487,8 +2532,8 @@ vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt(uint32_t ray_gen_shader_i /*= 0*
     if (GetMissShaderGroupsCount() > 0) {
         sbt_address = Align<VkDeviceAddress>(sbt_address, rt_pipeline_props.shaderGroupBaseAlignment);
         miss_sbt.deviceAddress = sbt_address;
-        miss_sbt.stride = handle_size_aligned;
-        miss_sbt.size = GetMissShaderGroupsCount() * handle_size_aligned;
+        miss_sbt.stride = sbt_shader_size_aligned;
+        miss_sbt.size = GetMissShaderGroupsCount() * sbt_shader_size_aligned;
         sbt_address += miss_sbt.size;
 #ifdef VVL_DEBUG_LOG_SBT
         std::cout << "Miss groups SBT entry: @ = " << miss_sbt.deviceAddress
@@ -2501,8 +2546,8 @@ vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt(uint32_t ray_gen_shader_i /*= 0*
     if (GetHitShaderGroupsCount() > 0) {
         sbt_address = Align<VkDeviceAddress>(sbt_address, rt_pipeline_props.shaderGroupBaseAlignment);
         hit_sbt.deviceAddress = sbt_address;
-        hit_sbt.stride = handle_size_aligned;
-        hit_sbt.size = GetHitShaderGroupsCount() * handle_size_aligned;
+        hit_sbt.stride = sbt_shader_size_aligned;
+        hit_sbt.size = GetHitShaderGroupsCount() * sbt_shader_size_aligned;
         sbt_address += hit_sbt.size;
 #ifdef VVL_DEBUG_LOG_SBT
         std::cout << "Hit groups SBT entry: @ = " << hit_sbt.deviceAddress
