@@ -351,6 +351,7 @@ void CommandBuffer::ResetCBState() {
     label_commands_.clear();
 
     push_constant_ranges_layout.reset();
+    push_data_dword_mask.clear();
 
     transform_feedback_active = false;
     transform_feedback_buffers_bound = 0;
@@ -2283,17 +2284,52 @@ void CommandBuffer::RecordPushConstants(const vvl::PipelineLayout& pipeline_layo
 
     for (auto& item : sub_states_) {
         item.second->RecordPushConstants(pipeline_layout_state.VkHandle(), stage_flags, offset, size, values);
-        item.second->ClearPushData();  // vkspec.html#descriptorheaps-invalidate-sets
+
+        // vkspec.html#descriptorheaps-invalidate-sets
+        item.second->ClearPushData();
+        push_data_dword_mask.clear();
     }
 }
 
 void CommandBuffer::RecordPushData(const VkPushDataInfoEXT& push_data_info, const Location& loc) {
     RecordCommand(loc);
 
+    if (push_data_info.data.size > 0) {
+        const size_t begin_byte = push_data_info.offset;
+        const size_t end_byte = push_data_info.offset + push_data_info.data.size;
+        // offset/size required to be multiple of 4
+        const size_t begin_dword = begin_byte / 4;
+        const size_t end_dword = end_byte / 4;
+        if (push_data_dword_mask.size() < end_dword) {
+            push_data_dword_mask.resize(end_dword, false);
+        }
+        for (size_t i = begin_dword; i < end_dword; ++i) {
+            push_data_dword_mask[i] = true;
+        }
+    }
+
     for (auto& item : sub_states_) {
         item.second->RecordPushData(push_data_info);
         item.second->ClearPushConstants();  // vkspec.html#descriptorheaps-invalidate-sets
     }
+}
+
+bool CommandBuffer::VerifyPushData(uint32_t offset_byte, uint32_t size_byte) const {
+    // no other reason we should need this function
+    assert(size_byte == 4 || size_byte == 8);
+    // offset required to be a multiple of 4
+    const uint32_t dwords_used = (offset_byte + size_byte) / 4;
+    if (dwords_used > push_data_dword_mask.size()) {
+        return false;
+    }
+    uint32_t dword_offset = offset_byte / 4;
+    if (!push_data_dword_mask[dword_offset]) {
+        return false;
+    }
+    if (size_byte == 8 && !push_data_dword_mask[dword_offset + 1]) {
+        return false;
+    }
+    return true;
 }
 
 void CommandBuffer::RecordBindResourceHeap(const Location& loc) {
