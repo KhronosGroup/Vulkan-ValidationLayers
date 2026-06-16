@@ -2143,6 +2143,10 @@ class DeviceState : public vvl::BaseDevice {
 
     vvl::unordered_map<uint32_t, std::vector<VkQueueFamilyDataGraphPropertiesARM>> queue_family_data_graph_properties;
 
+    struct OpticalFlowFormatsARM {
+        std::vector<VkFormat> input;  // VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM
+    } optical_flow_formats;
+
     // Features and properties that depend on platforms being defined
     // They will be false if platform is not defined
     bool android_external_format_resolve_null_color_attachment_prop = false;  // VK_ANDROID_external_format_resolve

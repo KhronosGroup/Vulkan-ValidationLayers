@@ -1119,6 +1119,39 @@ std::shared_ptr<Queue> DeviceState::CreateQueue(VkQueue handle, uint32_t family_
     return std::make_shared<Queue>(*this, handle, family_index, queue_index, flags, queueFamilyProperties);
 }
 
+static std::vector<VkFormat> GetOpticalFlowFormats(const VkPhysicalDevice physical_device,
+                                                   const VkDataGraphOpticalFlowImageUsageFlagsARM usage) {
+    VkQueueFamilyDataGraphPropertiesARM data_graph_props = vku::InitStructHelper();
+    strcpy(data_graph_props.operation.name, "OpticalFlow");
+
+    VkDataGraphOpticalFlowImageFormatInfoARM format_info = vku::InitStructHelper();
+    format_info.usage = usage;
+
+    uint32_t format_count = 0;
+
+    [[maybe_unused]] VkResult result = DispatchGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
+        physical_device, 0, &data_graph_props, &format_info, &format_count, nullptr);
+
+    assert(VK_SUCCESS == result);
+
+    std::vector<VkDataGraphOpticalFlowImageFormatPropertiesARM> format_properties(format_count);
+    for (auto& fmt_prop : format_properties) {
+        fmt_prop = vku::InitStructHelper();
+    }
+
+    result = DispatchGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
+        physical_device, 0, &data_graph_props, &format_info, &format_count, format_properties.data());
+
+    assert(VK_SUCCESS == result);
+
+    std::vector<VkFormat> formats(format_properties.size());
+    for (size_t i = 0; i < format_properties.size(); ++i) {
+        formats[i] = format_properties[i].format;
+    }
+
+    return formats;
+}
+
 void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {
     const auto* device_group_ci = vku::FindStructInPNextChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
     if (device_group_ci) {
@@ -1262,6 +1295,10 @@ void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const
             DispatchGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(physical_device, i, &n_properties, family_properties.data());
             queue_family_data_graph_properties.try_emplace(i, std::move(family_properties));
         }
+    }
+
+    if (IsExtEnabled(extensions.vk_arm_data_graph_optical_flow)) {
+        optical_flow_formats.input = GetOpticalFlowFormats(physical_device, VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM);
     }
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {

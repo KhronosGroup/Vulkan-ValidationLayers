@@ -140,11 +140,15 @@ struct HelperParameters {
 };
 
 class OpticalFlowHelper {
+  private:
+    static constexpr uint32_t kResourceCount = 4u;
+    HelperParameters params_ = HelperParameters();
+
   public:
     VkDataGraphPipelineOpticalFlowCreateInfoARM optical_flow_ci_ = {};
-    std::array<VkDataGraphPipelineSingleNodeConnectionARM, 4> connections_;
+    std::array<VkDataGraphPipelineSingleNodeConnectionARM, kResourceCount> connections_;
+    std::array<VkDataGraphPipelineResourceInfoImageLayoutARM, kResourceCount> image_layouts_;
     VkDataGraphPipelineSingleNodeCreateInfoARM single_node_ci_ = {};
-    VkQueueFamilyDataGraphPropertiesARM selected_properties_ = {};
     VkDataGraphOpticalFlowGridSizeFlagsARM optical_flow_grid_size_ = VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_UNKNOWN_ARM;
     DataGraphPipelineHelper dg_pipeline_;
 
@@ -154,16 +158,15 @@ class OpticalFlowHelper {
     explicit OpticalFlowHelper(VkLayerTest &test, const HelperParameters &params = HelperParameters());
 
     void QueryOpticalFlowProperties();
-    VkFormat GetOpticalFlowFormat(VkDataGraphOpticalFlowImageUsageFlagsARM usage);
+    std::vector<VkFormat> GetAllOpticalFlowFormats(VkDataGraphOpticalFlowImageUsageFlagsARM usage);
+    VkFormat GetAnyOpticalFlowFormat(VkDataGraphOpticalFlowImageUsageFlagsARM usage);
     void CreateOpticalFlow();
     void SetupImageDescriptors();
     void InitDataGraphPipeline();
+    VkResult CreateDataGraphPipeline();
 
     VkPipelineLayout PipelineLayout() const { return dg_pipeline_.pipeline_layout_; };
     const VkDescriptorSet* DescriptorSet() const { return &dg_pipeline_.descriptor_set_.get()->set_; };
-
-  private:
-    HelperParameters params_ = HelperParameters();
 };
 }  // namespace of
 }  // namespace dg
