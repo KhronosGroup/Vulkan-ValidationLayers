@@ -208,8 +208,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     // Event state tracking
     EventSignalStateMap event_signal_states;
-    EventWaitStateMap event_wait_states;
-    EventWaitCommandMap event_wait_commands;
+    EventWaitBarrierMap event_wait_barriers;
+    EventWaitCommandMap first_event_wait_commands;
     std::vector<WaitEventSubmitInfo> wait_event_submit_infos;
     std::vector<WaitEvent2SubmitInfo> wait_event2_submit_infos;
 

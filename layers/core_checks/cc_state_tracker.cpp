@@ -625,7 +625,10 @@ void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags
     signal_state = {};
     signal_state.was_reset = true;
     signal_state.last_signaling_command = loc.function;
-    event_wait_states.erase(event);
+
+    // Used for CmdWaitEvents -> (barriers) -> CmdResetEvent validation.
+    // A reset ends the current tracking interval, and the next wait starts a new one
+    event_wait_barriers.erase(event);
 }
 
 // Return the second synchronization scope in canonical form (meta stage expansion and logically later stages)
@@ -660,10 +663,8 @@ void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, Vk
     const VkPipelineStageFlags2 barriers = MakeEventBarriers(dst_stage_mask, base.GetQueueFlags());
 
     for (VkEvent event : events) {
-        event_wait_states[event] = EventWaitState{barriers, loc.function};
-
-        // Track only the first wait command for this event
-        event_wait_commands.insert({event, loc.function});
+        event_wait_barriers[event] = EventWaitBarrierState{barriers, loc.function};
+        first_event_wait_commands.insert({event, loc.function});
 
         EventSignalState* signal_state = vvl::Find(event_signal_states, event);
         if (signal_state) {
@@ -688,10 +689,8 @@ void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, Vk
 void CommandBufferSubState::RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {
     const VkPipelineStageFlags2 dst_stage_mask = sync_utils::GetExecScopes(dependency_info).dst;
     const VkPipelineStageFlags2 barriers = MakeEventBarriers(dst_stage_mask, base.GetQueueFlags());
-    event_wait_states[event] = EventWaitState{barriers, loc.function};
-
-    // Track only the first wait command for this event
-    event_wait_commands.insert({event, loc.function});
+    event_wait_barriers[event] = EventWaitBarrierState{barriers, loc.function};
+    first_event_wait_commands.insert({event, loc.function});
 
     EventSignalState* signal_state = vvl::Find(event_signal_states, event);
     const bool already_validated = signal_state && signal_state->HasKnownEffect();
@@ -710,13 +709,13 @@ void CommandBufferSubState::RecordWaitEvent2(VkEvent event, const VkDependencyIn
 }
 
 void CommandBufferSubState::UpdateEventWaitBarriers(VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask) {
-    for (auto& [event, state] : event_wait_states) {
+    for (auto& [event, state] : event_wait_barriers) {
         state.barriers |= GetNewEventBarriersFromDependency(state.barriers, src_stage_mask, dst_stage_mask, base.GetQueueFlags());
     }
 }
 
 void CommandBufferSubState::UpdateEventWaitBarriers(const VkDependencyInfo& dep_info) {
-    for (auto& [event, state] : event_wait_states) {
+    for (auto& [event, state] : event_wait_barriers) {
         VkPipelineStageFlags2 new_barriers = VK_PIPELINE_STAGE_2_NONE;
         if (dep_info.pMemoryBarriers) {
             for (uint32_t i = 0; i < dep_info.memoryBarrierCount; i++) {
@@ -1218,8 +1217,8 @@ void CommandBufferSubState::ResetCBState() {
 
     push_data_mask.clear();
     event_signal_states.clear();
-    event_wait_states.clear();
-    event_wait_commands.clear();
+    event_wait_barriers.clear();
+    first_event_wait_commands.clear();
 
     // Submit time validation
     queue_submit_functions.clear();
@@ -1292,17 +1291,18 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_c
     }
     UpdateEventSignalStates(event_signal_states, secondary_sub_state.event_signal_states);
 
-    // We don't currently merge secondary wait state precisely. Use a simplified model
-    // that clears the current wait state and keeps only the secondary's final wait state.
-    // To validate more primary/secondary interactions, this can be extended to replay
-    // secondary wait/barrier/reset commands.
-    event_wait_states.clear();
-    for (const auto& [event, wait_state] : secondary_sub_state.event_wait_states) {
-        event_wait_states[event] = wait_state;
+    // We don't currently merge secondary wait barrier state precisely.
+    // Use a simplified model that clears the current wait barrier state
+    // and keeps only the secondary's final state.
+    // NOTE: to validate more primary/secondary interactions, this can be
+    // extended to replay secondary wait/barrier/reset commands.
+    event_wait_barriers.clear();
+    for (const auto& [event, wait_barrier_state] : secondary_sub_state.event_wait_barriers) {
+        event_wait_barriers[event] = wait_barrier_state;
     }
 
-    for (const auto& [event, wait_command] : secondary_sub_state.event_wait_commands) {
-        event_wait_commands.insert({event, wait_command});
+    for (const auto& [event, wait_command] : secondary_sub_state.first_event_wait_commands) {
+        first_event_wait_commands.insert({event, wait_command});
     }
 
     for (auto& function : secondary_sub_state.queue_submit_functions) {
@@ -1383,7 +1383,7 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
         // Register pending event wait commands
         for (const auto& cb_info : submission.cb_submissions) {
             CommandBufferSubState& cb_sub_state = SubState(*cb_info.cb);
-            for (const auto& [event, wait_command] : cb_sub_state.event_wait_commands) {
+            for (const auto& [event, wait_command] : cb_sub_state.first_event_wait_commands) {
                 submission.event_wait_commands.insert({event, wait_command});
             }
         }

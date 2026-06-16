@@ -1125,7 +1125,7 @@ bool CoreChecks::ValidateResetVsWaitRace(const vvl::CommandBuffer& cb_state, VkE
                                          const Location& loc) const {
     bool skip = false;
     const auto& cb_sub_state = core::SubState(cb_state);
-    if (const EventWaitState* state = vvl::Find(cb_sub_state.event_wait_states, event)) {
+    if (const EventWaitBarrierState* state = vvl::Find(cb_sub_state.event_wait_barriers, event)) {
         VkPipelineStageFlags2 reset_exec_scope = sync_utils::ExpandPipelineStages(reset_stage_mask, cb_state.GetQueueFlags());
         reset_exec_scope = sync_utils::AddEarlierPipelineStages(reset_exec_scope);
         const bool has_barrier = (reset_stage_mask & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) ||
