@@ -1145,14 +1145,11 @@ static std::optional<VkPipelineStageFlags2> ResolveKnownSignalStageMask(VkEvent 
     return {};
 }
 
-// Return the last signaling command and does not take into acccount if it was ignored or not.
-// This is used for the set-wait version mismatch. The current validation logic considers
-// version mismtach to be an issue even if the command is ignored.
 static vvl::Func ResolveSignalingCommand(const EventSignalState* prior_state, const EventSignalState* secondary_state) {
-    if (secondary_state) {
+    if (secondary_state && secondary_state->HasKnownEffect(prior_state)) {
         return secondary_state->last_signaling_command;
     }
-    if (prior_state) {
+    if (prior_state && prior_state->HasKnownEffect() && prior_state->signaled) {
         return prior_state->last_signaling_command;
     }
     return vvl::Func::Empty;
@@ -1177,6 +1174,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBuf
     for (const WaitEventSubmitInfo& secondary_wait : secondary_cb_sub_state.wait_event_submit_infos) {
         VkPipelineStageFlags signals_src_stage_mask = VK_PIPELINE_STAGE_NONE;
         bool can_validate_stage_mask = true;
+        bool set_wait_version_mismatch = false;
         bool found_known_signals = false;
 
         for (VkEvent event : secondary_wait.wait_events) {
@@ -1189,6 +1187,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBuf
                 skip |=
                     LogError("VUID-vkCmdWaitEvents-pEvents-03847", event, secondary_cb_loc, "%s: %s was set by %s.",
                              vvl::String(secondary_wait.wait_command), FormatHandle(event).c_str(), vvl::String(signal_command));
+                set_wait_version_mismatch = true;
             }
 
             // Determine if stage mask validation is possible during execution time
@@ -1202,7 +1201,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBuf
             }
         }
         // Validate state mask
-        if (can_validate_stage_mask && secondary_wait.wait_src_stage_mask != signals_src_stage_mask) {
+        if (!set_wait_version_mismatch && can_validate_stage_mask && secondary_wait.wait_src_stage_mask != signals_src_stage_mask) {
             const LogObjectList objlist(secondary_cb_sub_state.Handle());
             if (found_known_signals) {
                 std::ostringstream ss;
@@ -1225,13 +1224,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBuf
         const EventSignalState* local_state = vvl::Find(local_signal_states, secondary_wait.wait_event);
         const EventSignalState* secondary_state = secondary_wait.signal_state.has_value() ? &*secondary_wait.signal_state : nullptr;
 
-        // Set-wait version mismatch is always reported. Do not try to determine whether signal is ignored
-        vvl::Func signaling_command = vvl::Func::Empty;
-        if (secondary_wait.signal_state.has_value() && secondary_wait.signal_state->signaled) {
-            signaling_command = secondary_wait.signal_state->last_signaling_command;
-        } else if (local_state && local_state->signaled) {
-            signaling_command = local_state->last_signaling_command;
-        }
+        const vvl::Func signaling_command = ResolveSignalingCommand(local_state, secondary_state);
 
         if (signaling_command == vvl::Func::vkCmdSetEvent) {
             skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03837", secondary_wait.wait_event, secondary_cb_loc,

@@ -1054,8 +1054,8 @@ TEST_F(NegativeEvent, StageMaskHost) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeEvent, SetWait2VersionMismatch) {
-    TEST_DESCRIPTION("CmdSetEvent followed by CmdWaitEvents2");
+TEST_F(NegativeEvent, SetWait2Mismatch) {
+    TEST_DESCRIPTION("CmdSetEvent -> CmdWaitEvents2");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
@@ -1066,6 +1066,7 @@ TEST_F(NegativeEvent, SetWait2VersionMismatch) {
     barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
     m_command_buffer.Begin();
+    m_command_buffer.ResetEvent(event);  // ensure that event is in known (unsignaled) state
     m_command_buffer.SetEvent(event);
     monitor_.SetDesiredError("VUID-vkCmdWaitEvents2-pEvents-03837");
     m_command_buffer.WaitEvent2(event, barrier);
@@ -1073,8 +1074,8 @@ TEST_F(NegativeEvent, SetWait2VersionMismatch) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, SetWait2VersionMismatchSecondary) {
-    TEST_DESCRIPTION("CmdSetEvent followed by CmdWaitEvents2");
+TEST_F(NegativeEvent, SetWait2MismatchSecondary) {
+    TEST_DESCRIPTION("CmdSetEvent -> CmdWaitEvents2");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
@@ -1090,6 +1091,7 @@ TEST_F(NegativeEvent, SetWait2VersionMismatchSecondary) {
     secondary.End();
 
     m_command_buffer.Begin();
+    m_command_buffer.ResetEvent(event);  // ensure that event is in known (unsignaled) state
     m_command_buffer.SetEvent(event);
     monitor_.SetDesiredError("VUID-vkCmdWaitEvents2-pEvents-03837");
     m_command_buffer.ExecuteCommands(secondary);
@@ -1097,8 +1099,8 @@ TEST_F(NegativeEvent, SetWait2VersionMismatchSecondary) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, SetWait2VersionMismatchSubmit) {
-    TEST_DESCRIPTION("CmdSetEvent followed by CmdWaitEvents2");
+TEST_F(NegativeEvent, SetWait2MismatchSubmit) {
+    TEST_DESCRIPTION("CmdSetEvent -> CmdWaitEvents2");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
@@ -1124,8 +1126,8 @@ TEST_F(NegativeEvent, SetWait2VersionMismatchSubmit) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeEvent, SetWaitThenWait2VersionMismatchSubmit) {
-    TEST_DESCRIPTION("CmdSetEvent followed by CmdWaitEvents, then CmdWaitEvents2");
+TEST_F(NegativeEvent, SetWaitThenWait2MismatchSubmit) {
+    TEST_DESCRIPTION("CmdSetEvent -> CmdWaitEvents -> CmdWaitEvents2");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
@@ -1152,8 +1154,8 @@ TEST_F(NegativeEvent, SetWaitThenWait2VersionMismatchSubmit) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeEvent, Set2WaitVersionMismatch) {
-    TEST_DESCRIPTION("CmdSetEvent2 followed by CmdWaitEvents");
+TEST_F(NegativeEvent, Set2WaitMismatch) {
+    TEST_DESCRIPTION("CmdSetEvent2 -> CmdWaitEvents");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
@@ -1164,6 +1166,7 @@ TEST_F(NegativeEvent, Set2WaitVersionMismatch) {
     barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
     m_command_buffer.Begin();
+    m_command_buffer.ResetEvent2(event);  // ensure the event is in known (unsignaled) state
     m_command_buffer.SetEvent2(event, barrier);
     monitor_.SetDesiredError("VUID-vkCmdWaitEvents-pEvents-03847");
     m_command_buffer.WaitEvent(event);
@@ -1171,8 +1174,8 @@ TEST_F(NegativeEvent, Set2WaitVersionMismatch) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, Set2WaitVersionMismatchSecondary) {
-    TEST_DESCRIPTION("CmdSetEvent2 followed by CmdWaitEvents");
+TEST_F(NegativeEvent, Set2WaitMismatchSecondary) {
+    TEST_DESCRIPTION("CmdSetEvent2 -> CmdWaitEvents");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
@@ -1188,6 +1191,7 @@ TEST_F(NegativeEvent, Set2WaitVersionMismatchSecondary) {
     secondary.End();
 
     m_command_buffer.Begin();
+    m_command_buffer.ResetEvent2(event);  // put event in known (unsignaled) state
     m_command_buffer.SetEvent2(event, barrier);
     monitor_.SetDesiredError("VUID-vkCmdWaitEvents-pEvents-03847");
     m_command_buffer.ExecuteCommands(secondary);
@@ -1195,8 +1199,34 @@ TEST_F(NegativeEvent, Set2WaitVersionMismatchSecondary) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, Set2WaitVersionMismatchSubmit) {
-    TEST_DESCRIPTION("CmdSetEvent2 followed by CmdWaitEvents");
+TEST_F(NegativeEvent, Set2WaitMismatchIgnoredSignalSecondary) {
+    TEST_DESCRIPTION("CmdSetEvent2 in primary -> ignored CmdSetEvent in secondary -> CmdWaitEvents in secondary");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    const vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.SetEvent(event);  // ignored signal
+    secondary.WaitEvent(event);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.ResetEvent2(event);
+    m_command_buffer.SetEvent2(event, barrier);
+    monitor_.SetDesiredError("VUID-vkCmdWaitEvents-pEvents-03847");
+    m_command_buffer.ExecuteCommands(secondary);
+    monitor_.VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, Set2WaitMismatchSubmit) {
+    TEST_DESCRIPTION("CmdSetEvent2 -> CmdWaitEvents");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
@@ -1222,8 +1252,58 @@ TEST_F(NegativeEvent, Set2WaitVersionMismatchSubmit) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeEvent, Set2Wait2ThenWaitVersionMismatchSubmit) {
-    TEST_DESCRIPTION("CmdSetEvent2 followed by CmdWaitEvents2, then CmdWaitEvents");
+TEST_F(NegativeEvent, Set2WaitMismatchIgnoredSignal) {
+    TEST_DESCRIPTION("CmdSetEvent2 -> ignored CmdSetEvent -> CmdWaitEvents");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    const vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
+    command_buffer.Begin();
+    command_buffer.ResetEvent(event);
+    command_buffer.SetEvent2(event, barrier);
+    command_buffer.SetEvent(event);  // ignored signal
+    monitor_.SetDesiredError("VUID-vkCmdWaitEvents-pEvents-03847");
+    command_buffer.WaitEvent(event);
+    monitor_.VerifyFound();
+    command_buffer.End();
+}
+
+TEST_F(NegativeEvent, Set2WaitMismatchIgnoredSignalSubmit) {
+    TEST_DESCRIPTION("CmdSetEvent2 -> ignored CmdSetEvent -> CmdWaitEvents");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    const vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
+    command_buffer.Begin();
+    command_buffer.SetEvent2(event, barrier);
+    command_buffer.End();
+
+    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
+    command_buffer2.Begin();
+    command_buffer2.SetEvent(event);  // ignored signal
+    command_buffer2.WaitEvent(event);
+    command_buffer2.End();
+
+    monitor_.SetDesiredError("VUID-vkCmdWaitEvents-pEvents-03847");
+    m_default_queue->Submit({command_buffer, command_buffer2});
+    monitor_.VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeEvent, Set2Wait2ThenWaitMismatchSubmit) {
+    TEST_DESCRIPTION("CmdSetEvent2 -> CmdWaitEvents2 -> CmdWaitEvents");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
