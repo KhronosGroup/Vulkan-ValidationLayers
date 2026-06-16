@@ -600,11 +600,19 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
     auto get_push_data = [&](uint32_t offset, uint32_t size) {
         VkDeviceSize push_index = 0;
+        ss << new_bullet_line << "pushData[" << std::dec << offset << ":" << offset + (size - 1) << "] = ";
+
         // This is caught by core validation already, but don't want to crash here
         if ((offset + size) > push_data_value.size()) {
+            ss << "UNDEFINED";
             warn_ss << new_bullet_line << "[WARNING] PUSH DATA - " << std::dec << offset << " is over the maxPushDataSize ("
                     << push_data_value.size() << ") limit";
             return push_index;  // something to not blow up other calculations too bad
+        } else if (!base.VerifyPushData(offset, size)) {
+            ss << "UNDEFINED";
+            warn_ss << new_bullet_line << "[WARNING] PUSH DATA - [" << std::dec << offset << ":" << (offset + size) - 1
+                    << "] has not been set by vkCmdPushDataEXT and the value being read is undefined";
+            return push_index;  // value being tracked in state tracking is undefined
         }
 
         if (size == 4) {
@@ -613,8 +621,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             push_index = (VkDeviceSize) * ((VkDeviceAddress*)&push_data_value[offset]);
         }
 
-        ss << new_bullet_line << "pushData[" << std::dec << offset << ":" << offset + (size - 1) << "] = 0x" << std::hex
-           << push_index;
+        ss << "0x" << std::hex << push_index;
         return push_index;
     };
 

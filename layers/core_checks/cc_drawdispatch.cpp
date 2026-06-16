@@ -2222,27 +2222,43 @@ bool CoreChecks::ValidateActionStatePushConstantDescriptorHeap(const vvl::Comman
         return skip;
     }
 
-    const auto& cb_sub_state = core::SubState(cb_state);
+    if (!cb_state.push_data_dword_mask.empty()) {
+        const uint32_t begin_byte = pc_variable.offset;
+        const uint32_t end_byte = pc_variable.offset + pc_variable.size;  // Exclusive end for easier range math
+        const uint32_t size_dword = static_cast<uint32_t>(cb_state.push_data_dword_mask.size());
 
-    const uint32_t begin = pc_variable.offset;
-    const uint32_t end = begin + pc_variable.size - 1;
+        const uint32_t begin_dword = begin_byte / 4;
+        const uint32_t end_dword = (end_byte + 3) / 4;  // Round up to cover the partial last dword
 
-    if (!cb_sub_state.push_data_mask.empty()) {
-        const uint32_t size = static_cast<uint32_t>(cb_sub_state.push_data_mask.size());
-        // Find the first range of bytes which were not set
-        uint32_t unset_start = size;
-        uint32_t unset_end = end;
-        for (uint32_t i = begin; i <= end; i++) {
-            if (i >= size || !cb_sub_state.push_data_mask[i]) {
-                if (unset_start == size) {
-                    unset_start = i;
+        uint32_t unset_start = spirv::kInvalidValue;
+        uint32_t unset_end = spirv::kInvalidValue;
+
+        bool found_error = false;
+        for (uint32_t i = begin_dword; i < end_dword; ++i) {
+            const bool is_not_set = (i >= size_dword) || !cb_state.push_data_dword_mask[i];
+
+            if (is_not_set) {
+                const uint32_t dword_start_byte = i * 4;
+                const uint32_t dword_end_byte = dword_start_byte + 4;
+
+                // Find the overlapping byte range between this unmasked DWORD and the variable
+                const uint32_t overlap_start = std::max(begin_byte, dword_start_byte);
+                const uint32_t overlap_end = std::min(end_byte, dword_end_byte);
+
+                // guard if the user does something like offset = 3, size = 1
+                if (overlap_start < overlap_end) {
+                    if (!found_error) {
+                        // first bad dword
+                        unset_start = overlap_start;
+                        found_error = true;
+                    }
+                    unset_end = overlap_end;
                 }
-            } else if (unset_start != size) {
-                unset_end = i - 1;
-                break;
+            } else if (found_error) {
+                break;  // found unset_end
             }
         }
-        if (unset_start != size) {
+        if (found_error) {
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11376),
                              cb_state.GetObjectList(bind_point), loc,
                              "shader %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32

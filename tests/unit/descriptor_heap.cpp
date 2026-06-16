@@ -4689,35 +4689,22 @@ TEST_F(NegativeDescriptorHeap, PushDataRange) {
 
     float src_data[4] = {1.0f, 2.0f, 3.0f, 4.0f};
 
-    VkPushDataInfoEXT push_data_info1 = vku::InitStructHelper();
-    push_data_info1.offset = 0u;
-    push_data_info1.data.size = 8u;
-    push_data_info1.data.address = src_data;
-
-    VkPushDataInfoEXT push_data_info2 = vku::InitStructHelper();
-    push_data_info2.offset = 12u;
-    push_data_info2.data.size = 4u;
-    push_data_info2.data.address = src_data;
-
     // Set from 0-7 and 12-15, unset from 8-11
     m_command_buffer.Begin();
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info1);
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info2);
+    m_command_buffer.PushData(0, 8, src_data);
+    m_command_buffer.PushData(12, 4, src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
-
-    push_data_info1.offset = 4u;
-    push_data_info1.data.size = 16u;
 
     // Set from 4-19, unset from 0-3
     m_command_buffer.Begin();
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info1);
+    m_command_buffer.PushData(4, 16, src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -4725,21 +4712,12 @@ TEST_F(NegativeDescriptorHeap, PushDataRange) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    push_data_info1.offset = 0u;
-    push_data_info1.data.size = 8u;
-    push_data_info2.offset = 4u;
-    push_data_info2.data.size = 8u;
-    VkPushDataInfoEXT push_data_info3 = vku::InitStructHelper();
-    push_data_info3.offset = 8u;
-    push_data_info3.data.size = 8u;
-    push_data_info3.data.address = src_data;
-
     // Set multiple times with overlap
     m_command_buffer.Begin();
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info1);
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info2);
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info3);
+    m_command_buffer.PushData(0, 8, src_data);
+    m_command_buffer.PushData(4, 8, src_data);
+    m_command_buffer.PushData(8, 8, src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -4755,26 +4733,78 @@ TEST_F(NegativeDescriptorHeap, PushDataRange) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    push_data_info1.offset = 0u;
-    push_data_info1.data.size = 16u;
-
     const std::vector<VkPushConstantRange> pc_range = {{VK_SHADER_STAGE_COMPUTE_BIT, 0, 16}};
     vkt::PipelineLayout pipeline_layout(*m_device, {}, pc_range);
 
     // Full range set, invalidated by vkCmdPushConstants, only part of the range set again
     m_command_buffer.Begin();
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info1);
+    m_command_buffer.PushData(0, 16, src_data);
     vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0u, 16u, src_data);
-    push_data_info1.data.size = 8u;
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
-    vk::CmdPushDataEXT(m_command_buffer, &push_data_info1);
+    m_command_buffer.PushData(0, 8, src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(NegativeDescriptorHeap, PushDataRangeNonDword) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    AddRequiredFeature(vkt::Feature::storagePushConstant8);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    CreateResourceHeap(heap_props.bufferDescriptorSize);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_int8 : enable
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(push_constant) uniform PushConstant {
+            layout(offset = 4) uint8_t b[5];
+        };
+        void main() {
+            a = uint(b[0]);
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    char const* cs_source2 = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_int8 : enable
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(push_constant) uniform PushConstant {
+            layout(offset = 3) uint8_t b[5];
+        };
+        void main() {
+            a = uint(b[1]);
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    uint32_t data = 0;
+    m_command_buffer.PushData(4, 4, &data);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe2);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeDescriptorHeap, MaxPushDataSizeStatic) {

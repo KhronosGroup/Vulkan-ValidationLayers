@@ -511,6 +511,10 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     PushConstantRangesId push_constant_ranges_layout;
 
+    // VK_EXT_descriptor_heap - Mark which ranges vkCmdPushDataKHR has been set
+    // Note - this is one boolean per 32-bit dword as VkPushDataInfoEXT offset/size are required to be multiple of 4
+    std::vector<bool> push_data_dword_mask{};
+
     // Video coding related state tracking
     std::shared_ptr<vvl::VideoSession> bound_video_session;
     std::shared_ptr<vvl::VideoSessionParameters> bound_video_session_parameters;
@@ -744,6 +748,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordPushConstants(const vvl::PipelineLayout& pipeline_layout_state, VkShaderStageFlags stage_flags, uint32_t offset,
                              uint32_t size, const void *values);
     void RecordPushData(const VkPushDataInfoEXT& push_data_info, const Location& loc);
+    bool VerifyPushData(uint32_t offset, uint32_t size) const;
 
     void RecordBindResourceHeap(const Location& loc);
     void RecordBindSamplerHeap(const Location& loc);
