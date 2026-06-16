@@ -3651,3 +3651,52 @@ TEST_F(PositiveWsi, NullTimingsInfo) {
     m_default_queue->Present(swapchain, image_index, render_semaphore, &present_timings_info);
     vk::DeviceWaitIdle(*m_device);
 }
+
+TEST_F(PositiveWsi, NullPresentIds) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_PRESENT_ID_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentId);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
+    const VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, surface_info);
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto images = swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
+    SetPresentImageLayout(images[image_index]);
+
+    VkPresentIdKHR present_id = vku::InitStructHelper();
+    present_id.swapchainCount = 1u;
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_id);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveWsi, NullPresentIds2) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_PRESENT_ID_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentId2);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, surface_info);
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto images = swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
+    SetPresentImageLayout(images[image_index]);
+
+    VkPresentId2KHR present_id2 = vku::InitStructHelper();
+    present_id2.swapchainCount = 1u;
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_id2);
+    m_default_queue->Wait();
+}
