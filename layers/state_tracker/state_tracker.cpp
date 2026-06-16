@@ -4638,9 +4638,9 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         uint64_t present_id = 0;
         // TODO - need to know what happens if both are included
         // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4317
-        if (present_id_info_2 && i < present_id_info_2->swapchainCount) {
+        if (present_id_info_2 && i < present_id_info_2->swapchainCount && present_id_info_2->pPresentIds) {
             present_id = present_id_info_2->pPresentIds[i];
-        } else if (present_id_info && i < present_id_info->swapchainCount) {
+        } else if (present_id_info && i < present_id_info->swapchainCount && present_id_info->pPresentIds) {
             present_id = present_id_info->pPresentIds[i];
         }
 

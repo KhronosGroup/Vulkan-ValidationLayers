@@ -933,7 +933,8 @@ bool CoreChecks::ValidatePresentId(VkQueue queue, const VkPresentInfoKHR& presen
 
         auto swapchain_state = Get<vvl::Swapchain>(present_info.pSwapchains[i]);
         ASSERT_AND_CONTINUE(swapchain_state);
-        if ((present_id_info.pPresentIds[i] != 0) && (present_id_info.pPresentIds[i] <= swapchain_state->max_present_id)) {
+        if (present_id_info.pPresentIds && (present_id_info.pPresentIds[i] != 0) &&
+            (present_id_info.pPresentIds[i] <= swapchain_state->max_present_id)) {
             const LogObjectList objlist(queue, present_info.pSwapchains[i]);
             skip |= LogError("VUID-VkPresentIdKHR-presentIds-04999", objlist,
                              present_info_loc.pNext(Struct::VkPresentIdKHR, Field::pPresentIds, i),
@@ -960,6 +961,18 @@ bool CoreChecks::ValidatePresentId2(VkQueue queue, const VkPresentInfoKHR& prese
     }
 
     for (uint32_t i = 0; i < present_id2_info.swapchainCount; i++) {
+        const auto swapchain_state = Get<vvl::Swapchain>(present_info.pSwapchains[i]);
+        if ((swapchain_state->create_info.flags & VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR) == 0) {
+            const LogObjectList objlist(queue, present_info.pSwapchains[i]);
+            skip |= LogError("VUID-VkPresentId2KHR-None-10820", objlist, present_info_loc.dot(Field::pSwapchain, i),
+                             "was created without VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR\nCreate flags were %s",
+                             string_VkSwapchainCreateFlagsKHR(swapchain_state->create_info.flags).c_str());
+        }
+
+        if (!present_id2_info.pPresentIds) {
+            continue;
+        }
+
         if (!enabled_features.presentId2 && present_id2_info.pPresentIds[i] != 0) {
             skip |= LogError(
                 "VUID-VkPresentInfoKHR-pNext-10821", queue, present_info_loc.pNext(Struct::VkPresentId2KHR, Field::pPresentIds, i),
@@ -967,7 +980,6 @@ bool CoreChecks::ValidatePresentId2(VkQueue queue, const VkPresentInfoKHR& prese
             break;
         }
 
-        const auto swapchain_state = Get<vvl::Swapchain>(present_info.pSwapchains[i]);
         VkSurfaceCapabilitiesPresentId2KHR present_id_2_capabilities = vku::InitStructHelper();
         VkSurfaceCapabilities2KHR capabilities2 = vku::InitStructHelper(&present_id_2_capabilities);
         VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
@@ -993,13 +1005,6 @@ bool CoreChecks::ValidatePresentId2(VkQueue queue, const VkPresentInfoKHR& prese
                              "passed for the "
                              "associated pSwapchains entry",
                              present_id2_info.pPresentIds[i], swapchain_state->max_present_id);
-        }
-
-        if ((swapchain_state->create_info.flags & VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR) == 0) {
-            const LogObjectList objlist(queue, present_info.pSwapchains[i]);
-            skip |= LogError("VUID-VkPresentId2KHR-None-10820", objlist, present_info_loc.dot(Field::pSwapchain, i),
-                             "was created without VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR\nCreate flags were %s",
-                             string_VkSwapchainCreateFlagsKHR(swapchain_state->create_info.flags).c_str());
         }
     }
 
