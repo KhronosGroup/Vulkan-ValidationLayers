@@ -144,6 +144,77 @@ uint32_t DescriptorHeapPass::GetMapping(const AccessPath& access_path, bool is_s
     return kMappingIndexInvalid;
 }
 
+// We use to copy the 256-ish bytes for PushData at every draw/dispatch into an BDA incase we needed to access it.
+// Instead it would be faster to just use the "actual" push data, as we are in the shader already!
+// This involves some "fun" SPIR-V!
+// Case 1: They don't use push constants in their shader, so we just add a layout(push_constant) for them.
+// Case 2: They do use push constants, we can't break VU 06673 so we use Untyped pointers and type punning.
+//
+// Regardless, we get the "offset" into an array that looks like uint32_t[maxPushDataSize / 4]
+uint32_t DescriptorHeapPass::GetInternalPushData(BasicBlock& block, InstructionIt* inst_it, uint32_t offset) {
+    const Type& uint32_type = type_manager_.GetTypeInt(32, 0);
+
+    // Only set up the pre-function SPIR-V the first time we need the push data
+    if (pc.uint_pointer_id == 0) {
+        // decide if case 1 or 2
+        const Variable* user_pc_var = type_manager_.FindPushConstantVariable();
+
+        // TODO - currently this will trip 11376
+        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4869
+        uint32_t array_size = module_.settings_.max_push_data_size / 4;
+        const Constant& array_size_const = type_manager_.CreateConstantUInt32(array_size);
+        const Type& array_type = type_manager_.GetTypeArray(uint32_type, array_size_const);
+        pc.array_id = array_type.Id();
+        module_.AddDecoration(pc.array_id, spv::DecorationArrayStride, {4});
+
+        if (user_pc_var) {
+            pc.user_pc_var_id = user_pc_var->Id();
+            if (!module_.HasCapability(spv::CapabilityUntypedPointersKHR)) {
+                module_.AddCapability(spv::CapabilityUntypedPointersKHR);
+                module_.AddExtension("SPV_KHR_untyped_pointers");
+            }
+
+            const Type& pc_untyped_pointer = type_manager_.GetTypeUntypedPointer(spv::StorageClassPushConstant);
+            pc.uint_pointer_id = pc_untyped_pointer.Id();
+        } else {
+            const uint32_t struct_type_id = module_.TakeNextId();
+            auto new_struct_inst = std::make_unique<Instruction>(3, spv::OpTypeStruct);
+            new_struct_inst->Fill({struct_type_id, pc.array_id});
+            const Type& struct_type = type_manager_.AddType(std::move(new_struct_inst), SpvType::kStruct);
+
+            module_.AddDecoration(struct_type_id, spv::DecorationBlock, {});
+            module_.AddMemberDecoration(struct_type_id, 0, spv::DecorationOffset, {0});
+
+            const Type& pc_array_pointer = type_manager_.GetTypePointer(spv::StorageClassPushConstant, struct_type);
+
+            const uint32_t new_pc_var_id = module_.TakeNextId();
+            auto new_inst = std::make_unique<Instruction>(4, spv::OpVariable);
+            new_inst->Fill({pc_array_pointer.Id(), new_pc_var_id, spv::StorageClassPushConstant});
+            const Variable& pc_variable = type_manager_.AddVariable(std::move(new_inst), pc_array_pointer);
+            pc.variable_id = pc_variable.Id();
+            module_.AddInterfaceVariables(pc.variable_id, spv::StorageClassPushConstant);
+
+            const Type& pc_uint_pointer = type_manager_.GetTypePointer(spv::StorageClassPushConstant, uint32_type);
+            pc.uint_pointer_id = pc_uint_pointer.Id();
+        }
+    }
+
+    uint32_t access_chain_id = module_.TakeNextId();
+    const uint32_t offset_id = type_manager_.GetConstantUInt32(offset).Id();
+    if (pc.user_pc_var_id != 0) {
+        block.CreateInstruction(spv::OpUntypedAccessChainKHR,
+                                {pc.uint_pointer_id, access_chain_id, pc.array_id, pc.user_pc_var_id, offset_id}, inst_it);
+    } else {
+        const uint32_t struct_index_id = type_manager_.GetConstantZeroUint32().Id();
+        block.CreateInstruction(spv::OpAccessChain,
+                                {pc.uint_pointer_id, access_chain_id, pc.variable_id, struct_index_id, offset_id}, inst_it);
+    }
+
+    uint32_t internal_pc_id = module_.TakeNextId();
+    block.CreateInstruction(spv::OpLoad, {uint32_type.Id(), internal_pc_id, access_chain_id}, inst_it);
+    return internal_pc_id;
+}
+
 uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
                                                 bool is_seperate_sampler) {
     const Variable& descriptor_variable = is_seperate_sampler ? *meta.access_path.sampler_variable : *meta.access_path.variable;
@@ -270,15 +341,16 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
 
         const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.heapArrayStride);
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
-        // VU enforces pushOffset to multiple of 4, and the GLSL is using a uint array
-        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
         const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.heapIndexStride).Id();
         const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.heapArrayStride).Id();
+
+        // VU enforces pushOffset to multiple of 4
+        const uint32_t push_index_id = GetInternalPushData(block, inst_it, map_data.pushOffset / 4);
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_PUSH_INDEX);
 
         block.CreateInstruction(spv::OpFunctionCall,
-                                {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id,
+                                {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_index_id,
                                  heap_index_stride_id, heap_array_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id},
                                 inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
@@ -287,70 +359,80 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
 
         const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.heapArrayStride);
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
-        // VU enforces pushOffset to multiple of 8, and the GLSL is using a uint array
-        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
         const uint32_t address_offset_id = type_manager_.GetConstantUInt32(map_data.addressOffset / 4).Id();
         const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.heapIndexStride).Id();
         const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.heapArrayStride).Id();
+
+        // VU enforces pushOffset to multiple of 8
+        const uint32_t push_offset = map_data.pushOffset / 4;
+        const uint32_t indirect_address_hi = GetInternalPushData(block, inst_it, push_offset);
+        const uint32_t indirect_address_low = GetInternalPushData(block, inst_it, push_offset + 1);
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_INDIRECT_INDEX);
 
         block.CreateInstruction(
             spv::OpFunctionCall,
-            {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id, address_offset_id,
-             heap_index_stride_id, heap_array_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id},
+            {bool_type, function_result, function_def, inst_position_id, heap_offset_id, indirect_address_hi, indirect_address_low,
+             address_offset_id, heap_index_stride_id, heap_array_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id},
             inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
         const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data = mapping->sourceData.indirectIndexArray;
         has_embedded_sampler = map_data.pEmbeddedSampler != nullptr;
 
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
-        // VU enforces pushOffset to multiple of 8, and the GLSL is using a uint array
-        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
         const uint32_t frist_index_offset = (map_data.addressOffset / 4) + binding_offset;
         const uint32_t address_offset_id = type_manager_.GetConstantUInt32(frist_index_offset).Id();
         const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.heapIndexStride).Id();
 
+        // VU enforces pushOffset to multiple of 8
+        const uint32_t push_offset = map_data.pushOffset / 4;
+        const uint32_t indirect_address_hi = GetInternalPushData(block, inst_it, push_offset);
+        const uint32_t indirect_address_low = GetInternalPushData(block, inst_it, push_offset + 1);
+
         const uint32_t function_def = GetLinkFunctionId(MAPPING_INDIRECT_INDEX_ARRAY);
 
-        block.CreateInstruction(spv::OpFunctionCall,
-                                {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id,
-                                 address_offset_id, heap_index_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id},
-                                inst_it);
+        block.CreateInstruction(
+            spv::OpFunctionCall,
+            {bool_type, function_result, function_def, inst_position_id, heap_offset_id, indirect_address_hi, indirect_address_low,
+             address_offset_id, heap_index_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id},
+            inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
         const VkDescriptorMappingSourceHeapDataEXT& map_data = mapping->sourceData.heapData;
 
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
-        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
+
+        // VU enforces pushOffset to multiple of 4
+        const uint32_t push_index_id = GetInternalPushData(block, inst_it, map_data.pushOffset / 4);
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_RESOURCE_HEAP_DATA);
 
         block.CreateInstruction(
             spv::OpFunctionCall,
-            {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id, desc_encoding_id},
-            inst_it);
+            {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_index_id, desc_encoding_id}, inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) {
         // TODO - is there any GPU-AV needed for this mapping?
         const uint32_t function_def = GetLinkFunctionId(MAPPING_PUSH_DATA);
         block.CreateInstruction(spv::OpFunctionCall, {bool_type, function_result, function_def}, inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT) {
-        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(mapping->sourceData.pushAddressOffset / 4).Id();
-
         const bool is_uniform = meta.access_path.descriptor_type == gpuav::descriptor::TYPE_UNIFORM_BUFFER;
         const uint32_t buffer_alignment =
             is_uniform ? module_.settings_.min_uniform_buffer_alignment : module_.settings_.min_storage_buffer_alignment;
         const uint32_t buffer_alignment_id = type_manager_.GetConstantUInt32(buffer_alignment).Id();
 
+        // VU enforces pushAddressOffset to multiple of 8
+        const uint32_t push_offset = mapping->sourceData.pushAddressOffset / 4;
+        const uint32_t indirect_address_hi = GetInternalPushData(block, inst_it, push_offset);
+        const uint32_t indirect_address_low = GetInternalPushData(block, inst_it, push_offset + 1);
+
         const uint32_t function_def = GetLinkFunctionId(MAPPING_PUSH_ADDRESS);
 
-        block.CreateInstruction(
-            spv::OpFunctionCall,
-            {bool_type, function_result, function_def, inst_position_id, push_offset_id, buffer_alignment_id, desc_encoding_id},
-            inst_it);
+        block.CreateInstruction(spv::OpFunctionCall,
+                                {bool_type, function_result, function_def, inst_position_id, indirect_address_hi,
+                                 indirect_address_low, buffer_alignment_id, desc_encoding_id},
+                                inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
         const VkDescriptorMappingSourceIndirectAddressEXT& map_data = mapping->sourceData.indirectAddress;
 
-        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
         const uint32_t address_offset_id = type_manager_.GetConstantUInt32(map_data.addressOffset / 4).Id();
 
         const bool is_uniform = meta.access_path.descriptor_type == gpuav::descriptor::TYPE_UNIFORM_BUFFER;
@@ -358,11 +440,16 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
             is_uniform ? module_.settings_.min_uniform_buffer_alignment : module_.settings_.min_storage_buffer_alignment;
         const uint32_t buffer_alignment_id = type_manager_.GetConstantUInt32(buffer_alignment).Id();
 
+        // VU enforces pushOffst to multiple of 8
+        const uint32_t push_offset = map_data.pushOffset / 4;
+        const uint32_t indirect_address_hi = GetInternalPushData(block, inst_it, push_offset);
+        const uint32_t indirect_address_low = GetInternalPushData(block, inst_it, push_offset + 1);
+
         const uint32_t function_def = GetLinkFunctionId(MAPPING_INDIRECT_ADDRESS);
 
         block.CreateInstruction(spv::OpFunctionCall,
-                                {bool_type, function_result, function_def, inst_position_id, push_offset_id, address_offset_id,
-                                 buffer_alignment_id, desc_encoding_id},
+                                {bool_type, function_result, function_def, inst_position_id, indirect_address_hi,
+                                 indirect_address_low, address_offset_id, buffer_alignment_id, desc_encoding_id},
                                 inst_it);
 
     } else {

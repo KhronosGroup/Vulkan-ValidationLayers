@@ -125,6 +125,7 @@ struct DeviceSettings {
     uint32_t descriptor_alignment_sampler;
     uint32_t descriptor_alignment_image;
     uint32_t descriptor_alignment_buffer;
+    uint32_t max_push_data_size;
 
     const DeviceFeatures* enabled_features;
 };

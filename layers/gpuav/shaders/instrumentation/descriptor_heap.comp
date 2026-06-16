@@ -35,7 +35,6 @@ layout(buffer_reference, scalar) buffer IndirectBuffer {
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorHeap, scalar) buffer DescriptorHeapEncoding {
     BoundHeapInfo bound_resource_heap;
     BoundHeapInfo bound_sampler_heap;
-    uint push_data[];
 } gpuav;
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT
@@ -72,10 +71,9 @@ bool inst_heap_mapping_constant_offset(const uint inst_offset, const uint heap_o
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT
-bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
+bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset, const uint push_index, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
     uint error = 0;
 
-    uint push_index = gpuav.push_data[push_offset];
     uint offset = heap_offset + (push_index * heap_index_stride) + (desc_index * heap_array_stride);
 
     BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
@@ -106,12 +104,12 @@ bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT
-bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint address_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
+bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_offset, const uint indirect_address_hi, const uint indirect_address_low, const uint address_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
     uint error = 0;
     uint param_0 = 0;
 
     // will generate [OpCompositeConstruct, OpBitcast, OpConvertUToPtr] which should be fine as a compromise keeping the push_data in a uint array
-    uint64_t indirect_address = packUint2x32(uvec2(gpuav.push_data[push_offset], gpuav.push_data[push_offset + 1]));
+    uint64_t indirect_address = packUint2x32(uvec2(indirect_address_hi, indirect_address_low));
     if ((indirect_address & 3) != 0) {
         error = kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment;
     } else if (indirect_address == 0) {
@@ -155,12 +153,12 @@ bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_of
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT
-bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint address_offset, const uint heap_index_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
+bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint heap_offset, const uint indirect_address_hi, const uint indirect_address_low, const uint address_offset, const uint heap_index_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
     uint error = 0;
     uint param_0 = 0;
 
     // will generate [OpCompositeConstruct, OpBitcast, OpConvertUToPtr] which should be fine as a compromise keeping the push_data in a uint array
-    uint64_t indirect_address = packUint2x32(uvec2(gpuav.push_data[push_offset], gpuav.push_data[push_offset + 1]));
+    uint64_t indirect_address = packUint2x32(uvec2(indirect_address_hi, indirect_address_low));
     IndirectBuffer indirect_buffer = IndirectBuffer(indirect_address);
     if ((indirect_address & 3) != 0) {
         error = kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment;
@@ -204,10 +202,9 @@ bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint h
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT
-bool inst_heap_mapping_resource_heap_data(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint desc_encoding) {
+bool inst_heap_mapping_resource_heap_data(const uint inst_offset, const uint heap_offset, const uint push_index, const uint desc_encoding) {
     uint error = 0;
 
-    uint push_index = gpuav.push_data[push_offset];
     uint offset = heap_offset + push_index;
 
     BoundHeapInfo bound_heap_info = gpuav.bound_resource_heap;
@@ -240,12 +237,12 @@ bool inst_heap_mapping_push_data() {
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT
-bool inst_heap_mapping_push_address(const uint inst_offset, const uint push_offset, const uint buffer_alignment, const uint desc_encoding) {
+bool inst_heap_mapping_push_address(const uint inst_offset, const uint indirect_address_hi, const uint indirect_address_low, const uint buffer_alignment, const uint desc_encoding) {
     uint error = 0;
     uint param_0 = 0;
     uint param_1 = 0;
 
-    uint64_t indirect_address = packUint2x32(uvec2(gpuav.push_data[push_offset], gpuav.push_data[push_offset + 1]));
+    uint64_t indirect_address = packUint2x32(uvec2(indirect_address_hi, indirect_address_low));
     if ((indirect_address & (buffer_alignment - 1)) != 0) {
         error = kErrorSubCode_DescriptorHeap_AddressBufferAlignment;
         param_0 = uint(indirect_address);
@@ -270,12 +267,12 @@ bool inst_heap_mapping_push_address(const uint inst_offset, const uint push_offs
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT
-bool inst_heap_mapping_indirect_address(const uint inst_offset, const uint push_offset, const uint address_offset, const uint buffer_alignment, const uint desc_encoding) {
+bool inst_heap_mapping_indirect_address(const uint inst_offset, const uint indirect_address_hi, const uint indirect_address_low, const uint address_offset, const uint buffer_alignment, const uint desc_encoding) {
     uint error = 0;
     uint param_0 = 0;
     uint param_1 = 0;
 
-    uint64_t indirect_address = packUint2x32(uvec2(gpuav.push_data[push_offset], gpuav.push_data[push_offset + 1]));
+    uint64_t indirect_address = packUint2x32(uvec2(indirect_address_hi, indirect_address_low));
     if ((indirect_address & 7) != 0) {
         error = kErrorSubCode_DescriptorHeap_IndirectAddressPushAlignment;
     } else if (indirect_address == 0) {

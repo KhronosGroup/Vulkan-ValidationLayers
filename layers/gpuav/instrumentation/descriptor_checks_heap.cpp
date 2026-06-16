@@ -368,31 +368,27 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
         return inst_error_logger;
     });
 
-    cb.on_instrumentation_common_desc_update_functions.emplace_back([&gpuav](CommandBufferSubState& cb, const LastBound& last_bound,
-                                                                             const Location&,
-                                                                             CommonDescriptorUpdate& out_update) mutable {
-        const uint32_t bound_heap_info_size = sizeof(VkDeviceAddress) * 2;
-        uint32_t buffer_size = bound_heap_info_size + (uint32_t)gpuav.phys_dev_ext_props.descriptor_heap_props.maxPushDataSize;
-        vko::BufferRange buffer_range = cb.gpu_resources_manager.GetHostCoherentBufferRange(buffer_size);
+    cb.on_instrumentation_common_desc_update_functions.emplace_back(
+        [](CommandBufferSubState& cb, const LastBound& last_bound, const Location&, CommonDescriptorUpdate& out_update) mutable {
+            const uint32_t bound_heap_info_size = sizeof(VkDeviceAddress) * 2;
+            uint32_t buffer_size = bound_heap_info_size;
+            vko::BufferRange buffer_range = cb.gpu_resources_manager.GetHostCoherentBufferRange(buffer_size);
 
-        VkDeviceAddress* bound_heap_info = (VkDeviceAddress*)buffer_range.offset_mapped_ptr;
+            VkDeviceAddress* bound_heap_info = (VkDeviceAddress*)buffer_range.offset_mapped_ptr;
 
-        // If these are zero that is valid, core validation gives error if heap is not set when needed
-        DescriptorChecksHeapCbState* dc_cb_state = cb.shared_resources_cache.TryGet<DescriptorChecksHeapCbState>();
-        if (dc_cb_state) {
-            bound_heap_info[0] = dc_cb_state->last_bound_heap_info_resource.offset_address;
-            bound_heap_info[1] = dc_cb_state->last_bound_heap_info_sampler.offset_address;
-        }
+            // If these are zero that is valid, core validation gives error if heap is not set when needed
+            DescriptorChecksHeapCbState* dc_cb_state = cb.shared_resources_cache.TryGet<DescriptorChecksHeapCbState>();
+            if (dc_cb_state) {
+                bound_heap_info[0] = dc_cb_state->last_bound_heap_info_resource.offset_address;
+                bound_heap_info[1] = dc_cb_state->last_bound_heap_info_sampler.offset_address;
+            }
 
-        uint8_t* gpu_push_data_ptr = ((uint8_t*)buffer_range.offset_mapped_ptr) + bound_heap_info_size;
-        memcpy(gpu_push_data_ptr, cb.push_data_value.data(), cb.push_data_value.size());
-
-        out_update.buffer = buffer_range.buffer;
-        out_update.offset = buffer_range.offset;
-        out_update.range = buffer_range.size;
-        out_update.address = buffer_range.offset_address;
-        out_update.binding = glsl::kBindingInstDescriptorHeap;
-    });
+            out_update.buffer = buffer_range.buffer;
+            out_update.offset = buffer_range.offset;
+            out_update.range = buffer_range.size;
+            out_update.address = buffer_range.offset_address;
+            out_update.binding = glsl::kBindingInstDescriptorHeap;
+        });
 }
 
 }  // namespace gpuav
