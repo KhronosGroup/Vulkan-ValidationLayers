@@ -443,6 +443,8 @@ class Pipeline {
     void AddSlangClosestHitShader(const char* slang, const char* entry_point);
     void AddLibrary(const Pipeline& library);
     void AddDynamicState(VkDynamicState dynamic_state);
+    // Will be the same size for *all* shaders
+    void SetShaderRecordSize(uint32_t shader_record_size);
 
     // Build
     // -----
@@ -450,6 +452,13 @@ class Pipeline {
     void BuildPipeline();
     void BuildSbt();
     void DeferBuild();
+
+    // Updates
+    // -------
+    // (SBT needs to be built)
+    void UpdateRayGenShaderRecord(uint32_t ray_gen_i, void* data, size_t size);
+    void UpdateMissShaderRecord(uint32_t miss_i, void* data, size_t size);
+    void UpdateHitShaderRecord(uint32_t hit_i, void* data, size_t size);
 
     // Get
     // ---
@@ -503,6 +512,7 @@ class Pipeline {
     vkt::Pipeline rt_pipeline_{};
     VkDeferredOperationKHR deferred_op_ = VK_NULL_HANDLE;
     vkt::Buffer sbt_buffer_{};
+    uint32_t shader_record_size_ = 0;
     VkRayTracingPipelineInterfaceCreateInfoKHR rt_pipeline_interface_info_{};
     VkPipelineLibraryCreateInfoKHR pipeline_lib_info_{};
     std::vector<const Pipeline*> libraries_{};

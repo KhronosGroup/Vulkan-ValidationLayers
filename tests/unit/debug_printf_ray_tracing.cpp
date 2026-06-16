@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
- * Copyright (c) 2020-2025 Google, Inc.
+ * Copyright (c) 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2020-2026 Valve Corporation
+ * Copyright (c) 2020-2026 LunarG, Inc.
+ * Copyright (c) 2020-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,6 +88,63 @@ TEST_F(NegativeDebugPrintfRayTracing, Raygen) {
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
     m_command_buffer.End();
     m_errorMonitor->SetDesiredInfo("In Raygen");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintfRayTracing, RaygenShaderRecord) {
+    TEST_DESCRIPTION("Test debug printf in raygen shader. Use shader records.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+
+    const char* ray_gen = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        #extension GL_EXT_debug_printf : enable
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(location = 0) rayPayloadEXT vec3 hit;
+
+        layout(shaderRecordEXT) buffer sbt {
+            uvec3 sbt_vec;
+        };
+
+        void main() {
+            debugPrintfEXT("shader record: %v3u\n", sbt_vec);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
+        }
+    )glsl";
+    pipeline.SetGlslRayGenShader(ray_gen);
+    pipeline.SetShaderRecordSize(3 * sizeof(uint32_t));
+    pipeline.AddGlslMissShader(kRayTracingPayloadMinimalGlsl);
+    pipeline.AddGlslClosestHitShader(kRayTracingPayloadMinimalGlsl);
+
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.CreateDescriptorSet();
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.GetDescriptorSet().UpdateDescriptorSets();
+
+    pipeline.Build();
+
+    uint32_t vec[3] = {0, 2, 4};
+    pipeline.UpdateRayGenShaderRecord(0, vec, 3 * sizeof(uint32_t));
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+    vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
+    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredInfo("shader record: 0, 2, 4");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -254,6 +311,192 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
         for (uint32_t i = 0; i < 2 * ray_gen_rays_count; ++i) {
             std::string msg = "In Closest Hit " + std::to_string(frame * 2 * ray_gen_rays_count + i);
             m_errorMonitor->SetDesiredInfo(msg.c_str());
+        }
+
+        m_default_queue->SubmitAndWait(m_command_buffer);
+
+        m_errorMonitor->VerifyFound();
+    }
+
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
+    ASSERT_EQ(debug_buffer_ptr[0], ray_gen_rays_count * frames_count);
+    ASSERT_EQ(debug_buffer_ptr[1], 3 * ray_gen_rays_count * frames_count);
+    ASSERT_EQ(debug_buffer_ptr[2], 2 * ray_gen_rays_count * frames_count);
+}
+
+TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShaderShaderRecord) {
+    TEST_DESCRIPTION("Test debug printf in raygen, miss and closest hit shaders. Use shader records.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitFrameworkWithPrintfBufferSize(1024 * 1024));
+    RETURN_IF_SKIP(InitState());
+
+    // #ARNO_TODO: For clarity, here geometry should be set explicitly, as of now the ray hitting or not
+    // implicitly depends on the default triangle position.
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+
+    // Build Bottom Level Acceleration Structure
+    m_command_buffer.Begin();
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+
+    // Build Top Level Acceleration Structure
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas.GetDstAS());
+    m_command_buffer.Begin();
+    tlas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+
+    // Buffer used to count invocations for the 3 shader types
+    vkt::Buffer debug_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                             kHostVisibleMemProps);
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, debug_buffer, 0, debug_buffer.CreateInfo().size, 0);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+
+    const char* ray_gen = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        #extension GL_EXT_debug_printf : enable
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 0) buffer DbgBuffer {
+          uint debug_buffer[];
+        };
+
+        layout(location = 0) rayPayloadEXT vec3 hit;
+
+        void main() {
+            uint last = atomicAdd(debug_buffer[0], 1);
+            debugPrintfEXT("In Raygen %u", last);
+
+            vec3 ray_origin = vec3(0,0,-50);
+            vec3 ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,-50);
+            ray_direction = vec3(0,0,-1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,50);
+            ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            ray_origin = vec3(0,0,50);
+            ray_direction = vec3(0,0,-1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,0);
+            ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+        }
+    )glsl";
+    pipeline.SetGlslRayGenShader(ray_gen);
+
+    const char* miss = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        #extension GL_EXT_debug_printf : enable
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 0) buffer DbgBuffer {
+          uint debug_buffer[];
+        };
+
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+
+        layout(shaderRecordEXT) buffer sbt {
+            uvec3 sbt_vec;
+        };
+
+        void main() {
+            uint last = atomicAdd(debug_buffer[1], 1);
+            debugPrintfEXT("Miss %v3u\n", sbt_vec);
+            hit = vec3(0.1, 0.2, 0.3);
+        }
+    )glsl";
+    pipeline.AddGlslMissShader(miss);
+
+    const char* closest_hit = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        #extension GL_EXT_debug_printf : enable
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 0) buffer DbgBuffer {
+          uint debug_buffer[];
+        };
+
+        layout(shaderRecordEXT) buffer sbt {
+            uvec3 sbt_vec;
+        };
+
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+        hitAttributeEXT vec2 baryCoord;
+
+        void main() {
+            uint last = atomicAdd(debug_buffer[2], 1);
+            debugPrintfEXT("Closest Hit %v3u\n", sbt_vec);
+            const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
+            hit = barycentricCoords;
+        }
+    )glsl";
+    pipeline.AddGlslClosestHitShader(closest_hit);
+
+    pipeline.SetShaderRecordSize(3 * sizeof(uint32_t));
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    pipeline.CreateDescriptorSet();
+    pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, debug_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipeline.GetDescriptorSet().UpdateDescriptorSets();
+
+    pipeline.Build();
+
+    uint32_t miss_v[3] = {1, 3, 5};
+    uint32_t hit_v[3] = {2, 6, 8};
+    pipeline.UpdateMissShaderRecord(0, miss_v, sizeof(miss_v));
+    pipeline.UpdateHitShaderRecord(0, hit_v, sizeof(hit_v));
+
+    constexpr uint32_t frames_count = 14;
+    const uint32_t ray_gen_width = 1;
+    const uint32_t ray_gen_height = 4;
+    const uint32_t ray_gen_depth = 1;
+    const uint32_t ray_gen_rays_count = ray_gen_width * ray_gen_height * ray_gen_depth;
+    for (uint32_t frame = 0; frame < frames_count; ++frame) {
+        m_command_buffer.Begin();
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+                                  &pipeline.GetDescriptorSet().set_, 0, nullptr);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+        vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
+
+        vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                            &trace_rays_sbt.callable_sbt, ray_gen_width, ray_gen_height, ray_gen_depth);
+
+        m_command_buffer.End();
+        for (uint32_t i = 0; i < ray_gen_rays_count; ++i) {
+            std::string msg = "In Raygen " + std::to_string(frame * ray_gen_rays_count + i);
+            m_errorMonitor->SetDesiredInfo(msg.c_str());
+        }
+        for (uint32_t i = 0; i < 3 * ray_gen_rays_count; ++i) {
+            m_errorMonitor->SetDesiredInfo("Miss 1, 3, 5");
+        }
+        for (uint32_t i = 0; i < 2 * ray_gen_rays_count; ++i) {
+            m_errorMonitor->SetDesiredInfo("Closest Hit 2, 6, 8");
         }
 
         m_default_queue->SubmitAndWait(m_command_buffer);
