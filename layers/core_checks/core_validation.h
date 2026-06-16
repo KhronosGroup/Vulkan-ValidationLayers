@@ -759,7 +759,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                            const bool has_embedded_samplers, const Location& loc) const;
     bool ValidateActionStatePushConstant(const LastBound& last_bound_state, const vvl::Pipeline* pipeline,
                                          const Location& loc) const;
-    bool ValidateActionStatePushConstantDescriptorHeap(const vvl::CommandBuffer& cb_state, const spirv::EntryPoint* entry_point,
+    bool ValidateActionStatePushConstantDescriptorHeap(const vvl::CommandBuffer& cb_state, const ShaderStageState& stage_state,
                                                        const VkPipelineBindPoint bind_point, const Location& loc) const;
     bool ValidateActionStateProtectedMemory(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
                                             const vvl::Pipeline* pipeline, const Location& loc) const;

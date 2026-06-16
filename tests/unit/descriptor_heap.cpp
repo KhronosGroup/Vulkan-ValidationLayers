@@ -4777,6 +4777,62 @@ TEST_F(NegativeDescriptorHeap, PushDataRange) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
+TEST_F(NegativeDescriptorHeap, MaxPushDataSizeStatic) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    if (heap_props.maxPushDataSize != 256) {
+        GTEST_SKIP() << "maxPushDataSize is not 256";
+    }
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(push_constant) uniform PC {
+            uint data[65]; // 132 bytes
+        } pc;
+        void main() {
+            a = pc.data[0];
+        }
+    )glsl";
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxPushDataSize-12455");
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    m_errorMonitor->VerifyFound();
+
+    char const* cs_source2 = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(push_constant) uniform PushConstant {
+            layout(offset = 240) uint data[8];
+        };
+        void main() {
+            a = data[0];
+        }
+    )glsl";
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxPushDataSize-12455");
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
+    m_errorMonitor->VerifyFound();
+
+    char const* cs_source3 = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(push_constant) uniform PushConstant {
+            layout(offset = 0) uint good;
+            layout(offset = 256) uint bad;
+        };
+        void main() {
+            a = good;
+        }
+    )glsl";
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxPushDataSize-12455");
+    vkt::HeapComputePipeline pipe3(*m_device, cs_source3, SPV_ENV_VULKAN_1_0, &mapping_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptorHeap, NonConstantImageMemoryAccess) {
     TEST_DESCRIPTION("Non constant image memory access with incompatible mapping source");
     SetTargetApiVersion(VK_API_VERSION_1_3);
