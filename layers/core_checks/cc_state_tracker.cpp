@@ -657,7 +657,6 @@ void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, Vk
         if (signal_state) {
             signal_states.emplace(event, *signal_state);
         }
-        // NOTE: the same logic is used by the validation phase
         const bool already_validated = signal_state && signal_state->HasKnownEffect();
         if (!already_validated) {
             submit_validation = true;
@@ -1235,17 +1234,14 @@ static std::optional<WaitEventSubmitInfo> BuildSubmitTimeWaitInfo(const WaitEven
     for (VkEvent event : secondary_wait.wait_events) {
         const EventSignalState* primary_state = vvl::Find(primary_states, event);
         const EventSignalState* secondary_state = vvl::Find(secondary_wait.signal_states, event);
+        const EventSignalState* known_state = ResolveSecondarySignal(primary_state, secondary_state);
 
-        const bool primary_state_known = primary_state && primary_state->HasKnownEffect();
-        const bool secondary_state_known = secondary_state && secondary_state->HasKnownEffect(primary_state);
-        if (secondary_state_known || (!primary_state && secondary_state)) {
+        if (secondary_state && (known_state == secondary_state || !primary_state)) {
             wait_signal_states[event] = *secondary_state;
         } else if (primary_state) {
             wait_signal_states[event] = *primary_state;
         }
-
-        const bool state_known = primary_state_known || secondary_state_known;
-        if (!state_known) {
+        if (known_state == nullptr) {
             all_signal_states_known = false;
         }
     }
