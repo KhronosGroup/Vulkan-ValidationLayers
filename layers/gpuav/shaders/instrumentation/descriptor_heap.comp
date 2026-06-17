@@ -38,7 +38,7 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorHeap, sc
     uint push_data[];
 } gpuav;
 
-// VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT
+// VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT [MAPPING_CONSTANT_OFFSET]
 bool inst_heap_mapping_constant_offset(const uint inst_offset, const uint heap_offset, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
     uint error = 0;
 
@@ -71,7 +71,7 @@ bool inst_heap_mapping_constant_offset(const uint inst_offset, const uint heap_o
     return true;
 }
 
-// VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT
+// VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT [MAPPING_PUSH_INDEX]
 bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
     uint error = 0;
 
@@ -105,7 +105,7 @@ bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset
     return true;
 }
 
-// VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT
+// VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT [MAPPING_INDIRECT_INDEX]
 bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint address_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
     uint error = 0;
     uint param_0 = 0;
@@ -154,7 +154,7 @@ bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_of
     return true;
 }
 
-// VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT
+// VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT [MAPPING_INDIRECT_INDEX_ARRAY]
 bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint address_offset, const uint heap_index_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
     uint error = 0;
     uint param_0 = 0;
@@ -203,8 +203,8 @@ bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint h
     return true;
 }
 
-// VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT
-bool inst_heap_mapping_resource_heap_data(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint desc_encoding) {
+// VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT [MAPPING_RESOURCE_HEAP_DATA]
+bool inst_heap_mapping_resource_heap_data(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint buffer_alignment, const uint desc_encoding) {
     uint error = 0;
 
     uint push_index = gpuav.push_data[push_offset];
@@ -218,6 +218,8 @@ bool inst_heap_mapping_resource_heap_data(const uint inst_offset, const uint hea
                // when no reserved range
                bound_heap_info.reserved_begin != bound_heap_info.reserved_end) {
         error = kErrorSubCode_DescriptorHeap_ReservedRange;
+    } else if ((offset & (buffer_alignment - 1)) != 0) {
+        error = kErrorSubCode_DescriptorHeap_HeapBufferAlignment;
     }
 
     if (error != 0) {
@@ -234,12 +236,12 @@ bool inst_heap_mapping_resource_heap_data(const uint inst_offset, const uint hea
     return true;
 }
 
-// VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT
+// VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT [MAPPING_PUSH_DATA]
 bool inst_heap_mapping_push_data() {
     return true; // Saving function offset space, but currently not used
 }
 
-// VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT
+// VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT [MAPPING_PUSH_ADDRESS]
 bool inst_heap_mapping_push_address(const uint inst_offset, const uint push_offset, const uint buffer_alignment, const uint desc_encoding) {
     uint error = 0;
     uint param_0 = 0;
@@ -269,7 +271,7 @@ bool inst_heap_mapping_push_address(const uint inst_offset, const uint push_offs
     return true;
 }
 
-// VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT
+// VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT [MAPPING_INDIRECT_ADDRESS]
 bool inst_heap_mapping_indirect_address(const uint inst_offset, const uint push_offset, const uint address_offset, const uint buffer_alignment, const uint desc_encoding) {
     uint error = 0;
     uint param_0 = 0;
@@ -308,7 +310,7 @@ bool inst_heap_mapping_indirect_address(const uint inst_offset, const uint push_
     return true;
 }
 
-// Untyped Pointers
+// Untyped Pointers [UNTYPED]
 bool inst_heap_untyped(const uint inst_offset, const uint heap_offset, const uint address_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
     uint error = 0;
 

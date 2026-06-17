@@ -52,6 +52,7 @@ class DescriptorHeapPass : public Pass {
     bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type, const AccessPath& access_path,
                                     bool is_sampler) const;
     uint32_t GetMapping(const AccessPath& access_path, bool is_sampler) const;
+    uint32_t GetMinBufferAlignment(const InstructionMeta& meta) const;
 
     // < original ID, new CopyObject ID >
     vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;

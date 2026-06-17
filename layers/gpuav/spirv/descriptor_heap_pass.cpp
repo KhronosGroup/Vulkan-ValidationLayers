@@ -144,6 +144,13 @@ uint32_t DescriptorHeapPass::GetMapping(const AccessPath& access_path, bool is_s
     return kMappingIndexInvalid;
 }
 
+uint32_t DescriptorHeapPass::GetMinBufferAlignment(const InstructionMeta& meta) const {
+    const bool is_uniform = meta.access_path.descriptor_type == gpuav::descriptor::TYPE_UNIFORM_BUFFER;
+    const uint32_t buffer_alignment =
+        is_uniform ? module_.settings_.min_uniform_buffer_alignment : module_.settings_.min_storage_buffer_alignment;
+    return type_manager_.GetConstantUInt32(buffer_alignment).Id();
+}
+
 uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
                                                 bool is_seperate_sampler) {
     const Variable& descriptor_variable = is_seperate_sampler ? *meta.access_path.sampler_variable : *meta.access_path.variable;
@@ -323,12 +330,15 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
         const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
 
+        assert(meta.access_path.descriptor_type == gpuav::descriptor::TYPE_UNIFORM_BUFFER);
+        const uint32_t buffer_alignment_id = GetMinBufferAlignment(meta);
+
         const uint32_t function_def = GetLinkFunctionId(MAPPING_RESOURCE_HEAP_DATA);
 
-        block.CreateInstruction(
-            spv::OpFunctionCall,
-            {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id, desc_encoding_id},
-            inst_it);
+        block.CreateInstruction(spv::OpFunctionCall,
+                                {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id,
+                                 buffer_alignment_id, desc_encoding_id},
+                                inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) {
         // TODO - is there any GPU-AV needed for this mapping?
         const uint32_t function_def = GetLinkFunctionId(MAPPING_PUSH_DATA);
@@ -336,10 +346,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT) {
         const uint32_t push_offset_id = type_manager_.GetConstantUInt32(mapping->sourceData.pushAddressOffset / 4).Id();
 
-        const bool is_uniform = meta.access_path.descriptor_type == gpuav::descriptor::TYPE_UNIFORM_BUFFER;
-        const uint32_t buffer_alignment =
-            is_uniform ? module_.settings_.min_uniform_buffer_alignment : module_.settings_.min_storage_buffer_alignment;
-        const uint32_t buffer_alignment_id = type_manager_.GetConstantUInt32(buffer_alignment).Id();
+        const uint32_t buffer_alignment_id = GetMinBufferAlignment(meta);
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_PUSH_ADDRESS);
 
@@ -353,10 +360,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
         const uint32_t address_offset_id = type_manager_.GetConstantUInt32(map_data.addressOffset / 4).Id();
 
-        const bool is_uniform = meta.access_path.descriptor_type == gpuav::descriptor::TYPE_UNIFORM_BUFFER;
-        const uint32_t buffer_alignment =
-            is_uniform ? module_.settings_.min_uniform_buffer_alignment : module_.settings_.min_storage_buffer_alignment;
-        const uint32_t buffer_alignment_id = type_manager_.GetConstantUInt32(buffer_alignment).Id();
+        const uint32_t buffer_alignment_id = GetMinBufferAlignment(meta);
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_INDIRECT_ADDRESS);
 
