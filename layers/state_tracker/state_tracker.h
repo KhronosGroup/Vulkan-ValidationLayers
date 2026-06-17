@@ -2146,6 +2146,7 @@ class DeviceState : public vvl::BaseDevice {
     struct OpticalFlowFormatsARM {
         std::vector<VkFormat> input;   // VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM
         std::vector<VkFormat> output;  // VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM
+        std::vector<VkFormat> cost;    // VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM
     } optical_flow_formats;
 
     // Features and properties that depend on platforms being defined

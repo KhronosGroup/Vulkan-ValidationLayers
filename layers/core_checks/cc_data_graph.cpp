@@ -185,6 +185,17 @@ bool CoreChecks::ValidateOpticalFlowCreateInfo(const VkDataGraphPipelineOpticalF
                          string_VkFormat(flowVectorFormat), list_formats(formats).c_str());
     }
 
+    if (optical_flow_ci.flags & VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM) {
+        const VkFormat costFormat = optical_flow_ci.costFormat;
+        formats = device_state->optical_flow_formats.cost;
+
+        if (std::find(formats.begin(), formats.end(), costFormat) == formats.end()) {
+            skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-costFormat-09970", device,
+                             optical_flow_ci_loc.dot(Field::costFormat), "(%s) is not supported.\nSupported formats: %s.",
+                             string_VkFormat(costFormat), list_formats(formats).c_str());
+        }
+    }
+
     return skip;
 }
 

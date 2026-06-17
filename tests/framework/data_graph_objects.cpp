@@ -549,11 +549,15 @@ void OpticalFlowHelper::CreateOpticalFlow() {
     connections_[1].binding = 1;
     connections_[1].connection = VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_REFERENCE_ARM;
     connections_[2].set = 0;
-    connections_[2].binding = 3;
+    connections_[2].binding = 2;
     connections_[2].connection = VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_FLOW_VECTOR_ARM;
     connections_[3].set = 0;
-    connections_[3].binding = 2;
+    connections_[3].binding = 3;
     connections_[3].connection = VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_HINT_ARM;
+    connections_[4].set = 0;
+    connections_[4].binding = 4;
+    connections_[4].connection = VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_COST_ARM;
+
     single_node_ci_.connectionCount = static_cast<uint32_t>(connections_.size());
     single_node_ci_.pConnections = connections_.data();
 
@@ -562,10 +566,12 @@ void OpticalFlowHelper::CreateOpticalFlow() {
     optical_flow_ci_.width = params_.width;
     optical_flow_ci_.imageFormat = GetAnyOpticalFlowFormat(VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM);
     optical_flow_ci_.flowVectorFormat = GetAnyOpticalFlowFormat(VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM);
+    optical_flow_ci_.costFormat = GetAnyOpticalFlowFormat(VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM);
     optical_flow_ci_.outputGridSize = params_.outputGridSize ? params_.outputGridSize : optical_flow_grid_size_;
     optical_flow_ci_.hintGridSize = params_.hintGridSize ? params_.hintGridSize : optical_flow_grid_size_;
     optical_flow_ci_.performanceLevel = VK_DATA_GRAPH_OPTICAL_FLOW_PERFORMANCE_LEVEL_MEDIUM_ARM;
-    optical_flow_ci_.flags = VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM;
+    optical_flow_ci_.flags =
+        VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM;
 }
 
 void OpticalFlowHelper::SetupImageDescriptors() {
@@ -577,23 +583,30 @@ void OpticalFlowHelper::SetupImageDescriptors() {
                                VK_IMAGE_USAGE_SAMPLED_BIT);
     reference_image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    vkt::Image hint_image(*device_, optical_flow_ci_.width, optical_flow_ci_.height, optical_flow_ci_.flowVectorFormat,
-                          VK_IMAGE_USAGE_SAMPLED_BIT);
-    hint_image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
     vkt::Image flow_image(*device_, optical_flow_ci_.width, optical_flow_ci_.height, optical_flow_ci_.flowVectorFormat,
                           VK_IMAGE_USAGE_STORAGE_BIT);
     flow_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
+    vkt::Image hint_image(*device_, optical_flow_ci_.width, optical_flow_ci_.height, optical_flow_ci_.flowVectorFormat,
+                          VK_IMAGE_USAGE_SAMPLED_BIT);
+    hint_image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vkt::Image cost_image(*device_, optical_flow_ci_.width, optical_flow_ci_.height, optical_flow_ci_.costFormat,
+                          VK_IMAGE_USAGE_STORAGE_BIT);
+    cost_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
     vkt::ImageView input_view = input_image.CreateView();
     vkt::ImageView reference_view = reference_image.CreateView();
-    vkt::ImageView hint_view = hint_image.CreateView();
     vkt::ImageView flow_view = flow_image.CreateView();
+    vkt::ImageView hint_view = hint_image.CreateView();
+    vkt::ImageView cost_view = cost_image.CreateView();
 
     dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(0, input_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(1, reference_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(2, hint_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(3, flow_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+    dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(2, flow_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                           VK_IMAGE_LAYOUT_GENERAL);
+    dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(3, hint_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(4, cost_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                            VK_IMAGE_LAYOUT_GENERAL);
     dg_pipeline_.descriptor_set_->UpdateDescriptorSets();
 }
@@ -602,8 +615,9 @@ void OpticalFlowHelper::InitDataGraphPipeline() {
     dg_pipeline_.descriptor_set_layout_bindings_ = {
         {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
         {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-        {2, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-        {3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+        {3, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+        {4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
 
     dg_pipeline_.descriptor_set_.reset(new OneOffDescriptorSet(device_, dg_pipeline_.descriptor_set_layout_bindings_));
@@ -615,8 +629,9 @@ void OpticalFlowHelper::InitDataGraphPipeline() {
     }
     image_layouts_[0].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_layouts_[1].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_layouts_[2].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_layouts_[3].layout = VK_IMAGE_LAYOUT_GENERAL;
+    image_layouts_[2].layout = VK_IMAGE_LAYOUT_GENERAL;
+    image_layouts_[3].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_layouts_[4].layout = VK_IMAGE_LAYOUT_GENERAL;
 
     dg_pipeline_.resources_.resize(kResourceCount);
     for (uint32_t i = 0; i < dg_pipeline_.resources_.size(); i++) {

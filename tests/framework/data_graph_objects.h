@@ -141,7 +141,7 @@ struct HelperParameters {
 
 class OpticalFlowHelper {
   private:
-    static constexpr uint32_t kResourceCount = 4u;
+    static constexpr uint32_t kResourceCount = 5u;
     HelperParameters params_ = HelperParameters();
 
   public:
