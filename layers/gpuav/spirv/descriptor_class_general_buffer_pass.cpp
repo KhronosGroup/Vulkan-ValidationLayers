@@ -210,6 +210,10 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
         }
     }
 
+    return instrumentations_count_ != 0;
+}
+
+void DescriptorClassGeneralBufferPass::PostProcess() {
     if (instrumentations_count_ > 75) {
         module_.InternalWarning(
             "GPUAV-Compile-time-general-buffer",
@@ -217,8 +221,6 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
             "checks for storage/uniform "
             "buffers. Turn on the |gpuav_force_on_robustness| setting to skip these checks and improve GPU-AV performance.");
     }
-
-    return instrumentations_count_ != 0;
 }
 
 }  // namespace spirv

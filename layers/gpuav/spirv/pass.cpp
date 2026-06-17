@@ -37,6 +37,9 @@ bool Pass::Run() {
     if (module_.settings_.print_debug_info) {
         PrintDebugInfo();
     }
+    if (modified) {
+        PostProcess();
+    }
 
     // Detect if any functions were applied that we need to add now
     if (modified && !link_info_.functions.empty()) {

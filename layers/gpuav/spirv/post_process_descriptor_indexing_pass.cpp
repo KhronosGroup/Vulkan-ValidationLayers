@@ -135,7 +135,7 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
         }
     }
 
-    return (instrumentations_count_ != 0);
+    return instrumentations_count_ != 0;
 }
 
 void PostProcessDescriptorIndexingPass::PrintDebugInfo() const {

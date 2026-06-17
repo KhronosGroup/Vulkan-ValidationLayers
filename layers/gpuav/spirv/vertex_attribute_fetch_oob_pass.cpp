@@ -94,10 +94,10 @@ bool VertexAttributeFetchOobPass::Instrument() {
                                       &stage_info_inst_it);
 
         instrumentation_performed = true;
-        return true;
+        break;
     }
 
-    return false;
+    return instrumentation_performed;
 }
 
 void VertexAttributeFetchOobPass::PrintDebugInfo() const {
