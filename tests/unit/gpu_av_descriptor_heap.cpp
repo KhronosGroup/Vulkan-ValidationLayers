@@ -2191,7 +2191,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingAddressBufferAlignment) {
 
 TEST_F(NegativeGpuAVDescriptorHeap, MappingAddressBufferAlignmentHeap) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    CreateResourceHeap(heap_props.bufferDescriptorSize);
+    CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     WriteBufferToHeap(ssbo_buffer);
 
