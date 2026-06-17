@@ -24,6 +24,7 @@ void DataGraphTest::InitBasicDataGraph() {
     AddRequiredFeature(vkt::Feature::shaderTensorAccess);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     AddRequiredFeature(vkt::Feature::shaderInt8);
+    RETURN_IF_SKIP(Init());
 }
 
 const std::string DataGraphTest::IncorrectSpirvMessage{
@@ -102,8 +103,7 @@ VkDataGraphPipelineConstantARM DataGraphTest::GetConstant(const VkTensorDescript
 
 TEST_F(PositiveDataGraph, ExecuteDataGraph) {
     TEST_DESCRIPTION("Create and execute a datagraph");
-    InitBasicDataGraph();
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDataGraph());
 
     vkt::dg::DataGraphPipelineHelper pipeline(*this);
     pipeline.CreateDataGraphPipeline();
@@ -136,7 +136,15 @@ TEST_F(PositiveDataGraph, ExecuteDataGraph) {
 
 TEST_F(PositiveDataGraph, DISABLED_ProtectedMemoryDataGraph) {
     TEST_DESCRIPTION("Execute a datagraph with protected memory");
-    InitBasicDataGraph();
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_ARM_DATA_GRAPH_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    AddRequiredFeature(vkt::Feature::dataGraph);
+    AddRequiredFeature(vkt::Feature::dataGraphShaderModule);
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
     AddRequiredFeature(vkt::Feature::protectedMemory);
     AddRequiredFeature(vkt::Feature::pipelineProtectedAccess);
     RETURN_IF_SKIP(InitFramework());
@@ -180,8 +188,7 @@ TEST_F(PositiveDataGraph, ShaderModuleInPNext) {
     TEST_DESCRIPTION(
         "Pass a VkShaderModuleCreateInfo in the pNext chain of pipeline info, not as "
         "VkDataGraphPipelineShaderModuleCreateInfoARM::module.");
-    InitBasicDataGraph();
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDataGraph());
 
     // create a ShaderModule to add in the pNext chain
     spvtools::SpirvTools tools{SPV_ENV_UNIVERSAL_1_6};
@@ -222,8 +229,7 @@ TEST_F(PositiveDataGraph, ShaderModuleInPNext) {
 
 TEST_F(PositiveDataGraph, DataGraphMultipleEntrypoints) {
     TEST_DESCRIPTION("Execute 2 different entrypoints in the datagraph's spirv.");
-    InitBasicDataGraph();
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDataGraph());
 
     // get spirv with 2 entrypoints
     const std::string two_entrypoint_spirv = vkt::dg::DataGraphPipelineHelper::GetSpirvMultiEntryTwoDataGraph();
@@ -257,13 +263,13 @@ TEST_F(PositiveDataGraph, DataGraphMultipleEntrypoints) {
 
 TEST_F(PositiveDataGraph, CmdDispatchDescriptorBuffer) {
     TEST_DESCRIPTION("Dispatch a datagraph using descriptor buffers.");
-    InitBasicDataGraph();
+    SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBuffer);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::dataGraphDescriptorBuffer);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDataGraph());
 
     vkt::dg::DataGraphPipelineHelper pipeline(*this);
 
