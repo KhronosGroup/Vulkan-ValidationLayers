@@ -1117,6 +1117,19 @@
                                                     { "key": "gpuav_enable", "value": true }
                                                 ]
                                             }
+                                        },
+                                        {
+                                            "key": "gpuav_debug_disable_dontinline",
+                                            "label": "Disable DontInline function hint",
+                                            "description": "Found that some drivers crash when using DontInline, but the perf gain is too good to have always off",
+                                            "type": "BOOL",
+                                            "default": false,
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    { "key": "gpuav_enable", "value": true }
+                                                ]
+                                            }
                                         }
                                     ]
                                 }

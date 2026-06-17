@@ -118,6 +118,7 @@ void GpuAVSettings::TracyLogSettings() const {
     VVL_TRACY_PRINT_GPUAV_SETTING(debug_validate_instrumented_shaders);
     VVL_TRACY_PRINT_GPUAV_SETTING(debug_dump_instrumented_shaders);
     VVL_TRACY_PRINT_GPUAV_SETTING(debug_max_instrumentations_count);
+    VVL_TRACY_PRINT_GPUAV_SETTING(debug_disable_dontinline);
     VVL_TRACY_PRINT_GPUAV_SETTING(debug_print_instrumentation_info);
 #define VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(setting) \
     VVL_TracyMessageStream("    " #setting ": " << shader_instrumentation.setting);

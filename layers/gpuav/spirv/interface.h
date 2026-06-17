@@ -117,6 +117,7 @@ struct DeviceSettings {
     bool print_debug_info;
     // zero is same as "unlimited"
     uint32_t max_instrumentations_count;
+    bool disable_dontinline;
     bool support_non_semantic_info;
     // Lets us embed the size instead of calling OpArrayLength
     uint32_t error_buffer_data_length;
