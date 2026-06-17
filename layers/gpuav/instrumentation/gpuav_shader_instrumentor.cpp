@@ -275,6 +275,7 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateI
     instrumentation_device_settings_.safe_mode = gpuav_settings.safe_mode;
     instrumentation_device_settings_.print_debug_info = gpuav_settings.debug_print_instrumentation_info;
     instrumentation_device_settings_.max_instrumentations_count = gpuav_settings.debug_max_instrumentations_count;
+    instrumentation_device_settings_.disable_dontinline = gpuav_settings.debug_disable_dontinline;
     instrumentation_device_settings_.support_non_semantic_info =
         IsExtEnabled(extensions.vk_khr_shader_non_semantic_info) && !IsExtEnabled(extensions.vk_khr_portability_subset);
     instrumentation_device_settings_.error_buffer_data_length = glsl::kErrorBufferDataLength;

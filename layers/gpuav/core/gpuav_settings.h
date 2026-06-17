@@ -46,6 +46,7 @@ struct GpuAVSettings {
     bool debug_dump_instrumented_shaders = false;
     uint32_t debug_max_instrumentations_count = 0;  // zero is same as "unlimited"
     bool debug_print_instrumentation_info = false;
+    bool debug_disable_dontinline = false;
 
     // We create a buffer of N slots as [0, N-1],
     // but N-1 is used to signal the app everything after is garbage.

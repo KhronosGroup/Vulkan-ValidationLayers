@@ -882,6 +882,10 @@ void Module::LinkFunctions(const LinkInfo& info) {
                     // Found on NVIDIA there are nasty bugs/behavior using this in RTX stages
                     // (clearly no CTS is written to use it)
                     new_inst->UpdateWord(3, spv::FunctionControlMaskNone);
+                } else if (settings_.disable_dontinline) {
+                    // We have found on some drivers (RTX 5090 with 610.62 driver) will crash on some shaders
+                    // This is here to provide a way to turn off DontInline if needed for unblocking people
+                    new_inst->UpdateWord(3, spv::FunctionControlMaskNone);
                 } else {
                     new_inst->UpdateWord(3, spv::FunctionControlDontInlineMask);
                 }
