@@ -471,6 +471,15 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         }
     };
 
+    auto warn_alignment_heap_ubo = [&](VkDeviceAddress address) {
+        VkDeviceSize alignment = dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment;
+        if (!IsPointerAligned(address, alignment)) {
+            warn_ss << new_bullet_line
+                    << "[WARNING] MISALIGNED - the heap address is not aligned to minUniformBufferOffsetAlignment (0x" << std::hex
+                    << alignment << ") and any access to this descriptor will be invalid";
+        }
+    };
+
     auto warn_alignment_indirect_address = [&](VkDeviceAddress address, bool from_resource = false) {
         VkDeviceSize alignment = 0;
         if (resource_variable.is_uniform_buffer) {
@@ -1259,8 +1268,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
            << push_data;
         VkDeviceAddress final_offset = map_data.heapOffset + push_data;
         VkDeviceAddress final_address = heap_range.begin + final_offset;
-        ss << " [final address 0x" << final_address << "]";
+        ss << new_sub_line << " Final address: 0x" << final_address;
 
+        warn_alignment_heap_ubo(final_address);
         warn_oob(final_offset + descriptor_size, false);
 
         if (!heap_reserved.empty()) {
