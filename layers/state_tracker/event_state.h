@@ -25,6 +25,10 @@
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <optional>
 
+namespace vvl {
+class Event;
+}  // namespace vvl
+
 struct EventSignalState {
     // Tracks how the event signaling state changes as command buffer recording progresses.
     // When recording is finished, this is the event state at the end of the command buffer
@@ -44,14 +48,16 @@ struct EventSignalState {
     // Last command that changed the event signal state: Set/Set2/Reset/Reset2
     vvl::Func last_signaling_command = vvl::Func::Empty;
 
-    // Return true if this state's effect on the event is known.
-    // Without a reset or known prior state, we cannot tell whether a signal
-    // in this state is a repeated signal, which the spec says is ignored
+    // Return true if we can guarantee that this signal state is not ignored.
+    // Without a reset or known prior state, we cannot tell whether this state
+    // should be ignored or not (repeated signals/unsignals are ignored).
     //
-    // NOTE: this implementation does not try to handle repeated unsignals, which
-    // are also ignored. We do not currently keep data associated with unsignals,
-    // (and for signals we store stage mask/dependency info). Update this if we
-    // need to track associated unsignal data.
+    // NOTE: this implementation is about handling repeated signals. It does not try
+    // to handle repeated unsignals, which are also ignored. The reason for this is
+    // that we don't track associated data with unsignals, so original unsignal and
+    // duplicated ones are the same from the tracking perspective. The implementatio
+    // has to be updated if we need to track data associated with the unsignal (then
+    // it's important to keep the original unsignal data)
     bool HasKnownEffect(const EventSignalState* prior_state = nullptr) const;
 };
 
@@ -63,6 +69,16 @@ struct EventWaitBarrierState {
 using EventSignalStateMap = vvl::unordered_map<VkEvent, EventSignalState>;
 using EventWaitBarrierMap = vvl::unordered_map<VkEvent, EventWaitBarrierState>;
 using EventWaitCommandMap = vvl::unordered_map<VkEvent, vvl::Func>;
+
+// Resolve the known signaling state from two levels: the secondary command buffer state and
+// the prior command buffer state (primary or prior secondary).
+// Returns null if it can't be determined whether the signal is effective (not ignored)
+const EventSignalState* ResolveSecondarySignal(const EventSignalState* prior_state, const EventSignalState* secondary_state);
+
+// Resolve the effective signaling state from three levels: the global state, the local submit
+// state (between command buffers of submission), and the command buffer state
+EventSignalState ResolveEventSignal(const vvl::Event& event_state, const EventSignalState* submit_signal_state,
+                                    const EventSignalState* cb_signal_state);
 
 void UpdateEventSignalStates(EventSignalStateMap& accumulated_states, const EventSignalStateMap& recorded_states);
 

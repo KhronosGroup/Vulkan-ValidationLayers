@@ -28,6 +28,36 @@ bool EventSignalState::HasKnownEffect(const EventSignalState* prior_state) const
     return is_prior_unsignaled;
 }
 
+const EventSignalState* ResolveSecondarySignal(const EventSignalState* prior_state, const EventSignalState* secondary_state) {
+    if (secondary_state && secondary_state->HasKnownEffect(prior_state)) {
+        return secondary_state;
+    }
+    if (prior_state && prior_state->HasKnownEffect()) {
+        return prior_state;
+    }
+    return nullptr;
+}
+
+EventSignalState ResolveEventSignal(const vvl::Event& event_state, const EventSignalState* submit_state,
+                                    const EventSignalState* cb_state) {
+    EventSignalState state;
+    state.signaled = event_state.signaled;
+    state.was_reset = true;
+    state.signal_src_stage_mask = event_state.signal_src_stage_mask;
+    state.signal_dependency_info = event_state.signal_dependency_info;
+    state.last_signaling_command = event_state.last_signaling_command;
+
+    const EventSignalState* prior_state = &state;
+    if (submit_state && submit_state->HasKnownEffect(prior_state)) {
+        state = *submit_state;
+    }
+    prior_state = submit_state ? submit_state : prior_state;
+    if (cb_state && cb_state->HasKnownEffect(prior_state)) {
+        state = *cb_state;
+    }
+    return state;
+}
+
 void UpdateEventSignalStates(EventSignalStateMap& accumulated_states, const EventSignalStateMap& recorded_states) {
     for (const auto& [event, recorded_state] : recorded_states) {
         EventSignalState& accumulated_state = accumulated_states[event];

@@ -1130,43 +1130,6 @@ bool CoreChecks::ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer& 
     return skip;
 }
 
-// Return the signal stage mask when it can be identified from recorded state
-static std::optional<VkPipelineStageFlags2> ResolveKnownSignalStageMask(VkEvent event, const EventSignalState* prior_state,
-                                                                        const EventSignalState* secondary_state) {
-    if (secondary_state && secondary_state->HasKnownEffect(prior_state)) {
-        if (secondary_state->signaled) {
-            return secondary_state->signal_src_stage_mask;
-        }
-        return {};
-    }
-    if (prior_state && prior_state->HasKnownEffect() && prior_state->signaled) {
-        return prior_state->signal_src_stage_mask;
-    }
-    return {};
-}
-
-static vvl::Func ResolveSignalingCommand(const EventSignalState* prior_state, const EventSignalState* secondary_state) {
-    if (secondary_state && secondary_state->HasKnownEffect(prior_state)) {
-        return secondary_state->last_signaling_command;
-    }
-    if (prior_state && prior_state->HasKnownEffect() && prior_state->signaled) {
-        return prior_state->last_signaling_command;
-    }
-    return vvl::Func::Empty;
-}
-
-// Return true when recorded state proves the event is unsignaled at the wait
-static bool IsKnownUnsignaled(VkEvent event, const EventSignalStateMap& prior_signal_states,
-                              const EventSignalStateMap& secondary_signal_states) {
-    const EventSignalState* prior_state = vvl::Find(prior_signal_states, event);
-    const EventSignalState* secondary_state = vvl::Find(secondary_signal_states, event);
-
-    if (secondary_state && secondary_state->HasKnownEffect(prior_state)) {
-        return !secondary_state->signaled;
-    }
-    return prior_state && prior_state->HasKnownEffect() && !prior_state->signaled;
-}
-
 bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBufferSubState& secondary_cb_sub_state,
                                                           const Location& secondary_cb_loc,
                                                           EventSignalStateMap& local_signal_states) const {
@@ -1175,35 +1138,36 @@ bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBuf
         VkPipelineStageFlags signals_src_stage_mask = VK_PIPELINE_STAGE_NONE;
         bool can_validate_stage_mask = true;
         bool set_wait_version_mismatch = false;
-        bool found_known_signals = false;
+        bool found_signals = false;
 
         for (VkEvent event : secondary_wait.wait_events) {
             const EventSignalState* local_state = vvl::Find(local_signal_states, event);
             const EventSignalState* secondary_state = vvl::Find(secondary_wait.signal_states, event);
+            const EventSignalState* known_state = ResolveSecondarySignal(local_state, secondary_state);
 
-            // Validate set-wait version mismatch
-            const vvl::Func signal_command = ResolveSignalingCommand(local_state, secondary_state);
-            if (IsValueIn(signal_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
-                skip |=
-                    LogError("VUID-vkCmdWaitEvents-pEvents-03847", event, secondary_cb_loc, "%s: %s was set by %s.",
-                             vvl::String(secondary_wait.wait_command), FormatHandle(event).c_str(), vvl::String(signal_command));
-                set_wait_version_mismatch = true;
-            }
-
-            // Determine if stage mask validation is possible during execution time
-            if (auto stage_mask = ResolveKnownSignalStageMask(event, local_state, secondary_state)) {
-                signals_src_stage_mask |= *stage_mask;
-                found_known_signals = true;
-            } else if (IsKnownUnsignaled(event, local_signal_states, secondary_wait.signal_states)) {
-                // Contribute 0 (nothing) to signals_src_stage_mask
+            if (known_state) {
+                // Validate set-wait version mismatch
+                if (IsValueIn(known_state->last_signaling_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
+                    skip |= LogError("VUID-vkCmdWaitEvents-pEvents-03847", event, secondary_cb_loc, "%s: %s was set by %s.",
+                                     vvl::String(secondary_wait.wait_command), FormatHandle(event).c_str(),
+                                     vvl::String(known_state->last_signaling_command));
+                    set_wait_version_mismatch = true;
+                }
+                // Collect source stages from all known signals
+                if (known_state->signaled) {
+                    signals_src_stage_mask |= known_state->signal_src_stage_mask;
+                    found_signals = true;
+                }
             } else {
+                // Can't validate at secondary command buffer execution time
+                // because the signal's state is not known yet
                 can_validate_stage_mask = false;
             }
         }
         // Validate state mask
         if (!set_wait_version_mismatch && can_validate_stage_mask && secondary_wait.wait_src_stage_mask != signals_src_stage_mask) {
             const LogObjectList objlist(secondary_cb_sub_state.Handle());
-            if (found_known_signals) {
+            if (found_signals) {
                 std::ostringstream ss;
                 ss << "(" << FormatHandle(secondary_cb_sub_state.Handle()) << ") contains a vkCmdWaitEvents call with srcStageMask "
                    << string_VkPipelineStageFlags(secondary_wait.wait_src_stage_mask)
@@ -1223,39 +1187,33 @@ bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBuf
     for (const WaitEvent2SubmitInfo& secondary_wait : secondary_cb_sub_state.wait_event2_submit_infos) {
         const EventSignalState* local_state = vvl::Find(local_signal_states, secondary_wait.wait_event);
         const EventSignalState* secondary_state = secondary_wait.signal_state.has_value() ? &*secondary_wait.signal_state : nullptr;
+        const EventSignalState* known_state = ResolveSecondarySignal(local_state, secondary_state);
 
-        const vvl::Func signaling_command = ResolveSignalingCommand(local_state, secondary_state);
-
-        if (signaling_command == vvl::Func::vkCmdSetEvent) {
+        if (!known_state) {
+            continue;
+        }
+        if (known_state->last_signaling_command == vvl::Func::vkCmdSetEvent) {
             skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03837", secondary_wait.wait_event, secondary_cb_loc,
                              "%s: %s was set by %s.", vvl::String(secondary_wait.wait_command),
-                             FormatHandle(secondary_wait.wait_event).c_str(), vvl::String(signaling_command));
+                             FormatHandle(secondary_wait.wait_event).c_str(), vvl::String(known_state->last_signaling_command));
         } else {
             const VkPipelineStageFlags2 union_src_stage_mask =
                 sync_utils::GetExecScopes(*secondary_wait.wait_dependency_info.ptr()).src;
-            const EventSignalState* signal_state = nullptr;
-            if (secondary_state && secondary_state->HasKnownEffect(local_state)) {
-                signal_state = secondary_state;
-            } else if (local_state && local_state->HasKnownEffect()) {
-                signal_state = local_state;
-            }
-            if (signal_state) {
-                if ((union_src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) == 0) {
-                    if (!IsValueIn(signal_state->last_signaling_command,
-                                   {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
-                        const LogObjectList objlist(secondary_cb_sub_state.Handle(), secondary_wait.wait_event);
-                        skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03841", objlist, secondary_cb_loc,
-                                         "contains %s but %s was not set by vkCmdSetEvent2.",
-                                         vvl::String(secondary_wait.wait_command), FormatHandle(secondary_wait.wait_event).c_str());
-                    }
-                } else if (union_src_stage_mask == VK_PIPELINE_STAGE_2_HOST_BIT) {
-                    if (signal_state->HasKnownEffect() && !signal_state->signaled) {
-                        const LogObjectList objlist(secondary_cb_sub_state.Handle(), secondary_wait.wait_event);
-                        skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03840", objlist, secondary_cb_loc,
-                                         "contains %s and the first synchronization scope specified by pDependencyInfos is "
-                                         "VK_PIPELINE_STAGE_2_HOST_BIT but %s is not signaled",
-                                         vvl::String(secondary_wait.wait_command), FormatHandle(secondary_wait.wait_event).c_str());
-                    }
+
+            if ((union_src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) == 0) {
+                if (!IsValueIn(known_state->last_signaling_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
+                    const LogObjectList objlist(secondary_cb_sub_state.Handle(), secondary_wait.wait_event);
+                    skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03841", objlist, secondary_cb_loc,
+                                     "contains %s but %s was not set by vkCmdSetEvent2.", vvl::String(secondary_wait.wait_command),
+                                     FormatHandle(secondary_wait.wait_event).c_str());
+                }
+            } else if (union_src_stage_mask == VK_PIPELINE_STAGE_2_HOST_BIT) {
+                if (!known_state->signaled) {
+                    const LogObjectList objlist(secondary_cb_sub_state.Handle(), secondary_wait.wait_event);
+                    skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03840", objlist, secondary_cb_loc,
+                                     "contains %s and the first synchronization scope specified by pDependencyInfos is "
+                                     "VK_PIPELINE_STAGE_2_HOST_BIT but %s is not signaled",
+                                     vvl::String(secondary_wait.wait_command), FormatHandle(secondary_wait.wait_event).c_str());
                 }
             }
         }
