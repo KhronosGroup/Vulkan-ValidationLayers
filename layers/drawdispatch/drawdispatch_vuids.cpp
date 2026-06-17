@@ -581,6 +581,25 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         // ### VUID-vkCmdDraw-None-10679
         case ActionVUID::PER_TILE_MODEL_FEEDBACK_LOOP_IMAGE_ACCESS_10679: suffix = "None-10679"; break;
 
+        // ### VUID-vkCmdDraw-OpImageSampleWeightedQCOM-06971
+        case ActionVUID::IMAGE_SAMPLE_WEIGHTED_QCOM_06971: suffix = "OpImageSampleWeightedQCOM-06971"; break;
+        // ### VUID-vkCmdDraw-OpImageSampleWeightedQCOM-06972
+        case ActionVUID::IMAGE_SAMPLE_WEIGHTED_QCOM_06972: suffix = "OpImageSampleWeightedQCOM-06972"; break;
+        // ### VUID-vkCmdDraw-OpImageBoxFilterQCOM-06973
+        case ActionVUID::IMAGE_BOX_FILTER_QCOM_06973: suffix = "OpImageBoxFilterQCOM-06973"; break;
+        // ### VUID-vkCmdDraw-OpImageBlockMatchSSDQCOM-06974
+        case ActionVUID::IMAGE_BLOCK_MATCH_SSD_QCOM_06974: suffix = "OpImageBlockMatchSSDQCOM-06974"; break;
+        // ### VUID-vkCmdDraw-OpImageSampleWeightedQCOM-06977
+        case ActionVUID::IMAGE_PROCESSING_SAMPLE_QCOM_06977: suffix = "OpImageSampleWeightedQCOM-06977"; break;
+        // ### VUID-vkCmdDraw-OpImageSampleWeightedQCOM-06978
+        case ActionVUID::IMAGE_PROCESSING_SAMPLE_QCOM_06978: suffix = "OpImageSampleWeightedQCOM-06978"; break;
+        // ### VUID-vkCmdDraw-OpImageBlockMatchWindow-09215
+        case ActionVUID::IMAGE_BLOCK_MATCH_WINDOW_QCOM_09215: suffix = "OpImageBlockMatchWindow-09215"; break;
+        // ### VUID-vkCmdDraw-OpImageBlockMatchWindow-09216
+        case ActionVUID::IMAGE_BLOCK_MATCH_WINDOW_QCOM_09216: suffix = "OpImageBlockMatchWindow-09216"; break;
+        // ### VUID-vkCmdDraw-OpImageBlockMatchSADQCOM-12420
+        case ActionVUID::IMAGE_BLOCK_MATCH_SAD_QCOM_12420: suffix = "OpImageBlockMatchSADQCOM-12420"; break;
+
         // ### VUID-vkCmdDraw-viewMask-06178
         case ActionVUID::DYNAMIC_RENDERING_VIEW_MASK_06178: suffix = "viewMask-06178"; break;
         // ### VUID-vkCmdDraw-colorAttachmentCount-06179

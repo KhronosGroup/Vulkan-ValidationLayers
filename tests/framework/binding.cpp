@@ -420,7 +420,8 @@ bool Device::IsEnabledExtension(const char* extension) const {
 }
 
 VkFormatFeatureFlags2 Device::FormatFeaturesLinear(VkFormat format) const {
-    if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+    if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME) ||
+        target_api_version_ >= VK_API_VERSION_1_3) {
         VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
         vk::GetPhysicalDeviceFormatProperties2(Physical(), format, &fmt_props_2);
@@ -433,7 +434,8 @@ VkFormatFeatureFlags2 Device::FormatFeaturesLinear(VkFormat format) const {
 }
 
 VkFormatFeatureFlags2 Device::FormatFeaturesOptimal(VkFormat format) const {
-    if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+    if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME) ||
+        target_api_version_ >= VK_API_VERSION_1_3) {
         VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
         vk::GetPhysicalDeviceFormatProperties2(Physical(), format, &fmt_props_2);
@@ -446,7 +448,8 @@ VkFormatFeatureFlags2 Device::FormatFeaturesOptimal(VkFormat format) const {
 }
 
 VkFormatFeatureFlags2 Device::FormatFeaturesBuffer(VkFormat format) const {
-    if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+    if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME) ||
+        target_api_version_ >= VK_API_VERSION_1_3) {
         VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
         vk::GetPhysicalDeviceFormatProperties2(Physical(), format, &fmt_props_2);

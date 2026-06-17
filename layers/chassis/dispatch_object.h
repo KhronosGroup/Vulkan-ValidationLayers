@@ -121,6 +121,7 @@ struct DeviceExtensionProperties {
     VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT ray_tracing_invocation_reorder_props;
     VkPhysicalDeviceShaderLongVectorPropertiesEXT shader_long_vector_props;
     VkPhysicalDeviceTileShadingPropertiesQCOM tile_shading_props;
+    VkPhysicalDeviceImageProcessing2PropertiesQCOM image_processing2_props;
 };
 
 // This object holds all static state for the device (device properties, enabled extensions/features, etc.)

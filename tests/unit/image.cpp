@@ -19,6 +19,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/descriptor_helper.h"
 #include "utils/image_utils.h"
+#include "pipeline_helper.h"
 
 class NegativeImage : public ImageTest {};
 
@@ -5001,4 +5002,583 @@ TEST_F(NegativeImage, DuplicatedStencilUsage) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_STORAGE_BIT;
     CreateImageTest(image_create_info, "UNASSIGNED-VkImageStencilUsageCreateInfo-None");
+}
+
+TEST_F(NegativeImage, CreateSamplerWithIncorrectBlockMatchWindowExtent) {
+    TEST_DESCRIPTION("Try to create a sampler that has an incorrect block-match-window extent information.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::textureBlockMatch);
+    AddRequiredFeature(vkt::Feature::textureBlockMatch2);
+    AddRequiredFeature(vkt::Feature::blockMatchExtendedClampToEdge);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceImageProcessing2PropertiesQCOM image_processing2_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(image_processing2_props);
+
+    VkSamplerBlockMatchWindowCreateInfoQCOM block_match_window_ci = vku::InitStructHelper();
+    block_match_window_ci.windowExtent.width = image_processing2_props.maxBlockMatchWindow.width * 2;
+    block_match_window_ci.windowExtent.height = image_processing2_props.maxBlockMatchWindow.height;
+    block_match_window_ci.windowCompareMode = VK_BLOCK_MATCH_WINDOW_COMPARE_MODE_MAX_QCOM;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo(&block_match_window_ci);
+    sampler_ci.flags = VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM;
+    sampler_ci.unnormalizedCoordinates = VK_TRUE;
+    sampler_ci.minLod = 0.0f;
+    sampler_ci.maxLod = 0.0f;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerBlockMatchWindowCreateInfoQCOM-WindowExtent-09210");
+    vkt::Sampler sampler{ *m_device, sampler_ci };
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImage, ImageSampleWeightedInstructionButInvalidFormatFeatures) {
+    TEST_DESCRIPTION("Try to launch a compute pass with an OpImageSampleWeightedQCOM instruction, while "
+                     "the used image views have the invalid format features.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::textureSampleWeighted);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceImageProcessingPropertiesQCOM image_processing_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(image_processing_props);
+
+    VkFormat sampled_format = VK_FORMAT_UNDEFINED;
+    VkFormat weight_format = VK_FORMAT_UNDEFINED;
+    for (VkFormat format : { VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8_UNORM, VK_FORMAT_R16G16_UNORM }) {
+        const auto format_features2 = m_device->FormatFeaturesOptimal(format);
+        if ((format_features2 & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
+            (format_features2 & VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM) == 0) {
+            sampled_format = format;
+            break;
+        }
+    }
+    for (VkFormat format : { VK_FORMAT_R16_SFLOAT, VK_FORMAT_R32_SFLOAT, VK_FORMAT_R8_UNORM }) {
+        const auto format_features2 = m_device->FormatFeaturesOptimal(format);
+        if ((format_features2 & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
+            (format_features2 & VK_FORMAT_FEATURE_2_WEIGHT_IMAGE_BIT_QCOM) == 0) {
+            weight_format = format;
+            break;
+        }
+    }
+
+    if ((sampled_format == VK_FORMAT_UNDEFINED) || (weight_format == VK_FORMAT_UNDEFINED)) {
+        GTEST_SKIP() << "Failed to find any format that doesn't support VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM "
+                        "or VK_FORMAT_FEATURE_2_WEIGHT_IMAGE_BIT_QCOM format feature, skipping test.";
+    }
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.flags = VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM;
+    sampler_ci.minLod = 0.0f;
+    sampler_ci.maxLod = 0.0f;
+    vkt::Sampler sampler{ *m_device, sampler_ci };
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(512, 512, 1, 1, sampled_format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image sampled_image{ *m_device, image_ci };
+    vkt::ImageView sampled_image_view = sampled_image.CreateView();
+
+    image_ci.format = weight_format;
+    image_ci.usage |= VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM;
+    vkt::Image weight_image{ *m_device, image_ci };
+
+    VkImageViewSampleWeightCreateInfoQCOM weight_ci = vku::InitStructHelper();
+    weight_ci.filterCenter = { 0, 0 };
+    weight_ci.filterSize = image_processing_props.maxWeightFilterDimension;
+    weight_ci.numPhases = 1;
+    VkImageViewCreateInfo weight_view_ci = vku::InitStructHelper(&weight_ci);
+    weight_view_ci.image = weight_image;
+    weight_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    weight_view_ci.format = weight_format;
+    weight_view_ci.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    vkt::ImageView weight_image_view{ *m_device, weight_view_ci };
+
+    const char* cs_source = R"glsl(
+        #version 460
+
+        #extension GL_QCOM_image_processing: require
+
+        layout(set = 0, binding = 0) uniform texture2D sampled_tex;
+        layout(set = 0, binding = 1) uniform texture2DArray weight_tex;
+        layout(set = 0, binding = 2) uniform sampler processing_sampler;
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+        void main() {
+            vec4 result = textureWeightedQCOM(
+                sampler2D(sampled_tex, processing_sampler),
+                vec2(0.5, 0.5),
+                sampler2DArray(weight_tex, processing_sampler)
+            );
+        }
+    )glsl";
+
+    CreateComputePipelineHelper compute_pipe{ *this };
+    compute_pipe.cs_ = VkShaderObj{ *m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3 };
+    compute_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                  {1, VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                  {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    compute_pipe.CreateComputePipeline();
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(0, sampled_image_view, nullptr, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(1, weight_image_view, nullptr, VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(2, nullptr, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    compute_pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe.pipeline_layout_, 0, 1,
+                              &compute_pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageSampleWeightedQCOM-06971");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageSampleWeightedQCOM-06972");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeImage, ImageBoxFilterInstructionButInvalidFormatFeatures) {
+    TEST_DESCRIPTION("Try to launch a compute pass with an OpImageBoxFilterQCOM instruction, while "
+                     "the used image views have the invalid format features.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::textureBoxFilter);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceImageProcessingPropertiesQCOM image_processing_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(image_processing_props);
+
+    VkFormat sampled_format = VK_FORMAT_UNDEFINED;
+    for (VkFormat format : { VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8_UNORM, VK_FORMAT_R16G16_UNORM }) {
+        const auto format_features2 = m_device->FormatFeaturesOptimal(format);
+        if ((format_features2 & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
+            (format_features2 & VK_FORMAT_FEATURE_2_BOX_FILTER_SAMPLED_BIT_QCOM) == 0) {
+            sampled_format = format;
+            break;
+        }
+    }
+
+    if (sampled_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Failed to find any format that doesn't support VK_FORMAT_FEATURE_2_BOX_FILTER_SAMPLED_BIT_QCOM "
+                        "format feature, skipping test.";
+    }
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.flags = VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM;
+    sampler_ci.minLod = 0.0f;
+    sampler_ci.maxLod = 0.0f;
+    vkt::Sampler sampler{ *m_device, sampler_ci };
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(512, 512, 1, 1, sampled_format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image sampled_image{ *m_device, image_ci };
+    vkt::ImageView sampled_image_view = sampled_image.CreateView();
+
+    const char* cs_source = R"glsl(
+        #version 460
+
+        #extension GL_QCOM_image_processing: require
+
+        layout(constant_id = 0) const float BOX_SIZE_X = 8.0;
+        layout(constant_id = 1) const float BOX_SIZE_Y = 8.0;
+        layout(set = 0, binding = 0) uniform texture2D sampled_tex;
+        layout(set = 0, binding = 1) uniform sampler processing_sampler;
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+        void main() {
+            vec4 result = textureBoxFilterQCOM(
+                sampler2D(sampled_tex, processing_sampler),
+                vec2(0.5, 0.5),
+                vec2(BOX_SIZE_X, BOX_SIZE_Y)
+            );
+        }
+    )glsl";
+
+    CreateComputePipelineHelper compute_pipe{ *this };
+    constexpr std::array<VkSpecializationMapEntry, 2> map_entries{
+        VkSpecializationMapEntry{ 0, 0, sizeof(uint32_t) },
+        VkSpecializationMapEntry{ 1, sizeof(uint32_t), sizeof(uint32_t) },
+    };
+    const std::array<float, 2> box_sizes{
+        std::min(8.0f, static_cast<float>(image_processing_props.maxBoxFilterBlockSize.width)),
+        std::min(8.0f, static_cast<float>(image_processing_props.maxBoxFilterBlockSize.height)),
+    };
+    VkSpecializationInfo specialization_info{};
+    specialization_info.mapEntryCount = map_entries.size();
+    specialization_info.pMapEntries = map_entries.data();
+    specialization_info.dataSize = sizeof(box_sizes);
+    specialization_info.pData = box_sizes.data();
+    compute_pipe.cs_ = VkShaderObj{ *m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3,
+                                    SPV_SOURCE_GLSL, &specialization_info };
+    compute_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                  {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    compute_pipe.CreateComputePipeline();
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(0, sampled_image_view, nullptr, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(1, nullptr, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    compute_pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe.pipeline_layout_, 0, 1,
+                              &compute_pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageBoxFilterQCOM-06973");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeImage, ImageBoxFilterInstructionButInvalidSamplerFlags) {
+    TEST_DESCRIPTION("Try to launch a compute pass with an OpImageBoxFilterQCOM instruction, while "
+                     "the sampler doesn't include VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM flag.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::textureBoxFilter);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceImageProcessingPropertiesQCOM image_processing_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(image_processing_props);
+
+    VkFormat sampled_format = VK_FORMAT_UNDEFINED;
+    for (VkFormat format : { VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8_UNORM, VK_FORMAT_R16G16_UNORM }) {
+        const auto format_features2 = m_device->FormatFeaturesOptimal(format);
+        if ((format_features2 & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
+            (format_features2 & VK_FORMAT_FEATURE_2_BOX_FILTER_SAMPLED_BIT_QCOM) != 0) {
+            sampled_format = format;
+            break;
+        }
+    }
+
+    if (sampled_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Failed to find any format that supports VK_FORMAT_FEATURE_2_BOX_FILTER_SAMPLED_BIT_QCOM "
+                        "format feature, skipping test.";
+    }
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.minLod = 0.0f;
+    sampler_ci.maxLod = 0.0f;
+    vkt::Sampler sampler{ *m_device, sampler_ci };
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(512, 512, 1, 1, sampled_format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image sampled_image{ *m_device, image_ci };
+    vkt::ImageView sampled_image_view = sampled_image.CreateView();
+
+    const char* cs_source = R"glsl(
+        #version 460
+
+        #extension GL_QCOM_image_processing: require
+
+        layout(constant_id = 0) const float BOX_SIZE_X = 8.0;
+        layout(constant_id = 1) const float BOX_SIZE_Y = 8.0;
+        layout(set = 0, binding = 0) uniform texture2D sampled_tex;
+        layout(set = 0, binding = 1) uniform sampler processing_sampler;
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+        void main() {
+            vec4 result = textureBoxFilterQCOM(
+                sampler2D(sampled_tex, processing_sampler),
+                vec2(0.5, 0.5),
+                vec2(BOX_SIZE_X, BOX_SIZE_Y)
+            );
+        }
+    )glsl";
+
+    CreateComputePipelineHelper compute_pipe{ *this };
+    constexpr std::array<VkSpecializationMapEntry, 2> map_entries{
+        VkSpecializationMapEntry{ 0, 0, sizeof(uint32_t) },
+        VkSpecializationMapEntry{ 1, sizeof(uint32_t), sizeof(uint32_t) },
+    };
+    const std::array<float, 2> box_sizes{
+        std::min(8.0f, static_cast<float>(image_processing_props.maxBoxFilterBlockSize.width)),
+        std::min(8.0f, static_cast<float>(image_processing_props.maxBoxFilterBlockSize.height)),
+    };
+    VkSpecializationInfo specialization_info{};
+    specialization_info.mapEntryCount = map_entries.size();
+    specialization_info.pMapEntries = map_entries.data();
+    specialization_info.dataSize = sizeof(box_sizes);
+    specialization_info.pData = box_sizes.data();
+    compute_pipe.cs_ = VkShaderObj{ *m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3,
+                                    SPV_SOURCE_GLSL, &specialization_info };
+    compute_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                  {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    compute_pipe.CreateComputePipeline();
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(0, sampled_image_view, nullptr, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(1, nullptr, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    compute_pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe.pipeline_layout_, 0, 1,
+                              &compute_pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageSampleWeightedQCOM-06977");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeImage, ImageSampleImplicitInstructionButInvalidSamplerFlags) {
+    TEST_DESCRIPTION("Try to launch a compute pass with an OpImageSampleImplicitLod instruction, while "
+                     "the sampler includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM flag.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    constexpr VkFormat sampled_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.flags = VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM;
+    sampler_ci.minLod = 0.0f;
+    sampler_ci.maxLod = 0.0f;
+    vkt::Sampler sampler{ *m_device, sampler_ci };
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(512, 512, 1, 1, sampled_format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image sampled_image{ *m_device, image_ci };
+    vkt::ImageView sampled_image_view = sampled_image.CreateView();
+
+    const char* cs_source = R"glsl(
+        #version 460
+
+        layout(set = 0, binding = 0) uniform texture2D sampled_tex;
+        layout(set = 0, binding = 1) uniform sampler processing_sampler;
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+        void main() {
+            vec4 result = texture(sampler2D(sampled_tex, processing_sampler), vec2(0.5, 0.5));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper compute_pipe{ *this };
+    compute_pipe.cs_ = VkShaderObj{ *m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3 };
+    compute_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                  {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    compute_pipe.CreateComputePipeline();
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(0, sampled_image_view, nullptr, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(1, nullptr, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    compute_pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe.pipeline_layout_, 0, 1,
+                              &compute_pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageSampleWeightedQCOM-06978");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeImage, ImageBlockMatchInstructionButInvalidFormatFeatures) {
+    TEST_DESCRIPTION("Try to launch a compute pass with an OpImageBlockMatchSADQCOM instruction and "
+                     "an OpImageBlockMatchSSDQCOM instruction, while the image views have the invalid format features.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::textureBlockMatch);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceImageProcessingPropertiesQCOM image_processing_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(image_processing_props);
+
+    VkFormat sampled_format = VK_FORMAT_UNDEFINED;
+    for (VkFormat format : { VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8_UNORM, VK_FORMAT_R16_UNORM }) {
+        const auto format_features2 = m_device->FormatFeaturesOptimal(format);
+        if ((format_features2 & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
+            (format_features2 & VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM) == 0 &&
+            (format_features2 & VK_FORMAT_FEATURE_2_BLOCK_MATCHING_SXD_BIT_QCOM) == 0) {
+            sampled_format = format;
+            break;
+        }
+    }
+
+    if (sampled_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Failed to find any format that doesn't support VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM "
+                        "or VK_FORMAT_FEATURE_2_BLOCK_MATCHING_SXD_BIT_QCOM format feature, skipping test.";
+    }
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.flags = VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM;
+    sampler_ci.unnormalizedCoordinates = VK_TRUE;
+    sampler_ci.minLod = 0.0f;
+    sampler_ci.maxLod = 0.0f;
+    vkt::Sampler sampler{ *m_device, sampler_ci };
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, sampled_format,
+                                                        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM);
+    vkt::Image target_image{ *m_device, image_ci };
+    vkt::Image reference_image{ *m_device, image_ci };
+    vkt::ImageView target_image_view = target_image.CreateView();
+    vkt::ImageView reference_image_view = reference_image.CreateView();
+
+    const char* cs_source = R"glsl(
+        #version 460
+
+        #extension GL_QCOM_image_processing: require
+
+        layout(constant_id = 0) const uint BLOCK_SIZE_X = 8;
+        layout(constant_id = 1) const uint BLOCK_SIZE_Y = 8;
+        layout(set = 0, binding = 0) uniform texture2D target_tex;
+        layout(set = 0, binding = 1) uniform texture2D ref_tex;
+        layout(set = 0, binding = 2) uniform sampler processing_sampler;
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+        void main() {
+            uvec2 target_coord = uvec2(0, 0);
+            uvec2 ref_coord_1 = uvec2(12, 12);
+            uvec2 ref_coord_2 = uvec2(8, 8);
+            uvec2 block_size = uvec2(BLOCK_SIZE_X, BLOCK_SIZE_Y);
+            vec4 result_1 = textureBlockMatchSADQCOM(
+                sampler2D(target_tex, processing_sampler), target_coord,
+                sampler2D(ref_tex, processing_sampler), ref_coord_1,
+                block_size
+            );
+            vec4 result_2 = textureBlockMatchSSDQCOM(
+                sampler2D(target_tex, processing_sampler), target_coord,
+                sampler2D(ref_tex, processing_sampler), ref_coord_2,
+                block_size
+            );
+        }
+    )glsl";
+
+    CreateComputePipelineHelper compute_pipe{ *this };
+    constexpr std::array<VkSpecializationMapEntry, 2> map_entries{
+        VkSpecializationMapEntry{ 0, 0, sizeof(uint32_t) },
+        VkSpecializationMapEntry{ 1, sizeof(uint32_t), sizeof(uint32_t) },
+    };
+    const std::array<uint32_t, 2> block_sizes{
+        std::min(8u, image_processing_props.maxBlockMatchRegion.width),
+        std::min(8u, image_processing_props.maxBlockMatchRegion.height),
+    };
+    VkSpecializationInfo specialization_info{};
+    specialization_info.mapEntryCount = map_entries.size();
+    specialization_info.pMapEntries = map_entries.data();
+    specialization_info.dataSize = sizeof(block_sizes);
+    specialization_info.pData = block_sizes.data();
+    compute_pipe.cs_ = VkShaderObj{ *m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3,
+                                    SPV_SOURCE_GLSL, &specialization_info };
+    compute_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                  {1, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                  {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    compute_pipe.CreateComputePipeline();
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(0, target_image_view, nullptr, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(1, reference_image_view, nullptr, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(2, nullptr, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    compute_pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe.pipeline_layout_, 0, 1,
+                              &compute_pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageBlockMatchSSDQCOM-06974", 2);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageBlockMatchSADQCOM-12420", 2);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeImage, ImageBlockMatchWindowInstructionButInvalidFormatFeatures) {
+    TEST_DESCRIPTION("Try to launch a compute pass with an opImageBlockMatchWindowSSDQCOM instruction and "
+                     "an opImageBlockMatchGatherSADQCOM instruction, while the image views have the invalid format features.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::textureBlockMatch);
+    AddRequiredFeature(vkt::Feature::textureBlockMatch2);
+    AddRequiredFeature(vkt::Feature::blockMatchExtendedClampToEdge);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceImageProcessingPropertiesQCOM image_processing_props = vku::InitStructHelper();
+    VkPhysicalDeviceImageProcessing2PropertiesQCOM image_processing2_props = vku::InitStructHelper(&image_processing_props);
+    GetPhysicalDeviceProperties2(image_processing2_props);
+
+    VkFormat sampled_format = VK_FORMAT_UNDEFINED;
+    for (VkFormat format : { VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8_UNORM, VK_FORMAT_R16G16B16A16_UNORM }) {
+        const auto format_features2 = m_device->FormatFeaturesOptimal(format);
+        if ((format_features2 & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
+            (format_features2 & VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM) == 0) {
+            sampled_format = format;
+            break;
+        }
+    }
+
+    if (sampled_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Failed to find any format that doesn't support VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM "
+                        "from the format candidate list, skipping test.";
+    }
+
+    VkSamplerBlockMatchWindowCreateInfoQCOM block_match_window_ci = vku::InitStructHelper();
+    block_match_window_ci.windowExtent.width = std::min(8U, image_processing2_props.maxBlockMatchWindow.width);
+    block_match_window_ci.windowExtent.height = std::min(8U, image_processing2_props.maxBlockMatchWindow.height);
+    block_match_window_ci.windowCompareMode = VK_BLOCK_MATCH_WINDOW_COMPARE_MODE_MIN_QCOM;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo(&block_match_window_ci);
+    sampler_ci.flags = VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM;
+    sampler_ci.unnormalizedCoordinates = VK_TRUE;
+    sampler_ci.minLod = 0.0f;
+    sampler_ci.maxLod = 0.0f;
+    vkt::Sampler sampler{ *m_device, sampler_ci };
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, sampled_format,
+                                                        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM);
+    vkt::Image target_image{ *m_device, image_ci };
+    vkt::Image reference_image{ *m_device, image_ci };
+    vkt::ImageView target_image_view = target_image.CreateView();
+    vkt::ImageView reference_image_view = reference_image.CreateView();
+
+    const char* cs_source = R"glsl(
+        #version 460
+
+        #extension GL_QCOM_image_processing: require
+        #extension GL_QCOM_image_processing2: require
+
+        layout(constant_id = 0) const uint BLOCK_SIZE_X = 8;
+        layout(constant_id = 1) const uint BLOCK_SIZE_Y = 8;
+        layout(set = 0, binding = 0) uniform texture2D target_tex;
+        layout(set = 0, binding = 1) uniform texture2D ref_tex;
+        layout(set = 0, binding = 2) uniform sampler processing_sampler;
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+        void main() {
+            uvec2 target_coord = uvec2(0, 0);
+            uvec2 ref_coord_1 = uvec2(8, 8);
+            uvec2 ref_coord_2 = uvec2(0, 0);
+            uvec2 block_size = uvec2(BLOCK_SIZE_X, BLOCK_SIZE_Y);
+            vec4 result_1 = textureBlockMatchWindowSSDQCOM(
+                sampler2D(target_tex, processing_sampler), target_coord,
+                sampler2D(ref_tex, processing_sampler), ref_coord_1,
+                block_size
+            );
+            vec4 result_2 = textureBlockMatchGatherSADQCOM(
+                sampler2D(target_tex, processing_sampler), target_coord,
+                sampler2D(ref_tex, processing_sampler), ref_coord_2,
+                block_size
+            );
+        }
+    )glsl";
+
+    CreateComputePipelineHelper compute_pipe{ *this };
+    constexpr std::array<VkSpecializationMapEntry, 2> map_entries{
+        VkSpecializationMapEntry{ 0, 0, sizeof(uint32_t) },
+        VkSpecializationMapEntry{ 1, sizeof(uint32_t), sizeof(uint32_t) }
+    };
+    const std::array<uint32_t, 2> block_sizes{
+        std::min(8u, image_processing_props.maxBlockMatchRegion.width),
+        std::min(8u, image_processing_props.maxBlockMatchRegion.height),
+    };
+    VkSpecializationInfo specialization_info{};
+    specialization_info.mapEntryCount = map_entries.size();
+    specialization_info.pMapEntries = map_entries.data();
+    specialization_info.dataSize = sizeof(block_sizes);
+    specialization_info.pData = block_sizes.data();
+    compute_pipe.cs_ = VkShaderObj{ *m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3,
+                                    SPV_SOURCE_GLSL, &specialization_info };
+    compute_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                  {1, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                  {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    compute_pipe.CreateComputePipeline();
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(0, target_image_view, nullptr, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(1, reference_image_view, nullptr, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM);
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(2, nullptr, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    compute_pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe.pipeline_layout_, 0, 1,
+                              &compute_pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageBlockMatchWindow-09215", 2);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageBlockMatchWindow-09216", 2);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
 }

@@ -351,6 +351,20 @@ bool Device::ValidateSamplerImageProcessingQCOM(const VkSamplerCreateInfo& creat
                          "but compareEnable is VK_TRUE.");
     }
 
+    if (enabled_features.textureBlockMatch2) {
+        if (const auto* block_match_window_ci = vku::FindStructInPNextChain<VkSamplerBlockMatchWindowCreateInfoQCOM>(create_info.pNext)) {
+            if (block_match_window_ci->windowExtent.width > phys_dev_ext_props.image_processing2_props.maxBlockMatchWindow.width ||
+                block_match_window_ci->windowExtent.height > phys_dev_ext_props.image_processing2_props.maxBlockMatchWindow.height) {
+                skip |= LogError("VUID-VkSamplerBlockMatchWindowCreateInfoQCOM-WindowExtent-09210",
+                                 device,
+                                 create_info_loc.pNext(Struct::VkSamplerBlockMatchWindowCreateInfoQCOM, Field::windowExtent),
+                                 "(%s) is larger than VkPhysicalDeviceImageProcessing2PropertiesQCOM::maxBlockMatchWindow (%s).",
+                                 string_VkExtent2D(block_match_window_ci->windowExtent).c_str(),
+                                 string_VkExtent2D(phys_dev_ext_props.image_processing2_props.maxBlockMatchWindow).c_str());
+            }
+        }
+    }
+
     return skip;
 }
 
