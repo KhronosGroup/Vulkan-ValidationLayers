@@ -257,8 +257,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         const bool push_address =
                             (mapping_info && mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT);
 
-                        ss << "is trying to access the descriptor at its " << (push_address ? "indirect" : "resource")
-                           << " buffer at 0x" << std::hex << final_address << ", but this not aligned to "
+                        ss << "is accessing the descriptor at its " << (push_address ? "indirect" : "resource") << " buffer at 0x"
+                           << std::hex << final_address << ", but this not aligned to "
                            << (is_uniform ? "minUniformBufferOffsetAlignment" : "minStorageBufferOffsetAlignment") << " (0x"
                            << (is_uniform ? gpuav.phys_dev_props.limits.minUniformBufferOffsetAlignment
                                           : gpuav.phys_dev_props.limits.minStorageBufferOffsetAlignment)
@@ -268,6 +268,16 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                                                           ? vvl::ActionVUID::DESCRIPTOR_HEAP_ADDRESS_BUFFER_ALIGNMENT_11441
                                                           : vvl::ActionVUID::DESCRIPTOR_HEAP_ADDRESS_BUFFER_ALIGNMENT_11442;
                         out_vuid_msg = vvl::CreateActionVuid(loc.function, action_vuid);
+                        error_found = true;
+                    } break;
+
+                    case kErrorSubCode_DescriptorHeap_HeapBufferAlignment: {
+                        ss << "is accessing the heap at offset 0x" << std::hex << offset << " (address 0x" << std::hex
+                           << heap_address << ") which is not aligned to minUniformBufferOffsetAlignment (0x"
+                           << gpuav.phys_dev_props.limits.minUniformBufferOffsetAlignment << ")\n";
+
+                        out_vuid_msg =
+                            vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_ADDRESS_BUFFER_ALIGNMENT_11441);
                         error_found = true;
                     } break;
 
@@ -287,7 +297,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                             }
                         }
 
-                        ss << "is trying to access the indirect buffer, but the indirect address is null.\n";
+                        ss << "is accessing the indirect buffer, but the indirect address is null.\n";
                         out_vuid_msg = vvl::CreateActionVuid(loc.function, action_vuid);
                         error_found = true;
                     } break;

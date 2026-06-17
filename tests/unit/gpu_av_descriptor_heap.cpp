@@ -2189,6 +2189,50 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingAddressBufferAlignment) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGpuAVDescriptorHeap, MappingAddressBufferAlignmentHeap) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    CreateResourceHeap(heap_props.bufferDescriptorSize);
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    WriteBufferToHeap(ssbo_buffer);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
+    mappings[0].sourceData.pushAddressOffset = 8;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT;
+    mappings[1].sourceData.heapData.heapOffset = 0;
+    mappings[1].sourceData.heapData.pushOffset = 0;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(set = 0, binding = 1) uniform B { uint b; };
+        void main() {
+            a = b;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    uint32_t bad_offset = 1;
+    VkDeviceAddress ssbo_address = ssbo_buffer.Address();
+    m_command_buffer.PushData(0, sizeof(uint32_t), &bad_offset);
+    m_command_buffer.PushData(8, sizeof(VkDeviceAddress), &ssbo_address);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11441");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGpuAVDescriptorHeap, MappingIndirectAddressBufferAlignment) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;

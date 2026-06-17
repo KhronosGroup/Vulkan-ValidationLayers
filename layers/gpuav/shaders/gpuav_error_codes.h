@@ -90,6 +90,7 @@ const int kErrorSubCode_DescriptorHeap_IndirectAddressPushAlignment = 6;
 const int kErrorSubCode_DescriptorHeap_AddressBufferAlignment = 7;
 const int kErrorSubCode_DescriptorHeap_InvalidDeviceAddress = 8;
 const int kErrorSubCode_DescriptorHeap_InvalidDeviceAddressResource = 9;
+const int kErrorSubCode_DescriptorHeap_HeapBufferAlignment = 10;
 
 // Buffer Device Address
 //
