@@ -1913,6 +1913,8 @@ bool CoreChecks::ValidateWriteUpdateDescriptorType(const VkWriteDescriptorSet& u
     } else if (IsValueIn(descriptor_type, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC})) {
         skip |= ValidateWriteUpdateBufferInfo(update, write_loc);
+    } else if (IsValueIn(descriptor_type, {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER})) {
+        skip |= ValidateWriteUpdateTexelBuffer(update, write_loc);
     } else if (IsValueIn(descriptor_type,
                          {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                           VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
@@ -1929,6 +1931,16 @@ bool CoreChecks::ValidateWriteUpdateDescriptorType(const VkWriteDescriptorSet& u
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateWriteUpdateTexelBuffer(const VkWriteDescriptorSet& update, const Location& write_loc) const {
+    bool skip = false;
+    if (!update.pTexelBufferView) {
+        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02994", device, write_loc.dot(Field::descriptorType),
+                         "is %s but pTexelBufferView is NULL.", string_VkDescriptorType(update.descriptorType));
+        return skip;
+    }
     return skip;
 }
 
@@ -2285,7 +2297,9 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, co
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
         case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
         case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM: {
-            if (!update.pImageInfo) break;
+            if (!update.pImageInfo) {
+                break;
+            }
             for (uint32_t di = 0; di < update.descriptorCount; ++di) {
                 const VkImageView image_view = update.pImageInfo[di].imageView;
                 auto image_layout = update.pImageInfo[di].imageLayout;
@@ -2306,6 +2320,9 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, co
         }
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: {
+            if (!update.pTexelBufferView) {
+                break;
+            }
             for (uint32_t di = 0; di < update.descriptorCount; ++di) {
                 const VkBufferView buffer_view_handle = update.pTexelBufferView[di];
                 if (buffer_view_handle == VK_NULL_HANDLE) continue;
@@ -2363,7 +2380,9 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, co
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: {
-            if (!update.pBufferInfo) break;
+            if (!update.pBufferInfo) {
+                break;
+            }
             for (uint32_t di = 0; di < update.descriptorCount; ++di) {
                 const auto& buffer_info = update.pBufferInfo[di];
                 if (buffer_info.buffer == VK_NULL_HANDLE && enabled_features.nullDescriptor) {
