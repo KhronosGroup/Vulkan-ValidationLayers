@@ -878,13 +878,11 @@ void Module::LinkFunctions(const LinkInfo& info) {
                 // - We reworked our functions to be smaller because we have to assume it will be inlined
                 //
                 // ... With all of that, we still "try" as it "should" be faster if it is not inlined
-                if (interface_.entry_point_stage & kShaderStageAllRayTracing) {
-                    // Found on NVIDIA there are nasty bugs/behavior using this in RTX stages
-                    // (clearly no CTS is written to use it)
-                    new_inst->UpdateWord(3, spv::FunctionControlMaskNone);
-                } else {
-                    new_inst->UpdateWord(3, spv::FunctionControlDontInlineMask);
-                }
+                // ---
+                // Update: The FunctionControlDontInlineMask mask causes a crash in Nvidia drivers,
+                // the only drivers supporting this feature, so it disabled for now.
+                // (tested with version 610.62 on a RTX 5090)
+                new_inst->UpdateWord(3, spv::FunctionControlMaskNone);
                 new_inst->UpdateWord(4, function_type_id_map[new_inst->Word(4)]);
             } else if (opcode == spv::OpLabel) {
                 uint32_t new_result_id = id_swap_map[new_inst->ResultId()];
