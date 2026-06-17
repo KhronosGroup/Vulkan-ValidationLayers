@@ -31,6 +31,7 @@ class DebugPrintfPass : public Pass {
     const char* Name() const final { return "DebugPrintfPass"; }
 
     bool Instrument() final;
+    void PostProcess() final;
     void PrintDebugInfo() const final;
 
   private:

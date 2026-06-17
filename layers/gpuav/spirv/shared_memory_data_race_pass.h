@@ -27,6 +27,7 @@ class SharedMemoryDataRacePass : public Pass {
     SharedMemoryDataRacePass(Module& module);
     const char* Name() const final { return "SharedMemoryDataRacePass"; }
     bool Instrument() final;
+    void PostProcess() final;
     void PrintDebugInfo() const final;
 
   private:

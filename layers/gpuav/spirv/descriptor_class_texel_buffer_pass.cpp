@@ -198,6 +198,10 @@ bool DescriptorClassTexelBufferPass::Instrument() {
         }
     }
 
+    return instrumentations_count_ != 0;
+}
+
+void DescriptorClassTexelBufferPass::PostProcess() {
     if (instrumentations_count_ > 75) {
         module_.InternalWarning(
             "GPUAV-Compile-time-texel-buffer",
@@ -205,8 +209,6 @@ bool DescriptorClassTexelBufferPass::Instrument() {
             "checks for texel "
             "buffers. Turn on the |gpuav_force_on_robustness| setting to skip these checks and improve GPU-AV performance.");
     }
-
-    return instrumentations_count_ != 0;
 }
 
 }  // namespace spirv

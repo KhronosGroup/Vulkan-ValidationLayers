@@ -575,10 +575,10 @@ bool DebugPrintfPass::Instrument() {
             }
         }
     }
-    if (instrumentations_count_ == 0) {
-        return false;
-    }
+    return instrumentations_count_ != 0;
+}
 
+void DebugPrintfPass::PostProcess() {
     const uint32_t output_buffer_variable_id = CreateDescriptorSet();
 
     // Here we "link" the functions, but since it is all generated, no need to go through the LinkInfo flow
@@ -608,8 +608,6 @@ bool DebugPrintfPass::Instrument() {
             }
         }
     }
-
-    return true;
 }
 
 void DebugPrintfPass::PrintDebugInfo() const {
