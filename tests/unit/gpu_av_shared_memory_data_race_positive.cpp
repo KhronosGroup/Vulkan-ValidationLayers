@@ -850,3 +850,47 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreDisjointUint8) 
 
     TestHelper(shader_source, SPV_SOURCE_GLSL, SPV_ENV_VULKAN_1_2, VK_SCOPE_SUBGROUP_KHR);
 }
+
+// The SharedMemoryDataRace was early returning when gpuav_debug_max_instrumentations_count was reached,
+// without finishing its setup, leading to invalid instrumented SPIR-V
+TEST_F(PositiveGpuAVSharedMemoryDataRace, InstrumentationCountCapStillValid) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    VkBool32 validate_instrumented = VK_TRUE;
+    uint32_t max_instrumentations = 1;
+    const VkLayerSettingEXT settings[] = {
+        {OBJECT_LAYER_NAME, "gpuav_debug_validate_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+         &validate_instrumented},
+        {OBJECT_LAYER_NAME, "gpuav_debug_max_instrumentations_count", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &max_instrumentations},
+    };
+    RETURN_IF_SKIP(InitGpuAvFramework({settings[0], settings[1]}, false));
+    RETURN_IF_SKIP(InitState());
+
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 2) in;
+        shared uint temp[2];
+        void main() {
+            temp[gl_LocalInvocationIndex] = 0;
+            barrier();
+            uint x = temp[gl_LocalInvocationIndex ^ 1];
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
