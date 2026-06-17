@@ -1299,6 +1299,7 @@ void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const
 
     if (IsExtEnabled(extensions.vk_arm_data_graph_optical_flow)) {
         optical_flow_formats.input = GetOpticalFlowFormats(physical_device, VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM);
+        optical_flow_formats.output = GetOpticalFlowFormats(physical_device, VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM);
     }
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {

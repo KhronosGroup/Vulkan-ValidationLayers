@@ -2339,6 +2339,21 @@ TEST_F(NegativeDataGraph, OpticalFlowWrongImageFormat) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDataGraph, OpticalFlowWrongFlowVectorFormat) {
+    TEST_DESCRIPTION("Try to create an optical flow data graph pipeline with an unsupported flow vector image format");
+
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+
+    /* Set an unsupported flowVectorFormat. ASTC are block formats, incompatible with optical flow operations. */
+    optical_flow.optical_flow_ci_.flowVectorFormat = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-flowVectorFormat-09969");
+    (void)optical_flow.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDataGraph, OpticalFlowWrongHint) {
     TEST_DESCRIPTION("Execute optical flow with a wrong meanFlowL1NormHint value");
     RETURN_IF_SKIP(InitBasicDataGraph(true));

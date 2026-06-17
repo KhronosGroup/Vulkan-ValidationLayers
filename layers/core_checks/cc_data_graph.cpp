@@ -168,12 +168,21 @@ bool CoreChecks::ValidateOpticalFlowCreateInfo(const VkDataGraphPipelineOpticalF
     };
 
     const VkFormat imageFormat = optical_flow_ci.imageFormat;
-    const std::vector<VkFormat> formats = device_state->optical_flow_formats.input;
+    std::vector<VkFormat> formats = device_state->optical_flow_formats.input;
 
     if (std::find(formats.begin(), formats.end(), imageFormat) == formats.end()) {
         skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-imageFormat-09968", device,
                          optical_flow_ci_loc.dot(Field::imageFormat), "(%s) is not supported.\nSupported formats: %s.",
                          string_VkFormat(imageFormat), list_formats(formats).c_str());
+    }
+
+    const VkFormat flowVectorFormat = optical_flow_ci.flowVectorFormat;
+    formats = device_state->optical_flow_formats.output;
+
+    if (std::find(formats.begin(), formats.end(), flowVectorFormat) == formats.end()) {
+        skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-flowVectorFormat-09969", device,
+                         optical_flow_ci_loc.dot(Field::flowVectorFormat), "(%s) is not supported.\nSupported formats: %s.",
+                         string_VkFormat(flowVectorFormat), list_formats(formats).c_str());
     }
 
     return skip;

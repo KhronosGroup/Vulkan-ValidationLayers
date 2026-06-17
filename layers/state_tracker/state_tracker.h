@@ -2144,7 +2144,8 @@ class DeviceState : public vvl::BaseDevice {
     vvl::unordered_map<uint32_t, std::vector<VkQueueFamilyDataGraphPropertiesARM>> queue_family_data_graph_properties;
 
     struct OpticalFlowFormatsARM {
-        std::vector<VkFormat> input;  // VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM
+        std::vector<VkFormat> input;   // VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM
+        std::vector<VkFormat> output;  // VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM
     } optical_flow_formats;
 
     // Features and properties that depend on platforms being defined
