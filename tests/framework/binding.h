@@ -215,10 +215,11 @@ class QueueCreateInfoArray {
 
 class Device : public internal::Handle<VkDevice> {
   public:
-    explicit Device(VkPhysicalDevice phy, const VkDeviceCreateInfo &info) : physical_device_(phy) { Init(info); }
+    explicit Device(VkPhysicalDevice phy, const VkDeviceCreateInfo &info) : target_api_version_(VK_API_VERSION_1_0), physical_device_(phy) { Init(info); }
     explicit Device(VkPhysicalDevice phy, std::vector<const char *> &extension_names, VkPhysicalDeviceFeatures *features = nullptr,
-                    void *create_device_pnext = nullptr, bool all_queue_count = false)
-        : physical_device_(phy) {
+                    void *create_device_pnext = nullptr, bool all_queue_count = false,
+                    uint32_t target_api_version = VK_API_VERSION_1_0)
+        : target_api_version_(target_api_version), physical_device_(phy) {
         Init(extension_names, features, create_device_pnext, all_queue_count);
     }
 
@@ -266,6 +267,7 @@ class Device : public internal::Handle<VkDevice> {
     Queue *NonGraphicsQueue() const;
 
     uint32_t graphics_queue_node_index_ = vvl::kNoIndex32;
+    const uint32_t target_api_version_;
 
     const PhysicalDevice physical_device_;
 
@@ -316,7 +318,6 @@ class Device : public internal::Handle<VkDevice> {
 
     std::vector<const char *> enabled_extensions_;
     VkPhysicalDeviceFeatures features_;
-
     std::vector<QueueFamilyQueues> queue_families_;
     std::vector<Queue *> queues_[QUEUE_CAPABILITY_COUNT];
 };

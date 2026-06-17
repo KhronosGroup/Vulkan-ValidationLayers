@@ -407,6 +407,109 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                              ? spirv::ImageInstruction(&(*original_spirv)[instruction_position_offset])
                                              : resource_variable.info.image_insn;
 
+    const VkFormat image_view_format = image_view_state->create_info.format;
+
+    if ((resource_variable.info.image_insn.image_proc_usage_mask & spirv::ImageProcUsageBit::kSampleWeighted) != 0) {
+        if (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM &&
+            (image_view_state->format_features & VK_FORMAT_FEATURE_2_WEIGHT_IMAGE_BIT_QCOM) == 0) {
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
+            skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::IMAGE_SAMPLE_WEIGHTED_QCOM_06972),
+                             objlist, loc.Get(),
+                             "the %s has %s with format of %s which doesn't support "
+                             "VK_FORMAT_FEATURE_2_WEIGHT_IMAGE_BIT_QCOM.\n"
+                             "(supported features: %s).%s",
+                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                             FormatHandle(image_view).c_str(), string_VkFormat(image_view_state->create_info.format),
+                             string_VkFormatFeatureFlags2(image_view_state->format_features).c_str(),
+                             DescribeInstruction().c_str());
+        } else if (descriptor_type != VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM &&
+                   (image_view_state->format_features & VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM) == 0) {
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
+            skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::IMAGE_SAMPLE_WEIGHTED_QCOM_06971),
+                             objlist, loc.Get(),
+                             "the %s has %s with format of %s which doesn't support "
+                             "VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM.\n"
+                             "(supported features: %s).%s",
+                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                             FormatHandle(image_view).c_str(), string_VkFormat(image_view_state->create_info.format),
+                             string_VkFormatFeatureFlags2(image_view_state->format_features).c_str(),
+                             DescribeInstruction().c_str());
+        }
+    }
+
+    if ((resource_variable.info.image_insn.image_proc_usage_mask & spirv::ImageProcUsageBit::kBoxFilter) != 0 &&
+        (image_view_state->format_features & VK_FORMAT_FEATURE_2_BOX_FILTER_SAMPLED_BIT_QCOM) == 0) {
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
+        skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::IMAGE_BOX_FILTER_QCOM_06973),
+                         objlist, loc.Get(),
+                         "the %s has %s with format of %s which doesn't support "
+                         "VK_FORMAT_FEATURE_2_BOX_FILTER_SAMPLED_BIT_QCOM.\n"
+                         "(supported features: %s).%s",
+                         DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                         FormatHandle(image_view).c_str(), string_VkFormat(image_view_state->create_info.format),
+                         string_VkFormatFeatureFlags2(image_view_state->format_features).c_str(),
+                         DescribeInstruction().c_str());
+    }
+
+    if ((resource_variable.info.image_insn.image_proc_usage_mask & spirv::ImageProcUsageBit::kBlockMatchSsd) != 0 &&
+        (image_view_state->format_features & VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM) == 0 &&
+        (image_view_state->format_features & VK_FORMAT_FEATURE_2_BLOCK_MATCHING_SXD_BIT_QCOM) == 0) {
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
+        skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::IMAGE_BLOCK_MATCH_SSD_QCOM_06974),
+                         objlist, loc.Get(),
+                         "the %s has %s with format of %s which doesn't support "
+                         "VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM or VK_FORMAT_FEATURE_2_BLOCK_MATCHING_SXD_BIT_QCOM.\n"
+                         "(supported features: %s).%s",
+                         DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                         FormatHandle(image_view).c_str(), string_VkFormat(image_view_state->create_info.format),
+                         string_VkFormatFeatureFlags2(image_view_state->format_features).c_str(),
+                         DescribeInstruction().c_str());
+    }
+
+    if ((resource_variable.info.image_insn.image_proc_usage_mask & spirv::ImageProcUsageBit::kBlockMatchSad) != 0 &&
+        (image_view_state->format_features & VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM) == 0 &&
+        (image_view_state->format_features & VK_FORMAT_FEATURE_2_BLOCK_MATCHING_SXD_BIT_QCOM) == 0) {
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
+        skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::IMAGE_BLOCK_MATCH_SAD_QCOM_12420),
+                         objlist, loc.Get(),
+                         "the %s has %s with format of %s which doesn't support "
+                         "VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM or VK_FORMAT_FEATURE_2_BLOCK_MATCHING_SXD_BIT_QCOM.\n"
+                         "(supported features: %s).%s",
+                         DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                         FormatHandle(image_view).c_str(), string_VkFormat(image_view_state->create_info.format),
+                         string_VkFormatFeatureFlags2(image_view_state->format_features).c_str(),
+                         DescribeInstruction().c_str());
+    }
+
+    if ((resource_variable.info.image_insn.image_proc_usage_mask & spirv::ImageProcUsageBit::kBlockMatchWindow) != 0) {
+        if ((image_view_state->format_features & VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM) == 0) {
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
+            skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::IMAGE_BLOCK_MATCH_WINDOW_QCOM_09215),
+                             objlist, loc.Get(),
+                             "the %s has %s with format of %s which doesn't support "
+                             "VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM.\n"
+                             "(supported features: %s).%s",
+                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                             FormatHandle(image_view).c_str(), string_VkFormat(image_view_state->create_info.format),
+                             string_VkFormatFeatureFlags2(image_view_state->format_features).c_str(),
+                             DescribeInstruction().c_str());
+        }
+        const uint32_t component_count = vkuFormatComponentCount(image_view_state->create_info.format);
+        if (component_count != 1) {
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
+            skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::IMAGE_BLOCK_MATCH_WINDOW_QCOM_09216),
+                             objlist, loc.Get(),
+                             "the %s has %s with format of %s which has %" PRIu32
+                             " components, but OpImageBlockMatchWindow*QCOM and OpImageBlockMatchGather*QCOM "
+                             "require a single-component format.%s",
+                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                             FormatHandle(image_view).c_str(),
+                             string_VkFormat(image_view_state->create_info.format),
+                             component_count,
+                             DescribeInstruction().c_str());
+        }
+    }
+
     // if combined sampler, this variable might not be a OpTypeImage
     // SubpassData gets validated elsewhere
     if (resource_variable.IsImage() && dim != spv::DimSubpassData) {
@@ -816,7 +919,6 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     // If the Image View is invalid, the combined sampler mayb have the same issue
     if (skip) return skip;
 
-    const VkFormat image_view_format = image_view_state->create_info.format;
     for (const auto* sampler_state : sampler_states) {
         if (!sampler_state || sampler_state->Destroyed()) {
             continue;
@@ -1037,6 +1139,32 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  FormatHandle(image_view).c_str(), FormatHandle(sampler_state->Handle()).c_str(),
                                  DescribeInstruction().c_str());
             }
+        }
+
+        if (resource_variable.info.image_insn.image_proc_usage_mask != spirv::ImageProcUsageBit::kNone &&
+            (sampler_state->create_info.flags & VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM) == 0) {
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, sampler_state->Handle());
+            skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::IMAGE_PROCESSING_SAMPLE_QCOM_06977),
+                             objlist, loc.Get(),
+                             "the %s has %s paired with sampler %s (flags: %s), but "
+                             "VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM is required for image-processing instructions.%s",
+                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                             FormatHandle(image_view).c_str(),
+                             FormatHandle(sampler_state->Handle()).c_str(),
+                             string_VkSamplerCreateFlags(sampler_state->create_info.flags).c_str(),
+                             DescribeInstruction().c_str());
+        } else if (resource_variable.info.image_insn.image_proc_usage_mask == spirv::ImageProcUsageBit::kNone &&
+                   (sampler_state->create_info.flags & VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM) != 0) {
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, sampler_state->Handle());
+            skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::IMAGE_PROCESSING_SAMPLE_QCOM_06978),
+                             objlist, loc.Get(),
+                             "the %s has %s paired with sampler %s (flags: %s), but "
+                             "VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM is only valid with image-processing instructions.%s",
+                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                             FormatHandle(image_view).c_str(),
+                             FormatHandle(sampler_state->Handle()).c_str(),
+                             string_VkSamplerCreateFlags(sampler_state->create_info.flags).c_str(),
+                             DescribeInstruction().c_str());
         }
     }
 

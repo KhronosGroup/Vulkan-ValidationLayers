@@ -691,7 +691,8 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures* features, void* crea
         }
     }
 
-    m_device = new vkt::Device(gpu_, m_device_extension_names, features, create_device_pnext, all_queue_count_);
+    m_device = new vkt::Device(gpu_, m_device_extension_names, features, create_device_pnext, all_queue_count_,
+                               m_target_api_version.Value());
 
     for (const char* device_ext_name : m_device_extension_names) {
         vk::InitDeviceExtension(instance_, *m_device, device_ext_name);
