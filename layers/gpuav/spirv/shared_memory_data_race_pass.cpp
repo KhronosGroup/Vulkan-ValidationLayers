@@ -363,51 +363,54 @@ bool SharedMemoryDataRacePass::Instrument() {
     work_group_size_id_ = type_manager_.GetConstantUInt32(work_group_size).Id();
 
     // Can safely loop function list as there is no injecting of new Functions until linking time
-    for (Function& function : module_.functions_) {
-        if (!function.called_from_target_) {
-            continue;
-        }
-        for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
-            BasicBlock& current_block = **block_it;
-
-            cf_.Update(current_block);
-            if (debug_disable_loops_ && cf_.in_loop) {
+    // Note: If MaxInstrumentationsCountReached() returns true, shador_var still needs to be added, so don't just early return
+    [&]() {
+        for (Function& function : module_.functions_) {
+            if (!function.called_from_target_) {
                 continue;
             }
+            for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
+                BasicBlock& current_block = **block_it;
 
-            if (current_block.IsLoopHeader()) {
-                continue;  // Currently can't properly handle injecting CFG logic into a loop header block
-            }
-            auto& block_instructions = current_block.instructions_;
-
-            // Call init_shadow at the start of the entry point
-            if (function.id_ == module_.target_entry_point_id_ && block_it == function.blocks_.begin()) {
-                InstructionIt inst_it = current_block.GetFirstInjectableInstrution();
-
-                InstructionMeta meta;
-                meta.target_instruction = &*(inst_it->get());
-                meta.function_idx = INIT_SHADOW;
-
-                CreateFunctionCall(function, current_block, &inst_it, meta);
-                instrumentations_count_++;
-            }
-
-            for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                InstructionMeta meta;
-                // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!RequiresInstrumentation(function, current_block, inst_it, *(inst_it->get()), meta)) {
+                cf_.Update(current_block);
+                if (debug_disable_loops_ && cf_.in_loop) {
                     continue;
                 }
 
-                if (MaxInstrumentationsCountReached()) {
-                    return instrumentations_count_ != 0;
+                if (current_block.IsLoopHeader()) {
+                    continue;  // Currently can't properly handle injecting CFG logic into a loop header block
                 }
-                instrumentations_count_++;
+                auto& block_instructions = current_block.instructions_;
 
-                CreateFunctionCall(function, current_block, &inst_it, meta);
+                // Call init_shadow at the start of the entry point
+                if (function.id_ == module_.target_entry_point_id_ && block_it == function.blocks_.begin()) {
+                    InstructionIt inst_it = current_block.GetFirstInjectableInstrution();
+
+                    InstructionMeta meta;
+                    meta.target_instruction = &*(inst_it->get());
+                    meta.function_idx = INIT_SHADOW;
+
+                    CreateFunctionCall(function, current_block, &inst_it, meta);
+                    instrumentations_count_++;
+                }
+
+                for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
+                    InstructionMeta meta;
+                    // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
+                    if (!RequiresInstrumentation(function, current_block, inst_it, *(inst_it->get()), meta)) {
+                        continue;
+                    }
+
+                    if (MaxInstrumentationsCountReached()) {
+                        return;
+                    }
+                    instrumentations_count_++;
+
+                    CreateFunctionCall(function, current_block, &inst_it, meta);
+                }
             }
         }
-    }
+    }();
 
     // Need to actutally add the shadow array variable type into the module
     if (instrumentations_count_ != 0) {
