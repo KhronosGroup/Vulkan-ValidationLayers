@@ -804,6 +804,7 @@ class CoreChecks : public vvl::DeviceProxy {
                              const vvl::DslErrorSource& dsl_error_source) const;
     bool ValidateWriteUpdateDescriptorType(const VkWriteDescriptorSet& update, const Location& write_loc) const;
     bool ValidateWriteUpdateBufferInfo(const VkWriteDescriptorSet& update, const Location& write_loc) const;
+    bool ValidateWriteUpdateTexelBuffer(const VkWriteDescriptorSet& update, const Location& write_loc) const;
     bool ValidateWriteUpdateInlineUniformBlock(const VkWriteDescriptorSet& update, const Location& write_loc) const;
     bool ValidateWriteUpdateAccelerationStructureKHR(const VkWriteDescriptorSet& update, const Location& write_loc) const;
     bool ValidateWriteUpdateAccelerationStructureNV(const VkWriteDescriptorSet& update, const Location& write_loc) const;

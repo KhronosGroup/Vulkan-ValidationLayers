@@ -545,10 +545,11 @@ TEST_F(NegativeDescriptors, DescriptorSetLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, WriteDescriptorSetNullBufferInfo) {
+TEST_F(NegativeDescriptors, WriteDescriptorSetNull) {
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {1, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
@@ -559,6 +560,12 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetNullBufferInfo) {
     descriptor_write.pBufferInfo = nullptr;
 
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00324");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    descriptor_write.dstBinding = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02994");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 }

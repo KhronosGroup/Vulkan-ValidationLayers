@@ -423,14 +423,17 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const* desc, bool is_p
     switch (desc->descriptorType) {
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: {
-            for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
-                skip |= ValidateObject(desc->pTexelBufferView[i], kVulkanObjectTypeBufferView, true,
+            if (desc->pTexelBufferView) {
+                for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
+                    skip |=
+                        ValidateObject(desc->pTexelBufferView[i], kVulkanObjectTypeBufferView, true,
                                        "VUID-VkWriteDescriptorSet-descriptorType-02994",
                                        "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06236", loc.dot(Field::pTexelBufferView, i));
-                if (!enabled_features.nullDescriptor && desc->pTexelBufferView[i] == VK_NULL_HANDLE) {
-                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02995", desc->dstSet,
-                                     loc.dot(Field::pTexelBufferView, i), "is VK_NULL_HANDLE, and descriptorType is %s",
-                                     string_VkDescriptorType(desc->descriptorType));
+                    if (!enabled_features.nullDescriptor && desc->pTexelBufferView[i] == VK_NULL_HANDLE) {
+                        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02995", desc->dstSet,
+                                         loc.dot(Field::pTexelBufferView, i), "is VK_NULL_HANDLE, and descriptorType is %s",
+                                         string_VkDescriptorType(desc->descriptorType));
+                    }
                 }
             }
             break;
