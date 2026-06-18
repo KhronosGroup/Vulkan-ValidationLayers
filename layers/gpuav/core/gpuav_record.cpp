@@ -965,7 +965,7 @@ bool Validator::PreCallValidateCmdPushDataEXT(VkCommandBuffer commandBuffer, con
     if (!gpuav_settings.IsShaderInstrumentationEnabled()) {
         return skip;
     }
-    const uint32_t final_byte = pPushDataInfo->offset + pPushDataInfo->data.size;
+    const uint32_t final_byte = (uint32_t)(pPushDataInfo->offset + pPushDataInfo->data.size);
     if (final_byte > push_data_offset_) {
         skip |= LogError("UNASSIGNED-GPU-Assisted-Validation", commandBuffer, error_obj.location,
                          "is trying to set push data at [%" PRIu32 ":%" PRIu32

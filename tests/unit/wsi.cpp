@@ -1939,18 +1939,12 @@ TEST_F(NegativeWsi, GetSwapchainImagesCountButNotImages) {
     }
     InitSwapchainInfo();
 
-    VkImageFormatProperties img_format_props;
-    vk::GetPhysicalDeviceImageFormatProperties(Gpu(), m_surface_formats[0].format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
-                                               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0, &img_format_props);
-    VkExtent2D img_ext = {std::min(m_surface_capabilities.maxImageExtent.width, img_format_props.maxExtent.width),
-                          std::min(m_surface_capabilities.maxImageExtent.height, img_format_props.maxExtent.height)};
-
     VkSwapchainCreateInfoKHR swapchain_info = vku::InitStructHelper();
     swapchain_info.surface = m_surface;
     swapchain_info.minImageCount = m_surface_capabilities.minImageCount;
     swapchain_info.imageFormat = m_surface_formats[0].format;
     swapchain_info.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_info.imageExtent = img_ext;
+    swapchain_info.imageExtent = GetSwapchainExtent(m_surface_capabilities);
     swapchain_info.imageArrayLayers = 1;
     swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_info.preTransform = m_surface_capabilities.currentTransform;
