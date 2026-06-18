@@ -487,23 +487,39 @@ bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandB
     skip |=
         ValidateDataGraphOperations(*last_bound_state.pipeline_state, cb_state.command_pool.queueFamilyIndex, error_obj.location);
 
+    const vku::safe_VkDataGraphPipelineCreateInfoARM data_graph_ci = last_bound_state.pipeline_state->DataGraphCreateInfo();
+
+    const auto* single_node_ci = vku::FindStructInPNextChain<VkDataGraphPipelineSingleNodeCreateInfoARM>(data_graph_ci.pNext);
+
     const auto* optical_flow_di =
         pInfo ? vku::FindStructInPNextChain<VkDataGraphPipelineOpticalFlowDispatchInfoARM>(pInfo->pNext) : nullptr;
 
+    if (single_node_ci && (VK_DATA_GRAPH_PIPELINE_NODE_TYPE_OPTICAL_FLOW_ARM == single_node_ci->nodeType)) {
+        // TODO: VUID 09981
+    } else {
+        if (optical_flow_di) {
+            skip |= LogError(
+                "VUID-vkCmdDispatchDataGraphARM-nodeType-09980", LogObjectList(objlist, cb_pipeline), error_obj.location,
+                "Call to dispatch the pipeline with optical flow info, but it was not created with optical flow node info.");
+        }
+    }
+
     if (optical_flow_di) {
         const Location pinfo_loc = error_obj.location.dot(Field::pInfo);
-        const Location hint_loc = pinfo_loc.pNext(Struct::VkDataGraphPipelineOpticalFlowDispatchInfoARM, Field::meanFlowL1NormHint);
-        const auto* optical_flow_ci = vku::FindStructInPNextChain<VkDataGraphPipelineOpticalFlowCreateInfoARM>(
-            last_bound_state.pipeline_state->DataGraphCreateInfo().pNext);
 
-        ASSERT_AND_RETURN_SKIP(optical_flow_ci);
+        const auto* optical_flow_ci = vku::FindStructInPNextChain<VkDataGraphPipelineOpticalFlowCreateInfoARM>(data_graph_ci.pNext);
 
-        if (optical_flow_di->meanFlowL1NormHint != 0 &&
-            optical_flow_di->meanFlowL1NormHint > std::max(optical_flow_ci->width, optical_flow_ci->height)) {
-            skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowDispatchInfoARM-meanFlowL1NormHint-09976", objlist, hint_loc,
-                             "(%" PRIu32 ") is greater than the maximum of the width (%" PRIu32 ") or height (%" PRIu32
-                             ") of the input image.",
-                             optical_flow_di->meanFlowL1NormHint, optical_flow_ci->width, optical_flow_ci->height);
+        if (optical_flow_ci) {
+            if (optical_flow_di->meanFlowL1NormHint != 0 &&
+                optical_flow_di->meanFlowL1NormHint > std::max(optical_flow_ci->width, optical_flow_ci->height)) {
+                const Location hint_loc =
+                    pinfo_loc.pNext(Struct::VkDataGraphPipelineOpticalFlowDispatchInfoARM, Field::meanFlowL1NormHint);
+
+                skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowDispatchInfoARM-meanFlowL1NormHint-09976", objlist, hint_loc,
+                                 "(%" PRIu32 ") is greater than the maximum of the width (%" PRIu32 ") or height (%" PRIu32
+                                 ") of the input image.",
+                                 optical_flow_di->meanFlowL1NormHint, optical_flow_ci->width, optical_flow_ci->height);
+            }
         }
 
         const VkDataGraphOpticalFlowExecuteFlagsARM mask = VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_INPUT_UNCHANGED_BIT_ARM |
@@ -516,7 +532,7 @@ bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandB
             const Location flags_loc = pinfo_loc.pNext(Struct::VkDataGraphPipelineOpticalFlowDispatchInfoARM, Field::flags);
 
             skip |= LogError("VUID-vkCmdDispatchDataGraphARM-pInfo-09964", objlist, flags_loc, "(%s) contain disallowed bits.",
-                             string_VkDataGraphOpticalFlowExecuteFlagsARM(optical_flow_ci->flags).c_str());
+                             string_VkDataGraphOpticalFlowExecuteFlagsARM(optical_flow_di->flags).c_str());
         }
     }
 
