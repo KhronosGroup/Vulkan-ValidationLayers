@@ -592,11 +592,12 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
         if (size == 4) {
             push_index = (VkDeviceSize) * ((uint32_t*)&push_data_value[offset]);
+            ss << std::dec << push_index;
         } else if (size == 8) {
             push_index = (VkDeviceSize) * ((VkDeviceAddress*)&push_data_value[offset]);
+            ss << "0x" << std::hex << push_index;
         }
 
-        ss << push_index;
         return push_index;
     };
 
