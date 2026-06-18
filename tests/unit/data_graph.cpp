@@ -270,7 +270,7 @@ TEST_F(NegativeDataGraph, GetDataGraphPipelinePropertiesPipelineNotCreatedWithCr
     query_result.dataSize = 0;
     uint32_t prop_count = 1;
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineInfoARM-dataGraphPipeline-09803");
-    EXPECT_NE(VK_SUCCESS, vk::GetDataGraphPipelinePropertiesARM(m_device->handle(), &pipeline_info, prop_count, &query_result));
+    vk::GetDataGraphPipelinePropertiesARM(m_device->handle(), &pipeline_info, prop_count, &query_result);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2275,11 +2275,10 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongQueue) {
     vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &n_queue_families, nullptr);
     for (uint32_t qfi = 0; qfi < n_queue_families; qfi++) {
         uint32_t n_properties;
-        ASSERT_TRUE(VK_SUCCESS == vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), qfi, &n_properties, nullptr));
+        vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), qfi, &n_properties, nullptr);
         std::vector<VkQueueFamilyDataGraphPropertiesARM> properties(n_properties,
                                                                     {VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM});
-        ASSERT_TRUE(VK_SUCCESS ==
-                    vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), qfi, &n_properties, properties.data()));
+        vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), qfi, &n_properties, properties.data());
 
         bool queue_supports_tosa_1_0 = false;
         for (const auto& p : properties) {
@@ -2374,7 +2373,7 @@ TEST_F(NegativeDataGraph, OpticalFlowWrongHint) {
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
     vkt::dg::of::OpticalFlowHelper optical_flow(*this);
-    ASSERT_EQ(VK_SUCCESS, optical_flow.CreateDataGraphPipeline());
+    optical_flow.CreateDataGraphPipeline();
     optical_flow.SetupImageDescriptors();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
@@ -2399,5 +2398,149 @@ TEST_F(NegativeDataGraph, OpticalFlowWrongHint) {
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineOpticalFlowDispatchInfoARM-meanFlowL1NormHint-09976");
     vk::CmdDispatchDataGraphARM(m_command_buffer, session, &pipeline_di);
     m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDataGraph, OpticalFlowNoCacheSession) {
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    optical_flow.CreateDataGraphPipeline();
+    optical_flow.SetupImageDescriptors();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = optical_flow.dg_pipeline_;
+
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    std::vector<vkt::DeviceMemory> device_mem(session.BindPointReqs().size());
+    session.AllocSessionMem(device_mem);
+    std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos =
+        DataGraphTest::InitSessionBindInfo(session, device_mem);
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
+    // Set one of the disallowed bits
+    optical_flow_di.flags = VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_REFERENCE_UNCHANGED_BIT_ARM;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.dg_pipeline_);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.dg_pipeline_.pipeline_layout_,
+                              0, 1, &optical_flow.dg_pipeline_.descriptor_set_.get()->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-pInfo-09964");
+    VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, &pipeline_di);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDataGraph, OpticalFlowDispatchWithoutOpticalFlowCreateInfo) {
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    pipeline.CreateDataGraphPipeline();
+
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = pipeline;
+
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    std::vector<vkt::DeviceMemory> device_mem(session.BindPointReqs().size());
+    session.AllocSessionMem(device_mem);
+
+    std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos =
+        DataGraphTest::InitSessionBindInfo(session, device_mem);
+
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    // Set optical flow dispatch info for `pipeline` which was not created with optical flow create info.
+    VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
+    VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
+                              &pipeline.descriptor_set_.get()->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-nodeType-09980");
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, &pipeline_di);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDataGraph, OpticalFlowConnectionsImageLayoutsNoUnifiedImageLayouts) {
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    // Set the resource info image layout to VK_IMAGE_LAYOUT_GENERAL, where the connection references a descriptor in the
+    // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL layout. Since unifiedImageLayouts feature is not enabled this is invalid usage.
+    optical_flow.image_layouts_[0].layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    optical_flow.CreateDataGraphPipeline();
+    optical_flow.SetupImageDescriptors();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = optical_flow.dg_pipeline_;
+
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    std::vector<vkt::DeviceMemory> device_mem(session.BindPointReqs().size());
+    session.AllocSessionMem(device_mem);
+    std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos =
+        DataGraphTest::InitSessionBindInfo(session, device_mem);
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
+    VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.dg_pipeline_);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.dg_pipeline_.pipeline_layout_,
+                              0, 1, &optical_flow.dg_pipeline_.descriptor_set_.get()->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-nodeType-09981");
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, &pipeline_di);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDataGraph, OpticalFlowConnectionsImageLayoutsUnifiedImageLayouts) {
+    AddRequiredFeature(vkt::Feature::unifiedImageLayouts);
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    // Set the resource info image layout to VK_IMAGE_LAYOUT_UNDEFINED, where the connection references a descriptor in the
+    // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL layout.
+    optical_flow.image_layouts_[0].layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    optical_flow.CreateDataGraphPipeline();
+    optical_flow.SetupImageDescriptors();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = optical_flow.dg_pipeline_;
+
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    std::vector<vkt::DeviceMemory> device_mem(session.BindPointReqs().size());
+    session.AllocSessionMem(device_mem);
+    std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos =
+        DataGraphTest::InitSessionBindInfo(session, device_mem);
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
+    VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.dg_pipeline_);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.dg_pipeline_.pipeline_layout_,
+                              0, 1, &optical_flow.dg_pipeline_.descriptor_set_.get()->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-nodeType-09981");
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, &pipeline_di);
+    m_errorMonitor->VerifyFound();
+
     m_command_buffer.End();
 }
