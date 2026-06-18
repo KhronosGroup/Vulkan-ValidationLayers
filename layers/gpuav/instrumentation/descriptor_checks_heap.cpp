@@ -144,7 +144,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 } else {
                     heap_status = &instrumented_shader->status.heap_mappings[mapping_index_decoded];
                     mapping_info = &heap_status->mapping_data;
-                    ss << "[Set " << mapping_info->descriptorSet << ", Binding " << heap_status->binding << ", Variable \"";
+                    ss << "[Set " << std::dec << mapping_info->descriptorSet << ", Binding " << heap_status->binding
+                       << ", Variable \"";
                     ::spirv::FindGlobalName(ss, instrumented_shader->original_spirv, (uint32_t)spv::OpVariable,
                                             heap_status->variable_id);
                     ss << "\"] ";
@@ -161,10 +162,10 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 switch (error_sub_code) {
                     case kErrorSubCode_DescriptorHeap_HeapOOB: {
                         if (!is_source_heap_data) {
-                            ss << "descriptor index " << index << " ";
+                            ss << "descriptor index " << std::dec << index << " ";
                         }
-                        ss << "is accessing the heap at offset 0x" << std::hex << offset << " (address 0x" << std::hex
-                           << heap_address << ") which is OOB of the heap memory.\n";
+                        ss << "is accessing the heap at offset 0x" << std::hex << offset << " (address 0x" << heap_address
+                           << ") which is OOB of the heap memory.\n";
                         out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_OOB_11309);
                         error_found = true;
                     } break;
@@ -172,15 +173,15 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     case kErrorSubCode_DescriptorHeap_ReservedRange: {
                         assert(heap_cb_state);
                         if (!is_source_heap_data) {
-                            ss << "descriptor index " << index << " ";
+                            ss << "descriptor index " << std::dec << index << " ";
                         }
-                        ss << "is accessing the heap at offset 0x" << std::hex << offset << " (address 0x" << std::hex
-                           << heap_address << ") which is inside the reserved range.\nThe reserved range was bound at ";
+                        ss << "is accessing the heap at offset 0x" << std::hex << offset << " (address 0x" << heap_address
+                           << ") which is inside the reserved range.\nThe reserved range was bound at ";
                         if (is_sampler) {
-                            ss << string_range_hex(heap_cb_state->sampler_reserved) << " (size of 0x" << std::hex
+                            ss << string_range_hex(heap_cb_state->sampler_reserved) << " (size of " << std::dec
                                << heap_cb_state->sampler_reserved.size() << " bytes)\n";
                         } else {
-                            ss << string_range_hex(heap_cb_state->resource_reserved) << " (size of 0x" << std::hex
+                            ss << string_range_hex(heap_cb_state->resource_reserved) << " (size of " << std::dec
                                << heap_cb_state->resource_reserved.size() << " bytes)\n";
                         }
                         out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_OOB_11309);
@@ -189,8 +190,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
 
                     case kErrorSubCode_DescriptorHeap_DescriptorAlignment:
                     case kErrorSubCode_DescriptorHeap_DescriptorAlignmentUntyped: {
-                        ss << "descriptor index " << index << " is accessing the heap at offset 0x" << std::hex << offset
-                           << " (address 0x" << std::hex << heap_address << ") which is not aligned to ";
+                        ss << "descriptor index " << std::dec << index << " is accessing the heap at offset 0x" << std::hex
+                           << offset << " (address 0x" << std::hex << heap_address << ") which is not aligned to ";
                         if (is_buffer) {
                             ss << "bufferDescriptorAlignment";
                         } else if (is_image) {
@@ -198,7 +199,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         } else if (is_sampler) {
                             ss << "samplerDescriptorAlignment";
                         }
-                        ss << " (0x" << std::hex << alignment_value << ")\n";
+                        ss << " (" << std::dec << alignment_value << ")\n";
 
                         if (error_sub_code == kErrorSubCode_DescriptorHeap_DescriptorAlignmentUntyped) {
                             out_vuid_msg = is_sampler ? "VUID-RuntimeSpirv-samplerDescriptorAlignment-11348"
@@ -216,7 +217,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     case kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment:
                     case kErrorSubCode_DescriptorHeap_IndirectAddressPushAlignment: {
                         if (error_sub_code == kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment) {
-                            ss << "descriptor index " << index << " ";
+                            ss << "descriptor index " << std::dec << index << " ";
                         }
                         ss << "has a " << (is_sampler ? "samplerPushOffset" : "pushOffset") << " of ";
 
@@ -262,7 +263,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
 
                         ss << "is accessing the descriptor at its " << (push_address ? "indirect" : "resource") << " buffer at 0x"
                            << std::hex << final_address << ", but this not aligned to "
-                           << (is_uniform ? "minUniformBufferOffsetAlignment" : "minStorageBufferOffsetAlignment") << " (0x"
+                           << (is_uniform ? "minUniformBufferOffsetAlignment" : "minStorageBufferOffsetAlignment") << " ("
+                           << std::dec
                            << (is_uniform ? gpuav.phys_dev_props.limits.minUniformBufferOffsetAlignment
                                           : gpuav.phys_dev_props.limits.minStorageBufferOffsetAlignment)
                            << ")\n";
@@ -275,8 +277,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     } break;
 
                     case kErrorSubCode_DescriptorHeap_HeapBufferAlignment: {
-                        ss << "is accessing the heap at offset 0x" << std::hex << offset << " (address 0x" << std::hex
-                           << heap_address << ") which is not aligned to minUniformBufferOffsetAlignment (0x"
+                        ss << "is accessing the heap at offset 0x" << std::hex << offset << " (address 0x" << heap_address
+                           << ") which is not aligned to minUniformBufferOffsetAlignment (0x"
                            << gpuav.phys_dev_props.limits.minUniformBufferOffsetAlignment << ")\n";
 
                         out_vuid_msg =
@@ -311,34 +313,34 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                        << string_VkDescriptorMappingSourceEXT(mapping_info->source) << std::hex;
                     const uint32_t bind_offset = heap_status->binding - mapping_info->firstBinding;
                     if (bind_offset != 0) {
-                        ss << " (firstBindng: " << mapping_info->firstBinding << ", bindingCount: " << mapping_info->bindingCount
-                           << ")";
+                        ss << " (firstBindng: " << std::dec << mapping_info->firstBinding
+                           << ", bindingCount: " << mapping_info->bindingCount << ")";
                     }
                     if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
                         const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping_info->sourceData.constantOffset;
                         ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
-                        ss << "\n  - heapArrayStride = 0x" << map_data.heapArrayStride;
+                        ss << "\n  - heapArrayStride = " << std::dec << map_data.heapArrayStride;
                         // TODO - have way to know if combined image sampler
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
                         const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping_info->sourceData.pushIndex;
                         ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
                         ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
-                        ss << "\n  - heapIndexStride = 0x" << std::hex << map_data.heapIndexStride;
-                        ss << "\n  - heapArrayStride = 0x" << map_data.heapArrayStride;
+                        ss << "\n  - heapIndexStride = " << map_data.heapIndexStride;
+                        ss << "\n  - heapArrayStride = " << map_data.heapArrayStride;
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
                         const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping_info->sourceData.indirectIndex;
                         ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
+                        ss << "\n  - addressOffset = 0x" << map_data.addressOffset;
                         ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
-                        ss << "\n  - addressOffset = 0x" << std::hex << map_data.addressOffset;
-                        ss << "\n  - heapIndexStride = 0x" << map_data.heapIndexStride;
-                        ss << "\n  - heapArrayStride = 0x" << map_data.heapArrayStride;
+                        ss << "\n  - heapIndexStride = " << map_data.heapIndexStride;
+                        ss << "\n  - heapArrayStride = " << map_data.heapArrayStride;
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
                         const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data =
                             mapping_info->sourceData.indirectIndexArray;
                         ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
+                        ss << "\n  - addressOffset = 0x" << map_data.addressOffset;
                         ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
-                        ss << "\n  - addressOffset = 0x" << std::hex << map_data.addressOffset;
-                        ss << "\n  - heapIndexStride = 0x" << map_data.heapIndexStride;
+                        ss << "\n  - heapIndexStride = " << map_data.heapIndexStride;
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
                         const VkDescriptorMappingSourceHeapDataEXT& map_data = mapping_info->sourceData.heapData;
                         ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
@@ -375,14 +377,14 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     if (!heap_cb_state || !heap_cb_state->sampler_bound) {
                         ss << "not bound with vkCmdBindSamplerHeapEXT";
                     } else {
-                        ss << "bound at " << string_range_hex(heap_cb_state->sampler_range) << " (size of 0x" << std::hex
+                        ss << "bound at " << string_range_hex(heap_cb_state->sampler_range) << " (size of " << std::dec
                            << heap_cb_state->sampler_range.size() << " bytes)\n";
                     }
                 } else {
                     if (!heap_cb_state || !heap_cb_state->resource_bound) {
                         ss << "not bound with vkCmdBindResourceHeapEXT";
                     } else {
-                        ss << "bound at " << string_range_hex(heap_cb_state->resource_range) << " (size of 0x" << std::hex
+                        ss << "bound at " << string_range_hex(heap_cb_state->resource_range) << " (size of " << std::dec
                            << heap_cb_state->resource_range.size() << " bytes)\n";
                     }
                 }
