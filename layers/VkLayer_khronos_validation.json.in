@@ -1120,8 +1120,8 @@
                                         },
                                         {
                                             "key": "gpuav_debug_disable_dontinline",
-                                            "label": "Disable DontInline function hint",
-                                            "description": "Found that some drivers crash when using DontInline, but the perf gain is too good to have always off",
+                                            "label": "Disable DontInline performance boost",
+                                            "description": "Disable DontInline SPIR-V function hint for instrumentations functions, at the cost of a performance boost if the driver supports it. This flag can provoke instabilities on some drivers. Currently a debug option until we learn more about these instabilities.",
                                             "type": "BOOL",
                                             "default": false,
                                             "dependence": {
