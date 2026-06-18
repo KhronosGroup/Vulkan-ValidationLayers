@@ -20,6 +20,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include <string>
+#include "generated/error_location_helper.h"
 
 namespace spirv {
 struct ResourceInterfaceVariable;
@@ -74,6 +75,7 @@ std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_ty
 
 VkDeviceSize GetUntypedDescriptorSize(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props, VkDescriptorType type);
 VkDeviceSize GetDescriptorHeapAlignment(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props, VkDescriptorType type);
+vvl::Field GetDescriptorHeapAlignmentField(VkDescriptorType type);
 
 // Way to cache vkGetPhysicalDeviceDescriptorSizeEXT as a flat array
 // This is a very quick way to use the VkDescriptorType enum and knowledge of the limited VkDescriptorType allowed to make this fast

@@ -314,6 +314,23 @@ VkDeviceSize GetDescriptorHeapAlignment(const VkPhysicalDeviceDescriptorHeapProp
     return 0;
 }
 
+vvl::Field GetDescriptorHeapAlignmentField(VkDescriptorType type) {
+    if (type == VK_DESCRIPTOR_TYPE_TENSOR_ARM) {
+        return vvl::Field::tensorDescriptorAlignment;
+    } else if (type == VK_DESCRIPTOR_TYPE_SAMPLER) {
+        return vvl::Field::samplerDescriptorAlignment;
+    } else if (IsValueIn(type,
+                         {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                          VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER})) {
+        return vvl::Field::imageDescriptorAlignment;
+    } else if (IsValueIn(type, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR})) {
+        return vvl::Field::bufferDescriptorAlignment;
+    }
+    assert(false);
+    return vvl::Field::Empty;
+}
+
 void CachedDescriptorSize::Init(VkPhysicalDevice gpu, const DeviceExtensions& extensions) {
     size_[0] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLER);
     size_[2] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
