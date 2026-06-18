@@ -3700,3 +3700,27 @@ TEST_F(PositiveWsi, NullPresentIds2) {
     m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_id2);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveWsi, NullPresentIdsFeatureDisabled) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_PRESENT_ID_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
+    const VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, surface_info);
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto images = swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
+    SetPresentImageLayout(images[image_index]);
+
+    VkPresentIdKHR present_id = vku::InitStructHelper();
+    present_id.swapchainCount = 1u;
+    present_id.pPresentIds = nullptr;
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_id);
+    m_default_queue->Wait();
+}
