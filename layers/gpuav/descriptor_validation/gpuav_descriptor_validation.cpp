@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
+#include "gpuav_descriptor_validation.h"
 
 #include "drawdispatch/descriptor_validator.h"
 #include "gpuav/core/gpuav.h"
@@ -72,6 +72,54 @@ void UpdateBoundDescriptorHeap(Validator& gpuav, CommandBufferSubState& cb_state
         func(gpuav, cb_state, bound_heap_snapshot, is_sampler);
     }
     desc_heap_bindings->bound_heap_snapshots.emplace_back(std::move(bound_heap_snapshot));
+}
+
+VkDescriptorType GetDescriptorTypeFromMask(uint8_t mask) {
+    if (mask == TYPE_SAMPLER) {
+        return VK_DESCRIPTOR_TYPE_SAMPLER;
+    } else if (mask == TYPE_UNIFORM_BUFFER) {
+        return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    } else if (mask == TYPE_STORAGE_BUFFER) {
+        return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    } else if (mask == TYPE_ACCELERATION_STRUCTURE) {
+        return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    } else if (mask == TYPE_IMAGE_SAMPLED) {
+        return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    } else if (mask == TYPE_IMAGE_STORAGE) {
+        return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    } else if (mask == TYPE_IMAGE_TEXEL_BUFFER_UNIFORM) {
+        return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+    } else if (mask == TYPE_IMAGE_TEXEL_BUFFER_STORAGE) {
+        return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+    } else if (mask == TYPE_IMAGE_INPUT_ATTACHMENT) {
+        return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    }
+    assert(false);
+    return VK_DESCRIPTOR_TYPE_MAX_ENUM;
+}
+
+uint8_t GetMaskFromDescriptorType(VkDescriptorType type) {
+    if (type == VK_DESCRIPTOR_TYPE_SAMPLER) {
+        return TYPE_SAMPLER;
+    } else if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+        return TYPE_UNIFORM_BUFFER;
+    } else if (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+        return TYPE_STORAGE_BUFFER;
+    } else if (type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+        return TYPE_ACCELERATION_STRUCTURE;
+    } else if (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
+        return TYPE_IMAGE_SAMPLED;
+    } else if (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
+        return TYPE_IMAGE_STORAGE;
+    } else if (type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
+        return TYPE_IMAGE_TEXEL_BUFFER_UNIFORM;
+    } else if (type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
+        return TYPE_IMAGE_TEXEL_BUFFER_STORAGE;
+    } else if (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
+        return TYPE_IMAGE_INPUT_ATTACHMENT;
+    }
+    assert(false);
+    return 0;
 }
 
 }  // namespace descriptor

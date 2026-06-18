@@ -119,10 +119,13 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 const uint32_t desc_encoding = error_record[kInst_LogError_ParameterOffset_2];
                 const uint32_t desc_type =
                     (desc_encoding & kInst_DescriptorHeap_DescriptorTypeMask) >> kInst_DescriptorHeap_DescriptorTypeShift;
+                const uint32_t desc_size =
+                    (desc_encoding & kInst_DescriptorHeap_DescriptorSizeMask) >> kInst_DescriptorHeap_DescriptorSizeShift;
                 const uint32_t mapping_index_decoded =
                     (desc_encoding & kInst_DescriptorHeap_MappingIndexMask) >> kInst_DescriptorHeap_MappingIndexShift;
                 const uint32_t alignment_value = 1u << (desc_encoding & kInst_DescriptorHeap_AlignmentShiftMask);
 
+                const bool is_untyped = mapping_index_decoded == glsl::kInst_DescriptorHeap_MappingIndexUntyped;
                 const bool is_buffer = desc_type & gpuav::descriptor::TYPE_BUFFER_MASK;
                 const bool is_image = desc_type & gpuav::descriptor::TYPE_IMAGE_MASK;
                 const bool is_sampler = desc_type == gpuav::descriptor::TYPE_SAMPLER;
@@ -134,7 +137,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
 
                 const VkDescriptorSetAndBindingMappingEXT* mapping_info = nullptr;
                 const spirv::HeapMappingStatus* heap_status = nullptr;
-                if (mapping_index_decoded == glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
+                if (is_untyped) {
                     // TODO - Print some info for untyped pointers
                 } else if (!instrumented_shader || mapping_index_decoded > instrumented_shader->status.heap_mappings.size()) {
                     ss << "(VkDescriptorSetAndBindingMappingEXT not found) ";
@@ -350,8 +353,21 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
                         ss << "\n  - addressOffset = 0x" << std::hex << map_data.addressOffset;
                     }
-                    ss << "\n";
+                    ss << '\n';
                 }
+
+                ss << "Descriptor type: " << string_VkDescriptorType(descriptor::GetDescriptorTypeFromMask((uint8_t)desc_type))
+                   << ", size " << std::dec << desc_size;
+                if (is_untyped) {
+                    if (is_buffer) {
+                        ss << " (bufferDescriptorSize)";
+                    } else if (is_image) {
+                        ss << " (imageDescriptorSize)";
+                    } else if (is_sampler) {
+                        ss << " (samplerDescriptorSize)";
+                    }
+                }
+                ss << '\n';
 
                 // Unless find otherwise, this information is useful for all errors
                 ss << "The " << (is_sampler ? "sampler" : "resource") << " heap was ";

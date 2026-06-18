@@ -72,6 +72,9 @@ bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
 std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_type,
                                          const spirv::ResourceInterfaceVariable& resource_variable);
 
+VkDeviceSize GetUntypedDescriptorSize(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props, VkDescriptorType type);
+VkDeviceSize GetDescriptorHeapAlignment(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props, VkDescriptorType type);
+
 // Way to cache vkGetPhysicalDeviceDescriptorSizeEXT as a flat array
 // This is a very quick way to use the VkDescriptorType enum and knowledge of the limited VkDescriptorType allowed to make this fast
 // and not making it impossible to update if a new VkDescriptorType is added later

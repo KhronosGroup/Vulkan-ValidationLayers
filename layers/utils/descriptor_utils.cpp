@@ -255,6 +255,65 @@ std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_ty
     return "[UNKNOWN]";
 }
 
+// See https://gitlab.khronos.org/vulkan/vulkan/-/issues/4858
+// For the mapping API, we use vkGetPhysicalDeviceDescriptorSizeEXT to determine the size
+// For SPV_EXT_descriptor_heap, the property values are used
+VkDeviceSize GetUntypedDescriptorSize(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props, VkDescriptorType type) {
+    switch (type) {
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            return props.samplerDescriptorSize;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
+            return props.bufferDescriptorSize;
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:  // not valid, but handle in case
+            return props.imageDescriptorSize;
+        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
+        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
+        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
+            return 0;  // TODO - vendors handle their own types
+        default:
+            assert(false);
+            break;
+    }
+    return 0;
+}
+
+VkDeviceSize GetDescriptorHeapAlignment(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props, VkDescriptorType type) {
+    switch (type) {
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            return props.samplerDescriptorAlignment;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
+            return props.bufferDescriptorAlignment;
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:  // not valid, but handle in case
+            return props.imageDescriptorAlignment;
+        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
+        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
+        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
+            return 0;  // TODO - vendors handle their own types
+        default:
+            assert(false);
+            break;
+    }
+    return 0;
+}
+
 void CachedDescriptorSize::Init(VkPhysicalDevice gpu, const DeviceExtensions& extensions) {
     size_[0] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLER);
     size_[2] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);

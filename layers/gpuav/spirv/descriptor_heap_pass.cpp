@@ -15,6 +15,7 @@
 
 #include "descriptor_heap_pass.h"
 #include <vulkan/vulkan_core.h>
+#include "chassis/dispatch_object.h"
 #include "containers/container_utils.h"
 #include "generated/spirv_grammar_helper.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
@@ -30,6 +31,7 @@
 #include "generated/gpuav_offline_spirv.h"
 #include "pass.h"
 #include "type_manager.h"
+#include "utils/descriptor_utils.h"
 #include "utils/math_utils.h"
 
 namespace gpuav {
@@ -50,7 +52,10 @@ const static OfflineFunction kOfflineFunction[] = {
     {"inst_heap_untyped", instrumentation_descriptor_heap_comp_function_8_offset},
 };
 
-DescriptorHeapPass::DescriptorHeapPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
+DescriptorHeapPass::DescriptorHeapPass(Module& module)
+    : Pass(module, kOfflineModule), descriptor_heap_props(module.settings_.phys_dev_ext_props->descriptor_heap_props) {
+    module.use_bda_ = true;
+}
 
 uint32_t DescriptorHeapPass::GetLinkFunctionId(const FunctionNames func_name) {
     return GetLinkFunction(link_function_id_[func_name], kOfflineFunction[func_name]);
@@ -68,12 +73,12 @@ bool DescriptorHeapPass::ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT 
         return true;
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT) != 0 &&
-        (access_path.descriptor_type == gpuav::descriptor::TYPE_IMAGE_SAMPLED)) {
+        (access_path.descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)) {
         return true;
     }
-    if (access_path.descriptor_type == gpuav::descriptor::TYPE_IMAGE_STORAGE ||
-        access_path.descriptor_type == gpuav::descriptor::TYPE_IMAGE_TEXEL_BUFFER_STORAGE ||
-        access_path.descriptor_type == gpuav::descriptor::TYPE_IMAGE_INPUT_ATTACHMENT) {
+    if (access_path.descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ||
+        access_path.descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER ||
+        access_path.descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
         // NonWritable must be on the OpVariable, not the OpTypeStruct
         // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4789
         const bool nonwritable = GetDecoration(access_path.variable->Id(), spv::DecorationNonWritable) != nullptr;
@@ -89,10 +94,10 @@ bool DescriptorHeapPass::ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT 
         return true;
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT) != 0 &&
-        access_path.descriptor_type == gpuav::descriptor::TYPE_UNIFORM_BUFFER) {
+        access_path.descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
         return true;
     }
-    if (access_path.descriptor_type == gpuav::descriptor::TYPE_STORAGE_BUFFER) {
+    if (access_path.descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
         // NonWritable must be on the OpVariable, not the OpTypeStruct
         // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4789
         const bool nonwritable = GetDecoration(access_path.variable->Id(), spv::DecorationNonWritable) != nullptr;
@@ -104,7 +109,7 @@ bool DescriptorHeapPass::ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT 
         }
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT) != 0 &&
-        access_path.descriptor_type == gpuav::descriptor::TYPE_ACCELERATION_STRUCTURE) {
+        access_path.descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
         return true;
     }
 
@@ -145,10 +150,10 @@ uint32_t DescriptorHeapPass::GetMapping(const AccessPath& access_path, bool is_s
 }
 
 uint32_t DescriptorHeapPass::GetMinBufferAlignment(const InstructionMeta& meta) const {
-    const bool is_uniform = meta.access_path.descriptor_type == gpuav::descriptor::TYPE_UNIFORM_BUFFER;
-    const uint32_t buffer_alignment =
-        is_uniform ? module_.settings_.min_uniform_buffer_alignment : module_.settings_.min_storage_buffer_alignment;
-    return type_manager_.GetConstantUInt32(buffer_alignment).Id();
+    const bool is_uniform = meta.access_path.descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    const VkDeviceSize buffer_alignment = is_uniform ? module_.settings_.phys_dev_props->limits.minUniformBufferOffsetAlignment
+                                                     : module_.settings_.phys_dev_props->limits.minStorageBufferOffsetAlignment;
+    return type_manager_.GetConstantUInt32((uint32_t)buffer_alignment).Id();
 }
 
 uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
@@ -166,25 +171,23 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
 
     // We try and encode a lot of information in a single uint32_t
     uint32_t desc_encoding_id = 0;
+    const VkDescriptorType vk_desc_type = is_seperate_sampler ? VK_DESCRIPTOR_TYPE_SAMPLER : meta.access_path.descriptor_type;
     {
-        const bool is_buffer = meta.access_path.descriptor_type & gpuav::descriptor::TYPE_BUFFER_MASK;
-        const bool is_sampler = is_seperate_sampler;
-        const bool is_image = !is_buffer && !is_sampler;
+        uint8_t desc_type_mask = gpuav::descriptor::GetMaskFromDescriptorType(vk_desc_type);
 
-        const uint32_t desc_type = is_sampler ? gpuav::descriptor::TYPE_SAMPLER : meta.access_path.descriptor_type;
-
-        const uint32_t desc_alignment_value = is_buffer  ? module_.settings_.descriptor_alignment_buffer
-                                              : is_image ? module_.settings_.descriptor_alignment_image
-                                                         : module_.settings_.descriptor_alignment_sampler;
+        const uint32_t desc_alignment_value = (uint32_t)GetDescriptorHeapAlignment(descriptor_heap_props, vk_desc_type);
         const uint32_t desc_alignment_shift = GetAlignmentShift(desc_alignment_value);
         assert(desc_alignment_shift <= glsl::kInst_DescriptorHeap_AlignmentShiftMask);
 
         const uint32_t mapping_index_encoded = is_seperate_sampler ? meta.mapping_index_sampler : meta.mapping_index_resource;
-        mapping = (mapping_index_encoded == glsl::kInst_DescriptorHeap_MappingIndexUntyped)
-                      ? nullptr
-                      : &module_.out_status.device.heap_mappings[mapping_index_encoded].mapping_data;
+        const bool is_untyped = mapping_index_encoded == glsl::kInst_DescriptorHeap_MappingIndexUntyped;
+        mapping = is_untyped ? nullptr : &module_.out_status.device.heap_mappings[mapping_index_encoded].mapping_data;
 
-        const uint32_t desc_encoding = (desc_type << glsl::kInst_DescriptorHeap_DescriptorTypeShift) |
+        const uint32_t desc_size_value = (uint32_t)(is_untyped ? GetUntypedDescriptorSize(descriptor_heap_props, vk_desc_type)
+                                                               : module_.settings_.cached_descriptor_size->GetSize(vk_desc_type));
+
+        const uint32_t desc_encoding = (desc_type_mask << glsl::kInst_DescriptorHeap_DescriptorTypeShift) |
+                                       (desc_size_value << glsl::kInst_DescriptorHeap_DescriptorSizeShift) |
                                        (mapping_index_encoded << glsl::kInst_DescriptorHeap_MappingIndexShift) |
                                        (desc_alignment_shift & glsl::kInst_DescriptorHeap_AlignmentShiftMask);
 
@@ -330,7 +333,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
         const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
 
-        assert(meta.access_path.descriptor_type == gpuav::descriptor::TYPE_UNIFORM_BUFFER);
+        assert(meta.access_path.descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         const uint32_t buffer_alignment_id = GetMinBufferAlignment(meta);
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_RESOURCE_HEAP_DATA);
@@ -403,7 +406,8 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
     const uint32_t is_sampler_id = type_manager_.GetConstantBool(true).Id();
-    const uint32_t desc_alignment_id = type_manager_.GetConstantUInt32(module_.settings_.descriptor_alignment_sampler).Id();
+    const uint32_t desc_alignment_id =
+        type_manager_.GetConstantUInt32((uint32_t)descriptor_heap_props.samplerDescriptorAlignment).Id();
 
     const uint32_t binding_offset = meta.access_path.variable->interface_.binding - mapping.firstBinding;
 
@@ -480,7 +484,7 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
     if (!meta.access_path.IsValid() || !meta.access_path.variable->IsDescriptor()) {
         return false;
     }
-    if (meta.access_path.descriptor_type == gpuav::descriptor::TYPE_ACCELERATION_STRUCTURE) {
+    if (meta.access_path.descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
         return false;  // not supported yet
     }
 

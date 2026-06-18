@@ -25,6 +25,11 @@
 
 struct Location;
 struct DeviceFeatures;
+struct CachedDescriptorSize;
+
+namespace vvl {
+struct DeviceExtensionProperties;
+}
 
 namespace spirv {
 struct Module;
@@ -116,16 +121,11 @@ struct DeviceSettings {
     // Lets us embed the size instead of calling OpArrayLength
     uint32_t error_buffer_data_length;
     uint32_t debug_printf_buffer_size;
-    // maxComputeSharedMemorySize limit
-    uint32_t max_compute_shared_memory_size;
-    // minUniformBufferOffsetAlignment and minStorageBufferOffsetAlignment limit
-    uint32_t min_uniform_buffer_alignment;
-    uint32_t min_storage_buffer_alignment;
-    // Descriptor Heap alignmente;
-    uint32_t descriptor_alignment_sampler;
-    uint32_t descriptor_alignment_image;
-    uint32_t descriptor_alignment_buffer;
 
+    CachedDescriptorSize* cached_descriptor_size;
+
+    const VkPhysicalDeviceProperties* phys_dev_props;
+    const vvl::DeviceExtensionProperties* phys_dev_ext_props;
     const DeviceFeatures* enabled_features;
 };
 
