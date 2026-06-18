@@ -1663,9 +1663,10 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
                 skip |= ValidateRenderPassInstanceNoLayoutChange(objlist, barrier_loc, barrier.oldLayout, barrier.newLayout);
             }
         }
-        if (const EventSignalState* signal_state = vvl::Find(cb_sub_state.event_signal_states, pEvents[i])) {
+        const EventSignalState* signal_state = vvl::Find(cb_sub_state.event_signal_states, pEvents[i]);
+        if (signal_state && signal_state->HasKnownEffect()) {
             const VkPipelineStageFlags2 union_src_stage_mask = sync_utils::GetExecScopes(dep_info).src;
-            if (signal_state->HasKnownEffect() && signal_state->last_signaling_command == vvl::Func::vkCmdSetEvent) {
+            if (signal_state->last_signaling_command == vvl::Func::vkCmdSetEvent) {
                 skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03837", objlist, error_obj.location, "%s was set by %s.",
                                  FormatHandle(pEvents[i]).c_str(), vvl::String(signal_state->last_signaling_command));
             } else if ((union_src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) == 0 &&
@@ -1674,8 +1675,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
                 skip |= LogError("VUID-vkCmdWaitEvents2-pEvents-03841", objlist, error_obj.location,
                                  "%s was not set by vkCmdSetEvent2.", FormatHandle(pEvents[i]).c_str());
             }
-
-            if (union_src_stage_mask == VK_PIPELINE_STAGE_2_HOST_BIT && signal_state->HasKnownEffect() && !signal_state->signaled) {
+            if (union_src_stage_mask == VK_PIPELINE_STAGE_2_HOST_BIT && !signal_state->signaled) {
                 skip |=
                     LogError("VUID-vkCmdWaitEvents2-pEvents-03840", objlist, error_obj.location,
                              "pEvents[%" PRIu32

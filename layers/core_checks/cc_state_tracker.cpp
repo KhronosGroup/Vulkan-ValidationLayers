@@ -1229,17 +1229,17 @@ void CommandBufferSubState::ResetCBState() {
 
 static std::optional<WaitEventSubmitInfo> BuildSubmitTimeWaitInfo(const WaitEventSubmitInfo& secondary_wait,
                                                                   const EventSignalStateMap& primary_states) {
-    EventSignalStateMap wait_signal_states;
+    WaitEventSubmitInfo wait = secondary_wait;
     bool all_signal_states_known = true;
+
     for (VkEvent event : secondary_wait.wait_events) {
         const EventSignalState* primary_state = vvl::Find(primary_states, event);
         const EventSignalState* secondary_state = vvl::Find(secondary_wait.signal_states, event);
         const EventSignalState* known_state = ResolveSecondarySignal(primary_state, secondary_state);
 
-        if (secondary_state && (known_state == secondary_state || !primary_state)) {
-            wait_signal_states[event] = *secondary_state;
-        } else if (primary_state) {
-            wait_signal_states[event] = *primary_state;
+        // If secondary signal is not decisive, replace it with primary signal
+        if (primary_state && (!secondary_state || known_state != secondary_state)) {
+            wait.signal_states[event] = *primary_state;
         }
         if (known_state == nullptr) {
             all_signal_states_known = false;
@@ -1249,8 +1249,24 @@ static std::optional<WaitEventSubmitInfo> BuildSubmitTimeWaitInfo(const WaitEven
         // Record-time validation already had enough information, no need to schedule submit-time validation
         return {};
     }
-    WaitEventSubmitInfo wait = secondary_wait;
-    wait.signal_states = std::move(wait_signal_states);
+    return wait;
+}
+
+static std::optional<WaitEvent2SubmitInfo> BuildSubmitTimeWait2Info(const WaitEvent2SubmitInfo& secondary_wait,
+                                                                    const EventSignalStateMap& primary_states) {
+    const EventSignalState* primary_state = vvl::Find(primary_states, secondary_wait.wait_event);
+    const EventSignalState* secondary_state = secondary_wait.signal_state.has_value() ? &*secondary_wait.signal_state : nullptr;
+    const EventSignalState* known_state = ResolveSecondarySignal(primary_state, secondary_state);
+
+    if (known_state) {
+        // Record-time validation had enough information, no need to do submit-time
+        return {};
+    }
+    WaitEvent2SubmitInfo wait = secondary_wait;
+    // Secondary signal is not decisive (known_state is null), replace it with primary signal
+    if (primary_state) {
+        wait.signal_state = *primary_state;
+    }
     return wait;
 }
 
@@ -1266,9 +1282,8 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_c
         }
     }
     for (const WaitEvent2SubmitInfo& secondary_wait : secondary_sub_state.wait_event2_submit_infos) {
-        const bool found_signal_state = vvl::Contains(event_signal_states, secondary_wait.wait_event);
-        if (!found_signal_state) {
-            wait_event2_submit_infos.emplace_back(secondary_wait);
+        if (auto wait = BuildSubmitTimeWait2Info(secondary_wait, event_signal_states)) {
+            wait_event2_submit_infos.emplace_back(std::move(*wait));
         }
     }
     UpdateEventSignalStates(event_signal_states, secondary_sub_state.event_signal_states);
@@ -1331,14 +1346,15 @@ void CommandBufferSubState::Submit(vvl::Queue& queue_state, uint32_t perf_submit
                     event_state->signal_src_stage_mask = signal_state.signal_src_stage_mask;
                     event_state->signal_dependency_info = signal_state.signal_dependency_info;
                     event_state->signaling_queue = queue_state.VkHandle();
+                    event_state->last_signaling_command = signal_state.last_signaling_command;
                 }
             } else {
                 event_state->signaled = false;
                 event_state->signal_src_stage_mask = VK_PIPELINE_STAGE_NONE;
                 event_state->signal_dependency_info.reset();
                 event_state->signaling_queue = VK_NULL_HANDLE;
+                event_state->last_signaling_command = signal_state.last_signaling_command;  // CmdReset
             }
-            event_state->last_signaling_command = signal_state.last_signaling_command;
         }
     }
 
