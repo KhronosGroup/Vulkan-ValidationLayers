@@ -2401,3 +2401,51 @@ TEST_F(NegativeDataGraph, OpticalFlowWrongHint) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDataGraph, OpticalFlowNoCacheSession) {
+    TEST_DESCRIPTION(
+        "Try to dispatch an optical flow pipeline with execution flags that are not allowed for a non-cached pipeline session");
+
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    ASSERT_EQ(VK_SUCCESS, optical_flow.CreateDataGraphPipeline());
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = optical_flow.dg_pipeline_;
+
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+
+    std::vector<vkt::DeviceMemory> device_mem(session.BindPointReqs().size());
+
+    session.AllocSessionMem(device_mem);
+
+    std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos =
+        DataGraphTest::InitSessionBindInfo(session, device_mem);
+
+    ASSERT_EQ(VK_SUCCESS,
+              vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data()));
+
+    optical_flow.SetupImageDescriptors();
+
+    VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
+    {
+        /* Set one of the disallowed bits. */
+        optical_flow_di.flags = VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_REFERENCE_UNCHANGED_BIT_ARM;
+    }
+
+    VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
+
+    m_command_buffer.Begin();
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.dg_pipeline_);
+
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.dg_pipeline_.pipeline_layout_,
+                              0, 1, &optical_flow.dg_pipeline_.descriptor_set_.get()->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-pInfo-09964");
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, &pipeline_di);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}

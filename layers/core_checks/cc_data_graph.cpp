@@ -495,13 +495,28 @@ bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandB
         const Location hint_loc = pinfo_loc.pNext(Struct::VkDataGraphPipelineOpticalFlowDispatchInfoARM, Field::meanFlowL1NormHint);
         const auto* optical_flow_ci = vku::FindStructInPNextChain<VkDataGraphPipelineOpticalFlowCreateInfoARM>(
             last_bound_state.pipeline_state->DataGraphCreateInfo().pNext);
+
         ASSERT_AND_RETURN_SKIP(optical_flow_ci);
+
         if (optical_flow_di->meanFlowL1NormHint != 0 &&
             optical_flow_di->meanFlowL1NormHint > std::max(optical_flow_ci->width, optical_flow_ci->height)) {
             skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowDispatchInfoARM-meanFlowL1NormHint-09976", objlist, hint_loc,
                              "(%" PRIu32 ") is greater than the maximum of the width (%" PRIu32 ") or height (%" PRIu32
                              ") of the input image.",
                              optical_flow_di->meanFlowL1NormHint, optical_flow_ci->width, optical_flow_ci->height);
+        }
+
+        const VkDataGraphOpticalFlowExecuteFlagsARM mask = VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_INPUT_UNCHANGED_BIT_ARM |
+                                                           VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_REFERENCE_UNCHANGED_BIT_ARM |
+                                                           VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_INPUT_IS_PREVIOUS_REFERENCE_BIT_ARM |
+                                                           VK_DATA_GRAPH_OPTICAL_FLOW_EXECUTE_REFERENCE_IS_PREVIOUS_INPUT_BIT_ARM;
+
+        if ((optical_flow_di->flags & mask) &&
+            !(session_state.create_info.flags & VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_OPTICAL_FLOW_CACHE_BIT_ARM)) {
+            const Location flags_loc = pinfo_loc.pNext(Struct::VkDataGraphPipelineOpticalFlowDispatchInfoARM, Field::flags);
+
+            skip |= LogError("VUID-vkCmdDispatchDataGraphARM-pInfo-09964", objlist, flags_loc, "(%s) contain disallowed bits.",
+                             string_VkDataGraphOpticalFlowExecuteFlagsARM(optical_flow_ci->flags).c_str());
         }
     }
 
