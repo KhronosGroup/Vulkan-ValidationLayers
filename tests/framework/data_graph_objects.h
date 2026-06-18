@@ -145,11 +145,13 @@ class OpticalFlowHelper {
     HelperParameters params_ = HelperParameters();
 
   public:
-    VkDataGraphPipelineOpticalFlowCreateInfoARM optical_flow_ci_ = {};
-    std::array<VkDataGraphPipelineSingleNodeConnectionARM, kResourceCount> connections_;
-    std::array<VkDataGraphPipelineResourceInfoImageLayoutARM, kResourceCount> image_layouts_;
+    std::vector<VkDataGraphPipelineSingleNodeConnectionARM> connections_;
     VkDataGraphPipelineSingleNodeCreateInfoARM single_node_ci_ = {};
+    VkDataGraphPipelineOpticalFlowCreateInfoARM optical_flow_ci_ = {};
     VkDataGraphOpticalFlowGridSizeFlagsARM optical_flow_grid_size_ = VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_UNKNOWN_ARM;
+    std::vector<vkt::Image> images_;
+    std::vector<vkt::ImageView> image_views_;
+    std::vector<VkDataGraphPipelineResourceInfoImageLayoutARM> image_layouts_;
     DataGraphPipelineHelper dg_pipeline_;
 
     VkLayerTest &layer_test_;
