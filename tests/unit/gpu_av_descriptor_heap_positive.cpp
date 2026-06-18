@@ -627,7 +627,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitHeapData) {
     )glsl";
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
-    const VkDeviceSize min_alignment = m_device->Physical().limits_.minUniformBufferOffsetAlignment;
+    const uint32_t min_alignment = (uint32_t)m_device->Physical().limits_.minUniformBufferOffsetAlignment;
     uint32_t* heap_data = (uint32_t*)resource_heap_data_;
     heap_data[min_alignment / 4] = 42;
 
@@ -848,4 +848,100 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitShaderAndMapping) {
 
     uint64_t* ssbo_data = (uint64_t*)ssbo_buffer.Memory().Map();
     ASSERT_TRUE(ssbo_data[0] == ssbo_address);
+}
+
+// https://gitlab.khronos.org/vulkan/vulkan/-/issues/4874
+TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitMulitipleDispatch) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::scalarBlockLayout);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 2);
+
+    vkt::Buffer ssbo1_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer ssbo2_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    WriteBufferToHeap(ssbo1_buffer);
+    WriteBufferToHeap(ssbo2_buffer, 1);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT;
+    mappings[1].sourceData.pushDataOffset = 0;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_scalar_block_layout : enable
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(set = 0, binding = 1, scalar) uniform B { uint b[64]; };
+        void main() {
+            a = b[62];
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe1(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+
+    mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)resource_stride;
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    uint32_t index = 42;
+    m_command_buffer.PushData(248, sizeof(uint32_t), &index);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    index = 88;
+    m_command_buffer.PushData(248, sizeof(uint32_t), &index);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe2);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    uint32_t* ssbo_data = (uint32_t*)ssbo1_buffer.Memory().Map();
+    ASSERT_TRUE(ssbo_data[0] == 42);
+    ssbo_data = (uint32_t*)ssbo2_buffer.Memory().Map();
+    ASSERT_TRUE(ssbo_data[0] == 88);
+}
+
+TEST_F(PositiveGpuAVDescriptorHeap, PushDataLimitNoShaderInstrumentation) {
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "gpuav_shader_instrumentation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
+    };
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap(layer_settings));
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
+    mapping.sourceData.pushAddressOffset = 248;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        void main() {
+            a = 42;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    VkDeviceAddress ssbo_address = ssbo_buffer.Address();
+
+    m_command_buffer.Begin();
+    m_command_buffer.PushData(248, sizeof(VkDeviceAddress), &ssbo_address);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    uint32_t* ssbo_data = (uint32_t*)ssbo_buffer.Memory().Map();
+    ASSERT_TRUE(ssbo_data[0] == 42);
 }
