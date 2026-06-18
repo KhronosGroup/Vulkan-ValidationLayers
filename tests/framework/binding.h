@@ -1300,12 +1300,10 @@ class TensorView : public internal::NonDispHandle<VkTensorViewARM> {
 class DataGraphPipelineSession : public internal::NonDispHandle<VkDataGraphPipelineSessionARM> {
   public:
     explicit DataGraphPipelineSession(const Device &dev, const VkDataGraphPipelineSessionCreateInfoARM &info);
+    DataGraphPipelineSession(const Device &dev, const VkDataGraphPipelineSessionCreateInfoARM &info, NoMemT);
     ~DataGraphPipelineSession() noexcept;
     void Destroy() noexcept;
-
-    // CreateDataGraphPipelineSessionARM
-    void Init(const Device &dev);
-
+    void Init(const Device &dev, const VkDataGraphPipelineSessionCreateInfoARM& info);
     void GetMemoryReqs();
     void AllocSessionMem(std::vector<vkt::DeviceMemory> &device_mem, bool is_protected = false, size_t scale_factor = 1,
                          int32_t size_modifier = 0);

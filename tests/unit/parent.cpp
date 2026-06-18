@@ -1002,7 +1002,7 @@ TEST_F(NegativeParent, DataGraphPipelineSessionBindPointRequirements) {
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline.Handle();
 
-    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    vkt::DataGraphPipelineSession session(*m_device, session_ci, vkt::no_mem);
 
     VkDataGraphPipelineSessionBindPointRequirementsInfoARM req_info = vku::InitStructHelper();
     req_info.session = session.handle();
@@ -1037,7 +1037,7 @@ TEST_F(NegativeParent, DataGraphPipelineSessionMemoryRequirements) {
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline.Handle();
 
-    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    vkt::DataGraphPipelineSession session(*m_device, session_ci, vkt::no_mem);
 
     VkDataGraphPipelineSessionMemoryRequirementsInfoARM req_info = vku::InitStructHelper();
     req_info.session = session.handle();

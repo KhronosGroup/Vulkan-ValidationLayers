@@ -354,7 +354,7 @@ TEST_F(NegativeDataGraph, SessionGetMemoryRequirementsBindPointNotGottenPrior) {
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
 
-    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    vkt::DataGraphPipelineSession session(*m_device, session_ci, vkt::no_mem);
 
     VkDataGraphPipelineSessionMemoryRequirementsInfoARM session_mem_reqs = vku::InitStructHelper();
     session_mem_reqs.session = session;
@@ -376,11 +376,7 @@ TEST_F(NegativeDataGraph, BindSessionTwice) {
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
-
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem);
@@ -405,11 +401,7 @@ TEST_F(NegativeDataGraph, BindSessionMemoryOffsetLargerThanSize) {
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
-
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem);
@@ -434,11 +426,7 @@ TEST_F(NegativeDataGraph, BindSessionMemoryInvalidMemoryBits) {
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
-
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     auto& bind_point_reqs = session.BindPointReqs();
@@ -474,9 +462,6 @@ TEST_F(NegativeDataGraph, BindSessionMemoryInvalidOffsetAlignment) {
     session_ci.dataGraphPipeline = pipeline;
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
-
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem, false, 2);
 
@@ -498,11 +483,7 @@ TEST_F(NegativeDataGraph, BindSessionMemoryTooSmall) {
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
-
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem, false, 1, -1);
@@ -525,9 +506,6 @@ TEST_F(NegativeDataGraph, BindProtectedSessionToUnprotectedMemory) {
     session_ci.flags = VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM;
     session_ci.dataGraphPipeline = pipeline;
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     // allocate unprotected memory
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
@@ -562,9 +540,6 @@ TEST_F(NegativeDataGraph, BindUnprotectedSessionToProtectedMemory) {
     session_ci.dataGraphPipeline = pipeline;
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
-
     // allocate protected memory
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     auto& mem_reqs = session.MemReqs();
@@ -596,11 +571,7 @@ TEST_F(NegativeDataGraph, BindSessionObjectIndexTooLarge) {
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
-
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem);
@@ -622,11 +593,7 @@ TEST_F(NegativeDataGraph, BindSessionObjectWrongBindPoint) {
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
-
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem);
@@ -654,11 +621,7 @@ TEST_F(NegativeDataGraph, DestroySessionInUse) {
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
-
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem);
@@ -769,11 +732,7 @@ TEST_F(NegativeDataGraph, CmdDispatchPipelineNotBound) {
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
-
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem);
@@ -802,11 +761,7 @@ TEST_F(NegativeDataGraph, CmdDispatchDescriptorSetNotBound) {
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
-
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem);
@@ -834,11 +789,7 @@ TEST_F(NegativeDataGraph, CmdDispatchSessionNotBound) {
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
-
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
@@ -874,11 +825,7 @@ TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedUnprotectedCmdBu
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
-
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem);
@@ -930,11 +877,7 @@ TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedProtectedCmdBuff
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
-
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
-
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem);
 
@@ -968,9 +911,6 @@ TEST_F(NegativeDataGraph, CmdDispatchInvalidDescriptorNoUpdate) {
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline.Handle();
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
-
     auto& bind_point_reqs = session.BindPointReqs();
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
@@ -1003,8 +943,6 @@ TEST_F(NegativeDataGraph, CmdDispatchInvalidDescriptorDeletedObject) {
         VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
         session_ci.dataGraphPipeline = pipeline.Handle();
         vkt::DataGraphPipelineSession session(*m_device, session_ci);
-        session.GetMemoryReqs();
-        CheckSessionMemory(session);
 
         auto& bind_point_reqs = session.BindPointReqs();
         std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
@@ -1047,9 +985,6 @@ TEST_F(NegativeDataGraph, CmdDispatchInvalidDescriptorBufferBit) {
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline.Handle();
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
-
     auto& bind_point_reqs = session.BindPointReqs();
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
@@ -1101,9 +1036,6 @@ TEST_F(NegativeDataGraph, CmdDispatchMissingDescriptorBufferBit) {
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline.Handle();
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
-
     auto& bind_point_reqs = session.BindPointReqs();
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
@@ -1612,14 +1544,14 @@ TEST_F(NegativeDataGraph, SessionGetMemoryRequirementsIndexTooLarge) {
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
 
-    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    vkt::DataGraphPipelineSession session(*m_device, session_ci, vkt::no_mem);
 
     uint32_t bind_point_req_count = 0;
     VkDataGraphPipelineSessionBindPointRequirementsInfoARM bind_point_req_info = vku::InitStructHelper();
     bind_point_req_info.session = session;
     vk::GetDataGraphPipelineSessionBindPointRequirementsARM(*m_device, &bind_point_req_info, &bind_point_req_count, nullptr);
     if (bind_point_req_count == 0) {
-        GTEST_FAIL() << "No bind points, " << IncorrectSpirvMessage;
+        GTEST_FAIL() << "No bind points, test incorrect. Possible causes: incorrect spirv, or inconsistency between spirv and tensor/constant declarations\n";
     }
     std::vector<VkDataGraphPipelineSessionBindPointRequirementARM> bind_point_reqs(bind_point_req_count);
     for (auto& bp_req : bind_point_reqs) {
@@ -2222,9 +2154,6 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongPipeline) {
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline_copy.handle();
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
-
     // setup the command buffer with the _default_ pipeline, as usual.
     auto& bind_point_reqs = session.BindPointReqs();
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
@@ -2257,9 +2186,6 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongTensorUsage) {
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
-
     auto& bind_point_reqs = session.BindPointReqs();
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
@@ -2378,9 +2304,6 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongQueue) {
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
-
     auto& bind_point_reqs = session.BindPointReqs();
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
