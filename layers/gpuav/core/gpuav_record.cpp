@@ -962,13 +962,16 @@ void Validator::PreCallRecordCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuff
 bool Validator::PreCallValidateCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    if (pPushDataInfo->offset + pPushDataInfo->data.size > push_data_offset_) {
-        skip |=
-            LogError("UNASSIGNED-GPU-Assisted-Validation", commandBuffer, error_obj.location,
-                     "VkPhysicalDeviceDescriptorHeapPropertiesEXT::maxPushDataSize is %" PRIu32
-                     ", however GPU-AV reserved 8 bytes at the end of the push data range for internal use. Therefore only %" PRIu32
-                     " bytes are available to the application.",
-                     static_cast<uint32_t>(push_data_offset_ + sizeof(VkDeviceAddress)), push_data_offset_);
+    if (!gpuav_settings.IsShaderInstrumentationEnabled()) {
+        return skip;
+    }
+    const uint32_t final_byte = pPushDataInfo->offset + pPushDataInfo->data.size;
+    if (final_byte > push_data_offset_) {
+        skip |= LogError("UNASSIGNED-GPU-Assisted-Validation", commandBuffer, error_obj.location,
+                         "is trying to set push data at [%" PRIu32 ":%" PRIu32
+                         ") however GPU-AV needs to reserve 8 bytes at [%" PRIu32 ":%" PRIu32
+                         ") for internal use. Therefore only push data at byte [0:%" PRIu32 "] are available to the application.",
+                         pPushDataInfo->offset, final_byte - 1, push_data_offset_, push_data_offset_ + 7, push_data_offset_ - 1);
     }
     return skip;
 }
