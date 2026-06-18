@@ -1286,11 +1286,17 @@ void TensorView::Init(const Device& dev, const VkTensorViewCreateInfoARM& info) 
 
 NON_DISPATCHABLE_HANDLE_DTOR(DataGraphPipelineSession, vk::DestroyDataGraphPipelineSessionARM)
 DataGraphPipelineSession::DataGraphPipelineSession(const Device& dev, const VkDataGraphPipelineSessionCreateInfoARM& info) {
-    create_info_ = info;
-    Init(dev);
+    Init(dev, info);
+    GetMemoryReqs();
 }
-void DataGraphPipelineSession::Init(const Device& dev) {
+
+DataGraphPipelineSession::DataGraphPipelineSession(const Device& dev, const VkDataGraphPipelineSessionCreateInfoARM& info, NoMemT) {
+    Init(dev, info);
+}
+
+void DataGraphPipelineSession::Init(const Device& dev, const VkDataGraphPipelineSessionCreateInfoARM& info) {
     device_ = &dev;
+    create_info_ = info;
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDataGraphPipelineSessionARM, dev, &create_info_);
 }
 
@@ -1312,6 +1318,16 @@ void DataGraphPipelineSession::GetMemoryReqs() {
         session_mem_reqs.bindPoint = bind_point_reqs_[i].bindPoint;
         mem_reqs_[i] = vku::InitStructHelper();
         vk::GetDataGraphPipelineSessionMemoryRequirementsARM(*device_, &session_mem_reqs, &mem_reqs_[i]);
+    }
+
+    const char *incorrect_spirv_msg = "test incorrect. Possible causes: incorrect spirv, or inconsistency between spirv and tensor/constant declarations\n";
+    if (mem_reqs_.empty()) {
+        GTEST_FAIL() << "No bind points, " << incorrect_spirv_msg;
+    }
+    for (uint32_t i = 0; i < mem_reqs_.size(); i++) {
+        if (mem_reqs_[i].memoryRequirements.size == 0) {
+            GTEST_FAIL() << "No memory for binding " << i << ", " << incorrect_spirv_msg;
+        }
     }
 }
 

@@ -31,21 +31,7 @@ void DataGraphTest::InitBasicDataGraph(bool optical_flow) {
     RETURN_IF_SKIP(Init());
 }
 
-const std::string DataGraphTest::IncorrectSpirvMessage{
-    "test incorrect. Possible causes: incorrect spirv, or inconsistency between spirv and tensor/constant declarations\n"};
 const VkTensorDescriptionARM DataGraphTest::defaultConstantTensorDesc{DefaultConstantTensorDesc()};
-
-void DataGraphTest::CheckSessionMemory(const vkt::DataGraphPipelineSession& session) {
-    const auto& mem_reqs = session.MemReqs();
-    if (mem_reqs.empty()) {
-        GTEST_FAIL() << "No bind points, " << IncorrectSpirvMessage;
-    }
-    for (uint32_t i = 0; i < mem_reqs.size(); i++) {
-        if (mem_reqs[i].memoryRequirements.size == 0) {
-            GTEST_FAIL() << "No memory for binding " << i << ", " << IncorrectSpirvMessage;
-        }
-    }
-}
 
 std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> DataGraphTest::InitSessionBindInfo(
     const vkt::DataGraphPipelineSession& session, const std::vector<vkt::DeviceMemory>& device_mem) {
@@ -115,8 +101,6 @@ TEST_F(PositiveDataGraph, ExecuteDataGraph) {
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     auto& bind_point_reqs = session.BindPointReqs();
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
@@ -164,10 +148,7 @@ TEST_F(PositiveDataGraph, DISABLED_ProtectedMemoryDataGraph) {
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline;
     session_ci.flags = VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM;
-
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem, true);
@@ -295,8 +276,6 @@ TEST_F(PositiveDataGraph, CmdDispatchDescriptorBuffer) {
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = pipeline.Handle();
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     auto& bind_point_reqs = session.BindPointReqs();
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
@@ -335,8 +314,6 @@ TEST_F(PositiveDataGraph, OpticalFlow) {
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = optical_flow.dg_pipeline_;
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
-    session.GetMemoryReqs();
-    CheckSessionMemory(session);
 
     auto& bind_point_reqs = session.BindPointReqs();
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
