@@ -55,7 +55,7 @@ struct EventSignalState {
     // NOTE: this implementation is about handling repeated signals. It does not try
     // to handle repeated unsignals, which are also ignored. The reason for this is
     // that we don't track associated data with unsignals, so original unsignal and
-    // duplicated ones are the same from the tracking perspective. The implementatio
+    // duplicated ones are the same from the tracking perspective. The implementation
     // has to be updated if we need to track data associated with the unsignal (then
     // it's important to keep the original unsignal data)
     bool HasKnownEffect(const EventSignalState* prior_state = nullptr) const;
@@ -77,7 +77,7 @@ const EventSignalState* ResolveSecondarySignal(const EventSignalState* prior_sta
 
 // Resolve the effective signaling state from three levels: the global state, the local submit
 // state (between command buffers of submission), and the command buffer state
-EventSignalState ResolveEventSignal(const vvl::Event& event_state, const EventSignalState* submit_signal_state,
+EventSignalState ResolveEventSignal(const vvl::Event& event_state, const EventSignalState* local_signal_state,
                                     const EventSignalState* cb_signal_state);
 
 void UpdateEventSignalStates(EventSignalStateMap& accumulated_states, const EventSignalStateMap& recorded_states);

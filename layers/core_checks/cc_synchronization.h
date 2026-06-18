@@ -81,7 +81,7 @@ struct WaitEventSubmitInfo {
     vvl::Func wait_command = vvl::Func::Empty;
 
     bool Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
-                  EventSignalStateMap& submit_signal_states, const Location& loc) const;
+                  EventSignalStateMap& local_signal_states, const Location& loc) const;
 };
 
 struct WaitEvent2SubmitInfo {
@@ -91,5 +91,5 @@ struct WaitEvent2SubmitInfo {
     vvl::Func wait_command = vvl::Func::Empty;
 
     bool Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
-                  EventSignalStateMap& submit_signal_states, const Location& loc) const;
+                  EventSignalStateMap& local_signal_states, const Location& loc) const;
 };
