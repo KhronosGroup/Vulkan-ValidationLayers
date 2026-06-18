@@ -38,22 +38,22 @@ const EventSignalState* ResolveSecondarySignal(const EventSignalState* prior_sta
     return nullptr;
 }
 
-EventSignalState ResolveEventSignal(const vvl::Event& event_state, const EventSignalState* submit_state,
-                                    const EventSignalState* cb_state) {
+EventSignalState ResolveEventSignal(const vvl::Event& event_state, const EventSignalState* local_signal_state,
+                                    const EventSignalState* cb_signal_state) {
     EventSignalState state;
     state.signaled = event_state.signaled;
-    state.was_reset = true;
+    state.was_reset = true;  // the global event state is known (so HasKnownEffect works as expected)
     state.signal_src_stage_mask = event_state.signal_src_stage_mask;
     state.signal_dependency_info = event_state.signal_dependency_info;
     state.last_signaling_command = event_state.last_signaling_command;
 
     const EventSignalState* prior_state = &state;
-    if (submit_state && submit_state->HasKnownEffect(prior_state)) {
-        state = *submit_state;
+    if (local_signal_state && local_signal_state->HasKnownEffect(prior_state)) {
+        state = *local_signal_state;
     }
-    prior_state = submit_state ? submit_state : prior_state;
-    if (cb_state && cb_state->HasKnownEffect(prior_state)) {
-        state = *cb_state;
+    prior_state = local_signal_state ? local_signal_state : prior_state;
+    if (cb_signal_state && cb_signal_state->HasKnownEffect(prior_state)) {
+        state = *cb_signal_state;
     }
     return state;
 }

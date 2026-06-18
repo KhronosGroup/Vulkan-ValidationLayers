@@ -401,13 +401,13 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location& signal_semaph
 }
 
 static bool ValidateEventQueueMismatch(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
-                                       const vvl::Event& event_state, const EventSignalStateMap& submit_signal_states,
+                                       const vvl::Event& event_state, const EventSignalStateMap& local_signal_states,
                                        const Location& loc) {
     bool skip = false;
 
     // Check if prior command buffers from this submit contain signaling operation.
     // If yes, then everything is on the same queue
-    if (vvl::Contains(submit_signal_states, event_state.VkHandle())) {
+    if (vvl::Contains(local_signal_states, event_state.VkHandle())) {
         return skip;
     }
     // Check global event state
@@ -422,7 +422,7 @@ static bool ValidateEventQueueMismatch(const CoreChecks& core, const vvl::Queue&
 }
 
 bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
-                                   EventSignalStateMap& submit_signal_states, const Location& loc) const {
+                                   EventSignalStateMap& local_signal_states, const Location& loc) const {
     bool skip = false;
 
     VkPipelineStageFlags signals_src_stage_mask = 0;
@@ -430,11 +430,11 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& que
     for (VkEvent event : wait_events) {
         if (auto event_state = core.Get<vvl::Event>(event)) {
             if (!vvl::Contains(signal_states, event)) {
-                skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, submit_signal_states, loc);
+                skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, local_signal_states, loc);
             }
-            const EventSignalState* submit_signal_state = vvl::Find(submit_signal_states, event);
+            const EventSignalState* local_signal_state = vvl::Find(local_signal_states, event);
             const EventSignalState* cb_signal_state = vvl::Find(signal_states, event);
-            const EventSignalState resolved_state = ResolveEventSignal(*event_state, submit_signal_state, cb_signal_state);
+            const EventSignalState resolved_state = ResolveEventSignal(*event_state, local_signal_state, cb_signal_state);
 
             // Collect source stages from all signals
             if (resolved_state.signaled) {
@@ -475,7 +475,7 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& que
 }
 
 bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state,
-                                    EventSignalStateMap& submit_signal_states, const Location& loc) const {
+                                    EventSignalStateMap& local_signal_states, const Location& loc) const {
     bool skip = false;
 
     auto event_state = core.Get<vvl::Event>(wait_event);
@@ -483,11 +483,11 @@ bool WaitEvent2SubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& qu
         return skip;
     }
 
-    skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, submit_signal_states, loc);
+    skip |= ValidateEventQueueMismatch(core, queue_state, cb_state, *event_state, local_signal_states, loc);
 
-    const EventSignalState* submit_signal_state = vvl::Find(submit_signal_states, wait_event);
+    const EventSignalState* local_signal_state = vvl::Find(local_signal_states, wait_event);
     const EventSignalState* cb_signal_state = signal_state.has_value() ? &*signal_state : nullptr;
-    const EventSignalState resolved_state = ResolveEventSignal(*event_state, submit_signal_state, cb_signal_state);
+    const EventSignalState resolved_state = ResolveEventSignal(*event_state, local_signal_state, cb_signal_state);
 
     const VkPipelineStageFlags2 union_src_stage_mask = sync_utils::GetExecScopes(*wait_dependency_info.ptr()).src;
 
