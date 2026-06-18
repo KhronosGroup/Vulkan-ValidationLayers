@@ -923,26 +923,29 @@ bool CoreChecks::ValidatePresentId(VkQueue queue, const VkPresentInfoKHR& presen
         return skip;
     }
 
-    for (uint32_t i = 0; i < present_id_info.swapchainCount; i++) {
-        if (!enabled_features.presentId && present_id_info.pPresentIds[i] != 0) {
-            skip |= LogError(
-                "VUID-VkPresentInfoKHR-pNext-06235", queue, present_info_loc.pNext(Struct::VkPresentIdKHR, Field::pPresentIds, i),
-                "(%" PRIu64 ") is not zero, but the presentId feature was not enabled.", present_id_info.pPresentIds[i]);
-            break;
-        }
+    if (present_id_info.pPresentIds) {
+        for (uint32_t i = 0; i < present_id_info.swapchainCount; i++) {
+            if (!enabled_features.presentId && present_id_info.pPresentIds[i] != 0) {
+                skip |= LogError("VUID-VkPresentInfoKHR-pNext-06235", queue,
+                                 present_info_loc.pNext(Struct::VkPresentIdKHR, Field::pPresentIds, i),
+                                 "(%" PRIu64 ") is not zero, but the presentId feature was not enabled.",
+                                 present_id_info.pPresentIds[i]);
+                break;
+            }
 
-        auto swapchain_state = Get<vvl::Swapchain>(present_info.pSwapchains[i]);
-        ASSERT_AND_CONTINUE(swapchain_state);
-        if (present_id_info.pPresentIds && (present_id_info.pPresentIds[i] != 0) &&
-            (present_id_info.pPresentIds[i] <= swapchain_state->max_present_id)) {
-            const LogObjectList objlist(queue, present_info.pSwapchains[i]);
-            skip |= LogError("VUID-VkPresentIdKHR-presentIds-04999", objlist,
+            auto swapchain_state = Get<vvl::Swapchain>(present_info.pSwapchains[i]);
+            ASSERT_AND_CONTINUE(swapchain_state);
+            if ((present_id_info.pPresentIds[i] != 0) && (present_id_info.pPresentIds[i] <= swapchain_state->max_present_id)) {
+                const LogObjectList objlist(queue, present_info.pSwapchains[i]);
+                skip |=
+                    LogError("VUID-VkPresentIdKHR-presentIds-04999", objlist,
                              present_info_loc.pNext(Struct::VkPresentIdKHR, Field::pPresentIds, i),
                              "(%" PRIu64 ") is not larger than the largest presentId (%" PRIu64
                              ") sent for this swapchain.\nEach presentIds entry must be greater than any previous presentIds entry "
                              "passed for the "
                              "associated pSwapchains entry",
                              present_id_info.pPresentIds[i], swapchain_state->max_present_id);
+            }
         }
     }
     return skip;
