@@ -4191,7 +4191,9 @@ void DeviceState::PostCallRecordResetEvent(VkDevice device, VkEvent event, const
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    if (auto event_state = Get<Event>(event)) {
+    auto event_state = Get<Event>(event);
+    const bool can_unsignal = event_state && event_state->signaled;
+    if (can_unsignal) {
         event_state->signaled = false;
         event_state->signal_dependency_info.reset();
         event_state->signal_src_stage_mask = VK_PIPELINE_STAGE_NONE;
@@ -4204,7 +4206,9 @@ void DeviceState::PostCallRecordSetEvent(VkDevice device, VkEvent event, const R
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    if (auto event_state = Get<Event>(event)) {
+    auto event_state = Get<Event>(event);
+    const bool can_signal = event_state && !event_state->signaled;
+    if (can_signal) {
         event_state->signaled = true;
         event_state->signal_dependency_info.reset();
         event_state->signal_src_stage_mask = VK_PIPELINE_STAGE_HOST_BIT;

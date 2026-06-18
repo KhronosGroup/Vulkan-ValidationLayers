@@ -1099,6 +1099,33 @@ TEST_F(NegativeEvent, SetWait2MismatchSecondary) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeEvent, SetWait2MismatchSecondarySubmit) {
+    TEST_DESCRIPTION("CmdSetEvent -> CmdWaitEvents2 in secondary");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    const vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.WaitEvent2(event, barrier);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.ExecuteCommands(secondary);
+    m_command_buffer.End();
+
+    monitor_.SetDesiredError("VUID-vkCmdWaitEvents2-pEvents-03837");
+    m_default_queue->Submit(m_command_buffer);
+    monitor_.VerifyFound();
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeEvent, SetWait2MismatchSubmit) {
     TEST_DESCRIPTION("CmdSetEvent -> CmdWaitEvents2");
     SetTargetApiVersion(VK_API_VERSION_1_3);

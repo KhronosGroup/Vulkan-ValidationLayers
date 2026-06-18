@@ -744,6 +744,59 @@ TEST_F(PositiveEvent, WaitWithOnlyHostDependencyIgnoredSignalSecondary) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
+TEST_F(PositiveEvent, Wait2IgnoredSignal) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
+    command_buffer.Begin();
+    command_buffer.SetEvent2(event, barrier);
+    command_buffer.End();
+    m_default_queue->SubmitAndWait(command_buffer);
+
+    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
+    command_buffer2.Begin();
+    command_buffer2.SetEvent(event);  // ignored signal
+    command_buffer2.WaitEvent2(event, barrier);
+    command_buffer2.End();
+    m_default_queue->SubmitAndWait(command_buffer2);
+}
+
+TEST_F(PositiveEvent, Wait2IgnoredSignal2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
+    command_buffer.Begin();
+    command_buffer.SetEvent2(event, barrier);
+    command_buffer.End();
+    m_default_queue->SubmitAndWait(command_buffer);
+
+    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
+    command_buffer2.Begin();
+    command_buffer2.SetEvent(event);  // ignored signal
+    command_buffer2.End();
+    m_default_queue->SubmitAndWait(command_buffer2);
+
+    vkt::CommandBuffer command_buffer3(*m_device, m_command_pool);
+    command_buffer3.Begin();
+    command_buffer3.WaitEvent2(event, barrier);
+    command_buffer3.End();
+    m_default_queue->SubmitAndWait(command_buffer3);
+}
+
 TEST_F(PositiveEvent, WaitHostStageAndIgnoredSignal) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
