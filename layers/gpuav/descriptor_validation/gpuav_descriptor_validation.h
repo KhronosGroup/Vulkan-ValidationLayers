@@ -57,5 +57,8 @@ const uint8_t TYPE_IMAGE_STORAGE = 0x9;               // VK_DESCRIPTOR_TYPE_STOR
 const uint8_t TYPE_IMAGE_TEXEL_BUFFER_UNIFORM = 0xA;  // VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
 const uint8_t TYPE_IMAGE_TEXEL_BUFFER_STORAGE = 0xB;  // VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
 const uint8_t TYPE_IMAGE_INPUT_ATTACHMENT = 0xC;      // VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+
+VkDescriptorType GetDescriptorTypeFromMask(uint8_t mask);
+uint8_t GetMaskFromDescriptorType(VkDescriptorType type);
 }  // namespace descriptor
 }  // namespace gpuav

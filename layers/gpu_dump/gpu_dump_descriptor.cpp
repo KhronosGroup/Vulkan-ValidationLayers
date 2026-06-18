@@ -657,15 +657,17 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             const uint32_t max_index = map_data.heapArrayStride == 0 ? 1 : (uint32_t)(available_space / map_data.heapArrayStride);
             if (array_length != 0) {
                 const VkDeviceSize final_array_offset = (array_length - 1) * map_data.heapArrayStride;
-                ss << new_sub_line << "The final descriptor index at [" << std::dec << array_length << std::hex
-                   << "] will access [0x" << (index_zero_address + final_array_offset) << ", 0x"
-                   << (index_zero_address + final_array_offset + descriptor_size) << ")";
+                vvl::range<VkDeviceAddress> final_index_range{index_zero_address + final_array_offset,
+                                                              index_zero_address + final_array_offset + descriptor_size};
+                ss << new_sub_line << "The final descriptor index at [" << std::dec << array_length << std::hex << "] will access "
+                   << string_range_hex(final_index_range);
                 warn_index_oob(max_index);
             } else if (is_runtime_array) {
                 const VkDeviceSize final_array_offset = (max_index * map_data.heapArrayStride);
-                ss << new_sub_line << "The final descriptor index in bounds is [" << std::dec << max_index << std::hex
-                   << "] which would be accessed at [0x" << (index_zero_address + final_array_offset) << ", 0x"
-                   << (index_zero_address + final_array_offset + descriptor_size) << ")";
+                vvl::range<VkDeviceAddress> final_index_range{index_zero_address + final_array_offset,
+                                                              index_zero_address + final_array_offset + descriptor_size};
+                ss << new_sub_line << "The final descriptor index at [" << std::dec << max_index << std::hex
+                   << "] is the last index in bounds of the heap buffer and will access " << string_range_hex(final_index_range);
             }
 
             if (!heap_reserved.empty()) {
@@ -715,16 +717,19 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                     map_data.samplerHeapArrayStride == 0 ? 1 : (uint32_t)(available_space / map_data.samplerHeapArrayStride);
                 if (array_length != 0) {
                     const VkDeviceSize final_array_offset = (array_length - 1) * map_data.samplerHeapArrayStride;
+                    vvl::range<VkDeviceAddress> final_index_range{
+                        index_zero_address + final_array_offset, index_zero_address + final_array_offset + sampler_descriptor_size};
                     ss << new_sub_line << "The final descriptor index at [" << std::dec << array_length << std::hex
-                       << "] will access [0x" << (index_zero_address + final_array_offset) << ", 0x"
-                       << (index_zero_address + final_array_offset + sampler_descriptor_size) << ")";
+                       << "] will access " << string_range_hex(final_index_range);
                     warn_index_oob(max_index);
                 } else if (is_runtime_array) {
                     const VkDeviceSize final_array_offset =
                         (map_data.samplerHeapOffset + (max_index * map_data.samplerHeapArrayStride));
-                    ss << new_sub_line << "The final descriptor index in bounds is [" << std::dec << max_index << std::hex
-                       << "] which would be accessed at [0x" << (index_zero_address + final_array_offset) << ", 0x"
-                       << (index_zero_address + final_array_offset + sampler_descriptor_size) << ")";
+                    vvl::range<VkDeviceAddress> final_index_range{
+                        index_zero_address + final_array_offset, index_zero_address + final_array_offset + sampler_descriptor_size};
+                    ss << new_sub_line << "The final descriptor index at [" << std::dec << max_index << std::hex
+                       << "] is the last index in bounds of the heap buffer and will access "
+                       << string_range_hex(final_index_range);
                 }
 
                 if (!heap.sampler_reserved.empty() && warn_reserved_range_start == vvl::kNoIndex32) {
@@ -780,15 +785,17 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             const uint32_t max_index = map_data.heapArrayStride == 0 ? 1 : (uint32_t)(available_space / map_data.heapArrayStride);
             if (array_length != 0) {
                 const VkDeviceSize final_array_offset = (array_length - 1) * map_data.heapArrayStride;
-                ss << new_sub_line << "The final descriptor index at [" << std::dec << array_length << std::hex
-                   << "] will access [0x" << (index_zero_address + final_array_offset) << ", 0x"
-                   << (index_zero_address + final_array_offset + descriptor_size) << ")";
+                vvl::range<VkDeviceAddress> final_index_range{index_zero_address + final_array_offset,
+                                                              index_zero_address + final_array_offset + descriptor_size};
+                ss << new_sub_line << "The final descriptor index at [" << std::dec << array_length << std::hex << "] will access "
+                   << string_range_hex(final_index_range);
                 warn_index_oob(max_index);
             } else if (is_runtime_array) {
                 const VkDeviceSize final_array_offset = max_index * map_data.heapArrayStride;
-                ss << new_sub_line << "The final descriptor index in bounds is [" << std::dec << max_index << std::hex
-                   << "] which would be accessed at [0x" << (index_zero_address + final_array_offset) << ", 0x"
-                   << (index_zero_address + final_array_offset + descriptor_size) << ")";
+                vvl::range<VkDeviceAddress> final_index_range{index_zero_address + final_array_offset,
+                                                              index_zero_address + final_array_offset + descriptor_size};
+                ss << new_sub_line << "The final descriptor index at [" << std::dec << max_index << std::hex
+                   << "] is the last index in bounds of the heap buffer and will access " << string_range_hex(final_index_range);
             }
 
             if (!heap_reserved.empty()) {
@@ -847,15 +854,18 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                     map_data.samplerHeapArrayStride == 0 ? 1 : (uint32_t)(available_space / map_data.samplerHeapArrayStride);
                 if (array_length != 0) {
                     const VkDeviceSize final_array_offset = (array_length - 1) * map_data.samplerHeapArrayStride;
+                    vvl::range<VkDeviceAddress> final_index_range{
+                        index_zero_address + final_array_offset, index_zero_address + final_array_offset + sampler_descriptor_size};
                     ss << new_sub_line << "The final descriptor index at [" << std::dec << array_length << std::hex
-                       << "] will access [0x" << (index_zero_address + final_array_offset) << ", 0x"
-                       << (index_zero_address + final_array_offset + sampler_descriptor_size) << ")";
+                       << "] will access " << string_range_hex(final_index_range);
                     warn_index_oob(max_index);
                 } else if (is_runtime_array) {
                     const VkDeviceSize final_array_offset = max_index * map_data.samplerHeapArrayStride;
-                    ss << new_sub_line << "The final descriptor index in bounds is [" << std::dec << max_index << std::hex
-                       << "] which would be accessed at [0x" << (index_zero_address + final_array_offset) << ", 0x"
-                       << (index_zero_address + final_array_offset + sampler_descriptor_size) << ")";
+                    vvl::range<VkDeviceAddress> final_index_range{
+                        index_zero_address + final_array_offset, index_zero_address + final_array_offset + sampler_descriptor_size};
+                    ss << new_sub_line << "The final descriptor index at [" << std::dec << max_index << std::hex
+                       << "] is the last index in bounds of the heap buffer and will access "
+                       << string_range_hex(final_index_range);
                 }
 
                 if (!heap.sampler_reserved.empty() && warn_reserved_range_start == vvl::kNoIndex32) {
@@ -934,15 +944,18 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                     map_data.heapArrayStride == 0 ? 1 : (uint32_t)(available_space / map_data.heapArrayStride);
                 if (array_length != 0) {
                     const VkDeviceSize final_array_offset = (array_length - 1) * map_data.heapArrayStride;
+                    vvl::range<VkDeviceAddress> final_index_range{index_zero_address + final_array_offset,
+                                                                  index_zero_address + final_array_offset + descriptor_size};
                     ss << new_sub_line << "The final descriptor index at [" << std::dec << array_length << std::hex
-                       << "] will access [0x" << (index_zero_address + final_array_offset) << ", 0x"
-                       << (index_zero_address + final_array_offset + descriptor_size) << ")";
+                       << "] will access " << string_range_hex(final_index_range);
                     warn_index_oob(max_index);
                 } else if (is_runtime_array) {
                     const VkDeviceSize final_array_offset = max_index * map_data.heapArrayStride;
-                    ss << new_sub_line << "The final descriptor index in bounds is [" << std::dec << max_index << std::hex
-                       << "] which would be accessed at [0x" << (index_zero_address + final_array_offset) << ", 0x"
-                       << (index_zero_address + final_array_offset + descriptor_size) << ")";
+                    vvl::range<VkDeviceAddress> final_index_range{index_zero_address + final_array_offset,
+                                                                  index_zero_address + final_array_offset + descriptor_size};
+                    ss << new_sub_line << "The final descriptor index at [" << std::dec << max_index << std::hex
+                       << "] is the last index in bounds of the heap buffer and will access "
+                       << string_range_hex(final_index_range);
                 }
 
                 if (!heap_reserved.empty()) {
@@ -1027,15 +1040,20 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                         map_data.samplerHeapArrayStride == 0 ? 1 : (uint32_t)(available_space / map_data.samplerHeapArrayStride);
                     if (array_length != 0) {
                         const VkDeviceSize final_array_offset = (array_length - 1) * map_data.samplerHeapArrayStride;
+                        vvl::range<VkDeviceAddress> final_index_range{
+                            index_zero_address + final_array_offset,
+                            index_zero_address + final_array_offset + sampler_descriptor_size};
                         ss << new_sub_line << "The final descriptor index at [" << std::dec << array_length << std::hex
-                           << "] will access [0x" << (index_zero_address + final_array_offset) << ", 0x"
-                           << (index_zero_address + final_array_offset + sampler_descriptor_size) << ")";
+                           << "] will access " << string_range_hex(final_index_range);
                         warn_index_oob(max_index);
                     } else if (is_runtime_array) {
                         const VkDeviceSize final_array_offset = max_index * map_data.samplerHeapArrayStride;
-                        ss << new_sub_line << "The final descriptor index in bounds is [" << std::dec << max_index << std::hex
-                           << "] which would be accessed at [0x" << (index_zero_address + final_array_offset) << ", 0x"
-                           << (index_zero_address + final_array_offset + sampler_descriptor_size) << ")";
+                        vvl::range<VkDeviceAddress> final_index_range{
+                            index_zero_address + final_array_offset,
+                            index_zero_address + final_array_offset + sampler_descriptor_size};
+                        ss << new_sub_line << "The final descriptor index at [" << std::dec << max_index << std::hex
+                           << "] is the last index in bounds of the heap buffer and will access "
+                           << string_range_hex(final_index_range);
                     }
 
                     if (!heap.sampler_reserved.empty() && warn_reserved_range_start == vvl::kNoIndex32) {
@@ -1515,7 +1533,8 @@ vvl::unordered_map<uint32_t, HeapAccesses> CommandBufferSubState::DumpDescriptor
     vvl::unordered_map<uint32_t, HeapAccesses> accesses;
 
     auto add_access = [&](const VkDescriptorType descriptor_type, const spirv::Instruction& ac_inst) {
-        const VkDeviceSize descriptor_size = dev_data.device_state->cached_descriptor_size.GetSize(descriptor_type);
+        const VkDeviceSize descriptor_size =
+            GetUntypedDescriptorSize(dev_data.phys_dev_ext_props.descriptor_heap_props, descriptor_type);
         assert(ac_inst.Opcode() == spv::OpUntypedAccessChainKHR);
         const spirv::Instruction* base_type_inst = module.FindDef(ac_inst.Word(3));
         if (base_type_inst->Opcode() != spv::OpTypeBufferEXT && base_type_inst->Opcode() != spv::OpTypeStruct &&
@@ -1704,7 +1723,8 @@ bool CommandBufferSubState::DumpDescriptorHeapUntyped(std::ostringstream& ss, co
                 ss << " (dynamic index)\n";
             }
 
-            VkDeviceSize descriptor_size = dev_data.device_state->cached_descriptor_size.GetSize(access.descriptor_type);
+            const VkDeviceSize descriptor_size =
+                GetUntypedDescriptorSize(dev_data.phys_dev_ext_props.descriptor_heap_props, access.descriptor_type);
             ss << "      - descriptor size: 0x" << std::hex << descriptor_size << " ("
                << string_VkDescriptorType(access.descriptor_type) << ")\n";
 

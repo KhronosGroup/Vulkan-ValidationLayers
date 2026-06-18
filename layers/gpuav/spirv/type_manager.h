@@ -14,6 +14,7 @@
  */
 #pragma once
 
+#include <vulkan/vulkan.h>
 #include <cstdint>
 #include <vector>
 #include <memory>
@@ -206,8 +207,7 @@ struct AccessPath {
     // TODO - Need to handle OffsetIdEXT correctly, this is a dumb hack
     uint32_t heap_offset_member_index = 0;
 
-    // As defined in gpuav_descriptor_validation.h
-    uint8_t descriptor_type = 0;
+    VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
 
     CooperativeMatrixAccess coop_mat{};
 };

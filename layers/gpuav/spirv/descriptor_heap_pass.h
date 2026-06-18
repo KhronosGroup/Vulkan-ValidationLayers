@@ -72,6 +72,8 @@ class DescriptorHeapPass : public Pass {
     };
     uint32_t link_function_id_[FUNC_COUNT]{};
     uint32_t GetLinkFunctionId(const FunctionNames func_name);
+
+    const VkPhysicalDeviceDescriptorHeapPropertiesEXT& descriptor_heap_props;
 };
 
 }  // namespace spirv

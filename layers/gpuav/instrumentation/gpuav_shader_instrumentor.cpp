@@ -279,18 +279,9 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateI
         IsExtEnabled(extensions.vk_khr_shader_non_semantic_info) && !IsExtEnabled(extensions.vk_khr_portability_subset);
     instrumentation_device_settings_.error_buffer_data_length = glsl::kErrorBufferDataLength;
     instrumentation_device_settings_.debug_printf_buffer_size = gpuav_settings.debug_printf_buffer_size;
-    instrumentation_device_settings_.max_compute_shared_memory_size = phys_dev_props.limits.maxComputeSharedMemorySize;
-    // Not sure why these are VkDeviceSize in the spec
-    instrumentation_device_settings_.min_uniform_buffer_alignment = (uint32_t)phys_dev_props.limits.minUniformBufferOffsetAlignment;
-    instrumentation_device_settings_.min_storage_buffer_alignment = (uint32_t)phys_dev_props.limits.minStorageBufferOffsetAlignment;
-    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        instrumentation_device_settings_.descriptor_alignment_sampler =
-            (uint32_t)phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment;
-        instrumentation_device_settings_.descriptor_alignment_image =
-            (uint32_t)phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment;
-        instrumentation_device_settings_.descriptor_alignment_buffer =
-            (uint32_t)phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment;
-    }
+    instrumentation_device_settings_.cached_descriptor_size = &device_state->cached_descriptor_size;
+    instrumentation_device_settings_.phys_dev_props = &phys_dev_props;
+    instrumentation_device_settings_.phys_dev_ext_props = &phys_dev_ext_props;
     instrumentation_device_settings_.enabled_features = &modified_features;
 }
 

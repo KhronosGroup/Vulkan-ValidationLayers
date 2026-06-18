@@ -881,8 +881,8 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentHeapData) {
 
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    //
-    m_errorMonitor->SetDesiredInfo("GPU-DUMP");
+
+    m_errorMonitor->SetDesiredWarning("MISALIGNED");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
 

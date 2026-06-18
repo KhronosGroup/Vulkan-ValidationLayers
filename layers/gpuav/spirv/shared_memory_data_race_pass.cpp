@@ -346,7 +346,8 @@ bool SharedMemoryDataRacePass::Instrument() {
     }
 
     // Bail if we would overflow the limit
-    if (shared_memory_size + (slot_count_ * sizeof(uint32_t)) > module_.settings_.max_compute_shared_memory_size) {
+    if (shared_memory_size + (slot_count_ * sizeof(uint32_t)) >
+        module_.settings_.phys_dev_props->limits.maxComputeSharedMemorySize) {
         return false;
     }
 
