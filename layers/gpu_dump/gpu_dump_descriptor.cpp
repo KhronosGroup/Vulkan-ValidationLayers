@@ -1499,9 +1499,14 @@ vvl::unordered_map<uint32_t, HeapAccesses> CommandBufferSubState::DumpDescriptor
     vvl::unordered_map<uint32_t, HeapAccesses> accesses;
 
     auto add_access = [&](const VkDescriptorType descriptor_type, const spirv::Instruction& ac_inst) {
+        if (ac_inst.Opcode() != spv::OpUntypedAccessChainKHR) {
+            // will happen when mixing typed (set/binding) and untyped
+            // just a dirty way to detect it is not going to be from the heap
+            return;
+        }
+
         const VkDeviceSize descriptor_size =
             GetUntypedDescriptorSize(dev_data.phys_dev_ext_props.descriptor_heap_props, descriptor_type);
-        assert(ac_inst.Opcode() == spv::OpUntypedAccessChainKHR);
         const spirv::Instruction* base_type_inst = module.FindDef(ac_inst.Word(3));
         if (base_type_inst->Opcode() != spv::OpTypeBufferEXT && base_type_inst->Opcode() != spv::OpTypeStruct &&
             !base_type_inst->IsArray()) {
@@ -1573,8 +1578,11 @@ vvl::unordered_map<uint32_t, HeapAccesses> CommandBufferSubState::DumpDescriptor
                 next_access_chain = module.FindDef(access_chain_base_id);
             }
             const spirv::Instruction* base_type = next_access_chain;
+            if (!base_type) {
+                continue;
+            }
 
-            if (base_type && base_type->Opcode() == spv::OpBufferPointerEXT) {
+            if (base_type->Opcode() == spv::OpBufferPointerEXT) {
                 // Ignore old BufferBlock + Uniform
                 const VkDescriptorType descriptor_type =
                     module.FindDef(base_type->TypeId())->StorageClass() == spv::StorageClassUniform
@@ -1582,6 +1590,11 @@ vvl::unordered_map<uint32_t, HeapAccesses> CommandBufferSubState::DumpDescriptor
                         : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
                 const spirv::Instruction* ac_inst = module.FindDef(base_type->Word(3));
+                add_access(descriptor_type, *ac_inst);
+            } else if (base_type->Opcode() == spv::OpUntypedImageTexelPointerEXT) {
+                // Atomic storage image
+                const VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                const spirv::Instruction* ac_inst = module.FindDef(base_type->Word(4));
                 add_access(descriptor_type, *ac_inst);
             }
         }
@@ -1677,10 +1690,13 @@ bool CommandBufferSubState::DumpDescriptorHeapUntyped(std::ostringstream& ss, co
             VkDeviceSize final_address = vvl::kNoIndex32;
             if (!dynamic_index) {
                 if (access.descriptor_index != 0) {
-                    ss << ", array index[" << std::dec << access.descriptor_index << "]\n";
+                    ss << ", array index[" << std::dec << access.descriptor_index << "]";
                 } else if (access.array_stride != 0) {
-                    ss << ", single element\n";  // if not array stride, this is pointless
+                    ss << ", array index[0]";
+                } else {
+                    ss << ", single element";
                 }
+                ss << '\n';
                 const VkDeviceSize final_offset = access.heap_offset + (access.array_stride * access.descriptor_index);
                 final_address = heap_range.begin + final_offset;
                 ss << "      - " << (is_sampler ? "Sampler" : "Resource") << " heap address: 0x" << std::hex << final_address
