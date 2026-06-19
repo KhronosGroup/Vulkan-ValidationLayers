@@ -872,13 +872,17 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
             path.ac_list.insert(path.ac_list.begin(), next_access_chain);
             const uint32_t untyped_variable_id = next_access_chain->Operand(1);
             path.variable = FindVariableById(untyped_variable_id);
-        } else if (next_access_chain->Opcode() == spv::OpImageTexelPointer) {
+        } else if (next_access_chain->Opcode() == spv::OpImageTexelPointer ||
+                   next_access_chain->Opcode() == spv::OpUntypedImageTexelPointerEXT) {
+            // Atomic Storage Image
             path.descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-            const Instruction* access_chain_inst = function.FindInstruction(next_access_chain->Operand(0));
+            const uint32_t image_operand = next_access_chain->Opcode() == spv::OpUntypedImageTexelPointerEXT ? 1 : 0;
+            const Instruction* access_chain_inst = function.FindInstruction(next_access_chain->Operand(image_operand));
             if (access_chain_inst && access_chain_inst->IsNonPtrAccessChain()) {
                 next_access_chain = access_chain_inst;
                 path.ac_list.insert(path.ac_list.begin(), next_access_chain);
-                path.variable = FindVariableById(access_chain_inst->Operand(0));
+                const uint32_t base_operand = next_access_chain->IsUntypedAccessChain() ? 1 : 0;
+                path.variable = FindVariableById(access_chain_inst->Operand(base_operand));
             } else {
                 // if no array, will point right to a variable
                 path.variable = FindVariableById(next_access_chain->Operand(0));
@@ -916,8 +920,16 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
 
     if (path.pointer_type->IsArray()) {
         assert(next_access_chain);  // no way to have an array otherwise
-        const uint32_t index_0_operand = next_access_chain->IsUntypedAccessChain() ? 2 : 1;
-        path.descriptor_index_id = next_access_chain->Operand(index_0_operand);
+        if (next_access_chain->IsUntypedAccessChain()) {
+            if (next_access_chain->Length() > 5) {
+                path.descriptor_index_id = next_access_chain->Word(5);
+            } else {
+                // using implicit zero index
+                path.descriptor_index_id = GetConstantZeroUint32().Id();
+            }
+        } else {
+            path.descriptor_index_id = next_access_chain->Word(4);
+        }
     } else {
         // There is no array of this descriptor, so we essentially have an array of 1
         path.descriptor_index_id = GetConstantZeroUint32().Id();

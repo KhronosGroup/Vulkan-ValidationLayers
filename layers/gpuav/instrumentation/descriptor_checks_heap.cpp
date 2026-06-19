@@ -203,7 +203,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
 
                         if (error_sub_code == kErrorSubCode_DescriptorHeap_DescriptorAlignmentUntyped) {
                             out_vuid_msg = is_sampler ? "VUID-RuntimeSpirv-samplerDescriptorAlignment-11348"
-                                           : is_image ? "VUID-RuntimeSpirv-imageDescriptorAlignment-11349"
+                                           : is_image ? "VUID-RuntimeSpirv-imageDescriptorAlignment-11349"  // (and 11383)
                                                       : "VUID-RuntimeSpirv-bufferDescriptorAlignment-11384";
                         } else {
                             vvl::ActionVUID action_vuid = is_buffer  ? vvl::ActionVUID::DESCRIPTOR_HEAP_ALIGNMENT_11297

@@ -1448,6 +1448,68 @@ TEST_F(NegativeGpuDump, DescriptorHeapUntypedPointers) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeGpuDump, DescriptorHeapUntypedPointersStorageImage) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitDescriptorHeap());
+
+    // We want to easily control it for testing
+    if (heap_props.minResourceHeapReservedRange != 0 || heap_props.minSamplerHeapReservedRange != 0) {
+        GTEST_SKIP() << "heapReservedRange is not zero";
+    }
+
+    const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
+    VkDeviceSize heap_size = Align((resource_stride * 4), resource_stride);
+    vkt::Buffer resource_heap(*m_device, heap_size, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
+
+    const char* cs_source = R"glsl(
+        #version 460 core
+        #extension GL_EXT_descriptor_heap: enable
+        layout(descriptor_heap, r32i) uniform iimage1D si1[];
+        layout(descriptor_heap, R32ui) uniform uimage2D si2[];
+        layout(set = 0, binding = 0, r32i) uniform iimage1D si3[];
+        layout(set = 0, binding = 1, R32ui) uniform uimage2D si4[];
+
+        void main() {
+            imageAtomicAdd(si1[2], 1, 1);
+            imageStore(si2[1], ivec2(1), uvec4(1));
+            imageAtomicAdd(si3[0], 1, 1);
+            imageStore(si4[1], ivec2(1), uvec4(1));
+        }
+    )glsl";
+
+    m_command_buffer.Begin();
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = resource_heap.AddressRange();
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[0].sourceData.constantOffset.heapArrayStride = (uint32_t)resource_stride;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)resource_stride;
+    mappings[1].sourceData.constantOffset.heapArrayStride = (uint32_t)resource_stride;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, &mapping_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+    uint32_t push_data = 0;
+    m_command_buffer.PushData(0, sizeof(uint32_t), &push_data);
+    m_errorMonitor->SetDesiredInfo("GPU-DUMP");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeGpuDump, DescriptorHeapBindingCount) {
     RETURN_IF_SKIP(InitDescriptorHeap());
 

@@ -823,6 +823,13 @@ const char* not_going_to_do[] = {
     // This is a crazy VU that is just not practical to track/test as it involves
     // pipeline binaries from the user's system
     "VUID-VkPipelineBinaryInfoKHR-binaryCount-09603",
+
+    // This should be a single VU as
+    // VUID-RuntimeSpirv-imageDescriptorAlignment-11349
+    // already cover imageDescriptorAlignment, but there is a seperate VU
+    // for atomic storage images.
+    // Instead of wasting effort/memory tracking that, we just combine the VU
+    "VUID-RuntimeSpirv-imageDescriptorAlignment-11383",
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working

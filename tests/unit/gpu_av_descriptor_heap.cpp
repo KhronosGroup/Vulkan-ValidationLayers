@@ -1973,6 +1973,149 @@ TEST_F(NegativeGpuAVDescriptorHeap, BufferDescriptorAlignmentUntypedPointers) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGpuAVDescriptorHeap, StorageImageDescriptorAlignmentUntypedPointers) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
+    CreateResourceHeap(resource_stride * 2);
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+    WriteImageToHeap(image, 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    WriteImageToHeap(image, 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+
+    // [stride: spec_constant_id = 1]
+    // layout(descriptor_heap, R32ui) uniform uimage2D si[];
+    //
+    // imageStore(si[1], ivec2(1), uvec4(1)); // bad
+    // imageStore(si[0], ivec2(1), uvec4(1)); // good
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorateId %runtime_image ArrayStrideIdEXT %bad_stride
+               OpDecorate %bad_stride SpecId 1
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+        %int = OpTypeInt 32 1
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+       %uint = OpTypeInt 32 0
+         %12 = OpTypeImage %uint 2D 0 0 0 2 R32ui
+ %bad_stride = OpSpecConstant %int 0
+%runtime_image = OpTypeRuntimeArray %12
+      %v2int = OpTypeVector %int 2
+         %18 = OpConstantComposite %v2int %int_1 %int_1
+     %v4uint = OpTypeVector %uint 4
+     %uint_1 = OpConstant %uint 1
+         %21 = OpConstantComposite %v4uint %uint_1 %uint_1 %uint_1 %uint_1
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+    %one_ac = OpUntypedAccessChainKHR %_ptr_UniformConstant %runtime_image %resource_heap %int_1
+  %si1_load = OpLoad %12 %one_ac
+               OpImageWrite %si1_load %18 %21 ZeroExtend
+    %zero_ac = OpUntypedAccessChainKHR %_ptr_UniformConstant %runtime_image %resource_heap
+   %si0_load = OpLoad %12 %zero_ac
+               OpImageWrite %si0_load %18 %21 ZeroExtend
+               OpReturn
+               OpFunctionEnd
+    )";
+    const uint32_t data = (uint32_t)heap_props.imageDescriptorSize - 1;
+    const VkSpecializationMapEntry entry = {1, 0, sizeof(uint32_t)};
+    const VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM, &specialization_info);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-imageDescriptorAlignment-11349");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, StorageImageAtomicDescriptorAlignmentUntypedPointers) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
+    CreateResourceHeap(resource_stride * 2);
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8_SINT, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+    WriteImageToHeap(image, 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    WriteImageToHeap(image, 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+
+    // [stride: spec_constant_id = 1]
+    // layout(descriptor_heap, r32i) uniform iimage1D si1[];
+    //
+    // imageAtomicAdd(si1[1], 1, 1); // bad
+    // imageAtomicAdd(si1[0], 1, 1); // good
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability Image1D
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorateId %runtime_image ArrayStrideIdEXT %bad_stride
+               OpDecorate %bad_stride SpecId 1
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+       %uint = OpTypeInt 32 0
+        %int = OpTypeInt 32 1
+     %uint_0 = OpConstant %uint 0
+     %uint_1 = OpConstant %uint 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+         %11 = OpTypeImage %int 1D 0 0 0 2 R32i
+%_runtimearr_11 = OpTypeRuntimeArray %11
+%_ptr_Image_int = OpTypePointer Image %int
+ %_ptr_Image = OpTypeUntypedPointerKHR Image
+ %bad_stride = OpSpecConstant %uint 0
+%runtime_image = OpTypeRuntimeArray %11
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %12 = OpUntypedAccessChainKHR %_ptr_UniformConstant %runtime_image %resource_heap %uint_1
+         %19 = OpUntypedImageTexelPointerEXT %_ptr_Image %11 %12 %int_1 %uint_0
+         %21 = OpAtomicIAdd %int %19 %uint_1 %uint_0 %int_1
+         %23 = OpUntypedAccessChainKHR %_ptr_UniformConstant %runtime_image %resource_heap %uint_0
+         %26 = OpUntypedImageTexelPointerEXT %_ptr_Image %11 %23 %int_1 %uint_0
+         %27 = OpAtomicIAdd %int %26 %uint_1 %uint_0 %int_1
+               OpReturn
+               OpFunctionEnd
+    )";
+    const uint32_t data = (uint32_t)heap_props.imageDescriptorSize - 1;
+    const VkSpecializationMapEntry entry = {1, 0, sizeof(uint32_t)};
+    const VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM, &specialization_info);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-imageDescriptorAlignment-11349");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGpuAVDescriptorHeap, ResourceReservedRange) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     if (heap_props.minResourceHeapReservedRange == 0) {
