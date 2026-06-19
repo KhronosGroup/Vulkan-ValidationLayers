@@ -72,10 +72,17 @@ bool inst_heap_mapping_constant_offset(const uint inst_offset, const uint heap_o
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT [MAPPING_PUSH_INDEX]
-bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
+bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler, const bool combined_index) {
     uint error = 0;
 
     uint push_index = gpuav.push_data[push_offset];
+    if (combined_index) {
+        if (is_sampler) {
+            push_index = (push_index >> 20) & 0xFFF;
+        } else {
+            push_index &= 0xFFFFF;
+        }
+    }
     uint offset = heap_offset + (push_index * heap_index_stride) + (desc_index * heap_array_stride);
 
     BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
@@ -106,7 +113,7 @@ bool inst_heap_mapping_push_index(const uint inst_offset, const uint heap_offset
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT [MAPPING_INDIRECT_INDEX]
-bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint address_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
+bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint address_offset, const uint heap_index_stride, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler, const bool combined_index) {
     uint error = 0;
     uint param_0 = 0;
 
@@ -121,6 +128,13 @@ bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_of
         IndirectBuffer indirect_buffer = IndirectBuffer(indirect_address);
 
         uint indirect_index = indirect_buffer.data[address_offset];
+        if (combined_index) {
+            if (is_sampler) {
+                indirect_index = (indirect_index >> 20) & 0xFFF;
+            } else {
+                indirect_index &= 0xFFFFF;
+            }
+        }
         uint offset = heap_offset + (indirect_index * heap_index_stride) + (desc_index * heap_array_stride);
 
         BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
@@ -155,7 +169,7 @@ bool inst_heap_mapping_indirect_index(const uint inst_offset, const uint heap_of
 }
 
 // VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT [MAPPING_INDIRECT_INDEX_ARRAY]
-bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint address_offset, const uint heap_index_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
+bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint heap_offset, const uint push_offset, const uint address_offset, const uint heap_index_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler, const bool combined_index) {
     uint error = 0;
     uint param_0 = 0;
 
@@ -170,6 +184,13 @@ bool inst_heap_mapping_indirect_index_array(const uint inst_offset, const uint h
     } else {
         uint indirect_offset = address_offset + desc_index;
         uint indirect_index = indirect_buffer.data[indirect_offset];
+        if (combined_index) {
+            if (is_sampler) {
+                indirect_index = (indirect_index >> 20) & 0xFFF;
+            } else {
+                indirect_index &= 0xFFFFF;
+            }
+        }
         uint offset = heap_offset + (indirect_index * heap_index_stride);
 
         BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;

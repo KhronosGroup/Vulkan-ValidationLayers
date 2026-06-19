@@ -75,7 +75,7 @@ void UpdateBoundDescriptorHeap(Validator& gpuav, CommandBufferSubState& cb_state
 }
 
 VkDescriptorType GetDescriptorTypeFromMask(uint8_t mask) {
-    if (mask == TYPE_SAMPLER) {
+    if (mask == TYPE_SAMPLER || mask == TYPE_COMBINED_SAMPLER) {
         return VK_DESCRIPTOR_TYPE_SAMPLER;
     } else if (mask == TYPE_UNIFORM_BUFFER) {
         return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

@@ -228,6 +228,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
     }
 
     const uint32_t binding_offset = mapping ? descriptor_variable.interface_.binding - mapping->firstBinding : 0;
+    const bool combined_index = meta.access_path.is_combined_image_sampler && mapping && HasCombinedImageSamplerIndex(*mapping);
 
     bool has_embedded_sampler = false;
     if (!mapping) {
@@ -285,12 +286,15 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.heapIndexStride).Id();
         const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.heapArrayStride).Id();
 
+        const uint32_t combined_index_id = type_manager_.GetConstantBool(combined_index).Id();
+
         const uint32_t function_def = GetLinkFunctionId(MAPPING_PUSH_INDEX);
 
-        block.CreateInstruction(spv::OpFunctionCall,
-                                {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id,
-                                 heap_index_stride_id, heap_array_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id},
-                                inst_it);
+        block.CreateInstruction(
+            spv::OpFunctionCall,
+            {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id, heap_index_stride_id,
+             heap_array_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id, combined_index_id},
+            inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
         const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping->sourceData.indirectIndex;
         has_embedded_sampler = map_data.pEmbeddedSampler != nullptr;
@@ -303,12 +307,14 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.heapIndexStride).Id();
         const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.heapArrayStride).Id();
 
+        const uint32_t combined_index_id = type_manager_.GetConstantBool(combined_index).Id();
+
         const uint32_t function_def = GetLinkFunctionId(MAPPING_INDIRECT_INDEX);
 
         block.CreateInstruction(
             spv::OpFunctionCall,
             {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id, address_offset_id,
-             heap_index_stride_id, heap_array_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id},
+             heap_index_stride_id, heap_array_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id, combined_index_id},
             inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
         const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data = mapping->sourceData.indirectIndexArray;
@@ -321,12 +327,15 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         const uint32_t address_offset_id = type_manager_.GetConstantUInt32(frist_index_offset).Id();
         const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.heapIndexStride).Id();
 
+        const uint32_t combined_index_id = type_manager_.GetConstantBool(combined_index).Id();
+
         const uint32_t function_def = GetLinkFunctionId(MAPPING_INDIRECT_INDEX_ARRAY);
 
-        block.CreateInstruction(spv::OpFunctionCall,
-                                {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id,
-                                 address_offset_id, heap_index_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id},
-                                inst_it);
+        block.CreateInstruction(
+            spv::OpFunctionCall,
+            {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id, address_offset_id,
+             heap_index_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id, combined_index_id},
+            inst_it);
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
         const VkDescriptorMappingSourceHeapDataEXT& map_data = mapping->sourceData.heapData;
 
@@ -406,8 +415,23 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
     const uint32_t is_sampler_id = type_manager_.GetConstantBool(true).Id();
-    const uint32_t desc_alignment_id =
-        type_manager_.GetConstantUInt32((uint32_t)descriptor_heap_props.samplerDescriptorAlignment).Id();
+
+    uint32_t desc_encoding_id = 0;
+    {
+        uint8_t desc_type_mask = gpuav::descriptor::TYPE_COMBINED_SAMPLER;
+        const uint32_t desc_size_value = (uint32_t)descriptor_heap_props.samplerDescriptorSize;
+        const uint32_t mapping_index_encoded = meta.mapping_index_resource;
+        const uint32_t desc_alignment_shift = GetAlignmentShift((uint32_t)descriptor_heap_props.samplerDescriptorAlignment);
+
+        const uint32_t desc_encoding = (desc_type_mask << glsl::kInst_DescriptorHeap_DescriptorTypeShift) |
+                                       (desc_size_value << glsl::kInst_DescriptorHeap_DescriptorSizeShift) |
+                                       (mapping_index_encoded << glsl::kInst_DescriptorHeap_MappingIndexShift) |
+                                       (desc_alignment_shift & glsl::kInst_DescriptorHeap_AlignmentShiftMask);
+        desc_encoding_id = type_manager_.GetConstantUInt32(desc_encoding).Id();
+    }
+
+    const bool combined_index = HasCombinedImageSamplerIndex(mapping);
+    const uint32_t combined_index_id = type_manager_.GetConstantBool(combined_index).Id();
 
     const uint32_t binding_offset = meta.access_path.variable->interface_.binding - mapping.firstBinding;
 
@@ -425,30 +449,34 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
 
         block.CreateInstruction(spv::OpFunctionCall,
                                 {bool_type, function_result, function_def, inst_position_id, heap_offset_id, heap_array_stride_id,
-                                 descriptor_index_id, desc_alignment_id, is_sampler_id},
+                                 descriptor_index_id, desc_encoding_id, is_sampler_id},
                                 inst_it);
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
         const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping.sourceData.pushIndex;
 
         const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.samplerHeapOffset);
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
-        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.samplerPushOffset / 4).Id();
+        const uint32_t push_offset = combined_index ? map_data.pushOffset : map_data.samplerPushOffset;
+        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(push_offset / 4).Id();
         const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapIndexStride).Id();
         const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapArrayStride).Id();
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_PUSH_INDEX);
 
-        block.CreateInstruction(spv::OpFunctionCall,
-                                {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id,
-                                 heap_index_stride_id, heap_array_stride_id, descriptor_index_id, desc_alignment_id, is_sampler_id},
-                                inst_it);
+        block.CreateInstruction(
+            spv::OpFunctionCall,
+            {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id, heap_index_stride_id,
+             heap_array_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id, combined_index_id},
+            inst_it);
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
         const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping.sourceData.indirectIndex;
 
         const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.samplerHeapOffset);
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
-        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.samplerPushOffset / 4).Id();
-        const uint32_t address_offset_id = type_manager_.GetConstantUInt32(map_data.samplerAddressOffset / 4).Id();
+        const uint32_t push_offset = combined_index ? map_data.pushOffset : map_data.samplerPushOffset;
+        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(push_offset / 4).Id();
+        const uint32_t address_offset = combined_index ? map_data.addressOffset : map_data.samplerAddressOffset;
+        const uint32_t address_offset_id = type_manager_.GetConstantUInt32(address_offset / 4).Id();
         const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapIndexStride).Id();
         const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapArrayStride).Id();
 
@@ -457,23 +485,26 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
         block.CreateInstruction(
             spv::OpFunctionCall,
             {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id, address_offset_id,
-             heap_index_stride_id, heap_array_stride_id, descriptor_index_id, desc_alignment_id, is_sampler_id},
+             heap_index_stride_id, heap_array_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id, combined_index_id},
             inst_it);
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
         const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data = mapping.sourceData.indirectIndexArray;
 
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.samplerHeapOffset).Id();
-        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.samplerPushOffset / 4).Id();
-        const uint32_t frist_index_offset = (map_data.samplerAddressOffset / 4) + binding_offset;
+        const uint32_t push_offset = combined_index ? map_data.pushOffset : map_data.samplerPushOffset;
+        const uint32_t push_offset_id = type_manager_.GetConstantUInt32(push_offset / 4).Id();
+        const uint32_t address_offset = combined_index ? map_data.addressOffset : map_data.samplerAddressOffset;
+        const uint32_t frist_index_offset = (address_offset / 4) + binding_offset;
         const uint32_t address_offset_id = type_manager_.GetConstantUInt32(frist_index_offset).Id();
         const uint32_t heap_index_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapIndexStride).Id();
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_INDIRECT_INDEX_ARRAY);
 
-        block.CreateInstruction(spv::OpFunctionCall,
-                                {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id,
-                                 address_offset_id, heap_index_stride_id, descriptor_index_id, desc_alignment_id, is_sampler_id},
-                                inst_it);
+        block.CreateInstruction(
+            spv::OpFunctionCall,
+            {bool_type, function_result, function_def, inst_position_id, heap_offset_id, push_offset_id, address_offset_id,
+             heap_index_stride_id, descriptor_index_id, desc_encoding_id, is_sampler_id, combined_index_id},
+            inst_it);
     }
 
     return function_result;

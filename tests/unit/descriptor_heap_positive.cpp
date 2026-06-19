@@ -711,32 +711,13 @@ TEST_F(PositiveDescriptorHeap, Sampler) {
 
     m_command_buffer.Begin();
 
-    VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
-    image_barrier.srcAccessMask = VK_ACCESS_NONE;
-    image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.image = image;
-    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
-                           nullptr, 1u, &image_barrier);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    VkClearColorValue color = {};
-    color.float32[0] = 0.2f;
-    color.float32[1] = 0.4f;
-    color.float32[2] = 0.6f;
-    color.float32[3] = 0.8f;
-    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1u,
-                           &image_barrier.subresourceRange);
+    VkClearColorValue color = {{0.2f, 0.4f, 0.6f, 0.8f}};
+    VkImageSubresourceRange sub_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1u, &sub_range);
 
-    image_barrier.srcAccessMask = image_barrier.dstAccessMask;
-    image_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    image_barrier.oldLayout = image_barrier.newLayout;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0u, 0u, nullptr,
-                           0u, nullptr, 1u, &image_barrier);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     BindResourceHeap();
@@ -755,7 +736,6 @@ TEST_F(PositiveDescriptorHeap, Sampler) {
 
 TEST_F(PositiveDescriptorHeap, CombinedImageSampler) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
-    InitRenderTarget();
 
     const VkDeviceSize image_offset = 0u;
     const VkDeviceSize buffer_offset = Align(heap_props.imageDescriptorSize, heap_props.resourceHeapAlignment);
@@ -821,32 +801,13 @@ TEST_F(PositiveDescriptorHeap, CombinedImageSampler) {
 
     m_command_buffer.Begin();
 
-    VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
-    image_barrier.srcAccessMask = VK_ACCESS_NONE;
-    image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.image = image;
-    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
-                           nullptr, 1u, &image_barrier);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    VkClearColorValue color = {};
-    color.float32[0] = 0.2f;
-    color.float32[1] = 0.4f;
-    color.float32[2] = 0.6f;
-    color.float32[3] = 0.8f;
-    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1u,
-                           &image_barrier.subresourceRange);
+    VkClearColorValue color = {{0.2f, 0.4f, 0.6f, 0.8f}};
+    VkImageSubresourceRange sub_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1u, &sub_range);
 
-    image_barrier.srcAccessMask = image_barrier.dstAccessMask;
-    image_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    image_barrier.oldLayout = image_barrier.newLayout;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0u, 0u, nullptr,
-                           0u, nullptr, 1u, &image_barrier);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     BindResourceHeap();
@@ -859,6 +820,285 @@ TEST_F(PositiveDescriptorHeap, CombinedImageSampler) {
         float* data = static_cast<float*>(buffer.Memory().Map());
         for (uint32_t i = 0; i < 4; ++i) {
             ASSERT_EQ(data[i], color.float32[i]);
+        }
+    }
+}
+
+TEST_F(PositiveDescriptorHeap, UseCombinedImageSamplerIndexPushIndex) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    CreateResourceHeap(heap_props.imageDescriptorSize * 3);
+    CreateSamplerHeap(heap_props.samplerDescriptorSize * 3);
+
+    vkt::Buffer buffer(*m_device, sizeof(float) * 4u, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    VkHostAddressRangeEXT resource_host = {resource_heap_data_ + heap_props.imageDescriptorSize,
+                                           static_cast<size_t>(heap_props.imageDescriptorSize)};
+    VkImageViewCreateInfo view_info = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+    VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
+    image_info.pView = &view_info;
+    image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_info.data.pImage = &image_info;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &resource_host);
+
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    VkHostAddressRangeEXT sampler_host = {sampler_heap_data_ + (heap_props.samplerDescriptorSize * 2),
+                                          static_cast<size_t>(heap_props.samplerDescriptorSize)};
+    vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+        layout(set = 1, binding = 0) buffer ssbo {
+            vec4 data;
+        };
+        void main() {
+            data = texture(tex, vec2(0.5f));
+        }
+    )glsl";
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
+    mappings[0].sourceData.pushIndex.heapOffset = 0;
+    mappings[0].sourceData.pushIndex.pushOffset = 8;
+    mappings[0].sourceData.pushIndex.heapIndexStride = (uint32_t)heap_props.imageDescriptorSize;
+    mappings[0].sourceData.pushIndex.useCombinedImageSamplerIndex = true;
+    mappings[0].sourceData.pushIndex.samplerPushOffset = 1;  // bogus, but ignored
+    mappings[0].sourceData.pushIndex.samplerHeapIndexStride = (uint32_t)heap_props.samplerDescriptorSize;
+    mappings[1] = MakeSetAndBindingMapping(1, 0);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
+    mappings[1].sourceData.pushAddressOffset = 0;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+
+    VkDeviceAddress ssbo_address = buffer.Address();
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &ssbo_address);
+
+    uint32_t image_index = 1;
+    uint32_t sampler_index = 2;
+    uint32_t combined_index = (image_index & 0xfffff) | ((sampler_index & 0xfff) << 20);
+    m_command_buffer.PushData(8, sizeof(uint32_t), &combined_index);
+
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    VkClearColorValue color = {{0.2f, 0.4f, 0.6f, 0.8f}};
+    VkImageSubresourceRange sub_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1u, &sub_range);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    BindResourceHeap();
+    BindSamplerHeap();
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        float* data = static_cast<float*>(buffer.Memory().Map());
+        for (uint32_t i = 0; i < 4; ++i) {
+            ASSERT_EQ(data[i], color.float32[i]);
+        }
+    }
+}
+
+TEST_F(PositiveDescriptorHeap, UseCombinedImageSamplerIndexIndirectIndex) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    CreateResourceHeap(heap_props.imageDescriptorSize * 3);
+    CreateSamplerHeap(heap_props.samplerDescriptorSize * 3);
+
+    vkt::Buffer buffer(*m_device, sizeof(float) * 4u, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    VkHostAddressRangeEXT resource_host = {resource_heap_data_ + heap_props.imageDescriptorSize,
+                                           static_cast<size_t>(heap_props.imageDescriptorSize)};
+    VkImageViewCreateInfo view_info = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+    VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
+    image_info.pView = &view_info;
+    image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_info.data.pImage = &image_info;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &resource_host);
+
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    VkHostAddressRangeEXT sampler_host = {sampler_heap_data_ + (heap_props.samplerDescriptorSize * 2),
+                                          static_cast<size_t>(heap_props.samplerDescriptorSize)};
+    vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+        layout(set = 1, binding = 0) buffer ssbo {
+            vec4 data;
+        };
+        void main() {
+            data = texture(tex, vec2(0.5f));
+        }
+    )glsl";
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
+    mappings[0].sourceData.indirectIndex.heapOffset = 0;
+    mappings[0].sourceData.indirectIndex.pushOffset = 8;
+    mappings[0].sourceData.indirectIndex.addressOffset = 4;
+    mappings[0].sourceData.indirectIndex.heapIndexStride = (uint32_t)heap_props.imageDescriptorSize;
+    mappings[0].sourceData.indirectIndex.useCombinedImageSamplerIndex = true;
+    mappings[0].sourceData.indirectIndex.samplerAddressOffset = 1;  // bogus, but ignored
+    mappings[0].sourceData.indirectIndex.samplerPushOffset = 1;     // bogus, but ignored
+    mappings[0].sourceData.indirectIndex.samplerHeapIndexStride = (uint32_t)heap_props.samplerDescriptorSize;
+    mappings[1] = MakeSetAndBindingMapping(1, 0);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
+    mappings[1].sourceData.pushAddressOffset = 0;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+
+    VkDeviceAddress ssbo_address = buffer.Address();
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &ssbo_address);
+
+    uint32_t image_index = 1;
+    uint32_t sampler_index = 2;
+    uint32_t combined_index = (image_index & 0xfffff) | ((sampler_index & 0xfff) << 20);
+    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+    uint32_t* indirect_data = (uint32_t*)indirect_buffer.Memory().Map();
+    indirect_data[1] = combined_index;
+    VkDeviceAddress indirect_address = indirect_buffer.Address();
+    m_command_buffer.PushData(8, sizeof(VkDeviceAddress), &indirect_address);
+
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    VkClearColorValue color = {{0.2f, 0.4f, 0.6f, 0.8f}};
+    VkImageSubresourceRange sub_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1u, &sub_range);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    BindResourceHeap();
+    BindSamplerHeap();
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        float* data = static_cast<float*>(buffer.Memory().Map());
+        for (uint32_t i = 0; i < 4; ++i) {
+            ASSERT_EQ(data[i], color.float32[i]);
+        }
+    }
+}
+
+TEST_F(PositiveDescriptorHeap, UseCombinedImageSamplerIndexIndirectIndexArray) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    CreateResourceHeap(heap_props.imageDescriptorSize * 3);
+    CreateSamplerHeap(heap_props.samplerDescriptorSize * 3);
+
+    vkt::Buffer buffer(*m_device, sizeof(float) * 4u, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    VkHostAddressRangeEXT resource_host = {resource_heap_data_, static_cast<size_t>(heap_props.imageDescriptorSize)};
+    VkImageViewCreateInfo view_info = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+    VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
+    image_info.pView = &view_info;
+    image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_info.data.pImage = &image_info;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &resource_host);
+    resource_host.address = resource_heap_data_ + heap_props.imageDescriptorSize;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &resource_host);
+
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    VkHostAddressRangeEXT sampler_host = {sampler_heap_data_ + heap_props.samplerDescriptorSize,
+                                          static_cast<size_t>(heap_props.samplerDescriptorSize)};
+    vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
+    sampler_host.address = sampler_heap_data_ + (heap_props.samplerDescriptorSize * 2);
+    vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform sampler2D texArray[2];
+        layout(set = 1, binding = 0) uniform sampler2D tex; // test non-array
+        layout(set = 2, binding = 0) buffer ssbo {
+            vec4 data;
+            vec4 data2;
+        };
+        void main() {
+            data = texture(texArray[0], vec2(0.5f)) + texture(texArray[1], vec2(0.5f));
+            data2 = texture(tex, vec2(0.5f));
+        }
+    )glsl";
+
+    VkDescriptorSetAndBindingMappingEXT mappings[3];
+    mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT;
+    mappings[0].sourceData.indirectIndexArray.heapOffset = 0;
+    mappings[0].sourceData.indirectIndexArray.pushOffset = 8;
+    mappings[0].sourceData.indirectIndexArray.addressOffset = 4;
+    mappings[0].sourceData.indirectIndexArray.heapIndexStride = (uint32_t)heap_props.imageDescriptorSize;
+    mappings[0].sourceData.indirectIndexArray.useCombinedImageSamplerIndex = true;
+    mappings[0].sourceData.indirectIndexArray.samplerAddressOffset = 1;  // bogus, but ignored
+    mappings[0].sourceData.indirectIndexArray.samplerPushOffset = 1;     // bogus, but ignored
+    mappings[0].sourceData.indirectIndexArray.samplerHeapIndexStride = (uint32_t)heap_props.samplerDescriptorSize;
+    mappings[1] = mappings[0];
+    mappings[1].descriptorSet = 1;
+    mappings[2] = MakeSetAndBindingMapping(2, 0);
+    mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
+    mappings[2].sourceData.pushAddressOffset = 0;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 3u;
+    mapping_info.pMappings = mappings;
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+
+    VkDeviceAddress ssbo_address = buffer.Address();
+    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &ssbo_address);
+
+    uint32_t image0_index = 1;
+    uint32_t image1_index = 0;
+    uint32_t sampler0_index = 1;
+    uint32_t sampler1_index = 2;
+    uint32_t combined0_index = (image0_index & 0xfffff) | ((sampler0_index & 0xfff) << 20);
+    uint32_t combined1_index = (image1_index & 0xfffff) | ((sampler1_index & 0xfff) << 20);
+    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+    uint32_t* indirect_data = (uint32_t*)indirect_buffer.Memory().Map();
+    indirect_data[1] = combined0_index;
+    indirect_data[2] = combined1_index;
+    VkDeviceAddress indirect_address = indirect_buffer.Address();
+    m_command_buffer.PushData(8, sizeof(VkDeviceAddress), &indirect_address);
+
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    VkClearColorValue color = {{0.2f, 0.4f, 0.6f, 0.8f}};
+    VkImageSubresourceRange sub_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1u, &sub_range);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    BindResourceHeap();
+    BindSamplerHeap();
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        float* data = static_cast<float*>(buffer.Memory().Map());
+        for (uint32_t i = 0; i < 4; ++i) {
+            ASSERT_EQ(data[i], (color.float32[i] * 2));
         }
     }
 }
@@ -933,32 +1173,13 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSampler) {
 
     m_command_buffer.Begin();
 
-    VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
-    image_barrier.srcAccessMask = VK_ACCESS_NONE;
-    image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.image = image;
-    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
-                           nullptr, 1u, &image_barrier);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    VkClearColorValue color = {};
-    color.float32[0] = 0.2f;
-    color.float32[1] = 0.4f;
-    color.float32[2] = 0.6f;
-    color.float32[3] = 0.8f;
-    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1u,
-                           &image_barrier.subresourceRange);
+    VkClearColorValue color = {{0.2f, 0.4f, 0.6f, 0.8f}};
+    VkImageSubresourceRange sub_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1u, &sub_range);
 
-    image_barrier.srcAccessMask = image_barrier.dstAccessMask;
-    image_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    image_barrier.oldLayout = image_barrier.newLayout;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0u, 0u, nullptr,
-                           0u, nullptr, 1u, &image_barrier);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     BindResourceHeap();
@@ -2688,17 +2909,8 @@ TEST_F(PositiveDescriptorHeap, YcbcrImage) {
     pipe.CreateGraphicsPipeline(false);
 
     m_command_buffer.Begin();
-    VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
-    image_barrier.srcAccessMask = VK_ACCESS_NONE;
-    image_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.image = image;
-    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, 0u,
-                           nullptr, 0u, nullptr, 1u, &image_barrier);
+
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
@@ -2904,17 +3116,8 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
     vkt::Shader frag_shader(*m_device, fs_ci);
 
     m_command_buffer.Begin();
-    VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
-    image_barrier.srcAccessMask = VK_ACCESS_NONE;
-    image_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.image = image;
-    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, 0u,
-                           nullptr, 0u, nullptr, 1u, &image_barrier);
+
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesAll(m_command_buffer);
@@ -3262,32 +3465,13 @@ TEST_F(PositiveDescriptorHeap, ReservedRangeInFront) {
 
     m_command_buffer.Begin();
 
-    VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
-    image_barrier.srcAccessMask = VK_ACCESS_NONE;
-    image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.image = image;
-    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
-                           nullptr, 1u, &image_barrier);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    VkClearColorValue color = {};
-    color.float32[0] = 0.2f;
-    color.float32[1] = 0.4f;
-    color.float32[2] = 0.6f;
-    color.float32[3] = 0.8f;
-    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1u,
-                           &image_barrier.subresourceRange);
+    VkClearColorValue color = {{0.2f, 0.4f, 0.6f, 0.8f}};
+    VkImageSubresourceRange sub_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1u, &sub_range);
 
-    image_barrier.srcAccessMask = image_barrier.dstAccessMask;
-    image_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    image_barrier.oldLayout = image_barrier.newLayout;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0u, 0u, nullptr,
-                           0u, nullptr, 1u, &image_barrier);
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     BindResourceHeap();

@@ -77,6 +77,8 @@ VkDeviceSize GetUntypedDescriptorSize(const VkPhysicalDeviceDescriptorHeapProper
 VkDeviceSize GetDescriptorHeapAlignment(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props, VkDescriptorType type);
 vvl::Field GetDescriptorHeapAlignmentField(VkDescriptorType type);
 
+bool HasCombinedImageSamplerIndex(const VkDescriptorSetAndBindingMappingEXT& mapping);
+
 // Way to cache vkGetPhysicalDeviceDescriptorSizeEXT as a flat array
 // This is a very quick way to use the VkDescriptorType enum and knowledge of the limited VkDescriptorType allowed to make this fast
 // and not making it impossible to update if a new VkDescriptorType is added later

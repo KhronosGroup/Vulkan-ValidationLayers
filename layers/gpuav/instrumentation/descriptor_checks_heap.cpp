@@ -28,6 +28,7 @@
 #include "gpuav/spirv/instrumentation_status.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "error_message/spirv_logging.h"
+#include "utils/descriptor_utils.h"
 
 namespace gpuav {
 
@@ -128,7 +129,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 const bool is_untyped = mapping_index_decoded == glsl::kInst_DescriptorHeap_MappingIndexUntyped;
                 const bool is_buffer = desc_type & gpuav::descriptor::TYPE_BUFFER_MASK;
                 const bool is_image = desc_type & gpuav::descriptor::TYPE_IMAGE_MASK;
-                const bool is_sampler = desc_type == gpuav::descriptor::TYPE_SAMPLER;
+                const bool is_combined_sampler = desc_type == gpuav::descriptor::TYPE_COMBINED_SAMPLER;
+                const bool is_sampler = desc_type == gpuav::descriptor::TYPE_SAMPLER || is_combined_sampler;
 
                 VkDeviceAddress heap_address = 0;
                 if (heap_cb_state) {
@@ -157,6 +159,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 // 3. Just have a few boolean to know which mapping it came from
                 const bool is_source_heap_data =
                     mapping_info && mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT;
+                const bool is_combined_index = mapping_info && HasCombinedImageSamplerIndex(*mapping_info);
 
                 const uint32_t error_sub_code = GetSubError(error_record);
                 switch (error_sub_code) {
@@ -164,8 +167,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         if (!is_source_heap_data) {
                             ss << "descriptor index " << std::dec << index << " ";
                         }
-                        ss << "is accessing the heap at offset 0x" << std::hex << offset << " (address 0x" << heap_address
-                           << ") which is OOB of the heap memory.\n";
+                        ss << "is accessing the " << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex
+                           << offset << " (address 0x" << heap_address << ") which is OOB of the heap memory.\n";
                         out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_OOB_11309);
                         error_found = true;
                     } break;
@@ -175,7 +178,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         if (!is_source_heap_data) {
                             ss << "descriptor index " << std::dec << index << " ";
                         }
-                        ss << "is accessing the heap at offset 0x" << std::hex << offset << " (address 0x" << heap_address
+                        ss << "is accessing the " << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex
+                           << offset << " (address 0x" << heap_address
                            << ") which is inside the reserved range.\nThe reserved range was bound at ";
                         if (is_sampler) {
                             ss << string_range_hex(heap_cb_state->sampler_reserved) << " (size of " << std::dec
@@ -190,8 +194,9 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
 
                     case kErrorSubCode_DescriptorHeap_DescriptorAlignment:
                     case kErrorSubCode_DescriptorHeap_DescriptorAlignmentUntyped: {
-                        ss << "descriptor index " << std::dec << index << " is accessing the heap at offset 0x" << std::hex
-                           << offset << " (address 0x" << std::hex << heap_address << ") which is not aligned to ";
+                        ss << "descriptor index " << std::dec << index << " is accessing the "
+                           << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex << offset << " (address 0x"
+                           << std::hex << heap_address << ") which is not aligned to ";
                         if (is_buffer) {
                             ss << "bufferDescriptorAlignment";
                         } else if (is_image) {
@@ -219,18 +224,20 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         if (error_sub_code == kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment) {
                             ss << "descriptor index " << std::dec << index << " ";
                         }
-                        ss << "has a " << (is_sampler ? "samplerPushOffset" : "pushOffset") << " of ";
+                        const bool use_sampler_push_offset = is_combined_sampler && !is_combined_index;
+                        ss << "has a " << (use_sampler_push_offset ? "samplerPushOffset" : "pushOffset") << " of ";
 
                         uint32_t push_offset = 0;
                         if (mapping_info) {
                             if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
                                 push_offset = mapping_info->sourceData.indirectAddress.pushOffset;
                             } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
-                                push_offset = is_sampler ? mapping_info->sourceData.indirectIndex.samplerPushOffset
-                                                         : mapping_info->sourceData.indirectIndex.pushOffset;
+                                push_offset = use_sampler_push_offset ? mapping_info->sourceData.indirectIndex.samplerPushOffset
+                                                                      : mapping_info->sourceData.indirectIndex.pushOffset;
                             } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
-                                push_offset = is_sampler ? mapping_info->sourceData.indirectIndexArray.samplerPushOffset
-                                                         : mapping_info->sourceData.indirectIndexArray.pushOffset;
+                                push_offset = use_sampler_push_offset
+                                                  ? mapping_info->sourceData.indirectIndexArray.samplerPushOffset
+                                                  : mapping_info->sourceData.indirectIndexArray.pushOffset;
                             }
                             ss << std::dec << push_offset;
                         } else {
@@ -277,7 +284,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     } break;
 
                     case kErrorSubCode_DescriptorHeap_HeapBufferAlignment: {
-                        ss << "is accessing the heap at offset 0x" << std::hex << offset << " (address 0x" << heap_address
+                        ss << "is accessing the resource heap at offset 0x" << std::hex << offset << " (address 0x" << heap_address
                            << ") which is not aligned to minUniformBufferOffsetAlignment (0x"
                            << gpuav.phys_dev_props.limits.minUniformBufferOffsetAlignment << ")\n";
 
@@ -318,29 +325,75 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     }
                     if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
                         const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping_info->sourceData.constantOffset;
-                        ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
-                        ss << "\n  - heapArrayStride = " << std::dec << map_data.heapArrayStride;
-                        // TODO - have way to know if combined image sampler
+                        if (is_combined_sampler) {
+                            ss << "\n  - samplerHeapOffset = 0x" << std::hex << map_data.samplerHeapOffset;
+                            ss << "\n  - samplerHeapArrayStride = " << std::dec << map_data.samplerHeapArrayStride;
+                        } else {
+                            ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
+                            ss << "\n  - heapArrayStride = " << std::dec << map_data.heapArrayStride;
+                        }
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
                         const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping_info->sourceData.pushIndex;
-                        ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
-                        ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
-                        ss << "\n  - heapIndexStride = " << map_data.heapIndexStride;
-                        ss << "\n  - heapArrayStride = " << map_data.heapArrayStride;
+                        if (is_combined_sampler) {
+                            ss << "\n  - samplerHeapOffset = 0x" << std::hex << map_data.samplerHeapOffset;
+                            if (is_combined_index) {
+                                ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
+                            } else {
+                                ss << "\n  - samplerPushOffset = " << std::dec << map_data.samplerPushOffset;
+                            }
+                            ss << "\n  - samplerHeapIndexStride = " << map_data.samplerHeapIndexStride;
+                            ss << "\n  - samplerHeapArrayStride = " << map_data.samplerHeapArrayStride;
+                            ss << "\n  - useCombinedImageSamplerIndex = "
+                               << (map_data.useCombinedImageSamplerIndex ? "true" : "false");
+                        } else {
+                            ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
+                            ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
+                            ss << "\n  - heapIndexStride = " << map_data.heapIndexStride;
+                            ss << "\n  - heapArrayStride = " << map_data.heapArrayStride;
+                        }
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
                         const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping_info->sourceData.indirectIndex;
-                        ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
-                        ss << "\n  - addressOffset = 0x" << map_data.addressOffset;
-                        ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
-                        ss << "\n  - heapIndexStride = " << map_data.heapIndexStride;
-                        ss << "\n  - heapArrayStride = " << map_data.heapArrayStride;
+                        if (is_combined_sampler) {
+                            ss << "\n  - samplerHeapOffset = 0x" << std::hex << map_data.samplerHeapOffset;
+                            if (is_combined_index) {
+                                ss << "\n  - addressOffset = 0x" << map_data.addressOffset;
+                                ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
+                            } else {
+                                ss << "\n  - samplerAddressOffset = 0x" << map_data.samplerAddressOffset;
+                                ss << "\n  - samplerPushOffset = " << std::dec << map_data.samplerPushOffset;
+                            }
+                            ss << "\n  - samplerHeapIndexStride = " << map_data.samplerHeapIndexStride;
+                            ss << "\n  - samplerHeapArrayStride = " << map_data.samplerHeapArrayStride;
+                            ss << "\n  - useCombinedImageSamplerIndex = "
+                               << (map_data.useCombinedImageSamplerIndex ? "true" : "false");
+                        } else {
+                            ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
+                            ss << "\n  - addressOffset = 0x" << map_data.addressOffset;
+                            ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
+                            ss << "\n  - heapIndexStride = " << map_data.heapIndexStride;
+                            ss << "\n  - heapArrayStride = " << map_data.heapArrayStride;
+                        }
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
                         const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data =
                             mapping_info->sourceData.indirectIndexArray;
-                        ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
-                        ss << "\n  - addressOffset = 0x" << map_data.addressOffset;
-                        ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
-                        ss << "\n  - heapIndexStride = " << map_data.heapIndexStride;
+                        if (is_combined_sampler) {
+                            ss << "\n  - samplerHeapOffset = 0x" << std::hex << map_data.samplerHeapOffset;
+                            if (is_combined_index) {
+                                ss << "\n  - addressOffset = 0x" << map_data.addressOffset;
+                                ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
+                            } else {
+                                ss << "\n  - samplerAddressOffset = 0x" << map_data.samplerAddressOffset;
+                                ss << "\n  - samplerPushOffset = " << std::dec << map_data.samplerPushOffset;
+                            }
+                            ss << "\n  - samplerHeapIndexStride = " << map_data.samplerHeapIndexStride;
+                            ss << "\n  - useCombinedImageSamplerIndex = "
+                               << (map_data.useCombinedImageSamplerIndex ? "true" : "false");
+                        } else {
+                            ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
+                            ss << "\n  - addressOffset = 0x" << map_data.addressOffset;
+                            ss << "\n  - pushOffset = " << std::dec << map_data.pushOffset;
+                            ss << "\n  - heapIndexStride = " << map_data.heapIndexStride;
+                        }
                     } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
                         const VkDescriptorMappingSourceHeapDataEXT& map_data = mapping_info->sourceData.heapData;
                         ss << "\n  - heapOffset = 0x" << std::hex << map_data.heapOffset;
@@ -368,6 +421,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     } else if (is_sampler) {
                         ss << " (samplerDescriptorSize)";
                     }
+                } else if (is_combined_sampler) {
+                    ss << " (from a combined image sampler)";
                 }
                 ss << '\n';
 
