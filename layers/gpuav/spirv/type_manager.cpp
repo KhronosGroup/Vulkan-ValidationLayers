@@ -1065,6 +1065,8 @@ const Variable& TypeManager::AddVariable(std::unique_ptr<Instruction> new_inst, 
     } else if (new_variable->StorageClass() == spv::StorageClassOutput) {
         output_variables_.push_back(new_variable);
     } else if (new_variable->StorageClass() == spv::StorageClassPushConstant) {
+        // If multiple entrypoints, will be overriden.
+        // Will be sorted out afterwards while building the module
         push_constant_variable_ = new_variable;
     } else if (new_variable->StorageClass() == spv::StorageClassWorkgroup) {
         shared_memory_variables_.push_back(new_variable);
@@ -1080,6 +1082,11 @@ const Variable& TypeManager::AddVariable(std::unique_ptr<Instruction> new_inst, 
 const Variable* TypeManager::FindVariableById(uint32_t id) const {
     auto variable = id_to_variable_.find(id);
     return (variable == id_to_variable_.end()) ? nullptr : variable->second.get();
+}
+
+void TypeManager::OverridePushConstantVariable(const Variable* new_variable) {
+    assert(push_constant_variable_);
+    push_constant_variable_ = new_variable;
 }
 
 const Variable* TypeManager::FindPushConstantVariable() const { return push_constant_variable_; }
