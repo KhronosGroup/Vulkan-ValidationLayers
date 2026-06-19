@@ -41,15 +41,16 @@ void UpdateBoundDescriptorHeap(Validator& gpuav, CommandBufferSubState& cb_state
 // message (which will save having to do the reverse look up in the SPIR-V then).
 //
 // This all should be capable of being packed in 4 bits as there are only 14 known types currently
-// (currently 0x1, 0x5, 0x6, 0x7 are not being used)
 // Sampler is a speical case, it is never by itself and instead is is provided along with an image
 const uint8_t TYPE_SAMPLER = 0x0;  // VK_DESCRIPTOR_TYPE_SAMPLER
+const uint8_t TYPE_COMBINED_SAMPLER = 0x1;  // VK_DESCRIPTOR_TYPE_SAMPLER part of a COMBINED_IMAGE_SAMPLER
 // Buffers
 const uint8_t TYPE_BUFFER_MASK = 0x2;
 const uint8_t TYPE_UNIFORM_BUFFER = 0x2;  // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
 const uint8_t TYPE_STORAGE_BUFFER = 0x3;  // VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 // RT
 const uint8_t TYPE_ACCELERATION_STRUCTURE = 0x4;  // VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR
+// (currently 0x5, 0x6, 0x7 are not being used)
 // Images
 const uint8_t TYPE_IMAGE_MASK = 0x8;
 const uint8_t TYPE_IMAGE_SAMPLED = 0x8;               // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE

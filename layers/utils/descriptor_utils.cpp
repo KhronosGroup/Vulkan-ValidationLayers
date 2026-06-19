@@ -331,6 +331,19 @@ vvl::Field GetDescriptorHeapAlignmentField(VkDescriptorType type) {
     return vvl::Field::Empty;
 }
 
+// Assumes you already know this is a combined image sampler
+bool HasCombinedImageSamplerIndex(const VkDescriptorSetAndBindingMappingEXT& mapping) {
+    if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
+        return !mapping.sourceData.pushIndex.pEmbeddedSampler && mapping.sourceData.pushIndex.useCombinedImageSamplerIndex;
+    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
+        return !mapping.sourceData.indirectIndex.pEmbeddedSampler && mapping.sourceData.indirectIndex.useCombinedImageSamplerIndex;
+    } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
+        return !mapping.sourceData.indirectIndexArray.pEmbeddedSampler &&
+               mapping.sourceData.indirectIndexArray.useCombinedImageSamplerIndex;
+    }
+    return false;
+}
+
 void CachedDescriptorSize::Init(VkPhysicalDevice gpu, const DeviceExtensions& extensions) {
     size_[0] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLER);
     size_[2] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);

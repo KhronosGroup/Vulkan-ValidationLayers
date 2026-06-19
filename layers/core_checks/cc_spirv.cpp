@@ -3307,20 +3307,26 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
             const auto& source_data = mapping.sourceData.pushIndex;
             s_info.offset = source_data.samplerHeapOffset;
             s_info.array_stride = source_data.samplerHeapArrayStride;
-            s_info.push_offset = source_data.samplerPushOffset;
+            // We don't use the pushOffset here as that is already validated in 11258 (and related VUs)
+            // and we don't want to spam the user with a duplicate error message
+            s_info.push_offset = source_data.useCombinedImageSamplerIndex ? 0 : source_data.samplerPushOffset;
             s_info.has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
         } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
             const auto& source_data = mapping.sourceData.indirectIndex;
             s_info.offset = source_data.samplerHeapOffset;
             s_info.array_stride = source_data.samplerHeapArrayStride;
-            s_info.push_offset = source_data.samplerPushOffset;
-            s_info.address_offset = source_data.samplerAddressOffset;
+            if (!source_data.useCombinedImageSamplerIndex) {
+                s_info.push_offset = source_data.samplerPushOffset;
+                s_info.address_offset = source_data.samplerAddressOffset;
+            }
             s_info.has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
         } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
             const auto& source_data = mapping.sourceData.indirectIndexArray;
             s_info.offset = source_data.samplerHeapOffset;
-            s_info.push_offset = source_data.samplerPushOffset;
-            s_info.address_offset = source_data.samplerAddressOffset;
+            if (!source_data.useCombinedImageSamplerIndex) {
+                s_info.push_offset = source_data.samplerPushOffset;
+                s_info.address_offset = source_data.samplerAddressOffset;
+            }
             s_info.has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
         } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
             const auto& source_data = mapping.sourceData.shaderRecordIndex;

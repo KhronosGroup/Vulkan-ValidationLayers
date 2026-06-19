@@ -727,7 +727,14 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
         ss << "pushOffset: " << std::dec << map_data.pushOffset << ", heapOffset: 0x" << std::hex << map_data.heapOffset
            << ", heapIndexStride: " << std::dec << map_data.heapIndexStride << ", heapArrayStride: " << map_data.heapArrayStride;
+
+        const bool combined_index = resource_variable.is_combined_image_sampler && HasCombinedImageSamplerIndex(mapping);
         VkDeviceSize push_index = get_push_data(map_data.pushOffset, 4);
+        if (combined_index) {
+            ss << new_sub_line << "pushIndex: (" << std::dec << push_index << " & 0xFFFFF) ";
+            push_index &= 0xFFFFF;
+            ss << "[" << push_index << "]";
+        }
 
         VkDeviceSize push_index_offset = (push_index * map_data.heapIndexStride);
         ss << new_bullet_line << "pushIndex offset: " << std::dec << push_index << " * " << map_data.heapIndexStride;
@@ -793,8 +800,15 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         if (dump_sampler) {
             ss << new_bullet_line << "samplerPushOffset: " << std::dec << map_data.samplerPushOffset << ", samplerHeapOffset: 0x"
                << std::hex << map_data.samplerHeapOffset << ", samplerHeapIndexStride: " << std::dec
-               << map_data.samplerHeapIndexStride << ", samplerHeapArrayStride: " << map_data.samplerHeapArrayStride;
-            push_index = get_push_data(map_data.samplerPushOffset, 4);
+               << map_data.samplerHeapIndexStride << ", samplerHeapArrayStride: " << map_data.samplerHeapArrayStride
+               << ", useCombinedImageSamplerIndex: " << (map_data.useCombinedImageSamplerIndex ? "true" : "false");
+            push_index = get_push_data(combined_index ? map_data.pushOffset : map_data.samplerPushOffset, 4);
+            if (combined_index) {
+                ss << " (using pushOffset)";
+                ss << new_sub_line << "pushIndex: ((" << std::dec << push_index << " >> 20) & 0xFFF) ";
+                push_index = (push_index >> 20) & 0xFFF;
+                ss << "[" << push_index << "]";
+            }
 
             push_index_offset = (push_index * map_data.samplerHeapIndexStride);
             ss << new_bullet_line << "pushIndex offset: " << std::dec << push_index << " * " << map_data.samplerHeapIndexStride;
@@ -857,7 +871,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                     }
                 }
             }
-            warn_oob(index_zero_offset + descriptor_size, true);
+            warn_oob(index_zero_offset + sampler_descriptor_size, true);
         }
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
         const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping.sourceData.indirectIndex;
@@ -872,20 +886,24 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
         warn_alignment_scalar_indirect(final_indirect_address, 4);
         warn_indirect_uniform_usage(final_indirect_address);
+        warn_indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
         std::vector<uint8_t> indirect_index_data = dev_data.CopyDataFromMemory(final_indirect_address, 4);
         bool know_ubo = !indirect_index_data.empty();
         uint32_t indirect_index = know_ubo ? *((uint32_t*)indirect_index_data.data()) : 0;
 
-        warn_indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
-
-        VkDeviceSize indirect_index_offset = (indirect_index * map_data.heapIndexStride);
+        const bool combined_index = resource_variable.is_combined_image_sampler && HasCombinedImageSamplerIndex(mapping);
         if (know_ubo) {
-            ss << new_bullet_line << "indirectIndex offset: 0x" << std::hex << indirect_index << " * " << std::dec
-               << map_data.heapIndexStride;
+            if (combined_index) {
+                ss << new_bullet_line << "indirectIndex: (" << std::dec << indirect_index << " & 0xFFFFF) ";
+                indirect_index &= 0xFFFFF;
+                ss << "[" << indirect_index << "]";
+            }
+            ss << new_bullet_line << "indirectIndex offset: " << std::dec << indirect_index << " * " << map_data.heapIndexStride;
         } else {
             ss << new_bullet_line << "indirectIndex offset: UNKNOWN (can't read buffer)";
         }
+        VkDeviceSize indirect_index_offset = (indirect_index * map_data.heapIndexStride);
 
         VkDeviceSize index_zero_offset = map_data.heapOffset + indirect_index_offset;
         if (is_alias) {
@@ -958,29 +976,42 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
             ss << new_bullet_line << "samplerPushOffset: " << std::dec << map_data.samplerPushOffset << std::hex
                << ", samplerAddressOffset: 0x" << map_data.samplerAddressOffset << ", samplerHeapOffset: 0x"
                << map_data.samplerHeapOffset << ", samplerHeapIndexStride: " << std::dec << map_data.samplerHeapIndexStride
-               << ", samplerHeapArrayStride: " << map_data.samplerHeapArrayStride;
-            push_indirect_address = get_push_data(map_data.samplerPushOffset, 8);
+               << ", samplerHeapArrayStride: " << map_data.samplerHeapArrayStride
+               << ", useCombinedImageSamplerIndex: " << (map_data.useCombinedImageSamplerIndex ? "true" : "false");
 
-            final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
+            push_indirect_address = get_push_data(combined_index ? map_data.pushOffset : map_data.samplerPushOffset, 8);
+            if (combined_index) {
+                ss << " (using pushOffset)";
+            }
+
+            const uint32_t sampler_address_offset = combined_index ? map_data.addressOffset : map_data.samplerAddressOffset;
+            final_indirect_address = push_indirect_address + sampler_address_offset;
             ss << new_bullet_line << "indirectAddress: 0x" << std::hex << final_indirect_address << " (0x" << push_indirect_address
-               << " + 0x" << map_data.samplerAddressOffset << ")";
+               << " + 0x" << sampler_address_offset << ")";
+            if (combined_index) {
+                ss << " (using addressOffset)";
+            }
 
             warn_alignment_scalar_indirect(final_indirect_address, 4);
             warn_indirect_uniform_usage(final_indirect_address);
+            warn_indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
             indirect_index_data = dev_data.CopyDataFromMemory(final_indirect_address, 4);
             know_ubo = !indirect_index_data.empty();
             indirect_index = know_ubo ? *((uint32_t*)indirect_index_data.data()) : 0;
 
-            warn_indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
-
-            indirect_index_offset = (indirect_index * map_data.samplerHeapIndexStride);
             if (know_ubo) {
-                ss << new_bullet_line << "indirectIndex offset: 0x" << std::hex << indirect_index << " * " << std::dec
+                if (combined_index) {
+                    ss << new_bullet_line << "indirectIndex: ((" << std::dec << indirect_index << " >> 20) & 0xFFF) ";
+                    indirect_index = (indirect_index >> 20) & 0xFFF;
+                    ss << "[" << indirect_index << "]";
+                }
+                ss << new_bullet_line << "indirectIndex offset: " << std::dec << indirect_index << " * "
                    << map_data.samplerHeapIndexStride;
             } else {
                 ss << new_bullet_line << "indirectIndex offset: UNKNOWN (can't read buffer)";
             }
+            indirect_index_offset = (indirect_index * map_data.samplerHeapIndexStride);
 
             index_zero_offset = map_data.samplerHeapOffset + indirect_index_offset;
             if (is_alias) {
@@ -1068,11 +1099,12 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
         warn_alignment_scalar_indirect(final_indirect_address, 4);
         warn_indirect_uniform_usage(final_indirect_address);
-
         warn_indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
         ss << new_bullet_line << main_heap_type << " Heap address: 0x" << heap_range.begin + map_data.heapOffset
            << " + (indirectIndex * " << std::dec << map_data.heapIndexStride << ")";
+
+        const bool combined_index = resource_variable.is_combined_image_sampler && HasCombinedImageSamplerIndex(mapping);
 
         if (const vvl::Buffer* buffer_state = GetLargestBuffer(dev_data, final_indirect_address)) {
             uint32_t available_bytes = (uint32_t)(buffer_state->DeviceAddressRange().end - final_indirect_address);
@@ -1100,13 +1132,19 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                 uint32_t* indirect_index_words = (uint32_t*)indirect_index_data.data();
                 if (!is_array) {
                     uint32_t indirect_index = indirect_index_words[0];
+                    if (combined_index) {
+                        ss << new_sub_line << "indirectIndex: (" << std::dec << indirect_index << " & 0xFFFFF) ";
+                        indirect_index &= 0xFFFFF;
+                        ss << "[" << indirect_index << "]";
+                    }
+
                     VkDeviceSize final_offset = map_data.heapOffset + (indirect_index * map_data.heapIndexStride);
                     VkDeviceAddress final_address = heap_range.begin + final_offset;
                     warn_alignment_descriptor(final_address);
-
-                    ss << new_sub_line << "Final address: 0x" << final_address << " (indirectIndex: " << std::dec << indirect_index
-                       << ")";
                     warn_oob(final_offset + descriptor_size, false);
+
+                    ss << new_sub_line << "Final address: 0x" << std::hex << final_address << " (indirectIndex: " << std::dec
+                       << indirect_index << ")";
                 } else if (!is_runtime_array) {
                     // Runtime arrays are unbounded and not idea where to stop looking,
                     // can add if people find valuable.
@@ -1115,7 +1153,11 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                     std::vector<uint32_t> bad_alignment_indexes;
                     std::vector<uint32_t> bad_reserve_indexes;
                     for (uint32_t i = 0; i < search_slots; i++) {
-                        const uint32_t current_index_value = indirect_index_words[i];
+                        uint32_t current_index_value = indirect_index_words[i];
+                        if (combined_index) {
+                            current_index_value &= 0xFFFFF;
+                        }
+
                         VkDeviceSize final_offset = map_data.heapOffset + (current_index_value * map_data.heapIndexStride);
                         if (final_offset + descriptor_size > heap_range.size()) {
                             bad_array_indexes.emplace_back(i);
@@ -1139,6 +1181,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                     warn_alignment_index_array(bad_alignment_indexes);
                     warn_reserved_range_index_array(bad_reserve_indexes);
                     ss << "]";
+                    if (combined_index) {
+                        ss << new_sub_line << "Applied (indirectIndex & 0xFFFFF) to each";
+                    }
                 }
             }
         } else {
@@ -1150,21 +1195,29 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         if (dump_sampler) {
             ss << new_bullet_line << "samplerPushOffset: " << std::dec << map_data.samplerPushOffset << std::hex
                << ", samplerAddressOffset: 0x" << map_data.samplerAddressOffset << ", samplerHeapOffset: 0x"
-               << map_data.samplerHeapOffset << ", samplerHeapIndexStride: " << std::dec << map_data.samplerHeapIndexStride;
-            push_indirect_address = get_push_data(map_data.samplerPushOffset, 8);
+               << map_data.samplerHeapOffset << ", samplerHeapIndexStride: " << std::dec << map_data.samplerHeapIndexStride
+               << ", useCombinedImageSamplerIndex: " << (map_data.useCombinedImageSamplerIndex ? "true" : "false");
 
-            final_indirect_address = push_indirect_address + map_data.samplerAddressOffset;
+            push_indirect_address = get_push_data(combined_index ? map_data.pushOffset : map_data.samplerPushOffset, 8);
+            if (combined_index) {
+                ss << " (using pushOffset)";
+            }
+
+            const uint32_t sampler_address_offset = combined_index ? map_data.addressOffset : map_data.samplerAddressOffset;
+            final_indirect_address = push_indirect_address + sampler_address_offset;
             if (is_alias) {
                 final_indirect_address += (sizeof(uint32_t) * binding_offset);
                 ss << new_bullet_line << "binding offset: " << std::dec << binding_offset << " * sizeof(uint32_t)";
             }
 
             ss << new_bullet_line << "indirectAddress: 0x" << final_indirect_address << " (0x" << push_indirect_address << " + 0x"
-               << map_data.samplerAddressOffset << " + binding offset)";
+               << sampler_address_offset << " + binding offset)";
+            if (combined_index) {
+                ss << " (using addressOffset)";
+            }
 
             warn_alignment_scalar_indirect(final_indirect_address, 4);
             warn_indirect_uniform_usage(final_indirect_address);
-
             warn_indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
             ss << new_bullet_line << "Sampler Heap address: 0x" << std::hex << heap.sampler_range.begin + map_data.samplerHeapOffset
@@ -1194,21 +1247,30 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                     uint32_t* indirect_index_words = (uint32_t*)indirect_index_data.data();
                     if (!is_array) {
                         uint32_t indirect_index = indirect_index_words[0];
+                        if (combined_index) {
+                            ss << new_bullet_line << "indirectIndex: ((" << std::dec << indirect_index << " >> 20) & 0xFFF) ";
+                            indirect_index = (indirect_index >> 20) & 0xFFF;
+                            ss << "[" << indirect_index << "]";
+                        }
+
                         VkDeviceSize final_offset = map_data.samplerHeapOffset + (indirect_index * map_data.samplerHeapIndexStride);
                         VkDeviceAddress final_address = heap.sampler_range.begin + final_offset;
                         warn_alignment_sampler(final_address);
+                        warn_oob(final_offset + sampler_descriptor_size, true);
 
                         ss << new_sub_line << "Final address: 0x" << std::hex << final_address << " (indirectIndex: " << std::dec
                            << indirect_index << ")";
-
-                        warn_oob(final_offset + sampler_descriptor_size, true);
                     } else if (!is_runtime_array) {
                         ss << new_bullet_line << "indirectIndex values from buffer: [" << std::dec;
                         std::vector<uint32_t> bad_array_indexes;
                         std::vector<uint32_t> bad_alignment_indexes;
                         std::vector<uint32_t> bad_reserve_indexes;
                         for (uint32_t i = 0; i < search_slots; i++) {
-                            const uint32_t current_index_value = indirect_index_words[i];
+                            uint32_t current_index_value = indirect_index_words[i];
+                            if (combined_index) {
+                                current_index_value = (current_index_value >> 20) & 0xFFF;
+                            }
+
                             VkDeviceSize final_offset =
                                 map_data.samplerHeapOffset + (current_index_value * map_data.samplerHeapIndexStride);
                             if (final_offset + sampler_descriptor_size > heap.sampler_range.size()) {
@@ -1235,6 +1297,9 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
                         warn_alignment_index_array_sampler(bad_alignment_indexes);
                         warn_reserved_range_index_array(bad_reserve_indexes);
                         ss << "]";
+                        if (combined_index) {
+                            ss << new_sub_line << "Applied ((indirectIndex >> 20) & 0xFFF) to each";
+                        }
                     }
                 }
             } else {
