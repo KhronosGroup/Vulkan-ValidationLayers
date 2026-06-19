@@ -675,9 +675,12 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                     ? vvl::DescriptorMode::DescriptorModeHeap
                     : SelectDescriptorModeFromDSL(original_create_info.setLayoutCount, original_create_info.pSetLayouts);
             if (mode == vvl::DescriptorMode::DescriptorModeHeap) {
-                AddDescriptorHeapMappings(reinterpret_cast<VkBaseOutStructure*>(&new_create_info));
                 chassis_state.is_modified |=
                     PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data, mode);
+                if (chassis_state.is_modified) {
+                    // Prevents adding extra (but still valid) mappings for no reason if they will never be used
+                    AddDescriptorHeapMappings(reinterpret_cast<VkBaseOutStructure*>(&new_create_info));
+                }
             } else {
                 // We need to remove the old layouts we copied in safe_VkShaderCreateInfoEXT::initialize
                 if (new_create_info.pSetLayouts) {
@@ -1303,6 +1306,7 @@ bool GpuShaderInstrumentor::IsShaderSelectedForInstrumentation(vku::safe_VkShade
     return should_instrument_shader;
 }
 
+// Takes a VkBaseOutStructure as we might need to inject mappings if the user didn't provide any
 void GpuShaderInstrumentor::AddDescriptorHeapMappings(VkBaseOutStructure* create_info) {
     const vku::safe_VkShaderDescriptorSetAndBindingMappingInfoEXT* mapping_info =
         reinterpret_cast<const vku::safe_VkShaderDescriptorSetAndBindingMappingInfoEXT*>(
@@ -1614,10 +1618,6 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                                                          loc.dot(vvl::Field::pStages, stage_state_i).dot(vvl::Field::module)))) {
                     continue;
                 }
-
-                if (modified_stage_state.descriptor_heap_mode) {
-                    AddDescriptorHeapMappings(reinterpret_cast<VkBaseOutStructure*>(modified_stage_ci));
-                }
             }
 
             // Instrument shader
@@ -1694,6 +1694,18 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
 
             if (instrumented_shader_module != VK_NULL_HANDLE) {
                 is_library_instrumented = true;
+
+                // We only need to apply the mappings for the pipeline creation, not shader module creation
+                // Also doing here prevents adding extra (but still valid) mappings for no reason if they will never be used
+                if (modified_stage_state.descriptor_heap_mode) {
+                    const VkShaderStageFlagBits stage = modified_stage_state.GetStage();
+                    for (uint32_t i = 0; i < new_lib_ci.stageCount; ++i) {
+                        if (new_lib_ci.pStages[i].stage == stage) {
+                            vku::safe_VkPipelineShaderStageCreateInfo* modified_stage_ci = &new_lib_ci.pStages[i];
+                            AddDescriptorHeapMappings(reinterpret_cast<VkBaseOutStructure*>(modified_stage_ci));
+                        }
+                    }
+                }
 
                 modified_lib_sub_state.status.Append(stage_status);
                 linked_pipeline_sub_state.status.Append(stage_status);

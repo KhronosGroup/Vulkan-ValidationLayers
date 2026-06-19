@@ -204,7 +204,7 @@ struct GraphicsPipelineLibraryStage {
     VkShaderModuleCreateInfo shader_ci;
     VkPipelineShaderStageCreateInfo stage_ci;
 
-    GraphicsPipelineLibraryStage(vvl::span<const uint32_t> spv, VkShaderStageFlagBits stage);
+    GraphicsPipelineLibraryStage(vvl::span<const uint32_t> spv, VkShaderStageFlagBits stage, void* pNext = nullptr);
 };
 
 // Used when need a Graphics Pipeline Library with the most basic components

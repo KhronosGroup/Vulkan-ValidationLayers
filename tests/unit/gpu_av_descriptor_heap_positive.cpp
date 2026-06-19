@@ -987,3 +987,230 @@ TEST_F(PositiveGpuAVDescriptorHeap, SamplerHeapOffset) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveGpuAVDescriptorHeap, GraphicsPipelineLibraryInlined) {
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    InitRenderTarget();
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 4);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[3];
+    mappings[0] = MakeSetAndBindingMapping(0, 6);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 7);  // unused
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)resource_stride;
+    mappings[2] = MakeSetAndBindingMapping(0, 8);
+    mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[2].sourceData.constantOffset.heapOffset = (uint32_t)resource_stride * 2;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 3u;
+    mapping_info.pMappings = mappings;
+
+    char const* vs_source = R"glsl(
+        #version 450
+        layout (set = 0, binding = 6) uniform UBO {
+            vec4 data;
+            vec4 data2;
+        };
+        layout(location = 0) out vec4 outColor;
+        void main() {
+            gl_Position = data;
+            outColor = data2;
+        }
+    )glsl";
+
+    char const* fs_source = R"glsl(
+        #version 450
+        layout (set = 0, binding = 8) buffer SSBO {
+            vec4 data;
+        };
+        layout(location = 0) in vec4 inColor;
+        void main() {
+            data = inColor;
+        }
+    )glsl";
+
+    VkPipelineCreateFlags2CreateInfoKHR create_flags = vku::InitStructHelper();
+    create_flags.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT | VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR;
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT, &mapping_info);
+
+        pre_raster_lib.gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(&create_flags));
+        pre_raster_lib.gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT |
+                                         VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT;
+
+        pre_raster_lib.gp_ci_ = vku::InitStructHelper(&pre_raster_lib.gpl_info);
+        pre_raster_lib.gp_ci_.pVertexInputState = &pre_raster_lib.vi_ci_;
+        pre_raster_lib.gp_ci_.pInputAssemblyState = &pre_raster_lib.ia_ci_;
+        pre_raster_lib.gp_ci_.pViewportState = &pre_raster_lib.vp_state_ci_;
+        pre_raster_lib.gp_ci_.pRasterizationState = &pre_raster_lib.rs_state_ci_;
+        pre_raster_lib.gp_ci_.renderPass = RenderPass();
+        pre_raster_lib.gp_ci_.layout = VK_NULL_HANDLE;
+        pre_raster_lib.gp_ci_.stageCount = 1;
+        pre_raster_lib.gp_ci_.pStages = &vs_stage.stage_ci;
+
+        pre_raster_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT, &mapping_info);
+
+        frag_shader_lib.gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(&create_flags));
+        frag_shader_lib.gpl_info->flags =
+            VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
+
+        frag_shader_lib.gp_ci_ = vku::InitStructHelper(&frag_shader_lib.gpl_info);
+        frag_shader_lib.gp_ci_.pViewportState = &frag_shader_lib.vp_state_ci_;
+        frag_shader_lib.gp_ci_.pColorBlendState = &frag_shader_lib.cb_ci_;
+        frag_shader_lib.gp_ci_.pMultisampleState = &frag_shader_lib.ms_ci_;
+        frag_shader_lib.gp_ci_.pRasterizationState = &frag_shader_lib.rs_state_ci_;
+        frag_shader_lib.gp_ci_.renderPass = RenderPass();
+        frag_shader_lib.gp_ci_.layout = VK_NULL_HANDLE;
+        frag_shader_lib.gp_ci_.stageCount = 1;
+        frag_shader_lib.gp_ci_.pStages = &fs_stage.stage_ci;
+
+        frag_shader_lib.CreateGraphicsPipeline(false);
+    }
+
+    VkPipeline libraries[2] = {
+        pre_raster_lib,
+        frag_shader_lib,
+    };
+
+    create_flags.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper(&create_flags);
+    link_info.libraryCount = size32(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = VK_NULL_HANDLE;
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    ASSERT_TRUE(exe_pipe.initialized());
+}
+
+TEST_F(PositiveGpuAVDescriptorHeap, GraphicsPipelineLibraryWithShaderModule) {
+    TEST_DESCRIPTION("Found in CTS where using a VkShaderModule with GPL caused the injected mappings to be lost");
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    InitRenderTarget();
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 4);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[3];
+    mappings[0] = MakeSetAndBindingMapping(0, 6);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 7);  // unused
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)resource_stride;
+    mappings[2] = MakeSetAndBindingMapping(0, 8);
+    mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[2].sourceData.constantOffset.heapOffset = (uint32_t)resource_stride * 2;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 3u;
+    mapping_info.pMappings = mappings;
+
+    char const* vs_source = R"glsl(
+        #version 450
+        layout (set = 0, binding = 6) uniform UBO {
+            vec4 data;
+            vec4 data2;
+        };
+        layout(location = 0) out vec4 outColor;
+        void main() {
+            gl_Position = data;
+            outColor = data2;
+        }
+    )glsl";
+
+    char const* fs_source = R"glsl(
+        #version 450
+        layout (set = 0, binding = 8) buffer SSBO {
+            vec4 data;
+        };
+        layout(location = 0) in vec4 inColor;
+        void main() {
+            data = inColor;
+        }
+    )glsl";
+    VkShaderObj vs_module(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs_module(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR create_flags = vku::InitStructHelper();
+    create_flags.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT | VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR;
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&mapping_info);
+        stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        stage_ci.module = vs_module;
+        stage_ci.pName = "main";
+
+        pre_raster_lib.gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(&create_flags));
+        pre_raster_lib.gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT |
+                                         VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT;
+
+        pre_raster_lib.gp_ci_ = vku::InitStructHelper(&pre_raster_lib.gpl_info);
+        pre_raster_lib.gp_ci_.pVertexInputState = &pre_raster_lib.vi_ci_;
+        pre_raster_lib.gp_ci_.pInputAssemblyState = &pre_raster_lib.ia_ci_;
+        pre_raster_lib.gp_ci_.pViewportState = &pre_raster_lib.vp_state_ci_;
+        pre_raster_lib.gp_ci_.pRasterizationState = &pre_raster_lib.rs_state_ci_;
+        pre_raster_lib.gp_ci_.renderPass = RenderPass();
+        pre_raster_lib.gp_ci_.layout = VK_NULL_HANDLE;
+        pre_raster_lib.gp_ci_.stageCount = 1;
+        pre_raster_lib.gp_ci_.pStages = &stage_ci;
+
+        pre_raster_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&mapping_info);
+        stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        stage_ci.module = fs_module;
+        stage_ci.pName = "main";
+
+        frag_shader_lib.gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(&create_flags));
+        frag_shader_lib.gpl_info->flags =
+            VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
+
+        frag_shader_lib.gp_ci_ = vku::InitStructHelper(&frag_shader_lib.gpl_info);
+        frag_shader_lib.gp_ci_.pViewportState = &frag_shader_lib.vp_state_ci_;
+        frag_shader_lib.gp_ci_.pColorBlendState = &frag_shader_lib.cb_ci_;
+        frag_shader_lib.gp_ci_.pMultisampleState = &frag_shader_lib.ms_ci_;
+        frag_shader_lib.gp_ci_.pRasterizationState = &frag_shader_lib.rs_state_ci_;
+        frag_shader_lib.gp_ci_.renderPass = RenderPass();
+        frag_shader_lib.gp_ci_.layout = VK_NULL_HANDLE;
+        frag_shader_lib.gp_ci_.stageCount = 1;
+        frag_shader_lib.gp_ci_.pStages = &stage_ci;
+
+        frag_shader_lib.CreateGraphicsPipeline(false);
+    }
+
+    VkPipeline libraries[2] = {
+        pre_raster_lib,
+        frag_shader_lib,
+    };
+
+    create_flags.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper(&create_flags);
+    link_info.libraryCount = size32(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = VK_NULL_HANDLE;
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    ASSERT_TRUE(exe_pipe.initialized());
+}
