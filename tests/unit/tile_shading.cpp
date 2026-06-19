@@ -3238,16 +3238,9 @@ TEST_F(NegativeTileShading, UseSampleWeightedImageOpButTileShadingImageProcessin
     AddRequiredFeature(vkt::Feature::textureSampleWeighted);
     RETURN_IF_SKIP(InitBasicTileShading());
 
-    const auto query_format_features2 = [this] (VkFormat format) {
-        VkFormatProperties3 format_props3 = vku::InitStructHelper();
-        VkFormatProperties2 format_props2 = vku::InitStructHelper(&format_props3);
-        vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &format_props2);
-        return format_props3.optimalTilingFeatures;
-    };
-
     VkFormat sampled_format = VK_FORMAT_UNDEFINED;
     for (VkFormat format : {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8_UNORM, VK_FORMAT_R16G16_UNORM}) {
-        const auto features = query_format_features2(format);
+        const auto features = m_device->FormatFeaturesOptimal(format);
         if ((features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
             (features & VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM) != 0) {
             sampled_format = format;
@@ -3256,7 +3249,7 @@ TEST_F(NegativeTileShading, UseSampleWeightedImageOpButTileShadingImageProcessin
     }
     VkFormat weight_format = VK_FORMAT_UNDEFINED;
     for (VkFormat format : {VK_FORMAT_R16_SFLOAT, VK_FORMAT_R32_SFLOAT, VK_FORMAT_R8_UNORM}) {
-        const auto features = query_format_features2(format);
+        const auto features = m_device->FormatFeaturesOptimal(format);
         if ((features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
             (features & VK_FORMAT_FEATURE_2_WEIGHT_IMAGE_BIT_QCOM) != 0) {
             weight_format = format;
@@ -3375,16 +3368,9 @@ TEST_F(NegativeTileShading, UseBoxFilterImageOpButTileShadingImageProcessingNotE
     AddRequiredFeature(vkt::Feature::textureBoxFilter);
     RETURN_IF_SKIP(InitBasicTileShading());
 
-    const auto query_format_features2 = [this] (VkFormat format) {
-        VkFormatProperties3 format_props3 = vku::InitStructHelper();
-        VkFormatProperties2 format_props2 = vku::InitStructHelper(&format_props3);
-        vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &format_props2);
-        return format_props3.optimalTilingFeatures;
-    };
-
     VkFormat sampled_format = VK_FORMAT_UNDEFINED;
     for (VkFormat format : {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8_UNORM, VK_FORMAT_R16G16_UNORM}) {
-        const auto features = query_format_features2(format);
+        const auto features = m_device->FormatFeaturesOptimal(format);
         if ((features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
             (features & VK_FORMAT_FEATURE_2_BOX_FILTER_SAMPLED_BIT_QCOM) != 0) {
             sampled_format = format;
@@ -3470,16 +3456,9 @@ TEST_F(NegativeTileShading, UseBlockMatchImageOpButTileShadingImageProcessingNot
     AddRequiredFeature(vkt::Feature::textureBlockMatch);
     RETURN_IF_SKIP(InitBasicTileShading());
 
-    const auto query_format_features2 = [this](VkFormat format) {
-        VkFormatProperties3 format_props3 = vku::InitStructHelper();
-        VkFormatProperties2 format_props2 = vku::InitStructHelper(&format_props3);
-        vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &format_props2);
-        return format_props3.optimalTilingFeatures;
-    };
-
     VkFormat sampled_format = VK_FORMAT_UNDEFINED;
     for (VkFormat format : {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8_UNORM, VK_FORMAT_R16_UNORM}) {
-        const auto features = query_format_features2(format);
+        const auto features = m_device->FormatFeaturesOptimal(format);
         if ((features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
             (features & VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM) != 0) {
             sampled_format = format;
@@ -3589,16 +3568,9 @@ TEST_F(NegativeTileShading, UseBlockMatchWindowImageOpButTileShadingImageProcess
     AddRequiredFeature(vkt::Feature::textureBlockMatch2);
     RETURN_IF_SKIP(InitBasicTileShading());
 
-    const auto query_format_features2 = [this] (VkFormat format) {
-        VkFormatProperties3 format_props3 = vku::InitStructHelper();
-        VkFormatProperties2 format_props2 = vku::InitStructHelper(&format_props3);
-        vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &format_props2);
-        return format_props3.optimalTilingFeatures;
-    };
-
     VkFormat sampled_format = VK_FORMAT_UNDEFINED;
     for (VkFormat format : {VK_FORMAT_R8_UNORM, VK_FORMAT_R16G16B16A16_UNORM, VK_FORMAT_R8G8B8A8_UNORM}) {
-        const auto features = query_format_features2(format);
+        const auto features = m_device->FormatFeaturesOptimal(format);
         if ((features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
             (features & VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM) != 0) {
             sampled_format = format;
@@ -3715,16 +3687,9 @@ TEST_F(NegativeTileShading, UseBlockMatchGatherImageOpButTileShadingImageProcess
     AddRequiredFeature(vkt::Feature::textureBlockMatch2);
     RETURN_IF_SKIP(InitBasicTileShading());
 
-    const auto query_format_features2 = [this] (VkFormat format) {
-        VkFormatProperties3 format_props3 = vku::InitStructHelper();
-        VkFormatProperties2 format_props2 = vku::InitStructHelper(&format_props3);
-        vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &format_props2);
-        return format_props3.optimalTilingFeatures;
-    };
-
     VkFormat sampled_format = VK_FORMAT_UNDEFINED;
     for (VkFormat format : {VK_FORMAT_R8_UNORM, VK_FORMAT_R16G16B16A16_UNORM, VK_FORMAT_R8G8B8A8_UNORM}) {
-        const auto features = query_format_features2(format);
+        const auto features = m_device->FormatFeaturesOptimal(format);
         if ((features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) != 0 &&
             (features & VK_FORMAT_FEATURE_2_BLOCK_MATCHING_BIT_QCOM) != 0) {
             sampled_format = format;

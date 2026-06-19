@@ -741,12 +741,8 @@ TEST_F(PositiveShaderSpirv, UnnormalizedCoordinatesNotSampled) {
     // Verify that it is allowed on this implementation if
     // VK_KHR_format_feature_flags2 is available.
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
-        VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
-        VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
-
-        vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
-
-        if (!(fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
+        const auto fmt_props = m_device->FormatFeaturesOptimal(VK_FORMAT_R8G8B8A8_UNORM);
+        if (!(fmt_props & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
             GTEST_SKIP() << "R8G8B8A8_UNORM does not support OpImage*Dref* operations";
         }
     }

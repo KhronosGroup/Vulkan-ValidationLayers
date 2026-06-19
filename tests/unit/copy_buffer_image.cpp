@@ -3427,9 +3427,6 @@ TEST_F(NegativeCopyBufferImage, MissingQueueGraphicsSupport) {
     const bool is_compute_queue =
         m_device->Physical().queue_properties_[*non_graphics_queue_family_index].queueFlags & VK_QUEUE_COMPUTE_BIT;
 
-    VkFormatProperties2 depth_format_properties2 = vku::InitStructHelper();
-    vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_D16_UNORM, &depth_format_properties2);
-
     vkt::CommandPool command_pool(*m_device, non_graphics_queue_family_index.value());
     vkt::CommandBuffer command_buffer(*m_device, command_pool);
 
@@ -3518,9 +3515,6 @@ TEST_F(NegativeCopyBufferImage, MissingQueueGraphicsSupportMS) {
     if (!non_graphics_queue_family_index) {
         GTEST_SKIP() << "No suitable queue found.";
     }
-    VkFormatProperties2 depth_format_properties2 = vku::InitStructHelper();
-    vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_D16_UNORM, &depth_format_properties2);
-
     vkt::CommandPool command_pool(*m_device, non_graphics_queue_family_index.value());
     vkt::CommandBuffer command_buffer(*m_device, command_pool);
 
