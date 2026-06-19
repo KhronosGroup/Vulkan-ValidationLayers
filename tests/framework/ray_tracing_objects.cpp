@@ -64,6 +64,12 @@ GeometryKHR& GeometryKHR::SetType(Type type) {
             vk_obj_.geometryType = VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV;
             vk_obj_.pNext = static_cast<const void*>(lsspheres_.sphere_geometry_ptr.get());
             break;
+        case Type::Micromap:
+            micromap_.micromap_data_ptr = std::make_shared<VkAccelerationStructureGeometryMicromapDataKHR>();
+            *micromap_.micromap_data_ptr = vku::InitStructHelper();
+            vk_obj_.geometryType = VK_GEOMETRY_TYPE_MICROMAP_KHR;
+            vk_obj_.pNext = micromap_.micromap_data_ptr.get();
+            break;
         case Type::_INTERNAL_UNSPECIFIED:
             [[fallthrough]];
         default:
@@ -125,6 +131,38 @@ GeometryKHR& GeometryKHR::SetTrianglesDeviceIndexBuffer(vkt::Buffer&& index_buff
     vk_obj_.geometry.triangles.indexType = index_type;
     vk_obj_.geometry.triangles.indexData.deviceAddress = triangles_.device_index_buffer.Address();
     return *this;
+}
+
+GeometryKHR& GeometryKHR::SetTrianglesPnext(void* pNext) {
+    vk_obj_.geometry.triangles.pNext = pNext;
+    return *this;
+}
+
+GeometryKHR& GeometryKHR::SetTrianglesOpacityMicromap(VkAccelerationStructureTrianglesOpacityMicromapKHR* micromap) {
+    if (!micromap) {
+        SetTrianglesPnext(nullptr);
+        return *this;
+    }
+
+    micromap_.micromap = *micromap;
+    SetTrianglesPnext(micromap);
+    return *this;
+}
+
+uint32_t GeometryKHR::GetTrianglesIndexTypeByteSize() {
+    switch (vk_obj_.geometry.triangles.indexType) {
+        case VK_INDEX_TYPE_UINT16:
+            return 2;
+        case VK_INDEX_TYPE_UINT32:
+            return 4;
+        case VK_INDEX_TYPE_UINT8:
+            return 1;
+        case VK_INDEX_TYPE_NONE_KHR:
+            [[fallthrough]];
+        case VK_INDEX_TYPE_MAX_ENUM:
+            return 0;
+    }
+    return 0;
 }
 
 vkt::Buffer& GeometryKHR::GetTrianglesDeviceIndexBuffer() { return triangles_.device_index_buffer; }
@@ -475,6 +513,21 @@ GeometryKHR& GeometryKHR::SetLSSpheresVertexAddressZero() {
 
 GeometryKHR& GeometryKHR::SetLSSpheresRadiusAddressZero() {
     lsspheres_.sphere_geometry_ptr->radiusData.deviceAddress = 0;
+    return *this;
+}
+
+GeometryKHR& GeometryKHR::SetMicromapDataBuffer(vkt::Buffer&& buffer) {
+    micromap_.data_buffer = std::move(buffer);
+    const VkDeviceAddress buffer_address = micromap_.data_buffer.Address();
+    micromap_.micromap_data_ptr->data = buffer_address;
+    return *this;
+}
+
+GeometryKHR& GeometryKHR::SetMicromapTriangleArrayBuffer(vkt::Buffer&& buffer, VkDeviceSize triangle_array_stride) {
+    micromap_.triangles_buffer = std::move(buffer);
+    const VkDeviceAddress buffer_address = micromap_.triangles_buffer.Address();
+    micromap_.micromap_data_ptr->triangleArray = buffer_address;
+    micromap_.micromap_data_ptr->triangleArrayStride = triangle_array_stride;
     return *this;
 }
 
@@ -838,7 +891,8 @@ void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeomet
     }
 }
 
-void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, bool use_ppGeometries /*= true*/) {
+void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, bool use_ppGeometries /*= true*/,
+                                                               bool use_null_build_ranges /*= false*/) {
     // fill vk_info_ with geometry data, and get build ranges
     std::vector<const VkAccelerationStructureGeometryKHR*> pGeometries;
     std::vector<VkAccelerationStructureGeometryKHR> geometries;
@@ -857,7 +911,11 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(VkCommandBuffer c
         } else {
             geometries[i] = geometry.GetVkObj();
         }
-        pRange_infos[i] = &build_range_infos_[i];
+        if (use_null_build_ranges) {
+            pRange_infos[i] = nullptr;
+        } else {
+            pRange_infos[i] = &build_range_infos_[i];
+        }
     }
     vk_info_.geometryCount = static_cast<uint32_t>(geometries_.size());
     if (use_null_geometries_) {
@@ -989,7 +1047,11 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(bool 
 
     // Get VkAccelerationStructureBuildSizesInfoKHR using this->vk_info_
     VkAccelerationStructureBuildSizesInfoKHR size_info = vku::InitStructHelper();
-    vk::GetAccelerationStructureBuildSizesKHR(device_->handle(), build_type_, &vk_info_, primitives_count.data(), &size_info);
+    if (vk_info_.type == VK_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_KHR) {
+        vk::GetAccelerationStructureBuildSizesKHR(device_->handle(), build_type_, &vk_info_, nullptr, &size_info);
+    } else {
+        vk::GetAccelerationStructureBuildSizesKHR(device_->handle(), build_type_, &vk_info_, primitives_count.data(), &size_info);
+    }
 
     // pGeometries and geometries are going to be destroyed
     vk_info_.geometryCount = 0;
@@ -1338,6 +1400,32 @@ GeometryKHR GeometrySimpleOnHostLSSpheresInfo() {
     return sphere_geometry;
 }
 
+BuildGeometryInfoKHR GeometrySimpleOnDeviceMicromapInfo(const vkt::Device& device, GeometryKHR&& geometry) {
+    BuildGeometryInfoKHR out_build_info(&device);
+
+    out_build_info.SetType(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
+    out_build_info.SetBuildType(VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR);
+    out_build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
+
+    // Set geometry
+    std::vector<GeometryKHR> geometries;
+    geometries.emplace_back(std::move(geometry));
+    out_build_info.SetGeometries(std::move(geometries));
+    out_build_info.SetBuildRanges(out_build_info.GetBuildRangeInfosFromGeometries());
+
+    // Set source and destination acceleration structures info. Does not create handles, it is done in Build()
+    out_build_info.SetSrcAS(AccelStructNull(device));
+    auto dstAsSize = out_build_info.GetSizeInfo().accelerationStructureSize;
+    out_build_info.SetDstAS(AccelStructSimpleOnDeviceBottomLevel(device, dstAsSize));
+    out_build_info.SetUpdateDstAccelStructSizeBeforeBuild(true);
+
+    out_build_info.SetInfoCount(1);
+    out_build_info.SetNullInfos(false);
+    out_build_info.SetNullBuildRangeInfos(false);
+
+    return out_build_info;
+}
+
 GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device& device, VkBufferUsageFlags additional_geometry_buffer_flags) {
     GeometryKHR triangle_geometry;
 
@@ -1581,6 +1669,23 @@ GeometryKHR GeometrySimpleHostInstance(VkAccelerationStructureKHR host_instance)
     return instance_geometry;
 }
 
+GeometryKHR GeometrySimpleOnDeviceMicromapInfo(const vkt::Device& device) {
+    GeometryKHR micromap_geometry;
+
+    micromap_geometry.SetType(GeometryKHR::Type::Micromap);
+    const VkBufferUsageFlags buffer_usage =
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    // #TODO_MICROMAP do not put garbage
+    vkt::Buffer micromap_data_buffer(device, 4096, buffer_usage, vkt::device_address);
+    vkt::Buffer micromap_triangles_buffer(device, 4096, buffer_usage, vkt::device_address);
+
+    micromap_geometry.SetPrimitiveCount(1);
+    micromap_geometry.SetMicromapDataBuffer(std::move(micromap_data_buffer));
+    micromap_geometry.SetMicromapTriangleArrayBuffer(std::move(micromap_triangles_buffer), 8);
+
+    return micromap_geometry;
+}
+
 std::shared_ptr<AccelerationStructureKHR> AccelStructNull(const vkt::Device& device) {
     auto as = std::make_shared<AccelerationStructureKHR>(&device);
     as->SetNull(true);
@@ -1623,6 +1728,20 @@ std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceTopLevel(cons
     return as;
 }
 
+std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceMicromap(const vkt::Device& device, VkDeviceSize size) {
+    auto as = std::make_shared<AccelerationStructureKHR>(&device);
+    as->SetCreateWithVersion2(true);
+    as->SetAddressFlags(VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR);
+    as->SetSize(size);
+    as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_KHR);
+    as->SetDeviceBufferMemoryAllocateFlags(VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
+    as->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    as->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    as->SetDeviceBufferInitNoMem(false);
+    return as;
+}
+
 BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceBottomLevel(const vkt::Device& device,
                                                                 GeometryKHR::Type geometry_type /*= GeometryKHR::Type::Triangle*/) {
     // Set geometry
@@ -1642,6 +1761,8 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceBottomLevel(const vkt::Devic
         case GeometryKHR::Type::LSSpheres:
             geometry = GeometrySimpleOnDeviceLSSpheresInfo(device);
             break;
+        case GeometryKHR::Type::Micromap:
+            [[fallthrough]];
         case GeometryKHR::Type::_INTERNAL_UNSPECIFIED:
             assert(false);
             break;
@@ -1701,6 +1822,8 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostBottomLevel(const vkt::Device&
             break;
         case GeometryKHR::Type::Instance:
             [[fallthrough]];
+        case GeometryKHR::Type::Micromap:
+            [[fallthrough]];
         case GeometryKHR::Type::_INTERNAL_UNSPECIFIED:
             assert(false);
             break;
@@ -1712,6 +1835,33 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostBottomLevel(const vkt::Device&
     out_build_info.SetSrcAS(AccelStructNull(device));
     auto dstAsSize = out_build_info.GetSizeInfo().accelerationStructureSize;
     out_build_info.SetDstAS(AccelStructSimpleOnHostBottomLevel(device, dstAsSize));
+    out_build_info.SetUpdateDstAccelStructSizeBeforeBuild(true);
+
+    out_build_info.SetInfoCount(1);
+    out_build_info.SetNullInfos(false);
+    out_build_info.SetNullBuildRangeInfos(false);
+
+    return out_build_info;
+}
+
+BuildGeometryInfoKHR BuildGeometryInfoOnDeviceMicromap(const vkt::Device& device) {
+    GeometryKHR geometry = GeometrySimpleOnDeviceMicromapInfo(device);
+    BuildGeometryInfoKHR out_build_info(&device);
+
+    out_build_info.SetType(VK_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_KHR);
+    out_build_info.SetBuildType(VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR);
+    out_build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
+
+    // Set geometry
+    std::vector<GeometryKHR> geometries;
+    geometries.emplace_back(std::move(geometry));
+    out_build_info.SetGeometries(std::move(geometries));
+    out_build_info.SetBuildRanges(out_build_info.GetBuildRangeInfosFromGeometries());
+
+    // Set source and destination acceleration structures info. Does not create handles, it is done in Build()
+    out_build_info.SetSrcAS(AccelStructNull(device));
+    auto dstAsSize = out_build_info.GetSizeInfo().accelerationStructureSize;
+    out_build_info.SetDstAS(AccelStructSimpleOnDeviceMicromap(device, dstAsSize));
     out_build_info.SetUpdateDstAccelStructSizeBeforeBuild(true);
 
     out_build_info.SetInfoCount(1);
