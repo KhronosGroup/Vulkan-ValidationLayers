@@ -276,6 +276,7 @@ class TypeManager {
 
     const Variable& AddVariable(std::unique_ptr<Instruction> new_inst, const Type& type);
     const Variable* FindVariableById(uint32_t id) const;
+    void OverridePushConstantVariable(const Variable* new_variable);
     const Variable* FindPushConstantVariable() const;
     const std::vector<const Variable*>& GetSharedMemoryVariables() const { return shared_memory_variables_; }
     const std::vector<const Variable*>& GetTaskPayloadVariables() const { return task_payload_variables_; }

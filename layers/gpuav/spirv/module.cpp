@@ -214,6 +214,28 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
         it += length;
     }
 
+    // If multiple entrypoints, need to resolve which is the real push constant for it
+    if (!type_manager_.FindPushConstantVariable() && entry_points_.size() > 1) {
+        const uint32_t spirv_version_1_4 = 0x00010400;
+        if (header_.version < spirv_version_1_4) {
+            // will just use the 2nd one found to not blow up
+            InternalWarning("Module",
+                            "Found 2 different OpVariable, can't determine which entrypoint, can be fixed updating SPIR-V to 1.4+");
+        } else {
+            const Instruction* entry_point = GetTargetEntryPoint();
+            uint32_t word = entry_point->GetEntryPointInterfaceStart();
+            const uint32_t total_words = entry_point->Length();
+            for (; word < total_words; word++) {
+                const uint32_t interface_id = entry_point->Word(word);
+                const Variable* variable = type_manager_.FindVariableById(interface_id);
+                if (variable && variable->StorageClass() == spv::StorageClassPushConstant) {
+                    type_manager_.OverridePushConstantVariable(variable);
+                    break;
+                }
+            }
+        }
+    }
+
     // From a dump of 400k production shaders found
     //   - the most OpFunction created was 135, the mean was 2.4
     //   - the most Instruction count was 125k, the mean was 1500

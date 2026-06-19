@@ -2660,6 +2660,148 @@ TEST_F(NegativeGpuAVDescriptorHeap, DifferentMappingResourceMask) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGpuAVDescriptorHeap, PushDataPushIndex) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride, true);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    WriteBufferToHeap(ssbo_buffer);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
+    mappings[0].sourceData.pushIndex.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mappings[0].sourceData.pushIndex.heapArrayStride = 0;
+    mappings[0].sourceData.pushIndex.pushOffset = 80;
+    mappings[0].sourceData.pushIndex.heapIndexStride = 2;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
+    mappings[1].sourceData.pushIndex.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mappings[1].sourceData.pushIndex.heapArrayStride = 0;
+    mappings[1].sourceData.pushIndex.pushOffset = 128;
+    mappings[1].sourceData.pushIndex.heapIndexStride = 1;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(set = 0, binding = 1) buffer B { uint b; };
+        void main() {
+            a = 2;
+            b = 4;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    uint32_t bad_push_index = 512;
+    m_command_buffer.PushData(80, sizeof(uint32_t), &bad_push_index);
+    uint32_t good_push_index = 512;
+    m_command_buffer.PushData(128, sizeof(uint32_t), &good_push_index);
+
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+
+    // now again with the user making using of the push constant
+    char const* cs_source2 = R"glsl(
+        #version 450
+        layout(push_constant) uniform PC {
+            uint data[20];
+        };
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(set = 0, binding = 1) buffer B { uint b; };
+        void main() {
+            a = data[3];
+            b = data[19];
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
+    m_command_buffer.Begin();
+    uint32_t garbage[20];
+    m_command_buffer.PushData(0, 80, garbage);
+    m_command_buffer.PushData(80, sizeof(uint32_t), &bad_push_index);
+    m_command_buffer.PushData(128, sizeof(uint32_t), &good_push_index);
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, PushDataIndirectIndex) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride, true);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    WriteBufferToHeap(ssbo_buffer);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
+    mappings[0].sourceData.indirectIndex.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mappings[0].sourceData.indirectIndex.pushOffset = 80;
+    mappings[0].sourceData.indirectIndex.heapIndexStride = 2;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
+    mappings[1].sourceData.indirectIndex.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mappings[1].sourceData.indirectIndex.pushOffset = 128;
+    mappings[1].sourceData.indirectIndex.heapIndexStride = 1;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(push_constant) uniform PC {
+            uint data[20];
+        };
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(set = 0, binding = 1) buffer B { uint b; };
+        void main() {
+            a = data[3];
+            b = data[19];
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    vkt::Buffer indirect_buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+    uint32_t* indirect_data = (uint32_t*)indirect_buffer.Memory().Map();
+    indirect_data[0] = 5000;
+    indirect_data[16] = 0;
+    VkDeviceAddress indirect_address_bad = indirect_buffer.Address();
+    VkDeviceAddress indirect_address_good = indirect_buffer.Address() + (16 * sizeof(uint32_t));
+
+    m_command_buffer.Begin();
+    uint32_t garbage[20];
+    m_command_buffer.PushData(0, 80, garbage);
+    m_command_buffer.PushData(80, sizeof(VkDeviceAddress), &indirect_address_good);
+    m_command_buffer.PushData(128, sizeof(VkDeviceAddress), &indirect_address_bad);
+
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGpuAVDescriptorHeap, ResourceHeapDataOOB) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4861");
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
