@@ -140,10 +140,8 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteMoreComponent) {
         GTEST_SKIP() << "Format doesn't support storage image";
     }
 
-    VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
-    VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
-    vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &fmt_props);
-    if ((fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) == 0) {
+    const auto fmt_props = m_device->FormatFeaturesOptimal(format);
+    if ((fmt_props & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) == 0) {
         GTEST_SKIP() << "Format doesn't support storage write without format";
     }
 

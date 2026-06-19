@@ -4225,16 +4225,12 @@ TEST_F(NegativeImage, ImageViewTextureSampleWeighted) {
     VkPhysicalDeviceImageProcessingPropertiesQCOM image_proc_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(image_proc_properties);
 
-    // check the format feature flags
-    VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
-    VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
-    vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_R8_UNORM, &fmt_props);
-    if ((fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_WEIGHT_IMAGE_BIT_QCOM) == 0) {
+    auto fmt_props = m_device->FormatFeaturesOptimal(VK_FORMAT_R8_UNORM);
+    if ((fmt_props & VK_FORMAT_FEATURE_2_WEIGHT_IMAGE_BIT_QCOM) == 0) {
         GTEST_SKIP() << "Required VK_FORMAT_FEATURE_2_WEIGHT_IMAGE_BIT_QCOM bit not supported for R8_UNORM";
     }
-    fmt_props_3 = vku::InitStructHelper();
-    vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
-    if ((fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM) == 0) {
+    fmt_props = m_device->FormatFeaturesOptimal(VK_FORMAT_R8G8B8A8_UNORM);
+    if ((fmt_props & VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM) == 0) {
         GTEST_SKIP() << "Required VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM bit not supported for VK_FORMAT_R8G8B8A8_UNORM";
     }
 
