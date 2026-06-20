@@ -441,7 +441,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
     if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
         const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping.sourceData.constantOffset;
 
-        const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.samplerHeapOffset);
+        const uint32_t heap_offset = map_data.samplerHeapOffset + (binding_offset * map_data.samplerHeapArrayStride);
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
         const uint32_t heap_array_stride_id = type_manager_.GetConstantUInt32(map_data.samplerHeapArrayStride).Id();
 
@@ -454,7 +454,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
         const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping.sourceData.pushIndex;
 
-        const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.samplerHeapOffset);
+        const uint32_t heap_offset = map_data.samplerHeapOffset + (binding_offset * map_data.samplerHeapArrayStride);
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
         const uint32_t push_offset = combined_index ? map_data.pushOffset : map_data.samplerPushOffset;
         const uint32_t push_offset_id = type_manager_.GetConstantUInt32(push_offset / 4).Id();
@@ -471,7 +471,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
     } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
         const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping.sourceData.indirectIndex;
 
-        const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.samplerHeapOffset);
+        const uint32_t heap_offset = map_data.samplerHeapOffset + (binding_offset * map_data.samplerHeapArrayStride);
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
         const uint32_t push_offset = combined_index ? map_data.pushOffset : map_data.samplerPushOffset;
         const uint32_t push_offset_id = type_manager_.GetConstantUInt32(push_offset / 4).Id();
