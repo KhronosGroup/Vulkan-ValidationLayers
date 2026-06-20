@@ -926,3 +926,64 @@ TEST_F(PositiveGpuAVDescriptorHeap, PushDataLimitNoShaderInstrumentation) {
     uint32_t* ssbo_data = (uint32_t*)ssbo_buffer.Memory().Map();
     ASSERT_TRUE(ssbo_data[0] == 42);
 }
+
+TEST_F(PositiveGpuAVDescriptorHeap, SamplerHeapOffset) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+
+    const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
+    const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
+    const uint32_t image_index = 8u;
+    const VkDeviceSize image_offset = resource_stride * image_index;
+
+    CreateResourceHeap(image_offset + resource_stride);
+    CreateSamplerHeap(sampler_stride);
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    WriteImageToHeap(image, image_index);
+    vkt::Buffer buffer(*m_device, sizeof(float) * 4u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    VkHostAddressRangeEXT sampler_host;
+    sampler_host.address = sampler_heap_data_;
+    sampler_host.size = static_cast<size_t>(sampler_stride);
+    vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+        layout(set = 1, binding = 0) buffer ssbo {
+            vec4 data;
+        };
+
+        void main() {
+            data = texture(tex, vec2(0.5f));
+        }
+    )glsl";
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = static_cast<uint32_t>(image_offset);
+    mappings[1] = MakeSetAndBindingMapping(1, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
+    mappings[1].sourceData.pushAddressOffset = 0u;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+    vkt::HeapComputePipeline pipeline(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    const VkDeviceAddress buffer_address = buffer.Address();
+
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    BindResourceHeap();
+    BindSamplerHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+
+    m_command_buffer.PushData(0, sizeof(buffer_address), &buffer_address);
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
