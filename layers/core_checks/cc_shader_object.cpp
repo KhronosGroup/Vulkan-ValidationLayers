@@ -500,35 +500,35 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
         } else if (stage == VK_SHADER_STAGE_MESH_BIT_EXT && shader != VK_NULL_HANDLE) {
             mesh_stage_index = i;
         } else if (stage == VK_SHADER_STAGE_COMPUTE_BIT) {
-            if ((cb_state->command_pool->queue_flags & VK_QUEUE_COMPUTE_BIT) == 0) {
-                const LogObjectList objlist(commandBuffer, cb_state->command_pool->Handle());
+            if ((cb_state->command_pool.queue_flags & VK_QUEUE_COMPUTE_BIT) == 0) {
+                const LogObjectList objlist(commandBuffer, cb_state->command_pool.Handle());
                 skip |= LogError(
                     "VUID-vkCmdBindShadersEXT-pShaders-08476", objlist, stage_loc,
                     "is VK_SHADER_STAGE_COMPUTE_BIT, but %s was allocated from %s that does not support compute operations (%s).",
-                    FormatHandle(commandBuffer).c_str(), FormatHandle(cb_state->command_pool->Handle()).c_str(),
-                    string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
+                    FormatHandle(commandBuffer).c_str(), FormatHandle(cb_state->command_pool.Handle()).c_str(),
+                    string_VkQueueFlags(cb_state->command_pool.queue_flags).c_str());
             }
         }
         if ((stage & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
                       VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)) >
             0) {
-            if ((cb_state->command_pool->queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
-                const LogObjectList objlist(commandBuffer, cb_state->command_pool->Handle());
+            if ((cb_state->command_pool.queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
+                const LogObjectList objlist(commandBuffer, cb_state->command_pool.Handle());
                 skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08477", objlist, stage_loc,
                                  "is %s, but %s was allocated from %s that does not support graphics operations (%s).",
                                  string_VkShaderStageFlagBits(stage), FormatHandle(commandBuffer).c_str(),
-                                 FormatHandle(cb_state->command_pool->Handle()).c_str(),
-                                 string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
+                                 FormatHandle(cb_state->command_pool.Handle()).c_str(),
+                                 string_VkQueueFlags(cb_state->command_pool.queue_flags).c_str());
             }
         }
         if ((stage & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)) > 0) {
-            if ((cb_state->command_pool->queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
-                const LogObjectList objlist(commandBuffer, cb_state->command_pool->Handle());
+            if ((cb_state->command_pool.queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
+                const LogObjectList objlist(commandBuffer, cb_state->command_pool.Handle());
                 skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08478", objlist, stage_loc,
                                  "is %s, but %s was allocated from %s that does not support graphics operations (%s).",
                                  string_VkShaderStageFlagBits(stage), FormatHandle(commandBuffer).c_str(),
-                                 FormatHandle(cb_state->command_pool->Handle()).c_str(),
-                                 string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
+                                 FormatHandle(cb_state->command_pool.Handle()).c_str(),
+                                 string_VkQueueFlags(cb_state->command_pool.queue_flags).c_str());
             }
         }
         if (stage == VK_SHADER_STAGE_ALL_GRAPHICS || stage == VK_SHADER_STAGE_ALL) {

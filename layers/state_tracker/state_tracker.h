@@ -1269,7 +1269,7 @@ class DeviceState : public vvl::BaseDevice {
 
     virtual std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
                                                                      const VkCommandBufferAllocateInfo* allocate_info,
-                                                                     const vvl::CommandPool* pool);
+                                                                     const vvl::CommandPool& pool);
     // Allocate/Free
     void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
                                               VkCommandBuffer* pCommandBuffer, const RecordObject& record_obj) override;

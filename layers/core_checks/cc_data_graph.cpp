@@ -424,7 +424,7 @@ bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandB
     }
 
     skip |=
-        ValidateDataGraphOperations(*last_bound_state.pipeline_state, cb_state.command_pool->queueFamilyIndex, error_obj.location);
+        ValidateDataGraphOperations(*last_bound_state.pipeline_state, cb_state.command_pool.queueFamilyIndex, error_obj.location);
 
     const auto* optical_flow_di =
         pInfo ? vku::FindStructInPNextChain<VkDataGraphPipelineOpticalFlowDispatchInfoARM>(pInfo->pNext) : nullptr;

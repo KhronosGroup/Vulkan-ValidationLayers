@@ -177,7 +177,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     vku::safe_VkCommandBufferInheritanceInfo inheritance_info;
 
     // since command buffers can only be destroyed by their command pool, this does not need to be a shared_ptr
-    const vvl::CommandPool *command_pool;
+    const vvl::CommandPool& command_pool;
     DeviceState &dev_data;
 
     CbState state;           // Track cmd buffer update state
@@ -595,8 +595,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock); }
 
-    CommandBuffer(DeviceState &dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *allocate_info,
-                  const vvl::CommandPool *cmd_pool);
+    CommandBuffer(DeviceState& dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* allocate_info,
+                  const vvl::CommandPool& cmd_pool);
 
     virtual ~CommandBuffer() { Destroy(); }
 
@@ -630,13 +630,13 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     LogObjectList GetObjectList(VkShaderStageFlagBits stage) const;
     LogObjectList GetObjectList(VkPipelineBindPoint pipeline_bind_point) const;
 
-    VkQueueFlags GetQueueFlags() const { return command_pool->queue_flags; }
+    VkQueueFlags GetQueueFlags() const { return command_pool.queue_flags; }
 
     bool IsReleaseOp(const OwnershipTransferBarrier &barrier) const {
-        return (IsOwnershipTransfer(barrier)) && (command_pool->queueFamilyIndex == barrier.srcQueueFamilyIndex);
+        return (IsOwnershipTransfer(barrier)) && (command_pool.queueFamilyIndex == barrier.srcQueueFamilyIndex);
     }
     bool IsAcquireOp(const OwnershipTransferBarrier &barrier) const {
-        return (IsOwnershipTransfer(barrier)) && (command_pool->queueFamilyIndex == barrier.dstQueueFamilyIndex);
+        return (IsOwnershipTransfer(barrier)) && (command_pool.queueFamilyIndex == barrier.dstQueueFamilyIndex);
     }
 
     void Begin(const VkCommandBufferBeginInfo *pBeginInfo);
