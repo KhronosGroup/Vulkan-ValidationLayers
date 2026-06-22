@@ -109,6 +109,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
 
                 // The user might have called vkCmdBindResourceHeap since recording, need to get the version at record time
                 const vvl::CommandBuffer::DescriptorHeap* heap_cb_state = nullptr;
+                // TODO - this is not being set for seconary command buffers
                 if (heap_binding_index != vvl::kNoIndex32) {
                     const DescriptorHeapBindings& desc_heap_bindings = cb.shared_resources_cache.Get<DescriptorHeapBindings>();
                     heap_cb_state = &desc_heap_bindings.bound_heap_snapshots[heap_binding_index].heap_cb_state;

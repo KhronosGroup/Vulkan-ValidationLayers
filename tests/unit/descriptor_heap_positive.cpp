@@ -588,6 +588,57 @@ TEST_F(PositiveDescriptorHeap, SamplerInheritance) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveDescriptorHeap, SecondaryCmdBufferMixHeap) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6662#note_613576");
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride, true);
+    CreateSamplerHeap(heap_props.samplerDescriptorSize, true);
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+        void main() {
+            vec4 data = texture(tex, vec2(0.5f));
+        }
+    )glsl";
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    mapping.sourceData.constantOffset.samplerHeapOffset = (uint32_t)heap_props.minSamplerHeapReservedRange;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    VkBindHeapInfoEXT sampler_bind_info = vku::InitStructHelper();
+    sampler_bind_info.heapRange = sampler_heap_.AddressRange();
+    sampler_bind_info.reservedRangeOffset = 0;
+    sampler_bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
+    VkCommandBufferInheritanceDescriptorHeapInfoEXT inh_desc_heap_info = vku::InitStructHelper();
+    inh_desc_heap_info.pSamplerHeapBindInfo = &sampler_bind_info;
+    VkCommandBufferInheritanceInfo inh = vku::InitStructHelper(&inh_desc_heap_info);
+    VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
+    cbbi.pInheritanceInfo = &inh;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin(&cbbi);
+    VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
+    resource_bind_info.heapRange = resource_heap_.AddressRange();
+    resource_bind_info.reservedRangeOffset = 0;
+    resource_bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    vk::CmdBindResourceHeapEXT(secondary, &resource_bind_info);
+    vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(secondary, 1u, 1u, 1u);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    BindSamplerHeap();
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveDescriptorHeap, ResourceInheritance) {
     TEST_DESCRIPTION("Validate that inherited ranges match primary buffer");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());

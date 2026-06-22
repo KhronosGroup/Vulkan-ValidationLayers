@@ -1969,8 +1969,8 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
     // If both heaps are bound, no point to look at the variables
     if (cb_state.IsPrimary() && cb_state.descriptor_heap.sampler_bound && cb_state.descriptor_heap.resource_bound) {
         return skip;
-    } else if (cb_state.IsSecondary() && cb_state.inheritance_descriptor_heap_info.pSamplerHeapBindInfo &&
-               cb_state.inheritance_descriptor_heap_info.pResourceHeapBindInfo) {
+    } else if (cb_state.IsSecondary() && cb_state.descriptor_heap.is_sampler_inherited &&
+               cb_state.descriptor_heap.is_resource_inherited) {
         return skip;
     }
 
@@ -1998,17 +1998,25 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
 
     // TODO - Currently at this level we don't know if the sampler is embedded or not
     // If there is only embedded samplers, the sampler heap isn't required to be bound
-    if (stage_state.uses_sampler_heap && !has_embedded_samplers) {
-        if (cb_state.IsPrimary()) {
-            if (!cb_state.descriptor_heap.sampler_bound) {
-                skip |= LogError(
-                    CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
-                    cb_state.GetObjectList(last_bound_state.bind_point), loc,
-                    "The shader %s uses sampler descriptors, but a sampler heap was not bound with vkCmdBindSamplerHeapEXT.%s%s",
-                    entry_point.Describe().c_str(), last_bound_state.DescribeInvalidDescriptorMode().c_str(),
-                    print_used_variables(true).c_str());
-            }
-        } else if (!cb_state.inheritance_descriptor_heap_info.pSamplerHeapBindInfo) {
+    if (stage_state.uses_sampler_heap && !has_embedded_samplers && !cb_state.descriptor_heap.sampler_bound) {
+        if (cb_state.descriptor_heap.is_resource_invalidated) {
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
+                             cb_state.GetObjectList(last_bound_state.bind_point), loc,
+                             "The shader %s uses sampler descriptors, but there is not currently a valid sampler heap "
+                             "bound.\nWhile there was a previous call to vkCmdBindSamplerHeapEXT, a previous call to "
+                             "vkCmdExecuteCommands had a secondary command buffer that bound its own sampler heap, instead of "
+                             "using VkCommandBufferInheritanceDescriptorHeapInfoEXT::pSamplerHeapBindInfo, therefore making this "
+                             "command buffer sampler heap invalid.%s%s",
+                             entry_point.Describe().c_str(), last_bound_state.DescribeInvalidDescriptorMode().c_str(),
+                             print_used_variables(true).c_str());
+        } else if (cb_state.IsPrimary()) {
+            skip |= LogError(
+                CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
+                cb_state.GetObjectList(last_bound_state.bind_point), loc,
+                "The shader %s uses sampler descriptors, but a sampler heap was not bound with vkCmdBindSamplerHeapEXT.%s%s",
+                entry_point.Describe().c_str(), last_bound_state.DescribeInvalidDescriptorMode().c_str(),
+                print_used_variables(true).c_str());
+        } else {
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
                              cb_state.GetObjectList(last_bound_state.bind_point), loc,
                              "The shader %s uses sampler descriptors, but "
@@ -2016,17 +2024,25 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
                              entry_point.Describe().c_str(), print_used_variables(true).c_str());
         }
     }
-    if (stage_state.uses_resource_heap) {
-        if (cb_state.IsPrimary()) {
-            if (!cb_state.descriptor_heap.resource_bound) {
-                skip |= LogError(
-                    CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
-                    cb_state.GetObjectList(last_bound_state.bind_point), loc,
-                    "The shader %s uses resource descriptors, but a resource heap was not bound with vkCmdBindResourceHeapEXT.%s%s",
-                    entry_point.Describe().c_str(), last_bound_state.DescribeInvalidDescriptorMode().c_str(),
-                    print_used_variables(false).c_str());
-            }
-        } else if (!cb_state.inheritance_descriptor_heap_info.pResourceHeapBindInfo) {
+    if (stage_state.uses_resource_heap && !cb_state.descriptor_heap.resource_bound) {
+        if (cb_state.descriptor_heap.is_resource_invalidated) {
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
+                             cb_state.GetObjectList(last_bound_state.bind_point), loc,
+                             "The shader %s uses resource descriptors, but there is not currently a valid resource heap "
+                             "bound.\nWhile there was a previous call to vkCmdBindResourceHeapEXT, a previous call to "
+                             "vkCmdExecuteCommands had a secondary command buffer that bound its own resource heap, instead of "
+                             "using VkCommandBufferInheritanceDescriptorHeapInfoEXT::pResourceHeapBindInfo, therefore making this "
+                             "command buffer resource heap invalid.%s%s",
+                             entry_point.Describe().c_str(), last_bound_state.DescribeInvalidDescriptorMode().c_str(),
+                             print_used_variables(true).c_str());
+        } else if (cb_state.IsPrimary()) {
+            skip |= LogError(
+                CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
+                cb_state.GetObjectList(last_bound_state.bind_point), loc,
+                "The shader %s uses resource descriptors, but a resource heap was not bound with vkCmdBindResourceHeapEXT.%s%s",
+                entry_point.Describe().c_str(), last_bound_state.DescribeInvalidDescriptorMode().c_str(),
+                print_used_variables(false).c_str());
+        } else {
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
                              cb_state.GetObjectList(last_bound_state.bind_point), loc,
                              "The shader %s uses resource descriptors, but "

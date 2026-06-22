@@ -199,14 +199,6 @@ std::string string_VkDependencyInfo(const Logger& logger, VkDependencyInfo set_d
     return ss.str();
 }
 
-[[maybe_unused]] static std::string string_VkBindHeapInfoEXT(VkBindHeapInfoEXT info) {
-    std::stringstream ss;
-    ss << "heapRange = { address = " << info.heapRange.address << ", size = " << info.heapRange.size << " }, ";
-    ss << "reservedRangeOffset = " << info.reservedRangeOffset << ", ";
-    ss << "reservedRangeSize = " << info.reservedRangeSize << "";
-    return ss.str();
-}
-
 [[maybe_unused]] static std::string string_VkPhysicalDeviceDataGraphProcessingEngineARM(
     const VkPhysicalDeviceDataGraphProcessingEngineARM& engine) {
     std::stringstream ss;

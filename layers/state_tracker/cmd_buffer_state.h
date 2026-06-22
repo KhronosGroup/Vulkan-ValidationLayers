@@ -173,7 +173,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     VkCommandBufferUsageFlags begin_info_flags;
     bool has_inheritance;
     vku::safe_VkCommandBufferInheritanceInfo inheritance_info;
-    vku::safe_VkCommandBufferInheritanceDescriptorHeapInfoEXT inheritance_descriptor_heap_info;
 
     // since command buffers can only be destroyed by their command pool, this does not need to be a shared_ptr
     const vvl::CommandPool *command_pool;
@@ -555,23 +554,35 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     // VK_EXT_descriptor_heap
     struct DescriptorHeap {
-        // Heap buffer area and for-implementation-reserved-area currently bound by vkCmdBindSamplerHeapEXT
         bool sampler_bound;
+        bool resource_bound;
+        // If heap is from VkCommandBufferInheritanceDescriptorHeapInfoEXT
+        bool is_sampler_inherited;
+        bool is_resource_inherited;
+        bool is_sampler_invalidated;
+        bool is_resource_invalidated;
+
+        // Heap buffer area and for-implementation-reserved-area currently bound by vkCmdBindSamplerHeapEXT
         vvl::range<VkDeviceAddress> sampler_range;
         vvl::range<VkDeviceAddress> sampler_reserved;
         // Heap buffer area and for-implementation-reserved-area currently bound by vkCmdBindResourceHeapEXT
-        bool resource_bound;
         vvl::range<VkDeviceAddress> resource_range;
         vvl::range<VkDeviceAddress> resource_reserved;
 
         void Reset() {
             sampler_bound = false;
+            resource_bound = false;
+            is_sampler_inherited = false;
+            is_resource_inherited = false;
+            is_sampler_invalidated = false;
+            is_resource_invalidated = false;
             sampler_reserved = {};
             sampler_range = {};
-            resource_bound = false;
             resource_reserved = {};
             resource_range = {};
         }
+        void Update(const VkBindHeapInfoEXT& bind_info, bool is_sampler);
+        std::string Describe(bool is_sampler) const;
     } descriptor_heap;
 
     void SetDescriptorMode(vvl::DescriptorMode new_mode, vvl::Func function);
@@ -750,8 +761,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordPushData(const VkPushDataInfoEXT& push_data_info, const Location& loc);
     bool VerifyPushData(uint32_t offset, uint32_t size) const;
 
-    void RecordBindResourceHeap(const Location& loc);
-    void RecordBindSamplerHeap(const Location& loc);
+    void RecordBindResourceHeap(vvl::DeviceState& device_state, const VkBindHeapInfoEXT& bind_info, const Location& loc);
+    void RecordBindSamplerHeap(vvl::DeviceState& device_state, const VkBindHeapInfoEXT& bind_info, const Location& loc);
 
     void RecordBeginConditionalRendering(const Location &loc);
     void RecordEndConditionalRendering(const Location &loc);

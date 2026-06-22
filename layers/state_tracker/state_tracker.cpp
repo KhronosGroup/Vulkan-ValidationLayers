@@ -6957,49 +6957,13 @@ void DeviceState::RemoveCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* 
 void DeviceState::PostCallRecordCmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
                                                       const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->descriptor_heap.sampler_bound = true;
-
-    vvl::range<VkDeviceAddress> reserved = {
-        pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset,
-        pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset + pBindInfo->reservedRangeSize};
-
-    if (cb_state->descriptor_heap.sampler_reserved != reserved) {
-        UpdateCommandBufferHeapReservedAddressMap(cb_state.get(), reserved, true);
-        cb_state->descriptor_heap.sampler_reserved = reserved;
-    }
-
-    vvl::range<VkDeviceAddress> range = {pBindInfo->heapRange.address, pBindInfo->heapRange.address + pBindInfo->heapRange.size};
-    cb_state->descriptor_heap.sampler_range = range;
-
-    cb_state->SetDescriptorMode(DescriptorModeHeap, record_obj.location.function);
-    TrackDeviceAddressRange(*cb_state, range, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT);
-
-    // try to move more of the above state in here
-    cb_state->RecordBindSamplerHeap(record_obj.location);
+    cb_state->RecordBindSamplerHeap(*this, *pBindInfo, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
                                                        const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->descriptor_heap.resource_bound = true;
-
-    vvl::range<VkDeviceAddress> reserved = {
-        pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset,
-        pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset + pBindInfo->reservedRangeSize};
-
-    if (cb_state->descriptor_heap.resource_reserved != reserved) {
-        UpdateCommandBufferHeapReservedAddressMap(cb_state.get(), reserved, false);
-        cb_state->descriptor_heap.resource_reserved = reserved;
-    }
-
-    vvl::range<VkDeviceAddress> range = {pBindInfo->heapRange.address, pBindInfo->heapRange.address + pBindInfo->heapRange.size};
-    cb_state->descriptor_heap.resource_range = range;
-
-    cb_state->SetDescriptorMode(DescriptorModeHeap, record_obj.location.function);
-    TrackDeviceAddressRange(*cb_state, range, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT);
-
-    // try to move more of the above state in here
-    cb_state->RecordBindResourceHeap(record_obj.location);
+    cb_state->RecordBindResourceHeap(*this, *pBindInfo, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
