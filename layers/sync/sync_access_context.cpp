@@ -607,10 +607,8 @@ void AccessContext::ImportAsyncContexts(const AccessContext& from) {
     async_.insert(async_.end(), from.async_.begin(), from.async_.end());
 }
 
-void AccessContext::AddAsyncContext(const AccessContext* context, ResourceUsageTag tag, QueueId queue_id) {
-    if (context) {
-        async_.emplace_back(*context, tag, queue_id);
-    }
+void AccessContext::AddAsyncContext(const AccessContext& context, ResourceUsageTag tag, QueueId queue_id) {
+    async_.emplace_back(context, tag, queue_id);
 }
 
 void SortedFirstAccesses::Init(const AccessMap& finalized_access_map) {
