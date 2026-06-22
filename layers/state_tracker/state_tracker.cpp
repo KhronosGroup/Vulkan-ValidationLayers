@@ -6707,7 +6707,7 @@ std::shared_ptr<Swapchain> DeviceState::CreateSwapchainState(const VkSwapchainCr
 
 std::shared_ptr<CommandBuffer> DeviceState::CreateCmdBufferState(VkCommandBuffer handle,
                                                                  const VkCommandBufferAllocateInfo* allocate_info,
-                                                                 const CommandPool* pool) {
+                                                                 const CommandPool& pool) {
     return std::make_shared<CommandBuffer>(*this, handle, allocate_info, pool);
 }
 

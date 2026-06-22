@@ -5047,13 +5047,13 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
 
     const Location begin_info_loc = error_obj.location.dot(Field::pBeginInfo);
 
-    if (vs_state->create_info.queueFamilyIndex != cb_state->command_pool->queueFamilyIndex) {
-        const LogObjectList objlist(commandBuffer, pBeginInfo->videoSession, cb_state->command_pool->Handle());
+    if (vs_state->create_info.queueFamilyIndex != cb_state->command_pool.queueFamilyIndex) {
+        const LogObjectList objlist(commandBuffer, pBeginInfo->videoSession, cb_state->command_pool.Handle());
         skip |= LogError("VUID-vkCmdBeginVideoCodingKHR-commandBuffer-11760", objlist, begin_info_loc.dot(Field::videoSession),
                          "%s (queue family index %" PRIu32 ") and %s (queue family index %" PRIu32
                          ") are not created with the same queue family index.",
                          FormatHandle(pBeginInfo->videoSession).c_str(), vs_state->create_info.queueFamilyIndex,
-                         FormatHandle(cb_state->command_pool->Handle()).c_str(), cb_state->command_pool->queueFamilyIndex);
+                         FormatHandle(cb_state->command_pool.Handle()).c_str(), cb_state->command_pool.queueFamilyIndex);
     }
 
     if (vs_state->GetUnboundMemoryBindingCount() > 0) {
@@ -5771,14 +5771,14 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                     }
                 }
 
-                const auto& qf_ext_props = device_state->queue_family_ext_props[cb_state->command_pool->queueFamilyIndex];
+                const auto& qf_ext_props = device_state->queue_family_ext_props[cb_state->command_pool.queueFamilyIndex];
                 if (!qf_ext_props.query_result_status_props.queryResultStatusSupport) {
                     const LogObjectList objlist(commandBuffer, inline_query_info->queryPool);
                     skip |= LogError("VUID-vkCmdDecodeVideoKHR-queryType-08369", objlist, error_obj.location,
                                      "the command pool's queue family (index %" PRIu32
                                      ") the command "
                                      "buffer %s was allocated from does not support result status queries.",
-                                     cb_state->command_pool->queueFamilyIndex, FormatHandle(*cb_state).c_str());
+                                     cb_state->command_pool.queueFamilyIndex, FormatHandle(*cb_state).c_str());
                 }
             }
         }
@@ -6241,7 +6241,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                     }
                 }
 
-                const auto& qf_ext_props = device_state->queue_family_ext_props[cb_state->command_pool->queueFamilyIndex];
+                const auto& qf_ext_props = device_state->queue_family_ext_props[cb_state->command_pool.queueFamilyIndex];
                 if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR &&
                     !qf_ext_props.query_result_status_props.queryResultStatusSupport) {
                     const LogObjectList objlist(commandBuffer, inline_query_info->queryPool);
@@ -6249,7 +6249,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                                      "the command pool's queue family (index %" PRIu32
                                      ") the command "
                                      "buffer %s was allocated from does not support result status queries.",
-                                     cb_state->command_pool->queueFamilyIndex, FormatHandle(*cb_state).c_str());
+                                     cb_state->command_pool.queueFamilyIndex, FormatHandle(*cb_state).c_str());
                 }
             }
         }

@@ -548,17 +548,16 @@ bool CoreChecks::ValidImageBufferQueue(const vvl::CommandBuffer& cb_state, const
 bool CoreChecks::ValidateQueueFamilyIndices(const Location& loc, const vvl::CommandBuffer& cb_state,
                                             const vvl::Queue& queue_state) const {
     bool skip = false;
-    auto pool = cb_state.command_pool;
-    ASSERT_AND_RETURN_SKIP(pool);
+    const vvl::CommandPool& pool = cb_state.command_pool;
 
-    if (pool->queueFamilyIndex != queue_state.queue_family_index) {
+    if (pool.queueFamilyIndex != queue_state.queue_family_index) {
         const LogObjectList objlist(cb_state.Handle(), queue_state.Handle());
         const auto& vuid = GetQueueSubmitVUID(loc, vvl::SubmitError::kCmdWrongQueueFamily);
         skip |= LogError(vuid, objlist, loc,
                          "Primary command buffer %s created in queue family %" PRIu32
                          " is being submitted on %s "
                          "from queue family %" PRIu32 ".",
-                         FormatHandle(cb_state).c_str(), pool->queueFamilyIndex, FormatHandle(queue_state.Handle()).c_str(),
+                         FormatHandle(cb_state).c_str(), pool.queueFamilyIndex, FormatHandle(queue_state.Handle()).c_str(),
                          queue_state.queue_family_index);
     }
 

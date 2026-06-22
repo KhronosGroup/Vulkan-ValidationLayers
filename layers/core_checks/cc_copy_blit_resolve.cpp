@@ -180,11 +180,7 @@ static inline bool IsExtentAligned(const VkExtent3D& extent, const VkExtent3D& g
 }
 
 VkExtent3D CoreChecks::GetImageTransferGranularity(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state) const {
-    if (cb_state.command_pool) {
-        return physical_device_state->queue_family_properties[cb_state.command_pool->queueFamilyIndex].minImageTransferGranularity;
-    }
-    // Default to (0, 0, 0) granularity in case we can't find the real granularity for the physical device.
-    return {0, 0, 0};
+    return physical_device_state->queue_family_properties[cb_state.command_pool.queueFamilyIndex].minImageTransferGranularity;
 }
 
 // Check elements of a VkOffset3D structure against a queue family's Image Transfer Granularity values
@@ -775,7 +771,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const vvl::CommandBuffer& cb_state,
         const VkQueueFlags required_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         if (!HasRequiredQueueFlags(cb_state, *physical_device_state, required_flags)) {
             const char* vuid = GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::BufferOffset_07737).c_str();
-            const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool->Handle());
+            const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool.Handle());
             skip |= LogError(
                 vuid, objlist, region_loc.dot(Field::bufferOffset),
                 "(%" PRIu64
@@ -4073,11 +4069,11 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer command
                          "The indirectMemoryCopy feature must be enabled.");
     }
 
-    if (!(phys_dev_ext_props.copy_memory_indirect_props.supportedQueues & cb_state->command_pool->queue_flags)) {
+    if (!(phys_dev_ext_props.copy_memory_indirect_props.supportedQueues & cb_state->command_pool.queue_flags)) {
         skip |= LogError("VUID-vkCmdCopyMemoryIndirectKHR-commandBuffer-10936", commandBuffer, error_obj.location,
                          "was allocated from a VkCommandPool with queue flags %s\nNone are supported by "
                          "VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR::supportedQueues %s",
-                         string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str(),
+                         string_VkQueueFlags(cb_state->command_pool.queue_flags).c_str(),
                          string_VkQueueFlags(phys_dev_ext_props.copy_memory_indirect_props.supportedQueues).c_str());
     }
 
@@ -4181,14 +4177,14 @@ bool CoreChecks::ValidateCopyMemoryToImageIndirectInfo(const vvl::CommandBuffer&
                              string_VkImageAspectFlags(aspect_mask).c_str());
         }
 
-        if (!(cb_state.command_pool->queue_flags & VK_QUEUE_GRAPHICS_BIT) &&
+        if (!(cb_state.command_pool.queue_flags & VK_QUEUE_GRAPHICS_BIT) &&
             (aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
             skip |= LogError(
                 "VUID-VkCopyMemoryToImageIndirectInfoKHR-commandBuffer-07674", dst_objlist, subresource_loc.dot(Field::aspectMask),
                 "(%s) must not be VK_IMAGE_ASPECT_DEPTH_BIT "
                 "or VK_IMAGE_ASPECT_STENCIL_BIT when the queue family does not support VK_QUEUE_GRAPHICS_BIT\n VkCommandPool queue "
                 "flags: %s.",
-                string_VkImageAspectFlags(aspect_mask).c_str(), string_VkQueueFlags(cb_state.command_pool->queue_flags).c_str());
+                string_VkImageAspectFlags(aspect_mask).c_str(), string_VkQueueFlags(cb_state.command_pool.queue_flags).c_str());
         }
 
         const uint32_t mip_level = subresource_layers.mipLevel;
@@ -4235,11 +4231,11 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToImageIndirectKHR(
                          error_obj.location, "The indirectMemoryToImageCopy feature must be enabled.");
     }
 
-    if (!(phys_dev_ext_props.copy_memory_indirect_props.supportedQueues & cb_state->command_pool->queue_flags)) {
+    if (!(phys_dev_ext_props.copy_memory_indirect_props.supportedQueues & cb_state->command_pool.queue_flags)) {
         skip |= LogError("VUID-vkCmdCopyMemoryToImageIndirectKHR-commandBuffer-10948", commandBuffer, error_obj.location,
                          "was allocated from a VkCommandPool with queue flags %s\nNone are supported by "
                          "VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR::supportedQueues %s",
-                         string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str(),
+                         string_VkQueueFlags(cb_state->command_pool.queue_flags).c_str(),
                          string_VkQueueFlags(phys_dev_ext_props.copy_memory_indirect_props.supportedQueues).c_str());
     }
 
@@ -4340,7 +4336,7 @@ bool CoreChecks::ValidateCmdCopyMemoryToImage(VkCommandBuffer command_buffer,
                 skip |= LogError(vuid, objlist, region_loc.dot(Field::addressRange).dot(Field::address),
                                  "(%" PRIu64 ") is not a multiple of 4, but is %s (From %s)", region.addressRange.address,
                                  DescribeRequiredQueueFlag(cb_state, *physical_device_state, required_flags).c_str(),
-                                 FormatHandle(cb_state.command_pool->Handle()).c_str());
+                                 FormatHandle(cb_state.command_pool.Handle()).c_str());
             }
         }
 
@@ -4373,7 +4369,7 @@ bool CoreChecks::ValidateCmdCopyMemoryToImage(VkCommandBuffer command_buffer,
                     LogError(vuid, objlist, region_loc.dot(Field::imageSubresource).dot(Field::aspectMask),
                              "is %s, but is %s (From %s)", string_VkImageAspectFlags(region.imageSubresource.aspectMask).c_str(),
                              DescribeRequiredQueueFlag(cb_state, *physical_device_state, required_flags).c_str(),
-                             FormatHandle(cb_state.command_pool->Handle()).c_str());
+                             FormatHandle(cb_state.command_pool.Handle()).c_str());
             }
             if (!IsIntegerMultipleOf(region.addressRange.address, 4)) {
                 skip |= LogError("VUID-VkCopyDeviceMemoryImageInfoKHR-image-13031", objlist,

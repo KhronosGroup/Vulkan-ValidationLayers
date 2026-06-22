@@ -2052,7 +2052,7 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_s
     const bool has_stencil_aspect = (barrier_aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
 
     skip |= ValidateBarrierQueueFamilies(cb_state.Handle(), barrier_loc, image_loc, barrier, image_state.Handle(),
-                                         image_state.GetSharingMode(), cb_state.command_pool->queueFamilyIndex);
+                                         image_state.GetSharingMode(), cb_state.command_pool.queueFamilyIndex);
     const auto& vuid_aspect = GetImageBarrierVUID(barrier_loc, vvl::ImageError::kAspectMask);
     skip |= ValidateImageAspectMask(image_state.VkHandle(), image_state.GetFormat(), barrier.subresourceRange.aspectMask,
                                     image_state.disjoint, image_loc, vuid_aspect.c_str());
@@ -2590,7 +2590,7 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList& objects, const Locat
         }
 
         skip |= ValidateBarrierQueueFamilies(objects, barrier_loc, buf_loc, mem_barrier, buffer_state->Handle(),
-                                             buffer_state->GetSharingMode(), cb_state.command_pool->queueFamilyIndex);
+                                             buffer_state->GetSharingMode(), cb_state.command_pool.queueFamilyIndex);
 
         auto buffer_size = buffer_state->GetSize();
         if (mem_barrier.offset >= buffer_size) {
@@ -2698,14 +2698,14 @@ bool CoreChecks::ValidateBarriers(const Location& outer_loc, const vvl::CommandB
     for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
         const Location barrier_loc = outer_loc.dot(Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
         const ImageBarrier barrier(pImageMemoryBarriers[i], src_stage_mask, dst_stage_mask);
-        const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
+        const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool.queueFamilyIndex);
         skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op);
         skip |= ValidateImageBarrier(objects, cb_state, barrier, barrier_loc, local_layout_registry);
     }
     for (uint32_t i = 0; i < bufferBarrierCount; ++i) {
         const Location barrier_loc = outer_loc.dot(Struct::VkBufferMemoryBarrier, Field::pBufferMemoryBarriers, i);
         const BufferBarrier barrier(pBufferMemoryBarriers[i], src_stage_mask, dst_stage_mask);
-        const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
+        const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool.queueFamilyIndex);
         skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op);
         skip |= ValidateBufferBarrier(objects, barrier_loc, cb_state, barrier);
     }
@@ -2728,14 +2728,14 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList& objects, const Loca
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; ++i) {
         const Location barrier_loc = dep_info_loc.dot(Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
         const ImageBarrier barrier(dep_info.pImageMemoryBarriers[i]);
-        const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
+        const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool.queueFamilyIndex);
         skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op, dep_info.dependencyFlags);
         skip |= ValidateImageBarrier(objects, cb_state, barrier, barrier_loc, local_layout_registry);
     }
     for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; ++i) {
         const Location barrier_loc = dep_info_loc.dot(Struct::VkBufferMemoryBarrier2, Field::pBufferMemoryBarriers, i);
         const BufferBarrier barrier(dep_info.pBufferMemoryBarriers[i]);
-        const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
+        const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool.queueFamilyIndex);
         skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op, dep_info.dependencyFlags);
         skip |= ValidateBufferBarrier(objects, barrier_loc, cb_state, barrier);
     }
@@ -2763,7 +2763,7 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList& objects, const Loca
             const auto buffer_states = GetBuffersByAddress(memory_range_barrier.addressRange.address);
             for (const auto buffer_state : buffer_states) {
                 const BufferBarrier barrier(memory_range_barrier, *buffer_state);
-                const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
+                const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool.queueFamilyIndex);
                 skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op, dep_info.dependencyFlags);
                 skip |= ValidateBufferBarrier(objects, barrier_loc, cb_state, barrier);
             }

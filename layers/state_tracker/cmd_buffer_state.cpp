@@ -127,7 +127,7 @@ CommandPool::CommandPool(DeviceState& dev, VkCommandPool handle, const VkCommand
 
 void CommandPool::Allocate(const VkCommandBufferAllocateInfo* allocate_info, const VkCommandBuffer* command_buffers) {
     for (uint32_t i = 0; i < allocate_info->commandBufferCount; i++) {
-        auto new_cb = dev_data.CreateCmdBufferState(command_buffers[i], allocate_info, this);
+        auto new_cb = dev_data.CreateCmdBufferState(command_buffers[i], allocate_info, *this);
         commandBuffers.emplace(command_buffers[i], new_cb.get());
         dev_data.Add(std::move(new_cb));
     }
@@ -176,10 +176,10 @@ const char* CommandBuffer::DescribeActiveColorAttachment() const {
 }
 
 CommandBuffer::CommandBuffer(DeviceState& dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* allocate_info,
-                             const vvl::CommandPool* pool)
+                             const vvl::CommandPool& pool)
     : RefcountedStateObject(handle, kVulkanObjectTypeCommandBuffer),
       allocate_info(*allocate_info),
-      unprotected(pool->unprotected),
+      unprotected(pool.unprotected),
       command_pool(pool),
       dev_data(dev),
       lastBound({{{*this, VK_PIPELINE_BIND_POINT_GRAPHICS},

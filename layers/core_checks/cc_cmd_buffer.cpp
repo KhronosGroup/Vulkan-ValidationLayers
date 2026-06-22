@@ -72,7 +72,7 @@ bool CoreChecks::ValidateCmd(const vvl::CommandBuffer& cb_state, const Location&
 
     // Validate the command pool from which the command buffer is from that the command is allowed for queue type
     if (!HasRequiredQueueFlags(cb_state, *physical_device_state, info.queue_flags)) {
-        const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool->Handle());
+        const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool.Handle());
         skip |= LogError(info.queue_vuid, objlist, loc, "%s",
                          DescribeRequiredQueueFlag(cb_state, *physical_device_state, info.queue_flags).c_str());
     }
@@ -214,8 +214,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                          FormatHandle(commandBuffer).c_str());
     } else if (IsRecorded(cb_state->state)) {
         VkCommandPool cmd_pool = cb_state->allocate_info.commandPool;
-        const auto* pool = cb_state->command_pool;
-        if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pool->createFlags)) {
+        if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & cb_state->command_pool.createFlags)) {
             const LogObjectList objlist(commandBuffer, cmd_pool);
             skip |= LogError("VUID-vkBeginCommandBuffer-commandBuffer-00050", objlist, error_obj.location,
                              "%s attempts to implicitly reset cmdBuffer created from "
@@ -235,13 +234,13 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                                          "VUID-VkDeviceGroupCommandBufferBeginInfo-deviceMask-00107");
     }
     if ((pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) != 0) {
-        if ((cb_state->command_pool->queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
-            const LogObjectList objlist(commandBuffer, cb_state->command_pool->Handle());
+        if ((cb_state->command_pool.queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
+            const LogObjectList objlist(commandBuffer, cb_state->command_pool.Handle());
             skip |= LogError("VUID-VkCommandBufferBeginInfo-flags-09123", objlist, begin_info_loc.dot(Field::flags),
                              "contain VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, but the command pool (created with "
                              "queueFamilyIndex %" PRIu32 ") the command buffer %s was allocated from only supports %s.",
-                             cb_state->command_pool->queueFamilyIndex, FormatHandle(commandBuffer).c_str(),
-                             string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
+                             cb_state->command_pool.queueFamilyIndex, FormatHandle(commandBuffer).c_str(),
+                             string_VkQueueFlags(cb_state->command_pool.queue_flags).c_str());
         }
     }
     return skip;
@@ -583,13 +582,13 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
 
     VkCommandPool cmd_pool = cb_state->allocate_info.commandPool;
-    const auto* pool = cb_state->command_pool;
 
-    if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pool->createFlags)) {
+    if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & cb_state->command_pool.createFlags)) {
         const LogObjectList objlist(commandBuffer, cmd_pool);
-        skip |= LogError("VUID-vkResetCommandBuffer-commandBuffer-00046", objlist, error_obj.location,
-                         "%s was created from %s  which was created with %s.", FormatHandle(commandBuffer).c_str(),
-                         FormatHandle(cmd_pool).c_str(), string_VkCommandPoolCreateFlags(pool->createFlags).c_str());
+        skip |=
+            LogError("VUID-vkResetCommandBuffer-commandBuffer-00046", objlist, error_obj.location,
+                     "%s was created from %s  which was created with %s.", FormatHandle(commandBuffer).c_str(),
+                     FormatHandle(cmd_pool).c_str(), string_VkCommandPoolCreateFlags(cb_state->command_pool.createFlags).c_str());
     }
 
     if (cb_state->InUse()) {
@@ -898,15 +897,15 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const vvl::CommandBuffer& c
                                                      const core::CommandBufferSubState& secondary_sub_state,
                                                      const Location& secondary_cb_loc) const {
     bool skip = false;
-    const auto primary_pool = cb_state.command_pool;
-    const auto secondary_pool = secondary_sub_state.base.command_pool;
-    if (primary_pool && secondary_pool && (primary_pool->queueFamilyIndex != secondary_pool->queueFamilyIndex)) {
+    const vvl::CommandPool& primary_pool = cb_state.command_pool;
+    const vvl::CommandPool& secondary_pool = secondary_sub_state.base.command_pool;
+    if (primary_pool.queueFamilyIndex != secondary_pool.queueFamilyIndex) {
         const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00094", objlist, secondary_cb_loc,
                          "(%s) was created in queue family %" PRIu32
                          " but the primary command buffer (%s) was created in queue family %" PRIu32 ".",
-                         FormatHandle(secondary_sub_state.base).c_str(), secondary_pool->queueFamilyIndex,
-                         FormatHandle(cb_state).c_str(), primary_pool->queueFamilyIndex);
+                         FormatHandle(secondary_sub_state.base).c_str(), secondary_pool.queueFamilyIndex,
+                         FormatHandle(cb_state).c_str(), primary_pool.queueFamilyIndex);
     }
 
     // All commands buffers involved must be protected or unprotected
