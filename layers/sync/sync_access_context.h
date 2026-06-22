@@ -311,7 +311,7 @@ class AccessContext {
     void EraseIf(Predicate &&pred);
 
     // For use during queue submit building up the QueueBatchContext AccessContext for validation, otherwise clear.
-    void AddAsyncContext(const AccessContext *context, ResourceUsageTag tag, QueueId queue_id);
+    void AddAsyncContext(const AccessContext& context, ResourceUsageTag tag, QueueId queue_id);
 
     class AsyncReference {
       public:

@@ -158,15 +158,16 @@ class CommandExecutionContext {
     CommandExecutionContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags);
     virtual ~CommandExecutionContext() = default;
 
-    virtual AccessContext *GetCurrentAccessContext() = 0;
+    virtual AccessContext& GetCurrentAccessContext() = 0;
+    virtual const AccessContext& GetCurrentAccessContext() const = 0;
+
     virtual SyncEventsContext& GetEventsContext() = 0;
-    virtual const AccessContext *GetCurrentAccessContext() const = 0;
+
     virtual const SyncEventsContext& GetEventsContext() const = 0;
     virtual QueueId GetQueueId() const = 0;
     virtual VulkanTypedHandle Handle() const = 0;
     virtual ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const = 0;
 
-    bool ValidForSyncOps() const;
     const SyncValidator &GetSyncState() const { return sync_state_; }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
 
@@ -208,16 +209,13 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     void Reset();
 
     ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const override;
-    AccessContext *GetCurrentAccessContext() override { return current_context_; }
+
+    AccessContext& GetCurrentAccessContext() override { return *current_context_; }
+    const AccessContext& GetCurrentAccessContext() const override { return *current_context_; }
+
     SyncEventsContext& GetEventsContext() override { return events_context_; }
-
-    const AccessContext *GetCurrentAccessContext() const override {
-        // TODO: return a reference (update a lot of places!)
-        assert(current_context_ != nullptr);
-        return current_context_;
-    }
-
     const SyncEventsContext& GetEventsContext() const override { return events_context_; }
+
     QueueId GetQueueId() const override;
 
     RenderPassAccessContext *GetCurrentRenderPassContext() { return current_renderpass_context_; }
