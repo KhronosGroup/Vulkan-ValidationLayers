@@ -439,6 +439,76 @@ bool CoreChecks::PreCallValidateDestroyDataGraphPipelineSessionARM(VkDevice devi
     return skip;
 }
 
+bool CoreChecks::ValidateOpticalFlowImageLayouts(const LastBound& last_bound_state,
+                                                 const VkDataGraphPipelineSingleNodeCreateInfoARM* single_node_ci,
+                                                 const LogObjectList& obj_list, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const vku::safe_VkDataGraphPipelineCreateInfoARM data_graph_ci = last_bound_state.pipeline_state->DataGraphCreateInfo();
+
+    for (uint32_t con = 0; con < single_node_ci->connectionCount; ++con) {
+        const VkDataGraphPipelineSingleNodeConnectionARM& connection = single_node_ci->pConnections[con];
+
+        const LastBound::DescriptorSetSlot& ds_slot = last_bound_state.ds_slots.at(connection.set);
+
+        const uint32_t binding_descriptor_count = ds_slot.ds_state->GetBinding(connection.binding)->count;
+
+        for (uint32_t desc_idx = 0; desc_idx < binding_descriptor_count; ++desc_idx) {
+            const vvl::Descriptor* descriptor = ds_slot.ds_state->GetDescriptorFromBinding(connection.binding, desc_idx);
+
+            if (vvl::DescriptorClass::Image == descriptor->GetClass() ||
+                vvl::DescriptorClass::ImageSampler == descriptor->GetClass()) {
+                const auto* image_descriptor = static_cast<const vvl::ImageDescriptor*>(descriptor);
+
+                const vku::safe_VkDataGraphPipelineResourceInfoARM* data_graph_resource_infos = data_graph_ci.pResourceInfos;
+
+                for (uint32_t res_idx = 0; res_idx < data_graph_ci.resourceInfoCount; ++res_idx) {
+                    const vku::safe_VkDataGraphPipelineResourceInfoARM& data_graph_ri = data_graph_resource_infos[res_idx];
+
+                    if (connection.set == data_graph_ri.descriptorSet && connection.binding == data_graph_ri.binding) {
+                        const auto* ri_image_layout =
+                            vku::FindStructInPNextChain<VkDataGraphPipelineResourceInfoImageLayoutARM>(data_graph_ri.pNext);
+
+                        if (ri_image_layout && (image_descriptor->GetImageLayout() != ri_image_layout->layout)) {
+                            VkDescriptorSet descriptor_set = ds_slot.ds_state->VkHandle();
+
+                            if (enabled_features.unifiedImageLayouts) {
+                                if (VK_IMAGE_LAYOUT_GENERAL != image_descriptor->GetImageLayout() &&
+                                    VK_IMAGE_LAYOUT_GENERAL != ri_image_layout->layout) {
+                                    skip |= LogError(
+                                        "VUID-vkCmdDispatchDataGraphARM-nodeType-09981", LogObjectList(obj_list, descriptor_set),
+                                        error_obj.location,
+                                        "The unifiedImageLayouts feature is enabled but in "
+                                        "VkDataGraphPipelineSingleNodeConnectionARM (%p), connection (%u) specifies descriptor "
+                                        "set (%u) at binding (%u) which references an image resource with layout (%s) that is "
+                                        "not VK_IMAGE_LAYOUT_GENERAL, nor matches the corresponding entry of "
+                                        "VkDataGraphPipelineResourceInfoImageLayoutARM (%p) that has layout (%s).",
+                                        (void*)(&connection), con, connection.set, connection.binding,
+                                        string_VkImageLayout(image_descriptor->GetImageLayout()), (void*)(ri_image_layout),
+                                        string_VkImageLayout(ri_image_layout->layout));
+                                }
+                            } else {
+                                skip |= LogError("VUID-vkCmdDispatchDataGraphARM-nodeType-09981",
+                                                 LogObjectList(obj_list, descriptor_set), error_obj.location,
+                                                 "The unifiedImageLayouts feature is not enabled and in "
+                                                 "VkDataGraphPipelineSingleNodeConnectionARM (%p), connection (%u) specifies "
+                                                 "descriptor set (%u) at binding (%u) which references an image resource with "
+                                                 "layout (%s) that does not match the corresponding entry of "
+                                                 "VkDataGraphPipelineResourceInfoImageLayoutARM (%p) that has layout (%s).",
+                                                 (void*)(&connection), con, connection.set, connection.binding,
+                                                 string_VkImageLayout(image_descriptor->GetImageLayout()), (void*)(ri_image_layout),
+                                                 string_VkImageLayout(ri_image_layout->layout));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphPipelineSessionARM session,
                                                         const VkDataGraphPipelineDispatchInfoARM* pInfo,
                                                         const ErrorObject& error_obj) const {
@@ -495,7 +565,7 @@ bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandB
         pInfo ? vku::FindStructInPNextChain<VkDataGraphPipelineOpticalFlowDispatchInfoARM>(pInfo->pNext) : nullptr;
 
     if (single_node_ci && (VK_DATA_GRAPH_PIPELINE_NODE_TYPE_OPTICAL_FLOW_ARM == single_node_ci->nodeType)) {
-        // TODO: VUID 09981
+        skip |= ValidateOpticalFlowImageLayouts(last_bound_state, single_node_ci, objlist, error_obj);
     } else {
         if (optical_flow_di) {
             skip |= LogError(

@@ -1116,9 +1116,13 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateDestroyDataGraphPipelineSessionARM(VkDevice device, VkDataGraphPipelineSessionARM session,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            const ErrorObject& error_obj) const override;
-    bool PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandBuffer,
-                                                VkDataGraphPipelineSessionARM session,
-                                                const VkDataGraphPipelineDispatchInfoARM *pInfo,
+
+    bool ValidateOpticalFlowImageLayouts(const LastBound& last_bound_state,
+                                         const VkDataGraphPipelineSingleNodeCreateInfoARM* single_node_ci,
+                                         const LogObjectList& obj_list, const ErrorObject& error_obj) const;
+
+    bool PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphPipelineSessionARM session,
+                                                const VkDataGraphPipelineDispatchInfoARM* pInfo,
                                                 const ErrorObject& error_obj) const override;
     void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkImage* pImage, const RecordObject& record_obj) override;
