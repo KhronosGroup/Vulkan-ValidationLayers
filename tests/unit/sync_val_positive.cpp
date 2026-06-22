@@ -4765,3 +4765,219 @@ TEST_F(PositiveSyncVal, BinaryWaitWithTopOfPipeStage) {
     m_default_queue->Submit(copy_command_buffer, vkt::Wait(semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT));
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveSyncVal, DrawMeshTasksIndirectTestIndirectAccess) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    vkt::Image image(*m_device, 64, 64, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    vkt::Buffer indirect_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT),
+                                VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    pipe.CreateGraphicsPipeline();
+
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
+    barrier.buffer = indirect_buffer;
+    barrier.size = sizeof(VkDrawMeshTasksIndirectCommandEXT);
+
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, indirect_buffer, 0, sizeof(VkDrawMeshTasksIndirectCommandEXT), 0);
+    m_command_buffer.Barrier(barrier);
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, indirect_buffer, 0, 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, DrawMeshTasksIndirectTestIndirectUpdate) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    vkt::Image image(*m_device, 64, 64, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    vkt::Buffer indirect_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT),
+                                VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    pipe.CreateGraphicsPipeline();
+
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.buffer = indirect_buffer;
+    barrier.size = sizeof(VkDrawMeshTasksIndirectCommandEXT);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, indirect_buffer, 0, 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    m_command_buffer.EndRendering();
+    m_command_buffer.Barrier(barrier);
+    vk::CmdFillBuffer(m_command_buffer, indirect_buffer, 0, sizeof(VkDrawMeshTasksIndirectCommandEXT), 0);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, DrawMeshTasksIndirectCountTestCountAccess) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    vkt::Image image(*m_device, 64, 64, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    pipe.CreateGraphicsPipeline();
+
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
+    barrier.buffer = count_buffer;
+    barrier.size = sizeof(uint32_t);
+
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, count_buffer, 0, sizeof(uint32_t), 0);
+    m_command_buffer.Barrier(barrier);
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, draw_buffer, 0, count_buffer, 0, 1,
+                                         sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, DrawMeshTasksIndirectCountTestCountUpdate) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    vkt::Image image(*m_device, 64, 64, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    pipe.CreateGraphicsPipeline();
+
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.buffer = count_buffer;
+    barrier.size = sizeof(uint32_t);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, draw_buffer, 0, count_buffer, 0, 1,
+                                         sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    m_command_buffer.EndRendering();
+    m_command_buffer.Barrier(barrier);
+    vk::CmdFillBuffer(m_command_buffer, count_buffer, 0, sizeof(uint32_t), 0);
+    m_command_buffer.End();
+}

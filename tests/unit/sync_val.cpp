@@ -2427,6 +2427,196 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazardsDrawIndirectCount) {
     }
 }
 
+TEST_F(NegativeSyncVal, DrawMeshTasksIndirectTestAccess) {
+    TEST_DESCRIPTION("Validate vkCmdDrawMeshTasksIndirectEXT indirect buffer accesses");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    vkt::Image image(*m_device, 64, 64, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    vkt::Buffer indirect_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT),
+                                VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, indirect_buffer, 0, sizeof(VkDrawMeshTasksIndirectCommandEXT), 0);
+
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, indirect_buffer, 0, 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncVal, DrawMeshTasksIndirectTestUpdate) {
+    TEST_DESCRIPTION("Validate vkCmdDrawMeshTasksIndirectEXT indirect buffer state updates");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    vkt::Image image(*m_device, 64, 64, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    vkt::Buffer indirect_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT),
+                                VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, indirect_buffer, 0, 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    m_command_buffer.EndRendering();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::CmdFillBuffer(m_command_buffer, indirect_buffer, 0, sizeof(VkDrawMeshTasksIndirectCommandEXT), 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncVal, DrawMeshTasksIndirectCountTestCountAccess) {
+    TEST_DESCRIPTION("Validate vkCmdDrawMeshTasksIndirectCountEXT count buffer accesses");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    vkt::Image image(*m_device, 64, 64, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, count_buffer, 0, sizeof(uint32_t), 0);
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, draw_buffer, 0, count_buffer, 0, 1,
+                                         sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncVal, DrawMeshTasksIndirectCountTestCountUpdate) {
+    TEST_DESCRIPTION("Validate vkCmdDrawMeshTasksIndirectCountEXT count buffer state updates");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    vkt::Image image(*m_device, 64, 64, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, draw_buffer, 0, count_buffer, 0, 1,
+                                         sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    m_command_buffer.EndRendering();
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::CmdFillBuffer(m_command_buffer, count_buffer, 0, sizeof(uint32_t), 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeSyncVal, CmdClear) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());

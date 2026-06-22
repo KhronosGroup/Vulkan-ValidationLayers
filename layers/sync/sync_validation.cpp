@@ -1446,6 +1446,67 @@ void SyncValidator::PostCallRecordCmdDrawIndexedIndirectCountAMD(VkCommandBuffer
                                               record_obj);
 }
 
+bool SyncValidator::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                               uint32_t drawCount, uint32_t stride,
+                                                               const ErrorObject& error_obj) const {
+    bool skip = false;
+    if (drawCount == 0) {
+        return skip;
+    }
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const auto* cb_access_context = GetAccessContext(*cb_state);
+    const auto* context = cb_access_context->GetCurrentAccessContext();
+
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
+    skip |= cb_access_context->ValidateDrawAttachment(error_obj.location);
+    skip |= ValidateIndirectBuffer(*cb_access_context, *context, sizeof(VkDrawMeshTasksIndirectCommandEXT), buffer, offset,
+                                   drawCount, stride, error_obj.location);
+    return skip;
+}
+
+void SyncValidator::PostCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                              uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) {
+    if (drawCount == 0) {
+        return;
+    }
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    auto* cb_access_context = GetAccessContext(*cb_state);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
+
+    cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
+    cb_access_context->RecordDrawAttachment(tag);
+    RecordIndirectBuffer(*cb_access_context, tag, sizeof(VkDrawMeshTasksIndirectCommandEXT), buffer, offset, drawCount, stride);
+}
+
+bool SyncValidator::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                    VkDeviceSize offset, VkBuffer countBuffer,
+                                                                    VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                                    uint32_t stride, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const auto* cb_access_context = GetAccessContext(*cb_state);
+    const auto* context = cb_access_context->GetCurrentAccessContext();
+
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
+    skip |= cb_access_context->ValidateDrawAttachment(error_obj.location);
+    skip |= ValidateCountBuffer(*cb_access_context, *context, countBuffer, countBufferOffset, error_obj.location);
+    return skip;
+}
+
+void SyncValidator::PostCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                   VkDeviceSize offset, VkBuffer countBuffer,
+                                                                   VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                                   uint32_t stride, const RecordObject& record_obj) {
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    auto* cb_access_context = GetAccessContext(*cb_state);
+    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
+
+    cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
+    cb_access_context->RecordDrawAttachment(tag);
+    RecordCountBuffer(*cb_access_context, tag, countBuffer, countBufferOffset);
+}
+
 bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                       const VkClearColorValue* pColor, uint32_t rangeCount,
                                                       const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const {
