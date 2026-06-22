@@ -3260,6 +3260,7 @@ TEST_F(NegativeTileShading, UseSampleWeightedImageOpButTileShadingImageProcessin
         GTEST_SKIP() << "Failed to find a format supporting OpImageSampleWeightedQCOM, skipping test.";
     }
 
+    tile_shading_rp_config.format = sampled_format;
     InitTileShadingRenderTarget();
 
     VkPhysicalDeviceImageProcessingPropertiesQCOM image_processing_props = vku::InitStructHelper();
@@ -3381,6 +3382,7 @@ TEST_F(NegativeTileShading, UseBoxFilterImageOpButTileShadingImageProcessingNotE
         GTEST_SKIP() << "Failed to find a format supporting OpImageBoxFilterQCOM, skipping test.";
     }
 
+    tile_shading_rp_config.format = sampled_format;
     InitTileShadingRenderTarget();
 
     VkSamplerCreateInfo sampler_ci = vku::InitStructHelper();
@@ -3601,9 +3603,10 @@ TEST_F(NegativeTileShading, UseBlockMatchWindowImageOpButTileShadingImageProcess
     sampler_ci.magFilter = VK_FILTER_NEAREST;
     sampler_ci.minFilter = VK_FILTER_NEAREST;
     sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     sampler_ci.addressModeV = sampler_ci.addressModeU;
     sampler_ci.addressModeW = sampler_ci.addressModeU;
+    sampler_ci.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
     vkt::Sampler sampler{*m_device, sampler_ci};
 
     const char* cs_source = R"glsl(
@@ -3720,9 +3723,10 @@ TEST_F(NegativeTileShading, UseBlockMatchGatherImageOpButTileShadingImageProcess
     sampler_ci.magFilter = VK_FILTER_NEAREST;
     sampler_ci.minFilter = VK_FILTER_NEAREST;
     sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     sampler_ci.addressModeV = sampler_ci.addressModeU;
     sampler_ci.addressModeW = sampler_ci.addressModeU;
+    sampler_ci.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
     vkt::Sampler sampler{*m_device, sampler_ci};
 
     const char* cs_source = R"glsl(
