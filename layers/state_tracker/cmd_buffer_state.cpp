@@ -216,6 +216,39 @@ void CommandBuffer::RemoveChild(std::shared_ptr<StateObject>& child_node) {
     object_bindings.erase(child_node);
 }
 
+void CommandBuffer::DescriptorHeap::Update(const VkBindHeapInfoEXT& bind_info, bool is_sampler) {
+    vvl::range<VkDeviceAddress> range = {bind_info.heapRange.address, bind_info.heapRange.address + bind_info.heapRange.size};
+    vvl::range<VkDeviceAddress> reserved = {
+        bind_info.heapRange.address + bind_info.reservedRangeOffset,
+        bind_info.heapRange.address + bind_info.reservedRangeOffset + bind_info.reservedRangeSize};
+
+    if (is_sampler) {
+        sampler_bound = true;
+        sampler_reserved = reserved;
+        sampler_range = range;
+    } else {
+        resource_bound = true;
+        resource_reserved = reserved;
+        resource_range = range;
+    }
+}
+
+std::string CommandBuffer::DescriptorHeap::Describe(bool is_sampler) const {
+    std::stringstream ss;
+    if (is_sampler) {
+        ss << "heapRange = { address = 0x" << std::hex << sampler_range.begin << ", size = " << std::dec << sampler_range.size()
+           << " }, ";
+        ss << "reservedRangeOffset = " << (sampler_reserved.begin - sampler_range.begin) << ", ";
+        ss << "reservedRangeSize = " << sampler_reserved.size() << "";
+    } else {
+        ss << "heapRange = { address = 0x" << std::hex << resource_range.begin << ", size = " << std::dec << resource_range.size()
+           << " }, ";
+        ss << "reservedRangeOffset = " << (resource_reserved.begin - resource_range.begin) << ", ";
+        ss << "reservedRangeSize = " << resource_reserved.size() << "";
+    }
+    return ss.str();
+}
+
 // This tracking is awful, in practice people are using only a single descriptor mode per command buffer
 // But in theory you |COULD| do some crazy stuff, like
 //   - Set graphics to use classic descriptor
@@ -280,7 +313,6 @@ void CommandBuffer::ResetCBState() {
     begin_info_flags = 0;
     has_inheritance = false;
     inheritance_info = {};
-    inheritance_descriptor_heap_info = {};
 
     state = CbState::New;
     command_count = 0;
@@ -1370,7 +1402,14 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo* pBeginInfo) {
 
         if (auto descriptor_heap_info =
                 vku::FindStructInPNextChain<VkCommandBufferInheritanceDescriptorHeapInfoEXT>(pBeginInfo->pInheritanceInfo->pNext)) {
-            inheritance_descriptor_heap_info.initialize(descriptor_heap_info);
+            if (descriptor_heap_info->pResourceHeapBindInfo) {
+                descriptor_heap.Update(*descriptor_heap_info->pResourceHeapBindInfo, false);
+                descriptor_heap.is_resource_inherited = true;
+            }
+            if (descriptor_heap_info->pSamplerHeapBindInfo) {
+                descriptor_heap.Update(*descriptor_heap_info->pSamplerHeapBindInfo, true);
+                descriptor_heap.is_sampler_inherited = true;
+            }
         }
     }
 
@@ -1463,6 +1502,15 @@ void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secon
         }
         if (secondary_cb_state->last_rendering_info.has_value()) {
             last_rendering_info = secondary_cb_state->last_rendering_info;
+        }
+
+        if (secondary_cb_state->descriptor_heap.sampler_bound && !secondary_cb_state->descriptor_heap.is_sampler_inherited) {
+            descriptor_heap.sampler_bound = false;
+            descriptor_heap.is_sampler_invalidated = true;
+        }
+        if (secondary_cb_state->descriptor_heap.resource_bound && !secondary_cb_state->descriptor_heap.is_resource_inherited) {
+            descriptor_heap.resource_bound = false;
+            descriptor_heap.is_resource_invalidated = true;
         }
 
         // Handle debug labels
@@ -2332,15 +2380,42 @@ bool CommandBuffer::VerifyPushData(uint32_t offset_byte, uint32_t size_byte) con
     return true;
 }
 
-void CommandBuffer::RecordBindResourceHeap(const Location& loc) {
+void CommandBuffer::RecordBindResourceHeap(vvl::DeviceState& device_state, const VkBindHeapInfoEXT& bind_info,
+                                           const Location& loc) {
     RecordCommand(loc);
+
+    vvl::range<VkDeviceAddress> old_reserved = descriptor_heap.resource_reserved;
+
+    // need to do first as the substate expects this to be set
+    descriptor_heap.Update(bind_info, false);
+
+    if (descriptor_heap.resource_reserved != old_reserved) {
+        device_state.UpdateCommandBufferHeapReservedAddressMap(this, descriptor_heap.resource_reserved, false);
+    }
+
+    SetDescriptorMode(DescriptorModeHeap, loc.function);
+    device_state.TrackDeviceAddressRange(*this, descriptor_heap.resource_range, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT);
+
     for (auto& item : sub_states_) {
         item.second->RecordBindResourceHeap();
     }
 }
 
-void CommandBuffer::RecordBindSamplerHeap(const Location& loc) {
+void CommandBuffer::RecordBindSamplerHeap(vvl::DeviceState& device_state, const VkBindHeapInfoEXT& bind_info, const Location& loc) {
     RecordCommand(loc);
+
+    vvl::range<VkDeviceAddress> old_reserved = descriptor_heap.sampler_reserved;
+
+    // need to do first as the substate expects this to be set
+    descriptor_heap.Update(bind_info, true);
+
+    if (descriptor_heap.sampler_reserved != old_reserved) {
+        device_state.UpdateCommandBufferHeapReservedAddressMap(this, descriptor_heap.sampler_reserved, true);
+    }
+
+    SetDescriptorMode(DescriptorModeHeap, loc.function);
+    device_state.TrackDeviceAddressRange(*this, descriptor_heap.sampler_range, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT);
+
     for (auto& item : sub_states_) {
         item.second->RecordBindSamplerHeap();
     }

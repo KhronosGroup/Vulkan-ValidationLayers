@@ -5573,6 +5573,54 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferSamplerHeapUnbound) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferUnbind) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 2, true);
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer ssbo { uint data; };
+        void main() {
+            data = 42;
+        }
+    )glsl";
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
+    resource_bind_info.heapRange = resource_heap_.AddressRange();
+    resource_bind_info.reservedRangeOffset = 0;
+    resource_bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    vk::CmdBindResourceHeapEXT(secondary, &resource_bind_info);
+    vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(secondary, 1u, 1u, 1u);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &resource_bind_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+
+    // this not invalidate the resource heap for the primary command buffer
+    // because it was not inherited
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11308");
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDescriptorHeap, UnboundResourceHeap) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 

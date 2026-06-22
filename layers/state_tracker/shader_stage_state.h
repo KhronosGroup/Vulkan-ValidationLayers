@@ -61,6 +61,7 @@ struct ShaderStageState {
     std::shared_ptr<const spirv::EntryPoint> entrypoint;
     // Because this can come from a different struct depending on the Pipeline type, have it passed on creation
     const bool descriptor_heap_mode;
+    // If the heap is used by any variable (mapping or untyped)
     const bool uses_resource_heap;
     const bool uses_sampler_heap;
 

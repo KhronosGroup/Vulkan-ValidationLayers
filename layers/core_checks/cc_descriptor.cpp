@@ -5719,11 +5719,11 @@ bool CoreChecks::PreCallValidateCmdBindSamplerHeapEXT(VkCommandBuffer commandBuf
                                        error_obj.location.dot(Field::pBindInfo).dot(Field::heapRange), LogObjectList(commandBuffer),
                                        VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, "VUID-vkCmdBindSamplerHeapEXT-heapRange-11230");
 
-    if (cb_state->IsSecondary() && cb_state->inheritance_descriptor_heap_info.pSamplerHeapBindInfo != nullptr) {
+    if (cb_state->IsSecondary() && cb_state->descriptor_heap.is_sampler_inherited) {
         skip |= LogError("VUID-vkCmdBindSamplerHeapEXT-commandBuffer-11231", commandBuffer,
                          error_obj.location.dot(Field::commandBuffer),
-                         "began with VkCommandBufferInheritanceDescriptorHeapInfoEXT::pSamplerHeapBindInfo (0x%p).",
-                         cb_state->inheritance_descriptor_heap_info.pSamplerHeapBindInfo);
+                         "began with a non-null VkCommandBufferInheritanceDescriptorHeapInfoEXT::pSamplerHeapBindInfo (%s).",
+                         cb_state->descriptor_heap.Describe(true).c_str());
     }
     skip |= ValidateReservedRangeOverlap(*cb_state, pBindInfo, error_obj.location);
 
@@ -5740,11 +5740,11 @@ bool CoreChecks::PreCallValidateCmdBindResourceHeapEXT(VkCommandBuffer commandBu
                                        error_obj.location.dot(Field::pBindInfo).dot(Field::heapRange), LogObjectList(commandBuffer),
                                        VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, "VUID-vkCmdBindResourceHeapEXT-heapRange-11237");
 
-    if (cb_state->IsSecondary() && cb_state->inheritance_descriptor_heap_info.pResourceHeapBindInfo != nullptr) {
+    if (cb_state->IsSecondary() && cb_state->descriptor_heap.is_resource_inherited) {
         skip |= LogError("VUID-vkCmdBindResourceHeapEXT-commandBuffer-11238", commandBuffer,
                          error_obj.location.dot(Field::commandBuffer),
-                         "began with VkCommandBufferInheritanceDescriptorHeapInfoEXT::pResourceHeapBindInfo (0x%p).",
-                         cb_state->inheritance_descriptor_heap_info.pResourceHeapBindInfo);
+                         "began with a non-null VkCommandBufferInheritanceDescriptorHeapInfoEXT::pResourceHeapBindInfo (%s).",
+                         cb_state->descriptor_heap.Describe(false).c_str());
     }
 
     skip |= ValidateReservedRangeOverlap(*cb_state, pBindInfo, error_obj.location);
@@ -5786,7 +5786,7 @@ bool CoreChecks::ValidateInheritanceDescriptorHeapInfo(const vvl::CommandBuffer&
     }
 
     const char* vuid = kVUIDUndefined;
-    if (cb_state.inheritance_descriptor_heap_info.pSamplerHeapBindInfo) {
+    if (cb_state.descriptor_heap.is_sampler_inherited) {
         switch (loc.function) {
             case Func::vkCmdBindDescriptorSets:
                 vuid = "VUID-vkCmdBindDescriptorSets-commandBuffer-11295";
@@ -5837,12 +5837,12 @@ bool CoreChecks::ValidateInheritanceDescriptorHeapInfo(const vvl::CommandBuffer&
         }
         const LogObjectList objlist(cb_state.Handle(), cb_state.allocate_info.commandPool);
         skip |= LogError(vuid, objlist, loc.dot(Field::commandBuffer),
-                         "began with VkCommandBufferInheritanceDescriptorHeapInfoEXT::pSamplerHeapBindInfo = %p (must be null for "
-                         "secondary command buffers)",
-                         cb_state.inheritance_descriptor_heap_info.pSamplerHeapBindInfo);
+                         "began with a non-null VkCommandBufferInheritanceDescriptorHeapInfoEXT::pSamplerHeapBindInfo (%s)\nHint: "
+                         "By being non-null it acts as if vkCmdBindSamplerHeapEXT was called for this secondary command buffer.",
+                         cb_state.descriptor_heap.Describe(true).c_str());
     }
 
-    if (cb_state.inheritance_descriptor_heap_info.pResourceHeapBindInfo) {
+    if (cb_state.descriptor_heap.is_resource_inherited) {
         switch (loc.function) {
             case Func::vkCmdBindDescriptorSets:
                 vuid = "VUID-vkCmdBindDescriptorSets-commandBuffer-11296";
@@ -5893,9 +5893,9 @@ bool CoreChecks::ValidateInheritanceDescriptorHeapInfo(const vvl::CommandBuffer&
         }
         const LogObjectList objlist(cb_state.Handle(), cb_state.allocate_info.commandPool);
         skip |= LogError(vuid, objlist, loc.dot(Field::commandBuffer),
-                         "began with VkCommandBufferInheritanceDescriptorHeapInfoEXT::pResourceHeapBindInfo = %p (must be null for "
-                         "secondary command buffers)",
-                         cb_state.inheritance_descriptor_heap_info.pResourceHeapBindInfo);
+                         "began with non-null VkCommandBufferInheritanceDescriptorHeapInfoEXT::pResourceHeapBindInfo (%s)\nHint: "
+                         "By being non-null it acts as if vkCmdBindResourceHeapEXT was called for this secondary command buffer.",
+                         cb_state.descriptor_heap.Describe(false).c_str());
     }
 
     return skip;

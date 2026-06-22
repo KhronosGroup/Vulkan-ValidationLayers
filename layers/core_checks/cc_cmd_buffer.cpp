@@ -790,11 +790,6 @@ bool CoreChecks::ValidatePrimaryCommandBuffer(const vvl::CommandBuffer& cb_state
     return skip;
 }
 
-static bool CompareBindHeapInfoEXT(const VkBindHeapInfoEXT& a, const VkBindHeapInfoEXT& b) {
-    return (a.heapRange.address == b.heapRange.address) && (a.heapRange.size == b.heapRange.size) &&
-           (a.reservedRangeOffset == b.reservedRangeOffset) && (a.reservedRangeSize == b.reservedRangeSize);
-}
-
 bool CoreChecks::ValidateSecondaryCommandBufferDescriptorHeapInheritance(const vvl::CommandBuffer& cb_state,
                                                                          const vvl::CommandBuffer& secondary_cb_state,
                                                                          const Location& secondary_cb_loc) const {
@@ -803,64 +798,53 @@ bool CoreChecks::ValidateSecondaryCommandBufferDescriptorHeapInheritance(const v
         return skip;
     }
 
-    if (secondary_cb_state.inheritance_descriptor_heap_info.pSamplerHeapBindInfo) {
+    if (secondary_cb_state.descriptor_heap.is_sampler_inherited) {
         if (cb_state.descriptor_heap.sampler_bound) {
-            const auto& sampler_bound = cb_state.descriptor_heap.sampler_range;
-            const auto& sampler_reserved = cb_state.descriptor_heap.sampler_reserved;
-
-            VkBindHeapInfoEXT current = {};
-            current.heapRange.address = sampler_bound.begin;
-            current.heapRange.size = sampler_bound.end - sampler_bound.begin;
-            current.reservedRangeOffset = sampler_reserved.begin - sampler_bound.begin;
-            current.reservedRangeSize = sampler_reserved.end - sampler_reserved.begin;
-
-            const auto& secondary = *secondary_cb_state.inheritance_descriptor_heap_info.pSamplerHeapBindInfo;
-            if (!CompareBindHeapInfoEXT(current, *secondary.ptr())) {
+            const bool same_range = cb_state.descriptor_heap.sampler_range == secondary_cb_state.descriptor_heap.sampler_range;
+            const bool same_reserved =
+                cb_state.descriptor_heap.sampler_reserved == secondary_cb_state.descriptor_heap.sampler_reserved;
+            if (!same_range || !same_reserved) {
                 const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
                 skip |= LogError(
                     "VUID-vkCmdExecuteCommands-commandBuffer-11351", objlist, secondary_cb_loc,
                     "was recorded with VkBindHeapInfoEXT, which does not match the currently bound sampler descriptor heap.\n"
                     "Executed VkBindHeapInfoEXT: %s\n"
                     "Current  VkBindHeapInfoEXT: %s",
-                    string_VkBindHeapInfoEXT(*secondary.ptr()).c_str(), string_VkBindHeapInfoEXT(current).c_str());
+                    secondary_cb_state.descriptor_heap.Describe(true).c_str(), cb_state.descriptor_heap.Describe(true).c_str());
             }
         } else if (cb_state.IsPrimary()) {
             const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
-            const auto& secondary = *secondary_cb_state.inheritance_descriptor_heap_info.pSamplerHeapBindInfo;
             skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-11473", objlist, secondary_cb_loc,
                              "was recorded with VkCommandBufferInheritanceDescriptorHeapInfoEXT::pSamplerHeapBindInfo (%s), but "
-                             "sampler descriptor heap is not bound to the primary command buffer.",
-                             string_VkBindHeapInfoEXT(*secondary.ptr()).c_str());
+                             "sampler descriptor heap is not bound to the primary command buffer.\nHint: You are only allowed to "
+                             "inherit the exact same heap bound in the primary command buffer. Either set pSamplerHeapBindInfo to "
+                             "null or call vkCmdBindSamplerHeapEXT in the primary command buffer before this call.",
+                             secondary_cb_state.descriptor_heap.Describe(true).c_str());
         }
     }
-    if (secondary_cb_state.inheritance_descriptor_heap_info.pResourceHeapBindInfo) {
+    if (secondary_cb_state.descriptor_heap.is_resource_inherited) {
         if (cb_state.descriptor_heap.resource_bound) {
-            const auto& resource_bound = cb_state.descriptor_heap.resource_range;
-            const auto& resource_reserved = cb_state.descriptor_heap.resource_reserved;
+            const bool same_range = cb_state.descriptor_heap.resource_range == secondary_cb_state.descriptor_heap.resource_range;
+            const bool same_reserved =
+                cb_state.descriptor_heap.resource_reserved == secondary_cb_state.descriptor_heap.resource_reserved;
 
-            VkBindHeapInfoEXT current = {};
-            current.heapRange.address = resource_bound.begin;
-            current.heapRange.size = resource_bound.end - resource_bound.begin;
-            current.reservedRangeOffset = resource_reserved.begin - resource_bound.begin;
-            current.reservedRangeSize = resource_reserved.end - resource_reserved.begin;
-
-            const auto& secondary = *secondary_cb_state.inheritance_descriptor_heap_info.pResourceHeapBindInfo;
-            if (!CompareBindHeapInfoEXT(current, *secondary.ptr())) {
+            if (!same_range || !same_reserved) {
                 const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
                 skip |= LogError(
                     "VUID-vkCmdExecuteCommands-commandBuffer-11352", objlist, secondary_cb_loc,
                     "was recorded with VkBindHeapInfoEXT, which does not match the currently bound resource descriptor heap.\n"
                     "Executed VkBindHeapInfoEXT: %s\n"
                     "Current  VkBindHeapInfoEXT: %s",
-                    string_VkBindHeapInfoEXT(*secondary.ptr()).c_str(), string_VkBindHeapInfoEXT(current).c_str());
+                    secondary_cb_state.descriptor_heap.Describe(false).c_str(), cb_state.descriptor_heap.Describe(false).c_str());
             }
         } else if (cb_state.IsPrimary()) {
             const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
-            const auto& secondary = *secondary_cb_state.inheritance_descriptor_heap_info.pResourceHeapBindInfo;
             skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-11474", objlist, secondary_cb_loc,
                              "was recorded with VkCommandBufferInheritanceDescriptorHeapInfoEXT::pResourceHeapBindInfo (%s), but "
-                             "resource descriptor heap is not bound to the primary command buffer.",
-                             string_VkBindHeapInfoEXT(*secondary.ptr()).c_str());
+                             "resource descriptor heap is not bound to the primary command buffer.\nHint: You are only allowed to "
+                             "inherit the exact same heap bound in the primary command buffer. Either set pResourceHeapBindInfo to "
+                             "null or call vkCmdBindResourceHeapEXT in the primary command buffer before this call.",
+                             secondary_cb_state.descriptor_heap.Describe(false).c_str());
         }
     }
 
