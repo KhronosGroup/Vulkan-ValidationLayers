@@ -38,7 +38,7 @@ jobs:
   check_vvl:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: '0'
       - uses: actions/setup-python@v6
@@ -85,7 +85,7 @@ jobs:
         # Chromium build, and some package managers don't use it.
         custom_hash_map: [ "ON", "OFF" ]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ matrix.config }}-address-${{matrix.custom_hash_map}}
@@ -127,7 +127,7 @@ jobs:
         custom_hash_map: [ "ON" ]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ matrix.config }}-thread-${{matrix.custom_hash_map}}
@@ -159,7 +159,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: linux-ubsan
@@ -180,7 +180,7 @@ jobs:
     if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     name: "Ubuntu Backcompat"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Test Minimum CMake Version
         uses: lukka/get-cmake@latest
         with:
@@ -204,7 +204,7 @@ jobs:
     runs-on: ubuntu-24.04
     name: "linux Upload"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: linux-upload-ccache
@@ -226,7 +226,7 @@ jobs:
     runs-on: ubuntu-24.04
     if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: '3.10'
@@ -254,7 +254,7 @@ jobs:
       matrix:
         arch: [ amd64 ]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: '3.10'
@@ -290,7 +290,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: '3.10'
@@ -340,7 +340,7 @@ jobs:
             stl_type: c++_static
 
       steps:
-        - uses: actions/checkout@v6
+        - uses: actions/checkout@v7
         - name: Setup ccache
           uses: hendrikmuhs/ccache-action@v1.2
           with:
@@ -368,7 +368,7 @@ jobs:
       if: github.ref == 'refs/heads/main'
       runs-on: ubuntu-24.04
       steps:
-        - uses: actions/checkout@v6
+        - uses: actions/checkout@v7
         - name: Setup ccache
           uses: hendrikmuhs/ccache-action@v1.2
           with:
@@ -404,7 +404,7 @@ jobs:
     runs-on: macos-latest
     if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: '3.10'
@@ -439,7 +439,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -469,7 +469,7 @@ jobs:
           - 'target_os="linux" target_cpu="x64"'
           - 'target_os="android" target_cpu="arm64"'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       - run: python scripts/gn/gn.py --args='${{ matrix.args }}'
 
