@@ -179,9 +179,9 @@ CommandBuffer::CommandBuffer(DeviceState& dev, VkCommandBuffer handle, const VkC
                              const vvl::CommandPool* pool)
     : RefcountedStateObject(handle, kVulkanObjectTypeCommandBuffer),
       allocate_info(*allocate_info),
+      unprotected(pool->unprotected),
       command_pool(pool),
       dev_data(dev),
-      unprotected(pool->unprotected),
       lastBound({{{*this, VK_PIPELINE_BIND_POINT_GRAPHICS},
                   {*this, VK_PIPELINE_BIND_POINT_COMPUTE},
                   {*this, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR},
