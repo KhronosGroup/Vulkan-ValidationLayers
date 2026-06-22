@@ -1254,6 +1254,10 @@ TEST_F(PositiveImage, ImageBlockMatchInstruction) {
     sampler_ci.minLod = 0.0f;
     sampler_ci.maxLod = 0.0f;
     sampler_ci.unnormalizedCoordinates = VK_TRUE;
+    sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    sampler_ci.addressModeV = sampler_ci.addressModeU;
+    sampler_ci.addressModeW = sampler_ci.addressModeU;
+    sampler_ci.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
     vkt::Sampler sampler{ *m_device, sampler_ci };
 
     const auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, sampled_format,
@@ -1330,10 +1334,8 @@ TEST_F(PositiveImage, ImageBlockMatchWindowInstruction) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);
     AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::textureBlockMatch);
     AddRequiredFeature(vkt::Feature::textureBlockMatch2);
-    AddRequiredFeature(vkt::Feature::blockMatchExtendedClampToEdge);
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceImageProcessingPropertiesQCOM image_processing_props = vku::InitStructHelper();
@@ -1363,6 +1365,10 @@ TEST_F(PositiveImage, ImageBlockMatchWindowInstruction) {
     sampler_ci.minLod = 0.0f;
     sampler_ci.maxLod = 0.0f;
     sampler_ci.unnormalizedCoordinates = VK_TRUE;
+    sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    sampler_ci.addressModeV = sampler_ci.addressModeU;
+    sampler_ci.addressModeW = sampler_ci.addressModeU;
+    sampler_ci.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
     vkt::Sampler sampler{ *m_device, sampler_ci };
 
     const auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, sampled_format,
