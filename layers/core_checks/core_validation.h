@@ -1112,6 +1112,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                                            const VkAllocationCallbacks* pAllocator,
                                                            const ErrorObject& error_obj) const override;
 
+    bool ValidateResourceInfoImageLayouts(const LastBound& last_bound_state, const LogObjectList& obj_list,
+                                          const ErrorObject& error_obj) const;
+
     bool ValidateOpticalFlowImageLayouts(const LastBound& last_bound_state,
                                          const VkDataGraphPipelineSingleNodeCreateInfoARM* single_node_ci,
                                          const LogObjectList& obj_list, const ErrorObject& error_obj) const;

@@ -439,6 +439,59 @@ bool CoreChecks::PreCallValidateDestroyDataGraphPipelineSessionARM(VkDevice devi
     return skip;
 }
 
+bool CoreChecks::ValidateResourceInfoImageLayouts(const LastBound& last_bound_state, const LogObjectList& obj_list,
+                                                  const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const vku::safe_VkDataGraphPipelineCreateInfoARM data_graph_ci = last_bound_state.pipeline_state->DataGraphCreateInfo();
+
+    const vku::safe_VkDataGraphPipelineResourceInfoARM* data_graph_resource_infos = data_graph_ci.pResourceInfos;
+
+    for (uint32_t res_idx = 0; res_idx < data_graph_ci.resourceInfoCount; ++res_idx) {
+        const vku::safe_VkDataGraphPipelineResourceInfoARM& data_graph_ri = data_graph_resource_infos[res_idx];
+
+        // No descriptor set, caught by earlier VU
+        if (data_graph_ri.descriptorSet >= last_bound_state.ds_slots.size()) {
+            continue;
+        }
+
+        const LastBound::DescriptorSetSlot& ds_slot = last_bound_state.ds_slots.at(data_graph_ri.descriptorSet);
+
+        if (!ds_slot.ds_state) {
+            continue;
+        }
+
+        const uint32_t binding_descriptor_count = ds_slot.ds_state->GetBinding(data_graph_ri.binding)->count;
+
+        for (uint32_t desc_idx = 0; desc_idx < binding_descriptor_count; ++desc_idx) {
+            const vvl::Descriptor* descriptor = ds_slot.ds_state->GetDescriptorFromBinding(data_graph_ri.binding, desc_idx);
+
+            if (vvl::DescriptorClass::Image != descriptor->GetClass() &&
+                vvl::DescriptorClass::ImageSampler != descriptor->GetClass()) {
+                continue;
+            }
+
+            const auto* ri_image_layout =
+                vku::FindStructInPNextChain<VkDataGraphPipelineResourceInfoImageLayoutARM>(data_graph_ri.pNext);
+
+            if (!enabled_features.unifiedImageLayouts && !ri_image_layout) {
+                const std::string field =
+                    error_obj.location.dot(Struct::VkDataGraphPipelineCreateInfoARM, Field::pResourceInfos, res_idx).Fields();
+
+                skip |= LogError("VUID-VkDataGraphPipelineResourceInfoARM-descriptorSet-09962",
+                                 LogObjectList(obj_list, ds_slot.ds_state->VkHandle()), error_obj.location,
+                                 "VkDataGraphPipelineCreateInfoARM::%s does not contain a "
+                                 "VkDataGraphPipelineResourceInfoImageLayoutARM structure in its pNext chain but the "
+                                 "unifiedImageLayouts feature is not enabled.\n%s.",
+                                 field.c_str(),
+                                 PrintPNextChain(Struct::VkDataGraphPipelineResourceInfoARM, data_graph_ri.pNext).c_str());
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateOpticalFlowImageLayouts(const LastBound& last_bound_state,
                                                  const VkDataGraphPipelineSingleNodeCreateInfoARM* single_node_ci,
                                                  const LogObjectList& obj_list, const ErrorObject& error_obj) const {
@@ -446,10 +499,21 @@ bool CoreChecks::ValidateOpticalFlowImageLayouts(const LastBound& last_bound_sta
 
     const vku::safe_VkDataGraphPipelineCreateInfoARM data_graph_ci = last_bound_state.pipeline_state->DataGraphCreateInfo();
 
+    const vku::safe_VkDataGraphPipelineResourceInfoARM* data_graph_resource_infos = data_graph_ci.pResourceInfos;
+
     for (uint32_t con = 0; con < single_node_ci->connectionCount; ++con) {
         const VkDataGraphPipelineSingleNodeConnectionARM& connection = single_node_ci->pConnections[con];
 
+        // No descriptor set, caught by earlier VU
+        if (connection.set >= last_bound_state.ds_slots.size()) {
+            continue;
+        }
+
         const LastBound::DescriptorSetSlot& ds_slot = last_bound_state.ds_slots.at(connection.set);
+
+        if (!ds_slot.ds_state) {
+            continue;
+        }
 
         const uint32_t binding_descriptor_count = ds_slot.ds_state->GetBinding(connection.binding)->count;
 
@@ -462,8 +526,6 @@ bool CoreChecks::ValidateOpticalFlowImageLayouts(const LastBound& last_bound_sta
             }
 
             const auto* image_descriptor = static_cast<const vvl::ImageDescriptor*>(descriptor);
-
-            const vku::safe_VkDataGraphPipelineResourceInfoARM* data_graph_resource_infos = data_graph_ci.pResourceInfos;
 
             for (uint32_t res_idx = 0; res_idx < data_graph_ci.resourceInfoCount; ++res_idx) {
                 const vku::safe_VkDataGraphPipelineResourceInfoARM& data_graph_ri = data_graph_resource_infos[res_idx];
@@ -562,6 +624,8 @@ bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandB
 
     skip |=
         ValidateDataGraphOperations(*last_bound_state.pipeline_state, cb_state.command_pool.queueFamilyIndex, error_obj.location);
+
+    skip |= ValidateResourceInfoImageLayouts(last_bound_state, objlist, error_obj);
 
     const vku::safe_VkDataGraphPipelineCreateInfoARM data_graph_ci = last_bound_state.pipeline_state->DataGraphCreateInfo();
 
