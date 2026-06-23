@@ -1418,68 +1418,8 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     return found_warning;
 }
 
-// if we hit this, its because of OpConstantSizeOfEXT can't be folded (https://godbolt.org/z/3z6Pao4sf)
-// TODO - We will need some sort of internal constant folding here... fun!
-// ... for now lets make assumption only thing people will use here is IMul/IAdd/Isub and just do some folding
-static uint32_t GetConstantFoldValue(const spirv::Module& module, const spirv::Instruction& spec_constant_op,
-                                     VkDeviceSize descriptor_size) {
-    const uint32_t spec_op = spec_constant_op.Word(3);
-    if (spec_op != spv::OpIMul && spec_op != spv::OpIAdd && spec_op != spv::OpISub) {
-        assert(false);  // hit another case
-        return 0;
-    }
-
-    const spirv::Instruction& operand_0_inst = *module.FindDef(spec_constant_op.Word(4));
-    const spirv::Instruction& operand_1_inst = *module.FindDef(spec_constant_op.Word(5));
-
-    uint32_t operand_0 = 0;
-    if (operand_0_inst.Opcode() == spv::OpConstantSizeOfEXT) {
-        operand_0 = (uint32_t)descriptor_size;
-    } else if (operand_0_inst.Opcode() == spv::OpSpecConstantOp) {
-        operand_0 = GetConstantFoldValue(module, operand_0_inst, descriptor_size);
-    } else {
-        operand_0 = operand_0_inst.GetConstantValue();
-    }
-
-    uint32_t operand_1 = 0;
-    if (operand_1_inst.Opcode() == spv::OpConstantSizeOfEXT) {
-        operand_1 = (uint32_t)descriptor_size;
-    } else if (operand_1_inst.Opcode() == spv::OpSpecConstantOp) {
-        operand_1 = GetConstantFoldValue(module, operand_1_inst, descriptor_size);
-    } else {
-        operand_1 = operand_1_inst.GetConstantValue();
-    }
-
-    if (spec_op == spv::OpIMul) {
-        return operand_0 * operand_1;
-    } else if (spec_op == spv::OpIAdd) {
-        return operand_0 + operand_1;
-    } else if (spec_op == spv::OpISub) {
-        return operand_0 - operand_1;
-    }
-    assert(false);
-    return 0;
-}
-
-static uint32_t GetUntypedSize(const spirv::Module& module, const spirv::Instruction& size_inst, VkDeviceSize descriptor_size) {
-    if (size_inst.Opcode() == spv::OpConstantSizeOfEXT) {
-        const spirv::Instruction* constant_type_inst = module.FindDef(size_inst.Word(3));
-        if (!IsValueIn((spv::Op)constant_type_inst->Opcode(), {spv::OpTypeBufferEXT, spv::OpTypeImage, spv::OpTypeSampler})) {
-            assert(false);  // assumptions
-            return 0;
-        }
-        return (uint32_t)descriptor_size;
-    } else if (size_inst.Opcode() == spv::OpConstant) {
-        return size_inst.GetConstantValue();
-    } else if (size_inst.Opcode() == spv::OpSpecConstantOp) {
-        return GetConstantFoldValue(module, size_inst, descriptor_size);
-    }
-    assert(false);  // assumptions
-    return 0;
-}
-
-static uint32_t GetUntypedHeapOffset(const spirv::Module& module, const spirv::Instruction& access_chain,
-                                     const spirv::Instruction& base_type_inst, VkDeviceSize descriptor_size) {
+static uint32_t GetUntypedHeapOffset(const spirv::Module& module, const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
+                                     const spirv::Instruction& access_chain, const spirv::Instruction& base_type_inst) {
     if (base_type_inst.Opcode() != spv::OpTypeStruct) {
         return 0;
     }
@@ -1487,27 +1427,35 @@ static uint32_t GetUntypedHeapOffset(const spirv::Module& module, const spirv::I
     const uint32_t struct_id = base_type_inst.ResultId();
     for (const auto& type_struct : module.static_data_.type_structs) {
         if (type_struct->id == struct_id) {
-            uint32_t struct_member = module.FindDef(access_chain.Word(5))->GetConstantValue();
+            uint32_t struct_member = 0;
+            // If doesn't have an index, it's implicitly the zero index
+            if (access_chain.Length() > 5) {
+                struct_member = module.FindDef(access_chain.Word(5))->GetConstantValue();
+            }
             const auto& member = type_struct->members[struct_member];
             if (member.decorations->offset != vvl::kNoIndex32) {
                 return member.decorations->offset;
             }
             const spirv::Instruction* offset_id_inst = module.FindDef(member.decorations->offset_id);
-            return GetUntypedSize(module, *offset_id_inst, descriptor_size);
+            return module.GetHeapUntypedSize(props, *offset_id_inst);
         }
     }
     assert(false);
     return 0;
 }
 
-static uint32_t GetUntypedArrayStride(const spirv::Module& module, const spirv::Instruction& access_chain,
-                                      const spirv::Instruction& base_type_inst, VkDeviceSize descriptor_size) {
+static uint32_t GetUntypedArrayStride(const spirv::Module& module, const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
+                                      const spirv::Instruction& access_chain, const spirv::Instruction& base_type_inst) {
     uint32_t type_array_id = vvl::kNoIndex32;
     if (base_type_inst.Opcode() == spv::OpTypeBufferEXT) {
         return 0;  // single element
     } else if (base_type_inst.Opcode() == spv::OpTypeStruct) {
         // required to be a constant into the struct
-        uint32_t struct_member = module.FindDef(access_chain.Word(5))->GetConstantValue();
+        uint32_t struct_member = 0;
+        // If doesn't have an index, it's implicitly the zero index
+        if (access_chain.Length() > 5) {
+            struct_member = module.FindDef(access_chain.Word(5))->GetConstantValue();
+        }
         type_array_id = base_type_inst.Word(2 + struct_member);
     } else if (base_type_inst.IsArray()) {
         type_array_id = base_type_inst.ResultId();
@@ -1518,7 +1466,7 @@ static uint32_t GetUntypedArrayStride(const spirv::Module& module, const spirv::
     }
 
     const spirv::Instruction* array_stride_inst = module.FindDef(decoration_set.array_stride_id);
-    return GetUntypedSize(module, *array_stride_inst, descriptor_size);
+    return module.GetHeapUntypedSize(props, *array_stride_inst);
 }
 
 static uint32_t GetUntypedDescriptorIndex(const spirv::Module& module, const spirv::Instruction& access_chain,
@@ -1563,6 +1511,8 @@ vvl::unordered_map<uint32_t, HeapAccesses> CommandBufferSubState::DumpDescriptor
     const spirv::Module& module, const spirv::EntryPoint& entrypoint) const {
     vvl::unordered_map<uint32_t, HeapAccesses> accesses;
 
+    const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props = dev_data.phys_dev_ext_props.descriptor_heap_props;
+
     auto add_access = [&](const VkDescriptorType descriptor_type, const spirv::Instruction& ac_inst) {
         if (ac_inst.Opcode() != spv::OpUntypedAccessChainKHR) {
             // will happen when mixing typed (set/binding) and untyped
@@ -1570,8 +1520,6 @@ vvl::unordered_map<uint32_t, HeapAccesses> CommandBufferSubState::DumpDescriptor
             return;
         }
 
-        const VkDeviceSize descriptor_size =
-            GetUntypedDescriptorSize(dev_data.phys_dev_ext_props.descriptor_heap_props, descriptor_type);
         const spirv::Instruction* base_type_inst = module.FindDef(ac_inst.Word(3));
         if (base_type_inst->Opcode() != spv::OpTypeBufferEXT && base_type_inst->Opcode() != spv::OpTypeStruct &&
             !base_type_inst->IsArray()) {
@@ -1579,9 +1527,9 @@ vvl::unordered_map<uint32_t, HeapAccesses> CommandBufferSubState::DumpDescriptor
             return;
         }
 
-        const uint32_t heap_offset = GetUntypedHeapOffset(module, ac_inst, *base_type_inst, descriptor_size);
+        const uint32_t heap_offset = GetUntypedHeapOffset(module, props, ac_inst, *base_type_inst);
 
-        const uint32_t array_stride_value = GetUntypedArrayStride(module, ac_inst, *base_type_inst, descriptor_size);
+        const uint32_t array_stride_value = GetUntypedArrayStride(module, props, ac_inst, *base_type_inst);
 
         const uint32_t descriptor_index = GetUntypedDescriptorIndex(module, ac_inst, *base_type_inst);
 
@@ -1770,8 +1718,7 @@ bool CommandBufferSubState::DumpDescriptorHeapUntyped(std::ostringstream& ss, co
                 ss << " (dynamic index)\n";
             }
 
-            const VkDeviceSize descriptor_size =
-                GetUntypedDescriptorSize(dev_data.phys_dev_ext_props.descriptor_heap_props, access.descriptor_type);
+            const VkDeviceSize descriptor_size = dev_data.device_state->cached_descriptor_size.GetSize(access.descriptor_type);
             ss << "      - descriptor size: " << std::dec << descriptor_size << " ("
                << string_VkDescriptorType(access.descriptor_type) << ")\n";
 

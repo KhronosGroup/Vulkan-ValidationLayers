@@ -106,16 +106,6 @@ void DecorationBase::AddId(uint32_t decoration, uint32_t id) {
     }
 }
 
-uint32_t DecorationBase::GetOffset(const Module& module_state) const {
-    // Only at most one can offset can be set
-    if (offset != kInvalidValue) {
-        return offset;
-    }
-    // If offset is a spec constant, should be resolved by now
-    // Spec ensures us OffsetIdEXT will be an unsigned 32-bit int
-    return module_state.GetConstantValueById(offset_id);
-}
-
 // Some decorations are only avaiable for variables, so can't be in OpMemberDecorate
 void DecorationSet::Add(uint32_t decoration, uint32_t value) {
     switch (decoration) {
@@ -1698,6 +1688,83 @@ uint32_t Module::CalculateWorkgroupSharedMemory() const {
     return total_size;
 }
 
+// See https://gitlab.khronos.org/vulkan/vulkan/-/issues/4858
+// When we hit a OpConstantSizeOfEXT, we get the <Type ID> and use this function to map it to the correct prop
+uint32_t Module::ResolveConstantSizeOf(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
+                                       const spirv::Instruction& inst) const {
+    assert(inst.Opcode() == spv::OpConstantSizeOfEXT);
+    const spirv::Instruction* type_inst = FindDef(inst.Word(3));
+    const spv::Op opcode = (spv::Op)type_inst->Opcode();
+
+    if (opcode == spv::OpTypeSampler) {
+        return (uint32_t)props.samplerDescriptorSize;
+    } else if (opcode == spv::OpTypeBufferEXT || opcode == spv::OpTypeAccelerationStructureKHR) {
+        return (uint32_t)props.bufferDescriptorSize;
+    } else if (opcode == spv::OpTypeImage) {
+        return (uint32_t)props.imageDescriptorSize;
+    }
+    assert(false);
+    return 0;
+}
+
+// if we hit this, its because of OpConstantSizeOfEXT can't be folded (https://godbolt.org/z/3z6Pao4sf)
+// TODO - We will need some sort of internal constant folding here... fun!
+// ... for now lets make assumption only thing people will use here is IMul/IAdd/Isub and just do some folding
+uint32_t Module::ResolveConstantFoldHeaps(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
+                                          const spirv::Instruction& spec_constant_op) const {
+    assert(spec_constant_op.Opcode() == spv::OpSpecConstantOp);
+    const uint32_t spec_op = spec_constant_op.Word(3);
+    if (spec_op != spv::OpIMul && spec_op != spv::OpIAdd && spec_op != spv::OpISub) {
+        assert(false);  // hit another case
+        return 0;
+    }
+
+    const spirv::Instruction& operand_0_inst = *FindDef(spec_constant_op.Word(4));
+    const spirv::Instruction& operand_1_inst = *FindDef(spec_constant_op.Word(5));
+
+    uint32_t operand_0 = 0;
+    if (operand_0_inst.Opcode() == spv::OpConstantSizeOfEXT) {
+        operand_0 = ResolveConstantSizeOf(props, operand_0_inst);
+    } else if (operand_0_inst.Opcode() == spv::OpSpecConstantOp) {
+        operand_0 = ResolveConstantFoldHeaps(props, operand_0_inst);
+    } else {
+        operand_0 = operand_0_inst.GetConstantValue();
+    }
+
+    uint32_t operand_1 = 0;
+    if (operand_1_inst.Opcode() == spv::OpConstantSizeOfEXT) {
+        operand_1 = ResolveConstantSizeOf(props, operand_1_inst);
+    } else if (operand_1_inst.Opcode() == spv::OpSpecConstantOp) {
+        operand_1 = ResolveConstantFoldHeaps(props, operand_1_inst);
+    } else {
+        operand_1 = operand_1_inst.GetConstantValue();
+    }
+
+    if (spec_op == spv::OpIMul) {
+        return operand_0 * operand_1;
+    } else if (spec_op == spv::OpIAdd) {
+        return operand_0 + operand_1;
+    } else if (spec_op == spv::OpISub) {
+        return operand_0 - operand_1;
+    }
+    assert(false);
+    return 0;
+}
+
+uint32_t Module::GetHeapUntypedSize(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
+                                    const spirv::Instruction& inst) const {
+    const spv::Op opcode = (spv::Op)inst.Opcode();
+    if (opcode == spv::OpConstantSizeOfEXT) {
+        return ResolveConstantSizeOf(props, inst);
+    } else if (opcode == spv::OpConstant) {
+        return inst.GetConstantValue();
+    } else if (opcode == spv::OpSpecConstantOp) {
+        return ResolveConstantFoldHeaps(props, inst);
+    }
+    assert(false);  // assumptions
+    return 0;
+}
+
 // If the instruction at |id| is a OpConstant or copy of a constant, returns the instruction
 // Cases such as runtime arrays, will not find a constant and return NULL
 // Might return a OpSpecConstant
@@ -2748,8 +2815,7 @@ TypeStructInfo::TypeStructInfo(const Module& module_state, const Instruction& st
         const spv::Op member_opcode = (spv::Op)member.insn->Opcode();
         if (member_opcode == spv::OpTypeRuntimeArray) {
             has_runtime_array = true;
-        } else if (IsValueIn(member_opcode, {spv::OpTypeSampler, spv::OpTypeImage, spv::OpTypeBufferEXT,
-                                             spv::OpTypeAccelerationStructureKHR, spv::OpTypeTensorARM})) {
+        } else if (member.insn->IsDescriptorType()) {
             has_descriptor_type = true;
         }
     }
@@ -2781,7 +2847,12 @@ TypeStructSize TypeStructInfo::GetSize(const Module& module_state) const {
     for (uint32_t i = 0; i < members.size(); i++) {
         const auto& member = members[i];
         // all struct elements are required to have offset decorations in Block
-        const uint32_t member_offset = member.decorations->GetOffset(module_state);
+        const uint32_t member_offset = member.decorations->offset;
+        if (member_offset == spirv::kInvalidValue) {
+            // This will occur if using OffsetIdEXT... currently no reason we should need a size for these case.
+            // If we find a case, see GetHeapUntypedSize()
+            continue;
+        }
         offset = std::min(offset, member_offset);
         if (member_offset > highest_element_offset) {
             highest_element_index = i;

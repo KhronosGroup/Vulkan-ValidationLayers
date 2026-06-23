@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "chassis/dispatch_object.h"
 #include "containers/limits.h"
 #include "containers/small_vector.h"
 #include "generated/spirv_grammar_helper.h"
@@ -355,6 +356,23 @@ bool Module::ConstantFoldCompositeInsert(Instruction* inst, const Type& result_t
     return true;
 }
 
+uint32_t Module::ResolveConstantSizeOf(const Instruction& inst) {
+    assert(inst.Opcode() == spv::OpConstantSizeOfEXT);
+    const Type* descriptor_type = type_manager_.FindTypeById(inst.Word(3));
+    assert(descriptor_type);
+
+    if (descriptor_type->spv_type_ == SpvType::kSampler) {
+        return (uint32_t)settings_.phys_dev_ext_props->descriptor_heap_props.samplerDescriptorSize;
+    } else if (descriptor_type->spv_type_ == SpvType::kBufferEXT ||
+               descriptor_type->spv_type_ == SpvType::kAccelerationStructureKHR) {
+        return (uint32_t)settings_.phys_dev_ext_props->descriptor_heap_props.bufferDescriptorSize;
+    } else if (descriptor_type->spv_type_ == SpvType::kImage) {
+        return (uint32_t)settings_.phys_dev_ext_props->descriptor_heap_props.imageDescriptorSize;
+    }
+    assert(false);
+    return 0;
+}
+
 bool Module::ConstantFold(Instruction* inst, const Type& result_type) {
     assert(inst->Opcode() == spv::OpSpecConstantOp);
     if (result_type.spv_type_ == SpvType::kStruct) {
@@ -405,6 +423,8 @@ bool Module::ConstantFold(Instruction* inst, const Type& result_type) {
 
             if (lane_constant->inst_.Opcode() == spv::OpConstantNull) {
                 args.emplace_back(0ul);
+            } else if (lane_constant->inst_.Opcode() == spv::OpConstantSizeOfEXT) {
+                args.emplace_back(ResolveConstantSizeOf(lane_constant->inst_));
             } else if (lane_constant->type_.spv_type_ == SpvType::kBool) {
                 if (lane_constant->inst_.Opcode() == spv::OpConstantTrue) {
                     args.emplace_back(1ul);

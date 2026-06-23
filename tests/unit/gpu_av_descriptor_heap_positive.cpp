@@ -1215,6 +1215,91 @@ TEST_F(PositiveGpuAVDescriptorHeap, GraphicsPipelineLibraryWithShaderModule) {
     ASSERT_TRUE(exe_pipe.initialized());
 }
 
+TEST_F(PositiveGpuAVDescriptorHeap, UntypedPointersOffsetIdNonArray) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 3);
+
+    vkt::Buffer buffer_0(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Buffer buffer_1(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    WriteBufferToHeap(buffer_0, 2);
+    WriteBufferToHeap(buffer_1, 1);
+
+    // layout(storage_buffer) SSBO {
+    //     uint data;
+    // };
+    // heap {
+    //     layout(offset = buffer_size * 2) SSBO buffer_0;
+    //     layout(offset = buffer_size) SSBO buffer_1;
+    // } heap_layout;
+    //
+    // heap_layout.buffer_0.data = 42;
+    // heap_layout.buffer_1.data = 43;
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpDecorate %heap_layout Block
+               OpMemberDecorateIdEXT %heap_layout 0 OffsetIdEXT %buf_size2
+               OpMemberDecorateIdEXT %heap_layout 1 OffsetIdEXT %buf_size
+       %void = OpTypeVoid
+    %void_fn = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+    %uint_42 = OpConstant %uint 42
+    %uint_43 = OpConstant %uint 43
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+        %SSBO = OpTypeStruct %uint
+%_ptr_StorageBuffer = OpTypeUntypedPointerKHR StorageBuffer
+
+%type_buffer = OpTypeBufferEXT StorageBuffer
+   %buf_size = OpConstantSizeOfEXT %int %type_buffer
+  %buf_size2 = OpSpecConstantOp %int IMul %buf_size %int_2
+
+ %heap_layout = OpTypeStruct %type_buffer %type_buffer
+
+       %main = OpFunction %void None %void_fn
+          %5 = OpLabel
+
+%heap_index_0 = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap
+  %buf_ptr_0 = OpBufferPointerEXT %_ptr_StorageBuffer %heap_index_0
+   %member_0 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_0 %int_0
+               OpStore %member_0 %uint_42
+
+%heap_index_1 = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap %int_1
+  %buf_ptr_1 = OpBufferPointerEXT %_ptr_StorageBuffer %heap_index_1
+   %member_1 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_1 %int_0
+               OpStore %member_1 %uint_43
+
+               OpReturn
+               OpFunctionEnd
+    )";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 // TODO - Handle Secondary command buffers correctly
 TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_SecondaryInheritance) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());

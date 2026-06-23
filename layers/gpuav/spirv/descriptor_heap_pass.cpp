@@ -183,8 +183,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         const bool is_untyped = mapping_index_encoded == glsl::kInst_DescriptorHeap_MappingIndexUntyped;
         mapping = is_untyped ? nullptr : &module_.out_status.device.heap_mappings[mapping_index_encoded].mapping_data;
 
-        const uint32_t desc_size_value = (uint32_t)(is_untyped ? GetUntypedDescriptorSize(descriptor_heap_props, vk_desc_type)
-                                                               : module_.settings_.cached_descriptor_size->GetSize(vk_desc_type));
+        const uint32_t desc_size_value = (uint32_t)module_.settings_.cached_descriptor_size->GetSize(vk_desc_type);
 
         const uint32_t desc_encoding = (desc_type_mask << glsl::kInst_DescriptorHeap_DescriptorTypeShift) |
                                        (desc_size_value << glsl::kInst_DescriptorHeap_DescriptorSizeShift) |
@@ -244,16 +243,17 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
 
             descriptor_array =
                 type_manager_.FindTypeById(meta.access_path.pointer_type->inst_.Operand(meta.access_path.heap_offset_member_index));
-            assert(descriptor_array->IsArray());
         } else {
-            assert(meta.access_path.pointer_type->IsArray());
             descriptor_array = meta.access_path.pointer_type;
             heap_offset_id = type_manager_.GetConstantZeroUint32().Id();
         }
 
-        const uint32_t array_stride_dec = GetDecoration(descriptor_array->Id(), spv::DecorationArrayStrideIdEXT)->Word(3);
-        const Constant* array_stride = type_manager_.FindConstantById(array_stride_dec);
-        const uint32_t array_stride_id = CastToUint32(array_stride->Id(), block, inst_it);  // might be int32
+        uint32_t array_stride_id = type_manager_.GetConstantZeroUint32().Id();
+        if (descriptor_array->IsArray()) {
+            const uint32_t array_stride_dec = GetDecoration(descriptor_array->Id(), spv::DecorationArrayStrideIdEXT)->Word(3);
+            const Constant* array_stride = type_manager_.FindConstantById(array_stride_dec);
+            array_stride_id = CastToUint32(array_stride->Id(), block, inst_it);  // might be int32
+        }
 
         const uint32_t function_def = GetLinkFunctionId(UNTYPED);
 
