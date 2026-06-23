@@ -73,7 +73,6 @@ bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
 std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_type,
                                          const spirv::ResourceInterfaceVariable& resource_variable);
 
-VkDeviceSize GetUntypedDescriptorSize(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props, VkDescriptorType type);
 VkDeviceSize GetDescriptorHeapAlignment(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props, VkDescriptorType type);
 vvl::Field GetDescriptorHeapAlignmentField(VkDescriptorType type);
 

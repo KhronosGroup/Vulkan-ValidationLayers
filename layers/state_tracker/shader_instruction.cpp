@@ -226,6 +226,13 @@ bool Instruction::IsMemoryAccess() const {
            opcode == spv::OpCooperativeMatrixStoreKHR || AtomicOperation(opcode) || (OpcodeImageAccessPosition(opcode) != 0);
 }
 
+// As defined in https://github.khronos.org/SPIRV-Registry/extensions/EXT/SPV_EXT_descriptor_heap.html
+bool Instruction::IsDescriptorType() const {
+    const uint32_t opcode = Opcode();
+    return opcode == spv::OpTypeSampler || opcode == spv::OpTypeImage || opcode == spv::OpTypeBufferEXT ||
+           opcode == spv::OpTypeAccelerationStructureKHR || opcode == spv::OpTypeTensorARM;
+}
+
 VkDescriptorType Instruction::GetImageType() const {
     assert(Opcode() == spv::OpTypeImage);
     const bool is_sampled_without_sampler = Word(7) == 2;

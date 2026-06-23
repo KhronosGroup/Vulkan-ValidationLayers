@@ -44,6 +44,7 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/pipeline_state.h"
+#include "utils/assert_utils.h"
 #include "utils/shader_utils.h"
 #include "utils/hash_util.h"
 #include "utils/descriptor_utils.h"
@@ -3830,6 +3831,8 @@ bool CoreChecks::ValidateDescriptorHeapStructs(const spirv::Module& module_state
         return skip;
     }
 
+    const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props = phys_dev_ext_props.descriptor_heap_props;
+
     // There are to ways to set the offset with decorations
     //  - classic Offset
     //  - using new OffsetIdEXT, which is designed to be used with a spec constant
@@ -3840,57 +3843,64 @@ bool CoreChecks::ValidateDescriptorHeapStructs(const spirv::Module& module_state
         // Even if there is a struct inside member, we don't need to go into it, it will be it's own iteration inside
         // |static_data_.type_structs|
         for (uint32_t i = 0; i < type_struct->members.size(); i++) {
-            const auto& member = type_struct->members[i];
+            const spirv::TypeStructInfo::Member& member = type_struct->members[i];
+            if (!member.insn->IsDescriptorType()) {
+                continue;
+            }
 
-            const uint32_t opcode = member.insn->Opcode();
+            // If using the old, hardcoded Offset
+            uint32_t offset_value = member.decorations->offset;
+            if (offset_value == spirv::kInvalidValue) {
+                // Using OffsetIdEXT
+                const spirv::Instruction& offset_inst = *module_state.FindDef(member.decorations->offset_id);
+                offset_value = module_state.GetHeapUntypedSize(props, offset_inst);
+            }
+            ASSERT_AND_CONTINUE(offset_value != spirv::kInvalidValue);
+
+            const spv::Op opcode = (spv::Op)member.insn->Opcode();
             if (opcode == spv::OpTypeSampler) {
-                const uint32_t offset = member.decorations->GetOffset(module_state);
-                if (!IsIntegerMultipleOf(offset, phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment)) {
+                if (!IsIntegerMultipleOf(offset_value, phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment)) {
                     skip |= LogError("VUID-RuntimeSpirv-samplerDescriptorAlignment-11476", module_state.handle(), loc,
                                      "shader %s has a struct (ID %" PRIu32 ") where member %" PRIu32
                                      " is an OpTypeSampler with an offset of %" PRIu32
                                      " which is not aligned with samplerDescriptorAlignment (%" PRIu64 ")",
-                                     entrypoint.Describe().c_str(), type_struct->id, i, offset,
+                                     entrypoint.Describe().c_str(), type_struct->id, i, offset_value,
                                      phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment);
                 }
             } else if (opcode == spv::OpTypeImage) {
-                const uint32_t offset = member.decorations->GetOffset(module_state);
-                if (!IsIntegerMultipleOf(offset, phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment)) {
+                if (!IsIntegerMultipleOf(offset_value, phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment)) {
                     skip |= LogError("VUID-RuntimeSpirv-imageDescriptorAlignment-11477", module_state.handle(), loc,
                                      "shader %s has a struct (ID %" PRIu32 ") where member %" PRIu32
                                      " is an OpTypeImage with an offset of %" PRIu32
                                      " which is not aligned with imageDescriptorAlignment (%" PRIu64 ")",
-                                     entrypoint.Describe().c_str(), type_struct->id, i, offset,
+                                     entrypoint.Describe().c_str(), type_struct->id, i, offset_value,
                                      phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment);
                 }
             } else if (opcode == spv::OpTypeBufferEXT) {
-                const uint32_t offset = member.decorations->GetOffset(module_state);
-                if (!IsIntegerMultipleOf(offset, phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment)) {
+                if (!IsIntegerMultipleOf(offset_value, phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment)) {
                     skip |= LogError("VUID-RuntimeSpirv-bufferDescriptorAlignment-11478", module_state.handle(), loc,
                                      "shader %s has a struct (ID %" PRIu32 ") where member %" PRIu32
                                      " is an OpTypeBufferEXT with an offset of %" PRIu32
                                      " which is not aligned with bufferDescriptorAlignment (%" PRIu64 ")",
-                                     entrypoint.Describe().c_str(), type_struct->id, i, offset,
+                                     entrypoint.Describe().c_str(), type_struct->id, i, offset_value,
                                      phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment);
                 }
             } else if (opcode == spv::OpTypeAccelerationStructureKHR) {
-                const uint32_t offset = member.decorations->GetOffset(module_state);
-                if (!IsIntegerMultipleOf(offset, phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment)) {
+                if (!IsIntegerMultipleOf(offset_value, phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment)) {
                     skip |= LogError("VUID-RuntimeSpirv-bufferDescriptorAlignment-11479", module_state.handle(), loc,
                                      "shader %s has a struct (ID %" PRIu32 ") where member %" PRIu32
                                      " is an OpTypeAccelerationStructureKHR with an offset of %" PRIu32
                                      " which is not aligned with bufferDescriptorAlignment (%" PRIu64 ")",
-                                     entrypoint.Describe().c_str(), type_struct->id, i, offset,
+                                     entrypoint.Describe().c_str(), type_struct->id, i, offset_value,
                                      phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment);
                 }
             } else if (opcode == spv::OpTypeTensorARM) {
-                const uint32_t offset = member.decorations->GetOffset(module_state);
-                if (!IsIntegerMultipleOf(offset, phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorAlignment)) {
+                if (!IsIntegerMultipleOf(offset_value, phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorAlignment)) {
                     skip |= LogError("VUID-RuntimeSpirv-tensorDescriptorAlignment-11480", module_state.handle(), loc,
                                      "shader %s has a struct (ID %" PRIu32 ") where member %" PRIu32
                                      " is an OpTypeTensorARM with an offset of %" PRIu32
                                      " which is not aligned with tensorDescriptorAlignment (%" PRIu64 ")",
-                                     entrypoint.Describe().c_str(), type_struct->id, i, offset,
+                                     entrypoint.Describe().c_str(), type_struct->id, i, offset_value,
                                      phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorAlignment);
                 }
             }

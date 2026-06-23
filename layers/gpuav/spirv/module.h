@@ -138,6 +138,7 @@ class Module {
     bool ConstantFoldVectorShuffle(Instruction* inst, const Type& type);
     bool ConstantFoldCompositeExtract(Instruction* inst, const Type& type);
     bool ConstantFoldCompositeInsert(Instruction* inst, const Type& type);
+    uint32_t ResolveConstantSizeOf(const Instruction& inst);
 };
 
 }  // namespace spirv

@@ -936,12 +936,18 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
 
         // Hack for Offset in Heaps until get better understanding
         if (path.variable->interface_.IsHeap() && path.pointer_type->spv_type_ == SpvType::kStruct) {
-            assert(next_access_chain->IsUntypedAccessChain() && next_access_chain->Length() == 7);
+            assert(next_access_chain->IsUntypedAccessChain());
             // https://godbolt.org/z/hWz84zdTW - this is required to be a constant
-            const Constant* struct_member_index_constant = FindConstantById(next_access_chain->Operand(2));
-            assert(struct_member_index_constant);
-            path.heap_offset_member_index = struct_member_index_constant->GetValueUint32();
-            path.descriptor_index_id = next_access_chain->Operand(3);
+
+            // If doesn't have an index, it's implicitly the zero index
+            if (next_access_chain->Length() > 5) {
+                const Constant* struct_member_index_constant = FindConstantById(next_access_chain->Word(5));
+                assert(struct_member_index_constant);
+                path.heap_offset_member_index = struct_member_index_constant->GetValueUint32();
+            }
+            if (next_access_chain->Length() > 6) {
+                path.descriptor_index_id = next_access_chain->Word(6);
+            }
         }
     }
 

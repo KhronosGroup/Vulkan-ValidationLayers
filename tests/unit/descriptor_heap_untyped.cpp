@@ -371,6 +371,73 @@ TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedMixedType) {
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+
+    bool is_aligned = (heap_props.samplerDescriptorSize & (heap_props.imageDescriptorAlignment - 1)) == 0;
+    if (is_aligned) {
+        GTEST_SKIP() << "properties aren't different to trigger error";
+    }
+
+    // struct heap {
+    //     (offset = samplerDescriptorSize) image;
+    //     (offset = samplerDescriptorSize) sampler;
+    // };
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap %sampler_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %sampler_heap BuiltIn SamplerHeapEXT
+               OpMemberDecorateIdEXT %heap_struct 0 OffsetIdEXT %sampler_size
+               OpMemberDecorateIdEXT %heap_struct 1 OffsetIdEXT %sampler_size
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Function_v4float = OpTypePointer Function %v4float
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+%_ptr_Uniform = OpTypeUntypedPointerKHR Uniform
+%sampler_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+  %float_0_5 = OpConstant %float 0.5
+    %float_0 = OpConstant %float 0
+    %v2float = OpTypeVector %float 2
+         %30 = OpConstantComposite %v2float %float_0_5 %float_0_5
+ %type_image = OpTypeImage %float 2D 0 0 0 1 Unknown
+%type_sampler = OpTypeSampler
+         %26 = OpTypeSampledImage %type_image
+
+%sampler_size = OpConstantSizeOfEXT %int %type_sampler
+%image_size = OpConstantSizeOfEXT %int %type_image
+%heap_struct = OpTypeStruct %type_image %type_sampler
+
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+       %data = OpVariable %_ptr_Function_v4float Function
+         %16 = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_struct %resource_heap %int_0
+         %19 = OpLoad %type_image %16
+         %22 = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_struct %sampler_heap %int_1
+         %25 = OpLoad %type_sampler %22
+         %27 = OpSampledImage %26 %19 %25
+         %32 = OpImageSampleExplicitLod %v4float %27 %30 Lod %float_0
+               OpStore %data %32
+               OpReturn
+               OpFunctionEnd
+    )";
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-imageDescriptorAlignment-11477");
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedImageAndSampler) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
