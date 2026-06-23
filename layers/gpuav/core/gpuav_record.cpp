@@ -367,21 +367,6 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
         AdjustmentWarning(physicalDevice, record_obj.location, adjustment_warnings.c_str());
     }
 
-    if (auto* desc_heap_props = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorHeapPropertiesEXT>(device_props2->pNext)) {
-        VkDeviceSize bytes_to_reserve =
-            Align(desc_heap_props->bufferDescriptorSize * glsl::kTotalBindings, desc_heap_props->bufferDescriptorAlignment);
-        bytes_to_reserve = Align(bytes_to_reserve, desc_heap_props->resourceHeapAlignment);
-
-        VkDeviceSize new_limit = desc_heap_props->minResourceHeapReservedRange + bytes_to_reserve;
-
-        std::stringstream ss;
-        ss << "Setting VkPhysicalDeviceDescriptorHeapPropertiesEXT::minResourceHeapReservedRange to " << new_limit << " (reserving "
-           << bytes_to_reserve << " bytes)";
-        InternalWarning(physicalDevice, record_obj.location, ss.str().c_str());
-
-        desc_heap_props->minResourceHeapReservedRange = new_limit;
-    }
-
     ReserveBindingSlot(physicalDevice, device_props2->properties.limits, record_obj.location);
 }
 
