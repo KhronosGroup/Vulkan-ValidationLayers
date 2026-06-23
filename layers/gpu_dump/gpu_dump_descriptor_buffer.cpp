@@ -1,0 +1,253 @@
+/* Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "gpu_dump_state.h"
+#include "gpu_dump.h"
+#include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vulkan_core.h>
+#include <cassert>
+#include <cstdint>
+#include <iostream>
+#include <sstream>
+#include <algorithm>
+#include <vector>
+#include "containers/range.h"
+#include "containers/small_vector.h"
+#include "containers/limits.h"
+#include "generated/dispatch_functions.h"
+#include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/pipeline_layout_state.h"
+#include "state_tracker/pipeline_state.h"
+#include "state_tracker/shader_module.h"
+#include "state_tracker/shader_stage_state.h"
+#include "state_tracker/state_tracker.h"
+#include "utils/descriptor_utils.h"
+
+namespace gpudump {
+
+// Return true if found warning
+bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const LastBound& last_bound) const {
+    const vvl::CommandBuffer& cb_state = last_bound.cb_state;
+    bool found_warning = false;
+    ss << "- vkCmdBindDescriptorBuffersEXT last bound the following descriptor buffers:\n";
+    for (uint32_t binding_i = 0; binding_i < cb_state.descriptor_buffer.binding_info.size(); binding_i++) {
+        const VkDeviceAddress address = cb_state.descriptor_buffer.binding_info[binding_i].address;
+        ss << "  - pBindingInfos[" << std::dec << binding_i << "].address 0x" << std::hex << address << '\n';
+        found_warning |= dev_data.ListBuffers(ss, address, 1);
+    }
+
+    struct BindingInfo {
+        uint32_t index;
+        VkDescriptorType type;
+        uint32_t count;
+        uint32_t size;
+        VkDeviceSize offset;
+        vvl::range<VkDeviceAddress> range;
+        std::string variable_name;
+
+        // We want to sort the bindings we print by their address
+        bool operator<(const BindingInfo& other) const { return range.begin < other.range.begin; }
+
+        void Print(std::ostringstream& binding_ss, bool robust_buffer) {
+            binding_ss << "    - SPIR-V Binding " << std::dec << index << " [\"" << variable_name << "\"]\n";
+            binding_ss << "      - " << string_VkDescriptorType(type) << "\n";
+            binding_ss << "      - offset: " << std::dec << offset << ", range: " << string_range_hex(range) << "\n";
+            binding_ss << "      - size: " << DescribeDescriptorBufferSize(robust_buffer, type) << " [" << std::dec << size << "]";
+            if (count > 1) {
+                binding_ss << " * descriptorCount [" << std::dec << count << "]";
+            }
+            binding_ss << "\n";
+        }
+    };
+
+    struct SetInfo {
+        uint32_t index;          // set of the descriptor
+        uint32_t binding_index;  // into pBindingInfos[]
+        vvl::range<VkDeviceAddress> range;
+        const vvl::DescriptorSetLayout* dsl;
+        std::vector<BindingInfo> bindings{};
+
+        // We want to sort the sets we print by their address
+        bool operator<(const SetInfo& other) const { return range.begin < other.range.begin; }
+
+        void Print(std::ostringstream& set_ss) {
+            set_ss << "  - SPIR-V Set " << std::dec << index << "\n    - size: " << range.size()
+                   << " bytes, range: " << string_range_hex(range);
+            if (binding_index != vvl::kNoIndex32) {
+                // Only print if there are multiple bindings
+                set_ss << " (specified in pBindingInfos[" << std::dec << binding_index << "])";
+            }
+            set_ss << '\n';
+        }
+    };
+
+    small_vector<const ShaderStageState*, 3> stages = last_bound.GetStages();
+
+    // Can be a push constant only shader, which is valid here
+    // But if there are descriptors it is only valid if they are no accessed, which is warning territory
+    if (!last_bound.desc_set_pipeline_layout) {
+        ss << "- No VkPipelineLayout found from a previous vkCmdSetDescriptorBufferOffsetsEXT call\n";
+
+        bool uses_descriptors = false;
+        for (const ShaderStageState* stage : stages) {
+            if (stage->HasSpirv() && !stage->entrypoint->resource_interface_variables.empty()) {
+                uses_descriptors = true;
+                break;
+            }
+        }
+        if (uses_descriptors) {
+            ss << "- [WARNING] no vkCmdSetDescriptorBufferOffsetsEXT was called so any accesses to the descriptors in the shader "
+                  "will be invalid.\n";
+            // quickly check if they set the wrong bind point (only for the more common one)
+            if (last_bound.bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS &&
+                cb_state.GetLastBoundGraphics().desc_set_pipeline_layout) {
+                ss << "    - vkCmdSetDescriptorBufferOffsetsEXT was called with VK_PIPELINE_BIND_POINT_GRAPHICS, did you mean "
+                   << string_VkPipelineBindPoint(last_bound.bind_point) << "?\n";
+            } else if (last_bound.bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
+                       cb_state.GetLastBoundCompute().desc_set_pipeline_layout) {
+                ss << "    - vkCmdSetDescriptorBufferOffsetsEXT was called with VK_PIPELINE_BIND_POINT_COMPUTE, did you mean "
+                   << string_VkPipelineBindPoint(last_bound.bind_point) << "?\n";
+            } else if (last_bound.bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR &&
+                       cb_state.GetLastBoundRayTracing().desc_set_pipeline_layout) {
+                ss << "    - vkCmdSetDescriptorBufferOffsetsEXT was called with VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, did you "
+                      "mean "
+                   << string_VkPipelineBindPoint(last_bound.bind_point) << "?\n";
+            }
+            found_warning = true;
+        }
+        return found_warning;
+    }
+
+    const vvl::PipelineLayout& pipeline_layout = *last_bound.desc_set_pipeline_layout;
+    ss << "- vkCmdSetDescriptorBufferOffsetsEXT last bound with " << dev_data.FormatHandle(pipeline_layout.VkHandle()) << "\n";
+
+    ss << "- Shader descriptors:\n";
+    for (const ShaderStageState* stage : stages) {
+        if (!stage->HasSpirv()) {
+            ss << "  - [No SPIR-V found for " << string_VkShaderStageFlagBits(stage->GetStage())
+               << ", can't detect which descriptors are being accessed]\n";
+            continue;
+        }
+        const spirv::EntryPoint& entry_point = *stage->entrypoint;
+        ss << "  " << entry_point.Describe();
+        // TODO - add util in ShaderStageState to get ShaderObject handle here
+        if (stage->module_state && stage->module_state->VkHandle() != VK_NULL_HANDLE) {
+            ss << " " << dev_data.FormatHandle(stage->module_state->VkHandle());
+        }
+        ss << "\n";
+
+        std::vector<SetInfo> sorted_sets;
+        sorted_sets.reserve(pipeline_layout.set_layouts.list.size());
+
+        for (const spirv::ResourceInterfaceVariable& resource_variable : entry_point.resource_interface_variables) {
+            const uint32_t var_set = resource_variable.decorations.set;
+            const uint32_t var_binding = resource_variable.decorations.binding;
+
+            SetInfo* set_info = nullptr;
+            for (SetInfo& info : sorted_sets) {
+                if (info.index == var_set) {
+                    set_info = &info;
+                    break;
+                }
+            }
+
+            if (set_info == nullptr) {
+                const vvl::DescriptorSetLayout* dsl = pipeline_layout.set_layouts.list[var_set].get();
+                const auto& descriptor_buffer_binding = last_bound.ds_slots[var_set].descriptor_buffer_binding;
+
+                // Will print the invalid/unknown sets first, no need to sort these
+                if (!dsl || dsl->Destroyed()) {
+                    ss << "  - [WARNING] Set " << std::dec << var_set
+                       << " VkDescriptorSetLayout was destroyed (TODO - Track more info in pipeline layout)\n";
+                    found_warning = true;
+                    continue;
+                } else if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) == 0) {
+                    ss << "  - [WARNING] Set " << std::dec << var_set
+                       << " was not created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT\n";
+                    found_warning = true;
+                    continue;
+                } else if (!descriptor_buffer_binding.has_value()) {
+                    ss << "  - [WARNING] Set " << std::dec << var_set
+                       << " was never bound with offset. This is only valid if descriptor is not used in the shader";
+                    if (dsl->HasImmutableSamplers()) {
+                        ss << " or because all bindings are using Immutable Samplers";
+                    }
+                    ss << "\n";
+                    found_warning = true;
+                    continue;
+                }
+
+                const VkDeviceAddress start_address =
+                    cb_state.descriptor_buffer.binding_info[descriptor_buffer_binding->index].address +
+                    descriptor_buffer_binding->offset;
+                const VkDeviceSize dsl_size = dsl->GetLayoutSizeInBytes();
+                vvl::range<VkDeviceAddress> set_range{start_address, start_address + dsl_size};
+
+                // only care to print index in pBindingInfos
+                const uint32_t binding_index =
+                    cb_state.descriptor_buffer.binding_info.size() > 1 ? descriptor_buffer_binding->index : vvl::kNoIndex32;
+
+                set_info = &sorted_sets.emplace_back(SetInfo{var_set, binding_index, set_range, dsl, {}});
+            }
+
+            // To variables might be the same set/binding if doing descriptor indexing aliasing
+            bool alias_binding = false;
+            for (BindingInfo& info : set_info->bindings) {
+                if (info.index == var_binding && !info.variable_name.empty() && !resource_variable.debug_name.empty()) {
+                    info.variable_name = info.variable_name + ", " + resource_variable.debug_name + "";
+                    alias_binding = true;
+                    break;
+                }
+            }
+            if (alias_binding) {
+                continue;
+            }
+
+            const auto& ds_layout_def = *set_info->dsl->GetLayoutDef();
+            const VkDescriptorType type = ds_layout_def.GetTypeFromBinding(var_binding);
+            const uint32_t count = ds_layout_def.GetDescriptorCountFromBinding(var_binding);
+
+            const uint32_t descriptor_size = (uint32_t)GetDescriptorBufferSize(dev_data.phys_dev_ext_props.descriptor_buffer_props,
+                                                                               dev_data.enabled_features.robustBufferAccess, type);
+            VkDeviceSize binding_offset = 0;
+            DispatchGetDescriptorSetLayoutBindingOffsetEXT(dev_data.device, set_info->dsl->VkHandle(), var_binding,
+                                                           &binding_offset);
+            const VkDeviceAddress binding_start_address = set_info->range.begin + binding_offset;
+            vvl::range<VkDeviceAddress> binding_range{binding_start_address, binding_start_address + (descriptor_size * count)};
+
+            set_info->bindings.emplace_back(BindingInfo{var_binding, type, count, descriptor_size, binding_offset, binding_range,
+                                                        resource_variable.debug_name});
+        }
+
+        if (sorted_sets.empty()) {
+            ss << "  - No descriptors were detected in the shader\n";
+            continue;
+        }
+
+        // Sort by address and print out everything
+        std::sort(sorted_sets.begin(), sorted_sets.end());
+        for (SetInfo& set_info : sorted_sets) {
+            set_info.Print(ss);
+
+            std::sort(set_info.bindings.begin(), set_info.bindings.end());
+            for (BindingInfo& binding_info : set_info.bindings) {
+                binding_info.Print(ss, dev_data.enabled_features.robustBufferAccess);
+            }
+        }
+    }
+    return found_warning;
+}
+}  // namespace gpudump
