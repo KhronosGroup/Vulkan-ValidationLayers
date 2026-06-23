@@ -1074,8 +1074,13 @@ class CoreChecks : public vvl::DeviceProxy {
                                                     const vvl::Pipeline& pipeline) const;
     bool ValidateDataGraphOperations(const vvl::Pipeline& pipeline, uint32_t queueFamilyIndex, const Location& loc) const;
 
-    bool ValidateOpticalFlowCreateInfo(const VkDataGraphPipelineOpticalFlowCreateInfoARM& optical_flow_ci,
-                                       const Location& optical_flow_ci_loc) const;
+    bool ValidateOpticalFlowFormats(const VkDataGraphPipelineOpticalFlowCreateInfoARM& optical_flow_ci,
+                                    const Location& optical_flow_ci_loc) const;
+    bool ValidateOpticalFlowFlags(const VkDataGraphPipelineOpticalFlowCreateInfoARM& optical_flow_ci,
+                                  const Location& optical_flow_ci_loc) const;
+    bool ValidateOpticalFlowConnections(const VkDataGraphPipelineSingleNodeCreateInfoARM& single_node_ci,
+                                        const Location& single_node_ci_loc,
+                                        VkDataGraphOpticalFlowGridSizeFlagsARM hint_grid_size) const;
 
     bool PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                     VkPipelineCache pipelineCache, uint32_t createInfoCount,

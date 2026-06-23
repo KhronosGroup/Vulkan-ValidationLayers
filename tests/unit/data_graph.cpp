@@ -1538,7 +1538,7 @@ TEST_F(NegativeDataGraph, ResourceInfoImageLayoutsNoUnifiedImageLayouts) {
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
     // Need to create a data graph with image resources instead of the usual tensors, so use optical flow.
-    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    vkt::dg::OpticalFlowHelper optical_flow(*this);
     /* Fail to chain a VkDataGraphPipelineResourceInfoImageLayoutARM structure. Since the unifiedImageLayouts feature is not
      * enabled this is invalid usage. */
     optical_flow.dg_pipeline_.resources_[0].pNext = nullptr;
@@ -2329,8 +2329,10 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongQueue) {
     }
 
     if (UINT32_MAX == queue_without_tosa_1_0_idx) {
-        GTEST_SKIP() << "All queues support TOSA, impossible to create the error condition, skip.";
+        GTEST_SKIP() << "All the queues support TOSA, impossible to create the error condition, skip.";
     }
+
+    // TODO: use queue with index queue_without_tosa_1_0_idx
 
     vkt::dg::DataGraphPipelineHelper pipeline(*this);
     pipeline.CreateDataGraphPipeline();
@@ -2363,7 +2365,7 @@ TEST_F(NegativeDataGraph, OpticalFlowWrongImageFormat) {
 
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
-    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    vkt::dg::OpticalFlowHelper optical_flow(*this);
 
     /* Set an unsupported imageFormat. ASTC are block formats, incompatible with optical flow operations. */
     optical_flow.optical_flow_ci_.imageFormat = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
@@ -2378,7 +2380,7 @@ TEST_F(NegativeDataGraph, OpticalFlowWrongFlowVectorFormat) {
 
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
-    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    vkt::dg::OpticalFlowHelper optical_flow(*this);
 
     /* Set an unsupported flowVectorFormat. ASTC are block formats, incompatible with optical flow operations. */
     optical_flow.optical_flow_ci_.flowVectorFormat = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
@@ -2393,8 +2395,12 @@ TEST_F(NegativeDataGraph, OpticalFlowWrongCostFormat) {
 
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
-    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    auto opt_flow_properties = vkt::dg::OpticalFlowHelper::QueryOpticalFlowProperties(*this, DefaultQueue()->family_index);
+    if (!opt_flow_properties.costSupported) {
+        GTEST_SKIP() << "Cost not supported, skip.";
+    }
 
+    vkt::dg::OpticalFlowHelper optical_flow(*this);
     /* Set an unsupported costFormat. ASTC are block formats, incompatible with optical flow operations. */
     optical_flow.optical_flow_ci_.costFormat = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
 
@@ -2407,7 +2413,12 @@ TEST_F(NegativeDataGraph, OpticalFlowWrongHint) {
     TEST_DESCRIPTION("Execute optical flow with a wrong meanFlowL1NormHint value");
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
-    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    auto opt_flow_properties = vkt::dg::OpticalFlowHelper::QueryOpticalFlowProperties(*this, DefaultQueue()->family_index);
+    if (!opt_flow_properties.hintSupported) {
+        GTEST_SKIP() << "Hint not supported, skip.";
+    }
+
+    vkt::dg::OpticalFlowHelper optical_flow(*this);
     optical_flow.CreateDataGraphPipeline();
     optical_flow.SetupImageDescriptors();
 
@@ -2439,7 +2450,7 @@ TEST_F(NegativeDataGraph, OpticalFlowWrongHint) {
 TEST_F(NegativeDataGraph, OpticalFlowNoCacheSession) {
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
-    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    vkt::dg::OpticalFlowHelper optical_flow(*this);
     optical_flow.CreateDataGraphPipeline();
     optical_flow.SetupImageDescriptors();
 
@@ -2511,7 +2522,7 @@ TEST_F(NegativeDataGraph, OpticalFlowDispatchWithoutOpticalFlowCreateInfo) {
 TEST_F(NegativeDataGraph, OpticalFlowConnectionsImageLayoutsNoUnifiedImageLayouts) {
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
-    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    vkt::dg::OpticalFlowHelper optical_flow(*this);
     // Set the resource info image layout to VK_IMAGE_LAYOUT_GENERAL, where the connection references a descriptor in the
     // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL layout. Since unifiedImageLayouts feature is not enabled this is invalid usage.
     optical_flow.image_layouts_[0].layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -2548,7 +2559,7 @@ TEST_F(NegativeDataGraph, OpticalFlowConnectionsImageLayoutsUnifiedImageLayouts)
     AddRequiredFeature(vkt::Feature::unifiedImageLayouts);
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
-    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    vkt::dg::OpticalFlowHelper optical_flow(*this);
     // Set the resource info image layout to VK_IMAGE_LAYOUT_UNDEFINED, where the connection references a descriptor in the
     // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL layout.
     optical_flow.image_layouts_[0].layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -2578,4 +2589,162 @@ TEST_F(NegativeDataGraph, OpticalFlowConnectionsImageLayoutsUnifiedImageLayouts)
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
+}
+
+TEST_F(NegativeDataGraph, OpticalFlowMissingOpticalFlowCreateInfo) {
+    TEST_DESCRIPTION("Try to create an optical flow datagraph without a VkDataGraphPipelineOpticalFlowCreateInfoARM structure");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    vkt::dg::OpticalFlowHelper optical_flow(*this);
+
+    // pipeline_ci_.pNext points to optical_flow_ci_: skip one link to remove it from the chain
+    optical_flow.dg_pipeline_.pipeline_ci_.pNext = optical_flow.optical_flow_ci_.pNext;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineSingleNodeCreateInfoARM-nodeType-09963");
+    ASSERT_EQ(VK_ERROR_VALIDATION_FAILED, optical_flow.dg_pipeline_.CreateDataGraphPipeline());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, OpticalFlowWrongNumberOfInputs) {
+    TEST_DESCRIPTION("Try to create an optical flow datagraph with a missing or too many input connections");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    for (uint32_t n : {0, 2}) {
+        vkt::dg::OfHelperParameters params;
+        params.n_inputs = n;
+        vkt::dg::OpticalFlowHelper optical_flow(*this, params);
+
+        m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineSingleNodeCreateInfoARM-nodeType-09978");
+        ASSERT_EQ(VK_ERROR_VALIDATION_FAILED, optical_flow.dg_pipeline_.CreateDataGraphPipeline());
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeDataGraph, OpticalFlowWrongNumberOfReferences) {
+    TEST_DESCRIPTION("Try to create an optical flow datagraph with a missing or too many reference connections");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    for (uint32_t n : {0, 2}) {
+        vkt::dg::OfHelperParameters params;
+        params.n_references = n;
+        vkt::dg::OpticalFlowHelper optical_flow(*this, params);
+
+        m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineSingleNodeCreateInfoARM-nodeType-09978");
+        ASSERT_EQ(VK_ERROR_VALIDATION_FAILED, optical_flow.dg_pipeline_.CreateDataGraphPipeline());
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeDataGraph, OpticalFlowWrongNumberOfOutputs) {
+    TEST_DESCRIPTION("Try to create an optical flow datagraph with a missing or too many output connections");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    for (uint32_t n : {0, 2}) {
+        vkt::dg::OfHelperParameters params;
+        params.n_outputs = n;
+        vkt::dg::OpticalFlowHelper optical_flow(*this, params);
+
+        m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineSingleNodeCreateInfoARM-nodeType-09978");
+        ASSERT_EQ(VK_ERROR_VALIDATION_FAILED, optical_flow.dg_pipeline_.CreateDataGraphPipeline());
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeDataGraph, OpticalFlowWrongNumberOfHints) {
+    TEST_DESCRIPTION("Try to create an optical flow datagraph with hintGridSize > 0 but missing or too many hint connections");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    uint32_t queue_index = DefaultQueue()->family_index;
+
+    auto opt_flow_properties = vkt::dg::OpticalFlowHelper::QueryOpticalFlowProperties(*this, queue_index);
+    if (!opt_flow_properties.hintSupported) {
+        GTEST_SKIP() << "Hint not supported, skip.";
+    }
+    uint32_t hint_grid_size = vkt::dg::OpticalFlowHelper::GetAnyOpticalFlowGridSize(opt_flow_properties);
+
+    for (uint32_t n : {0, 2}) {
+        vkt::dg::OfHelperParameters params;
+        params.n_hints = n;  // force the wrong number of hint images
+        params.hintGridSize = hint_grid_size;
+        vkt::dg::OpticalFlowHelper optical_flow(*this, params);
+
+        m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineSingleNodeCreateInfoARM-nodeType-09979");
+        ASSERT_EQ(VK_ERROR_VALIDATION_FAILED, optical_flow.dg_pipeline_.CreateDataGraphPipeline());
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeDataGraph, OpticalFlowNoHint) {
+    TEST_DESCRIPTION("Try to create an optical flow datagraph using a hint image but the feature is not supported");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    uint32_t n_queue_families;
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &n_queue_families, nullptr);
+    uint32_t no_hint_index = UINT32_MAX;
+    for (uint32_t qfi = 0; qfi < n_queue_families; qfi++) {
+        auto of_support_property = vkt::dg::OpticalFlowHelper::GetOpticalFlowSupportProperty(*this, qfi);
+        if (std::nullopt == of_support_property) {
+            continue;
+        }
+
+        VkQueueFamilyDataGraphOpticalFlowPropertiesARM op_flow_properties = vku::InitStructHelper();
+        ASSERT_EQ(VK_SUCCESS,
+                  vk::GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+                      Gpu(), qfi, &of_support_property.value(), reinterpret_cast<VkBaseOutStructure*>(&op_flow_properties)));
+        if (!op_flow_properties.hintSupported) {
+            no_hint_index = qfi;
+            break;
+        }
+    }
+    if (UINT32_MAX == no_hint_index) {
+        GTEST_SKIP() << "All the queues support optical flow hint, impossible to create the error condition, skip.";
+    }
+
+    // TODO: use queue with index no_hint_index
+    vkt::dg::OpticalFlowHelper optical_flow(*this);
+
+    // force the hint flag
+    optical_flow.optical_flow_ci_.flags |= VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-flags-09974");
+    ASSERT_EQ(VK_ERROR_VALIDATION_FAILED, optical_flow.CreateDataGraphPipeline());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, OpticalFlowNoCost) {
+    TEST_DESCRIPTION("Try to create an optical flow datagraph using a cost image but the feature is not supported");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    uint32_t n_queue_families;
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &n_queue_families, nullptr);
+    uint32_t no_cost_index = UINT32_MAX;
+    for (uint32_t qfi = 0; qfi < n_queue_families; qfi++) {
+        auto of_support_property = vkt::dg::OpticalFlowHelper::GetOpticalFlowSupportProperty(*this, qfi);
+        if (std::nullopt == of_support_property) {
+            continue;
+        }
+
+        VkQueueFamilyDataGraphOpticalFlowPropertiesARM op_flow_properties = vku::InitStructHelper();
+        ASSERT_EQ(VK_SUCCESS,
+                  vk::GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+                      Gpu(), qfi, &of_support_property.value(), reinterpret_cast<VkBaseOutStructure*>(&op_flow_properties)));
+        if (!op_flow_properties.costSupported) {
+            no_cost_index = qfi;
+            break;
+        }
+    }
+    if (UINT32_MAX == no_cost_index) {
+        GTEST_SKIP() << "All the queues support optical flow cost, impossible to create the error condition, skip.";
+    }
+
+    // TODO: use queue with index no_cost_index
+    vkt::dg::OpticalFlowHelper optical_flow(*this);
+
+    // force the cost flag, and also a format to avoid 9970
+    optical_flow.optical_flow_ci_.flags |= VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM;
+    optical_flow.optical_flow_ci_.costFormat = optical_flow.GetAnyOpticalFlowFormat(VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM);
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-flags-09975");
+    ASSERT_EQ(VK_ERROR_VALIDATION_FAILED, optical_flow.CreateDataGraphPipeline());
+    m_errorMonitor->VerifyFound();
 }

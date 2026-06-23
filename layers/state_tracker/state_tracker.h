@@ -2028,6 +2028,10 @@ class DeviceState : public vvl::BaseDevice {
     // Get device-specific canonical id for the provided set layout definition
     DescriptorSetLayoutId GetCanonicalId(const VkDescriptorSetLayoutCreateInfo* p_create_info);
 
+    vvl::unordered_set<VkFormat> GetOpticalFlowFormats(const uint32_t queue_index,
+                                                       const VkPhysicalDeviceDataGraphProcessingEngineARM engine,
+                                                       const VkDataGraphOpticalFlowImageUsageFlagsARM usage);
+
     // the VK_EXTERNAL_*_HANDLE_TYPE_OPAQUE_* handles are designed to created/exported in Vulkan, that means we can track the
     // values and compare when re-importing later. While FD and Win32 have differnt handles to access the struct, the information
     // needed is non-platform specific Vulkan values.
@@ -2079,14 +2083,6 @@ class DeviceState : public vvl::BaseDevice {
     std::vector<VkCooperativeMatrixFlexibleDimensionsPropertiesNV> cooperative_matrix_flexible_dimensions_properties;
 
     std::vector<VkCooperativeVectorPropertiesNV> cooperative_vector_properties_nv;
-
-    vvl::unordered_map<uint32_t, std::vector<VkQueueFamilyDataGraphPropertiesARM>> queue_family_data_graph_properties;
-
-    struct OpticalFlowFormatsARM {
-        std::vector<VkFormat> input;   // VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM
-        std::vector<VkFormat> output;  // VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM
-        std::vector<VkFormat> cost;    // VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM
-    } optical_flow_formats;
 
     // Features and properties that depend on platforms being defined
     // They will be false if platform is not defined
