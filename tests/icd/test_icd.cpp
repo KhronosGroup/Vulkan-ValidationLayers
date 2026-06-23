@@ -1475,21 +1475,52 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphPrope
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
     const VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties, VkBaseOutStructure* pProperties) {
-    if (pProperties->sType == VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_OPTICAL_FLOW_PROPERTIES_ARM) {
-        auto* properties = reinterpret_cast<VkQueueFamilyDataGraphOpticalFlowPropertiesARM*>(pProperties);
-        properties->supportedOutputGridSizes =
-            VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM |
-            VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM;
-        properties->supportedHintGridSizes =
-            VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM |
-            VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM;
-        properties->hintSupported = VK_TRUE;
-        properties->costSupported = VK_TRUE;
-        properties->minWidth = 10;
-        properties->minHeight = 10;
-        properties->maxWidth = 10000;
-        properties->maxHeight = 10000;
+
+    if (pQueueFamilyDataGraphProperties->engine.type == VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM &&
+        pQueueFamilyDataGraphProperties->engine.isForeign == false) {
+
+        // ARM engine properties per operation type
+        const char *op_flow_operation_name = "OpticalFlow";
+        const char *tosa_operation_name = "TOSA";
+
+        if (pQueueFamilyDataGraphProperties->operation.operationType == VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM &&
+            strncmp(pQueueFamilyDataGraphProperties->operation.name, op_flow_operation_name, strlen(op_flow_operation_name)) == 0 &&
+            pProperties->sType == VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_OPTICAL_FLOW_PROPERTIES_ARM) {
+
+            auto* pOpticalFlowProperties = reinterpret_cast<VkQueueFamilyDataGraphOpticalFlowPropertiesARM*>(pProperties);
+            pOpticalFlowProperties->supportedOutputGridSizes =
+                VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM |
+                VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM;
+            pOpticalFlowProperties->supportedHintGridSizes =
+                VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM |
+                VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM;
+            pOpticalFlowProperties->hintSupported = VK_TRUE;
+            pOpticalFlowProperties->costSupported = VK_TRUE;
+            pOpticalFlowProperties->minWidth = 10;
+            pOpticalFlowProperties->minHeight = 10;
+            pOpticalFlowProperties->maxWidth = 10000;
+            pOpticalFlowProperties->maxHeight = 10000;
+        } else if (pQueueFamilyDataGraphProperties->operation.operationType == VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM &&
+            strncmp(pQueueFamilyDataGraphProperties->operation.name, tosa_operation_name, strlen(tosa_operation_name)) == 0 &&
+            pProperties->sType == VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_TOSA_PROPERTIES_ARM) {
+
+            auto *pTOSAProperties = reinterpret_cast<VkQueueFamilyDataGraphTOSAPropertiesARM *>(pProperties);
+            static constexpr VkDataGraphTOSANameQualityARM graphTOSANameQualityProfiles[] = {
+                { "PRO-INT", VK_DATA_GRAPH_TOSA_QUALITY_CONFORMANT_ARM },
+                { "PRO-FP", VK_DATA_GRAPH_TOSA_QUALITY_CONFORMANT_ARM },
+            };
+            pTOSAProperties->profileCount = static_cast<uint32_t>(std::size(graphTOSANameQualityProfiles));
+            pTOSAProperties->pProfiles = graphTOSANameQualityProfiles;
+            pTOSAProperties->extensionCount = 0;
+            pTOSAProperties->pExtensions = nullptr;
+            pTOSAProperties->level = VK_DATA_GRAPH_TOSA_LEVEL_8K_ARM;
+        }
+    } else if (pQueueFamilyDataGraphProperties->engine.type == VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_COMPUTE_QCOM) {
+        // TODO: add properties for this processing engine
+    } else if (pQueueFamilyDataGraphProperties->engine.type == VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_NEURAL_QCOM) {
+        // TODO: add properties for this processing engine
     }
+
     return VK_SUCCESS;
 }
 
@@ -1498,42 +1529,54 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphOptic
     const VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties,
     const VkDataGraphOpticalFlowImageFormatInfoARM* pOpticalFlowImageFormatInfo, uint32_t* pFormatCount,
     VkDataGraphOpticalFlowImageFormatPropertiesARM* pImageFormatProperties) {
-    switch (pOpticalFlowImageFormatInfo->usage) {
-        case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM: {
-            static constexpr std::array<VkFormat, 6> input_formats = {
-                VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8_UNORM,
-                VK_FORMAT_B8G8R8_UNORM,   VK_FORMAT_R8_UNORM,       VK_FORMAT_B10G11R11_UFLOAT_PACK32,
-            };
-            if (pImageFormatProperties != nullptr) {
-                for (uint32_t i = 0; i < *pFormatCount; ++i) {
-                    pImageFormatProperties[i].sType = VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM;
-                    pImageFormatProperties[i].format = input_formats[i];
+
+    if (pQueueFamilyDataGraphProperties->engine.type == VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM &&
+        pQueueFamilyDataGraphProperties->engine.isForeign == false) {
+
+        switch (pOpticalFlowImageFormatInfo->usage) {
+            case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM: {
+                static constexpr std::array<VkFormat, 6> input_formats = {
+                    VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8_UNORM,
+                    VK_FORMAT_B8G8R8_UNORM,   VK_FORMAT_R8_UNORM,       VK_FORMAT_B10G11R11_UFLOAT_PACK32,
+                };
+                if (pImageFormatProperties != nullptr) {
+                    for (uint32_t i = 0; i < *pFormatCount; ++i) {
+                        pImageFormatProperties[i].sType = VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM;
+                        pImageFormatProperties[i].format = input_formats[i];
+                    }
+                } else {
+                    *pFormatCount = static_cast<uint32_t>(input_formats.size());
                 }
-            } else {
-                *pFormatCount = static_cast<uint32_t>(input_formats.size());
+                break;
             }
-            break;
+            case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM:
+            case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_HINT_BIT_ARM:
+                if (pImageFormatProperties != nullptr) {
+                    pImageFormatProperties[0].sType = VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM;
+                    pImageFormatProperties[0].format = VK_FORMAT_R16G16_SFLOAT;
+                } else {
+                    *pFormatCount = 1;
+                }
+                break;
+            case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM:
+                if (pImageFormatProperties != nullptr) {
+                    pImageFormatProperties[0].sType = VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM;
+                    pImageFormatProperties[0].format = VK_FORMAT_R16_UINT;
+                } else {
+                    *pFormatCount = 1;
+                }
+                break;
+            default:
+                break;
         }
-        case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM:
-        case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_HINT_BIT_ARM:
-            if (pImageFormatProperties != nullptr) {
-                pImageFormatProperties[0].sType = VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM;
-                pImageFormatProperties[0].format = VK_FORMAT_R16G16_SFLOAT;
-            } else {
-                *pFormatCount = 1;
-            }
-            break;
-        case VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM:
-            if (pImageFormatProperties != nullptr) {
-                pImageFormatProperties[0].sType = VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_ARM;
-                pImageFormatProperties[0].format = VK_FORMAT_R16_UINT;
-            } else {
-                *pFormatCount = 1;
-            }
-            break;
-        default:
-            break;
+    } else if (pQueueFamilyDataGraphProperties->engine.type == VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_COMPUTE_QCOM) {
+        // TODO: add formats sopported by this processing engine. Currently none
+        *pFormatCount = 0;
+    } else if (pQueueFamilyDataGraphProperties->engine.type == VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_NEURAL_QCOM) {
+        // TODO: add formats sopported by this processing engine. Currently none
+        *pFormatCount = 0;
     }
+
     return VK_SUCCESS;
 }
 

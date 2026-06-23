@@ -3188,8 +3188,9 @@ bool CoreChecks::ValidateDataGraphOperations(const vvl::Pipeline& pipeline, uint
     bool queue_uses_tosa_1_0 = false;
     // no properties for the specified family index means NO support for TOSA 1.0, i.e. VUID 9941
     // this also covers completely empty properties, meaning VK_ARM_data_graph extension not supported
-    if (queueFamilyIndex <= device_state->queue_family_data_graph_properties.size()) {
-        for (const auto& p : device_state->queue_family_data_graph_properties.at(queueFamilyIndex)) {
+    const auto properties_it = physical_device_state->queue_family_data_graph_properties.find(queueFamilyIndex);
+    if (properties_it != physical_device_state->queue_family_data_graph_properties.end()) {
+        for (const auto& p : properties_it->second) {
             if (CompareVkQueueFamilyDataGraphPropertiesARM(tosa_1_0_property, p)) {
                 queue_uses_tosa_1_0 = true;
                 break;
@@ -3204,12 +3205,11 @@ bool CoreChecks::ValidateDataGraphOperations(const vvl::Pipeline& pipeline, uint
               "required property:\n"
            << string_VkQueueFamilyDataGraphPropertiesARM(tosa_1_0_property)
            << "vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM for queueFamilyIndex " << queueFamilyIndex << "returned:\n";
-        auto properties = device_state->queue_family_data_graph_properties.at(queueFamilyIndex);
-        for (const auto& p : properties) {
-            ss << string_VkQueueFamilyDataGraphPropertiesARM(p) << '\n';
-        }
-        if (properties.empty()) {
-            // with just a blank it's unclear if the function is wrong or there really are no properties.
+        if (properties_it != physical_device_state->queue_family_data_graph_properties.end() && !properties_it->second.empty()) {
+            for (const auto& p : properties_it->second) {
+                ss << string_VkQueueFamilyDataGraphPropertiesARM(p) << '\n';
+            }
+        } else {
             ss << "EMPTY\n";
         }
         skip |= LogError("VUID-vkCmdDispatchDataGraphARM-commandBuffer-09941", device, loc, "%s", ss.str().c_str());

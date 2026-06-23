@@ -447,90 +447,70 @@ void DataGraphPipelineHelper::Destroy() {
 
 DataGraphPipelineHelper::~DataGraphPipelineHelper() { Destroy(); }
 
-namespace of {
-void OpticalFlowHelper::QueryOpticalFlowProperties() {
+std::optional<VkQueueFamilyDataGraphPropertiesARM> OpticalFlowHelper::GetOpticalFlowSupportProperty(VkLayerTest& test,
+                                                                                                      uint32_t queue_index) {
+    VkPhysicalDevice gpu = test.Gpu();
     uint32_t n_properties = 0;
-    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
-                              layer_test_.Gpu(), device_->graphics_queue_node_index_, &n_properties, nullptr));
+    [[maybe_unused]] VkResult result =
+        vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(gpu, queue_index, &n_properties, nullptr);
+    assert(VK_SUCCESS == result);
     std::vector<VkQueueFamilyDataGraphPropertiesARM> properties(n_properties,
                                                                 {VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM});
-    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
-                              layer_test_.Gpu(), device_->graphics_queue_node_index_, &n_properties, properties.data()));
+    result = vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(gpu, queue_index, &n_properties, properties.data());
+    assert(VK_SUCCESS == result);
+
     for (uint32_t i = 0; i < n_properties; i++) {
-        if (properties[i].operation.operationType != VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM) {
-            continue;
+        if (properties[i].operation.operationType == VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM) {
+            return properties[i];
         }
-
-        VkQueueFamilyDataGraphOpticalFlowPropertiesARM properties_query = vku::InitStructHelper();
-        if (vk::GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
-                layer_test_.Gpu(), device_->graphics_queue_node_index_, &properties[i],
-                reinterpret_cast<VkBaseOutStructure*>(&properties_query)) != VK_SUCCESS) {
-            continue;
-        }
-
-        const VkDataGraphOpticalFlowGridSizeFlagsARM supported_grid_sizes =
-            properties_query.supportedOutputGridSizes & properties_query.supportedHintGridSizes;
-        if (!properties_query.hintSupported || supported_grid_sizes == VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_UNKNOWN_ARM) {
-            continue;
-        }
-
-        for (const VkDataGraphOpticalFlowGridSizeFlagsARM grid_size :
-             {VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM, VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM,
-              VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM, VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM}) {
-            if (supported_grid_sizes & grid_size) {
-                optical_flow_grid_size_ = grid_size;
-                break;
-            }
-        }
-        break;
     }
+
+    return std::nullopt;
 }
 
-std::vector<VkFormat> OpticalFlowHelper::GetAllOpticalFlowFormats(VkDataGraphOpticalFlowImageUsageFlagsARM usage) {
-    VkQueueFamilyDataGraphPropertiesARM data_graph_props = vku::InitStructHelper();
-    strcpy(data_graph_props.operation.name, "OpticalFlow");
-
-    VkDataGraphOpticalFlowImageFormatInfoARM format_info = vku::InitStructHelper();
-    format_info.usage = usage;
-
-    uint32_t format_count = 0;
-
-    [[maybe_unused]] VkResult result = vk::GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
-        layer_test_.Gpu(), 0, &data_graph_props, &format_info, &format_count, nullptr);
-
+VkQueueFamilyDataGraphOpticalFlowPropertiesARM OpticalFlowHelper::QueryOpticalFlowProperties(VkLayerTest& test,
+                                                                                             uint32_t queue_index) {
+    auto of_support_property = GetOpticalFlowSupportProperty(test, queue_index);
+    assert(std::nullopt != of_support_property);
+    VkQueueFamilyDataGraphOpticalFlowPropertiesARM properties_query = vku::InitStructHelper();
+    [[maybe_unused]] VkResult result = vk::GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+        test.Gpu(), queue_index, &of_support_property.value(), reinterpret_cast<VkBaseOutStructure*>(&properties_query));
     assert(VK_SUCCESS == result);
 
-    std::vector<VkDataGraphOpticalFlowImageFormatPropertiesARM> format_properties(format_count);
-    for (auto& fmt_prop : format_properties) {
-        fmt_prop = vku::InitStructHelper();
-    }
+    return properties_query;
+}
 
-    result = vk::GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
-        layer_test_.Gpu(), 0, &data_graph_props, &format_info, &format_count, format_properties.data());
+VkDataGraphOpticalFlowGridSizeFlagBitsARM OpticalFlowHelper::GetAnyOpticalFlowGridSize(
+    VkQueueFamilyDataGraphOpticalFlowPropertiesARM properties, VkDataGraphOpticalFlowGridSizeFlagBitsARM first_size) {
+    // we need first_size to be a single bit, but enums don't enforce that
+    assert(first_size == VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM ||
+           first_size == VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM ||
+           first_size == VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM ||
+           first_size == VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM);
 
-    assert(VK_SUCCESS == result);
+    VkDataGraphOpticalFlowGridSizeFlagsARM supported_grid_sizes =
+        properties.supportedOutputGridSizes & properties.supportedHintGridSizes;
 
-    std::vector<VkFormat> formats(format_properties.size());
-    for (size_t i = 0; i < format_properties.size(); ++i) {
-        formats[i] = format_properties[i].format;
-    }
+    const auto first_size_mask = static_cast<VkDataGraphOpticalFlowGridSizeFlagsARM>(first_size);
+    const VkDataGraphOpticalFlowGridSizeFlagsARM eligible_grid_sizes =
+        (first_size_mask == 0) ? supported_grid_sizes : (supported_grid_sizes & ~(first_size_mask - 1));
 
-    return formats;
+    return (eligible_grid_sizes == 0)
+               ? VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_UNKNOWN_ARM
+               : static_cast<VkDataGraphOpticalFlowGridSizeFlagBitsARM>(eligible_grid_sizes & (0u - eligible_grid_sizes));
 }
 
 VkFormat OpticalFlowHelper::GetAnyOpticalFlowFormat(VkDataGraphOpticalFlowImageUsageFlagsARM usage) {
-    VkQueueFamilyDataGraphPropertiesARM data_graph_props = vku::InitStructHelper();
-    strcpy(data_graph_props.operation.name, "OpticalFlow");
-
+    auto of_support_property = GetOpticalFlowSupportProperty(dg_pipeline_.layer_test_, queue_index_);
+    assert(std::nullopt != of_support_property);
     VkDataGraphOpticalFlowImageFormatInfoARM format_info = vku::InitStructHelper();
     format_info.usage = usage;
-
     VkDataGraphOpticalFlowImageFormatPropertiesARM format_properties = vku::InitStructHelper();
-
     uint32_t format_count = 1;
 
     VkResult result = vk::GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
-        layer_test_.Gpu(), 0, &data_graph_props, &format_info, &format_count, &format_properties);
+        dg_pipeline_.layer_test_.Gpu(), queue_index_, &of_support_property.value(),
+        &format_info, &format_count, &format_properties);
 
     return result == VK_SUCCESS || result == VK_INCOMPLETE ? format_properties.format : VK_FORMAT_UNDEFINED;
 }
@@ -539,105 +519,168 @@ void OpticalFlowHelper::CreateOpticalFlow() {
     single_node_ci_ = vku::InitStructHelper();
     single_node_ci_.nodeType = VK_DATA_GRAPH_PIPELINE_NODE_TYPE_OPTICAL_FLOW_ARM;
 
+    params_.n_hints = optical_flow_properties_.hintSupported ? params_.n_hints : 0;
+    params_.n_costs = optical_flow_properties_.costSupported ? params_.n_costs : 0;
+
+    uint32_t kResourceCount = 0;
+    kResourceCount += params_.n_inputs;
+    kResourceCount += params_.n_references;
+    kResourceCount += params_.n_outputs;
+    kResourceCount += params_.n_hints;
+    kResourceCount += params_.n_costs;
     connections_.resize(kResourceCount, vku::InitStruct<VkDataGraphPipelineSingleNodeConnectionARM>());
 
-    connections_[0].set = 0;
-    connections_[0].binding = 0;
-    connections_[0].connection = VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_INPUT_ARM;
-    connections_[1].set = 0;
-    connections_[1].binding = 1;
-    connections_[1].connection = VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_REFERENCE_ARM;
-    connections_[2].set = 0;
-    connections_[2].binding = 2;
-    connections_[2].connection = VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_FLOW_VECTOR_ARM;
-    connections_[3].set = 0;
-    connections_[3].binding = 3;
-    connections_[3].connection = VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_HINT_ARM;
-    connections_[4].set = 0;
-    connections_[4].binding = 4;
-    connections_[4].connection = VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_COST_ARM;
+    uint32_t nc = 0;
+    for (uint32_t i = 0; i < params_.n_inputs; i++, nc++) {
+        connections_[nc].set = 0;
+        connections_[nc].binding = nc;
+        connections_[nc].connection = VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_INPUT_ARM;
+    }
+    for (uint32_t i = 0; i < params_.n_references; i++, nc++) {
+        connections_[nc].set = 0;
+        connections_[nc].binding = nc;
+        connections_[nc].connection = VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_REFERENCE_ARM;
+    }
+    for (uint32_t i = 0; i < params_.n_outputs; i++, nc++) {
+        connections_[nc].set = 0;
+        connections_[nc].binding = nc;
+        connections_[nc].connection = VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_FLOW_VECTOR_ARM;
+    }
+    for (uint32_t i = 0; i < params_.n_hints; i++, nc++) {
+        connections_[nc].set = 0;
+        connections_[nc].binding = nc;
+        connections_[nc].connection = VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_HINT_ARM;
+    }
+    for (uint32_t i = 0; i < params_.n_costs; i++, nc++) {
+        connections_[nc].set = 0;
+        connections_[nc].binding = nc;
+        connections_[nc].connection = VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_COST_ARM;
+    }
 
     single_node_ci_.connectionCount = static_cast<uint32_t>(connections_.size());
     single_node_ci_.pConnections = connections_.data();
 
     optical_flow_ci_ = vku::InitStructHelper(&single_node_ci_);
+    optical_flow_ci_.flags = 0;
     optical_flow_ci_.height = params_.height;
     optical_flow_ci_.width = params_.width;
     optical_flow_ci_.imageFormat = GetAnyOpticalFlowFormat(VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM);
     optical_flow_ci_.flowVectorFormat = GetAnyOpticalFlowFormat(VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM);
-    optical_flow_ci_.costFormat = GetAnyOpticalFlowFormat(VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM);
-    optical_flow_ci_.outputGridSize = params_.outputGridSize ? params_.outputGridSize : optical_flow_grid_size_;
-    optical_flow_ci_.hintGridSize = params_.hintGridSize ? params_.hintGridSize : optical_flow_grid_size_;
+    optical_flow_ci_.outputGridSize = params_.outputGridSize ? params_.outputGridSize
+        : static_cast<VkDataGraphOpticalFlowGridSizeFlagsARM>(GetAnyOpticalFlowGridSize(optical_flow_properties_));
+    optical_flow_ci_.hintGridSize = params_.hintGridSize ? params_.hintGridSize : optical_flow_ci_.outputGridSize;
+    if (optical_flow_properties_.hintSupported) {
+        optical_flow_ci_.flags |= VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM;
+    }
+    if (optical_flow_properties_.costSupported) {
+        optical_flow_ci_.costFormat = GetAnyOpticalFlowFormat(VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM);
+        optical_flow_ci_.flags |= VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM;
+    }
     optical_flow_ci_.performanceLevel = VK_DATA_GRAPH_OPTICAL_FLOW_PERFORMANCE_LEVEL_MEDIUM_ARM;
-    optical_flow_ci_.flags =
-        VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM;
+}
+
+static uint32_t scaled_size(uint32_t in_size, VkDataGraphOpticalFlowGridSizeFlagsARM grid_size) {
+    switch (grid_size) {
+        case VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM:
+            return in_size;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM:
+            return (in_size + 1) / 2;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM:
+            return (in_size + 3) / 4;
+        case VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM:
+            return (in_size + 7) / 8;
+    }
+    assert(false);
+    return UINT32_MAX;
 }
 
 void OpticalFlowHelper::SetupImageDescriptors() {
-    images_.resize(kResourceCount);
-
-    // Input
-    images_[0].Init(*device_, optical_flow_ci_.width, optical_flow_ci_.height, 1, optical_flow_ci_.imageFormat,
-                    VK_IMAGE_USAGE_SAMPLED_BIT);
-    images_[0].SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-    // Reference
-    images_[1].Init(*device_, optical_flow_ci_.width, optical_flow_ci_.height, 1, optical_flow_ci_.imageFormat,
-                    VK_IMAGE_USAGE_SAMPLED_BIT);
-    images_[1].SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-    // Flow (output)
-    images_[2].Init(*device_, optical_flow_ci_.width, optical_flow_ci_.height, 1, optical_flow_ci_.flowVectorFormat,
-                    VK_IMAGE_USAGE_STORAGE_BIT);
-    images_[2].SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-
-    // Hint
-    images_[3].Init(*device_, optical_flow_ci_.width, optical_flow_ci_.height, 1, optical_flow_ci_.flowVectorFormat,
-                    VK_IMAGE_USAGE_SAMPLED_BIT);
-    images_[3].SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-    // Cost
-    images_[4].Init(*device_, optical_flow_ci_.width, optical_flow_ci_.height, 1, optical_flow_ci_.costFormat,
-                    VK_IMAGE_USAGE_STORAGE_BIT);
-    images_[4].SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-
+    images_.resize(connections_.size());
     image_views_.resize(images_.size());
-    for (size_t i = 0; i < image_views_.size(); ++i) {
-        image_views_[i] = images_[i].CreateView();
+
+    // image size: hint
+    auto hint_w = scaled_size(optical_flow_ci_.width, optical_flow_ci_.hintGridSize);
+    auto hint_h = scaled_size(optical_flow_ci_.height, optical_flow_ci_.hintGridSize);
+    // output and cost
+    auto out_w = scaled_size(optical_flow_ci_.width, optical_flow_ci_.outputGridSize);
+    auto out_h = scaled_size(optical_flow_ci_.height, optical_flow_ci_.outputGridSize);
+
+    uint32_t nc = 0;
+    for (uint32_t i = 0; i < params_.n_inputs; i++, nc++) {
+        images_[nc].Init(*dg_pipeline_.device_, optical_flow_ci_.width, optical_flow_ci_.height, 1, optical_flow_ci_.imageFormat, VK_IMAGE_USAGE_SAMPLED_BIT);
+        images_[nc].SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        image_views_[nc] = images_[nc].CreateView();
+        dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(nc, image_views_[nc], VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     }
 
-    dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(0, image_views_[0], VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(1, image_views_[1], VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(2, image_views_[2], VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                           VK_IMAGE_LAYOUT_GENERAL);
-    dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(3, image_views_[3], VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(4, image_views_[4], VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                           VK_IMAGE_LAYOUT_GENERAL);
+    for (uint32_t i = 0; i < params_.n_references; i++, nc++) {
+        images_[nc].Init(*dg_pipeline_.device_, optical_flow_ci_.width, optical_flow_ci_.height, 1, optical_flow_ci_.imageFormat,
+                                VK_IMAGE_USAGE_SAMPLED_BIT);
+        images_[nc].SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        image_views_[nc] = images_[nc].CreateView();
+        dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(nc, image_views_[nc], VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    }
+
+    for (uint32_t i = 0; i < params_.n_outputs; i++, nc++) {
+        images_[nc].Init(*dg_pipeline_.device_, out_w, out_h, 1, optical_flow_ci_.flowVectorFormat, VK_IMAGE_USAGE_STORAGE_BIT);
+        images_[nc].SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+        image_views_[nc] = images_[nc].CreateView();
+        dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(nc, image_views_[nc], VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    }
+
+    for (uint32_t i = 0; i < params_.n_hints; i++, nc++) {
+        images_[nc].Init(*dg_pipeline_.device_, hint_w, hint_h, 1, optical_flow_ci_.flowVectorFormat, VK_IMAGE_USAGE_SAMPLED_BIT);
+        images_[nc].SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        image_views_[nc] = images_[nc].CreateView();
+        dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(nc, image_views_[nc], VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    }
+
+    for (uint32_t i = 0; i < params_.n_costs; i++, nc++) {
+        images_[nc].Init(*dg_pipeline_.device_, out_w, out_h, 1, optical_flow_ci_.costFormat, VK_IMAGE_USAGE_STORAGE_BIT);
+        images_[nc].SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+        image_views_[nc] = images_[nc].CreateView();
+        dg_pipeline_.descriptor_set_->WriteDescriptorImageInfo(nc, image_views_[nc], VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                               VK_IMAGE_LAYOUT_GENERAL);
+    }
+
     dg_pipeline_.descriptor_set_->UpdateDescriptorSets();
 }
 
 void OpticalFlowHelper::InitDataGraphPipeline() {
-    dg_pipeline_.descriptor_set_layout_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-        {2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-        {3, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-        {4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+
+    image_layouts_.resize(connections_.size(), vku::InitStruct<VkDataGraphPipelineResourceInfoImageLayoutARM>());
+    dg_pipeline_.descriptor_set_layout_bindings_.clear();
+    uint32_t nc = 0;
+    for (uint32_t i = 0; i < params_.n_inputs; i++, nc++) {
+        dg_pipeline_.descriptor_set_layout_bindings_.push_back(
+            {nc, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr});
+        image_layouts_[nc].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+    for (uint32_t i = 0; i < params_.n_references; i++, nc++) {
+        dg_pipeline_.descriptor_set_layout_bindings_.push_back(
+            {nc, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr});
+        image_layouts_[nc].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+    for (uint32_t i = 0; i < params_.n_outputs; i++, nc++) {
+        dg_pipeline_.descriptor_set_layout_bindings_.push_back(
+            {nc, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr});
+        image_layouts_[nc].layout = VK_IMAGE_LAYOUT_GENERAL;
+    }
+    for (uint32_t i = 0; i < params_.n_hints; i++, nc++) {
+        dg_pipeline_.descriptor_set_layout_bindings_.push_back(
+            {nc, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr});
+        image_layouts_[nc].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    };
+    for (uint32_t i = 0; i < params_.n_costs; i++, nc++) {
+        dg_pipeline_.descriptor_set_layout_bindings_.push_back(
+            {nc, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr});
+        image_layouts_[nc].layout = VK_IMAGE_LAYOUT_GENERAL;
     };
 
-    dg_pipeline_.descriptor_set_.reset(new OneOffDescriptorSet(device_, dg_pipeline_.descriptor_set_layout_bindings_));
-
+    dg_pipeline_.descriptor_set_.reset(new OneOffDescriptorSet(dg_pipeline_.device_, dg_pipeline_.descriptor_set_layout_bindings_));
     dg_pipeline_.CreatePipelineLayout();
 
-    image_layouts_.resize(kResourceCount, vku::InitStruct<VkDataGraphPipelineResourceInfoImageLayoutARM>());
-
-    image_layouts_[0].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_layouts_[1].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_layouts_[2].layout = VK_IMAGE_LAYOUT_GENERAL;
-    image_layouts_[3].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_layouts_[4].layout = VK_IMAGE_LAYOUT_GENERAL;
-
-    dg_pipeline_.resources_.resize(kResourceCount);
+    dg_pipeline_.resources_.resize(image_layouts_.size());
     for (uint32_t i = 0; i < dg_pipeline_.resources_.size(); i++) {
         dg_pipeline_.resources_[i] = vku::InitStructHelper(&image_layouts_[i]);
         dg_pipeline_.resources_[i].descriptorSet = 0;
@@ -651,13 +694,12 @@ void OpticalFlowHelper::InitDataGraphPipeline() {
 
 VkResult OpticalFlowHelper::CreateDataGraphPipeline() { return dg_pipeline_.CreateDataGraphPipeline(); }
 
-OpticalFlowHelper::OpticalFlowHelper(VkLayerTest& test, const HelperParameters& params)
-    : params_(params), dg_pipeline_(test), layer_test_(test) {
-    device_ = layer_test_.DeviceObj();
-    QueryOpticalFlowProperties();
+OpticalFlowHelper::OpticalFlowHelper(VkLayerTest& test, const OfHelperParameters& params)
+    : params_(params), dg_pipeline_(test) {
+    queue_index_ = dg_pipeline_.layer_test_.DefaultQueue()->family_index;  // add to params_ if we ever need to change this
+    optical_flow_properties_ = QueryOpticalFlowProperties(test, queue_index_);
     CreateOpticalFlow();
     InitDataGraphPipeline();
 }
-}  // namespace of
 }  // namespace dg
 }  // namespace vkt

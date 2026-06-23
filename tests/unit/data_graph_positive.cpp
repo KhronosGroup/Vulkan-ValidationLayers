@@ -310,7 +310,7 @@ TEST_F(PositiveDataGraph, ResourceInfoImageLayoutsUnifiedImageLayouts) {
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
     // Need to create a data graph with image resources instead of the usual tensors, so use optical flow.
-    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    vkt::dg::OpticalFlowHelper optical_flow(*this);
     /* Fail to chain a VkDataGraphPipelineResourceInfoImageLayoutARM structure. Since the unifiedImageLayouts feature is enabled
      * this is valid usage. */
     optical_flow.dg_pipeline_.resources_[0].pNext = nullptr;
@@ -342,7 +342,7 @@ TEST_F(PositiveDataGraph, OpticalFlow) {
     TEST_DESCRIPTION("Execute a datagraph with an optical flow node");
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
-    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    vkt::dg::OpticalFlowHelper optical_flow(*this);
     optical_flow.CreateDataGraphPipeline();
     optical_flow.SetupImageDescriptors();
 
@@ -377,7 +377,7 @@ TEST_F(PositiveDataGraph, OpticalFlowConnectionsImageLayoutsUnifiedImageLayouts)
     AddRequiredFeature(vkt::Feature::unifiedImageLayouts);
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
-    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    vkt::dg::OpticalFlowHelper optical_flow(*this);
     optical_flow.image_layouts_[0].layout = VK_IMAGE_LAYOUT_GENERAL;
     optical_flow.CreateDataGraphPipeline();
     optical_flow.SetupImageDescriptors();

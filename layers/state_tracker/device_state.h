@@ -45,6 +45,34 @@ enum class CallState {
 
 class PhysicalDevice : public StateObject {
   public:
+    // helper struct used to index properties and formats for data graph engine/queue pairs
+    struct QueueAndEngine {
+        uint32_t queue_index{};
+        VkPhysicalDeviceDataGraphProcessingEngineARM engine{VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM,
+                                                            false};
+
+        bool operator==(const QueueAndEngine& other) const {
+            return queue_index == other.queue_index && engine.type == other.engine.type &&
+                   engine.isForeign == other.engine.isForeign;
+        };
+        struct hash {
+            size_t operator()(const QueueAndEngine& value) const {
+                hash_util::HashCombiner hc;
+                hc << value.queue_index << value.engine.type << value.engine.isForeign;
+                return hc.Value();
+            }
+        };
+    };
+
+    template <typename T>
+    using QueueAndEngineMap = vvl::unordered_map<QueueAndEngine, T, QueueAndEngine::hash>;
+
+    struct OpticalFlowFormatsARM {
+        QueueAndEngineMap<vvl::unordered_set<VkFormat>> input;   // VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM
+        QueueAndEngineMap<vvl::unordered_set<VkFormat>> output;  // VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM
+        QueueAndEngineMap<vvl::unordered_set<VkFormat>> cost;    // VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM
+    };
+
     uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
     const std::vector<VkQueueFamilyProperties> queue_family_properties;
     const VkQueueFlags supported_queues;
@@ -54,6 +82,11 @@ class PhysicalDevice : public StateObject {
 
     // Map of queue family index to QueueFamilyPerfCounters
     vvl::unordered_map<uint32_t, std::unique_ptr<QueueFamilyPerfCounters>> perf_counters;
+
+    vvl::unordered_map<uint32_t, std::vector<VkQueueFamilyDataGraphPropertiesARM>> queue_family_data_graph_properties;
+    QueueAndEngineMap<VkQueueFamilyDataGraphOpticalFlowPropertiesARM> data_graph_optical_flow_properties;
+    QueueAndEngineMap<VkQueueFamilyDataGraphTOSAPropertiesARM> data_graph_tosa_properties;
+    OpticalFlowFormatsARM optical_flow_formats;
 
     // Surfaceless Query extension needs 'global' surface_state data
     SurfacelessQueryState surfaceless_query_state{};
