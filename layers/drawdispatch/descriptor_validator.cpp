@@ -1166,6 +1166,41 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                              string_VkSamplerCreateFlags(sampler_state->create_info.flags).c_str(),
                              DescribeInstruction().c_str());
         }
+
+        if ((resource_variable.info.image_insn.image_proc_usage_mask & spirv::ImageProcUsageBit::kBlockMatchWindow) != 0) {
+            if (!dev_proxy.enabled_features.blockMatchExtendedClampToEdge &&
+                (sampler_state->create_info.addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
+                 sampler_state->create_info.addressModeV == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)) {
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, sampler_state->Handle());
+                skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::IMAGE_BLOCK_MATCH_WINDOW_QCOM_12421),
+                                 objlist, loc.Get(),
+                                 "the %s has %s paired with sampler %s (addressModeU: %s, addressModeV: %s), but "
+                                 "VkPhysicalDeviceImageProcessing3FeaturesQCOM::blockMatchExtendedClampToEdge is required "
+                                 "when addressModeU or addressModeV is VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE.%s",
+                                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                                 FormatHandle(image_view).c_str(),
+                                 FormatHandle(sampler_state->Handle()).c_str(),
+                                 string_VkSamplerAddressMode(sampler_state->create_info.addressModeU),
+                                 string_VkSamplerAddressMode(sampler_state->create_info.addressModeV),
+                                 DescribeInstruction().c_str());
+            }
+            if ((sampler_state->create_info.addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
+                 sampler_state->create_info.addressModeV == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) &&
+                sampler_state->create_info.addressModeU != sampler_state->create_info.addressModeV) {
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, sampler_state->Handle());
+                skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::IMAGE_BLOCK_MATCH_WINDOW_QCOM_12422),
+                                 objlist, loc.Get(),
+                                 "the %s has %s paired with sampler %s (addressModeU: %s, addressModeV: %s), but "
+                                 "when either addressModeU or addressModeV is VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE "
+                                 "both must be VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE.%s",
+                                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                                 FormatHandle(image_view).c_str(),
+                                 FormatHandle(sampler_state->Handle()).c_str(),
+                                 string_VkSamplerAddressMode(sampler_state->create_info.addressModeU),
+                                 string_VkSamplerAddressMode(sampler_state->create_info.addressModeV),
+                                 DescribeInstruction().c_str());
+            }
+        }
     }
 
     for (const uint32_t texel_component_count : resource_variable.write_without_formats_component_count_list) {

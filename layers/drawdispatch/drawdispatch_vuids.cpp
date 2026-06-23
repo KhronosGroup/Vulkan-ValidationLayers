@@ -599,6 +599,10 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::IMAGE_BLOCK_MATCH_WINDOW_QCOM_09216: suffix = "OpImageBlockMatchWindow-09216"; break;
         // ### VUID-vkCmdDraw-OpImageBlockMatchSADQCOM-12420
         case ActionVUID::IMAGE_BLOCK_MATCH_SAD_QCOM_12420: suffix = "OpImageBlockMatchSADQCOM-12420"; break;
+        // ### VUID-vkCmdDraw-OpImageBlockMatchWindow-12421
+        case ActionVUID::IMAGE_BLOCK_MATCH_WINDOW_QCOM_12421: suffix = "OpImageBlockMatchWindow-12421"; break;
+        // ### VUID-vkCmdDraw-addressModeU-12422
+        case ActionVUID::IMAGE_BLOCK_MATCH_WINDOW_QCOM_12422: suffix = "addressModeU-12422"; break;
 
         // ### VUID-vkCmdDraw-viewMask-06178
         case ActionVUID::DYNAMIC_RENDERING_VIEW_MASK_06178: suffix = "viewMask-06178"; break;
