@@ -590,6 +590,14 @@ elseif(MSVC)
     )
 endif()
 
+if(APPLE)
+    # Github runners recently updated from Apple Clang 17 to 21
+    # This caused issues with the current custom hash solution
+    target_compile_options(vvl PRIVATE
+        -Wno-deprecated-declarations
+    )
+endif()
+
 # Order matters here. VkLayer_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
 # Otherwise, libraries after VkLayer_utils will not benefit from this performance improvement.
 target_link_libraries(vvl PRIVATE
