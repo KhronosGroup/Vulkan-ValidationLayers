@@ -24,6 +24,8 @@
 namespace gpudump {
 class GpuDump;
 struct MappingInfo;
+struct DumpInfo;
+struct WarnInfo;
 
 struct HeapAccess {
     VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
@@ -70,9 +72,28 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
   private:
     void DumpDescriptors(const LastBound& last_bound, const Location& loc) const;
     bool DumpDescriptorBuffer(std::ostringstream& ss, const LastBound& last_bound) const;
+
     // Return true if warning found
     bool DumpDescriptorHeap(std::ostringstream& ss, const LastBound& last_bound) const;
+    VkDeviceSize GetPushData(std::ostringstream& ss, WarnInfo& warn, uint32_t offset, uint32_t size) const;
+    void DumpDescriptorHeapConstantOffset(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
+                                          const VkDescriptorMappingSourceConstantOffsetEXT& map_data) const;
+    void DumpDescriptorHeapPushIndex(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
+                                     const VkDescriptorMappingSourcePushIndexEXT& map_data) const;
+    void DumpDescriptorHeapIndirectIndex(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
+                                         const VkDescriptorMappingSourceIndirectIndexEXT& map_data) const;
+    void DumpDescriptorHeapIndirectIndexArray(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
+                                              const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data) const;
+    void DumpDescriptorHeapHeapData(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
+                                    const VkDescriptorMappingSourceHeapDataEXT& map_data) const;
+    void DumpDescriptorHeapPushAddress(std::ostringstream& ss, WarnInfo& warn, uint32_t pushAddressOffset) const;
+    void DumpDescriptorHeapIndirectAddress(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
+                                           const VkDescriptorMappingSourceIndirectAddressEXT& map_data) const;
+    void DumpDescriptorHeapShaderRecordIndex(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
+                                             const VkDescriptorMappingSourceShaderRecordIndexEXT& map_data) const;
+    void DumpDescriptorHeapShaderRecordAddress(std::ostringstream& ss, uint32_t shaderRecordAddressOffset) const;
     bool DumpDescriptorHeapMapping(std::ostringstream& ss, const MappingInfo& mapping_info) const;
+
     vvl::unordered_map<uint32_t, HeapAccesses> DumpDescriptorHeapUntypedFindAccess(const spirv::Module& module,
                                                                                    const spirv::EntryPoint& entrypoint) const;
     bool DumpDescriptorHeapUntyped(std::ostringstream& ss, const ShaderStageState& stage) const;
