@@ -2473,6 +2473,54 @@ TEST_F(NegativeDataGraph, OpticalFlowDispatchWithoutOpticalFlowCreateInfo) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDataGraph, OpticalFlowResourceInfoImageLayoutsNoUnifiedImageLayouts) {
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    // The nullptr that is set in the test can cause a crash on a real driver.
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test only supported by MockICD";
+    }
+
+    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    /* Fail to chain a VkDataGraphPipelineResourceInfoImageLayoutARM structure. Since the unifiedImageLayouts feature is not
+     * enabled this is invalid usage. */
+    optical_flow.dg_pipeline_.resources_[0].pNext = nullptr;
+
+    optical_flow.CreateDataGraphPipeline();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = optical_flow.dg_pipeline_;
+
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+
+    std::vector<vkt::DeviceMemory> device_mem(session.BindPointReqs().size());
+
+    session.AllocSessionMem(device_mem);
+
+    std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos =
+        DataGraphTest::InitSessionBindInfo(session, device_mem);
+
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    optical_flow.SetupImageDescriptors();
+
+    VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
+    VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
+
+    m_command_buffer.Begin();
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.dg_pipeline_);
+
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.dg_pipeline_.pipeline_layout_,
+                              0, 1, &optical_flow.dg_pipeline_.descriptor_set_.get()->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-descriptorSet-09962");
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, &pipeline_di);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDataGraph, OpticalFlowConnectionsImageLayoutsNoUnifiedImageLayouts) {
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 

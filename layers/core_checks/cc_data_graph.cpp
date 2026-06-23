@@ -446,6 +446,41 @@ bool CoreChecks::ValidateOpticalFlowImageLayouts(const LastBound& last_bound_sta
 
     const vku::safe_VkDataGraphPipelineCreateInfoARM data_graph_ci = last_bound_state.pipeline_state->DataGraphCreateInfo();
 
+    const vku::safe_VkDataGraphPipelineResourceInfoARM* data_graph_resource_infos = data_graph_ci.pResourceInfos;
+
+    for (uint32_t res_idx = 0; res_idx < data_graph_ci.resourceInfoCount; ++res_idx) {
+        const vku::safe_VkDataGraphPipelineResourceInfoARM& data_graph_ri = data_graph_resource_infos[res_idx];
+
+        const LastBound::DescriptorSetSlot& ds_slot = last_bound_state.ds_slots.at(data_graph_ri.descriptorSet);
+
+        const uint32_t binding_descriptor_count = ds_slot.ds_state->GetBinding(data_graph_ri.binding)->count;
+
+        for (uint32_t desc_idx = 0; desc_idx < binding_descriptor_count; ++desc_idx) {
+            const vvl::Descriptor* descriptor = ds_slot.ds_state->GetDescriptorFromBinding(data_graph_ri.binding, desc_idx);
+
+            if (vvl::DescriptorClass::Image != descriptor->GetClass() &&
+                vvl::DescriptorClass::ImageSampler != descriptor->GetClass()) {
+                continue;
+            }
+
+            const auto* ri_image_layout =
+                vku::FindStructInPNextChain<VkDataGraphPipelineResourceInfoImageLayoutARM>(data_graph_ri.pNext);
+
+            if (!enabled_features.unifiedImageLayouts && !ri_image_layout) {
+                const std::string field =
+                    error_obj.location.dot(Struct::VkDataGraphPipelineCreateInfoARM, Field::pResourceInfos, res_idx).Fields();
+
+                skip |= LogError("VUID-VkDataGraphPipelineResourceInfoARM-descriptorSet-09962",
+                                 LogObjectList(obj_list, ds_slot.ds_state->VkHandle()), error_obj.location,
+                                 "VkDataGraphPipelineCreateInfoARM::%s does not contain a "
+                                 "VkDataGraphPipelineResourceInfoImageLayoutARM structure in its pNext chain but the "
+                                 "unifiedImageLayouts feature is not enabled.\n%s.",
+                                 field.c_str(),
+                                 PrintPNextChain(Struct::VkDataGraphPipelineResourceInfoARM, data_graph_ri.pNext).c_str());
+            }
+        }
+    }
+
     for (uint32_t con = 0; con < single_node_ci->connectionCount; ++con) {
         const VkDataGraphPipelineSingleNodeConnectionARM& connection = single_node_ci->pConnections[con];
 
@@ -462,8 +497,6 @@ bool CoreChecks::ValidateOpticalFlowImageLayouts(const LastBound& last_bound_sta
             }
 
             const auto* image_descriptor = static_cast<const vvl::ImageDescriptor*>(descriptor);
-
-            const vku::safe_VkDataGraphPipelineResourceInfoARM* data_graph_resource_infos = data_graph_ci.pResourceInfos;
 
             for (uint32_t res_idx = 0; res_idx < data_graph_ci.resourceInfoCount; ++res_idx) {
                 const vku::safe_VkDataGraphPipelineResourceInfoARM& data_graph_ri = data_graph_resource_infos[res_idx];
