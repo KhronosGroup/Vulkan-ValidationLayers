@@ -1966,11 +1966,9 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
 
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
 
-    // If both heaps are bound, no point to look at the variables
-    if (cb_state.IsPrimary() && cb_state.descriptor_heap.sampler_bound && cb_state.descriptor_heap.resource_bound) {
-        return skip;
-    } else if (cb_state.IsSecondary() && cb_state.descriptor_heap.is_sampler_inherited &&
-               cb_state.descriptor_heap.is_resource_inherited) {
+    // These checks are for when people forgot to bind any resource/sampler heap.
+    // If both heaps are already bound, no need to loop the variables to check which type they are.
+    if (cb_state.descriptor_heap.sampler_bound && cb_state.descriptor_heap.resource_bound) {
         return skip;
     }
 
