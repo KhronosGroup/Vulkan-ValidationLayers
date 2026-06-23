@@ -1534,6 +1534,41 @@ TEST_F(NegativeDataGraph, ResourceTensorInvalidUsage) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDataGraph, ResourceInfoImageLayoutsNoUnifiedImageLayouts) {
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    // Need to create a data graph with image resources instead of the usual tensors, so use optical flow.
+    vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    /* Fail to chain a VkDataGraphPipelineResourceInfoImageLayoutARM structure. Since the unifiedImageLayouts feature is not
+     * enabled this is invalid usage. */
+    optical_flow.dg_pipeline_.resources_[0].pNext = nullptr;
+    optical_flow.CreateDataGraphPipeline();
+    optical_flow.SetupImageDescriptors();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = optical_flow.dg_pipeline_;
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    std::vector<vkt::DeviceMemory> device_mem(session.BindPointReqs().size());
+    session.AllocSessionMem(device_mem);
+    std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos =
+        DataGraphTest::InitSessionBindInfo(session, device_mem);
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
+    VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.dg_pipeline_);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, optical_flow.dg_pipeline_.pipeline_layout_,
+                              0, 1, &optical_flow.dg_pipeline_.descriptor_set_.get()->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-descriptorSet-09962");
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, &pipeline_di);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDataGraph, SessionGetMemoryRequirementsIndexTooLarge) {
     TEST_DESCRIPTION("Try to get the memory requirements for a session with an out-of-bounds value for objectIndex");
     RETURN_IF_SKIP(InitBasicDataGraph());
