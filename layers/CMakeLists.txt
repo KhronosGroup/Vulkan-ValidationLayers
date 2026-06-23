@@ -156,6 +156,14 @@ elseif(MSVC)
     )
 endif()
 
+if(APPLE)
+    # Github runners recently updated from Apple Clang 17 to 21
+    # This caused issues with the current custom hash solution
+    target_compile_options(VkLayer_utils PUBLIC
+        -Wno-deprecated-declarations
+    )
+endif()
+
 option(DEBUG_CAPTURE_KEYBOARD "Every QueueSubmit if F1 is pressed, a DebugCapture function will be called and a custom action can be done (default: OFF)" OFF)
 if (DEBUG_CAPTURE_KEYBOARD)
     target_compile_definitions(VkLayer_utils PUBLIC DEBUG_CAPTURE_KEYBOARD)
@@ -589,14 +597,6 @@ elseif(MSVC)
         /wd4457 # hiding function parameter
         /wd4702 # unreachable code
         /wd4389 # signed/unsigned mismatch
-    )
-endif()
-
-if(APPLE)
-    # Github runners recently updated from Apple Clang 17 to 21
-    # This caused issues with the current custom hash solution
-    target_compile_options(vvl PRIVATE
-        -Wno-deprecated-declarations
     )
 endif()
 
