@@ -5742,6 +5742,54 @@ TEST_F(NegativeDebugPrintf, MidCommandBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDebugPrintf, SecondaryCommandBuffer) {
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(push_constant) uniform PushConstants {
+            int x;
+        } pc;
+        void main() {
+            debugPrintfEXT("int == %u", pc.x);
+        }
+    )glsl";
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)};
+    VkPipelineLayoutCreateInfo pipe_layout_ci = vku::InitStructHelper();
+    pipe_layout_ci.pushConstantRangeCount = 1;
+    pipe_layout_ci.pPushConstantRanges = &pc_range;
+    pipe_layout_ci.setLayoutCount = 0;
+    vkt::PipelineLayout pipeline_layout(*m_device, pipe_layout_ci);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    uint32_t push_data = 4;
+    vk::CmdPushConstants(secondary, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &push_data);
+    vk::CmdDispatch(secondary, 1u, 1u, 1u);
+    push_data = 7;
+    vk::CmdPushConstants(secondary, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &push_data);
+    vk::CmdDispatch(secondary, 1u, 1u, 1u);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("int == 4");
+    m_errorMonitor->SetDesiredInfo("int == 7");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDebugPrintf, DescriptorHeap) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);

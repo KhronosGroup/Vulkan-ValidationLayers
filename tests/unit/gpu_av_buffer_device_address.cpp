@@ -2766,3 +2766,52 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DifferentShaderLibraryWithIntermediateL
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, SecondaryCommandBuffer) {
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    const char* shader_source = R"glsl(
+        #version 460
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference) readonly buffer BDA {
+            uint data;
+        };
+
+        layout(set = 0, binding = 0) uniform foo {
+            BDA ptr;
+        };
+
+        void main() {
+            ptr.data = 42;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer ubo_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, ubo_buffer, 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    VkDeviceAddress* ubo_data = (VkDeviceAddress*)ubo_buffer.Memory().Map();
+    ubo_data[0] = 0;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &pipe.descriptor_set_.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(secondary, 1, 1, 1);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
