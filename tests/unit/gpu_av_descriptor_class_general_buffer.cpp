@@ -3056,3 +3056,43 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, BloomDownsampleSlangPushDescri
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, SecondaryCommandBuffer) {
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* shader_source = R"glsl(
+        #version 460
+        layout(binding = 0, set = 0) buffer OutData {
+            uint data[32];
+        };
+        void main() {
+            data[31] = 42;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer ssbo_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, ssbo_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &pipe.descriptor_set_.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(secondary, 1, 1, 1);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}

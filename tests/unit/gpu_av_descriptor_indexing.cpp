@@ -5055,3 +5055,59 @@ TEST_F(NegativeGpuAVDescriptorIndexing, SetMaxIndicesCountAtTheLimit) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorIndexing, SecondaryCommandBuffer) {
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    std::vector<VkPushConstantRange> push_constant_ranges = {{VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)}};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, push_constant_ranges);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    descriptor_set.WriteDescriptorBufferInfo(0, ssbo_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(push_constant) uniform Input {
+            uint index;
+        };
+
+        layout(set = 0, binding = 0) buffer SSBO {
+            uint data;
+        } bufs[];
+
+        void main() {
+           bufs[index].data = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    uint32_t index = 8;
+    vk::CmdPushConstants(secondary, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &index);
+    vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(secondary, 1, 1, 1);
+
+    index = 12;
+    vk::CmdPushConstants(secondary, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &index);
+    vk::CmdDispatch(secondary, 1, 1, 1);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068", 2);
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
