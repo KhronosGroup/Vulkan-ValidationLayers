@@ -19,6 +19,7 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
+#include <cstdint>
 #include <string>
 #include "generated/error_location_helper.h"
 
@@ -91,3 +92,86 @@ struct CachedDescriptorSize {
     // (see VU 11362)
     VkDeviceSize size_[14];
 };
+
+// We need a way to compress the VkDescriptorType enum to cover all the "real" types
+// (those seen in vkGetPhysicalDeviceDescriptorSizeEXT).
+//
+// This all should be capable of being packed in 4 bits as there are only 14 known types currently
+enum class vvlDescriptorType : uint8_t {
+    // Sampler is a speical case, it is never by itself and instead is is provided along with an image
+    Sampler = 0x0,          // VK_DESCRIPTOR_TYPE_SAMPLER
+    CombinedSampler = 0x1,  // VK_DESCRIPTOR_TYPE_SAMPLER part of a COMBINED_IMAGE_SAMPLER
+
+    // Buffers
+    UniformBuffer = 0x2,  // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+    StorageBuffer = 0x3,  // VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+
+    // RT
+    AccelerationStructure = 0x4,  // VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR
+
+    // (currently 0x5, 0x6, 0x7 are not being used)
+
+    // Images
+    ImageSampled = 0x8,             // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+    ImageStorage = 0x9,             // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+    ImageTexelBufferUniform = 0xA,  // VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
+    ImageTexelBufferStorage = 0xB,  // VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
+    ImageInputAttachment = 0xC,     // VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+};
+
+inline constexpr uint8_t vvlDescriptorBufferMask = 0x2;
+inline constexpr uint8_t vvlDescriptorImageMask = 0x8;
+
+constexpr VkDescriptorType GetDescriptorTypeFromMask(vvlDescriptorType vvl_type) noexcept {
+    switch (vvl_type) {
+        case vvlDescriptorType::Sampler:
+        case vvlDescriptorType::CombinedSampler:
+            return VK_DESCRIPTOR_TYPE_SAMPLER;
+        case vvlDescriptorType::UniformBuffer:
+            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        case vvlDescriptorType::StorageBuffer:
+            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        case vvlDescriptorType::AccelerationStructure:
+            return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        case vvlDescriptorType::ImageSampled:
+            return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        case vvlDescriptorType::ImageStorage:
+            return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        case vvlDescriptorType::ImageTexelBufferUniform:
+            return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+        case vvlDescriptorType::ImageTexelBufferStorage:
+            return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+        case vvlDescriptorType::ImageInputAttachment:
+            return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    }
+    assert(false && "Invalid compressed descriptor type mask");
+    return VK_DESCRIPTOR_TYPE_MAX_ENUM;
+}
+
+constexpr vvlDescriptorType GetMaskFromDescriptorType(VkDescriptorType vk_type) noexcept {
+    switch (vk_type) {
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            return vvlDescriptorType::Sampler;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            return vvlDescriptorType::UniformBuffer;
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            return vvlDescriptorType::StorageBuffer;
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+            return vvlDescriptorType::AccelerationStructure;
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            return vvlDescriptorType::ImageSampled;
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            return vvlDescriptorType::ImageStorage;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+            return vvlDescriptorType::ImageTexelBufferUniform;
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+            return vvlDescriptorType::ImageTexelBufferStorage;
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+            return vvlDescriptorType::ImageInputAttachment;
+        default:
+            break;
+    }
+
+    assert(false && "Unsupported VkDescriptorType for compression");
+    return static_cast<vvlDescriptorType>(0xFF);
+}

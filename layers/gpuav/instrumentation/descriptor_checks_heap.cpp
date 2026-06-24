@@ -137,8 +137,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 const uint32_t offset = error_record[kInst_LogError_ParameterOffset_1];
 
                 const uint32_t desc_encoding = error_record[kInst_LogError_ParameterOffset_2];
-                const uint32_t desc_type =
-                    (desc_encoding & kInst_DescriptorHeap_DescriptorTypeMask) >> kInst_DescriptorHeap_DescriptorTypeShift;
+                const vvlDescriptorType desc_type = static_cast<vvlDescriptorType>(
+                    (desc_encoding & kInst_DescriptorHeap_DescriptorTypeMask) >> kInst_DescriptorHeap_DescriptorTypeShift);
                 const uint32_t desc_size =
                     (desc_encoding & kInst_DescriptorHeap_DescriptorSizeMask) >> kInst_DescriptorHeap_DescriptorSizeShift;
                 const uint32_t mapping_index_decoded =
@@ -146,10 +146,10 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 const uint32_t alignment_value = 1u << (desc_encoding & kInst_DescriptorHeap_AlignmentShiftMask);
 
                 const bool is_untyped = mapping_index_decoded == glsl::kInst_DescriptorHeap_MappingIndexUntyped;
-                const bool is_buffer = desc_type & gpuav::descriptor::TYPE_BUFFER_MASK;
-                const bool is_image = desc_type & gpuav::descriptor::TYPE_IMAGE_MASK;
-                const bool is_combined_sampler = desc_type == gpuav::descriptor::TYPE_COMBINED_SAMPLER;
-                const bool is_sampler = desc_type == gpuav::descriptor::TYPE_SAMPLER || is_combined_sampler;
+                const bool is_buffer = static_cast<uint8_t>(desc_type) & vvlDescriptorBufferMask;
+                const bool is_image = static_cast<uint8_t>(desc_type) & vvlDescriptorImageMask;
+                const bool is_combined_sampler = desc_type == vvlDescriptorType::CombinedSampler;
+                const bool is_sampler = desc_type == vvlDescriptorType::Sampler || is_combined_sampler;
 
                 VkDeviceAddress heap_address = 0;
                 if (heap_cb_state) {
@@ -281,7 +281,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     } break;
 
                     case kErrorSubCode_DescriptorHeap_AddressBufferAlignment: {
-                        const bool is_uniform = desc_type == gpuav::descriptor::TYPE_UNIFORM_BUFFER;
+                        const bool is_uniform = desc_type == vvlDescriptorType::UniformBuffer;
                         const uint64_t final_address =
                             *reinterpret_cast<const uint64_t*>(error_record + kInst_LogError_ParameterOffset_0);
                         const bool push_address =
@@ -430,8 +430,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     ss << '\n';
                 }
 
-                ss << "Descriptor type: " << string_VkDescriptorType(descriptor::GetDescriptorTypeFromMask((uint8_t)desc_type))
-                   << ", size " << std::dec << desc_size;
+                ss << "Descriptor type: " << string_VkDescriptorType(GetDescriptorTypeFromMask(desc_type)) << ", size " << std::dec
+                   << desc_size;
                 if (is_untyped) {
                     if (is_buffer) {
                         ss << " (bufferDescriptorSize)";

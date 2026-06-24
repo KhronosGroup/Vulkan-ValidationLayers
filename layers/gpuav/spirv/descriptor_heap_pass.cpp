@@ -173,7 +173,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
     uint32_t desc_encoding_id = 0;
     const VkDescriptorType vk_desc_type = is_seperate_sampler ? VK_DESCRIPTOR_TYPE_SAMPLER : meta.access_path.descriptor_type;
     {
-        uint8_t desc_type_mask = gpuav::descriptor::GetMaskFromDescriptorType(vk_desc_type);
+        uint8_t desc_type_mask = (uint8_t)GetMaskFromDescriptorType(vk_desc_type);
 
         const uint32_t desc_alignment_value = (uint32_t)GetDescriptorHeapAlignment(descriptor_heap_props, vk_desc_type);
         const uint32_t desc_alignment_shift = GetAlignmentShift(desc_alignment_value);
@@ -418,7 +418,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
 
     uint32_t desc_encoding_id = 0;
     {
-        uint8_t desc_type_mask = gpuav::descriptor::TYPE_COMBINED_SAMPLER;
+        uint8_t desc_type_mask = (uint8_t)vvlDescriptorType::CombinedSampler;
         const uint32_t desc_size_value = (uint32_t)descriptor_heap_props.samplerDescriptorSize;
         const uint32_t mapping_index_encoded = meta.mapping_index_resource;
         const uint32_t desc_alignment_shift = GetAlignmentShift((uint32_t)descriptor_heap_props.samplerDescriptorAlignment);
