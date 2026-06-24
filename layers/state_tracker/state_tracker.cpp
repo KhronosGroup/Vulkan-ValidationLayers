@@ -222,6 +222,7 @@ VkFormatFeatureFlags2 DeviceState::GetExternalFormatFeaturesANDROID(const void* 
     VkFormatFeatureFlags2 format_features = 0;
     const uint64_t external_format = GetExternalFormat(pNext);
     if ((0 != external_format)) {
+        ReadLockGuard guard(ahb_lock_);
         // VUID 01894 will catch if not found in map
         auto it = ahb_ext_formats_map.find(external_format);
         if (it != ahb_ext_formats_map.end()) {
@@ -231,22 +232,32 @@ VkFormatFeatureFlags2 DeviceState::GetExternalFormatFeaturesANDROID(const void* 
     return format_features;
 }
 
+VkFormat DeviceState::GetExternalFormatResolveANDROID(uint64_t external_format) const {
+    ReadLockGuard guard(ahb_lock_);
+    auto it = ahb_ext_resolve_formats_map.find(external_format);
+    if (it != ahb_ext_resolve_formats_map.end()) {
+        return it->second;
+    }
+    return VK_FORMAT_UNDEFINED;
+}
+
 void DeviceState::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
                                                                           VkAndroidHardwareBufferPropertiesANDROID* pProperties,
                                                                           const RecordObject& record_obj) {
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
+    WriteLockGuard guard(ahb_lock_);
     uint64_t external_format = 0;
     auto ahb_format_props2 = vku::FindStructInPNextChain<VkAndroidHardwareBufferFormatProperties2ANDROID>(pProperties->pNext);
     if (ahb_format_props2) {
         external_format = ahb_format_props2->externalFormat;
-        ahb_ext_formats_map.insert(external_format, ahb_format_props2->formatFeatures);
+        ahb_ext_formats_map.emplace(external_format, ahb_format_props2->formatFeatures);
     } else {
         auto ahb_format_props = vku::FindStructInPNextChain<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties->pNext);
         if (ahb_format_props) {
             external_format = ahb_format_props->externalFormat;
-            ahb_ext_formats_map.insert(external_format, static_cast<VkFormatFeatureFlags2>(ahb_format_props->formatFeatures));
+            ahb_ext_formats_map.emplace(external_format, static_cast<VkFormatFeatureFlags2>(ahb_format_props->formatFeatures));
         }
     }
 
@@ -256,7 +267,7 @@ void DeviceState::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevi
             vku::FindStructInPNextChain<VkAndroidHardwareBufferFormatResolvePropertiesANDROID>(pProperties->pNext);
         if (ahb_format_resolve_props && external_format != 0) {
             // easy case, caller provided both structs for us
-            ahb_ext_resolve_formats_map.insert(external_format, ahb_format_resolve_props->colorAttachmentFormat);
+            ahb_ext_resolve_formats_map.emplace(external_format, ahb_format_resolve_props->colorAttachmentFormat);
         } else {
             // If caller didn't provide both struct, re-call for them
             VkAndroidHardwareBufferFormatResolvePropertiesANDROID new_ahb_format_resolve_props = vku::InitStructHelper();
@@ -264,8 +275,8 @@ void DeviceState::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevi
                 vku::InitStructHelper(&new_ahb_format_resolve_props);
             VkAndroidHardwareBufferPropertiesANDROID new_ahb_props = vku::InitStructHelper(&new_ahb_format_props);
             DispatchGetAndroidHardwareBufferPropertiesANDROID(device, buffer, &new_ahb_props);
-            ahb_ext_resolve_formats_map.insert(new_ahb_format_props.externalFormat,
-                                               new_ahb_format_resolve_props.colorAttachmentFormat);
+            ahb_ext_resolve_formats_map.emplace(new_ahb_format_props.externalFormat,
+                                                new_ahb_format_resolve_props.colorAttachmentFormat);
         }
     }
 }
@@ -275,6 +286,11 @@ void DeviceState::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevi
 VkFormatFeatureFlags2 DeviceState::GetExternalFormatFeaturesANDROID(const void* pNext) const {
     (void)pNext;
     return 0;
+}
+
+VkFormat DeviceState::GetExternalFormatResolveANDROID(uint64_t external_format) const {
+    (void)external_format;
+    return VK_FORMAT_UNDEFINED;
 }
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR

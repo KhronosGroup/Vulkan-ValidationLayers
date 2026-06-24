@@ -576,6 +576,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo& create_info
                              "(%" PRIu64 ") is non-zero, but layout is %s.", ext_fmt_android->externalFormat,
                              string_VkImageTiling(create_info.tiling));
         }
+        ReadLockGuard guard(device_state->ahb_lock_);
         if (device_state->ahb_ext_formats_map.find(ext_fmt_android->externalFormat) == device_state->ahb_ext_formats_map.end()) {
             skip |= LogError("VUID-VkExternalFormatANDROID-externalFormat-01894", device,
                              create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),

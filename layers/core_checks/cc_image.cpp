@@ -58,12 +58,8 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo& create_inf
 
     if (image_format == VK_FORMAT_UNDEFINED) {
         // VU 01975 states format can't be undefined unless an android externalFormat
-        const uint64_t external_format = GetExternalFormat(create_info.pNext);
-        if ((image_tiling == VK_IMAGE_TILING_OPTIMAL) && (0 != external_format)) {
-            auto it = device_state->ahb_ext_formats_map.find(external_format);
-            if (it != device_state->ahb_ext_formats_map.end()) {
-                tiling_features = it->second;
-            }
+        if (image_tiling == VK_IMAGE_TILING_OPTIMAL) {
+            tiling_features = device_state->GetExternalFormatFeaturesANDROID(create_info.pNext);
         }
     } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         vvl::unordered_set<uint64_t> drm_format_modifiers;

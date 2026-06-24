@@ -1,4 +1,4 @@
-<!-- Copyright 2021-2025 LunarG, Inc. -->
+<!-- Copyright 2021-2026 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -275,7 +275,6 @@ Since VkDevice’s state is a ValidationStateTracker, we don’t have a real C++
 
 State tracker Per-Device state that is changed:
 
-* ahb_ext_formats_map - map of android external format to VkFormatFeatureFlags. Thread safe because it uses `vvl::concurrent_unordered_map`.
 * custom_border_color_sampler_count - simple counter
 * performance_lock_acquired - boolean flag
 * fake_memory - fake address generator for synchronization validation, basically a uint64_t counter of the next free address
