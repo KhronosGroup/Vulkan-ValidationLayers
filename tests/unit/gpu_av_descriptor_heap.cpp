@@ -3044,7 +3044,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, PushDataIndirectIndex) {
 TEST_F(NegativeGpuAVDescriptorHeap, ResourceHeapDataOOB) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4861");
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    // create an extra 256 bytes that we will not bind
     CreateResourceHeap(heap_props.bufferDescriptorSize + 256, true);
+    VkDeviceSize bound_size = heap_props.minResourceHeapReservedRange + heap_props.bufferDescriptorSize;
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     WriteBufferToHeap(ssbo_buffer);
@@ -3055,7 +3057,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceHeapDataOOB) {
     mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
     mappings[1] = MakeSetAndBindingMapping(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT;
-    mappings[1].sourceData.heapData.heapOffset = 0;
+    mappings[1].sourceData.heapData.heapOffset = (uint32_t)bound_size;
     mappings[1].sourceData.heapData.pushOffset = 0;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -3072,9 +3074,17 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceHeapDataOOB) {
     )glsl";
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
-    uint32_t push_offset = (uint32_t)resource_heap_.CreateInfo().size;
     m_command_buffer.Begin();
     BindResourceHeap();
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange.address = resource_heap_.Address();
+    bind_resource_info.heapRange.size = bound_size;
+    bind_resource_info.reservedRangeOffset = 0;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    uint32_t push_offset = 0;
     m_command_buffer.PushData(0, sizeof(uint32_t), &push_offset);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
