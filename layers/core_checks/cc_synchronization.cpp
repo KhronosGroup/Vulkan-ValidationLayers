@@ -1610,22 +1610,21 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
 bool CoreChecks::ValidateWaitEventDependencyFlags(VkDependencyFlags dependency_flags, const LogObjectList& objlist,
                                                   const Location& dep_info_loc) const {
     bool skip = false;
-    const VkDependencyFlags allowed_flags = VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR;
-    if ((dependency_flags & ~allowed_flags) != 0) {
-        const bool is_transfer_use_all_only =
-            dependency_flags == VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR;
 
-        if (!enabled_features.maintenance8) {
-            skip |= LogError("VUID-vkCmdWaitEvents2-dependencyFlags-10394", objlist, dep_info_loc.dot(Field::dependencyFlags),
-                             "is (%s).%s", string_VkDependencyFlags(dependency_flags).c_str(),
-                             is_transfer_use_all_only
-                                 ? " To use VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR, the "
-                                   "maintenance8 feature must be enabled."
-                                 : "");
-        } else if (!is_transfer_use_all_only) {
+    const VkDependencyFlags forbidden_flags = VK_DEPENDENCY_BY_REGION_BIT | VK_DEPENDENCY_DEVICE_GROUP_BIT |
+                                              VK_DEPENDENCY_VIEW_LOCAL_BIT | VK_DEPENDENCY_FEEDBACK_LOOP_BIT_EXT;
+
+    const VkDependencyFlags included_forbidden_flags = dependency_flags & forbidden_flags;
+    if (included_forbidden_flags) {
+        skip |= LogError("VUID-vkCmdWaitEvents2-dependencyFlags-10394", objlist, dep_info_loc.dot(Field::dependencyFlags),
+                         "(%s) includes %s.", string_VkDependencyFlags(dependency_flags).c_str(),
+                         string_VkDependencyFlags(included_forbidden_flags).c_str());
+    }
+    if (!enabled_features.maintenance8) {
+        if (dependency_flags & VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR) {
             skip |= LogError("VUID-vkCmdWaitEvents2-maintenance8-10205", objlist, dep_info_loc.dot(Field::dependencyFlags),
-                             "(%s) but only VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR and "
-                             "VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR are allowed.",
+                             "(%s) includes VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR, but the "
+                             "maintenance8 feature is not enabled.",
                              string_VkDependencyFlags(dependency_flags).c_str());
         }
     }
