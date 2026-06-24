@@ -17,6 +17,7 @@
 
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
+#include "generated/dispatch_functions.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_module.h"
@@ -146,6 +147,58 @@ bool CoreChecks::ValidateTensorSemiStructuredSparsityInfo(VkDevice device, const
     return skip;
 }
 
+bool CoreChecks::ValidateOpticalFlowCreateInfo(const VkDataGraphPipelineOpticalFlowCreateInfoARM& optical_flow_ci,
+                                               const Location& optical_flow_ci_loc) const {
+    bool skip = false;
+
+    auto list_formats = [](const std::vector<VkFormat>& list) {
+        std::ostringstream ss;
+
+        for (const auto f : list) {
+            ss << string_VkFormat(f) << ", ";
+        }
+
+        std::string ret = ss.str();
+
+        if (ret.size() >= 2) {
+            ret.resize(ret.size() - 2);
+        }
+
+        return ret;
+    };
+
+    const VkFormat imageFormat = optical_flow_ci.imageFormat;
+    std::vector<VkFormat> formats = device_state->optical_flow_formats.input;
+
+    if (std::find(formats.begin(), formats.end(), imageFormat) == formats.end()) {
+        skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-imageFormat-09968", device,
+                         optical_flow_ci_loc.dot(Field::imageFormat), "(%s) is not supported.\nSupported formats: %s.",
+                         string_VkFormat(imageFormat), list_formats(formats).c_str());
+    }
+
+    const VkFormat flowVectorFormat = optical_flow_ci.flowVectorFormat;
+    formats = device_state->optical_flow_formats.output;
+
+    if (std::find(formats.begin(), formats.end(), flowVectorFormat) == formats.end()) {
+        skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-flowVectorFormat-09969", device,
+                         optical_flow_ci_loc.dot(Field::flowVectorFormat), "(%s) is not supported.\nSupported formats: %s.",
+                         string_VkFormat(flowVectorFormat), list_formats(formats).c_str());
+    }
+
+    if (optical_flow_ci.flags & VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM) {
+        const VkFormat costFormat = optical_flow_ci.costFormat;
+        formats = device_state->optical_flow_formats.cost;
+
+        if (std::find(formats.begin(), formats.end(), costFormat) == formats.end()) {
+            skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-costFormat-09970", device,
+                             optical_flow_ci_loc.dot(Field::costFormat), "(%s) is not supported.\nSupported formats: %s.",
+                             string_VkFormat(costFormat), list_formats(formats).c_str());
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                             VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                             const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
@@ -250,8 +303,16 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
             // TODO: add here validation for datagraph defined as cache object
         } else if (qcom_model_ci) {
             // TODO: add here validation for datagraph defined as QCOM model object
-        }
+        } else if (single_node_ci) {
+            const auto* optical_flow_ci =
+                vku::FindStructInPNextChain<VkDataGraphPipelineOpticalFlowCreateInfoARM>(create_info.pNext);
 
+            if (optical_flow_ci) {
+                const Location optical_flow_ci_loc = create_info_loc.pNext(Struct::VkDataGraphPipelineOpticalFlowCreateInfoARM);
+
+                skip |= ValidateOpticalFlowCreateInfo(*optical_flow_ci, optical_flow_ci_loc);
+            }
+        }
         // common checks
         skip |= ValidateDataGraphPipelineCreateInfo(device, create_info, create_info_loc, *pipeline);
     }

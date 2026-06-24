@@ -310,6 +310,8 @@ TEST_F(PositiveDataGraph, OpticalFlow) {
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
     vkt::dg::of::OpticalFlowHelper optical_flow(*this);
+    ASSERT_EQ(VK_SUCCESS, optical_flow.CreateDataGraphPipeline());
+    optical_flow.SetupImageDescriptors();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.dataGraphPipeline = optical_flow.dg_pipeline_;
