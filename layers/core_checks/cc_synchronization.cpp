@@ -427,6 +427,8 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& que
 
     VkPipelineStageFlags signals_src_stage_mask = 0;
     bool set_wait_version_mismatch = false;  // if version mismatch is detected some other validations make no sense
+    bool found_signals = false;
+
     for (VkEvent event : wait_events) {
         if (auto event_state = core.Get<vvl::Event>(event)) {
             if (!vvl::Contains(signal_states, event)) {
@@ -436,10 +438,6 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& que
             const EventSignalState* cb_signal_state = vvl::Find(signal_states, event);
             const EventSignalState resolved_state = ResolveEventSignal(*event_state, local_signal_state, cb_signal_state);
 
-            // Collect source stages from all signals
-            if (resolved_state.signaled) {
-                signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(resolved_state.signal_src_stage_mask);
-            }
             // Validate set-wait mismatch
             if (IsValueIn(resolved_state.last_signaling_command, {vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
                 set_wait_version_mismatch = true;
@@ -448,26 +446,51 @@ bool WaitEventSubmitInfo::Validate(const CoreChecks& core, const vvl::Queue& que
                                       vvl::String(wait_command), core.FormatHandle(event).c_str(),
                                       vvl::String(resolved_state.last_signaling_command));
             }
+            // Collect source stages from all signals
+            if (resolved_state.signaled) {
+                signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(resolved_state.signal_src_stage_mask);
+                found_signals = true;
+            }
         }
     }
 
     // Validate src stage mask
     if (!set_wait_version_mismatch && wait_src_stage_mask != signals_src_stage_mask) {
         std::ostringstream ss;
-        ss << "(" << core.FormatHandle(cb_state.Handle()) << ") contains a vkCmdWaitEvents call with srcStageMask "
-           << string_VkPipelineStageFlags(wait_src_stage_mask)
-           << ", but the bitwise OR of stageMask values from the most recent vkCmdSetEvent calls is "
-           << string_VkPipelineStageFlags(signals_src_stage_mask & ~VK_PIPELINE_STAGE_HOST_BIT);
+        ss << "(" << core.FormatHandle(cb_state.Handle()) << ") contains vkCmdWaitEvents with srcStageMask "
+           << string_VkPipelineStageFlags(wait_src_stage_mask);
 
-        if (wait_src_stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
-            if (!(signals_src_stage_mask & VK_PIPELINE_STAGE_HOST_BIT)) {
-                ss << " and none of the waited events were set by vkSetEvent";
+        const VkPipelineStageFlags device_signals_src_stage_mask = signals_src_stage_mask & ~VK_PIPELINE_STAGE_HOST_BIT;
+        const VkPipelineStageFlags device_wait_src_stage_mask = wait_src_stage_mask & ~VK_PIPELINE_STAGE_HOST_BIT;
+        const bool host_wait = wait_src_stage_mask & VK_PIPELINE_STAGE_HOST_BIT;
+        const bool host_signal = signals_src_stage_mask & VK_PIPELINE_STAGE_HOST_BIT;
+
+        if (found_signals) {
+            if (device_wait_src_stage_mask != device_signals_src_stage_mask) {
+                if (signals_src_stage_mask != VK_PIPELINE_STAGE_HOST_BIT) {
+                    ss << ", but the bitwise OR of stageMask values from the most recent vkCmdSetEvent calls is "
+                       << string_VkPipelineStageFlags(device_signals_src_stage_mask);
+                } else if (host_wait) {
+                    // The host part of srcStageMask matches the host signal, but the device part has no signal
+                    ss << ". srcStageMask includes " << string_VkPipelineStageFlags(device_wait_src_stage_mask)
+                       << " which has no corresponding vkCmdSetEvent signal";
+                }
+            }
+            if (host_wait && !host_signal) {
+                ss << ". srcStageMask specifies VK_PIPELINE_STAGE_HOST_BIT but none of the waited events were set by vkSetEvent";
             }
         } else {
-            if (signals_src_stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
-                ss << " and at least one waited event was set by vkSetEvent, so srcStageMask must also include "
-                      "VK_PIPELINE_STAGE_HOST_BIT";
+            ss << ", but the waited events are known to be unsignaled at this point";
+            if (device_wait_src_stage_mask) {
+                ss << ". The wait does not have a corresponding vkCmdSetEvent signal";
             }
+            if (host_wait) {
+                ss << ". srcStageMask specifies VK_PIPELINE_STAGE_HOST_BIT but none of the waited events were set by vkSetEvent";
+            }
+        }
+        if (host_signal && !host_wait) {
+            ss << ". At least one waited event was set by vkSetEvent, so srcStageMask must also include "
+                  "VK_PIPELINE_STAGE_HOST_BIT";
         }
         skip |= core.LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", cb_state.Handle(), loc, "%s", ss.str().c_str());
     }
@@ -1578,6 +1601,8 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
         auto& cb_sub_state = core::SubState(*cb_state);
         bool can_validate_stage_mask = true;  // whether record-time validation is possible
         bool set_wait_version_mismatch = false;
+        bool found_signals = false;
+
         VkPipelineStageFlags signals_src_stage_mask = VK_PIPELINE_STAGE_NONE;
         for (uint32_t i = 0; i < eventCount; i++) {
             const EventSignalState* signal_state = vvl::Find(cb_sub_state.event_signal_states, pEvents[i]);
@@ -1589,18 +1614,24 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
                 }
                 if (signal_state->signaled) {
                     signals_src_stage_mask |= static_cast<VkPipelineStageFlags>(signal_state->signal_src_stage_mask);
+                    found_signals = true;
                 }
             } else {
                 can_validate_stage_mask = false;
             }
         }
-        if (!set_wait_version_mismatch && can_validate_stage_mask) {
-            if (srcStageMask != signals_src_stage_mask) {
+        if (!set_wait_version_mismatch && can_validate_stage_mask && srcStageMask != signals_src_stage_mask) {
+            if (found_signals) {
                 skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", objlist, error_obj.location.dot(Field::srcStageMask),
                                  "is %s, but the bitwise OR of stageMask values from the most recent vkCmdSetEvent call for each "
                                  "waited event is %s.",
                                  string_VkPipelineStageFlags(srcStageMask).c_str(),
                                  string_VkPipelineStageFlags(signals_src_stage_mask).c_str());
+            } else {
+                skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", objlist, error_obj.location.dot(Field::srcStageMask),
+                                 "is %s, but the waited events are known to be unsignaled at this point. The wait does not have a "
+                                 "corresponding vkCmdSetEvent signal.",
+                                 string_VkPipelineStageFlags(srcStageMask).c_str());
             }
         }
     }
