@@ -227,7 +227,7 @@ class DescriptorHeapBindings {
     // Callback system to route the state tracking into the single file doing all the logic
     using OnDescriptorHeapBindingFunc =
         stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb, BindingCommand&, bool)>;
-    std::vector<OnDescriptorHeapBindingFunc> on_update_bound_descriptor_heap;
+    OnDescriptorHeapBindingFunc on_update_bound_descriptor_heap;
 };
 
 class QueueSubState : public vvl::QueueSubState {

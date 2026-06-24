@@ -48,7 +48,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
 
     DescriptorHeapBindings& desc_heap_bindings = cb.shared_resources_cache.GetOrCreate<DescriptorHeapBindings>();
 
-    desc_heap_bindings.on_update_bound_descriptor_heap.emplace_back(
+    desc_heap_bindings.on_update_bound_descriptor_heap =
         [](Validator& gpuav, CommandBufferSubState& cb, DescriptorHeapBindings::BindingCommand& desc_binding_cmd, bool is_sampler) {
             DescriptorChecksHeapCbState& dc_cb_state = cb.shared_resources_cache.GetOrCreate<DescriptorChecksHeapCbState>();
 
@@ -56,7 +56,14 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
             assert(cb_heap.resource_range.size() < (VkDeviceAddress)vvl::kU32Max);
             assert(cb_heap.sampler_range.size() < (VkDeviceAddress)vvl::kU32Max);
 
-            if (is_sampler) {
+            // We only bind one at a time via vkCmdBindResourceHeapEXT/vkCmdBindSamplerHeapEXT
+            // but might be binding both with secondary command buffer inheritance
+            const bool has_inheritance =
+                cb.base.descriptor_heap.is_sampler_inherited || cb.base.descriptor_heap.is_resource_inherited;
+            const bool update_sampler = (!has_inheritance && is_sampler) || cb.base.descriptor_heap.is_sampler_inherited;
+            const bool update_resource = (!has_inheritance && !is_sampler) || cb.base.descriptor_heap.is_resource_inherited;
+
+            if (update_sampler) {
                 dc_cb_state.last_bound_heap_info_sampler =
                     cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(glsl::BoundHeapInfo));
                 dc_cb_state.last_bound_heap_info_sampler.Clear();
@@ -65,7 +72,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 desc_heap_info->heap_size = (uint32_t)cb_heap.sampler_range.size();
                 desc_heap_info->reserved_begin = (uint32_t)(cb_heap.sampler_reserved.begin - cb_heap.sampler_range.begin);
                 desc_heap_info->reserved_end = (uint32_t)(cb_heap.sampler_reserved.end - cb_heap.sampler_range.begin);
-            } else {
+            }
+            if (update_resource) {
                 dc_cb_state.last_bound_heap_info_resource =
                     cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(glsl::BoundHeapInfo));
                 dc_cb_state.last_bound_heap_info_resource.Clear();
@@ -82,7 +90,17 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
             desc_binding_cmd.bound_heap_info_sampler = dc_cb_state.last_bound_heap_info_sampler;
             // Data for the CPU (since the command buffer might updated)
             desc_binding_cmd.heap_cb_state = cb_heap;
-        });
+        };
+
+    // When using VkCommandBufferInheritanceDescriptorHeapInfoEXT we emulate calling
+    // vkCmdBindResourceHeapEXT/vkCmdBindSamplerHeapEXT here.
+    // We can't do this in CommandBufferSubState::RecordBindResourceHeap because that is before
+    // RegisterDescriptorChecksHeapValidation is called.
+    if (cb.base.descriptor_heap.is_resource_inherited || cb.base.descriptor_heap.is_sampler_inherited) {
+        DescriptorHeapBindings::BindingCommand bound_heap_snapshot{};
+        desc_heap_bindings.on_update_bound_descriptor_heap(gpuav, cb, bound_heap_snapshot, false);
+        desc_heap_bindings.bound_heap_snapshots.emplace_back(std::move(bound_heap_snapshot));
+    }
 
     cb.on_instrumentation_error_logger_register_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
                                                                           const LastBound& last_bound) {
