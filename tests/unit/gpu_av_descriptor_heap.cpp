@@ -1280,8 +1280,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBRebindHeap) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - Handle Secondary command buffers correctly
-TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_ResourceOOBSecondaryInheritance) {
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBSecondaryInheritance) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride, true);
@@ -1327,8 +1326,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_ResourceOOBSecondaryInheritance) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - Handle Secondary command buffers correctly
-TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_ResourceOOBSecondaryBind) {
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBSecondaryBind) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride, true);

@@ -1300,8 +1300,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, UntypedPointersOffsetIdNonArray) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-// TODO - Handle Secondary command buffers correctly
-TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_SecondaryInheritance) {
+TEST_F(PositiveGpuAVDescriptorHeap, SecondaryInheritance) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride);
@@ -1351,7 +1350,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_SecondaryInheritance) {
     ASSERT_TRUE(ssbo_data[0] == 42);
 }
 
-TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_SecondaryBind) {
+TEST_F(PositiveGpuAVDescriptorHeap, SecondaryBind) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride);
