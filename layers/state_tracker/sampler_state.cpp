@@ -44,7 +44,7 @@ Sampler::Sampler(const VkSampler handle, const VkSamplerCreateInfo* pCreateInfo)
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
       sampler_conversion(GetConversion(pCreateInfo)),
-      customCreateInfo(GetCustomCreateInfo(pCreateInfo)) {}
+      custom_border_color_format(GetCustomBorderColorFormat(pCreateInfo)) {}
 
 SamplerYcbcrConversion::SamplerYcbcrConversion(VkSamplerYcbcrConversion handle,
                                                const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,

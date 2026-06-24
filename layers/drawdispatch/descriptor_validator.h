@@ -22,6 +22,7 @@
 
 namespace spirv {
 struct ResourceInterfaceVariable;
+struct ImageInstruction;
 }  // namespace spirv
 
 namespace vvl {
@@ -37,6 +38,8 @@ class CommandBuffer;
 class Sampler;
 class DescriptorSet;
 class TensorDescriptor;
+class Image;
+class ImageView;
 
 class DescriptorValidator : public Logger {
   public:
@@ -80,6 +83,21 @@ class DescriptorValidator : public Logger {
     // helper for the common parts of ImageSamplerDescriptor and SamplerDescriptor validation
     bool ValidateSamplerDescriptor(const spirv::ResourceInterfaceVariable& binding_info, uint32_t index, VkSampler sampler,
                                    bool is_immutable, const vvl::Sampler* sampler_state) const;
+
+    // Validate samplers that were used with an image (and we have the image info)
+    bool ValidateImageSamplerDescriptor(const spirv::ResourceInterfaceVariable& binding_info, const uint32_t index,
+                                        VkDescriptorType descriptor_type, const spirv::ImageInstruction& image_insn,
+                                        const vvl::ImageView& image_view_state, const vvl::Sampler& sampler_state) const;
+
+    bool ValidateSampledImageDescriptor(const spirv::ResourceInterfaceVariable& binding_info, const uint32_t index,
+                                        VkDescriptorType descriptor_type, const spirv::ImageInstruction& image_insn,
+                                        const vvl::ImageView& image_view_state, const vvl::Image& image_state) const;
+    bool ValidateImageAttachmentDescriptor(const spirv::ResourceInterfaceVariable& binding_info, const uint32_t index,
+                                           VkDescriptorType descriptor_type, const vvl::ImageView& image_view_state) const;
+
+    bool ValidateImageDescriptorQCOM(const spirv::ResourceInterfaceVariable& binding_info, const uint32_t index,
+                                     VkDescriptorType descriptor_type, const vvl::ImageDescriptor& image_descriptor,
+                                     bool has_sampler) const;
 
     std::string DescribeDescriptor(const spirv::ResourceInterfaceVariable& binding_info, uint32_t index,
                                    VkDescriptorType type) const;

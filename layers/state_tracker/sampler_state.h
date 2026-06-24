@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -62,7 +62,7 @@ class Sampler : public StateObject, public SubStateManager<SamplerSubState> {
 
     // VK_NULL_HANDLE if it doesn't have one chained in the pNext at creation time
     const VkSamplerYcbcrConversion sampler_conversion;
-    const VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo;
+    const VkFormat custom_border_color_format;
 
     Sampler(const VkSampler handle, const VkSamplerCreateInfo *pCreateInfo);
 
@@ -75,11 +75,11 @@ class Sampler : public StateObject, public SubStateManager<SamplerSubState> {
         auto *conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
         return conversion_info ? conversion_info->conversion : VK_NULL_HANDLE;
     }
-    static inline VkSamplerCustomBorderColorCreateInfoEXT GetCustomCreateInfo(const VkSamplerCreateInfo *pCreateInfo) {
-        VkSamplerCustomBorderColorCreateInfoEXT result{};
-        auto cbci = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
-        if (cbci) result = *cbci;
-        return result;
+    static inline VkFormat GetCustomBorderColorFormat(const VkSamplerCreateInfo* pCreateInfo) {
+        if (auto cbci = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext)) {
+            return cbci->format;
+        }
+        return VK_FORMAT_UNDEFINED;
     }
 };
 
