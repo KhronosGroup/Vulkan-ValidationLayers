@@ -3045,8 +3045,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceHeapDataOOB) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4861");
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     // create an extra 256 bytes that we will not bind
-    CreateResourceHeap(heap_props.bufferDescriptorSize + 256, true);
-    VkDeviceSize bound_size = heap_props.minResourceHeapReservedRange + heap_props.bufferDescriptorSize;
+    CreateResourceHeap(heap_props.bufferDescriptorSize + 512, true);
+    const VkDeviceSize min_alignment = m_device->Physical().limits_.minUniformBufferOffsetAlignment;
+    VkDeviceSize bound_size = Align(heap_props.minResourceHeapReservedRange + heap_props.bufferDescriptorSize, min_alignment);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     WriteBufferToHeap(ssbo_buffer);
