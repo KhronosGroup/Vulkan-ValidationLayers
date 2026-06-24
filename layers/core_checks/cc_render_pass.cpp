@@ -1269,18 +1269,15 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
             }
             const uint64_t attachment_external_format =
                 GetExternalFormat(render_pass_create_info->pAttachments[resolve_attachment].pNext);
-            auto it = device_state->ahb_ext_resolve_formats_map.find(attachment_external_format);
-            if (it != device_state->ahb_ext_resolve_formats_map.end()) {
-                VkFormat color_format = render_pass_create_info->pAttachments[color_attachment].format;
-                if (it->second != color_format) {
-                    const LogObjectList objlist(begin_info.renderPass, begin_info.framebuffer);
-                    skip |=
-                        LogError("VUID-VkRenderPassBeginInfo-framebuffer-09353", objlist, begin_info_loc,
+            const VkFormat ahb_resolve_format = device_state->GetExternalFormatResolveANDROID(attachment_external_format);
+            const VkFormat color_format = render_pass_create_info->pAttachments[color_attachment].format;
+            if (ahb_resolve_format != VK_FORMAT_UNDEFINED && ahb_resolve_format != color_format) {
+                const LogObjectList objlist(begin_info.renderPass, begin_info.framebuffer);
+                skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-09353", objlist, begin_info_loc,
                                  "subpass[%" PRIu32 "].pResolveAttachments[0].attachment %" PRIu32 " has externalFormat %" PRIu64
                                  " which corresponds to needing a color attachment format of %s, but the format is %s.",
-                                 i, resolve_attachment, attachment_external_format, string_VkFormat(it->second),
+                                 i, resolve_attachment, attachment_external_format, string_VkFormat(ahb_resolve_format),
                                  string_VkFormat(color_format));
-                }
             }
         }
     }
@@ -4264,19 +4261,18 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer&
                                          color_attachment_loc.dot(Field::imageView), "is not null (%s).",
                                          FormatHandle(color_attachment.imageView).c_str());
                     } else {
-                        auto it = device_state->ahb_ext_resolve_formats_map.find(resolve_view_state->image_state->ahb_format);
-                        if (it != device_state->ahb_ext_resolve_formats_map.end()) {
-                            if (it->second != color_view_state->create_info.format) {
-                                const LogObjectList objlist(commandBuffer, color_attachment.resolveImageView,
-                                                            color_attachment.imageView);
-                                skip |=
-                                    LogError("VUID-VkRenderingAttachmentInfo-resolveMode-09330", commandBuffer,
+                        const VkFormat ahb_resolve_format =
+                            device_state->GetExternalFormatResolveANDROID(resolve_view_state->image_state->ahb_format);
+                        if (ahb_resolve_format != VK_FORMAT_UNDEFINED &&
+                            ahb_resolve_format != color_view_state->create_info.format) {
+                            const LogObjectList objlist(commandBuffer, color_attachment.resolveImageView,
+                                                        color_attachment.imageView);
+                            skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveMode-09330", commandBuffer,
                                              color_attachment_loc.dot(Field::imageView),
                                              "has externalFormat %" PRIu64
                                              " which corresponds to needing a color attachment format of %s, but the format is %s.",
-                                             resolve_view_state->image_state->ahb_format, string_VkFormat(it->second),
+                                             resolve_view_state->image_state->ahb_format, string_VkFormat(ahb_resolve_format),
                                              string_VkFormat(color_view_state->create_info.format));
-                            }
                         }
                     }
                 } else if (!device_state->android_external_format_resolve_null_color_attachment_prop) {
@@ -5249,18 +5245,15 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& c
                 subpass.pResolveAttachments[0].attachment == i && subpass.pColorAttachments) {
                 const uint64_t attachment_external_format =
                     GetExternalFormat(rpci.pAttachments[subpass.pResolveAttachments[0].attachment].pNext);
-                auto it = device_state->ahb_ext_resolve_formats_map.find(attachment_external_format);
-                if (it != device_state->ahb_ext_resolve_formats_map.end()) {
-                    VkFormat color_format = rpci.pAttachments[subpass.pColorAttachments[0].attachment].format;
-                    if (it->second != color_format) {
-                        LogObjectList objlist(create_info.renderPass, image_views[i]);
-                        skip |= LogError(
-                            "VUID-VkFramebufferCreateInfo-nullColorAttachmentWithExternalFormatResolve-09349", objlist,
-                            attachment_loc,
-                            "subpass[%" PRIu32 "].pResolveAttachments[0].attachment %" PRIu32 " has externalFormat %" PRIu64
-                            " which corresponds to needing a color attachment format of %s, but the format is %s.",
-                            j, i, attachment_external_format, string_VkFormat(it->second), string_VkFormat(color_format));
-                    }
+                const VkFormat ahb_resolve_format = device_state->GetExternalFormatResolveANDROID(attachment_external_format);
+                const VkFormat color_format = rpci.pAttachments[subpass.pColorAttachments[0].attachment].format;
+                if (ahb_resolve_format != VK_FORMAT_UNDEFINED && ahb_resolve_format != color_format) {
+                    LogObjectList objlist(create_info.renderPass, image_views[i]);
+                    skip |= LogError(
+                        "VUID-VkFramebufferCreateInfo-nullColorAttachmentWithExternalFormatResolve-09349", objlist, attachment_loc,
+                        "subpass[%" PRIu32 "].pResolveAttachments[0].attachment %" PRIu32 " has externalFormat %" PRIu64
+                        " which corresponds to needing a color attachment format of %s, but the format is %s.",
+                        j, i, attachment_external_format, string_VkFormat(ahb_resolve_format), string_VkFormat(color_format));
                 }
             }
         }

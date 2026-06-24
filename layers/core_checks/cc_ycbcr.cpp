@@ -61,13 +61,11 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, co
     // (vkspec.html#potential-format-features)
     VkFormatFeatureFlags2 format_features = ~0ULL;
     if (conversion_format == VK_FORMAT_UNDEFINED) {
-        // only check for external format inside VK_FORMAT_UNDEFINED check to prevent unnecessary extra errors from no format
-        // features being supported
-        if (external_format != 0) {
-            auto it = device_state->ahb_ext_formats_map.find(external_format);
-            if (it != device_state->ahb_ext_formats_map.end()) {
-                format_features = it->second;
-            }
+        format_features = device_state->GetExternalFormatFeaturesANDROID(pCreateInfo->pNext);
+        if (format_features == 0) {
+            // only check for external format inside VK_FORMAT_UNDEFINED check to prevent unnecessary extra errors from no format
+            // features being supported
+            format_features = ~0ULL;
         }
     } else {
         format_features = GetPotentialFormatFeatures(conversion_format);

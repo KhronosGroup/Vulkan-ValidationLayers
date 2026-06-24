@@ -1797,6 +1797,7 @@ class DeviceState : public vvl::BaseDevice {
                                       const RecordObject& record_obj) override;
 
     VkFormatFeatureFlags2 GetExternalFormatFeaturesANDROID(const void* pNext) const;
+    VkFormat GetExternalFormatResolveANDROID(uint64_t external_format) const;
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     void PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
@@ -2189,9 +2190,10 @@ class DeviceState : public vvl::BaseDevice {
     } as_with_addresses;
 
     // < external format, features >
-    vvl::concurrent_unordered_map<uint64_t, VkFormatFeatureFlags2> ahb_ext_formats_map;
+    vvl::unordered_map<uint64_t, VkFormatFeatureFlags2> ahb_ext_formats_map;
     // < external format, colorAttachmentFormat > (VK_ANDROID_external_format_resolve)
-    vvl::concurrent_unordered_map<uint64_t, VkFormat> ahb_ext_resolve_formats_map;
+    vvl::unordered_map<uint64_t, VkFormat> ahb_ext_resolve_formats_map;
+    mutable std::shared_mutex ahb_lock_;
 
     // For VK_EXT_descriptor_buffer need to track global buffer size allocated
     struct DescriptorBufferAddressSpace {
