@@ -1152,14 +1152,14 @@ bool CoreChecks::ValidateSecondaryCommandBufferWaitEvents(const core::CommandBuf
             const LogObjectList objlist(secondary_cb_sub_state.Handle());
             if (found_signals) {
                 std::ostringstream ss;
-                ss << "(" << FormatHandle(secondary_cb_sub_state.Handle()) << ") contains a vkCmdWaitEvents call with srcStageMask "
+                ss << "(" << FormatHandle(secondary_cb_sub_state.Handle()) << ") contains vkCmdWaitEvents with srcStageMask "
                    << string_VkPipelineStageFlags(secondary_wait.wait_src_stage_mask)
                    << ", but the bitwise OR of stageMask values from the most recent vkCmdSetEvent calls is "
                    << string_VkPipelineStageFlags(signals_src_stage_mask);
                 skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", objlist, secondary_cb_loc, "%s", ss.str().c_str());
             } else {
                 std::ostringstream ss;
-                ss << "(" << FormatHandle(secondary_cb_sub_state.Handle()) << ") contains a vkCmdWaitEvents call with srcStageMask "
+                ss << "(" << FormatHandle(secondary_cb_sub_state.Handle()) << ") contains vkCmdWaitEvents with srcStageMask "
                    << string_VkPipelineStageFlags(secondary_wait.wait_src_stage_mask)
                    << ", but the waited events are known to be unsignaled at this point. The wait does not have a corresponding "
                       "vkCmdSetEvent signal.";
