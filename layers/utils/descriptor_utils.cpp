@@ -21,6 +21,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include "containers/container_utils.h"
+#include "containers/custom_containers.h"
 #include "generated/dispatch_functions.h"
 #include "generated/spirv_grammar_helper.h"
 #include "generated/vk_extension_helper.h"
@@ -30,6 +31,7 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
+#include <vector>
 
 uint32_t CountDescriptorHeapEmbeddedSamplers(const void* pNext) {
     const VkShaderDescriptorSetAndBindingMappingInfoEXT* mapping_info =
@@ -369,4 +371,40 @@ VkDeviceSize CachedDescriptorSize::GetSize(VkDescriptorType type, bool use_heap)
                VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT}));
     return use_heap ? heap_size_[index] : buffer_size_[index];
+}
+
+std::vector<VkDeviceSize> CachedDescriptorSize::GetAllSizes(bool use_heap) const {
+    std::vector<VkDeviceSize> sizes;
+    // Pre-allocate as no known implementations seem to go above 4 different sizes
+    sizes.reserve(4);
+
+    for (uint32_t i = 0; i < 14; i++) {
+        const VkDeviceSize new_size = use_heap ? heap_size_[i] : buffer_size_[i];
+        if (new_size == 0) {
+            continue;
+        }
+
+        const size_t current_count = sizes.size();
+        if (current_count == 0) {
+            sizes.emplace_back(new_size);
+        } else if (current_count == 1) {
+            if (sizes[0] != new_size) {
+                sizes.emplace_back(new_size);
+            }
+        } else {
+            // The vector is small enough and the number of unique sizes is small enough that just looping the vector to find it
+            // should be fast enough
+            bool add = true;
+            for (size_t j = 0; j < current_count; j++) {
+                if (sizes[j] == new_size) {
+                    add = false;
+                    break;
+                }
+            }
+            if (add) {
+                sizes.emplace_back(new_size);
+            }
+        }
+    }
+    return sizes;
 }

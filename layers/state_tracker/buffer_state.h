@@ -18,6 +18,7 @@
  * limitations under the License.
  */
 #pragma once
+#include <cstdint>
 #include <variant>
 #include "state_tracker/device_memory_state.h"
 #include "state_tracker/device_range_state.h"
@@ -77,6 +78,9 @@ class Buffer : public Bindable, public SubStateManager<BufferSubState> {
 
     // Used to help unify the way we print the BDA info
     std::string Describe(const Logger& dev_data) const;
+
+    // For when |descriptor_hashing| setting is turned on
+    std::vector<uint64_t> descriptor_hashes;
 
   private:
     std::variant<std::monostate, BindableLinearMemoryTracker, BindableSparseMemoryTracker> tracker_;

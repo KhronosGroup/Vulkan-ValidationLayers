@@ -176,6 +176,8 @@ const char* VK_LAYER_DUPLICATE_MESSAGE_LIMIT = "duplicate_message_limit";
 const char* VK_LAYER_FINE_GRAINED_LOCKING = "fine_grained_locking";
 // Debug settings used for internal development
 const char* VK_LAYER_DEBUG_DISABLE_SPIRV_VAL = "debug_disable_spirv_val";
+// Used both with GPU-AV and GPU Dump
+const char* VK_LAYER_DESCRIPTOR_HASHING = "descriptor_hashing";
 
 // DebugPrintf (which is now part of GPU-AV internally)
 // ---
@@ -1003,6 +1005,10 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DEBUG_DISABLE_SPIRV_VAL, global_settings.debug_disable_spirv_val);
     }
 
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DESCRIPTOR_HASHING)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DESCRIPTOR_HASHING, global_settings.descriptor_hashing);
+    }
+
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_CUSTOM_STYPE_LIST)) {
         // We use to support this, but feel no one is using this
         // As a transition, we will allow to be used and just skip the 1 VU check if anything is set
@@ -1394,6 +1400,13 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
                 "Shader Validation was explicitly turned off, but the SPIR-V still needs to be parsed/stored, but not validated, "
                 "in order for Sync Validation to get read/write information out the SPIR-V.");
         }
+    }
+
+    if (global_settings.descriptor_hashing && !settings_data->enabled[gpu_validation] && !settings_data->enabled[gpu_dump]) {
+        setting_warnings.emplace_back(
+            "Descriptor Hashing was turned on, but neither GPU-AV nor GPU Dump are enabled. Turning off as this setting has no "
+            "effect.");
+        global_settings.descriptor_hashing = false;
     }
 
     // Last as previous settings are needed so we can make sure they line up with the DebugReport settings

@@ -492,6 +492,8 @@ struct ResourceInterfaceVariable : public VariableBase {
     } info;
     // For non descriptor indexing usages, this hash allows use to skip re-validating because a different VkImageView bound will
     // result in the same outcome
+    // Note - this is not related to |descriptor_hashing| setting, this pre-dates VK_EXT_descriptor_buffer/VK_EXT_descriptor_heap
+    // back when people had to call vkUpdateDescriptorSet 10k times a frame and we needed a way to detect nothing changed.
     uint64_t descriptor_hash = 0;
     bool IsImage() const { return base_type.Opcode() == spv::OpTypeImage || base_type.Opcode() == spv::OpTypeSampledImage; }
 

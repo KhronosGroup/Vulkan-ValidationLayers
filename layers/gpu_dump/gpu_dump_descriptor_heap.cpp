@@ -20,6 +20,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_core.h>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <spirv-tools/libspirv.hpp>
@@ -41,6 +42,8 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/state_tracker.h"
+#include "utils/hash_util.h"
+#include "utils/lock_utils.h"
 #include "utils/math_utils.h"
 #include "utils/descriptor_utils.h"
 #include "utils/spirv_tools_utils.h"
@@ -63,7 +66,7 @@ struct MappingInfo {
 
 // Data to be used around all dumping logic
 struct DumpInfo {
-    const GpuDump& dev_data;
+    GpuDump& dev_data;
     const VkPhysicalDeviceDescriptorHeapPropertiesEXT& heap_props;
     const spirv::ResourceInterfaceVariable& resource_variable;
     const bool is_sampler;
@@ -92,7 +95,7 @@ struct DumpInfo {
     // Will be false if mapping uses embedded samplers instead
     bool inspect_sampler = false;
 
-    DumpInfo(const GpuDump& dev_data, const MappingInfo& mapping_info, const vvl::CommandBuffer::DescriptorHeap& heap)
+    DumpInfo(GpuDump& dev_data, const MappingInfo& mapping_info, const vvl::CommandBuffer::DescriptorHeap& heap)
         : dev_data(dev_data),
           heap_props(dev_data.phys_dev_ext_props.descriptor_heap_props),
           resource_variable(*mapping_info.resource_variable),
@@ -170,7 +173,7 @@ struct WarnInfo {
     const DumpInfo& dump;
     WarnInfo(const DumpInfo& dump) : dump(dump) {}
 
-    bool Found() { return indirect_buffer || !ss.str().empty(); }
+    bool FoundWarning() { return indirect_buffer || !ss.str().empty(); }
 
     void HeapOOB(VkDeviceSize offset, bool from_sampler);
     void AlignmentScalarIndirect(VkDeviceAddress address, VkDeviceSize alignment);
@@ -187,6 +190,7 @@ struct WarnInfo {
     void AlignmentIndexArraySampler(std::vector<uint32_t>& bad_indexes);
     void ReservedRangeIndexArray(std::vector<uint32_t>& bad_indexes);
     void ReservedRangeFinal();
+    const vvl::DeviceState::DescriptorHash::Entry* ValidateDescriptor(VkDeviceAddress address);
 };
 
 void WarnInfo::HeapOOB(VkDeviceSize offset, bool from_sampler) {
@@ -349,7 +353,7 @@ void WarnInfo::ArrayStride(uint32_t array_stride, bool is_sampler) {
 void WarnInfo::IndexOOB(uint32_t max_index) {
     if (dump.array_length > (max_index + 1)) {
         ss << new_bullet_line << "[WARNING] OUT OF BOUNDS - descriptor has an array length of [" << std::dec << dump.array_length
-           << "] but any element accessed starting at [" << max_index + 1 << "] will be invalid if accessed";
+           << "] but any element accessed starting at [" << max_index + 1 << "] will be OOB of the heap and invalid if accessed";
     }
 };
 
@@ -416,6 +420,76 @@ void WarnInfo::ReservedRangeFinal() {
         }
     }
 };
+
+static const vvl::DeviceState::DescriptorHash::Entry kNullDescriptor{static_cast<uint8_t>(vvlDescriptorType::Null),
+                                                                     vvl::DeviceState::DescriptorHash::EntryNull{}};
+
+const vvl::DeviceState::DescriptorHash::Entry* WarnInfo::ValidateDescriptor(VkDeviceAddress address) {
+    if (!dump.dev_data.global_settings.descriptor_hashing) {
+        return nullptr;
+    }
+    if (FoundWarning()) {
+        return nullptr;  // no point checking if we know something else is wrong
+    }
+
+    // For VK_EXT_descriptor_heap where each descriptor type might be a different size.
+    //
+    // For example, if a UBO is 32 bytes, but an image is 64 bytes:
+    // If we grab the heap data from [N, N+31] and hash it, we have no way to know if it would have
+    // really been an Image hash if we have done [N, N+63]
+    //
+    // We need a way to re-hash to find the key for a potential different type
+    bool check_larger_sizes = true;
+    std::vector<uint8_t> descriptor_bytes = dump.dev_data.CopyDataFromMemory(address, dump.dev_data.max_descriptor_size);
+    if (descriptor_bytes.empty()) {
+        descriptor_bytes = dump.dev_data.CopyDataFromMemory(address, dump.descriptor_size);
+        if (descriptor_bytes.empty()) {
+            return nullptr;  // heap buffer might not be visible
+        } else {
+            // this means we are at the end of the heap buffer and can only check the exact size (or smaller)
+            check_larger_sizes = false;
+        }
+    }
+
+    const auto& descriptor_hash = dump.dev_data.device_state->descriptor_hash;
+    WriteLockGuard guard(descriptor_hash.map_lock);
+
+    uint64_t key = hash_util::Hash64(descriptor_bytes.data(), (size_t)dump.descriptor_size);
+    auto it = descriptor_hash.map.find(key);
+    if (it == descriptor_hash.map.end()) {
+        // TODO - This is a very hacky (but will work good enough for now) way to detect null descriptors
+        if (memcmp(descriptor_bytes.data(), &dump.dev_data.null_descriptor_dword, sizeof(uint32_t)) == 0) {
+            return &kNullDescriptor;  // if we find a null descriptor,
+        }
+
+        // Before saying we can't find it, check the other descriptor sizes if we can spot the wrong descriptor type
+        for (VkDeviceSize size : dump.dev_data.all_descriptor_sizes) {
+            if (size == dump.descriptor_size) {
+                continue;
+            } else if (!check_larger_sizes && size > dump.descriptor_size) {
+                continue;
+            }
+            key = hash_util::Hash64(descriptor_bytes.data(), (size_t)size);
+            it = descriptor_hash.map.find(key);
+            if (it != descriptor_hash.map.end()) {
+                break;
+            }
+        }
+        if (it == descriptor_hash.map.end()) {
+            ss << new_bullet_line << "[WARNING] NO DESCRIPTOR - No known descriptor found in the heap at 0x" << std::hex << address;
+            return nullptr;
+        }
+    }
+
+    const vvlDescriptorType found_type = (vvlDescriptorType)it->second.type;
+    if (found_type != GetMaskFromDescriptorType(dump.descriptor_type)) {
+        ss << new_bullet_line << "[WARNING] WRONG DESCRIPTOR - At 0x" << std::hex << address << " expected a "
+           << string_VkDescriptorType(dump.descriptor_type)
+           << " descriptor, but instead found a descriptor for: " << it->second.Describe(*dump.dev_data.device_state);
+        return nullptr;
+    }
+    return &it->second;
+}
 
 VkDeviceSize CommandBufferSubState::GetPushData(std::ostringstream& ss, WarnInfo& warn, uint32_t offset, uint32_t size) const {
     VkDeviceSize push_index = 0;
@@ -503,6 +577,16 @@ void CommandBufferSubState::DumpDescriptorHeapConstantOffset(std::ostringstream&
 
     warn.HeapOOB(index_zero_offset + dump.descriptor_size, false);
 
+    // Currently only will look at the descriptor if not an array as it is common to have a large array where only the indexes
+    // accessed will have a valid descriptor ready.
+    // Also want at the end after everything has been checked so we don't try and access invalid memory
+    if (!dump.is_array) {
+        const auto* descriptor_entry = warn.ValidateDescriptor(index_zero_address);
+        if (descriptor_entry) {
+            ss << new_bullet_line << "Found descriptor mapped to: " << descriptor_entry->Describe(*dev_data.device_state);
+        }
+    }
+
     if (dump.inspect_sampler) {
         ss << new_bullet_line << "samplerHeapOffset: 0x" << std::hex << map_data.samplerHeapOffset
            << ", samplerHeapArrayStride: " << std::dec << map_data.samplerHeapArrayStride;
@@ -563,6 +647,13 @@ void CommandBufferSubState::DumpDescriptorHeapConstantOffset(std::ostringstream&
             }
         }
         warn.HeapOOB(index_zero_offset + dump.sampler_descriptor_size, true);
+
+        if (!dump.is_array) {
+            const auto* descriptor_entry = warn.ValidateDescriptor(index_zero_address);
+            if (descriptor_entry) {
+                ss << new_bullet_line << "Found descriptor mapped to: " << descriptor_entry->Describe(*dev_data.device_state);
+            }
+        }
     }
 }
 
@@ -637,6 +728,13 @@ void CommandBufferSubState::DumpDescriptorHeapPushIndex(std::ostringstream& ss, 
         }
     }
     warn.HeapOOB(index_zero_offset + dump.descriptor_size, false);
+
+    if (!dump.is_array) {
+        const auto* descriptor_entry = warn.ValidateDescriptor(index_zero_address);
+        if (descriptor_entry) {
+            ss << new_bullet_line << "Found descriptor mapped to: " << descriptor_entry->Describe(*dev_data.device_state);
+        }
+    }
 
     if (dump.inspect_sampler) {
         ss << new_bullet_line << "samplerPushOffset: " << std::dec << map_data.samplerPushOffset << ", samplerHeapOffset: 0x"
@@ -714,6 +812,13 @@ void CommandBufferSubState::DumpDescriptorHeapPushIndex(std::ostringstream& ss, 
             }
         }
         warn.HeapOOB(index_zero_offset + dump.sampler_descriptor_size, true);
+
+        if (!dump.is_array) {
+            const auto* descriptor_entry = warn.ValidateDescriptor(index_zero_address);
+            if (descriptor_entry) {
+                ss << new_bullet_line << "Found descriptor mapped to: " << descriptor_entry->Describe(*dev_data.device_state);
+            }
+        }
     }
 }
 
@@ -808,9 +913,14 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
                 warn.reserved_range_start = 0;
             }
         }
-    }
 
-    warn.HeapOOB(map_data.heapOffset + dump.descriptor_size, false);
+        const auto* descriptor_entry = warn.ValidateDescriptor(index_zero_address);
+        if (descriptor_entry) {
+            ss << new_bullet_line << "Found descriptor mapped to: " << descriptor_entry->Describe(*dev_data.device_state);
+        }
+    } else {
+        warn.HeapOOB(map_data.heapOffset + dump.descriptor_size, false);
+    }
 
     if (dump.inspect_sampler) {
         ss << new_bullet_line << "samplerPushOffset: " << std::dec << map_data.samplerPushOffset << std::hex
@@ -918,9 +1028,14 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
                     warn.reserved_range_start = 0;
                 }
             }
-        }
 
-        warn.HeapOOB(map_data.samplerHeapOffset + dump.sampler_descriptor_size, true);
+            const auto* descriptor_entry = warn.ValidateDescriptor(index_zero_address);
+            if (descriptor_entry) {
+                ss << new_bullet_line << "Found descriptor mapped to: " << descriptor_entry->Describe(*dev_data.device_state);
+            }
+        } else {
+            warn.HeapOOB(map_data.samplerHeapOffset + dump.sampler_descriptor_size, true);
+        }
     }
 }
 
@@ -953,7 +1068,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
         uint32_t search_slots = !dump.is_array ? 1 : dump.is_runtime_array ? available_slots : dump.array_length;
 
         if (dump.array_length != 0 && dump.array_length > available_slots) {
-            warn.IndexOOB(available_slots - 1);  // will report warning
+            warn.IndexOOB(available_slots - 1);
             search_slots = available_slots;
         }
         uint32_t search_bytes = search_slots * sizeof(uint32_t);
@@ -1068,7 +1183,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
             uint32_t search_slots = !dump.is_array ? 1 : dump.is_runtime_array ? available_slots : dump.array_length;
 
             if (dump.array_length != 0 && dump.array_length > available_slots) {
-                warn.IndexOOB(available_slots - 1);  // will report warning
+                warn.IndexOOB(available_slots - 1);
                 search_slots = available_slots;
             }
             uint32_t search_bytes = search_slots * sizeof(uint32_t);
@@ -1295,7 +1410,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 
     ss << '\n';
 
-    return warn.Found();
+    return warn.FoundWarning();
 }
 
 static uint32_t GetUntypedHeapOffset(const spirv::Module& module, const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
