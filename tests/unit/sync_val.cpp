@@ -6709,3 +6709,61 @@ TEST_F(NegativeSyncVal, FenceWaitSynchronizesAnotherQueuePartially2) {
 
     m_device->Wait();
 }
+
+TEST_F(NegativeSyncVal, RacingHazardBetweenLayoutTransitions) {
+    all_queue_count_ = true;
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    auto [queue, queue2] = GetTwoQueuesFromSameFamily(m_device->QueuesWithComputeCapability());
+    if (!queue) {
+        GTEST_SKIP() << "Test requires two queues with compute capabilities from the same queue family";
+    }
+
+    vkt::CommandPool command_pool(*m_device, queue->family_index);
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Semaphore semaphore(*m_device);
+
+    VkImageMemoryBarrier2 transition = vku::InitStructHelper();
+    transition.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    transition.srcAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+    transition.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    transition.dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+    transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    transition.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    transition.image = image;
+    transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    vkt::CommandBuffer cb_transition(*m_device, command_pool);
+    cb_transition.Begin();
+    cb_transition.Barrier(transition);
+    cb_transition.End();
+
+    vkt::CommandBuffer cb_next_transition(*m_device, command_pool);
+    cb_next_transition.Begin();
+    cb_next_transition.Barrier(transition);
+    cb_next_transition.End();
+
+    vkt::CommandBuffer cb2_transition(*m_device, command_pool);
+    cb2_transition.Begin();
+    cb2_transition.Barrier(transition);
+    cb2_transition.End();
+
+    // a) The first queue.
+    // Submit layout transition. Signal a semaphore when the work is done.
+    queue->Submit2(cb_transition, vkt::Signal(semaphore, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT));
+
+    // b) The second queue.
+    // Submit layout transtion. Wait for the first queue.
+    // This layout transition is properly synchronized with the first queue (no error)
+    queue2->Submit2(cb2_transition, vkt::Wait(semaphore, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT));
+
+    // c) The first queue again.
+    // Submit layout transition on the first queue again without synchronization.
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
+    queue->Submit2(cb_next_transition);
+    m_errorMonitor->VerifyFound();
+
+    m_device->Wait();
+}
