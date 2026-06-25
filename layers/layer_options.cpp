@@ -959,6 +959,9 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
     // so that the layer always defaults to the standard validation options we want,
     // and does not try to process option coming from the VVL we are debugging
 #if defined(BUILD_SELF_VVL)
+    // Found having sync val on is very important for catching GPU-AV bugs
+    settings_data->enabled[sync_validation] = true;
+
     // Setup default messenger callback to stdout and just error validation messages
     FILE* log_output = stdout;
     VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
