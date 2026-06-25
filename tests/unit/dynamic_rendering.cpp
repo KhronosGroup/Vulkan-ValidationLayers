@@ -8366,3 +8366,116 @@ TEST_F(NegativeDynamicRendering, MultiviewCountersByRegionARM) {
         perf_begin_info.counterAddressCount = 1;
     }
 }
+
+TEST_F(NegativeDynamicRendering, DynamicRenderingTilePropertiesWithTooMuchTileMemory) {
+    TEST_DESCRIPTION("Try to query dynamic rendering tile properties with a tile memory size "
+                     "that is greater than the largest tile memory heap.");
+    AddRequiredExtensions(VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileProperties);
+    AddRequiredFeature(vkt::Feature::tileMemoryHeap);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkPhysicalDeviceMemoryProperties memory_info{};
+    vk::GetPhysicalDeviceMemoryProperties(Gpu(), &memory_info);
+    uint64_t max_tile_memory_heap_size = 0;
+    for (uint32_t index = 0; index < memory_info.memoryHeapCount; ++index) {
+        if (memory_info.memoryHeaps[index].flags & VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM) {
+            max_tile_memory_heap_size = std::max(memory_info.memoryHeaps[index].size, max_tile_memory_heap_size);
+        }
+    }
+    if (max_tile_memory_heap_size == std::numeric_limits<uint64_t>::max()) {
+        GTEST_SKIP() << "Tile Memory heap exposes max 64 bit value, skipping test.";
+    }
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image color_image{*m_device, image_ci};
+    vkt::ImageView color_image_view = color_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = color_image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkTileMemorySizeInfoQCOM tile_memory_size_info = vku::InitStructHelper();
+    tile_memory_size_info.size = max_tile_memory_heap_size + 1;
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&tile_memory_size_info);
+    rendering_info.renderArea = {{0, 0}, {64, 64}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkTilePropertiesQCOM tile_properties = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-VkTileMemorySizeInfoQCOM-size-10729");
+    vk::GetDynamicRenderingTilePropertiesQCOM(device(), &rendering_info, &tile_properties);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRendering, DynamicRenderingTilePropertiesWithTileShadingButFeatureNotEnabled) {
+    TEST_DESCRIPTION("Try to query dynamic rendering tile properties with tile shading information, "
+                     "but tileShading feature isn't enabled.");
+    AddRequiredExtensions(VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_TILE_SHADING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileProperties);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image color_image{*m_device, image_ci};
+    vkt::ImageView color_image_view = color_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = color_image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_info = vku::InitStructHelper();
+    tile_shading_info.flags = VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM;
+    tile_shading_info.tileApronSize = {0, 0};
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&tile_shading_info);
+    rendering_info.renderArea = {{0, 0}, {64, 64}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkTilePropertiesQCOM tile_properties = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassTileShadingCreateInfoQCOM-tileShading-10658");
+    vk::GetDynamicRenderingTilePropertiesQCOM(device(), &rendering_info, &tile_properties);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRendering, DynamicRenderingTilePropertiesWithPerViewRenderAreasButFeatureNotEnabled) {
+    TEST_DESCRIPTION("Try to query dynamic rendering tile properties with per-view render areas information, "
+                     "but multiviewPerViewRenderAreas feature isn't enabled.");
+    AddRequiredExtensions(VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_MULTIVIEW_PER_VIEW_RENDER_AREAS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileProperties);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image color_image{*m_device, image_ci};
+    vkt::ImageView color_image_view = color_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = color_image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    const VkRect2D per_view_render_area = {{0, 0}, {64, 64}};
+    VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM per_view_render_areas_info = vku::InitStructHelper();
+    per_view_render_areas_info.perViewRenderAreaCount = 1;
+    per_view_render_areas_info.pPerViewRenderAreas = &per_view_render_area;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&per_view_render_areas_info);
+    rendering_info.renderArea = {{0, 0}, {64, 64}};
+    rendering_info.layerCount = 1;
+    rendering_info.viewMask = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkTilePropertiesQCOM tile_properties = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-perViewRenderAreaCount-07857");
+    vk::GetDynamicRenderingTilePropertiesQCOM(device(), &rendering_info, &tile_properties);
+    m_errorMonitor->VerifyFound();
+}

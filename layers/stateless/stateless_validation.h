@@ -1161,9 +1161,9 @@ class Device : public vvl::BaseDevice {
                                                   const VkImageSubresourceRange *pRanges, const Context &context) const;
 
     bool ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
-        VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* rp_begin_info, const VkRenderingInfo* rendering_info,
+        const LogObjectList &objlist, const VkRenderPassBeginInfo* rp_begin_info, const VkRenderingInfo* rendering_info,
         const VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM& multiview_per_view_info, const Location& loc) const;
-    bool ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, const void *pNext, const VkRect2D render_area,
+    bool ValidateRenderPassStripeBeginInfo(const LogObjectList &objlist, const void *pNext, const VkRect2D render_area,
                                            const Location &loc) const;
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *const rp_begin,
                                     const ErrorObject &error_obj) const;
@@ -1174,24 +1174,26 @@ class Device : public vvl::BaseDevice {
     bool manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
                                                  const Context &context) const;
 
-    bool ValidateRenderingAttachmentLayout(VkCommandBuffer commandBuffer, const VkRenderingAttachmentInfo &attachment_info,
+    bool ValidateRenderingInfo(const LogObjectList &objlist, const VkRenderingInfo &rendering_info,
+                               const Location &rendering_info_loc) const;
+    bool ValidateRenderingAttachmentLayout(const LogObjectList &objlist, const VkRenderingAttachmentInfo &attachment_info,
                                            const Location &attachment_loc) const;
-    bool ValidateRenderingAttachmentFeedbackLoopInfo(VkCommandBuffer commandBuffer,
+    bool ValidateRenderingAttachmentFeedbackLoopInfo(const LogObjectList &objlist,
                                                      const VkRenderingAttachmentInfo &attachment_info,
                                                      const Location &attachment_loc) const;
-    bool ValidateRenderingCustomResolve(VkCommandBuffer commandBuffer, VkRenderingFlags rendering_flags,
+    bool ValidateRenderingCustomResolve(const LogObjectList &objlist, VkRenderingFlags rendering_flags,
                                         VkResolveModeFlagBits resolve_mode, const Location &attachment_loc) const;
-    bool ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
+    bool ValidateBeginRenderingColorAttachment(const LogObjectList &objlist, const VkRenderingInfo &rendering_info,
                                                const Location &rendering_info_loc) const;
-    bool ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
+    bool ValidateBeginRenderingDepthAttachment(const LogObjectList &objlist, const VkRenderingInfo &rendering_info,
                                                const Location &rendering_info_loc) const;
-    bool ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
+    bool ValidateBeginRenderingStencilAttachment(const LogObjectList &objlist, const VkRenderingInfo &rendering_info,
                                                  const Location &rendering_info_loc) const;
     bool ValidateBeginRenderingAttachmentFlagsInfo(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
                                                    const Location &rendering_info_loc) const;
 
     bool ValidateBeginRenderingFragmentShadingRateAttachment(
-        VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
+        const LogObjectList &objlist, const VkRenderingInfo &rendering_info,
         const VkRenderingFragmentShadingRateAttachmentInfoKHR &rendering_fsr_attachment_info,
         const Location &rendering_info_loc) const;
 
