@@ -502,8 +502,12 @@ std::string FormatErrorMessage(const HazardResult& hazard, const CommandExecutio
     }
 
     // Synchronization information
+    const bool cross_queue_racing_hazard = hazard_info.IsRacingHazard() && context.GetQueueId() != kQueueIdInvalid;
     ss << "\n";
-    if (missing_synchronization) {
+    if (cross_queue_racing_hazard) {
+        ss << "The RACING hazard means the two submissions on different queues are not synchronized with each other, so the order "
+              "of their accesses is undefined. Synchronize the submissions so that one runs before the other.";
+    } else if (missing_synchronization) {
         const char* access_type = hazard_info.IsWrite() ? "write" : "read";
         const char* prior_access_type = hazard_info.IsPriorWrite() ? "write" : "read";
 
@@ -562,7 +566,7 @@ std::string FormatErrorMessage(const HazardResult& hazard, const CommandExecutio
             ss << string_VkAccessFlagBits2(access.access_mask) << " accesses at ";
             ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
         } else {
-            ss << ", but layout transition does synchronize with these accesses.";
+            ss << ", but layout transition does not synchronize with these accesses.";
             ReportLayoutTransitionSynchronizationInsight(ss, false);
         }
     } else {  // WAR hazard
@@ -581,7 +585,7 @@ std::string FormatErrorMessage(const HazardResult& hazard, const CommandExecutio
     }
 
     // Give a hint for WAR hazard
-    if (IsValueIn(hazard_type, {WRITE_AFTER_READ, WRITE_RACING_READ, PRESENT_AFTER_READ})) {
+    if (!cross_queue_racing_hazard && IsValueIn(hazard_type, {WRITE_AFTER_READ, WRITE_RACING_READ, PRESENT_AFTER_READ})) {
         ss << "\nHint: An execution dependency is sufficient to prevent this hazard.";
     }
     // Give a hint about how to fix a layout transition hazard with the previous access.
