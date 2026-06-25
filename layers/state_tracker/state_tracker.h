@@ -2063,6 +2063,13 @@ class DeviceState : public vvl::BaseDevice {
                                               const RecordObject& record_obj) override;
     void PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
                                       const RecordObject& record_obj) override;
+    void PostCallRecordWriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount,
+                                                   const VkResourceDescriptorInfoEXT* pResources,
+                                                   const VkHostAddressRangeEXT* pDescriptors,
+                                                   const RecordObject& record_obj) override;
+    void PostCallRecordWriteSamplerDescriptorsEXT(VkDevice device, uint32_t samplerCount, const VkSamplerCreateInfo* pSamplers,
+                                                  const VkHostAddressRangeEXT* pDescriptors,
+                                                  const RecordObject& record_obj) override;
 
     inline std::shared_ptr<vvl::ShaderModule> GetShaderModuleStateFromIdentifier(const VkShaderModuleIdentifierEXT& ident) {
         ReadLockGuard guard(shader_identifier_map_lock_);
@@ -2216,6 +2223,56 @@ class DeviceState : public vvl::BaseDevice {
     } descriptor_heap_reserved_address;
 
     std::atomic<uint32_t> descriptor_heap_global_embedded_sampler_count_ = {0u};
+
+    // When users opt in, we will try to hash all descriptors seen from VK_EXT_descriptor_buffer and VK_EXT_descriptor_heap
+    struct DescriptorHash {
+        struct EntryBuffer {
+            VkDeviceAddressRangeEXT range;
+        };
+        struct EntryTexelBuffer {
+            VkDeviceAddressRangeEXT range;
+            VkFormat format;
+        };
+        struct EntryAS {
+            VkDeviceAddressRangeEXT range;
+        };
+        struct EntryImage {
+            VkImage image;
+            VkFormat format;
+            VkImageViewType type;
+        };
+        struct EntrySampler {};
+        struct EntryNull {};
+        struct Entry {
+            uint8_t type;  // vvlDescriptorType
+            union Data {
+                EntryBuffer buffer;
+                EntryTexelBuffer texel_buffer;
+                EntryAS acceleration_structure;
+                EntryImage image;
+                EntrySampler sampler;
+                EntryNull null_descriptor;
+
+                explicit Data(EntryBuffer b) : buffer(b) {}
+                explicit Data(EntryTexelBuffer t) : texel_buffer(t) {}
+                explicit Data(EntryAS a) : acceleration_structure(a) {}
+                explicit Data(EntryImage i) : image(i) {}
+                explicit Data(EntrySampler s) : sampler(s) {}
+                explicit Data(EntryNull n) : null_descriptor(n) {}
+            } data;
+
+            Entry(uint8_t t, EntryBuffer b) : type(t), data(b) {}
+            Entry(uint8_t t, EntryTexelBuffer j) : type(t), data(j) {}
+            Entry(uint8_t t, EntryAS a) : type(t), data(a) {}
+            Entry(uint8_t t, EntryImage i) : type(t), data(i) {}
+            Entry(uint8_t t, EntrySampler s) : type(t), data(s) {}
+            Entry(uint8_t t, EntryNull n) : type(t), data(n) {}
+
+            std::string Describe(const DeviceState& device_state) const;
+        };
+        vvl::unordered_map<uint64_t, Entry> map;
+        mutable std::shared_mutex map_lock;
+    } descriptor_hash;
 
     // Keep track of identifier -> state
     vvl::unordered_map<VkShaderModuleIdentifierEXT, std::shared_ptr<vvl::ShaderModule>> shader_identifier_map_;

@@ -91,6 +91,7 @@
                         { "key": "gpu_dump_copy_memory_indirect", "value": false },
                         { "key": "gpu_dump_device_generated_commands", "value": false },
                         { "key": "validate_best_practices", "value": false },
+                        { "key": "descriptor_hashing", "value": false },
                         { "key": "report_flags", "value": [ "error", "warn" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
                         { "key": "enable_message_limit", "value": true }
@@ -121,6 +122,7 @@
                         { "key": "gpu_dump_copy_memory_indirect", "value": false },
                         { "key": "gpu_dump_device_generated_commands", "value": false },
                         { "key": "validate_best_practices", "value": false },
+                        { "key": "descriptor_hashing", "value": false },
                         { "key": "report_flags", "value": [ "error" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
                         { "key": "enable_message_limit", "value": true }
@@ -151,6 +153,7 @@
                         { "key": "gpu_dump_copy_memory_indirect", "value": false },
                         { "key": "gpu_dump_device_generated_commands", "value": false },
                         { "key": "validate_best_practices", "value": true },
+                        { "key": "descriptor_hashing", "value": false },
                         { "key": "report_flags", "value": [ "error", "warn", "perf" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
                         { "key": "enable_message_limit", "value": true }
@@ -181,6 +184,7 @@
                         { "key": "gpu_dump_copy_memory_indirect", "value": false },
                         { "key": "gpu_dump_device_generated_commands", "value": false },
                         { "key": "validate_best_practices", "value": false },
+                        { "key": "descriptor_hashing", "value": false },
                         { "key": "report_flags", "value": [ "error" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
                         { "key": "enable_message_limit", "value": true }
@@ -214,6 +218,7 @@
                         { "key": "gpu_dump_copy_memory_indirect", "value": false },
                         { "key": "gpu_dump_device_generated_commands", "value": false },
                         { "key": "validate_best_practices", "value": false },
+                        { "key": "descriptor_hashing", "value": false },
                         { "key": "report_flags", "value": [ "error", "warn" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
                         { "key": "enable_message_limit", "value": true }
@@ -244,6 +249,7 @@
                         { "key": "gpu_dump_copy_memory_indirect", "value": false },
                         { "key": "gpu_dump_device_generated_commands", "value": false },
                         { "key": "validate_best_practices", "value": false },
+                        { "key": "descriptor_hashing", "value": false },
                         { "key": "report_flags",  "value": [ "error", "warn", "info" ] },
                         { "key": "debug_action",  "value": [] },
                         { "key": "enable_message_limit", "value": false }
@@ -274,6 +280,7 @@
                         { "key": "gpu_dump_copy_memory_indirect", "value": false },
                         { "key": "gpu_dump_device_generated_commands", "value": false },
                         { "key": "validate_best_practices", "value": false },
+                        { "key": "descriptor_hashing", "value": false },
                         { "key": "report_flags",  "value": [ "warn" ] },
                         { "key": "debug_action",  "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
                         { "key": "enable_message_limit", "value": false }
@@ -304,6 +311,7 @@
                         { "key": "gpu_dump_copy_memory_indirect", "value": true },
                         { "key": "gpu_dump_device_generated_commands", "value": true },
                         { "key": "validate_best_practices", "value": false },
+                        { "key": "descriptor_hashing", "value": false },
                         { "key": "report_flags",  "value": [ "warn", "info" ] },
                         { "key": "debug_action",  "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
                         { "key": "enable_message_limit", "value": false }
@@ -1164,6 +1172,13 @@
                                     }
                                 }
                             ]
+                        },
+                        {
+                            "key": "descriptor_hashing",
+                            "label": "Descriptor Hashing",
+                            "description": "When enabled and using VK_EXT_descriptor_heap/VK_EXT_descriptor_buffer, this will attempt to track all descriptors seen such that GPU-AV and GPU Dump can detect more errors. This will increase the memory footprint.",
+                            "type": "BOOL",
+                            "default": false
                         },
                         {
                             "key": "validate_best_practices",

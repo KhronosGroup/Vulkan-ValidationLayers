@@ -103,6 +103,9 @@ struct GlobalSettings {
     // If we want to have spirv-opt potentially do constant folding on the spec constants
     // (by far the largest performance bottle neck for large shaders using spec cosntants)
     bool spirv_const_fold = true;
+
+    // Option to track the hashes of descriptors in VK_EXT_descriptor_buffer/VK_EXT_descriptor_heap
+    bool descriptor_hashing = false;
 };
 
 class DebugReport;

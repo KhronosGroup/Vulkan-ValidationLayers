@@ -109,6 +109,9 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     const bool sparse_residency;
     const std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
 
+    // For when |descriptor_hashing| setting is turned on
+    std::vector<uint64_t> descriptor_hashes;
+
     VkImageFormatProperties image_format_properties = {};
 #ifdef VK_USE_PLATFORM_METAL_EXT
     const bool metal_image_export;

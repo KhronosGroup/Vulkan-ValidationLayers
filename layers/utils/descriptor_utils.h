@@ -21,6 +21,7 @@
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include <string>
+#include <vector>
 #include "generated/error_location_helper.h"
 
 namespace spirv {
@@ -88,6 +89,7 @@ struct DeviceExtensions;
 struct CachedDescriptorSize {
     void Init(const vvl::DeviceState& device_state);
     VkDeviceSize GetSize(VkDescriptorType type, bool use_heap = true) const;
+    std::vector<VkDeviceSize> GetAllSizes(bool use_heap = true) const;
 
   private:
     // The number of valid descriptors that can be queried is known in the spec
@@ -120,6 +122,8 @@ enum class vvlDescriptorType : uint8_t {
     ImageTexelBufferUniform = 0xA,  // VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
     ImageTexelBufferStorage = 0xB,  // VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
     ImageInputAttachment = 0xC,     // VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+
+    Null = 0xFF,  // null descriptor
 };
 
 inline constexpr uint8_t vvlDescriptorBufferMask = 0x2;
@@ -146,6 +150,9 @@ constexpr VkDescriptorType GetDescriptorTypeFromMask(vvlDescriptorType vvl_type)
             return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
         case vvlDescriptorType::ImageInputAttachment:
             return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+        case vvlDescriptorType::Null:
+            assert(false);
+            return VK_DESCRIPTOR_TYPE_MAX_ENUM;
     }
     assert(false && "Invalid compressed descriptor type mask");
     return VK_DESCRIPTOR_TYPE_MAX_ENUM;

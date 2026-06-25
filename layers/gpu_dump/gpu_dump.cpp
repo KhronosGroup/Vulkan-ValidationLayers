@@ -118,4 +118,21 @@ bool GpuDump::ListBuffers(std::ostringstream& ss, VkDeviceAddress address, uint3
     return buffer_states.empty();
 }
 
+void GpuDump::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {
+    if (gpu_dump_settings.descriptors && global_settings.descriptor_hashing) {
+        all_descriptor_sizes = device_state->cached_descriptor_size.GetAllSizes();
+        for (VkDeviceSize size : all_descriptor_sizes) {
+            if (size > max_descriptor_size) {
+                max_descriptor_size = size;
+            }
+        }
+        // TODO - move to some common util
+        null_descriptor_dword = 0;
+        if (phys_dev_props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU && phys_dev_props.vendorID == 0x8086) {
+            // For Intel Integrated GPUs (from Metorlake+ which support heaps) they have a special null descriptor
+            null_descriptor_dword = 0xe0000000;
+        }
+    }
+}
+
 }  // namespace gpudump
