@@ -915,7 +915,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffset) {
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(1, 3);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     // 1 resource stride OOB
-    mapping.sourceData.constantOffset.heapOffset = (uint32_t)(heap_props.minResourceHeapReservedRange + resource_stride);
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)resource_heap_.CreateInfo().size;
     mapping.sourceData.constantOffset.heapArrayStride = 0;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
