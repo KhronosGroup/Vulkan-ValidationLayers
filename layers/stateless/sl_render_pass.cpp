@@ -649,7 +649,7 @@ void Device::PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass rende
     renderpasses_states.erase(renderPass);
 }
 
-bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, const void* pNext, const VkRect2D render_area,
+bool Device::ValidateRenderPassStripeBeginInfo(const LogObjectList& objlist, const void* pNext, const VkRect2D render_area,
                                                const Location& loc) const {
     bool skip = false;
     const auto rp_stripe_begin = vku::FindStructInPNextChain<VkRenderPassStripeBeginInfoARM>(pNext);
@@ -658,7 +658,7 @@ bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, co
     }
 
     if (rp_stripe_begin->stripeInfoCount > phys_dev_ext_props.renderpass_striped_props.maxRenderPassStripes) {
-        skip |= LogError("VUID-VkRenderPassStripeBeginInfoARM-stripeInfoCount-09450", commandBuffer,
+        skip |= LogError("VUID-VkRenderPassStripeBeginInfoARM-stripeInfoCount-09450", objlist,
                          loc.pNext(Struct::VkRenderPassStripeBeginInfoARM, Field::stripeInfoCount),
                          "(%" PRIu32 ") is greater than maxRenderPassStripes (%" PRIu32 ").", rp_stripe_begin->stripeInfoCount,
                          phys_dev_ext_props.renderpass_striped_props.maxRenderPassStripes);
@@ -684,7 +684,7 @@ bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, co
                 RangesIntersect(rect.offset.y, rect.extent.height, stripe_area.offset.y, stripe_area.extent.height);
 
             if (has_overlapping_stripes) {
-                skip |= LogError("VUID-VkRenderPassStripeBeginInfoARM-stripeArea-09451", commandBuffer, stripe_info_loc,
+                skip |= LogError("VUID-VkRenderPassStripeBeginInfoARM-stripeArea-09451", objlist, stripe_info_loc,
                                  "(offset{%s} extent{%s}) is overlapping with pStripeInfos[%" PRIu32 "] (offset{%s} extent {%s}).",
                                  string_VkOffset2D(stripe_area.offset).c_str(), string_VkExtent2D(stripe_area.extent).c_str(),
                                  index, string_VkOffset2D(rect.offset).c_str(), string_VkExtent2D(rect.extent).c_str());
@@ -693,14 +693,14 @@ bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, co
         }
 
         if (width_granularity > 0 && !IsIntegerMultipleOf(stripe_area.offset.x, width_granularity)) {
-            skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09452", commandBuffer,
+            skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09452", objlist,
                              stripe_info_loc.dot(Field::stripeArea).dot(Field::offset).dot(Field::x),
                              "(%" PRIu32 ") is not a multiple of %" PRIu32 ".", stripe_area.offset.x, width_granularity);
         }
 
         if (width_granularity > 0 && !IsIntegerMultipleOf(stripe_area.extent.width, width_granularity) &&
             ((stripe_area.extent.width + stripe_area.offset.x) != render_area.extent.width)) {
-            skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09453", commandBuffer,
+            skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09453", objlist,
                              stripe_info_loc.dot(Field::stripeArea).dot(Field::extent).dot(Field::width),
                              "(%" PRIu32 ") is not a multiple of %" PRIu32
                              ", or when added to the stripeArea.offset.x is not equal render area width (%" PRIu32 ")",
@@ -708,14 +708,14 @@ bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, co
         }
 
         if (height_granularity > 0 && !IsIntegerMultipleOf(stripe_area.offset.y, height_granularity)) {
-            skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09454", commandBuffer,
+            skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09454", objlist,
                              stripe_info_loc.dot(Field::stripeArea).dot(Field::offset).dot(Field::y),
                              "(%" PRIu32 ") is not a multiple of %" PRIu32 ".", stripe_area.offset.y, height_granularity);
         }
 
         if (height_granularity > 0 && !IsIntegerMultipleOf(stripe_area.extent.height, height_granularity) &&
             (stripe_area.extent.height + stripe_area.offset.y) != render_area.extent.height) {
-            skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09455", commandBuffer,
+            skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09455", objlist,
                              stripe_info_loc.dot(Field::stripeArea).dot(Field::extent).dot(Field::height),
                              "(%" PRIu32 ") is not a multiple of %" PRIu32
                              ", or when added to the stripeArea.offset.y is not equal to render area height (%" PRIu32 ")",
@@ -728,7 +728,7 @@ bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, co
     if (!has_overlapping_stripes && (total_stripe_area != total_render_area)) {
         const std::string vuid = (loc.function == Func::vkCmdBeginRenderPass) ? "VUID-VkRenderPassBeginInfo-pNext-09539"
                                                                               : "VUID-VkRenderingInfo-pNext-09535";
-        skip |= LogError(vuid.data(), commandBuffer, loc.pNext(Struct::VkRenderPassStripeBeginInfoARM, Field::pStripeInfos),
+        skip |= LogError(vuid.data(), objlist, loc.pNext(Struct::VkRenderPassStripeBeginInfoARM, Field::pStripeInfos),
                          "has total of stripe area of %" PRIu32 " is not covering whole render area of %" PRIu32 " (%s).",
                          total_stripe_area, total_render_area, string_VkExtent2D(render_area.extent).c_str());
     }
@@ -737,13 +737,13 @@ bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, co
 }
 
 bool Device::ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
-    VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* rp_begin_info, const VkRenderingInfo* rendering_info,
+    const LogObjectList& objlist, const VkRenderPassBeginInfo* rp_begin_info, const VkRenderingInfo* rendering_info,
     const VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM& multiview_per_view_info, const Location& loc) const {
     bool skip = false;
     if (multiview_per_view_info.perViewRenderAreaCount != 0 && !enabled_features.multiviewPerViewRenderAreas) {
         const char* vuid = rp_begin_info ? "VUID-VkRenderPassBeginInfo-perViewRenderAreaCount-07859"
                                          : "VUID-VkRenderingInfo-perViewRenderAreaCount-07857";
-        skip |= LogError(vuid, commandBuffer,
+        skip |= LogError(vuid, objlist,
                          loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM).dot(Field::perViewRenderAreaCount),
                          "is %" PRIu32 " but the multiviewPerViewRenderAreas feature was not enabled.",
                          multiview_per_view_info.perViewRenderAreaCount);
@@ -753,7 +753,7 @@ bool Device::ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
         const uint32_t msb = (uint32_t)MostSignificantBit(rendering_info->viewMask);
         if (multiview_per_view_info.perViewRenderAreaCount != msb + 1) {
             skip |= LogError(
-                "VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-pNext-07866", commandBuffer,
+                "VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-pNext-07866", objlist,
                 loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM).dot(Field::perViewRenderAreaCount),
                 "(%" PRIu32 ") must be VkRenderingInfo::viewMask (0x%" PRIx32 ") most significant bit index (%" PRIu32 ") + 1",
                 multiview_per_view_info.perViewRenderAreaCount, rendering_info->viewMask, msb);
@@ -765,7 +765,7 @@ bool Device::ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
     for (uint32_t i = 0; i < multiview_per_view_info.perViewRenderAreaCount; i++) {
         const VkRect2D view_rect = multiview_per_view_info.pPerViewRenderAreas[i];
         if (view_rect.offset.x < 0) {
-            skip |= LogError("VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-offset-07861", commandBuffer,
+            skip |= LogError("VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-offset-07861", objlist,
                              loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM)
                                  .dot(Field::pPerViewRenderAreas, i)
                                  .dot(Field::offset)
@@ -773,7 +773,7 @@ bool Device::ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
                              "(%" PRId32 ") is less than zero.", view_rect.offset.x);
         }
         if (view_rect.offset.y < 0) {
-            skip |= LogError("VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-offset-07862", commandBuffer,
+            skip |= LogError("VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-offset-07862", objlist,
                              loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM)
                                  .dot(Field::pPerViewRenderAreas, i)
                                  .dot(Field::offset)
@@ -781,7 +781,7 @@ bool Device::ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
                              "(%" PRId32 ") is less than zero.", view_rect.offset.y);
         }
         if ((view_rect.offset.x + view_rect.extent.width) > phys_dev_props.limits.maxFramebufferWidth) {
-            skip |= LogError("VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-offset-07863", commandBuffer,
+            skip |= LogError("VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-offset-07863", objlist,
                              loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM)
                                  .dot(Field::pPerViewRenderAreas, i)
                                  .dot(Field::offset)
@@ -790,7 +790,7 @@ bool Device::ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
                              view_rect.offset.x, view_rect.extent.width, phys_dev_props.limits.maxFramebufferWidth);
         }
         if ((view_rect.offset.y + view_rect.extent.height) > phys_dev_props.limits.maxFramebufferHeight) {
-            skip |= LogError("VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-offset-07864", commandBuffer,
+            skip |= LogError("VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-offset-07864", objlist,
                              loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM)
                                  .dot(Field::pPerViewRenderAreas, i)
                                  .dot(Field::offset)
@@ -803,7 +803,7 @@ bool Device::ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
             const char* vuid = rp_begin_info ? "VUID-VkRenderPassBeginInfo-perViewRenderAreaCount-07860"
                                              : "VUID-VkRenderingInfo-perViewRenderAreaCount-07858";
             skip |=
-                LogError(vuid, commandBuffer,
+                LogError(vuid, objlist,
                          loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM).dot(Field::pPerViewRenderAreas, i),
                          "(%s) is not contained in %s::renderArea (%s)", string_VkRect2D(view_rect).c_str(),
                          rendering_info ? "VkRenderingInfo" : "VkRenderPassBeginInfo", string_VkRect2D(full_render_area).c_str());
@@ -889,75 +889,84 @@ bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
                          "dynamicRendering is not enabled.");
     }
 
-    if (pRenderingInfo->viewMask == 0 && pRenderingInfo->layerCount == 0) {
-        skip |= LogError("VUID-VkRenderingInfo-viewMask-06069", commandBuffer, rendering_info_loc,
+    skip |= ValidateRenderingInfo(commandBuffer, *pRenderingInfo, rendering_info_loc);
+    skip |= ValidateBeginRenderingAttachmentFlagsInfo(commandBuffer, *pRenderingInfo, rendering_info_loc);
+    return skip;
+}
+
+bool Device::ValidateRenderingInfo(const LogObjectList& objlist, const VkRenderingInfo& rendering_info,
+                                   const Location& rendering_info_loc) const {
+    bool skip = false;
+
+    if (rendering_info.viewMask == 0 && rendering_info.layerCount == 0) {
+        skip |= LogError("VUID-VkRenderingInfo-viewMask-06069", objlist, rendering_info_loc,
                          "viewMask and layerCount are both zero");
     }
 
-    if (pRenderingInfo->colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
-        skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06106", commandBuffer,
+    if (rendering_info.colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
+        skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06106", objlist,
                          rendering_info_loc.dot(Field::colorAttachmentCount),
                          "(%" PRIu32
                          ") must be less than or equal to "
                          "maxColorAttachments (%" PRIu32 ").",
-                         pRenderingInfo->colorAttachmentCount, phys_dev_props.limits.maxColorAttachments);
+                         rendering_info.colorAttachmentCount, phys_dev_props.limits.maxColorAttachments);
     }
 
-    if ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_INLINE_BIT_KHR) != 0 && !enabled_features.nestedCommandBuffer &&
+    if ((rendering_info.flags & VK_RENDERING_CONTENTS_INLINE_BIT_KHR) != 0 && !enabled_features.nestedCommandBuffer &&
         !enabled_features.maintenance7) {
-        skip |= LogError("VUID-VkRenderingInfo-flags-10012", commandBuffer, rendering_info_loc.dot(Field::flags),
+        skip |= LogError("VUID-VkRenderingInfo-flags-10012", objlist, rendering_info_loc.dot(Field::flags),
                          "is %s, but nestedCommandBuffer and maintenance7 feature were not enabled.",
-                         string_VkRenderingFlags(pRenderingInfo->flags).c_str());
+                         string_VkRenderingFlags(rendering_info.flags).c_str());
     }
-    if ((pRenderingInfo->flags & (VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT | VK_RENDERING_FRAGMENT_REGION_BIT_EXT)) != 0 &&
+    if ((rendering_info.flags & (VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT | VK_RENDERING_FRAGMENT_REGION_BIT_EXT)) != 0 &&
         !enabled_features.customResolve) {
         skip |=
-            LogError("VUID-VkRenderingInfo-flags-11514", commandBuffer, rendering_info_loc.dot(Field::flags),
-                     "is %s, but customResolve feature were not enabled.", string_VkRenderingFlags(pRenderingInfo->flags).c_str());
+            LogError("VUID-VkRenderingInfo-flags-11514", objlist, rendering_info_loc.dot(Field::flags),
+                     "is %s, but customResolve feature were not enabled.", string_VkRenderingFlags(rendering_info.flags).c_str());
     }
-    if (pRenderingInfo->layerCount > phys_dev_props.limits.maxFramebufferLayers) {
-        skip |= LogError("VUID-VkRenderingInfo-layerCount-07817", commandBuffer, rendering_info_loc.dot(Field::layerCount),
-                         "(%" PRIu32 ") is greater than maxFramebufferLayers (%" PRIu32 ").", pRenderingInfo->layerCount,
+    if (rendering_info.layerCount > phys_dev_props.limits.maxFramebufferLayers) {
+        skip |= LogError("VUID-VkRenderingInfo-layerCount-07817", objlist, rendering_info_loc.dot(Field::layerCount),
+                         "(%" PRIu32 ") is greater than maxFramebufferLayers (%" PRIu32 ").", rendering_info.layerCount,
                          phys_dev_props.limits.maxFramebufferLayers);
     }
 
-    if (!enabled_features.multiview && (pRenderingInfo->viewMask != 0)) {
-        skip |= LogError("VUID-VkRenderingInfo-multiview-06127", commandBuffer, rendering_info_loc.dot(Field::viewMask),
-                         "is 0x%" PRIx32 " (non-zero) but the multiview feature is not enabled.", pRenderingInfo->viewMask);
+    if (!enabled_features.multiview && (rendering_info.viewMask != 0)) {
+        skip |= LogError("VUID-VkRenderingInfo-multiview-06127", objlist, rendering_info_loc.dot(Field::viewMask),
+                         "is 0x%" PRIx32 " (non-zero) but the multiview feature is not enabled.", rendering_info.viewMask);
     }
 
-    if (pRenderingInfo->flags & VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) {
+    if (rendering_info.flags & VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) {
         if (!enabled_features.fragmentDensityMapLayered) {
-            skip |= LogError("VUID-VkRenderingInfo-fragmentDensityMapLayered-10827", commandBuffer,
+            skip |= LogError("VUID-VkRenderingInfo-fragmentDensityMapLayered-10827", objlist,
                              rendering_info_loc.dot(Field::flags),
                              "contains VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE, but fragmentDensityMapLayered feature "
                              "was not enabled.");
-        } else if (pRenderingInfo->layerCount > phys_dev_ext_props.fragment_density_map_layered_props.maxFragmentDensityMapLayers) {
-            skip |= LogError("VUID-VkRenderingInfo-flags-10826", commandBuffer, rendering_info_loc.dot(Field::layerCount),
-                             "is %" PRIu32 " but the maxFragmentDensityMapLayers is %" PRIu32 ".", pRenderingInfo->layerCount,
+        } else if (rendering_info.layerCount > phys_dev_ext_props.fragment_density_map_layered_props.maxFragmentDensityMapLayers) {
+            skip |= LogError("VUID-VkRenderingInfo-flags-10826", objlist, rendering_info_loc.dot(Field::layerCount),
+                             "is %" PRIu32 " but the maxFragmentDensityMapLayers is %" PRIu32 ".", rendering_info.layerCount,
                              phys_dev_ext_props.fragment_density_map_layered_props.maxFragmentDensityMapLayers);
         }
     }
 
     const auto rendering_fsr_attachment_info =
-        vku::FindStructInPNextChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext);
+        vku::FindStructInPNextChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(rendering_info.pNext);
     if (rendering_fsr_attachment_info) {
-        skip |= ValidateBeginRenderingFragmentShadingRateAttachment(commandBuffer, *pRenderingInfo, *rendering_fsr_attachment_info,
+        skip |= ValidateBeginRenderingFragmentShadingRateAttachment(objlist, rendering_info, *rendering_fsr_attachment_info,
                                                                     rendering_info_loc);
     }
 
     const auto fragment_density_map_attachment_info =
-        vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext);
+        vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(rendering_info.pNext);
     if (fragment_density_map_attachment_info && (fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE)) {
-        if (UniqueRenderingInfoImageViews(*pRenderingInfo, fragment_density_map_attachment_info->imageView) == false) {
-            skip |= LogError("VUID-VkRenderingInfo-imageView-06116", commandBuffer,
+        if (UniqueRenderingInfoImageViews(rendering_info, fragment_density_map_attachment_info->imageView) == false) {
+            skip |= LogError("VUID-VkRenderingInfo-imageView-06116", objlist,
                              rendering_info_loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView),
                              "is %s.", FormatHandle(fragment_density_map_attachment_info->imageView).c_str());
         }
 
         if (fragment_density_map_attachment_info->imageLayout != VK_IMAGE_LAYOUT_GENERAL &&
             fragment_density_map_attachment_info->imageLayout != VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT) {
-            skip |= LogError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06157", commandBuffer,
+            skip |= LogError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06157", objlist,
                              rendering_info_loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView),
                              "is %s, but "
                              "VkRenderingFragmentDensityMapAttachmentInfoEXT::imageLayout is %s.",
@@ -967,7 +976,7 @@ bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
 
         if (rendering_fsr_attachment_info &&
             (rendering_fsr_attachment_info->imageView == fragment_density_map_attachment_info->imageView)) {
-            skip |= LogError("VUID-VkRenderingInfo-imageView-06126", commandBuffer,
+            skip |= LogError("VUID-VkRenderingInfo-imageView-06126", objlist,
                              rendering_info_loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView),
                              "and VkRenderingFragmentShadingRateAttachmentInfoKHR::imageView are the same (%s).",
                              FormatHandle(fragment_density_map_attachment_info->imageView).c_str());
@@ -975,60 +984,59 @@ bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
     }
 
     if (const auto multiview_per_view_info =
-            vku::FindStructInPNextChain<VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM>(pRenderingInfo->pNext)) {
-        skip |= ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(commandBuffer, nullptr, pRenderingInfo,
+            vku::FindStructInPNextChain<VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM>(rendering_info.pNext)) {
+        skip |= ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(objlist, nullptr, &rendering_info,
                                                                        *multiview_per_view_info, rendering_info_loc);
     }
 
     if (const auto* rp_tile_shading_ci =
-            vku::FindStructInPNextChain<VkRenderPassTileShadingCreateInfoQCOM>(pRenderingInfo->pNext)) {
+            vku::FindStructInPNextChain<VkRenderPassTileShadingCreateInfoQCOM>(rendering_info.pNext)) {
         const Location rp_tile_shading_loc = rendering_info_loc.pNext(Struct::VkRenderPassTileShadingCreateInfoQCOM);
         skip |= ValidateRenderPassTileShadingCreateInfo(*rp_tile_shading_ci, rp_tile_shading_loc);
     }
 
-    skip |= ValidateRenderPassStripeBeginInfo(commandBuffer, pRenderingInfo->pNext, pRenderingInfo->renderArea, rendering_info_loc);
-    skip |= ValidateBeginRenderingColorAttachment(commandBuffer, *pRenderingInfo, rendering_info_loc);
-    skip |= ValidateBeginRenderingDepthAttachment(commandBuffer, *pRenderingInfo, rendering_info_loc);
-    skip |= ValidateBeginRenderingStencilAttachment(commandBuffer, *pRenderingInfo, rendering_info_loc);
-    skip |= ValidateBeginRenderingAttachmentFlagsInfo(commandBuffer, *pRenderingInfo, rendering_info_loc);
+    skip |= ValidateRenderPassStripeBeginInfo(objlist, rendering_info.pNext, rendering_info.renderArea, rendering_info_loc);
+    skip |= ValidateBeginRenderingColorAttachment(objlist, rendering_info, rendering_info_loc);
+    skip |= ValidateBeginRenderingDepthAttachment(objlist, rendering_info, rendering_info_loc);
+    skip |= ValidateBeginRenderingStencilAttachment(objlist, rendering_info, rendering_info_loc);
     return skip;
 }
 
-bool Device::ValidateRenderingAttachmentLayout(VkCommandBuffer commandBuffer, const VkRenderingAttachmentInfo& attachment_info,
+bool Device::ValidateRenderingAttachmentLayout(const LogObjectList& objlist, const VkRenderingAttachmentInfo& attachment_info,
                                                const Location& attachment_loc) const {
     bool skip = false;
 
     if (attachment_info.imageLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
-        const LogObjectList objlist(commandBuffer, attachment_info.imageView);
-        skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06145", objlist, attachment_loc.dot(Field::imageLayout),
+        const LogObjectList attachment_objlist(objlist, attachment_info.imageView);
+        skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06145", attachment_objlist, attachment_loc.dot(Field::imageLayout),
                          "must not be VK_IMAGE_LAYOUT_PRESENT_SRC_KHR");
     } else if (IsValueIn(attachment_info.imageLayout, {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                                        VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT})) {
-        const LogObjectList objlist(commandBuffer, attachment_info.imageView);
-        skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06135", objlist, attachment_loc.dot(Field::imageLayout),
+        const LogObjectList attachment_objlist(objlist, attachment_info.imageView);
+        skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06135", attachment_objlist, attachment_loc.dot(Field::imageLayout),
                          "is %s.", string_VkImageLayout(attachment_info.imageLayout));
     }
 
     if (attachment_info.imageLayout == VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
-        const LogObjectList objlist(commandBuffer, attachment_info.imageView);
+        const LogObjectList attachment_objlist(objlist, attachment_info.imageView);
         const char* vuid = IsExtEnabled(extensions.vk_khr_fragment_shading_rate) ? "VUID-VkRenderingAttachmentInfo-imageView-06143"
                                                                                  : "VUID-VkRenderingAttachmentInfo-imageView-06138";
-        skip |= LogError(vuid, objlist, attachment_loc.dot(Field::imageLayout),
+        skip |= LogError(vuid, attachment_objlist, attachment_loc.dot(Field::imageLayout),
                          "must not be VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR (or the alias "
                          "VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV)");
     }
 
     if (attachment_info.imageLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT) {
-        const LogObjectList objlist(commandBuffer, attachment_info.imageView);
-        skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06140", objlist, attachment_loc.dot(Field::imageLayout),
+        const LogObjectList attachment_objlist(objlist, attachment_info.imageView);
+        skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06140", attachment_objlist, attachment_loc.dot(Field::imageLayout),
                          "must not be VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT");
     }
 
     return skip;
 }
 
-bool Device::ValidateRenderingAttachmentFeedbackLoopInfo(VkCommandBuffer commandBuffer,
+bool Device::ValidateRenderingAttachmentFeedbackLoopInfo(const LogObjectList& objlist,
                                                          const VkRenderingAttachmentInfo& attachment_info,
                                                          const Location& attachment_loc) const {
     bool skip = false;
@@ -1036,7 +1044,7 @@ bool Device::ValidateRenderingAttachmentFeedbackLoopInfo(VkCommandBuffer command
     const auto attachment_feedback_loop_info = vku::FindStructInPNextChain<VkAttachmentFeedbackLoopInfoEXT>(attachment_info.pNext);
     if (attachment_feedback_loop_info) {
         if (attachment_feedback_loop_info->feedbackLoopEnable && !enabled_features.unifiedImageLayouts) {
-            skip |= LogError("VUID-VkAttachmentFeedbackLoopInfoEXT-unifiedImageLayouts-10782", commandBuffer,
+            skip |= LogError("VUID-VkAttachmentFeedbackLoopInfoEXT-unifiedImageLayouts-10782", objlist,
                              attachment_loc.pNext(Struct::VkAttachmentFeedbackLoopInfoEXT, Field::feedbackLoopEnable),
                              "is VK_TRUE, but VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR::unifiedImageLayouts is not enabled.");
         }
@@ -1045,19 +1053,19 @@ bool Device::ValidateRenderingAttachmentFeedbackLoopInfo(VkCommandBuffer command
     return skip;
 }
 
-bool Device::ValidateRenderingCustomResolve(VkCommandBuffer commandBuffer, VkRenderingFlags rendering_flags,
+bool Device::ValidateRenderingCustomResolve(const LogObjectList& objlist, VkRenderingFlags rendering_flags,
                                             VkResolveModeFlagBits resolve_mode, const Location& attachment_loc) const {
     bool skip = false;
 
     if (rendering_flags & VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT) {
         if (!IsValueIn(resolve_mode, {VK_RESOLVE_MODE_CUSTOM_BIT_EXT, VK_RESOLVE_MODE_NONE})) {
             skip |=
-                LogError("VUID-VkRenderingInfo-flags-11516", commandBuffer, attachment_loc.dot(Field::resolveMode),
+                LogError("VUID-VkRenderingInfo-flags-11516", objlist, attachment_loc.dot(Field::resolveMode),
                          "is %s but VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT flag is set.", string_VkResolveModeFlagBits(resolve_mode));
         }
     } else if (resolve_mode == VK_RESOLVE_MODE_CUSTOM_BIT_EXT) {
         skip |=
-            LogError("VUID-VkRenderingInfo-pColorAttachments-11515", commandBuffer, attachment_loc.dot(Field::resolveMode),
+            LogError("VUID-VkRenderingInfo-pColorAttachments-11515", objlist, attachment_loc.dot(Field::resolveMode),
                      "is VK_RESOLVE_MODE_CUSTOM_BIT_EXT but VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT flag is missing (flags set %s).",
                      string_VkRenderingFlags(rendering_flags).c_str());
     }
@@ -1065,7 +1073,7 @@ bool Device::ValidateRenderingCustomResolve(VkCommandBuffer commandBuffer, VkRen
     return skip;
 }
 
-bool Device::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+bool Device::ValidateBeginRenderingColorAttachment(const LogObjectList& objlist, const VkRenderingInfo& rendering_info,
                                                    const Location& rendering_info_loc) const {
     bool skip = false;
     for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
@@ -1074,14 +1082,14 @@ bool Device::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer
         const Location color_attachment_loc = rendering_info_loc.dot(Field::pColorAttachments, i);
 
         const VkResolveModeFlagBits resolve_mode = color_attachment.resolveMode;
-        skip |= ValidateRenderingAttachmentFeedbackLoopInfo(commandBuffer, color_attachment, color_attachment_loc);
-        skip |= ValidateRenderingAttachmentLayout(commandBuffer, color_attachment, color_attachment_loc);
-        skip |= ValidateRenderingCustomResolve(commandBuffer, rendering_info.flags, resolve_mode, color_attachment_loc);
+        skip |= ValidateRenderingAttachmentFeedbackLoopInfo(objlist, color_attachment, color_attachment_loc);
+        skip |= ValidateRenderingAttachmentLayout(objlist, color_attachment, color_attachment_loc);
+        skip |= ValidateRenderingCustomResolve(objlist, rendering_info.flags, resolve_mode, color_attachment_loc);
 
         const VkImageLayout image_layout = color_attachment.imageLayout;
         if (image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
             image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
-            skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06090", commandBuffer,
+            skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06090", objlist,
                              color_attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
         }
 
@@ -1089,7 +1097,7 @@ bool Device::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer
         if (resolve_mode != VK_RESOLVE_MODE_NONE) {
             if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
                 resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
-                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06091", commandBuffer,
+                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06091", objlist,
                                  color_attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
                                  string_VkImageLayout(resolve_image_layout), string_VkResolveModeFlagBits(resolve_mode));
             }
@@ -1098,14 +1106,14 @@ bool Device::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer
         if (IsExtEnabled(extensions.vk_khr_maintenance2)) {
             if (image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
                 image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
-                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06096", commandBuffer,
+                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06096", objlist,
                                  color_attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
             }
 
             if (resolve_mode != VK_RESOLVE_MODE_NONE) {
                 if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
                     resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
-                    skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06097", commandBuffer,
+                    skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06097", objlist,
                                      color_attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
                                      string_VkImageLayout(resolve_image_layout), string_VkResolveModeFlagBits(resolve_mode));
                 }
@@ -1113,14 +1121,14 @@ bool Device::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer
         }
 
         if (IsImageLayoutDepthOnly(image_layout) || IsImageLayoutStencilOnly(image_layout)) {
-            skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06100", commandBuffer,
+            skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06100", objlist,
                              color_attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
         }
 
         if (resolve_mode != VK_RESOLVE_MODE_NONE) {
             if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
                 resolve_image_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL) {
-                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06101", commandBuffer,
+                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06101", objlist,
                                  color_attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
                                  string_VkImageLayout(resolve_image_layout), string_VkResolveModeFlagBits(resolve_mode));
             }
@@ -1130,7 +1138,7 @@ bool Device::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool Device::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+bool Device::ValidateBeginRenderingDepthAttachment(const LogObjectList& objlist, const VkRenderingInfo& rendering_info,
                                                    const Location& rendering_info_loc) const {
     bool skip = false;
     if (!rendering_info.pDepthAttachment || rendering_info.pDepthAttachment->imageView == VK_NULL_HANDLE) return skip;
@@ -1138,41 +1146,41 @@ bool Device::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer
     const VkRenderingAttachmentInfo& depth_attachment = *rendering_info.pDepthAttachment;
     const Location attachment_loc = rendering_info_loc.dot(Field::pDepthAttachment);
 
-    skip |= ValidateRenderingAttachmentFeedbackLoopInfo(commandBuffer, depth_attachment, attachment_loc);
-    skip |= ValidateRenderingAttachmentLayout(commandBuffer, depth_attachment, attachment_loc);
-    skip |= ValidateRenderingCustomResolve(commandBuffer, rendering_info.flags, depth_attachment.resolveMode, attachment_loc);
+    skip |= ValidateRenderingAttachmentFeedbackLoopInfo(objlist, depth_attachment, attachment_loc);
+    skip |= ValidateRenderingAttachmentLayout(objlist, depth_attachment, attachment_loc);
+    skip |= ValidateRenderingCustomResolve(objlist, rendering_info.flags, depth_attachment.resolveMode, attachment_loc);
 
     if (depth_attachment.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-        skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06092", commandBuffer, attachment_loc.dot(Field::imageLayout),
+        skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06092", objlist, attachment_loc.dot(Field::imageLayout),
                          "is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.");
     } else if (IsImageLayoutStencilOnly(depth_attachment.imageLayout)) {
-        skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-07732", commandBuffer, attachment_loc.dot(Field::imageLayout),
+        skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-07732", objlist, attachment_loc.dot(Field::imageLayout),
                          "is %s.", string_VkImageLayout(depth_attachment.imageLayout));
     }
 
     if (depth_attachment.resolveMode != VK_RESOLVE_MODE_NONE) {
         const VkImageLayout resolve_layout = depth_attachment.resolveImageLayout;
         if (resolve_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06093", commandBuffer,
+            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06093", objlist,
                              attachment_loc.dot(Field::resolveImageLayout),
                              "is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL and resolveMode is %s.",
                              string_VkResolveModeFlagBits(depth_attachment.resolveMode));
         } else if (IsImageLayoutStencilOnly(resolve_layout)) {
-            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-07733", commandBuffer,
+            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-07733", objlist,
                              attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
                              string_VkImageLayout(resolve_layout), string_VkResolveModeFlagBits(depth_attachment.resolveMode));
         }
 
         if (IsExtEnabled(extensions.vk_khr_maintenance2) &&
             resolve_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
-            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06098", commandBuffer,
+            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06098", objlist,
                              attachment_loc.dot(Field::resolveImageLayout),
                              "is VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.");
         }
 
         if (!(depth_attachment.resolveMode & phys_dev_props_core12.supportedDepthResolveModes)) {
             skip |=
-                LogError("VUID-VkRenderingInfo-pDepthAttachment-06102", commandBuffer, attachment_loc.dot(Field::resolveMode),
+                LogError("VUID-VkRenderingInfo-pDepthAttachment-06102", objlist, attachment_loc.dot(Field::resolveMode),
                          "is %s, but supportedDepthResolveModes is %s.", string_VkResolveModeFlagBits(depth_attachment.resolveMode),
                          string_VkResolveModeFlags(phys_dev_props_core12.supportedDepthResolveModes).c_str());
         }
@@ -1181,7 +1189,7 @@ bool Device::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool Device::ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+bool Device::ValidateBeginRenderingStencilAttachment(const LogObjectList& objlist, const VkRenderingInfo& rendering_info,
                                                      const Location& rendering_info_loc) const {
     bool skip = false;
     if (!rendering_info.pStencilAttachment || rendering_info.pStencilAttachment->imageView == VK_NULL_HANDLE) return skip;
@@ -1189,40 +1197,40 @@ bool Device::ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuff
     const VkRenderingAttachmentInfo& stencil_attachment = *rendering_info.pStencilAttachment;
     const Location attachment_loc = rendering_info_loc.dot(Field::pStencilAttachment);
 
-    skip |= ValidateRenderingAttachmentFeedbackLoopInfo(commandBuffer, stencil_attachment, attachment_loc);
-    skip |= ValidateRenderingAttachmentLayout(commandBuffer, stencil_attachment, attachment_loc);
-    skip |= ValidateRenderingCustomResolve(commandBuffer, rendering_info.flags, stencil_attachment.resolveMode, attachment_loc);
+    skip |= ValidateRenderingAttachmentFeedbackLoopInfo(objlist, stencil_attachment, attachment_loc);
+    skip |= ValidateRenderingAttachmentLayout(objlist, stencil_attachment, attachment_loc);
+    skip |= ValidateRenderingCustomResolve(objlist, rendering_info.flags, stencil_attachment.resolveMode, attachment_loc);
 
     if (stencil_attachment.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-        skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06094", commandBuffer, attachment_loc.dot(Field::imageLayout),
+        skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06094", objlist, attachment_loc.dot(Field::imageLayout),
                          "is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.");
     } else if (IsImageLayoutDepthOnly(stencil_attachment.imageLayout)) {
-        skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-07734", commandBuffer, attachment_loc.dot(Field::imageLayout),
+        skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-07734", objlist, attachment_loc.dot(Field::imageLayout),
                          "is %s.", string_VkImageLayout(stencil_attachment.imageLayout));
     }
 
     if (stencil_attachment.resolveMode != VK_RESOLVE_MODE_NONE) {
         const VkImageLayout resolve_layout = stencil_attachment.resolveImageLayout;
         if (resolve_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06095", commandBuffer,
+            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06095", objlist,
                              attachment_loc.dot(Field::resolveImageLayout),
                              "is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL and resolveMode is %s.",
                              string_VkResolveModeFlagBits(stencil_attachment.resolveMode));
         } else if (IsImageLayoutDepthOnly(resolve_layout)) {
-            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-07735", commandBuffer,
+            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-07735", objlist,
                              attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
                              string_VkImageLayout(resolve_layout), string_VkResolveModeFlagBits(stencil_attachment.resolveMode));
         }
 
         if (IsExtEnabled(extensions.vk_khr_maintenance2) &&
             resolve_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
-            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06099", commandBuffer,
+            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06099", objlist,
                              attachment_loc.dot(Field::resolveImageLayout),
                              "is VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.");
         }
 
         if (!(stencil_attachment.resolveMode & phys_dev_props_core12.supportedStencilResolveModes)) {
-            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06103", commandBuffer, attachment_loc.dot(Field::resolveMode),
+            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06103", objlist, attachment_loc.dot(Field::resolveMode),
                              "is %s, but supportedStencilResolveModes is %s.",
                              string_VkResolveModeFlagBits(stencil_attachment.resolveMode),
                              string_VkResolveModeFlags(phys_dev_props_core12.supportedStencilResolveModes).c_str());
@@ -1281,28 +1289,28 @@ bool Device::ValidateBeginRenderingAttachmentFlagsInfo(VkCommandBuffer commandBu
 }
 
 bool Device::ValidateBeginRenderingFragmentShadingRateAttachment(
-    VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+    const LogObjectList& objlist, const VkRenderingInfo& rendering_info,
     const VkRenderingFragmentShadingRateAttachmentInfoKHR& rendering_fsr_attachment_info,
     const Location& rendering_info_loc) const {
     bool skip = false;
     if (rendering_fsr_attachment_info.imageView == VK_NULL_HANDLE) return skip;
 
     if (UniqueRenderingInfoImageViews(rendering_info, rendering_fsr_attachment_info.imageView) == false) {
-        skip |= LogError("VUID-VkRenderingInfo-imageView-06125", commandBuffer,
+        skip |= LogError("VUID-VkRenderingInfo-imageView-06125", objlist,
                          rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
                          "is %s.", FormatHandle(rendering_fsr_attachment_info.imageView).c_str());
     }
 
     const VkImageLayout image_layout = rendering_fsr_attachment_info.imageLayout;
     if (image_layout != VK_IMAGE_LAYOUT_GENERAL && image_layout != VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
-        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06147", commandBuffer,
+        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06147", objlist,
                          rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::layout),
                          "is (%s).", string_VkImageLayout(image_layout));
     }
 
     if (!IsPowerOfTwo(rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width)) {
         skip |= LogError(
-            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06149", commandBuffer,
+            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06149", objlist,
             rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
                 .dot(Field::width),
             "(%" PRIu32 ") must be a power of two.", rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width);
@@ -1312,7 +1320,7 @@ bool Device::ValidateBeginRenderingFragmentShadingRateAttachment(
         phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width;
     if (rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width > max_frs_attach_texel_width) {
         skip |= LogError(
-            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06150", commandBuffer,
+            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06150", objlist,
             rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
                 .dot(Field::width),
             "(%" PRIu32
@@ -1325,7 +1333,7 @@ bool Device::ValidateBeginRenderingFragmentShadingRateAttachment(
         phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width;
     if (rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width < min_frs_attach_texel_width) {
         skip |= LogError(
-            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06151", commandBuffer,
+            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06151", objlist,
             rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
                 .dot(Field::width),
             "(%" PRIu32
@@ -1336,7 +1344,7 @@ bool Device::ValidateBeginRenderingFragmentShadingRateAttachment(
 
     if (!IsPowerOfTwo(rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height)) {
         skip |= LogError(
-            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06152", commandBuffer,
+            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06152", objlist,
             rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
                 .dot(Field::height),
             "(%" PRIu32 ") must be a power of two.", rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height);
@@ -1346,7 +1354,7 @@ bool Device::ValidateBeginRenderingFragmentShadingRateAttachment(
         phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height;
     if (rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height > max_frs_attach_texel_height) {
         skip |= LogError(
-            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06153", commandBuffer,
+            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06153", objlist,
             rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
                 .dot(Field::height),
             "(%" PRIu32
@@ -1359,7 +1367,7 @@ bool Device::ValidateBeginRenderingFragmentShadingRateAttachment(
         phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height;
     if (rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height < min_frs_attach_texel_height) {
         skip |= LogError(
-            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06154", commandBuffer,
+            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06154", objlist,
             rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
                 .dot(Field::height),
             "(%" PRIu32
@@ -1372,7 +1380,7 @@ bool Device::ValidateBeginRenderingFragmentShadingRateAttachment(
         phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio;
     if ((rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width /
          rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height) > max_frs_attach_texel_aspect_ratio) {
-        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06155", commandBuffer,
+        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06155", objlist,
                          rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR,
                                                   Field::shadingRateAttachmentTexelSize),
                          "the quotient of width (%" PRIu32 ") and height (%" PRIu32
@@ -1384,7 +1392,7 @@ bool Device::ValidateBeginRenderingFragmentShadingRateAttachment(
 
     if ((rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height /
          rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width) > max_frs_attach_texel_aspect_ratio) {
-        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06156", commandBuffer,
+        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06156", objlist,
                          rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR,
                                                   Field::shadingRateAttachmentTexelSize),
                          "the quotient of height (%" PRIu32 ") and width (%" PRIu32
