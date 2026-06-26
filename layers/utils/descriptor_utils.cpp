@@ -25,8 +25,8 @@
 #include "generated/spirv_grammar_helper.h"
 #include "generated/vk_extension_helper.h"
 #include "state_tracker/shader_module.h"
+#include "state_tracker/state_tracker.h"
 
-#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -46,34 +46,6 @@ uint32_t CountDescriptorHeapEmbeddedSamplers(const void* pNext) {
     }
 
     return count;
-}
-
-size_t GetDescriptorBufferSize(const VkPhysicalDeviceDescriptorBufferPropertiesEXT& props, bool robust, VkDescriptorType type) {
-    switch (type) {
-        case VK_DESCRIPTOR_TYPE_SAMPLER:
-            return props.samplerDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            return props.combinedImageSamplerDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            return props.sampledImageDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-            return props.storageImageDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-            return robust ? props.robustUniformTexelBufferDescriptorSize : props.uniformTexelBufferDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-            return robust ? props.robustStorageTexelBufferDescriptorSize : props.storageTexelBufferDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-            return robust ? props.robustUniformBufferDescriptorSize : props.uniformBufferDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-            return robust ? props.robustStorageBufferDescriptorSize : props.storageBufferDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-            return props.inputAttachmentDescriptorSize;
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            return props.accelerationStructureDescriptorSize;
-        default:
-            break;
-    }
-    return 0;
 }
 
 const char* DescribeDescriptorBufferSize(bool robust, VkDescriptorType type) {
@@ -314,54 +286,87 @@ bool HasCombinedImageSamplerIndex(const VkDescriptorSetAndBindingMappingEXT& map
     return false;
 }
 
-void CachedDescriptorSize::Init(VkPhysicalDevice gpu, const DeviceExtensions& extensions) {
-    size_[0] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLER);
-    size_[2] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    size_[3] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-    size_[4] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
-    size_[5] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
-    size_[6] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-    size_[7] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    size_[10] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-    if (IsExtEnabled(extensions.vk_khr_acceleration_structure)) {
-        size_[1] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
+void CachedDescriptorSize::Init(const vvl::DeviceState& device_state) {
+    const VkPhysicalDevice gpu = device_state.physical_device;
+    if (IsExtEnabled(device_state.extensions.vk_ext_descriptor_heap)) {
+        heap_size_[0] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLER);
+        heap_size_[2] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+        heap_size_[3] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+        heap_size_[4] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
+        heap_size_[5] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
+        heap_size_[6] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        heap_size_[7] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+        heap_size_[10] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        if (IsExtEnabled(device_state.extensions.vk_khr_acceleration_structure)) {
+            heap_size_[1] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
+        } else {
+            heap_size_[1] = 0;
+        }
+        if (IsExtEnabled(device_state.extensions.vk_nv_ray_tracing)) {
+            heap_size_[8] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
+        } else {
+            heap_size_[8] = 0;
+        }
+        if (IsExtEnabled(device_state.extensions.vk_nv_partitioned_acceleration_structure)) {
+            heap_size_[9] =
+                DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
+        } else {
+            heap_size_[9] = 0;
+        }
+        if (IsExtEnabled(device_state.extensions.vk_arm_tensors)) {
+            heap_size_[11] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_TENSOR_ARM);
+        } else {
+            heap_size_[11] = 0;
+        }
+        if (IsExtEnabled(device_state.extensions.vk_qcom_image_processing)) {
+            heap_size_[12] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM);
+            heap_size_[13] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM);
+        } else {
+            heap_size_[12] = 0;
+            heap_size_[13] = 0;
+        }
     }
-    if (IsExtEnabled(extensions.vk_nv_ray_tracing)) {
-        size_[8] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
-    }
-    if (IsExtEnabled(extensions.vk_nv_partitioned_acceleration_structure)) {
-        size_[9] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
-    }
-    if (IsExtEnabled(extensions.vk_arm_tensors)) {
-        size_[11] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_TENSOR_ARM);
-    }
-    if (IsExtEnabled(extensions.vk_qcom_image_processing)) {
-        size_[12] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM);
-        size_[13] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM);
+    if (IsExtEnabled(device_state.extensions.vk_ext_descriptor_buffer)) {
+        const VkPhysicalDeviceDescriptorBufferPropertiesEXT& props = device_state.phys_dev_ext_props.descriptor_buffer_props;
+        const bool robust = device_state.enabled_features.robustBufferAccess;
+        buffer_size_[0] = props.samplerDescriptorSize;
+        buffer_size_[1] = props.accelerationStructureDescriptorSize;
+        buffer_size_[2] = props.sampledImageDescriptorSize;
+        buffer_size_[3] = props.storageImageDescriptorSize;
+        buffer_size_[4] = robust ? props.robustUniformTexelBufferDescriptorSize : props.uniformTexelBufferDescriptorSize;
+        buffer_size_[5] = robust ? props.robustStorageTexelBufferDescriptorSize : props.storageTexelBufferDescriptorSize;
+        buffer_size_[6] = robust ? props.robustUniformBufferDescriptorSize : props.uniformBufferDescriptorSize;
+        buffer_size_[7] = robust ? props.robustStorageBufferDescriptorSize : props.storageBufferDescriptorSize;
+        buffer_size_[8] = 0;  // nv as
+        buffer_size_[9] = 0;  // nv partitioned as
+        buffer_size_[10] = props.inputAttachmentDescriptorSize;
+        buffer_size_[11] = 0;  // arm tensor
+        buffer_size_[12] = 0;  // qcom sample weight
+        buffer_size_[13] = 0;  // qcom block match
     }
 }
 
-VkDeviceSize CachedDescriptorSize::GetSize(VkDescriptorType type) const {
+VkDeviceSize CachedDescriptorSize::GetSize(VkDescriptorType type, bool use_heap) const {
+    uint32_t index = (uint32_t)type;
     if (type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
         // takes VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER value at index 1
-        return size_[1];
+        index = 1;
     } else if (type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
         // takes VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC value at index 8
-        return size_[8];
+        index = 8;
     } else if (type == VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV) {
         // takes VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC value at index 9
-        return size_[9];
+        index = 9;
     } else if (type == VK_DESCRIPTOR_TYPE_TENSOR_ARM) {
-        return size_[11];
+        index = 11;
     } else if (type == VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM) {
-        return size_[12];
+        index = 12;
     } else if (type == VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM) {
-        return size_[13];
+        index = 13;
     }
     assert(IsValueIn(
         type, {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT}));
-    uint32_t index = (uint32_t)type;
-    return size_[index];
+    return use_heap ? heap_size_[index] : buffer_size_[index];
 }
