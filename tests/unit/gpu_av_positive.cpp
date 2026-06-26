@@ -18,14 +18,14 @@
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include <vector>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/buffer_helper.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/shader_helper.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/gpu_av_helper.h"
-#include "../framework/external_memory_sync.h"
-#include "../../layers/gpuav/shaders/gpuav_shaders_constants.h"
+#include "layer_validation_tests.h"
+#include "buffer_helper.h"
+#include "pipeline_helper.h"
+#include "shader_helper.h"
+#include "descriptor_helper.h"
+#include "gpu_av_helper.h"
+#include "external_memory_sync.h"
+#include "gpuav/shaders/gpuav_shaders_constants.h"
 
 class PositiveGpuAV : public GpuAVTest {};
 

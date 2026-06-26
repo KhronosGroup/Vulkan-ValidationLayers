@@ -14,11 +14,11 @@
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include <cinttypes>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/gpu_av_helper.h"
-#include "../framework/ray_tracing_objects.h"
-#include "../framework/descriptor_heap_object.h"
+#include "layer_validation_tests.h"
+#include "descriptor_helper.h"
+#include "gpu_av_helper.h"
+#include "ray_tracing_objects.h"
+#include "descriptor_heap_object.h"
 
 class NegativeDebugPrintfRayTracing : public DebugPrintfTests {
   public:

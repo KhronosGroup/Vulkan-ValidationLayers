@@ -16,11 +16,11 @@
 #include <vulkan/vulkan_core.h>
 #include "generated/vk_function_pointers.h"
 #include "utils/cast_utils.h"
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/render_pass_helper.h"
-#include "../framework/ray_tracing_objects.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "descriptor_helper.h"
+#include "render_pass_helper.h"
+#include "ray_tracing_objects.h"
 #include <algorithm>
 
 class NegativeDescriptors : public VkLayerTest {};

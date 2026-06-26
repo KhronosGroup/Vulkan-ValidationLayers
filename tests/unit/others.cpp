@@ -15,8 +15,8 @@
 
 #include <vulkan/vulkan_core.h>
 #include <algorithm>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
 #include "utils/hash_util.h"
 #include "generated/vk_validation_error_messages.h"
 

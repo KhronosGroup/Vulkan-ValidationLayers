@@ -13,9 +13,9 @@
 #include "shader_helper.h"
 #include "shader_templates.h"
 #include "utils/math_utils.h"
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/shader_object_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "shader_object_helper.h"
 #include <cstdint>
 #include <vulkan/utility/vk_struct_helper.hpp>
 

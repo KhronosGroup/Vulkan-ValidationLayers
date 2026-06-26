@@ -13,7 +13,7 @@
 
 #include <thread>
 #include <vector>
-#include "../framework/layer_validation_tests.h"
+#include "layer_validation_tests.h"
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #include <sys/mman.h>

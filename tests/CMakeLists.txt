@@ -302,6 +302,10 @@ target_sources(vk_layer_validation_tests PRIVATE
     vvl_utils/pnext_chain_extraction.cpp
 )
 
+target_include_directories(vk_layer_validation_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
 get_target_property(TEST_SOURCES vk_layer_validation_tests SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEST_SOURCES})
 
