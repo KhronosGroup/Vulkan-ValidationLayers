@@ -2413,10 +2413,21 @@ void CoreChecks::RecordBarrierValidationInfo(const Location& barrier_loc, vvl::C
                                              const BufferBarrier& barrier,
                                              QFOTransferBarrierSets<QFOBufferTransferBarrier>& barrier_sets) {
     if (IsOwnershipTransfer(barrier)) {
+        BufferBarrier adjusted_barrier = barrier;
+        if (adjusted_barrier.size == VK_WHOLE_SIZE) {
+            if (auto buffer_state = Get<vvl::Buffer>(barrier.buffer)) {
+                if (buffer_state->GetSize() >= barrier.offset) {
+                    adjusted_barrier.size = buffer_state->GetSize() - barrier.offset;
+                } else {
+                    adjusted_barrier.size = 0;  // Invalid offset, should be reported elsewhere
+                }
+            }
+        }
+
         if (cb_state.IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
-            barrier_sets.release.emplace(barrier);
+            barrier_sets.release.emplace(adjusted_barrier);
         } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
-            barrier_sets.acquire.emplace(barrier);
+            barrier_sets.acquire.emplace(adjusted_barrier);
         }
     }
 }
