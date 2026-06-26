@@ -3575,6 +3575,52 @@ TEST_F(PositiveDescriptorHeap, ComputeShaderRecordMapping) {
     pipe.CreateComputePipeline(false);
 }
 
+TEST_F(PositiveDescriptorHeap, MaxBindingCount) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    CreateResourceHeap(resource_stride * 2);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    VkHostAddressRangeEXT host_descriptor{resource_heap_data_, static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT device_address_range = ssbo_buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_address_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &host_descriptor);
+    host_descriptor.address = resource_heap_data_ + resource_stride;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &host_descriptor);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[1] = MakeSetAndBindingMapping(1, 252, UINT32_MAX);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)resource_stride;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(set = 1, binding = 256) buffer B { uint b; };
+        void main() {
+            b = a;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveDescriptorHeap, EmbeddedSamplerAlignment) {
     TEST_DESCRIPTION("Ignore invalid sampler mappings when using embedded samplers");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
