@@ -5574,9 +5574,9 @@ bool CoreChecks::PreCallValidateGetImageOpaqueCaptureDataEXT(VkDevice device, ui
                                                              VkHostAddressRangeEXT* pDatas, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    if (!enabled_features.descriptorHeap) {
+    if (!enabled_features.descriptorHeapCaptureReplay) {
         skip |= LogError("VUID-vkGetImageOpaqueCaptureDataEXT-descriptorHeapCaptureReplay-11282", device, error_obj.location,
-                         "descriptorHeap feature was not enabled.");
+                         "descriptorHeapCaptureReplay feature was not enabled.");
     }
     if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice) {
         skip |= LogError("VUID-vkGetImageOpaqueCaptureDataEXT-device-11284", device, error_obj.location,
