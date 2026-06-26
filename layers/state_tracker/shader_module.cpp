@@ -2460,6 +2460,22 @@ StageInterfaceVariable::StageInterfaceVariable(const Module& module_state, const
       built_in_block(GetBuiltInBlock(*this, module_state)),
       total_built_in_components(GetBuiltInComponents(*this, module_state)) {}
 
+bool ResourceInterfaceVariable::IsImageAtIndexStaticallyAccessed(uint32_t index) const {
+    if (!IsImageAccessed()) {
+        return false;
+    }
+    // Non-array image is statically accessed (IsImageAccessed() == true)
+    if (!IsArray()) {
+        return true;
+    }
+    // With dynamic indexing or unresolved spec constants, any element may be accessed
+    if (!all_constant_integral_expressions || vvl::Contains(image_array_indices_accessed, kSpecConstant)) {
+        return true;
+    }
+    // Check whether this array element was accessed with a constant index
+    return vvl::Contains(image_array_indices_accessed, index);
+}
+
 bool ResourceInterfaceVariable::IsHeap() const {
     // It is only legal to not have a set/binding for descriptors if they are the heap
     // We might one day want to know which heap it is, and could just check for |ResourceHeapEXT| or |SamplerHeapEXT| but that will
@@ -2692,6 +2708,12 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                 // Only tied to the image (not the sampler when using non-COMBINED_IMAGE_SAMPLER)
                 if (IsArray() && image_access.image_access_chain_index == kInvalidValue) {
                     all_constant_integral_expressions = false;
+                }
+
+                // Track array elements accessed with a statically known constant index,
+                // or kSpecConstant when indexing uses an unresolved spec constant
+                if (IsArray() && image_access.image_access_chain_index != kInvalidValue) {
+                    image_array_indices_accessed.emplace(image_access.image_access_chain_index);
                 }
 
                 // if not CombinedImageSampler, need to find all Samplers that were accessed with the image

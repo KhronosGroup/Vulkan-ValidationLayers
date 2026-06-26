@@ -894,7 +894,8 @@ void vvl::DescriptorSet::UpdateImageLayoutDrawStates(vvl::DeviceState* device_da
         ASSERT_AND_CONTINUE(binding);
 
         // core validation doesn't handle descriptor indexing, that is only done by GPU-AV
-        if (ValidateBindingOnGPU(*binding, *binding_req_pair.second.variable)) {
+        const spirv::ResourceInterfaceVariable& variable = *binding_req_pair.second.variable;
+        if (ValidateBindingOnGPU(*binding, variable)) {
             continue;
         }
 
@@ -902,21 +903,27 @@ void vvl::DescriptorSet::UpdateImageLayoutDrawStates(vvl::DeviceState* device_da
             case DescriptorClass::Image: {
                 auto* image_binding = static_cast<ImageBinding*>(binding);
                 for (uint32_t i = 0; i < image_binding->count; ++i) {
-                    image_binding->descriptors[i].UpdateImageLayoutDrawState(cb_state);
+                    if (variable.IsImageAtIndexStaticallyAccessed(i)) {
+                        image_binding->descriptors[i].UpdateImageLayoutDrawState(cb_state);
+                    }
                 }
                 break;
             }
             case DescriptorClass::ImageSampler: {
                 auto* image_binding = static_cast<ImageSamplerBinding*>(binding);
                 for (uint32_t i = 0; i < image_binding->count; ++i) {
-                    image_binding->descriptors[i].UpdateImageLayoutDrawState(cb_state);
+                    if (variable.IsImageAtIndexStaticallyAccessed(i)) {
+                        image_binding->descriptors[i].UpdateImageLayoutDrawState(cb_state);
+                    }
                 }
                 break;
             }
             case DescriptorClass::Mutable: {
                 auto* mutable_binding = static_cast<MutableBinding*>(binding);
                 for (uint32_t i = 0; i < mutable_binding->count; ++i) {
-                    mutable_binding->descriptors[i].UpdateImageLayoutDrawState(cb_state);
+                    if (variable.IsImageAtIndexStaticallyAccessed(i)) {
+                        mutable_binding->descriptors[i].UpdateImageLayoutDrawState(cb_state);
+                    }
                 }
                 break;
             }
