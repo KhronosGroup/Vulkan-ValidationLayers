@@ -316,10 +316,10 @@ bool Device::manual_PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevic
                                                                          const Context& context) const {
     bool skip = false;
     const auto& error_obj = context.error_obj;
-    skip |= ValidateRenderingInfo(device, *pRenderingInfo, error_obj.location.dot(Field::pRenderingInfo));
+    const Location rendering_loc = error_obj.location.dot(Field::pRenderingInfo);
+    skip |= ValidateRenderingInfo(device, *pRenderingInfo, rendering_loc);
     if (const auto tile_memory_size = vku::FindStructInPNextChain<VkTileMemorySizeInfoQCOM>(pRenderingInfo->pNext)) {
-        skip |= ValidateTileMemorySizeInfo(*tile_memory_size,
-                                           error_obj.location.dot(Field::pRenderingInfo).pNext(Struct::VkTileMemorySizeInfoQCOM));
+        skip |= ValidateTileMemorySizeInfo(*tile_memory_size, rendering_loc.pNext(Struct::VkTileMemorySizeInfoQCOM));
     }
     return skip;
 }
