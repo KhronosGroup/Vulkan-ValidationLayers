@@ -15,9 +15,9 @@
 #include <chrono>
 #include <thread>
 
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/ray_tracing_objects.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "ray_tracing_objects.h"
 
 // Tests for NVIDIA-specific best practices
 const char* kEnableNVIDIAValidation = "validate_best_practices_nvidia";

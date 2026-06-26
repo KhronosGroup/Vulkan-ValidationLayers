@@ -12,10 +12,10 @@
  */
 
 #include <vulkan/vulkan_core.h>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/buffer_helper.h"
-#include "../framework/shader_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "buffer_helper.h"
+#include "shader_helper.h"
 
 class PositiveGpuAVVertexAttributeFetch : public GpuAVTest {};
 

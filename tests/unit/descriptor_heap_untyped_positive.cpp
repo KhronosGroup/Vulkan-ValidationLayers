@@ -13,8 +13,8 @@
 #include <cstdint>
 #include "shader_helper.h"
 #include "test_framework.h"
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
 
 constexpr uint32_t kMaxSSBO = 128;  // max bufferDescriptorSize is allowed to be
 

@@ -12,11 +12,11 @@
 
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/shader_object_helper.h"
-#include "../framework/buffer_helper.h"
-#include "../utils/math_utils.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "shader_object_helper.h"
+#include "buffer_helper.h"
+#include "utils/math_utils.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "shader_helper.h"
 #include "shader_templates.h"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 The Khronos Group Inc.
  * Copyright (c) 2025 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -9,7 +9,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/video_objects.h"
+#include "video_objects.h"
 #include "generated/enum_flag_bits.h"
 
 class NegativeVideoEncodeIntraRefresh : public VkVideoLayerTest {};

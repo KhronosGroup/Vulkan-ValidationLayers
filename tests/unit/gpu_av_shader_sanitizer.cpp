@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "../framework/layer_validation_tests.h"
+#include "layer_validation_tests.h"
 #include "cooperative_matrix_helper.h"
 #include "pipeline_helper.h"
 #include "shader_helper.h"

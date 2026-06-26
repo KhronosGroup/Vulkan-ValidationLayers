@@ -12,8 +12,8 @@
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include "shader_helper.h"
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
 
 class NegativeDescriptorHeapUntyped : public DescriptorHeapTest {};
 

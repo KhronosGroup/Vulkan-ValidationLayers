@@ -2,7 +2,7 @@
  * Copyright (c) 2015-2026 The Khronos Group Inc.
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include <vulkan/vulkan_core.h>
 #include <algorithm>
-#include "../framework/layer_validation_tests.h"
+#include "layer_validation_tests.h"
 
 class NegativeCopyBufferImage : public VkLayerTest {};
 

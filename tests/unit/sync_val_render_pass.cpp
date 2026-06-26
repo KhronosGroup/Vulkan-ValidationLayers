@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#include "../framework/sync_val_tests.h"
-#include "../framework/render_pass_helper.h"
+#include "sync_val_tests.h"
+#include "render_pass_helper.h"
 
 struct NegativeSyncValRenderPass : public VkSyncValTest {};
 

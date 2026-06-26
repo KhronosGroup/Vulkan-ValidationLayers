@@ -13,7 +13,7 @@
 
 #include <cstdarg>
 #include <cstdint>
-#include "../framework/layer_validation_tests.h"
+#include "layer_validation_tests.h"
 
 class NegativeLayerSettings : public VkLayerTest {};
 

@@ -13,12 +13,12 @@
 
 #include <thread>
 #include <algorithm>
-#include "../framework/sync_val_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/render_pass_helper.h"
-#include "../framework/thread_helper.h"
-#include "../layers/sync/sync_settings.h"
+#include "sync_val_tests.h"
+#include "pipeline_helper.h"
+#include "descriptor_helper.h"
+#include "render_pass_helper.h"
+#include "thread_helper.h"
+#include "sync/sync_settings.h"
 
 class PositiveSyncVal : public VkSyncValTest {};
 

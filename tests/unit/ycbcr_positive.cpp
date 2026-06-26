@@ -2,7 +2,7 @@
  * Copyright (c) 2015-2026 The Khronos Group Inc.
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,9 @@
 
 #include <spirv-tools/libspirv.h>
 #include <vulkan/vulkan_core.h>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "descriptor_helper.h"
 
 class PositiveYcbcr : public VkLayerTest {};
 
