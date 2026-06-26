@@ -1118,6 +1118,11 @@ void CommandBuffer::RecordBeginVideoCoding(const VkVideoBeginCodingInfoKHR& begi
                 int32_t slot_index = begin_info.pReferenceSlots[i].slotIndex;
                 vvl::VideoPictureResource res(dev_data, *begin_info.pReferenceSlots[i].pPictureResource);
                 bound_video_picture_resources.emplace(std::make_pair(res, slot_index));
+
+                if (auto reference_image_view = dev_data.Get<vvl::ImageView>(begin_info.pReferenceSlots[i].pPictureResource->imageViewBinding)) {
+                    // Connect the image view to cmdBuffer
+                    AddChild(reference_image_view);
+                }
             }
 
             if (begin_info.pReferenceSlots[i].slotIndex >= 0 && begin_info.pReferenceSlots[i].pPictureResource == nullptr) {
@@ -1216,6 +1221,22 @@ void vvl::CommandBuffer::RecordVideoInlineQueries(const VkVideoInlineQueryInfoKH
 
     for (uint32_t i = 0; i < query_info.queryCount; i++) {
         updated_queries.insert(QueryObject(query_info.queryPool, query_info.firstQuery + i));
+
+        // Connect this query pool to cmdBuffer
+        if (auto pool_state = dev_data.Get<vvl::QueryPool>(query_info.queryPool)) {
+            AddChild(pool_state);
+        }
+    }
+}
+
+void vvl::CommandBuffer::RecordVideoEncodeQuantizationMap(const VkVideoEncodeQuantizationMapInfoKHR &quant_map_info) {
+    for (auto& item : sub_states_) {
+        item.second->RecordVideoEncodeQuantizationMap(quant_map_info);
+    }
+
+    // Connect the quantization map image view to cmdBuffer
+    if (auto quant_map_image_view_state = dev_data.Get<vvl::ImageView>(quant_map_info.quantizationMap)) {
+        AddChild(quant_map_image_view_state);
     }
 }
 
@@ -1228,6 +1249,16 @@ void CommandBuffer::RecordDecodeVideo(const VkVideoDecodeInfoKHR& decode_info, c
     // Need to record substate first
     for (auto& item : sub_states_) {
         item.second->RecordDecodeVideo(*bound_video_session, decode_info, loc);
+    }
+
+    // Connect the bitstream buffer to cmdBuffer
+    if (auto bitstream_buffer_state = dev_data.Get<vvl::Buffer>(decode_info.srcBuffer)) {
+        AddChild(bitstream_buffer_state);
+    }
+
+    // Connect the decode output image view to cmdBuffer
+    if (auto output_image_view_state = dev_data.Get<vvl::ImageView>(decode_info.dstPictureResource.imageViewBinding)) {
+        AddChild(output_image_view_state);
     }
 
     if (decode_info.pSetupReferenceSlot && decode_info.pSetupReferenceSlot->pPictureResource) {
@@ -1276,6 +1307,16 @@ void vvl::CommandBuffer::RecordEncodeVideo(const VkVideoEncodeInfoKHR& encode_in
         item.second->RecordEncodeVideo(*bound_video_session, encode_info, loc);
     }
 
+    // Connect the encode input image view to cmdBuffer
+    if (auto input_image_view_state = dev_data.Get<vvl::ImageView>(encode_info.srcPictureResource.imageViewBinding)) {
+        AddChild(input_image_view_state);
+    }
+
+    // Connect the bitstream buffer to cmdBuffer
+    if (auto bitstream_buffer_state = dev_data.Get<vvl::Buffer>(encode_info.dstBuffer)) {
+        AddChild(bitstream_buffer_state);
+    }
+
     if (encode_info.pSetupReferenceSlot && encode_info.pSetupReferenceSlot->pPictureResource) {
         vvl::VideoReferenceSlot setup_slot(dev_data, *bound_video_session->profile, *encode_info.pSetupReferenceSlot);
 
@@ -1294,6 +1335,14 @@ void vvl::CommandBuffer::RecordEncodeVideo(const VkVideoEncodeInfoKHR& encode_in
                 }
                 return false;
             });
+    }
+
+    // Handle quantization map info
+    if ((encode_info.flags & (VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR)) != 0) {
+        const auto quant_map_info = vku::FindStructInPNextChain<VkVideoEncodeQuantizationMapInfoKHR>(encode_info.pNext);
+        if (quant_map_info != nullptr) {
+            RecordVideoEncodeQuantizationMap(*quant_map_info);
+        }
     }
 
     // Update active query indices

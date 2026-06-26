@@ -847,6 +847,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
     void UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin);
     void RecordVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info);
+    void RecordVideoEncodeQuantizationMap(const VkVideoEncodeQuantizationMapInfoKHR &quant_map_info);
     void UnbindResources();
 };
 
@@ -972,6 +973,7 @@ class CommandBufferSubState {
     virtual void RecordWriteAccelerationStructuresProperties(VkQueryPool queryPool, uint32_t firstQuery,
                                                              uint32_t accelerationStructureCount, const Location &loc) {}
     virtual void RecordVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) {}
+    virtual void RecordVideoEncodeQuantizationMap(const VkVideoEncodeQuantizationMapInfoKHR &quant_map_info) {}
 
     virtual void RecordBeginVideoCoding(vvl::VideoSession &vs_state, const VkVideoBeginCodingInfoKHR &begin_info,
                                         const Location &loc) {}
