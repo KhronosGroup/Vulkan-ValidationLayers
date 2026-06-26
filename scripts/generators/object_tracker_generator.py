@@ -718,6 +718,8 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
             return '"UNASSIGNED-VkMicromapCreateInfoEXT-buffer-parent"'
         if commandName == 'vkCreateAccelerationStructureKHR' and memberName == 'buffer':
             return '"UNASSIGNED-VkAccelerationStructureCreateInfoKHR-buffer-parent"'
+        if commandName == 'vkCreateAccelerationStructure2KHR' and memberName == 'buffer':
+            return '"UNASSIGNED-VkAccelerationStructureCreateInfo2KHR-buffer-parent"'
         if commandName == 'vkCreateImage' and memberName == 'swapchain':
             return '"UNASSIGNED-VkImageSwapchainCreateInfoKHR-swapchain-parent"'
         if commandName == 'vkQueuePresentKHR' and memberName == 'pFences':

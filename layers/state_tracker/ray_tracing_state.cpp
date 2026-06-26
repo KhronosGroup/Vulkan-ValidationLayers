@@ -89,6 +89,10 @@ void AccelerationStructureKHR::Build(const VkAccelerationStructureBuildGeometryI
 
 void AccelerationStructureKHR::UpdateBuildRangeInfos(const VkAccelerationStructureBuildRangeInfoKHR* p_build_range_infos,
                                                      uint32_t geometry_count) {
+    build_range_infos.clear();
+    if (!p_build_range_infos) {
+        return;
+    }
     build_range_infos.resize(geometry_count);
     for (const auto [i, build_range] : vvl::enumerate(p_build_range_infos, geometry_count)) {
         build_range_infos[i] = build_range;

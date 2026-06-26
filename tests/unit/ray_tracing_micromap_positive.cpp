@@ -18,7 +18,7 @@
 
 class PositiveRayTracingMicromap : public RayTracingTest {};
 
-TEST_F(PositiveRayTracingMicromap, DISABLED_Simple) {
+TEST_F(PositiveRayTracingMicromap, BasicKHR) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
@@ -67,15 +67,23 @@ TEST_F(PositiveRayTracingMicromap, BasicEXT) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
 
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::accelerationStructure);
-    AddRequiredFeature(vkt::Feature::synchronization2);
-    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
-    AddRequiredFeature(vkt::Feature::micromap);
-    AddRequiredFeature(vkt::Feature::micromapHostCommands);
-
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
-    RETURN_IF_SKIP(InitState());
+    VkPhysicalDeviceOpacityMicromapFeaturesEXT ext_features = vku::InitStructHelper();
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR pipeline_features = vku::InitStructHelper(&ext_features);
+    VkPhysicalDeviceSynchronization2Features sync_features = vku::InitStructHelper(&pipeline_features);
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper(&sync_features);
+    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_features = vku::InitStructHelper(&accel_features);
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&buffer_features);
+    vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
+    if (!ext_features.micromap) {
+        GTEST_SKIP() << "micromap feature not supported";
+    }
+    ext_features.micromap = VK_TRUE;
+    pipeline_features.rayTracingPipeline = VK_TRUE;
+    sync_features.synchronization2 = VK_TRUE;
+    accel_features.accelerationStructure = VK_TRUE;
+    buffer_features.bufferDeviceAddress = VK_TRUE;
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
@@ -389,4 +397,365 @@ TEST_F(PositiveRayTracingMicromap, BasicEXT) {
     vk::DestroyAccelerationStructureKHR(*m_device, topAS, NULL);
     vk::DestroyAccelerationStructureKHR(*m_device, bottomAS, NULL);
     vk::DestroyMicromapEXT(*m_device, micromap, NULL);
+}
+
+TEST_F(PositiveRayTracingMicromap, GlslOMMExtensionCompileAndRecord) {
+    TEST_DESCRIPTION("Compile GLSL using the opacity micromap extension and record a ray tracing command buffer.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::micromap);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+
+    pipeline.SetGlslRayGenShader(R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        #extension GL_EXT_opacity_micromap : require
+
+        layout(location = 0) rayPayloadEXT vec4 payload;
+
+        void main() {
+            payload = vec4(0.0, 1.0, 0.0, 1.0);
+        }
+    )glsl");
+
+    pipeline.AddGlslMissShader(R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        #extension GL_EXT_opacity_micromap : require
+
+        layout(location = 0) rayPayloadInEXT vec4 payload;
+
+        void main() {
+            payload = vec4(1.0);
+        }
+    )glsl");
+
+    pipeline.Build();
+
+    const vkt::rt::TraceRaysSbt sbt = pipeline.GetTraceRaysSbt();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
+    vk::CmdTraceRaysKHR(m_command_buffer, &sbt.ray_gen_sbt, &sbt.miss_sbt, &sbt.hit_sbt, &sbt.callable_sbt, 1, 1, 1);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveRayTracingMicromap, OpacityMicromapPipelineFlagAndTrace) {
+    TEST_DESCRIPTION(
+        "Build a BLAS with VkAccelerationStructureTrianglesOpacityMicromapKHR, create a ray tracing pipeline with "
+        "VK_PIPELINE_CREATE_RAY_TRACING_OPACITY_MICROMAP_BIT_KHR, and record CmdTraceRaysKHR.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::micromap);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
+    VkMemoryAllocateFlagsInfo allocate_da_flag_info = vku::InitStructHelper();
+    allocate_da_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
+    static float const vertex_data[6 * 2] = {
+        0.25, 0.75, 0.5, 0.25, 0.75, 0.75,
+    };
+    static uint32_t const index_data[6] = {0, 1, 2};
+
+    vkt::Buffer vertex_buffer(
+        *m_device, sizeof(vertex_data) + sizeof(index_data),
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        vkt::device_address);
+
+    VkDeviceAddress vertex_address = vertex_buffer.Address();
+
+    {
+        char* ptr;
+        vk::MapMemory(device(), vertex_buffer.Memory(), 0, VK_WHOLE_SIZE, 0, (void**)&ptr);
+        memcpy(ptr, &vertex_data[0], sizeof(vertex_data));
+        memcpy(ptr + sizeof(vertex_data), &index_data[0], sizeof(index_data));
+        vk::UnmapMemory(device(), vertex_buffer.Memory());
+    }
+
+    VkAccelerationStructureGeometryKHR micromap_blas_geometry = vku::InitStructHelper();
+    micromap_blas_geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+    micromap_blas_geometry.geometry.triangles = vku::InitStructHelper();
+    micromap_blas_geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32_SFLOAT;
+    micromap_blas_geometry.geometry.triangles.vertexData.deviceAddress = vertex_address;
+    micromap_blas_geometry.geometry.triangles.vertexStride = 8;
+    micromap_blas_geometry.geometry.triangles.maxVertex = 3;
+    micromap_blas_geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+    micromap_blas_geometry.geometry.triangles.indexData.deviceAddress = vertex_address + sizeof(vertex_data);
+    micromap_blas_geometry.geometry.triangles.transformData.deviceAddress = 0;
+    micromap_blas_geometry.flags = 0;
+
+    VkAccelerationStructureBuildGeometryInfoKHR micromap_blas_info = vku::InitStructHelper();
+    micromap_blas_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    micromap_blas_info.flags = 0;
+    micromap_blas_info.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    micromap_blas_info.srcAccelerationStructure = VK_NULL_HANDLE;
+    micromap_blas_info.dstAccelerationStructure = VK_NULL_HANDLE;
+    micromap_blas_info.geometryCount = 1;
+    micromap_blas_info.pGeometries = &micromap_blas_geometry;
+    micromap_blas_info.ppGeometries = NULL;
+    micromap_blas_info.scratchData.deviceAddress = 0;
+
+    VkAccelerationStructureBuildSizesInfoKHR micromap_blas_size_info = vku::InitStructHelper();
+    uint32_t micromap_blas_primitive_counts = 1;
+    vk::GetAccelerationStructureBuildSizesKHR(*m_device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &micromap_blas_info,
+                                              &micromap_blas_primitive_counts, &micromap_blas_size_info);
+
+    vkt::Buffer micromap_blas_buffer(
+        *m_device, micromap_blas_size_info.accelerationStructureSize,
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocate_da_flag_info);
+
+    VkAccelerationStructureCreateInfoKHR micromap_as_ci = vku::InitStructHelper();
+    micromap_as_ci.createFlags = 0;
+    micromap_as_ci.buffer = micromap_blas_buffer;
+    micromap_as_ci.offset = 0;
+    micromap_as_ci.size = micromap_blas_size_info.accelerationStructureSize;
+    micromap_as_ci.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    micromap_as_ci.deviceAddress = 0;
+
+    VkAccelerationStructureKHR micromapAS;
+    ASSERT_EQ(VK_SUCCESS, vk::CreateAccelerationStructureKHR(*m_device, &micromap_as_ci, NULL, &micromapAS));
+
+    vkt::Buffer micromap_scratch_buffer(*m_device, micromap_blas_size_info.buildScratchSize,
+                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocate_da_flag_info);
+
+    {
+        micromap_blas_info.dstAccelerationStructure = micromapAS;
+        micromap_blas_info.scratchData.deviceAddress = micromap_scratch_buffer.Address();
+
+        VkAccelerationStructureBuildRangeInfoKHR build_range_info = {1, 0, 0, 0};
+        const VkAccelerationStructureBuildRangeInfoKHR* p_build_range_info = &build_range_info;
+
+        m_command_buffer.Begin();
+        vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &micromap_blas_info, &p_build_range_info);
+        VkMemoryBarrier memory_barrier = {VK_STRUCTURE_TYPE_MEMORY_BARRIER, NULL, VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
+                                          VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR};
+        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                               VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &memory_barrier, 0, 0, 0, 0);
+        m_command_buffer.End();
+        m_default_queue->Submit(m_command_buffer);
+        m_device->Wait();
+    }
+
+    vkt::Buffer index_buffer_for_micromap(
+        *m_device, sizeof(uint32_t),
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        vkt::device_address);
+
+    {
+        uint32_t* idx = (uint32_t*)index_buffer_for_micromap.Memory().Map();
+        idx[0] = 0;
+    }
+
+    VkAccelerationStructureTrianglesOpacityMicromapKHR opacity_geometry_micromap = vku::InitStructHelper();
+    opacity_geometry_micromap.indexType = VK_INDEX_TYPE_UINT32;
+    opacity_geometry_micromap.indexBuffer = index_buffer_for_micromap.Address();
+    opacity_geometry_micromap.indexStride = sizeof(uint32_t);
+    opacity_geometry_micromap.baseTriangle = 0;
+    opacity_geometry_micromap.micromap = micromapAS;
+
+    VkAccelerationStructureGeometryKHR bottom_as_geometry = vku::InitStructHelper();
+    bottom_as_geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+    bottom_as_geometry.geometry.triangles = vku::InitStructHelper();
+    bottom_as_geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32_SFLOAT;
+    bottom_as_geometry.geometry.triangles.vertexData.deviceAddress = vertex_address;
+    bottom_as_geometry.geometry.triangles.vertexStride = 8;
+    bottom_as_geometry.geometry.triangles.maxVertex = 3;
+    bottom_as_geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+    bottom_as_geometry.geometry.triangles.indexData.deviceAddress = vertex_address + sizeof(vertex_data);
+    bottom_as_geometry.geometry.triangles.transformData.deviceAddress = 0;
+    bottom_as_geometry.geometry.triangles.pNext = &opacity_geometry_micromap;
+    bottom_as_geometry.flags = 0;
+
+    VkAccelerationStructureBuildGeometryInfoKHR bottomASInfo = vku::InitStructHelper();
+    bottomASInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    bottomASInfo.flags = 0;
+    bottomASInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    bottomASInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+    bottomASInfo.dstAccelerationStructure = VK_NULL_HANDLE;
+    bottomASInfo.geometryCount = 1;
+    bottomASInfo.pGeometries = &bottom_as_geometry;
+    bottomASInfo.ppGeometries = NULL;
+    bottomASInfo.scratchData.deviceAddress = 0;
+
+    VkAccelerationStructureBuildSizesInfoKHR bottom_as_build_size_info = vku::InitStructHelper();
+    uint32_t bottom_max_primitive_counts = 1;
+    vk::GetAccelerationStructureBuildSizesKHR(*m_device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &bottomASInfo,
+                                              &bottom_max_primitive_counts, &bottom_as_build_size_info);
+
+    vkt::Buffer bottom_as_buffer(*m_device, bottom_as_build_size_info.accelerationStructureSize,
+                                 VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocate_da_flag_info);
+
+    VkAccelerationStructureCreateInfoKHR as_create_info = vku::InitStructHelper();
+    as_create_info.createFlags = 0;
+    as_create_info.buffer = bottom_as_buffer;
+    as_create_info.offset = 0;
+    as_create_info.size = bottom_as_build_size_info.accelerationStructureSize;
+    as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    as_create_info.deviceAddress = 0;
+
+    VkAccelerationStructureKHR bottomAS;
+    ASSERT_EQ(VK_SUCCESS, vk::CreateAccelerationStructureKHR(*m_device, &as_create_info, NULL, &bottomAS));
+
+    vkt::Buffer instance_buffer(
+        *m_device, sizeof(VkAccelerationStructureInstanceKHR),
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        vkt::device_address);
+
+    {
+        VkAccelerationStructureInstanceKHR* instance = (VkAccelerationStructureInstanceKHR*)instance_buffer.Memory().Map();
+        memset(instance, 0, sizeof(VkAccelerationStructureInstanceKHR));
+        instance[0].transform.matrix[0][0] = 1;
+        instance[0].transform.matrix[1][1] = 1;
+        instance[0].transform.matrix[2][2] = 1;
+        instance[0].mask = 0xff;
+
+        VkAccelerationStructureDeviceAddressInfoKHR as_device_address_info = vku::InitStructHelper();
+        as_device_address_info.accelerationStructure = bottomAS;
+        instance[0].accelerationStructureReference =
+            vk::GetAccelerationStructureDeviceAddressKHR(device(), &as_device_address_info);
+    }
+
+    VkAccelerationStructureGeometryKHR top_as_geometry = vku::InitStructHelper();
+    top_as_geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+    top_as_geometry.geometry.instances = vku::InitStructHelper();
+    top_as_geometry.geometry.instances.arrayOfPointers = VK_FALSE;
+    top_as_geometry.geometry.instances.data.deviceAddress = instance_buffer.Address();
+    top_as_geometry.flags = 0;
+
+    VkAccelerationStructureBuildGeometryInfoKHR topASInfo = vku::InitStructHelper();
+    topASInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    topASInfo.flags = 0;
+    topASInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    topASInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+    topASInfo.dstAccelerationStructure = VK_NULL_HANDLE;
+    topASInfo.geometryCount = 1;
+    topASInfo.pGeometries = &top_as_geometry;
+    topASInfo.ppGeometries = NULL;
+    topASInfo.scratchData.deviceAddress = 0;
+
+    VkAccelerationStructureBuildSizesInfoKHR top_as_build_size_info = vku::InitStructHelper();
+    uint32_t top_max_primitive_counts = 1;
+    vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &topASInfo,
+                                              &top_max_primitive_counts, &top_as_build_size_info);
+
+    vkt::Buffer top_as_buffer(*m_device, top_as_build_size_info.accelerationStructureSize,
+                              VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocate_da_flag_info);
+
+    as_create_info.buffer = top_as_buffer;
+    as_create_info.offset = 0;
+    as_create_info.size = top_as_build_size_info.accelerationStructureSize;
+    as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+
+    VkAccelerationStructureKHR topAS;
+    ASSERT_EQ(VK_SUCCESS, vk::CreateAccelerationStructureKHR(device(), &as_create_info, NULL, &topAS));
+
+    vkt::Buffer scratch_buffer(*m_device,
+                               std::max(bottom_as_build_size_info.buildScratchSize, top_as_build_size_info.buildScratchSize),
+                               VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocate_da_flag_info);
+    VkDeviceAddress scratch_address = scratch_buffer.Address();
+
+    {
+        bottomASInfo.dstAccelerationStructure = bottomAS;
+        bottomASInfo.scratchData.deviceAddress = scratch_address;
+
+        VkAccelerationStructureBuildRangeInfoKHR build_range_info = {1, 0, 0, 0};
+        const VkAccelerationStructureBuildRangeInfoKHR* p_build_range_info = &build_range_info;
+
+        m_command_buffer.Begin();
+        vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &bottomASInfo, &p_build_range_info);
+        VkMemoryBarrier memory_barrier = {VK_STRUCTURE_TYPE_MEMORY_BARRIER, NULL, VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
+                                          VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR};
+        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                               VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &memory_barrier, 0, 0, 0, 0);
+        m_command_buffer.End();
+        m_default_queue->Submit(m_command_buffer);
+        m_device->Wait();
+    }
+
+    {
+        topASInfo.dstAccelerationStructure = topAS;
+        topASInfo.scratchData.deviceAddress = scratch_address;
+
+        VkAccelerationStructureBuildRangeInfoKHR build_range_info = {1, 0, 0, 0};
+        const VkAccelerationStructureBuildRangeInfoKHR* p_build_range_info = &build_range_info;
+
+        m_command_buffer.Begin();
+        vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &topASInfo, &p_build_range_info);
+        VkMemoryBarrier memory_barrier = {VK_STRUCTURE_TYPE_MEMORY_BARRIER, NULL, VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
+                                          VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR};
+        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                               VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, 0, 1, &memory_barrier, 0, 0, 0, 0);
+        m_command_buffer.End();
+        m_default_queue->Submit(m_command_buffer);
+        m_device->Wait();
+    }
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+
+    pipeline.AddCreateInfoFlags(VK_PIPELINE_CREATE_RAY_TRACING_OPACITY_MICROMAP_BIT_KHR);
+
+    pipeline.SetGlslRayGenShader(R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        #extension GL_EXT_opacity_micromap : require
+
+        layout(location = 0) rayPayloadEXT vec4 payload;
+
+        void main() {
+            payload = vec4(0.0, 1.0, 0.0, 1.0);
+        }
+    )glsl");
+
+    pipeline.AddGlslMissShader(R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        #extension GL_EXT_opacity_micromap : require
+
+        layout(location = 0) rayPayloadInEXT vec4 payload;
+
+        void main() {
+            payload = vec4(1.0);
+        }
+    )glsl");
+
+    pipeline.Build();
+
+    const vkt::rt::TraceRaysSbt sbt = pipeline.GetTraceRaysSbt();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
+    vk::CmdTraceRaysKHR(m_command_buffer, &sbt.ray_gen_sbt, &sbt.miss_sbt, &sbt.hit_sbt, &sbt.callable_sbt, 1, 1, 1);
+    m_command_buffer.End();
+
+    vk::DestroyAccelerationStructureKHR(*m_device, topAS, NULL);
+    vk::DestroyAccelerationStructureKHR(*m_device, bottomAS, NULL);
+    vk::DestroyAccelerationStructureKHR(*m_device, micromapAS, NULL);
 }

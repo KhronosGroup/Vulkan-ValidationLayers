@@ -2410,7 +2410,7 @@ TEST_F(NegativePipeline, CreateFlags) {
     flags = VK_PIPELINE_CREATE_RAY_TRACING_ALLOW_MOTION_BIT_NV;
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-04947");
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-None-09497");
-    flags = VK_PIPELINE_CREATE_RAY_TRACING_OPACITY_MICROMAP_BIT_EXT;
+    flags = VK_PIPELINE_CREATE_RAY_TRACING_OPACITY_MICROMAP_BIT_KHR;
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-07401");
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-None-09497");
     flags = VK_PIPELINE_CREATE_RAY_TRACING_DISPLACEMENT_MICROMAP_BIT_NV;
@@ -2418,6 +2418,24 @@ TEST_F(NegativePipeline, CreateFlags) {
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-None-09497");
     flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-vkCreateGraphicsPipelines-pNext-09617");
+}
+
+TEST_F(NegativePipeline, CreateFlags2) {
+    TEST_DESCRIPTION("Create a graphics pipeline with invalid VkPipelineCreateFlags.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);  // add to remove many extra errors
+    AddRequiredExtensions(VK_KHR_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPipelineCreateFlags2CreateInfoKHR flags2 = {};
+    flags2.sType = VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO_KHR;
+    flags2.pNext = nullptr;
+    const auto setup_info = [&](CreatePipelineHelper& helper) { helper.gp_ci_.pNext = &flags2; };
+
+    flags2.flags = VK_PIPELINE_CREATE_2_OPACITY_MICROMAP_DISALLOW_MIXED_SPECIAL_INDEX_BIT_KHR;
+    CreatePipelineHelper::OneshotTest(*this, setup_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-11595");
 }
 
 TEST_F(NegativePipeline, CreateFlagsCompute) {
@@ -2451,7 +2469,7 @@ TEST_F(NegativePipeline, CreateFlagsCompute) {
     flags = VK_PIPELINE_CREATE_RAY_TRACING_ALLOW_MOTION_BIT_NV;
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-04945");
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-None-09497");
-    flags = VK_PIPELINE_CREATE_RAY_TRACING_OPACITY_MICROMAP_BIT_EXT;
+    flags = VK_PIPELINE_CREATE_RAY_TRACING_OPACITY_MICROMAP_BIT_KHR;
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-07367");
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-None-09497");
     flags = VK_PIPELINE_CREATE_RAY_TRACING_DISPLACEMENT_MICROMAP_BIT_NV;
@@ -2462,6 +2480,24 @@ TEST_F(NegativePipeline, CreateFlagsCompute) {
     flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-None-09497");
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-vkCreateComputePipelines-pNext-09617");
+}
+
+TEST_F(NegativePipeline, CreateFlags2Compute) {
+    TEST_DESCRIPTION("Create a compute pipeline with invalid VkPipelineCreateFlags.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);  // add to remove many extra errors
+    AddRequiredExtensions(VK_KHR_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkPipelineCreateFlags2CreateInfoKHR flags2 = {};
+    flags2.sType = VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO_KHR;
+    flags2.pNext = nullptr;
+    const auto setup_info = [&](CreateComputePipelineHelper& helper) { helper.cp_ci_.pNext = &flags2; };
+
+    flags2.flags = VK_PIPELINE_CREATE_2_OPACITY_MICROMAP_DISALLOW_MIXED_SPECIAL_INDEX_BIT_KHR;
+    CreateComputePipelineHelper::OneshotTest(*this, setup_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-11593");
 }
 
 TEST_F(NegativePipeline, MergePipelineCachesInvalidDst) {
@@ -3814,6 +3850,46 @@ TEST_F(NegativePipeline, PipelineCreationFlags2LibraryLinkTime) {
     pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
     pre_raster_lib.gpl_info->pNext = &link_info;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06610");
+    pre_raster_lib.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativePipeline, OMMPipelineCreationFlags2LibraryLinkTime) {
+    TEST_DESCRIPTION("Test VK_PIPELINE_CREATE_2_OPACITY_MICROMAP_DISALLOW_MIXED_SPECIAL_INDEX_BIT_KHR with VkPipelineCreateFlags2");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    AddRequiredFeature(vkt::Feature::micromap);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
+    flags2.flags = VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR;
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo(&flags2);
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[1] = {
+        vertex_input_lib,
+    };
+
+    flags2.flags =
+        VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_2_OPACITY_MICROMAP_DISALLOW_MIXED_SPECIAL_INDEX_BIT_KHR;
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper(&flags2);
+    link_info.libraryCount = size32(libraries);
+    link_info.pLibraries = libraries;
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    pre_raster_lib.gpl_info->pNext = &link_info;
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-11594");
     pre_raster_lib.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }

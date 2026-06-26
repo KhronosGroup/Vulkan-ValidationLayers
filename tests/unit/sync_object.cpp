@@ -4773,7 +4773,7 @@ TEST_F(NegativeSyncObject, MicromapBuildStageWithoutEnabledFeature) {
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcStageMask-10753");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcStageMask-11541");
     m_command_buffer.Barrier(barrier);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

@@ -659,10 +659,12 @@ struct DeviceFeatures {
     // VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT
     bool nonSeamlessCubeMap;
     // VkPhysicalDeviceOpacityMicromapFeaturesEXT
-    bool micromapCaptureReplay;
+    bool micromapCaptureReplayEXT;
     // VkPhysicalDeviceOpacityMicromapFeaturesEXT
-    bool micromapHostCommands;
-    // VkPhysicalDeviceOpacityMicromapFeaturesEXT, VkPhysicalDeviceOpacityMicromapFeaturesKHR
+    bool micromapEXT;
+    // VkPhysicalDeviceOpacityMicromapFeaturesEXT
+    bool micromapHostCommandsEXT;
+    // VkPhysicalDeviceOpacityMicromapFeaturesKHR
     bool micromap;
     // VkPhysicalDeviceOpticalFlowFeaturesNV
     bool opticalFlow;

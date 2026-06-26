@@ -34,6 +34,7 @@ class DeviceFeaturesOutputGenerator(BaseGenerator):
         self.identical_but_different_features = {
             'VkPhysicalDeviceBufferDeviceAddressFeaturesEXT': 'EXT',
             'VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV': 'NV',
+            'VkPhysicalDeviceOpacityMicromapFeaturesEXT': 'EXT',
         }
 
     def generate(self):
