@@ -23,6 +23,7 @@
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include <string>
+#include "containers/limits.h"
 #include "core_checks/cc_buffer_address.h"
 #include "core_checks/cc_state_tracker.h"
 #include "core_checks/cc_vuid_maps.h"
@@ -1848,13 +1849,20 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound& last_bo
                 break;
             }
         } else if (ds_slot.descriptor_buffer_binding.has_value()) {
+            std::ostringstream ss;
+            ss << "pipeline bound to " << string_VkPipelineBindPoint(bind_point)
+               << " requires a VkDescriptorSet (because it was not created with "
+                  "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT), but has a bound descriptor buffer ";
+            if (ds_slot.descriptor_buffer_binding->embedded != vvl::kNoIndex32) {
+                ss << "(vkCmdBindDescriptorBufferEmbeddedSamplersEXT for set " << ds_slot.descriptor_buffer_binding->embedded
+                   << ")";
+            } else {
+                ss << "(index = " << ds_slot.descriptor_buffer_binding->index
+                   << ", offset = " << ds_slot.descriptor_buffer_binding->offset << ")";
+            }
+            ss << last_bound_state.DescribeInvalidDescriptorMode();
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_BUFFER_BIT_08117),
-                             cb_state.GetObjectList(bind_point), loc,
-                             "pipeline bound to %s requires a VkDescriptorSet (because it was not created with "
-                             "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT), but has a bound descriptor buffer"
-                             " (index=%" PRIu32 " offset=%" PRIu64 ")%s",
-                             string_VkPipelineBindPoint(bind_point), ds_slot.descriptor_buffer_binding->index,
-                             ds_slot.descriptor_buffer_binding->offset, last_bound_state.DescribeInvalidDescriptorMode().c_str());
+                             cb_state.GetObjectList(bind_point), loc, "%s", ss.str().c_str());
             break;
         }
     }

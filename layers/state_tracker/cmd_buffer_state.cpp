@@ -23,6 +23,7 @@
 #include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_format_utils.h>
 #include <memory>
+#include "containers/limits.h"
 #include "error_message/error_location.h"
 #include "generated/command_validation.h"
 #include "generated/vk_object_types.h"
@@ -1772,7 +1773,7 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
     }
 }
 
-void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point,
+void CommandBuffer::UpdateLastBoundDescriptorBuffers(LastBound& last_bound,
                                                      std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, uint32_t first_set,
                                                      uint32_t set_count, const uint32_t* buffer_indicies,
                                                      const VkDeviceSize* buffer_offsets) {
@@ -1780,8 +1781,6 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipelin
     const uint32_t last_binding_index = required_size - 1;
     assert(last_binding_index < pipeline_layout->set_compat_ids.size());
 
-    const vvl::BindPoint vvl_bind_point = ConvertToVvlBindPoint(pipeline_bind_point);
-    auto& last_bound = lastBound[vvl_bind_point];
     last_bound.desc_set_pipeline_layout = pipeline_layout;
     auto& pipe_compat_ids = pipeline_layout->set_compat_ids;
     // Resize binding arrays
@@ -1822,9 +1821,27 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipelin
         ds_slot.Reset();
 
         // Record binding
-        ds_slot.descriptor_buffer_binding = {buffer_indicies[input_idx], buffer_offsets[input_idx]};
+        ds_slot.descriptor_buffer_binding = {vvl::kNoIndex32, buffer_indicies[input_idx], buffer_offsets[input_idx]};
         ds_slot.compat_id_for_set = pipe_compat_ids[set_idx];  // compat ids are canonical *per* set index
     }
+}
+
+// Make assumption that there is no reason to ONLY have embedded samplers set and that CmdSetDescriptorBufferOffsetsEXT will be
+// called
+void CommandBuffer::UpdateLastBoundDescriptorBuffersEmbedded(LastBound& last_bound,
+                                                             std::shared_ptr<const vvl::PipelineLayout> pipeline_layout,
+                                                             uint32_t set) {
+    auto& pipe_compat_ids = pipeline_layout->set_compat_ids;
+
+    if (set >= last_bound.ds_slots.size()) {
+        last_bound.ds_slots.resize(set + 1);
+    }
+
+    auto& ds_slot = last_bound.ds_slots[set];
+    ds_slot.Reset();
+
+    ds_slot.descriptor_buffer_binding = {set, 0, 0};
+    ds_slot.compat_id_for_set = pipe_compat_ids[set];
 }
 
 // Set image layout for given subresource range

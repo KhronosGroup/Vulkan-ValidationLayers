@@ -52,6 +52,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
     struct BindingInfo {
         uint32_t index;
         VkDescriptorType type;
+        bool embedded;
         uint32_t count;
         uint32_t size;
         VkDeviceSize offset;
@@ -63,17 +64,21 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
 
         void Print(std::ostringstream& binding_ss, bool robust_buffer) {
             binding_ss << "    - SPIR-V Binding " << std::dec << index << " [\"" << variable_name << "\"]\n";
-            binding_ss << "      - " << string_VkDescriptorType(type) << "\n";
-            binding_ss << "      - offset: " << std::dec << offset << ", range: " << string_range_hex(range) << "\n";
-            binding_ss << "      - size: " << DescribeDescriptorBufferSize(robust_buffer, type) << " [" << std::dec << size << "]";
-            if (count > 1) {
-                binding_ss << " * descriptorCount [" << std::dec << count << "]";
+            if (!embedded) {
+                binding_ss << "      - " << string_VkDescriptorType(type) << "\n";
+                binding_ss << "      - offset: " << std::dec << offset << ", range: " << string_range_hex(range) << "\n";
+                binding_ss << "      - size: " << DescribeDescriptorBufferSize(robust_buffer, type) << " [" << std::dec << size
+                           << "]";
+                if (count > 1) {
+                    binding_ss << " * descriptorCount [" << std::dec << count << "]";
+                }
+                binding_ss << "\n";
             }
-            binding_ss << "\n";
         }
     };
 
     struct SetInfo {
+        bool embedded;
         uint32_t index;          // set of the descriptor
         uint32_t binding_index;  // into pBindingInfos[]
         vvl::range<VkDeviceAddress> range;
@@ -84,8 +89,12 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
         bool operator<(const SetInfo& other) const { return range.begin < other.range.begin; }
 
         void Print(std::ostringstream& set_ss) {
-            set_ss << "  - SPIR-V Set " << std::dec << index << "\n    - size: " << range.size()
-                   << " bytes, range: " << string_range_hex(range);
+            set_ss << "  - SPIR-V Set " << std::dec << index << "\n";
+            if (embedded) {
+                set_ss << "    - Embedded Sampler";
+            } else {
+                set_ss << "    - size: " << range.size() << " bytes, range: " << string_range_hex(range);
+            }
             if (binding_index != vvl::kNoIndex32) {
                 // Only print if there are multiple bindings
                 set_ss << " (specified in pBindingInfos[" << std::dec << binding_index << "])";
@@ -190,17 +199,24 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
                     continue;
                 }
 
-                const VkDeviceAddress start_address =
-                    cb_state.descriptor_buffer.binding_info[descriptor_buffer_binding->index].address +
-                    descriptor_buffer_binding->offset;
-                const VkDeviceSize dsl_size = dsl->GetLayoutSizeInBytes();
-                vvl::range<VkDeviceAddress> set_range{start_address, start_address + dsl_size};
+                uint32_t binding_index = vvl::kNoIndex32;
+                vvl::range<VkDeviceAddress> set_range;
 
-                // only care to print index in pBindingInfos
-                const uint32_t binding_index =
-                    cb_state.descriptor_buffer.binding_info.size() > 1 ? descriptor_buffer_binding->index : vvl::kNoIndex32;
+                const bool embedded = descriptor_buffer_binding->embedded != vvl::kNoIndex32;
+                if (!embedded) {
+                    const VkDeviceAddress start_address =
+                        cb_state.descriptor_buffer.binding_info[descriptor_buffer_binding->index].address +
+                        descriptor_buffer_binding->offset;
+                    const VkDeviceSize dsl_size = dsl->GetLayoutSizeInBytes();
+                    set_range = {start_address, start_address + dsl_size};
 
-                set_info = &sorted_sets.emplace_back(SetInfo{var_set, binding_index, set_range, dsl, {}});
+                    // only care to print index in pBindingInfos
+                    if (cb_state.descriptor_buffer.binding_info.size() > 1) {
+                        binding_index = descriptor_buffer_binding->index;
+                    }
+                }
+
+                set_info = &sorted_sets.emplace_back(SetInfo{embedded, var_set, binding_index, set_range, dsl, {}});
             }
 
             // To variables might be the same set/binding if doing descriptor indexing aliasing
@@ -216,20 +232,25 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
                 continue;
             }
 
+            uint32_t descriptor_size = 0;
+            VkDeviceSize binding_offset = 0;
+            vvl::range<VkDeviceAddress> binding_range;
+
             const auto& ds_layout_def = *set_info->dsl->GetLayoutDef();
             const VkDescriptorType type = ds_layout_def.GetTypeFromBinding(var_binding);
             const uint32_t count = ds_layout_def.GetDescriptorCountFromBinding(var_binding);
 
-            const uint32_t descriptor_size = (uint32_t)GetDescriptorBufferSize(dev_data.phys_dev_ext_props.descriptor_buffer_props,
-                                                                               dev_data.enabled_features.robustBufferAccess, type);
-            VkDeviceSize binding_offset = 0;
-            DispatchGetDescriptorSetLayoutBindingOffsetEXT(dev_data.device, set_info->dsl->VkHandle(), var_binding,
-                                                           &binding_offset);
-            const VkDeviceAddress binding_start_address = set_info->range.begin + binding_offset;
-            vvl::range<VkDeviceAddress> binding_range{binding_start_address, binding_start_address + (descriptor_size * count)};
+            if (!set_info->embedded) {
+                descriptor_size = (uint32_t)GetDescriptorBufferSize(dev_data.phys_dev_ext_props.descriptor_buffer_props,
+                                                                    dev_data.enabled_features.robustBufferAccess, type);
+                DispatchGetDescriptorSetLayoutBindingOffsetEXT(dev_data.device, set_info->dsl->VkHandle(), var_binding,
+                                                               &binding_offset);
+                const VkDeviceAddress binding_start_address = set_info->range.begin + binding_offset;
+                binding_range = {binding_start_address, binding_start_address + (descriptor_size * count)};
+            }
 
-            set_info->bindings.emplace_back(BindingInfo{var_binding, type, count, descriptor_size, binding_offset, binding_range,
-                                                        resource_variable.debug_name});
+            set_info->bindings.emplace_back(BindingInfo{var_binding, type, set_info->embedded, count, descriptor_size,
+                                                        binding_offset, binding_range, resource_variable.debug_name});
         }
 
         if (sorted_sets.empty()) {

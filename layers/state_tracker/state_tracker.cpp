@@ -31,6 +31,7 @@
 #include "containers/container_utils.h"
 #include "error_message/error_strings.h"
 #include "generated/vk_extension_helper.h"
+#include "state_tracker/bind_point.h"
 #include "state_tracker/data_graph_pipeline_session_state.h"
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/image_state.h"
@@ -3271,7 +3272,7 @@ void DeviceState::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
     cb_state->UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, firstSet, setCount, pDescriptorSets, no_push_desc,
                                             dynamicOffsetCount, pDynamicOffsets, record_obj.location);
 
-    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic, record_obj.location.function);
+    cb_state->SetDescriptorMode(DescriptorModeClassic, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
@@ -3307,7 +3308,7 @@ void DeviceState::PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBu
             pBindDescriptorSetsInfo->dynamicOffsetCount, pBindDescriptorSetsInfo->pDynamicOffsets, record_obj.location);
     }
 
-    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic, record_obj.location.function);
+    cb_state->SetDescriptorMode(DescriptorModeClassic, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
@@ -3327,9 +3328,9 @@ void DeviceState::PostCallRecordCmdPushDescriptorSet(VkCommandBuffer commandBuff
                                      record_obj.location);
 
     if (pipeline_layout->has_descriptor_buffer) {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer, record_obj.location.function);
+        cb_state->SetDescriptorMode(DescriptorModeBuffer, record_obj.location.function);
     } else {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic, record_obj.location.function);
+        cb_state->SetDescriptorMode(DescriptorModeClassic, record_obj.location.function);
     }
 }
 
@@ -3364,9 +3365,9 @@ void DeviceState::PostCallRecordCmdPushDescriptorSet2(VkCommandBuffer commandBuf
     }
 
     if (pipeline_layout->has_descriptor_buffer) {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer, record_obj.location.function);
+        cb_state->SetDescriptorMode(DescriptorModeBuffer, record_obj.location.function);
     } else {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic, record_obj.location.function);
+        cb_state->SetDescriptorMode(DescriptorModeClassic, record_obj.location.function);
     }
 }
 
@@ -3403,6 +3404,11 @@ void DeviceState::PostCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCom
                                                                            VkPipelineLayout layout, uint32_t set,
                                                                            const RecordObject& record_obj) {
     auto cb_state = Get<CommandBuffer>(commandBuffer);
+    auto pipeline_layout = Get<PipelineLayout>(layout);
+    ASSERT_AND_RETURN(pipeline_layout);
+
+    LastBound& last_bound = cb_state->lastBound[ConvertToVvlBindPoint(pipelineBindPoint)];
+    cb_state->UpdateLastBoundDescriptorBuffersEmbedded(last_bound, pipeline_layout, set);
     cb_state->SetDescriptorMode(DescriptorModeBuffer, record_obj.location.function);
 }
 
@@ -3410,6 +3416,26 @@ void DeviceState::PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
     const RecordObject& record_obj) {
     auto cb_state = Get<CommandBuffer>(commandBuffer);
+
+    auto pipeline_layout = Get<PipelineLayout>(pBindDescriptorBufferEmbeddedSamplersInfo->layout);
+    ASSERT_AND_RETURN(pipeline_layout);
+
+    if (IsStageInPipelineBindPoint(pBindDescriptorBufferEmbeddedSamplersInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
+        LastBound& last_bound = cb_state->lastBound[BindPointGraphics];
+        cb_state->UpdateLastBoundDescriptorBuffersEmbedded(last_bound, pipeline_layout,
+                                                           pBindDescriptorBufferEmbeddedSamplersInfo->set);
+    }
+    if (IsStageInPipelineBindPoint(pBindDescriptorBufferEmbeddedSamplersInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
+        LastBound& last_bound = cb_state->lastBound[BindPointCompute];
+        cb_state->UpdateLastBoundDescriptorBuffersEmbedded(last_bound, pipeline_layout,
+                                                           pBindDescriptorBufferEmbeddedSamplersInfo->set);
+    }
+    if (IsStageInPipelineBindPoint(pBindDescriptorBufferEmbeddedSamplersInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
+        LastBound& last_bound = cb_state->lastBound[BindPointRayTracing];
+        cb_state->UpdateLastBoundDescriptorBuffersEmbedded(last_bound, pipeline_layout,
+                                                           pBindDescriptorBufferEmbeddedSamplersInfo->set);
+    }
+
     cb_state->SetDescriptorMode(DescriptorModeBuffer, record_obj.location.function);
 }
 
@@ -3422,9 +3448,10 @@ void DeviceState::PostCallRecordCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
     auto pipeline_layout = Get<PipelineLayout>(layout);
     ASSERT_AND_RETURN(pipeline_layout);
 
-    cb_state->UpdateLastBoundDescriptorBuffers(pipelineBindPoint, pipeline_layout, firstSet, setCount, pBufferIndices, pOffsets);
+    LastBound& last_bound = cb_state->lastBound[ConvertToVvlBindPoint(pipelineBindPoint)];
+    cb_state->UpdateLastBoundDescriptorBuffers(last_bound, pipeline_layout, firstSet, setCount, pBufferIndices, pOffsets);
 
-    cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer, record_obj.location.function);
+    cb_state->SetDescriptorMode(DescriptorModeBuffer, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdSetDescriptorBufferOffsets2EXT(
@@ -3435,25 +3462,25 @@ void DeviceState::PostCallRecordCmdSetDescriptorBufferOffsets2EXT(
     ASSERT_AND_RETURN(pipeline_layout);
 
     if (IsStageInPipelineBindPoint(pSetDescriptorBufferOffsetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
+        LastBound& last_bound = cb_state->lastBound[BindPointGraphics];
         cb_state->UpdateLastBoundDescriptorBuffers(
-            VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet,
-            pSetDescriptorBufferOffsetsInfo->setCount, pSetDescriptorBufferOffsetsInfo->pBufferIndices,
-            pSetDescriptorBufferOffsetsInfo->pOffsets);
+            last_bound, pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet, pSetDescriptorBufferOffsetsInfo->setCount,
+            pSetDescriptorBufferOffsetsInfo->pBufferIndices, pSetDescriptorBufferOffsetsInfo->pOffsets);
     }
     if (IsStageInPipelineBindPoint(pSetDescriptorBufferOffsetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
+        LastBound& last_bound = cb_state->lastBound[BindPointCompute];
         cb_state->UpdateLastBoundDescriptorBuffers(
-            VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet,
-            pSetDescriptorBufferOffsetsInfo->setCount, pSetDescriptorBufferOffsetsInfo->pBufferIndices,
-            pSetDescriptorBufferOffsetsInfo->pOffsets);
+            last_bound, pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet, pSetDescriptorBufferOffsetsInfo->setCount,
+            pSetDescriptorBufferOffsetsInfo->pBufferIndices, pSetDescriptorBufferOffsetsInfo->pOffsets);
     }
     if (IsStageInPipelineBindPoint(pSetDescriptorBufferOffsetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
+        LastBound& last_bound = cb_state->lastBound[BindPointRayTracing];
         cb_state->UpdateLastBoundDescriptorBuffers(
-            VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet,
-            pSetDescriptorBufferOffsetsInfo->setCount, pSetDescriptorBufferOffsetsInfo->pBufferIndices,
-            pSetDescriptorBufferOffsetsInfo->pOffsets);
+            last_bound, pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet, pSetDescriptorBufferOffsetsInfo->setCount,
+            pSetDescriptorBufferOffsetsInfo->pBufferIndices, pSetDescriptorBufferOffsetsInfo->pOffsets);
     }
 
-    cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer, record_obj.location.function);
+    cb_state->SetDescriptorMode(DescriptorModeBuffer, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
@@ -3467,8 +3494,8 @@ void DeviceState::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, 
     cb_state->RecordPushConstants(*pipeline_layout_state, stageFlags, offset, size, pValues);
 
     const DescriptorMode descriptor_mode =
-        pipeline_layout_state->has_descriptor_buffer ? vvl::DescriptorModeBuffer : vvl::DescriptorModeClassic;
-    cb_state->InvalidateDescriptorMode(vvl::DescriptorModeHeap, descriptor_mode, record_obj.location.function);
+        pipeline_layout_state->has_descriptor_buffer ? DescriptorModeBuffer : DescriptorModeClassic;
+    cb_state->InvalidateDescriptorMode(DescriptorModeHeap, descriptor_mode, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo,
@@ -5376,9 +5403,9 @@ void DeviceState::PostCallRecordCmdPushDescriptorSetWithTemplate(VkCommandBuffer
     auto pipeline_layout = Get<PipelineLayout>(layout);
 
     if (pipeline_layout->has_descriptor_buffer) {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer, record_obj.location.function);
+        cb_state->SetDescriptorMode(DescriptorModeBuffer, record_obj.location.function);
     } else {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic, record_obj.location.function);
+        cb_state->SetDescriptorMode(DescriptorModeClassic, record_obj.location.function);
     }
 
     if (!template_state || !pipeline_layout) {
@@ -5409,9 +5436,9 @@ void DeviceState::PostCallRecordCmdPushDescriptorSetWithTemplate2(
     auto pipeline_layout = Get<PipelineLayout>(pPushDescriptorSetWithTemplateInfo->layout);
 
     if (pipeline_layout->has_descriptor_buffer) {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer, record_obj.location.function);
+        cb_state->SetDescriptorMode(DescriptorModeBuffer, record_obj.location.function);
     } else {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic, record_obj.location.function);
+        cb_state->SetDescriptorMode(DescriptorModeClassic, record_obj.location.function);
     }
 
     if (!template_state || !pipeline_layout) {
