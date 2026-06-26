@@ -2089,9 +2089,11 @@ bool CoreChecks::ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuf
         for (const spirv::ResourceInterfaceVariable& resource_variable : entry_point.resource_interface_variables) {
             const uint32_t descriptor_set = resource_variable.decorations.set;
             const uint32_t descriptor_binding = resource_variable.decorations.binding;
+            // bindingCount could be UINT32_MAX
+            const uint64_t last_binding = mapping.firstBinding + uint64_t(mapping.bindingCount);
 
             if (mapping.descriptorSet != descriptor_set || descriptor_binding < mapping.firstBinding ||
-                descriptor_binding >= mapping.firstBinding + uint64_t(mapping.bindingCount)) {
+                descriptor_binding >= last_binding) {
                 continue;
             }
 

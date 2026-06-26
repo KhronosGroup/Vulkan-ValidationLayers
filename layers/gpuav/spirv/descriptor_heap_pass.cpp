@@ -129,7 +129,8 @@ uint32_t DescriptorHeapPass::GetMapping(const AccessPath& access_path, bool is_s
 
     for (uint32_t i = 0; i < module_.interface_.mapping_info->mappingCount; i++) {
         const VkDescriptorSetAndBindingMappingEXT& mapping = module_.interface_.mapping_info->pMappings[i];
-        const uint32_t last_binding = mapping.firstBinding + mapping.bindingCount;
+        // bindingCount could be UINT32_MAX
+        const uint64_t last_binding = mapping.firstBinding + uint64_t(mapping.bindingCount);
         if (mapping.descriptorSet == interface.set && interface.binding >= mapping.firstBinding &&
             interface.binding < last_binding && ResourceTypeMatchesBinding(mapping.resourceMask, access_path, is_sampler)) {
             const uint32_t encode_index = (uint32_t)module_.out_status.device.heap_mappings.size();
