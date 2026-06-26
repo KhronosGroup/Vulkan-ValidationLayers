@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include "../framework/layer_validation_tests.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/ray_tracing_objects.h"
+#include "layer_validation_tests.h"
+#include "descriptor_helper.h"
+#include "ray_tracing_objects.h"
 
 class NegativeGpuAVRayHitObject : public GpuAVRayHitObjectTest {};
 

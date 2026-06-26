@@ -14,10 +14,10 @@
 #include <spirv-tools/libspirv.h>
 #include <vulkan/vulkan_core.h>
 #include <vector>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/external_memory_sync.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "descriptor_helper.h"
+#include "external_memory_sync.h"
 
 class NegativeGpuAVDescriptorPostProcess : public GpuAVTest {};
 

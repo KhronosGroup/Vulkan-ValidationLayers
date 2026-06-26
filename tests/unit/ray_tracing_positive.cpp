@@ -11,11 +11,11 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/layer_validation_tests.h"
-#include "../framework/ray_tracing_objects.h"
-#include "../framework/feature_requirements.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/pipeline_helper.h"
+#include "layer_validation_tests.h"
+#include "ray_tracing_objects.h"
+#include "feature_requirements.h"
+#include "descriptor_helper.h"
+#include "pipeline_helper.h"
 #include "utils/math_utils.h"
 #include <algorithm>
 

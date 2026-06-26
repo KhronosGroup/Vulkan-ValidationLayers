@@ -2,7 +2,7 @@
  * Copyright (c) 2015-2026 The Khronos Group Inc.
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021 ARM, Inc. All rights reserved.
  *
@@ -14,10 +14,10 @@
  */
 
 #include <vulkan/vulkan_core.h>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/render_pass_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "descriptor_helper.h"
+#include "render_pass_helper.h"
 #include "binding.h"
 #include "utils/convert_utils.h"
 

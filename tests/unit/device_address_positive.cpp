@@ -14,7 +14,7 @@
 
 #include <gtest/gtest.h>
 #include <vulkan/vulkan_core.h>
-#include "../framework/layer_validation_tests.h"
+#include "layer_validation_tests.h"
 #include "containers/range.h"
 
 class PositiveDeviceAddress : public VkLayerTest {};

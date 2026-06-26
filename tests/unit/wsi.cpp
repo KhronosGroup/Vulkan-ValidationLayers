@@ -2,7 +2,7 @@
  * Copyright (c) 2015-2026 The Khronos Group Inc.
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,9 +12,9 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/render_pass_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "render_pass_helper.h"
 #include "containers/container_utils.h"
 #include "generated/vk_function_pointers.h"
 #include <algorithm>

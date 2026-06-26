@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Nintendo
+ * Copyright (c) 2023-2026 Nintendo
  * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -9,11 +9,11 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/layer_validation_tests.h"
-#include "../framework/shader_object_helper.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/shader_helper.h"
-#include "../framework/shader_templates.h"
+#include "layer_validation_tests.h"
+#include "shader_object_helper.h"
+#include "descriptor_helper.h"
+#include "shader_helper.h"
+#include "shader_templates.h"
 #include "test_framework.h"
 #include "utils/math_utils.h"
 

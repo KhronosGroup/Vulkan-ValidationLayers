@@ -9,10 +9,10 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/layer_validation_tests.h"
-#include "../framework/shader_helper.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/data_graph_objects.h"
+#include "layer_validation_tests.h"
+#include "shader_helper.h"
+#include "pipeline_helper.h"
+#include "data_graph_objects.h"
 
 namespace {
 VKAPI_ATTR VkBool32 VKAPI_CALL EmptyDebugReportCallback(VkDebugReportFlagsEXT, VkDebugReportObjectTypeEXT, uint64_t, size_t,

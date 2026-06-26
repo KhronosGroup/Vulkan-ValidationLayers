@@ -11,8 +11,8 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/layer_validation_tests.h"
-#include "../framework/ray_tracing_helper_nv.h"
+#include "layer_validation_tests.h"
+#include "ray_tracing_helper_nv.h"
 
 class PositiveRayTracingPipelineNV : public RayTracingTest {};
 

@@ -16,8 +16,8 @@
 #include "binding.h"
 #include "test_framework.h"
 #include "utils/cast_utils.h"
-#include "../framework/layer_validation_tests.h"
-#include "../framework/descriptor_helper.h"
+#include "layer_validation_tests.h"
+#include "descriptor_helper.h"
 #include "utils/image_utils.h"
 #include "pipeline_helper.h"
 

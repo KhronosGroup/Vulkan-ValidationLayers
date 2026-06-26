@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "../framework/sync_val_tests.h"
+#include "sync_val_tests.h"
 #include <vulkan/utility/vk_format_utils.h>
 #include <thread>
 

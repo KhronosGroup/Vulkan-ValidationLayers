@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "../framework/sync_val_tests.h"
+#include "sync_val_tests.h"
 
 struct NegativeSyncValWsi : public VkSyncValTest {};
 

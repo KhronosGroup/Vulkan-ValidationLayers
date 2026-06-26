@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (c) 2023-2025 Nintendo
+ * Copyright (c) 2023-2026 Nintendo
  * Copyright (c) 2023-2026 LunarG, Inc.
  * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -11,12 +11,12 @@
  */
 
 #include <vulkan/vulkan_core.h>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/shader_object_helper.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/render_pass_helper.h"
-#include "../framework/shader_helper.h"
-#include "../framework/pipeline_helper.h"
+#include "layer_validation_tests.h"
+#include "shader_object_helper.h"
+#include "descriptor_helper.h"
+#include "render_pass_helper.h"
+#include "shader_helper.h"
+#include "pipeline_helper.h"
 #include "binding.h"
 #include "generated/vk_function_pointers.h"
 #include "shader_templates.h"

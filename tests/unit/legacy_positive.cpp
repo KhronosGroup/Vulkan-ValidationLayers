@@ -11,7 +11,7 @@
  */
 // stype-check off
 #include <vulkan/vulkan_core.h>
-#include "../framework/layer_validation_tests.h"
+#include "layer_validation_tests.h"
 
 void LegacyTest::CreateRenderPass() {
     vkt::Image image(*m_device, 8, 8, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);

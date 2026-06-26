@@ -13,10 +13,10 @@
 
 #include <cmath>
 #include <vulkan/utility/vk_format_utils.h>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/ray_tracing_objects.h"
-#include "../framework/gpu_av_helper.h"
+#include "layer_validation_tests.h"
+#include "descriptor_helper.h"
+#include "ray_tracing_objects.h"
+#include "gpu_av_helper.h"
 #include "utils/math_utils.h"
 
 class NegativeGpuAVRayTracing : public GpuAVRayTracingTest {};

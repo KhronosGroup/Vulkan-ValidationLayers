@@ -14,9 +14,9 @@
 
 #include <spirv/unified1/spirv.hpp>
 #include <algorithm>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/shader_object_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "shader_object_helper.h"
 #include "cooperative_matrix_helper.h"
 
 void CooperativeMatrixTest::InitCooperativeMatrixKHR() {

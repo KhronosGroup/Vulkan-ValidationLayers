@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022-2025 The Khronos Group Inc.
- * Copyright (c) 2022-2025 RasterGrid Kft.
+ * Copyright (c) 2022-2026 The Khronos Group Inc.
+ * Copyright (c) 2022-2026 RasterGrid Kft.
  * Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -10,7 +10,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/video_objects.h"
+#include "video_objects.h"
 
 class NegativeVideoDecodeAV1 : public VkVideoLayerTest {};
 
