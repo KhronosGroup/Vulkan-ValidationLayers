@@ -22,7 +22,7 @@
 namespace gpudump {
 
 void CommandBufferSubState::DumpDescriptors(const LastBound& last_bound, const Location& loc) const {
-    vvl::DescriptorMode descriptor_mode = last_bound.GetDescriptorMode();
+    vvl::DescriptorMode descriptor_mode = last_bound.GetActionDescriptorMode();
     if (descriptor_mode != vvl::DescriptorModeBuffer && descriptor_mode != vvl::DescriptorModeHeap) {
         return;
     }
