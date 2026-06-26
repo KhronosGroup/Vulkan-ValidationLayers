@@ -4974,8 +4974,8 @@ TEST_F(NegativeShaderObject, InvalidColorWriteMask) {
     m_command_buffer.BeginRenderingColor(image_view, GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-    VkColorComponentFlags colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    vk::CmdSetColorWriteMaskEXT(m_command_buffer, 0u, 1u, &colorWriteMask);
+    VkColorComponentFlags rgb_mask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
+    vk::CmdSetColorWriteMaskEXT(m_command_buffer, 0u, 1u, &rgb_mask);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09116");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);

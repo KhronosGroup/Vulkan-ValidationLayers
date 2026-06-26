@@ -1373,12 +1373,15 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline& pipeli
         if (attachment_desc.format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 &&
             !pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
             const VkColorComponentFlags& color_write_mask = pipeline.AttachmentStates()[i].colorWriteMask;
-            VkColorComponentFlags rgb = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
-            if ((color_write_mask & rgb) != rgb && (color_write_mask & rgb) != 0) {
+            const VkColorComponentFlags rgba =
+                VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+            if ((color_write_mask & rgba) != rgba && (color_write_mask & rgba) != 0) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-09043", device, create_info_loc.dot(Field::renderPass),
                                  "was created with pAttachments[%" PRIu32
                                  "].format of VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, but pColorBlendState->pAttachments[%" PRIu32
-                                 "].colorWriteMask is %s.",
+                                 "].colorWriteMask is %s.\nThe 999E5 format is special as it overlaps the traditional 8-bit "
+                                 "boundary and has no real alpha channel. When updating, the driver needs the full RGBA mask in "
+                                 "order to properly handle this format.",
                                  attachment, i, string_VkColorComponentFlags(color_write_mask).c_str());
             }
         }
@@ -3321,14 +3324,17 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline& p
 
                 if (color_format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 &&
                     !pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
-                    VkColorComponentFlags rgb = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
-                    if ((color_blend_attachment.colorWriteMask & rgb) != rgb &&
-                        (color_blend_attachment.colorWriteMask & rgb) != 0) {
+                    const VkColorComponentFlags rgba =
+                        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+                    if ((color_blend_attachment.colorWriteMask & rgba) != rgba &&
+                        (color_blend_attachment.colorWriteMask & rgba) != 0) {
                         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-09043", device,
                                          create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo,
                                                                Field::pColorAttachmentFormats, color_index),
                                          "is VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, but pColorBlendState->pAttachments[%" PRIu32
-                                         "].colorWriteMask is %s.",
+                                         "].colorWriteMask is %s.\nThe 999E5 format is special as it overlaps the traditional "
+                                         "8-bit boundary and has no real alpha channel. When updating, the driver needs the full "
+                                         "RGBA mask in order to properly handle this format.",
                                          color_index, string_VkColorComponentFlags(color_blend_attachment.colorWriteMask).c_str());
                     }
                 }
