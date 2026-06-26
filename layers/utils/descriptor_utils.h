@@ -122,8 +122,6 @@ enum class vvlDescriptorType : uint8_t {
     ImageTexelBufferUniform = 0xA,  // VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
     ImageTexelBufferStorage = 0xB,  // VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
     ImageInputAttachment = 0xC,     // VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
-
-    Null = 0xFF,  // null descriptor
 };
 
 inline constexpr uint8_t vvlDescriptorBufferMask = 0x2;
@@ -150,9 +148,6 @@ constexpr VkDescriptorType GetDescriptorTypeFromMask(vvlDescriptorType vvl_type)
             return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
         case vvlDescriptorType::ImageInputAttachment:
             return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-        case vvlDescriptorType::Null:
-            assert(false);
-            return VK_DESCRIPTOR_TYPE_MAX_ENUM;
     }
     assert(false && "Invalid compressed descriptor type mask");
     return VK_DESCRIPTOR_TYPE_MAX_ENUM;

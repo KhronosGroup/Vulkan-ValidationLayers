@@ -1914,3 +1914,74 @@ TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptorNotSampler) {
 
     m_command_buffer.End();
 }
+
+TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptorDebugNames) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    static const VkLayerSettingEXT layer_settings[2] = {
+        {OBJECT_LAYER_NAME, "gpu_dump_descriptors", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+        {OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+    };
+    VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
+    RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
+    RETURN_IF_SKIP(InitState());
+    GetPhysicalDeviceProperties2(heap_props);
+
+    if (heap_props.minResourceHeapReservedRange != 0) {
+        GTEST_SKIP() << "minResourceHeapReservedRange is not zero";
+    }
+    vkt::Buffer resource_heap(*m_device, 1024, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)heap_props.bufferDescriptorSize;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    VkDebugUtilsObjectNameInfoEXT debug_obj_info = vku::InitStructHelper();
+    debug_obj_info.objectHandle = 0;
+    debug_obj_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
+    debug_obj_info.pObjectName = "My Sampler";
+
+    uint8_t* heap_data = (uint8_t*)resource_heap.Memory().Map();
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo(&debug_obj_info);
+    VkHostAddressRangeEXT sampler_host{heap_data, heap_props.samplerDescriptorSize};
+    vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
+
+    debug_obj_info.pObjectName = "My UBO";
+    vkt::Buffer ssbo_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+    VkHostAddressRangeEXT descriptor_host{heap_data + heap_props.bufferDescriptorSize, heap_props.bufferDescriptorSize};
+    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper(&debug_obj_info);
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0, R32ui) uniform uimage2D si;
+        layout(set = 0, binding = 1) uniform UBO { uvec4 data;};
+        void main() {
+            imageStore(si, ivec2(1), data);
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = resource_heap.AddressRange();
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    m_errorMonitor->SetDesiredWarning("[My Sampler]");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}

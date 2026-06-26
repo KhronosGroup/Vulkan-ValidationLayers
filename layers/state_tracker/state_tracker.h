@@ -36,6 +36,7 @@
 #include "utils/android_ndk_types.h"
 #include "utils/vk_api_utils.h"
 #include "containers/range_map.h"
+#include <cstdint>
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include <atomic>
 #include <functional>
@@ -2242,7 +2243,6 @@ class DeviceState : public vvl::BaseDevice {
             VkImageViewType type;
         };
         struct EntrySampler {};
-        struct EntryNull {};
         struct Entry {
             uint8_t type;  // vvlDescriptorType
             union Data {
@@ -2251,14 +2251,12 @@ class DeviceState : public vvl::BaseDevice {
                 EntryAS acceleration_structure;
                 EntryImage image;
                 EntrySampler sampler;
-                EntryNull null_descriptor;
 
                 explicit Data(EntryBuffer b) : buffer(b) {}
                 explicit Data(EntryTexelBuffer t) : texel_buffer(t) {}
                 explicit Data(EntryAS a) : acceleration_structure(a) {}
                 explicit Data(EntryImage i) : image(i) {}
                 explicit Data(EntrySampler s) : sampler(s) {}
-                explicit Data(EntryNull n) : null_descriptor(n) {}
             } data;
 
             Entry(uint8_t t, EntryBuffer b) : type(t), data(b) {}
@@ -2266,12 +2264,14 @@ class DeviceState : public vvl::BaseDevice {
             Entry(uint8_t t, EntryAS a) : type(t), data(a) {}
             Entry(uint8_t t, EntryImage i) : type(t), data(i) {}
             Entry(uint8_t t, EntrySampler s) : type(t), data(s) {}
-            Entry(uint8_t t, EntryNull n) : type(t), data(n) {}
-
-            std::string Describe(const DeviceState& device_state) const;
         };
         vvl::unordered_map<uint64_t, Entry> map;
+        // Users can pass in VkDebugUtilsObjectNameInfoEXT when getting the descriptor to provide a name
+        // We make a seperate map to prevent adding 32-bytes to every Entry as this might not be used
+        vvl::unordered_map<uint64_t, std::string> debug_names;
         mutable std::shared_mutex map_lock;
+
+        std::string Describe(const DeviceState& device_state, uint64_t key) const;
     } descriptor_hash;
 
     // Keep track of identifier -> state
