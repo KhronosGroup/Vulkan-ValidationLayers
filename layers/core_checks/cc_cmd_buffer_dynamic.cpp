@@ -1199,12 +1199,14 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
             if (attachment && attachment->create_info.format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) {
                 const uint32_t color_index = attachment_info.type_index;
                 const auto color_write_mask = cb_state.dynamic_state_value.color_write_masks[color_index];
-                VkColorComponentFlags rgb = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
-                if ((color_write_mask & rgb) != rgb && (color_write_mask & rgb) != 0) {
+                const VkColorComponentFlags rgba =
+                    VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+                if ((color_write_mask & rgba) != rgba && (color_write_mask & rgba) != 0) {
                     skip |= LogError(
                         CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_WRITE_MASK_09116), cb_state.Handle(), loc,
                         "%s has format VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, but vkCmdSetColorWriteMaskEXT::pColorWriteMasks[%" PRIu32
-                        "] is %s.",
+                        "] is %s\nThe 999E5 format is special as it overlaps the traditional 8-bit boundary and has no real alpha "
+                        "channel. When updating, the driver needs the full RGBA mask in order to properly handle this format.",
                         attachment_info.Describe(cb_state, i).c_str(), color_index,
                         string_VkColorComponentFlags(color_write_mask).c_str());
                 }

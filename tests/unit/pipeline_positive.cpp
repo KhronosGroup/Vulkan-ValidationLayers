@@ -1895,18 +1895,6 @@ TEST_F(PositivePipeline, ColorWriteMaskE5B9G9R9) {
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = rp;
-    pipe.cb_attachments_.colorWriteMask = VK_COLOR_COMPONENT_A_BIT;
-    {
-        pipe.CreateGraphicsPipeline();
-        pipe.Destroy();
-    }
-
-    pipe.cb_attachments_.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
-    {
-        pipe.CreateGraphicsPipeline();
-        pipe.Destroy();
-    }
-
     pipe.cb_attachments_.colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     {
