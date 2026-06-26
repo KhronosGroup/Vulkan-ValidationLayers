@@ -2942,3 +2942,54 @@ TEST_F(PositiveSyncObject, BufferOwnershipTransferWholeSize) {
     m_default_queue->Submit2(acquire_cb, vkt::Wait(semaphore));
     m_device->Wait();
 }
+
+TEST_F(PositiveSyncObject, BufferOwnershipTransferTimelineReordering) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4903#issuecomment-4587980554");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Queue* transfer_queue = m_device->TransferOnlyQueue();
+    if (!transfer_queue) {
+        GTEST_SKIP() << "Transfer-only queue is not present";
+    }
+    vkt::CommandPool release_pool(*m_device, transfer_queue->family_index);
+    vkt::CommandBuffer release_cb(*m_device, release_pool);
+    vkt::CommandBuffer acquire_cb(*m_device, m_command_pool);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    // Release on the transfer queue
+    VkBufferMemoryBarrier2 release_barrier = vku::InitStructHelper();
+    release_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    release_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    release_barrier.srcQueueFamilyIndex = transfer_queue->family_index;
+    release_barrier.dstQueueFamilyIndex = m_default_queue->family_index;
+    release_barrier.buffer = buffer;
+    release_barrier.size = 256;
+
+    release_cb.Begin();
+    release_cb.Barrier(release_barrier);
+    release_cb.End();
+
+    // Acquire on the default queue
+    VkBufferMemoryBarrier2 acquire_barrier = vku::InitStructHelper();
+    acquire_barrier.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT_KHR;
+    acquire_barrier.dstAccessMask = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
+    acquire_barrier.srcQueueFamilyIndex = transfer_queue->family_index;
+    acquire_barrier.dstQueueFamilyIndex = m_default_queue->family_index;
+    acquire_barrier.buffer = buffer;
+    acquire_barrier.size = 256;
+
+    acquire_cb.Begin();
+    acquire_cb.Barrier(acquire_barrier);
+    acquire_cb.End();
+
+    vkt::Semaphore timeline(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    // Test that QFOT validation with wait-before-signal submission works correctly
+    m_default_queue->Submit2(acquire_cb, vkt::TimelineWait(timeline, 1));
+    transfer_queue->Submit2(release_cb, vkt::TimelineSignal(timeline, 1));
+    m_device->Wait();
+}

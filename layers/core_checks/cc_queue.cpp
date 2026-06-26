@@ -39,8 +39,6 @@
 struct CommandBufferSubmitState {
     const CoreChecks& core;
     const vvl::Queue& queue_state;
-    QFOTransferCBScoreboards<QFOImageTransferBarrier> qfo_image_scoreboards;
-    QFOTransferCBScoreboards<QFOBufferTransferBarrier> qfo_buffer_scoreboards;
     std::vector<VkCommandBuffer> current_cmds;
     std::vector<std::string> cmdbuf_label_stack;
     std::string last_closed_cmdbuf_label;
@@ -65,8 +63,7 @@ struct CommandBufferSubmitState {
         const VkCommandBuffer cmd = cb_state.VkHandle();
         current_cmds.push_back(cmd);
         skip |= core.ValidatePrimaryCommandBufferState(
-            loc, cb_state, static_cast<uint32_t>(std::count(current_cmds.begin(), current_cmds.end(), cmd)), &qfo_image_scoreboards,
-            &qfo_buffer_scoreboards);
+            loc, cb_state, static_cast<uint32_t>(std::count(current_cmds.begin(), current_cmds.end(), cmd)));
         skip |= core.ValidateQueueFamilyIndices(loc, cb_state, queue_state);
         skip |= ValidateCmdBufLabelMatching(loc, cb_state);
 
@@ -470,56 +467,6 @@ bool CoreChecks::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount
     return ValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
 }
 
-void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
-                                           const RecordObject& record_obj) {
-    if (record_obj.result != VK_SUCCESS) {
-        return;
-    }
-    // The triply nested for duplicates that in the StateTracker, but avoids the need for two additional callbacks.
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const VkSubmitInfo& submit = pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit.commandBufferCount; i++) {
-            auto cb_state = GetWrite<vvl::CommandBuffer>(submit.pCommandBuffers[i]);
-            ASSERT_AND_CONTINUE(cb_state);
-
-            for (auto* secondary_cmd_buffer : cb_state->linked_command_buffers) {
-                RecordQueuedQFOTransfers(*secondary_cmd_buffer);
-            }
-            RecordQueuedQFOTransfers(*cb_state);
-        }
-    }
-}
-
-void CoreChecks::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                                    const RecordObject& record_obj) {
-    if (record_obj.result != VK_SUCCESS) {
-        return;
-    }
-    // The triply nested for duplicates that in the StateTracker, but avoids the need for two additional callbacks.
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const VkSubmitInfo2& submit = pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit.commandBufferInfoCount; i++) {
-            auto cb_state = GetWrite<vvl::CommandBuffer>(submit.pCommandBufferInfos[i].commandBuffer);
-            ASSERT_AND_CONTINUE(cb_state);
-
-            for (auto* secondary_cmd_buffer : cb_state->linked_command_buffers) {
-                RecordQueuedQFOTransfers(*secondary_cmd_buffer);
-            }
-            RecordQueuedQFOTransfers(*cb_state);
-        }
-    }
-}
-
-void CoreChecks::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                                               const RecordObject& record_obj) {
-    PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
-}
-
-void CoreChecks::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                                            const RecordObject& record_obj) {
-    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
-}
-
 // Check that the queue family index of 'queue' matches one of the entries in pQueueFamilyIndices
 bool CoreChecks::ValidImageBufferQueue(const vvl::CommandBuffer& cb_state, const VulkanTypedHandle& object,
                                        uint32_t queueFamilyIndex, uint32_t count, const uint32_t* indices,
@@ -644,10 +591,8 @@ bool CoreChecks::ValidateCommandBufferSimultaneousUse(const Location& loc, const
     return skip;
 }
 
-bool CoreChecks::ValidatePrimaryCommandBufferState(
-    const Location& loc, const vvl::CommandBuffer& cb_state, uint32_t current_submit_count,
-    QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,
-    QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards) const {
+bool CoreChecks::ValidatePrimaryCommandBufferState(const Location& loc, const vvl::CommandBuffer& cb_state,
+                                                   uint32_t current_submit_count) const {
     // Track in-use for resources off of primary and any secondary CBs
     bool skip = false;
 
@@ -657,7 +602,6 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
                          FormatHandle(cb_state).c_str());
     } else {
         for (const auto* sub_cb : cb_state.linked_command_buffers) {
-            skip |= ValidateQueuedQFOTransfers(*sub_cb, qfo_image_scoreboards, qfo_buffer_scoreboards, loc);
             // TODO: replace with InvalidateCommandBuffers() at recording.
             if ((sub_cb->primary_command_buffer != cb_state.VkHandle()) &&
                 !(sub_cb->begin_info_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
@@ -684,8 +628,6 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
 
     // If USAGE_SIMULTANEOUS_USE_BIT not set then CB cannot already be executing on device
     skip |= ValidateCommandBufferSimultaneousUse(loc, cb_state, current_submit_count);
-
-    skip |= ValidateQueuedQFOTransfers(cb_state, qfo_image_scoreboards, qfo_buffer_scoreboards, loc);
 
     const char* const vuid = (loc.function == Func::vkQueueSubmit) ? "VUID-vkQueueSubmit-pCommandBuffers-00070"
                                                                    : "VUID-vkQueueSubmit2-commandBuffer-03874";
@@ -830,14 +772,26 @@ bool CoreChecks::ProcessSubmissionBatch(const vvl::SubmitTimeTracker& tracker,
                      FormatHandle(semaphore).c_str(), signal_value, *current_value);
         }
     }
+    // Queue family ownership transfer (QFOT) validation
+    for (const auto& cb : command_buffers) {
+        if (cb) {
+            auto cb_guard = cb->ReadLock();
+            for (const vvl::CommandBuffer* secondary : cb->linked_command_buffers) {
+                skip |= ValidateQueuedQFOTransfers(*secondary, submit_loc);
+            }
+            skip |= ValidateQueuedQFOTransfers(*cb, submit_loc);
+        }
+    }
     if (!skip) {
         for (const auto& cb : command_buffers) {
             if (cb) {
                 auto cb_guard = cb->WriteLock();
-                for (const vvl::CommandBuffer* secondary : cb->linked_command_buffers) {
+                for (vvl::CommandBuffer* secondary : cb->linked_command_buffers) {
                     UpdateCmdBufImageLayouts(*secondary);
+                    RecordQueuedQFOTransfers(*secondary);
                 }
                 UpdateCmdBufImageLayouts(*cb);
+                RecordQueuedQFOTransfers(*cb);
             }
         }
     }

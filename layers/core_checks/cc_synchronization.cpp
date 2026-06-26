@@ -2449,7 +2449,6 @@ void CoreChecks::RecordBarrierValidationInfo(const Location& barrier_loc, vvl::C
 
 template <typename TransferBarrier>
 bool CoreChecks::ValidateQueuedQFOTransferBarriers(const core::CommandBufferSubState& cb_sub_state,
-                                                   QFOTransferCBScoreboards<TransferBarrier>* scoreboards,
                                                    const GlobalQFOTransferBarrierMap<TransferBarrier>& global_release_barriers,
                                                    const Location& loc) const {
     bool skip = false;
@@ -2476,16 +2475,11 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(const core::CommandBufferSubS
     return skip;
 }
 
-bool CoreChecks::ValidateQueuedQFOTransfers(const vvl::CommandBuffer& cb_state,
-                                            QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,
-                                            QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards,
-                                            const Location& loc) const {
+bool CoreChecks::ValidateQueuedQFOTransfers(const vvl::CommandBuffer& cb_state, const Location& loc) const {
     bool skip = false;
     auto& cb_sub_state = core::SubState(cb_state);
-    skip |= ValidateQueuedQFOTransferBarriers<QFOImageTransferBarrier>(cb_sub_state, qfo_image_scoreboards,
-                                                                       qfo_release_image_barrier_map, loc);
-    skip |= ValidateQueuedQFOTransferBarriers<QFOBufferTransferBarrier>(cb_sub_state, qfo_buffer_scoreboards,
-                                                                        qfo_release_buffer_barrier_map, loc);
+    skip |= ValidateQueuedQFOTransferBarriers<QFOImageTransferBarrier>(cb_sub_state, qfo_release_image_barrier_map, loc);
+    skip |= ValidateQueuedQFOTransferBarriers<QFOBufferTransferBarrier>(cb_sub_state, qfo_release_buffer_barrier_map, loc);
     return skip;
 }
 
