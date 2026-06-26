@@ -682,9 +682,11 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
                                        std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set, uint32_t dynamic_offset_count,
                                        const uint32_t *p_dynamic_offsets, const Location &loc);
 
-    void UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point,
-                                          std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, uint32_t first_set,
-                                          uint32_t set_count, const uint32_t *buffer_indicies, const VkDeviceSize *buffer_offsets);
+    void UpdateLastBoundDescriptorBuffers(LastBound& last_bound, std::shared_ptr<const vvl::PipelineLayout> pipeline_layout,
+                                          uint32_t first_set, uint32_t set_count, const uint32_t* buffer_indicies,
+                                          const VkDeviceSize* buffer_offsets);
+    void UpdateLastBoundDescriptorBuffersEmbedded(LastBound& last_bound, std::shared_ptr<const vvl::PipelineLayout> pipeline_layout,
+                                                  uint32_t set);
 
     void PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, std::shared_ptr<const vvl::PipelineLayout> pipeline_layout,
                                 uint32_t set, uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites,

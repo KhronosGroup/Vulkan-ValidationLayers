@@ -18,6 +18,7 @@
  */
 #pragma once
 
+#include "containers/limits.h"
 #include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/descriptor_mode.h"
 #include "utils/shader_utils.h"
@@ -61,6 +62,7 @@ struct LastBound {
     small_vector<const ShaderStageState*, 3> GetStages() const;
 
     struct DescriptorBufferBinding {
+        uint32_t embedded = vvl::kNoIndex32;
         uint32_t index = 0;
         VkDeviceSize offset = 0;
     };
