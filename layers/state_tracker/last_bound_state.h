@@ -169,6 +169,8 @@ struct LastBound {
 
     // Since GPU-AV uses this to access an array, force a getter to ensure people use this correctly.
     vvl::DescriptorMode GetActionDescriptorMode() const;
+    // Will be Unknown if shader is not using any descriptor
+    // GetActionDescriptorMode() will check the bound pipeline/shaders if Unknown
     vvl::DescriptorMode GetDescriptorMode() const { return descriptor_mode; };
     void SetDescriptorMode(vvl::DescriptorMode new_mode, vvl::Func function) {
         previous_descriptor_mode = descriptor_mode;
