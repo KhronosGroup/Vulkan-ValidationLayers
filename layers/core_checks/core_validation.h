@@ -697,22 +697,17 @@ class CoreChecks : public vvl::DeviceProxy {
 
     template <typename TransferBarrier>
     bool ValidateQueuedQFOTransferBarriers(const core::CommandBufferSubState& cb_sub_state,
-                                           QFOTransferCBScoreboards<TransferBarrier>* scoreboards,
                                            const GlobalQFOTransferBarrierMap<TransferBarrier>& global_release_barriers,
                                            const Location& loc) const;
-    bool ValidateQueuedQFOTransfers(const vvl::CommandBuffer& cb_state,
-                                    QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,
-                                    QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards,
-                                    const Location& loc) const;
+    bool ValidateQueuedQFOTransfers(const vvl::CommandBuffer& cb_state, const Location& loc) const;
 
     void RecordBarrierValidationInfo(const Location& loc, vvl::CommandBuffer& cb_state, const BufferBarrier& barrier,
                                      QFOTransferBarrierSets<QFOBufferTransferBarrier>& barrier_sets);
     void RecordBarrierValidationInfo(const Location& loc, vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
                                      const vvl::Image& image_state, QFOTransferBarrierSets<QFOImageTransferBarrier>& barrier_sets);
 
-    bool ValidatePrimaryCommandBufferState(const Location& loc, const vvl::CommandBuffer& cb_state, uint32_t current_submit_count,
-                                           QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,
-                                           QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards) const;
+    bool ValidatePrimaryCommandBufferState(const Location& loc, const vvl::CommandBuffer& cb_state,
+                                           uint32_t current_submit_count) const;
     bool ValidateDrawPipelineRenderpass(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                         const vvl::RenderPass& rp_state, const Location& loc) const;
     bool ValidateDrawPipelineDynamicRenderpass(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
@@ -1574,8 +1569,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                     const RecordObject& record_obj) override;
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                     const ErrorObject& error_obj) const override;
-    void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
-                                   const RecordObject& record_obj) override;
     bool ValidateRenderPassStripeSubmitInfo(VkQueue queue, const vvl::CommandBuffer& cb_state, const void* pNext,
                                             const Location& loc) const;
     bool ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
@@ -1584,12 +1577,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                      const ErrorObject& error_obj) const override;
-    void RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                            const RecordObject& record_obj);
-    void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
-                                       const RecordObject& record_obj) override;
-    void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                                    const RecordObject& record_obj) override;
     bool ProcessSubmissionBatch(const vvl::SubmitTimeTracker& tracker,
                                 const std::vector<std::shared_ptr<vvl::CommandBuffer>>& command_buffers,
                                 vvl::span<const VkSemaphoreSubmitInfo> signal_semaphores, const Location& submit_loc) override;

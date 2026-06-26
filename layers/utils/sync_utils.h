@@ -273,17 +273,6 @@ template <typename TransferBarrier>
 using GlobalQFOTransferBarrierMap =
     vvl::concurrent_unordered_map<typename TransferBarrier::HandleType, QFOTransferBarrierSet<TransferBarrier>>;
 
-// Submit queue uses the Scoreboard to track all release/acquire operations in a batch.
-template <typename TransferBarrier>
-using QFOTransferCBScoreboard =
-    vvl::unordered_map<TransferBarrier, const vvl::CommandBuffer*, QFOTransferBarrierHash<TransferBarrier>>;
-
-template <typename TransferBarrier>
-struct QFOTransferCBScoreboards {
-    QFOTransferCBScoreboard<TransferBarrier> acquire;
-    QFOTransferCBScoreboard<TransferBarrier> release;
-};
-
 namespace sync_utils {
 VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures& features, const DeviceExtensions& device_extensions);
 VkAccessFlags2 DisabledAccesses(const DeviceExtensions& device_extensions);
