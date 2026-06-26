@@ -978,6 +978,40 @@ bool Device::PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, V
     return false;
 }
 
+bool Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                      VkSurfaceCapabilitiesKHR* pSurfaceCapabilities,
+                                                                      const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_get_surface_capabilities2)) {
+        reported = true;
+        LogWarning("WARNING-legacy-gpdsc2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceSurfaceCapabilitiesKHR is a legacy command and this VkInstance enabled the "
+                   "VK_KHR_get_surface_capabilities2 extension which contains vkGetPhysicalDeviceSurfaceCapabilities2KHR that can "
+                   "be used instead.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdsc2");
+    }
+    return false;
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                 uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
+                                                                 const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_get_surface_capabilities2)) {
+        reported = true;
+        LogWarning("WARNING-legacy-gpdsc2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceSurfaceFormatsKHR is a legacy command and this VkInstance enabled the "
+                   "VK_KHR_get_surface_capabilities2 extension which contains vkGetPhysicalDeviceSurfaceFormats2KHR that can be "
+                   "used instead.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdsc2");
+    }
+    return false;
+}
+
 bool Device::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
     VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
     const ErrorObject& error_obj) const {

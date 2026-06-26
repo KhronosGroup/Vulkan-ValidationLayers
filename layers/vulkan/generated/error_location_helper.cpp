@@ -2161,9 +2161,11 @@ const char* String(Struct structure) {
     {"VkTensorCreateInfoARM", 22},
     {"VkTensorDependencyInfoARM", 26},
     {"VkTensorDescriptionARM", 23},
+    {"VkTensorExplicitTilingFormatPropertiesARM", 42},
     {"VkTensorFormatPropertiesARM", 28},
     {"VkTensorMemoryBarrierARM", 25},
     {"VkTensorMemoryRequirementsInfoARM", 34},
+    {"VkTensorRollingBackingCreateInfoARM", 36},
     {"VkTensorViewCaptureDescriptorDataInfoARM", 41},
     {"VkTensorViewCreateInfoARM", 26},
     {"VkTexelBufferDescriptorInfoEXT", 31},
@@ -2450,10 +2452,15 @@ const char* String(Field field) {
     {"blockMatchExtendedClampToEdge", 30},
     {"blockTexelViewCompatibleMultipleLayers", 39},
     {"blockType", 10},
+    {"blockU64kTilingTensorFeatures", 30},
+    {"blockUTilingTensorFeatures", 27},
     {"borderColor", 12},
     {"borderColorSwizzle", 19},
     {"borderColorSwizzleFromImage", 28},
     {"bresenhamLines", 15},
+    {"brick16TilingTensorFeatures", 28},
+    {"brick4TilingTensorFeatures", 27},
+    {"brick8TilingTensorFeatures", 27},
     {"buffer", 7},
     {"bufferAddress", 14},
     {"bufferBindCount", 16},
@@ -5671,6 +5678,7 @@ const char* String(Field field) {
     {"workgroupMemoryExplicitLayout16BitAccess", 41},
     {"workgroupMemoryExplicitLayout8BitAccess", 40},
     {"workgroupMemoryExplicitLayoutScalarBlockLayout", 47},
+    {"wraps", 6},
     {"writeMask", 10},
     {"writeStdPPS", 12},
     {"writeStdSPS", 12},
@@ -6094,6 +6102,7 @@ const char* String(Extension extension) {
     {"VK_ARM_shader_core_builtins", 28},
     {"VK_ARM_shader_core_properties", 30},
     {"VK_ARM_shader_instrumentation", 30},
+    {"VK_ARM_tensor_controls", 23},
     {"VK_ARM_tensors", 15},
     {"VK_EXT_4444_formats", 20},
     {"VK_EXT_acquire_drm_display", 27},
@@ -9423,6 +9432,10 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_REPLICATED_COMPOSITES_FEATURES_EXT:
        return Struct::VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT;
+    case VK_STRUCTURE_TYPE_TENSOR_ROLLING_BACKING_CREATE_INFO_ARM:
+       return Struct::VkTensorRollingBackingCreateInfoARM;
+    case VK_STRUCTURE_TYPE_TENSOR_EXPLICIT_TILING_FORMAT_PROPERTIES_ARM:
+       return Struct::VkTensorExplicitTilingFormatPropertiesARM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT8_FEATURES_EXT:
        return Struct::VkPhysicalDeviceShaderFloat8FeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_VALIDATION_FEATURES_NV:
