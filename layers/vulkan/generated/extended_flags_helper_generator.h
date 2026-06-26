@@ -23,8 +23,8 @@
 
 #include "error_message/error_location.h"
 
-VkBufferUsageFlags2 GetBufferCreateFlags(const VkBufferCreateInfo& create_info);
-Location GetFlagsLocation(const VkBufferCreateInfo& create_info, const Location& loc);
+VkBufferUsageFlags2 GetBufferUsageFlags(const VkBufferCreateInfo& create_info);
+Location GetUsageLocation(const VkBufferCreateInfo& create_info, const Location& loc);
 
 VkImageCreateFlags2KHR GetImageCreateFlags(const VkImageCreateInfo& create_info);
 Location GetFlagsLocation(const VkImageCreateInfo& create_info, const Location& loc);
@@ -47,8 +47,8 @@ Location GetFlagsLocation(const VkPhysicalDeviceImageFormatInfo2& create_info, c
 VkImageUsageFlags2KHR GetImageUsageFlags(const VkPhysicalDeviceSparseImageFormatInfo2& create_info);
 Location GetUsageLocation(const VkPhysicalDeviceSparseImageFormatInfo2& create_info, const Location& loc);
 
-VkBufferUsageFlags2 GetBufferUsageFlags(const VkPhysicalDeviceExternalBufferInfo& create_info);
-Location GetUsageLocation(const VkPhysicalDeviceExternalBufferInfo& create_info, const Location& loc);
+VkBufferUsageFlags2 GetBufferCreateFlags(const VkPhysicalDeviceExternalBufferInfo& create_info);
+Location GetFlagsLocation(const VkPhysicalDeviceExternalBufferInfo& create_info, const Location& loc);
 
 VkImageCreateFlags2KHR GetImageCreateFlags(const VkFramebufferAttachmentImageInfo& create_info);
 Location GetFlagsLocation(const VkFramebufferAttachmentImageInfo& create_info, const Location& loc);
@@ -65,8 +65,8 @@ Location GetImageUsageLocation(const VkPhysicalDeviceVideoFormatInfoKHR& create_
 VkPipelineCreateFlags2 GetPipelineCreateFlags(const VkRayTracingPipelineCreateInfoNV& create_info);
 Location GetFlagsLocation(const VkRayTracingPipelineCreateInfoNV& create_info, const Location& loc);
 
-VkBufferUsageFlags2 GetDeviceAddress(const VkDescriptorBufferBindingInfoEXT& create_info);
-Location GetAddressLocation(const VkDescriptorBufferBindingInfoEXT& create_info, const Location& loc);
+VkBufferUsageFlags2 GetBufferUsageFlags(const VkDescriptorBufferBindingInfoEXT& create_info);
+Location GetUsageLocation(const VkDescriptorBufferBindingInfoEXT& create_info, const Location& loc);
 
 VkPipelineCreateFlags2 GetPipelineCreateFlags(const VkRayTracingPipelineCreateInfoKHR& create_info);
 Location GetFlagsLocation(const VkRayTracingPipelineCreateInfoKHR& create_info, const Location& loc);

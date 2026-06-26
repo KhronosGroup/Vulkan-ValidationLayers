@@ -26,20 +26,20 @@
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include "error_message/error_location.h"
 
-VkBufferUsageFlags2 GetBufferCreateFlags(const VkBufferCreateInfo& create_info) {
+VkBufferUsageFlags2 GetBufferUsageFlags(const VkBufferCreateInfo& create_info) {
     const auto extended = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
     if (extended) {
         return extended->usage;
     }
-    return static_cast<VkBufferUsageFlags2>(create_info.flags);
+    return static_cast<VkBufferUsageFlags2>(create_info.usage);
 }
 
-Location GetFlagsLocation(const VkBufferCreateInfo& create_info, const Location& loc) {
+Location GetUsageLocation(const VkBufferCreateInfo& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
     if (extended) {
         return loc.pNext(vvl::Struct::VkBufferUsageFlags2CreateInfo).dot(vvl::Field::usage);
     }
-    return loc.dot(vvl::Field::flags);
+    return loc.dot(vvl::Field::usage);
 }
 
 VkImageCreateFlags2KHR GetImageCreateFlags(const VkImageCreateInfo& create_info) {
@@ -154,20 +154,20 @@ Location GetUsageLocation(const VkPhysicalDeviceSparseImageFormatInfo2& create_i
     return loc.dot(vvl::Field::usage);
 }
 
-VkBufferUsageFlags2 GetBufferUsageFlags(const VkPhysicalDeviceExternalBufferInfo& create_info) {
+VkBufferUsageFlags2 GetBufferCreateFlags(const VkPhysicalDeviceExternalBufferInfo& create_info) {
     const auto extended = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
     if (extended) {
         return extended->usage;
     }
-    return static_cast<VkBufferUsageFlags2>(create_info.usage);
+    return static_cast<VkBufferUsageFlags2>(create_info.flags);
 }
 
-Location GetUsageLocation(const VkPhysicalDeviceExternalBufferInfo& create_info, const Location& loc) {
+Location GetFlagsLocation(const VkPhysicalDeviceExternalBufferInfo& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
     if (extended) {
         return loc.pNext(vvl::Struct::VkBufferUsageFlags2CreateInfo).dot(vvl::Field::usage);
     }
-    return loc.dot(vvl::Field::usage);
+    return loc.dot(vvl::Field::flags);
 }
 
 VkImageCreateFlags2KHR GetImageCreateFlags(const VkFramebufferAttachmentImageInfo& create_info) {
@@ -250,20 +250,20 @@ Location GetFlagsLocation(const VkRayTracingPipelineCreateInfoNV& create_info, c
     return loc.dot(vvl::Field::flags);
 }
 
-VkBufferUsageFlags2 GetDeviceAddress(const VkDescriptorBufferBindingInfoEXT& create_info) {
+VkBufferUsageFlags2 GetBufferUsageFlags(const VkDescriptorBufferBindingInfoEXT& create_info) {
     const auto extended = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
     if (extended) {
         return extended->usage;
     }
-    return static_cast<VkBufferUsageFlags2>(create_info.address);
+    return static_cast<VkBufferUsageFlags2>(create_info.usage);
 }
 
-Location GetAddressLocation(const VkDescriptorBufferBindingInfoEXT& create_info, const Location& loc) {
+Location GetUsageLocation(const VkDescriptorBufferBindingInfoEXT& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
     if (extended) {
         return loc.pNext(vvl::Struct::VkBufferUsageFlags2CreateInfo).dot(vvl::Field::usage);
     }
-    return loc.dot(vvl::Field::address);
+    return loc.dot(vvl::Field::usage);
 }
 
 VkPipelineCreateFlags2 GetPipelineCreateFlags(const VkRayTracingPipelineCreateInfoKHR& create_info) {
