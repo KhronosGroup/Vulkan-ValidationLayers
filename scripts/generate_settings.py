@@ -110,9 +110,6 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT &la
         else if (strcmp(VK_LAYER_DISABLES, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_STRING_EXT; }''')
 
     for setting in all_settings:
-        if 'view' in setting and setting['view'] == 'HIDDEN':
-            continue
-
         type = setting['type']
         layer_type = None
         if type == 'BOOL':

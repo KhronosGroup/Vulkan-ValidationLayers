@@ -55,19 +55,14 @@ khronos_validation.duplicate_message_limit = 10
 # Enable limiting of duplicate messages.
 khronos_validation.enable_message_limit = true
 
-# Fine Grained Locking
-# =====================
-# Enable fine grained locking for Core Validation, which should improve performance in multithreaded applications. This setting allows the optimization to be disabled for debugging.
-khronos_validation.fine_grained_locking = true
-
 # Dump VK_KHR_copy_memory_indirect
 # =====================
 # Dump information at each copy command when recording
 khronos_validation.gpu_dump_copy_memory_indirect = false
 
-# Dump Descriptors (VK_EXT_descriptor_buffer and VK_EXT_descriptor_heap)
+# Dump Descriptor Heap/Buffer
 # =====================
-# Dump all the information at every draw/dispatch when recording
+# Dump all the information at every draw/dispatch when recording VK_EXT_descriptor_heap or VK_EXT_descriptor_buffer
 khronos_validation.gpu_dump_descriptors = false
 
 # Force Device Copy
@@ -115,7 +110,7 @@ khronos_validation.gpuav_copy_memory_indirect = true
 # Enable descriptors and buffer out of bounds validation when using descriptor indexing
 khronos_validation.gpuav_descriptor_checks = true
 
-# GPU Assisted Validation
+# GPU Assisted Validation (GPU-AV)
 # =====================
 # Enable validation that cannot be done the CPU and needs hooks into the GPU execution
 khronos_validation.gpuav_enable = false
