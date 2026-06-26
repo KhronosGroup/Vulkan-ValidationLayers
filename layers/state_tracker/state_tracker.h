@@ -2133,7 +2133,7 @@ class DeviceState : public vvl::BaseDevice {
 
     SpecialSupported special_supported;
 
-    // VK_EXT_descriptor_heap
+    // VK_EXT_descriptor_heap / VK_EXT_descriptor_buffer
     CachedDescriptorSize cached_descriptor_size;
 
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties_nv;

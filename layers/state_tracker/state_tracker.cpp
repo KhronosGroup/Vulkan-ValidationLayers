@@ -1320,8 +1320,8 @@ void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const
         optical_flow_formats.cost = GetOpticalFlowFormats(physical_device, VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM);
     }
 
-    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        cached_descriptor_size.Init(physical_device, extensions);
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap) || IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
+        cached_descriptor_size.Init(*this);
     }
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)

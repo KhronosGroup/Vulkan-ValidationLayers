@@ -26,6 +26,9 @@
 namespace spirv {
 struct ResourceInterfaceVariable;
 }
+namespace vvl {
+class DeviceState;
+}
 
 static inline const VkSamplerCreateInfo* GetEmbeddedSampler(const VkDescriptorSetAndBindingMappingEXT& mapping) {
     switch (mapping.source) {
@@ -64,7 +67,6 @@ static constexpr bool IsDescriptorHeapImage(const VkDescriptorType type) {
 
 static constexpr bool IsDescriptorHeapTensor(const VkDescriptorType type) { return (type == VK_DESCRIPTOR_TYPE_TENSOR_ARM); }
 
-size_t GetDescriptorBufferSize(const VkPhysicalDeviceDescriptorBufferPropertiesEXT& props, bool robust, VkDescriptorType type);
 const char* DescribeDescriptorBufferSize(bool robust, VkDescriptorType type);
 
 bool IsResourceVaribleInMapping(const VkDescriptorSetAndBindingMappingEXT& mapping,
@@ -84,13 +86,14 @@ bool HasCombinedImageSamplerIndex(const VkDescriptorSetAndBindingMappingEXT& map
 // and not making it impossible to update if a new VkDescriptorType is added later
 struct DeviceExtensions;
 struct CachedDescriptorSize {
-    void Init(VkPhysicalDevice gpu, const DeviceExtensions& extensions);
-    VkDeviceSize GetSize(VkDescriptorType type) const;
+    void Init(const vvl::DeviceState& device_state);
+    VkDeviceSize GetSize(VkDescriptorType type, bool use_heap = true) const;
 
   private:
     // The number of valid descriptors that can be queried is known in the spec
     // (see VU 11362)
-    VkDeviceSize size_[14];
+    VkDeviceSize heap_size_[14];    // VK_EXT_descriptor_heap
+    VkDeviceSize buffer_size_[14];  // VK_EXT_descriptor_buffer
 };
 
 // We need a way to compress the VkDescriptorType enum to cover all the "real" types

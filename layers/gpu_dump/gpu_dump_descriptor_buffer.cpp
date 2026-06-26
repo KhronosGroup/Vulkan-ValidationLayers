@@ -241,8 +241,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
             const uint32_t count = ds_layout_def.GetDescriptorCountFromBinding(var_binding);
 
             if (!set_info->embedded) {
-                descriptor_size = (uint32_t)GetDescriptorBufferSize(dev_data.phys_dev_ext_props.descriptor_buffer_props,
-                                                                    dev_data.enabled_features.robustBufferAccess, type);
+                descriptor_size = (uint32_t)dev_data.device_state->cached_descriptor_size.GetSize(type, false);
                 DispatchGetDescriptorSetLayoutBindingOffsetEXT(dev_data.device, set_info->dsl->VkHandle(), var_binding,
                                                                &binding_offset);
                 const VkDeviceAddress binding_start_address = set_info->range.begin + binding_offset;
