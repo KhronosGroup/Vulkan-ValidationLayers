@@ -447,6 +447,10 @@ struct ResourceInterfaceVariable : public VariableBase {
     // If there is no array, index 0 is marked if the single image is read
     vvl::unordered_set<uint32_t> input_attachment_index_read;
 
+    // For arrayed image variables, the elements the shader statically accesses with a constant index.
+    // Contains kSpecConstant if an unresolved spec constant is used for indexing.
+    vvl::unordered_set<uint32_t> image_array_indices_accessed;
+
     // Type once array/pointer are stripped
     // most likely will be OpTypeImage, OpTypeStruct, OpTypeSampler, OpTypeSampledImage, or OpTypeAccelerationStructureKHR
     const Instruction &base_type;
@@ -455,6 +459,10 @@ struct ResourceInterfaceVariable : public VariableBase {
     // NOTE - This just checks if there is ANY non-costant access
     bool all_constant_integral_expressions{true};
     uint32_t non_constant_id{0};
+
+    // Returns true if the image at array element |index| (0 for non-arrayed images) is statically accessed by the
+    // shader (vkspec.html#shaders-staticuse). Only a false result is certain: the element is provably not accessed.
+    bool IsImageAtIndexStaticallyAccessed(uint32_t index) const;
 
     // All info regarding what will be validated from requirements imposed by the pipeline on a descriptor. These
     // can't be checked at pipeline creation time as they depend on the object bound (Image/Tensor) or its view.
