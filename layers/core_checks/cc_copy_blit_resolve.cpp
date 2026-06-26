@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3183,7 +3184,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         const Location region_loc = loc.dot(Field::pRegions, i);
         const Location src_subresource_loc = region_loc.dot(Field::srcSubresource);
         const Location dst_subresource_loc = region_loc.dot(Field::dstSubresource);
-        const RegionType region = pRegions[i];
+        const RegionType& region = pRegions[i];
 
         // When performing blit from and to same subresource, VK_IMAGE_LAYOUT_GENERAL is the only option
         const VkImageSubresourceLayers& src_subresource = region.srcSubresource;
@@ -3471,6 +3472,32 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                     vuid = is_2 ? "VUID-VkBlitImageInfo2-pRegions-00217" : "VUID-vkCmdBlitImage-pRegions-00217";
                     skip |=
                         LogError(vuid, all_objlist, loc, "pRegion[%" PRIu32 "] src overlaps with pRegions[%" PRIu32 "] dst.", i, j);
+                }
+            }
+        }
+
+        // VK_QCOM_rotated_copy_commands
+        if constexpr (std::is_same_v<RegionType, VkImageBlit2>) {
+            if (vku::FindStructInPNextChain<VkCopyCommandTransformInfoQCOM>(region.pNext)) {
+                if (vkuFormatIsCompressed(src_format) || vkuFormatIsCompressed(dst_format)) {
+                    skip |= LogError("VUID-VkBlitImageInfo2-pRegions-04561", all_objlist, loc,
+                                     "has a region with VkCopyCommandTransformInfoQCOM struct in its pNext chain, "
+                                     "but srcImage format (%s) or dstImage format (%s) is block-compressed.\n%s",
+                                     string_VkFormat(src_format), string_VkFormat(dst_format),
+                                     PrintPNextChain(Struct::VkImageBlit2, region.pNext).c_str());
+                }
+                if (src_type != VK_IMAGE_TYPE_2D) {
+                    skip |= LogError("VUID-VkBlitImageInfo2KHR-pRegions-06207", src_objlist, src_image_loc,
+                                     "is (%s), but a region has VkCopyCommandTransformInfoQCOM struct in its pNext chain.\n%s",
+                                     string_VkImageType(src_type),
+                                     PrintPNextChain(Struct::VkImageBlit2, region.pNext).c_str());
+                }
+                if (vkuFormatIsMultiplane(src_format)) {
+                    skip |= LogError("VUID-VkBlitImageInfo2KHR-pRegions-06208", src_objlist, src_image_loc,
+                                     "has multi-planar format (%s), but a region has VkCopyCommandTransformInfoQCOM struct "
+                                     "in its pNext chain.\n%s",
+                                     string_VkFormat(src_format),
+                                     PrintPNextChain(Struct::VkImageBlit2, region.pNext).c_str());
                 }
             }
         }
