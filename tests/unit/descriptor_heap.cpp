@@ -2222,31 +2222,31 @@ TEST_F(NegativeDescriptorHeap, DescriptorMappingSourcePushDataLimitSampler) {
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
     pipe.cp_ci_.stage = cs_module.GetStageCreateInfo(&mapping_info);
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-pushIndex-limit");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12457");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 
     mapping.sourceData.pushIndex.samplerPushOffset = 1;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-pushIndex-multiple");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12456");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
     mapping.sourceData.pushIndex.samplerPushOffset = 0;  // clear union values
 
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
     mapping.sourceData.indirectIndex.samplerPushOffset = (uint32_t)heap_props.maxPushDataSize;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-indirectIndex-limit");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12459");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 
     mapping.sourceData.indirectIndex.samplerPushOffset = 1;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-indirectIndex-multiple");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12458");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
     mapping.sourceData.indirectIndex.samplerPushOffset = 0;  // clear union values
 
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT;
     mapping.sourceData.indirectIndexArray.samplerAddressOffset = 1;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-indirectIndex-addressOffset");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12460");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 }

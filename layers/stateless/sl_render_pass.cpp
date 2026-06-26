@@ -815,20 +815,20 @@ bool Device::ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
 bool Device::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* const rp_begin,
                                         const ErrorObject& error_obj) const {
     bool skip = false;
+    const Location begin_loc = error_obj.location.dot(Field::pRenderPassBegin);
+
     if ((rp_begin->clearValueCount != 0) && !rp_begin->pClearValues) {
         const LogObjectList objlist(commandBuffer, rp_begin->renderPass);
-        skip |= LogError("VUID-VkRenderPassBeginInfo-clearValueCount-04962", objlist,
-                         error_obj.location.dot(Field::pRenderPassBegin).dot(Field::clearValueCount),
+        skip |= LogError("VUID-VkRenderPassBeginInfo-clearValueCount-04962", objlist, begin_loc.dot(Field::clearValueCount),
                          "(%" PRIu32 ") is not zero, but pRenderPassBegin->pClearValues is NULL.", rp_begin->clearValueCount);
     }
 
-    const Location loc = error_obj.location.dot(Field::pRenderPassBegin);
-    skip |= ValidateRenderPassStripeBeginInfo(commandBuffer, rp_begin->pNext, rp_begin->renderArea, loc);
+    skip |= ValidateRenderPassStripeBeginInfo(commandBuffer, rp_begin->pNext, rp_begin->renderArea, begin_loc);
 
     if (const auto multiview_per_view_info =
             vku::FindStructInPNextChain<VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM>(rp_begin->pNext)) {
-        skip |=
-            ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(commandBuffer, rp_begin, nullptr, *multiview_per_view_info, loc);
+        skip |= ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(commandBuffer, rp_begin, nullptr, *multiview_per_view_info,
+                                                                       begin_loc);
     }
 
     return skip;

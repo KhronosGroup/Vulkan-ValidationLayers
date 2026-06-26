@@ -3356,9 +3356,7 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
 
             if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
                 if (!IsIntegerMultipleOf(s_info.push_offset, 4)) {
-                    // VUID for all of these being added in
-                    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8358/diffs
-                    skip |= LogError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-pushIndex-multiple", device,
+                    skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12456", device,
                                      mapping_loc.dot(Field::sourceData).dot(Field::pushIndex).dot(Field::samplerPushOffset),
                                      "(%" PRIu32
                                      ") is not a multiple of 4\nVkDescriptorSetAndBindingMappingEXT::source = "
@@ -3366,7 +3364,7 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
                                      s_info.push_offset);
                 }
                 if (s_info.push_offset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 4) {
-                    skip |= LogError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-pushIndex-limit", device,
+                    skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12457", device,
                                      mapping_loc.dot(Field::sourceData).dot(Field::pushIndex).dot(Field::samplerPushOffset),
                                      "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
                                      ") - 4\nVkDescriptorSetAndBindingMappingEXT::source = "
@@ -3378,7 +3376,7 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
             } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT ||
                        mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
                 if (!IsIntegerMultipleOf(s_info.push_offset, 8)) {
-                    skip |= LogError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-indirectIndex-multiple", device,
+                    skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12458", device,
                                      mapping_loc.dot(Field::sourceData)
                                          .dot(vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source))
                                          .dot(Field::samplerPushOffset),
@@ -3386,7 +3384,7 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
                                      s_info.push_offset, string_VkDescriptorMappingSourceEXT(mapping.source));
                 }
                 if (s_info.push_offset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 8) {
-                    skip |= LogError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-indirectIndex-limit", device,
+                    skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12459", device,
                                      mapping_loc.dot(Field::sourceData)
                                          .dot(vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source))
                                          .dot(Field::samplerPushOffset),
@@ -3398,7 +3396,7 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
                                      string_VkDescriptorMappingSourceEXT(mapping.source));
                 }
                 if (!IsIntegerMultipleOf(s_info.address_offset, 4)) {
-                    skip |= LogError("UNASSIGNED-VkDescriptorSetAndBindingMappingEXT-indirectIndex-addressOffset", device,
+                    skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12460", device,
                                      mapping_loc.dot(Field::sourceData)
                                          .dot(vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source))
                                          .dot(Field::samplerAddressOffset),
