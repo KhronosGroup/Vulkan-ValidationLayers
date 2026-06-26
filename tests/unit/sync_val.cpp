@@ -12,10 +12,10 @@
  */
 
 #include <cstdint>
-#include "../framework/sync_val_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/render_pass_helper.h"
-#include "../framework/descriptor_helper.h"
+#include "sync_val_tests.h"
+#include "pipeline_helper.h"
+#include "render_pass_helper.h"
+#include "descriptor_helper.h"
 
 class NegativeSyncVal : public VkSyncValTest {};
 

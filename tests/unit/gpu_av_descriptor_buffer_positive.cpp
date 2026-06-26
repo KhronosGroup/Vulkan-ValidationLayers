@@ -10,9 +10,9 @@
  */
 
 #include <vulkan/vulkan_core.h>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/buffer_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "buffer_helper.h"
 #include "utils/math_utils.h"
 
 void GpuAVDescriptorBuffer::InitBasicDescriptorBuffer(std::vector<VkLayerSettingEXT> layer_settings, bool safe_mode) {

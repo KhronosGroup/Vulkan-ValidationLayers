@@ -13,8 +13,8 @@
 #include <gtest/gtest.h>
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/descriptor_helper.h"
+#include "layer_validation_tests.h"
+#include "descriptor_helper.h"
 #include "sync_helper.h"
 
 class NegativeGpuAVCopyMemoryIndirect : public GpuAVCopyMemoryIndirect {};

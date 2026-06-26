@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
  * Copyright (C) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,9 +11,9 @@
 
 #include <vulkan/vulkan_core.h>
 #include "containers/container_utils.h"
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/data_graph_objects.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "data_graph_objects.h"
 #include <vector>
 
 class NegativeTensor : public TensorTest {};

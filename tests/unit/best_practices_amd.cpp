@@ -12,8 +12,8 @@
  */
 
 #include <vulkan/vulkan_core.h>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
 
 // Tests for AMD-specific best practices
 const char* kEnableAMDValidation = "validate_best_practices_amd";

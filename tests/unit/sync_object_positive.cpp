@@ -2,7 +2,7 @@
  * Copyright (c) 2015-2026 The Khronos Group Inc.
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,10 @@
  */
 
 #include <thread>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/external_memory_sync.h"
-#include "../framework/render_pass_helper.h"
-#include "../framework/sync_helper.h"
+#include "layer_validation_tests.h"
+#include "external_memory_sync.h"
+#include "render_pass_helper.h"
+#include "sync_helper.h"
 #include "containers/container_utils.h"
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR

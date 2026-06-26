@@ -13,7 +13,7 @@
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include <cstring>
-#include "../framework/layer_validation_tests.h"
+#include "layer_validation_tests.h"
 #include "descriptor_helper.h"
 #include "generated/vk_function_pointers.h"
 #include "pipeline_helper.h"

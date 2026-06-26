@@ -11,7 +11,7 @@
  */
 // stype-check off
 #include <vulkan/vulkan_core.h>
-#include "../framework/layer_validation_tests.h"
+#include "layer_validation_tests.h"
 
 static const VkLayerSettingEXT kLegacySetting = {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
                                                  &kVkTrue};

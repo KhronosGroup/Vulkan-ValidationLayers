@@ -14,9 +14,9 @@
 #include <gtest/gtest.h>
 #include <spirv-tools/libspirv.h>
 #include <cstdint>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/shader_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "shader_helper.h"
 
 class PositiveShaderSpirv : public VkLayerTest {};
 

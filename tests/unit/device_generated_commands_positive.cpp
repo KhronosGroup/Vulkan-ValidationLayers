@@ -11,9 +11,9 @@
  */
 
 #include <vulkan/vulkan_core.h>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/shader_object_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "shader_object_helper.h"
 #include "generated/vk_function_pointers.h"
 
 void DeviceGeneratedCommandsTest::InitBasicDeviceGeneratedCommands() {

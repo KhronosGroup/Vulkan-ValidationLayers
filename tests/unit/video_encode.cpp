@@ -10,7 +10,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/video_objects.h"
+#include "video_objects.h"
 #include "generated/enum_flag_bits.h"
 #include <algorithm>
 

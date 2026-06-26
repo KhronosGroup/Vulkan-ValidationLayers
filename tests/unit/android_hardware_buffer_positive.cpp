@@ -11,8 +11,8 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/layer_validation_tests.h"
-#include "../framework/android_hardware_buffer.h"
+#include "layer_validation_tests.h"
+#include "android_hardware_buffer.h"
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 

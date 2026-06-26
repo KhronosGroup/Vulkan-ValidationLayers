@@ -11,11 +11,11 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/buffer_helper.h"
-#include "../framework/ray_tracing_objects.h"
-#include "../framework/shader_object_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "buffer_helper.h"
+#include "ray_tracing_objects.h"
+#include "shader_object_helper.h"
 #include "shader_templates.h"
 
 class PositiveGpuAVIndirectBuffer : public GpuAVTest {};

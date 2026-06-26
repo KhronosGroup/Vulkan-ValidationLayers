@@ -15,10 +15,10 @@
 #include <gtest/gtest.h>
 #include <thread>
 #include "utils/cast_utils.h"
-#include "../framework/external_memory_sync.h"
-#include "../framework/layer_validation_tests.h"
-#include "../framework/render_pass_helper.h"
-#include "../framework/sync_helper.h"
+#include "external_memory_sync.h"
+#include "layer_validation_tests.h"
+#include "render_pass_helper.h"
+#include "sync_helper.h"
 
 class NegativeSyncObject : public SyncObjectTest {};
 

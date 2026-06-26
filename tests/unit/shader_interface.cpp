@@ -13,10 +13,10 @@
  */
 
 #include <vulkan/vulkan_core.h>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/shader_object_helper.h"
-#include "../framework/render_pass_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "shader_object_helper.h"
+#include "render_pass_helper.h"
 #include "shader_helper.h"
 
 class NegativeShaderInterface : public VkLayerTest {};

@@ -13,10 +13,10 @@
 
 #include <vulkan/vulkan_core.h>
 #include <thread>
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/render_pass_helper.h"
-#include "../framework/thread_helper.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "render_pass_helper.h"
+#include "thread_helper.h"
 
 class PositiveCommand : public VkLayerTest {};
 
