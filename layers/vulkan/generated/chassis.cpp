@@ -665,6 +665,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateMemory(VkDevice device, const VkMemoryAll
         result = device_dispatch->AllocateMemory(device, pAllocateInfo, pAllocator, pMemory);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pAllocateInfo->pNext, HandleToUint64(*pMemory));
     {
         VVL_ZoneScopedN("PostCallRecord_vkAllocateMemory");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordAllocateMemory]) {
@@ -1326,6 +1327,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateFence(VkDevice device, const VkFenceCreateI
         result = device_dispatch->CreateFence(device, pCreateInfo, pAllocator, pFence);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pFence));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateFence");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateFence]) {
@@ -1572,6 +1574,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSemaphore(VkDevice device, const VkSemaphor
         result = device_dispatch->CreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pSemaphore));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateSemaphore");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateSemaphore]) {
@@ -1664,6 +1667,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateQueryPool(VkDevice device, const VkQueryPoo
         result = device_dispatch->CreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pQueryPool));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateQueryPool");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateQueryPool]) {
@@ -1857,6 +1861,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImage(VkDevice device, const VkImageCreateI
         result = device_dispatch->CreateImage(device, pCreateInfo, pAllocator, pImage);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pImage));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateImage");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateImage]) {
@@ -1994,6 +1999,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImageView(VkDevice device, const VkImageVie
         result = device_dispatch->CreateImageView(device, pCreateInfo, pAllocator, pView);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pView));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateImageView");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateImageView]) {
@@ -2086,6 +2092,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCommandPool(VkDevice device, const VkComman
         result = device_dispatch->CreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pCommandPool));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateCommandPool");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateCommandPool]) {
@@ -2225,6 +2232,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkC
         result = device_dispatch->AllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pAllocateInfo->pNext, HandleToUint64(*pCommandBuffers));
     {
         VVL_ZoneScopedN("PostCallRecord_vkAllocateCommandBuffers");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordAllocateCommandBuffers]) {
@@ -3023,6 +3031,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateEvent(VkDevice device, const VkEventCreateI
         result = device_dispatch->CreateEvent(device, pCreateInfo, pAllocator, pEvent);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pEvent));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateEvent");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateEvent]) {
@@ -3262,6 +3271,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBufferView(VkDevice device, const VkBufferV
         result = device_dispatch->CreateBufferView(device, pCreateInfo, pAllocator, pView);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pView));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateBufferView");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateBufferView]) {
@@ -3399,6 +3409,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineCache(VkDevice device, const VkPipe
         result = device_dispatch->CreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pPipelineCache));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreatePipelineCache");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreatePipelineCache]) {
@@ -3677,6 +3688,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSampler(VkDevice device, const VkSamplerCre
         result = device_dispatch->CreateSampler(device, pCreateInfo, pAllocator, pSampler);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pSampler));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateSampler");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateSampler]) {
@@ -3770,6 +3782,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorSetLayout(VkDevice device, const 
         result = device_dispatch->CreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pSetLayout));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateDescriptorSetLayout");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateDescriptorSetLayout]) {
@@ -3863,6 +3876,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorPool(VkDevice device, const VkDes
         result = device_dispatch->CreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pDescriptorPool));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateDescriptorPool");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateDescriptorPool]) {
@@ -4523,6 +4537,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateFramebuffer(VkDevice device, const VkFrameb
         result = device_dispatch->CreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pFramebuffer));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateFramebuffer");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateFramebuffer]) {
@@ -4615,6 +4630,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
         result = device_dispatch->CreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pRenderPass));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateRenderPass");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateRenderPass]) {
@@ -6735,6 +6751,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplate(VkDevice device,
         result = device_dispatch->CreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pDescriptorUpdateTemplate));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateDescriptorUpdateTemplate");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateDescriptorUpdateTemplate]) {
@@ -6921,6 +6938,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSamplerYcbcrConversion(VkDevice device, con
         result = device_dispatch->CreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pYcbcrConversion));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateSamplerYcbcrConversion");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateSamplerYcbcrConversion]) {
@@ -7633,6 +7651,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePrivateDataSlot(VkDevice device, const VkPr
         result = device_dispatch->CreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pPrivateDataSlot));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreatePrivateDataSlot");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreatePrivateDataSlot]) {
@@ -10392,6 +10411,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSwapchainKHR(VkDevice device, const VkSwapc
         result = device_dispatch->CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pSwapchain));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateSwapchainKHR");
 
@@ -11115,6 +11135,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32
         result = device_dispatch->CreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfos->pNext, HandleToUint64(*pSwapchains));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateSharedSwapchainsKHR");
 
@@ -11695,6 +11716,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateVideoSessionKHR(VkDevice device, const VkVi
         result = device_dispatch->CreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pVideoSession));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateVideoSessionKHR");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateVideoSessionKHR]) {
@@ -11897,6 +11919,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateVideoSessionParametersKHR(VkDevice device,
         result = device_dispatch->CreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pVideoSessionParameters));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateVideoSessionParametersKHR");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateVideoSessionParametersKHR]) {
@@ -13448,6 +13471,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplateKHR(VkDevice device
         result = device_dispatch->CreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pDescriptorUpdateTemplate));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateDescriptorUpdateTemplateKHR");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateDescriptorUpdateTemplateKHR]) {
@@ -14688,6 +14712,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSamplerYcbcrConversionKHR(VkDevice device,
         result = device_dispatch->CreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pYcbcrConversion));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateSamplerYcbcrConversionKHR");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateSamplerYcbcrConversionKHR]) {
@@ -17460,6 +17485,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructure2KHR(VkDevice device,
         result = device_dispatch->CreateAccelerationStructure2KHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pAccelerationStructure));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateAccelerationStructure2KHR");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateAccelerationStructure2KHR]) {
@@ -19847,6 +19873,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCuModuleNVX(VkDevice device, const VkCuModu
         result = device_dispatch->CreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pModule));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateCuModuleNVX");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateCuModuleNVX]) {
@@ -19895,6 +19922,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCuFunctionNVX(VkDevice device, const VkCuFu
         result = device_dispatch->CreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pFunction));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateCuFunctionNVX");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateCuFunctionNVX]) {
@@ -22119,6 +22147,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGpaSessionAMD(VkDevice device, const VkGpaS
         result = device_dispatch->CreateGpaSessionAMD(device, pCreateInfo, pAllocator, pGpaSession);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pGpaSession));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateGpaSessionAMD");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateGpaSessionAMD]) {
@@ -22685,6 +22714,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateExecutionGraphPipelinesAMDX(VkDevice device
                                                                     pAllocator, pPipelines);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfos->pNext, HandleToUint64(*pPipelines));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateExecutionGraphPipelinesAMDX");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateExecutionGraphPipelinesAMDX]) {
@@ -23770,6 +23800,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureNV(VkDevice device,
         result = device_dispatch->CreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pAccelerationStructure));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateAccelerationStructureNV");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateAccelerationStructureNV]) {
@@ -27493,6 +27524,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePrivateDataSlotEXT(VkDevice device, const V
         result = device_dispatch->CreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pPrivateDataSlot));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreatePrivateDataSlotEXT");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreatePrivateDataSlotEXT]) {
@@ -30157,6 +30189,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMicromapEXT(VkDevice device, const VkMicrom
         result = device_dispatch->CreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pMicromap));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateMicromapEXT");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateMicromapEXT]) {
@@ -32946,6 +32979,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateTensorARM(VkDevice device, const VkTensorCr
         result = device_dispatch->CreateTensorARM(device, pCreateInfo, pAllocator, pTensor);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pTensor));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateTensorARM");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateTensorARM]) {
@@ -33038,6 +33072,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateTensorViewARM(VkDevice device, const VkTens
         result = device_dispatch->CreateTensorViewARM(device, pCreateInfo, pAllocator, pView);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pView));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateTensorViewARM");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateTensorViewARM]) {
@@ -33605,6 +33640,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateOpticalFlowSessionNV(VkDevice device, const
         result = device_dispatch->CreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pSession));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateOpticalFlowSessionNV");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateOpticalFlowSessionNV]) {
@@ -34442,6 +34478,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelineSessionARM(VkDevice device
         result = device_dispatch->CreateDataGraphPipelineSessionARM(device, pCreateInfo, pAllocator, pSession);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pSession));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateDataGraphPipelineSessionARM");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateDataGraphPipelineSessionARM]) {
@@ -35236,6 +35273,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateExternalComputeQueueNV(VkDevice device, con
         result = device_dispatch->CreateExternalComputeQueueNV(device, pCreateInfo, pAllocator, pExternalQueue);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pExternalQueue));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateExternalComputeQueueNV");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateExternalComputeQueueNV]) {
@@ -35717,6 +35755,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIndirectCommandsLayoutEXT(VkDevice device,
         result = device_dispatch->CreateIndirectCommandsLayoutEXT(device, pCreateInfo, pAllocator, pIndirectCommandsLayout);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pIndirectCommandsLayout));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateIndirectCommandsLayoutEXT");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateIndirectCommandsLayoutEXT]) {
@@ -35813,6 +35852,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIndirectExecutionSetEXT(VkDevice device,
         result = device_dispatch->CreateIndirectExecutionSetEXT(device, pCreateInfo, pAllocator, pIndirectExecutionSet);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pIndirectExecutionSet));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateIndirectExecutionSetEXT");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateIndirectExecutionSetEXT]) {
@@ -36308,6 +36348,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderInstrumentationARM(VkDevice device,
         result = device_dispatch->CreateShaderInstrumentationARM(device, pCreateInfo, pAllocator, pInstrumentation);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pInstrumentation));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateShaderInstrumentationARM");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateShaderInstrumentationARM]) {
@@ -36922,6 +36963,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
         result = device_dispatch->CreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pAccelerationStructure));
     {
         VVL_ZoneScopedN("PostCallRecord_vkCreateAccelerationStructureKHR");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateAccelerationStructureKHR]) {

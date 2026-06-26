@@ -404,7 +404,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     InitTracyVk(instance_dispatch->instance, gpu, *pDevice, fpGetInstanceProcAddr, fpGetDeviceProcAddr,
                 device_dispatch->device_dispatch_table);
 #endif
-
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pDevice));
     vvl::SetDispatchDevice(*pDevice, std::move(device_dispatch));
     for (auto& vo : instance_dispatch->object_dispatch) {
         if (!vo) {
@@ -551,7 +551,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
         }
     }
     record_obj.result = result;
-
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        device_dispatch->debug_report->SetUtilsObjectName(pCreateInfos[i].pNext, HandleToUint64(pPipelines[i]));
+    }
     {
         VVL_ZoneScopedN("PostCallRecord_CreateGraphicsPipelines");
         for (auto& vo : device_dispatch->object_dispatch) {
@@ -618,7 +620,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
         }
     }
     record_obj.result = result;
-
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        device_dispatch->debug_report->SetUtilsObjectName(pCreateInfos[i].pNext, HandleToUint64(pPipelines[i]));
+    }
     {
         VVL_ZoneScopedN("PostCallRecord_CreateComputePipelines");
         for (auto& vo : device_dispatch->object_dispatch) {
@@ -666,7 +670,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
     result =
         device_dispatch->CreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
     record_obj.result = result;
-
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        device_dispatch->debug_report->SetUtilsObjectName(pCreateInfos[i].pNext, HandleToUint64(pPipelines[i]));
+    }
     for (auto& vo : device_dispatch->object_dispatch) {
         if (!vo) {
             continue;
@@ -733,7 +739,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
         }
     }
     record_obj.result = result;
-
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        device_dispatch->debug_report->SetUtilsObjectName(pCreateInfos[i].pNext, HandleToUint64(pPipelines[i]));
+    }
     {
         VVL_ZoneScopedN("PostCallRecord_CreateRayTracingPipelinesKHR");
         for (auto& vo : device_dispatch->object_dispatch) {
@@ -844,7 +852,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
         result = device_dispatch->CreatePipelineLayout(device, &chassis_state.modified_create_info, pAllocator, pPipelineLayout);
     }
     record_obj.result = result;
-
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pPipelineLayout));
     {
         VVL_ZoneScopedN("PostCallRecord_CreatePipelineLayout");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreatePipelineLayout]) {
@@ -951,6 +959,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
         result = device_dispatch->CreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule);
     }
     record_obj.result = result;
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pShaderModule));
+
     {
         VVL_ZoneScopedN("PostCallRecord_CreateShaderModule");
         for (auto& vo : device_dispatch->object_dispatch) {
@@ -1015,7 +1025,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
         }
     }
     record_obj.result = result;
-
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        device_dispatch->debug_report->SetUtilsObjectName(pCreateInfos[i].pNext, HandleToUint64(pShaders[i]));
+    }
     {
         VVL_ZoneScopedN("PostCallRecord_CreateShadersEXT");
         for (auto& vo : device_dispatch->object_dispatch) {
@@ -1129,7 +1141,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
         result = device_dispatch->CreateBuffer(device, chassis_state.create_info_copy, pAllocator, pBuffer);
     }
     record_obj.result = result;
-
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pBuffer));
     {
         VVL_ZoneScopedN("PostCallRecord_CreateBuffer");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateBuffer]) {
