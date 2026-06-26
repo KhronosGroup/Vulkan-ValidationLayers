@@ -2155,6 +2155,12 @@ ValidValue stateless::Context::IsValidEnumValue(VkTensorTilingARM value) const {
         case VK_TENSOR_TILING_OPTIMAL_ARM:
         case VK_TENSOR_TILING_LINEAR_ARM:
             return ValidValue::Valid;
+        case VK_TENSOR_TILING_BRICK_16_WIDE_ARM:
+        case VK_TENSOR_TILING_BRICK_8_WIDE_ARM:
+        case VK_TENSOR_TILING_BRICK_4_WIDE_ARM:
+        case VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_ARM:
+        case VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_64K_ARM:
+            return IsExtEnabled(extensions.vk_arm_tensor_controls) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -4073,11 +4079,20 @@ const char* stateless::Context::DescribeEnum(VkDirectDriverLoadingModeLUNARG val
 
 template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkTensorTilingARM value) const {
-    return {};
+    switch (value) {
+        case VK_TENSOR_TILING_BRICK_16_WIDE_ARM:
+        case VK_TENSOR_TILING_BRICK_8_WIDE_ARM:
+        case VK_TENSOR_TILING_BRICK_4_WIDE_ARM:
+        case VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_ARM:
+        case VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_64K_ARM:
+            return {vvl::Extension::_VK_ARM_tensor_controls};
+        default:
+            return {};
+    };
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkTensorTilingARM value) const {
-    return nullptr;
+    return string_VkTensorTilingARM(value);
 }
 
 template <>

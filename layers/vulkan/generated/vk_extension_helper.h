@@ -544,6 +544,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_command_buffer_inheritance{kNotSupported};
     ExtEnabled vk_nv_shader_atomic_float16_vector{kNotSupported};
     ExtEnabled vk_ext_shader_replicated_composites{kNotSupported};
+    ExtEnabled vk_arm_tensor_controls{kNotSupported};
     ExtEnabled vk_ext_shader_float8{kNotSupported};
     ExtEnabled vk_nv_ray_tracing_validation{kNotSupported};
     ExtEnabled vk_nv_cluster_acceleration_structure{kNotSupported};
@@ -1052,6 +1053,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_command_buffer_inheritance:
         case vvl::Extension::_VK_NV_shader_atomic_float16_vector:
         case vvl::Extension::_VK_EXT_shader_replicated_composites:
+        case vvl::Extension::_VK_ARM_tensor_controls:
         case vvl::Extension::_VK_EXT_shader_float8:
         case vvl::Extension::_VK_NV_ray_tracing_validation:
         case vvl::Extension::_VK_NV_cluster_acceleration_structure:
