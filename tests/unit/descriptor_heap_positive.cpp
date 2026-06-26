@@ -14,6 +14,7 @@
 #include <cstdint>
 #include "shader_helper.h"
 #include "shader_object_helper.h"
+#include "descriptor_heap_object.h"
 #include "shader_templates.h"
 #include "test_framework.h"
 #include "utils/math_utils.h"
@@ -34,32 +35,18 @@ void DescriptorHeapTest::InitBasicDescriptorHeap() {
 
 TEST_F(PositiveDescriptorHeap, Basic) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
-
+    vkt::DescriptorHeap desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride * 2);
+    desc_heap.CreateResourceHeap(resource_stride * 2);
 
     vkt::Buffer buffer_a(*m_device, 512, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-
-    VkHostAddressRangeEXT descriptor_host[2];
-    descriptor_host[0].address = resource_heap_data_;
-    descriptor_host[0].size = static_cast<size_t>(resource_stride);
-    descriptor_host[1].address = resource_heap_data_ + resource_stride;
-    descriptor_host[1].size = static_cast<size_t>(resource_stride);
     VkDeviceAddressRangeEXT device_ranges[2];
     device_ranges[0].address = buffer_a.Address() + 256;
     device_ranges[0].size = 256;
-    device_ranges[1].address = buffer_b.Address();
-    device_ranges[1].size = 256;
-    VkResourceDescriptorInfoEXT descriptor_info[2];
-    descriptor_info[0] = vku::InitStructHelper();
-    descriptor_info[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info[0].data.pAddressRange = &device_ranges[0];
-    descriptor_info[1] = vku::InitStructHelper();
-    descriptor_info[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info[1].data.pAddressRange = &device_ranges[1];
-
-    vk::WriteResourceDescriptorsEXT(*m_device, 2, descriptor_info, descriptor_host);
+    device_ranges[1] = buffer_b.AddressRange();
+    desc_heap.WriteBufferDescriptor(device_ranges[0], VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_heap.WriteBufferDescriptor(device_ranges[1], VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 0);
@@ -88,7 +75,7 @@ TEST_F(PositiveDescriptorHeap, Basic) {
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -222,24 +209,15 @@ TEST_F(PositiveDescriptorHeap, GraphicsPushData) {
 
     const uint32_t expected_value = 3;
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(resource_stride);
 
-    CreateResourceHeap(resource_stride);
-
-    const VkDeviceSize data_buffer_size = 256;
-    vkt::Buffer out_buffer(*m_device, data_buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    VkHostAddressRangeEXT out_descriptor{resource_heap_data_, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT out_address_range = out_buffer.AddressRange();
-    VkResourceDescriptorInfoEXT out_descriptor_info = vku::InitStructHelper();
-    out_descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    out_descriptor_info.data.pAddressRange = &out_address_range;
-
-    vk::WriteResourceDescriptorsEXT(*m_device, 1, &out_descriptor_info, &out_descriptor);
+    vkt::Buffer out_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    desc_heap.WriteBufferDescriptor(out_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 20);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.heapOffset = 0u;
-    mapping.sourceData.constantOffset.heapArrayStride = 0;
-
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
@@ -283,7 +261,7 @@ TEST_F(PositiveDescriptorHeap, GraphicsPushData) {
 
     m_command_buffer.Begin();
     m_command_buffer.PushData(0, sizeof(expected_value), &expected_value);
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
@@ -400,17 +378,11 @@ TEST_F(PositiveDescriptorHeap, PushData) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride);
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(resource_stride);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-
-    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = buffer.AddressRange();
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-
-    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+    desc_heap.WriteBufferDescriptor(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
@@ -444,7 +416,7 @@ TEST_F(PositiveDescriptorHeap, PushData) {
 
     m_command_buffer.Begin();
     vk::CmdPushConstants(m_command_buffer, pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &src_data);
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     m_command_buffer.PushData(0, sizeof(uint32_t), &src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -465,16 +437,9 @@ TEST_F(PositiveDescriptorHeap, MixedDraws) {
     vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride);
-
-    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = buffer.AddressRange();
-
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-
-    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(resource_stride);
+    desc_heap.WriteBufferDescriptor(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     VkDescriptorSetAndBindingMappingEXT mapping =
         MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT);
@@ -539,7 +504,7 @@ TEST_F(PositiveDescriptorHeap, MixedDraws) {
     vk::CmdDraw(m_command_buffer, 1u, 1u, 0u, 0u);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_heap_pipe);
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdDraw(m_command_buffer, 1u, 1u, 1u, 0u);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, regular_pipe);
@@ -1329,23 +1294,17 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithPushIndex) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
-    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-
     const uint32_t push_data_offset = 8u;
     const uint32_t push_offset = 4u;
     const uint32_t heap_offset = 3u;
     const VkDeviceSize offset = heap_props.bufferDescriptorSize * (push_offset + heap_offset);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(offset + resource_stride);
 
-    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_ + offset, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = buffer.AddressRange();
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(offset + resource_stride);
 
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-
-    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, offset);
 
     VkDescriptorSetAndBindingMappingEXT mapping =
         MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT);
@@ -1391,7 +1350,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithPushIndex) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_heap_pipe);
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     m_command_buffer.PushData(push_data_offset, sizeof(uint32_t), &push_offset);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
 
@@ -1420,19 +1379,12 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndex) {
     uint32_t* heap_index_data = static_cast<uint32_t*>(heap_index.Memory().Map());
     heap_index_data[address_offset / sizeof(uint32_t)] = static_cast<uint32_t>(offset / heap_props.bufferDescriptorSize);
 
-    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(offset + resource_stride);
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(offset + resource_stride);
 
-    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_ + offset, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = buffer.AddressRange();
-
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-
-    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, offset);
 
     VkDescriptorSetAndBindingMappingEXT mapping =
         MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT);
@@ -1482,7 +1434,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndex) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_heap_pipe);
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     m_command_buffer.PushData(push_offset, sizeof(heap_index_address), &heap_index_address);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
 
@@ -1511,19 +1463,12 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndexArray) {
     uint32_t* heap_index_data = static_cast<uint32_t*>(heap_index.Memory().Map());
     heap_index_data[address_offset / sizeof(uint32_t)] = static_cast<uint32_t>(offset / heap_props.bufferDescriptorSize);
 
-    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(offset + resource_stride);
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(offset + resource_stride);
 
-    VkHostAddressRangeEXT descriptor_host = {resource_heap_data_ + offset, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT device_range = buffer.AddressRange();
-
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-
-    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, offset);
 
     VkDescriptorSetAndBindingMappingEXT mapping =
         MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT);
@@ -1572,7 +1517,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndexArray) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_heap_pipe);
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     m_command_buffer.PushData(push_offset, sizeof(heap_index_address), &heap_index_address);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
 
