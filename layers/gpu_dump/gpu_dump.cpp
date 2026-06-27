@@ -18,6 +18,7 @@
 #include <cstdint>
 #include "chassis/layer_object_id.h"
 #include "generated/dispatch_functions.h"
+#include "generated/vk_extension_helper.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/device_memory_state.h"
 
@@ -120,18 +121,28 @@ bool GpuDump::ListBuffers(std::ostringstream& ss, VkDeviceAddress address, uint3
 
 void GpuDump::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {
     if (gpu_dump_settings.descriptors && global_settings.descriptor_hashing) {
-        all_descriptor_sizes = device_state->cached_descriptor_size.GetAllSizes();
-        for (VkDeviceSize size : all_descriptor_sizes) {
-            if (size > max_descriptor_size) {
-                max_descriptor_size = size;
+        if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+            heap_all_descriptor_sizes = device_state->cached_descriptor_size.GetAllSizes(true);
+            for (VkDeviceSize size : heap_all_descriptor_sizes) {
+                if (size > heap_max_descriptor_size) {
+                    heap_max_descriptor_size = size;
+                }
             }
         }
-        // TODO - move to some common util
-        null_descriptor_dword = 0;
-        if (phys_dev_props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU && phys_dev_props.vendorID == 0x8086) {
-            // For Intel Integrated GPUs (from Metorlake+ which support heaps) they have a special null descriptor
-            null_descriptor_dword = 0xe0000000;
+        if (IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
+            buffer_all_descriptor_sizes = device_state->cached_descriptor_size.GetAllSizes(false);
+            for (VkDeviceSize size : buffer_all_descriptor_sizes) {
+                if (size > buffer_max_descriptor_size) {
+                    buffer_max_descriptor_size = size;
+                }
+            }
         }
+
+        // |force_on_robustness| marks the "modified" feature so need to check for both
+        if (enabled_features.nullDescriptor || gpuav_settings.force_on_robustness) {
+            null_descriptor_allowed = true;
+        }
+        null_descriptor_dword = GetNullDescriptorDWord(phys_dev_props);
     }
 }
 

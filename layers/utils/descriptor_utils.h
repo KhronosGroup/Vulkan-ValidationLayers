@@ -68,7 +68,7 @@ static constexpr bool IsDescriptorHeapImage(const VkDescriptorType type) {
 
 static constexpr bool IsDescriptorHeapTensor(const VkDescriptorType type) { return (type == VK_DESCRIPTOR_TYPE_TENSOR_ARM); }
 
-const char* DescribeDescriptorBufferSize(bool robust, VkDescriptorType type);
+vvl::Field DescriptorBufferSizeField(bool robust, VkDescriptorType type);
 
 bool IsResourceVaribleInMapping(const VkDescriptorSetAndBindingMappingEXT& mapping,
                                 const spirv::ResourceInterfaceVariable& resource_variable);
@@ -82,6 +82,8 @@ vvl::Field GetDescriptorHeapAlignmentField(VkDescriptorType type);
 
 bool HasCombinedImageSamplerIndex(const VkDescriptorSetAndBindingMappingEXT& mapping);
 
+uint32_t GetNullDescriptorDWord(const VkPhysicalDeviceProperties& phys_dev_props);
+
 // Way to cache vkGetPhysicalDeviceDescriptorSizeEXT as a flat array
 // This is a very quick way to use the VkDescriptorType enum and knowledge of the limited VkDescriptorType allowed to make this fast
 // and not making it impossible to update if a new VkDescriptorType is added later
@@ -89,7 +91,7 @@ struct DeviceExtensions;
 struct CachedDescriptorSize {
     void Init(const vvl::DeviceState& device_state);
     VkDeviceSize GetSize(VkDescriptorType type, bool use_heap = true) const;
-    std::vector<VkDeviceSize> GetAllSizes(bool use_heap = true) const;
+    std::vector<VkDeviceSize> GetAllSizes(bool use_heap) const;
 
   private:
     // The number of valid descriptors that can be queried is known in the spec

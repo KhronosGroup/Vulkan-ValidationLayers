@@ -333,8 +333,13 @@ TEST_F(PositiveDescriptorBuffer, MultipleDescriptors) {
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
+    std::vector<VkDescriptorSetLayoutBinding> sampler_binding = {
+        {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+    };
     vkt::DescriptorSetLayout ds_layout(*m_device, bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
-    vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
+    vkt::DescriptorSetLayout sampler_ds_layout(*m_device, sampler_binding,
+                                               VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout, &sampler_ds_layout});
 
     vkt::Buffer result_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -358,11 +363,12 @@ TEST_F(PositiveDescriptorBuffer, MultipleDescriptors) {
 
     mapped_descriptor_data = (uint8_t*)sampler_descriptor_buffer.Memory().Map();
     vkt::DescriptorGetInfo get_info_sampler(&sampler.handle());
-    vk::GetDescriptorEXT(device(), get_info_sampler, descriptor_buffer_properties.samplerDescriptorSize, mapped_descriptor_data);
+    vk::GetDescriptorEXT(device(), get_info_sampler, descriptor_buffer_properties.samplerDescriptorSize,
+                         mapped_descriptor_data + sampler_ds_layout.GetDescriptorBufferBindingOffset(2));
 
     const char* cs_source = R"glsl(
         #version 450
-        layout(set = 0, binding = 2) uniform sampler s;
+        layout(set = 1, binding = 2) uniform sampler s;
         layout(set = 0, binding = 0) uniform texture2D t;
         layout(set = 0, binding = 1) buffer SSBO { vec4 result; };
 
@@ -391,7 +397,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleDescriptors) {
 
     uint32_t buffer_index = 0;
     VkDeviceSize buffer_offset = 0;
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 1, 1, &buffer_index,
                                          &buffer_offset);
 
     buffer_index = 1;
