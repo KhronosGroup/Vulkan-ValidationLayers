@@ -7261,4 +7261,96 @@ void DeviceState::PostCallRecordWriteSamplerDescriptorsEXT(VkDevice device, uint
     }
 }
 
+void DeviceState::PostCallRecordGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize,
+                                                 void* pDescriptor, const RecordObject& record_obj) {
+    if (!global_settings.descriptor_hashing) {
+        return;
+    }
+    if (pDescriptorInfo->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+        return;  // TODO - need to handle
+    }
+    WriteLockGuard guard(descriptor_hash.map_lock);
+
+    const VkDescriptorType vk_type = pDescriptorInfo->type;
+    const uint8_t vvl_type = (uint8_t)GetMaskFromDescriptorType(vk_type);
+    // dataSize might be larger than the real descriptor
+    const VkDeviceSize descriptor_size = cached_descriptor_size.GetSize(vk_type, false);
+    const uint64_t key = hash_util::Hash64(pDescriptor, (size_t)descriptor_size);
+    if (const auto* debug_info = vku::FindStructInPNextChain<VkDebugUtilsObjectNameInfoEXT>(pDescriptorInfo->pNext)) {
+        if (debug_info->pObjectName) {
+            descriptor_hash.debug_names.emplace(key, debug_info->pObjectName);
+        }
+    }
+
+    switch (vk_type) {
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: {
+            const VkDescriptorAddressInfoEXT* address_info = vk_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+                                                                 ? pDescriptorInfo->data.pStorageBuffer
+                                                                 : pDescriptorInfo->data.pUniformBuffer;
+            if (address_info) {
+                VkDeviceAddressRangeEXT address_range{address_info->address, address_info->range};
+                auto [it, added] =
+                    descriptor_hash.map.emplace(key, DescriptorHash::Entry(vvl_type, DescriptorHash::EntryBuffer{address_range}));
+                if (added) {
+                    auto buffer_list = GetBuffersByAddress(address_info->address);
+                    if (buffer_list.size() == 1) {
+                        buffer_list[0]->descriptor_hashes.emplace_back(key);
+                    }
+                }
+            }
+        } break;
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            if (pDescriptorInfo->data.pSampler) {
+                descriptor_hash.map.emplace(key, DescriptorHash::Entry(vvl_type, DescriptorHash::EntrySampler{}));
+            }
+            break;
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: {
+            const VkDescriptorImageInfo* image_info =
+                vk_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE   ? pDescriptorInfo->data.pSampledImage
+                : vk_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ? pDescriptorInfo->data.pStorageImage
+                                                              : pDescriptorInfo->data.pInputAttachmentImage;
+            if (image_info) {
+                if (const auto view_state = Get<vvl::ImageView>(image_info->imageView)) {
+                    auto [it, added] = descriptor_hash.map.emplace(
+                        key, DescriptorHash::Entry(
+                                 vvl_type, DescriptorHash::EntryImage{view_state->create_info.image, view_state->create_info.format,
+                                                                      view_state->create_info.viewType}));
+                    if (added && view_state->image_state) {
+                        view_state->image_state->descriptor_hashes.emplace_back(key);
+                    }
+                }
+            }
+        } break;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: {
+            const VkDescriptorAddressInfoEXT* address_info = vk_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
+                                                                 ? pDescriptorInfo->data.pStorageTexelBuffer
+                                                                 : pDescriptorInfo->data.pUniformTexelBuffer;
+            if (address_info) {
+                VkDeviceAddressRangeEXT address_range{address_info->address, address_info->range};
+                auto [it, added] = descriptor_hash.map.emplace(
+                    key, DescriptorHash::Entry(vvl_type, DescriptorHash::EntryTexelBuffer{address_range, address_info->format}));
+                if (added) {
+                    auto buffer_list = GetBuffersByAddress(address_info->address);
+                    if (buffer_list.size() == 1) {
+                        buffer_list[0]->descriptor_hashes.emplace_back(key);
+                    }
+                }
+            }
+        } break;
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
+            if (pDescriptorInfo->data.accelerationStructure) {
+                VkDeviceAddressRangeEXT address_range{pDescriptorInfo->data.accelerationStructure, 0};
+                descriptor_hash.map.emplace(key, DescriptorHash::Entry(vvl_type, DescriptorHash::EntryAS{address_range}));
+                // TODO - Add somewhere to be removed when AS are deleted
+            }
+        } break;
+        default:
+            break;
+    }
+}
+
 }  // namespace vvl

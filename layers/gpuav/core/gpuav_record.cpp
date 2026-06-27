@@ -35,6 +35,7 @@
 #include "gpuav/validation_cmd/gpuav_ray_tracing.h"
 #include "state_tracker/device_memory_state.h"
 #include "utils/assert_utils.h"
+#include "utils/descriptor_utils.h"
 #include "utils/math_utils.h"
 
 #include <cstdint>
@@ -130,15 +131,7 @@ void Validator::SetMemoryWithNullDescriptor(const vvl::Buffer& buffer_state, VkD
     auto device_memory_state = Get<vvl::DeviceMemory>(memory);
     ASSERT_AND_RETURN(device_memory_state);
 
-    // Printing out the nullDescriptor (and confirm with driver dev) both NVIDIA and AMD use zero as a null descriptor
-    uint32_t null_dword = 0;
-    if (phys_dev_props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU && phys_dev_props.vendorID == 0x8086) {
-        // For Intel Integrated GPUs (from Metorlake+ which support heaps) they have a special null descriptor
-        null_dword = 0xe0000000;
-
-        // Note: For Lavapipe, it has a special 64-byte sequence that will be different from each descriptor type
-        // For now not going to support it unless desired, but this debugging feature was never ment for Lavapipe
-    }
+    const uint32_t null_dword = GetNullDescriptorDWord(phys_dev_props);
 
     const VkDeviceSize bound_size = buffer_state.GetSize();
     if (device_memory_state->mappable) {

@@ -437,7 +437,7 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address) {
     //
     // We need a way to re-hash to find the key for a potential different type
     bool check_larger_sizes = true;
-    std::vector<uint8_t> descriptor_bytes = dump.dev_data.CopyDataFromMemory(address, dump.dev_data.max_descriptor_size);
+    std::vector<uint8_t> descriptor_bytes = dump.dev_data.CopyDataFromMemory(address, dump.dev_data.heap_max_descriptor_size);
     if (descriptor_bytes.empty()) {
         descriptor_bytes = dump.dev_data.CopyDataFromMemory(address, dump.descriptor_size);
         if (descriptor_bytes.empty()) {
@@ -456,11 +456,17 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address) {
     if (it == descriptor_hash.map.end()) {
         // TODO - This is a very hacky (but will work good enough for now) way to detect null descriptors
         if (memcmp(descriptor_bytes.data(), &dump.dev_data.null_descriptor_dword, sizeof(uint32_t)) == 0) {
-            return "[Null Descriptor]";  // if we find a null descriptor,
+            if (dump.dev_data.null_descriptor_allowed) {
+                return "[Null Descriptor]";
+            }
+            ss << new_bullet_line
+               << "[WARNING] NO DESCRIPTOR - Found descriptor mapped to [Null Descriptor] but the nullDescriptor feature was not "
+                  "enabled";
+            return "";
         }
 
         // Before saying we can't find it, check the other descriptor sizes if we can spot the wrong descriptor type
-        for (VkDeviceSize size : dump.dev_data.all_descriptor_sizes) {
+        for (VkDeviceSize size : dump.dev_data.heap_all_descriptor_sizes) {
             if (size == dump.descriptor_size) {
                 continue;
             } else if (!check_larger_sizes && size > dump.descriptor_size) {

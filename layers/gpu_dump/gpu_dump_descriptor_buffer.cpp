@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "generated/error_location_helper.h"
 #include "gpu_dump_state.h"
 #include "gpu_dump.h"
 #include <vulkan/vk_enum_string_helper.h>
@@ -38,6 +39,136 @@
 
 namespace gpudump {
 
+struct BindingInfo {
+    uint32_t index;
+    VkDescriptorType type;
+    bool embedded;
+    uint32_t count;
+    uint32_t size;
+    vvl::Field size_field;
+    VkDeviceSize offset;
+    vvl::range<VkDeviceAddress> range;
+    std::string variable_name;
+
+    // We want to sort the bindings we print by their address
+    bool operator<(const BindingInfo& other) const { return range.begin < other.range.begin; }
+
+    void Print(std::ostringstream& ss) {
+        ss << "    - SPIR-V Binding " << std::dec << index << " [\"" << variable_name << "\"]\n";
+        if (!embedded) {
+            ss << "      - " << string_VkDescriptorType(type) << "\n";
+            ss << "      - offset: " << std::dec << offset << ", range: " << string_range_hex(range) << "\n";
+            ss << "      - size: " << String(size_field) << " [" << std::dec << size << "]";
+            if (count > 1) {
+                ss << " * descriptorCount [" << std::dec << count << "]";
+            }
+            ss << "\n";
+        }
+    }
+
+    bool ValidateDescriptor(std::ostringstream& ss, GpuDump& dev_data);
+};
+
+struct SetInfo {
+    bool embedded;
+    uint32_t index;          // set of the descriptor
+    uint32_t binding_index;  // into pBindingInfos[]
+    vvl::range<VkDeviceAddress> range;
+    const vvl::DescriptorSetLayout* dsl;
+    std::vector<BindingInfo> bindings{};
+
+    // We want to sort the sets we print by their address
+    bool operator<(const SetInfo& other) const { return range.begin < other.range.begin; }
+
+    void Print(std::ostringstream& ss) {
+        ss << "  - SPIR-V Set " << std::dec << index << "\n";
+        if (embedded) {
+            ss << "    - Embedded Sampler";
+        } else {
+            ss << "    - size: " << range.size() << " bytes, range: " << string_range_hex(range);
+        }
+        if (binding_index != vvl::kNoIndex32) {
+            // Only print if there are multiple bindings
+            ss << " (specified in pBindingInfos[" << std::dec << binding_index << "])";
+        }
+        ss << '\n';
+    }
+};
+
+bool BindingInfo::ValidateDescriptor(std::ostringstream& ss, GpuDump& dev_data) {
+    if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+        return false;  // TODO - handle
+    }
+
+    // For VK_EXT_descriptor_buffer where each descriptor type might be a different size.
+    //
+    // For example, if a UBO is 32 bytes, but an image is 64 bytes:
+    // If we grab the heap data from [N, N+31] and hash it, we have no way to know if it would have
+    // really been an Image hash if we have done [N, N+63]
+    //
+    // We need a way to re-hash to find the key for a potential different type
+    bool check_larger_sizes = true;
+    std::vector<uint8_t> descriptor_bytes = dev_data.CopyDataFromMemory(range.begin, dev_data.buffer_max_descriptor_size);
+    if (descriptor_bytes.empty()) {
+        descriptor_bytes = dev_data.CopyDataFromMemory(range.begin, size);
+        if (descriptor_bytes.empty()) {
+            return false;  // heap buffer might not be visible
+        } else {
+            // this means we are at the end of the heap buffer and can only check the exact size (or smaller)
+            check_larger_sizes = false;
+        }
+    }
+
+    const auto& descriptor_hash = dev_data.device_state->descriptor_hash;
+    WriteLockGuard guard(descriptor_hash.map_lock);
+
+    uint64_t key = hash_util::Hash64(descriptor_bytes.data(), (size_t)size);
+    auto it = descriptor_hash.map.find(key);
+    if (it == descriptor_hash.map.end()) {
+        // TODO - This is a very hacky (but will work good enough for now) way to detect null descriptors
+        if (memcmp(descriptor_bytes.data(), &dev_data.null_descriptor_dword, sizeof(uint32_t)) == 0) {
+            ss << "      - ";
+            if (!dev_data.null_descriptor_allowed) {
+                ss << "[WARNING] NO DESCRIPTOR - ";
+            }
+            ss << "Found descriptor mapped to [Null Descriptor]";
+            if (!dev_data.null_descriptor_allowed) {
+                ss << " but the nullDescriptor feature was not enabled";
+            }
+            ss << "\n";
+            return !dev_data.null_descriptor_allowed;
+        }
+
+        // Before saying we can't find it, check the other descriptor sizes if we can spot the wrong descriptor type
+        for (VkDeviceSize other_size : dev_data.buffer_all_descriptor_sizes) {
+            if (other_size == size) {
+                continue;
+            } else if (!check_larger_sizes && other_size > size) {
+                continue;
+            }
+            key = hash_util::Hash64(descriptor_bytes.data(), (size_t)other_size);
+            it = descriptor_hash.map.find(key);
+            if (it != descriptor_hash.map.end()) {
+                break;
+            }
+        }
+        if (it == descriptor_hash.map.end()) {
+            ss << "      - [WARNING] NO DESCRIPTOR - No known descriptor found in bound descriptor buffer\n";
+            return true;
+        }
+    }
+
+    const vvlDescriptorType found_type = (vvlDescriptorType)it->second.type;
+    if (found_type != GetMaskFromDescriptorType(type)) {
+        ss << "      - [WARNING] WRONG DESCRIPTOR - expected a " << string_VkDescriptorType(type)
+           << " descriptor, but instead found a descriptor for: " << descriptor_hash.Describe(*dev_data.device_state, key) << "\n";
+        return true;
+    }
+
+    ss << "      - Found descriptor mapped to: " << descriptor_hash.Describe(*dev_data.device_state, key) << "\n";
+    return true;
+}
+
 // Return true if found warning
 bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const LastBound& last_bound) const {
     const vvl::CommandBuffer& cb_state = last_bound.cb_state;
@@ -48,60 +179,6 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
         ss << "  - pBindingInfos[" << std::dec << binding_i << "].address 0x" << std::hex << address << '\n';
         found_warning |= dev_data.ListBuffers(ss, address, 1);
     }
-
-    struct BindingInfo {
-        uint32_t index;
-        VkDescriptorType type;
-        bool embedded;
-        uint32_t count;
-        uint32_t size;
-        VkDeviceSize offset;
-        vvl::range<VkDeviceAddress> range;
-        std::string variable_name;
-
-        // We want to sort the bindings we print by their address
-        bool operator<(const BindingInfo& other) const { return range.begin < other.range.begin; }
-
-        void Print(std::ostringstream& binding_ss, bool robust_buffer) {
-            binding_ss << "    - SPIR-V Binding " << std::dec << index << " [\"" << variable_name << "\"]\n";
-            if (!embedded) {
-                binding_ss << "      - " << string_VkDescriptorType(type) << "\n";
-                binding_ss << "      - offset: " << std::dec << offset << ", range: " << string_range_hex(range) << "\n";
-                binding_ss << "      - size: " << DescribeDescriptorBufferSize(robust_buffer, type) << " [" << std::dec << size
-                           << "]";
-                if (count > 1) {
-                    binding_ss << " * descriptorCount [" << std::dec << count << "]";
-                }
-                binding_ss << "\n";
-            }
-        }
-    };
-
-    struct SetInfo {
-        bool embedded;
-        uint32_t index;          // set of the descriptor
-        uint32_t binding_index;  // into pBindingInfos[]
-        vvl::range<VkDeviceAddress> range;
-        const vvl::DescriptorSetLayout* dsl;
-        std::vector<BindingInfo> bindings{};
-
-        // We want to sort the sets we print by their address
-        bool operator<(const SetInfo& other) const { return range.begin < other.range.begin; }
-
-        void Print(std::ostringstream& set_ss) {
-            set_ss << "  - SPIR-V Set " << std::dec << index << "\n";
-            if (embedded) {
-                set_ss << "    - Embedded Sampler";
-            } else {
-                set_ss << "    - size: " << range.size() << " bytes, range: " << string_range_hex(range);
-            }
-            if (binding_index != vvl::kNoIndex32) {
-                // Only print if there are multiple bindings
-                set_ss << " (specified in pBindingInfos[" << std::dec << binding_index << "])";
-            }
-            set_ss << '\n';
-        }
-    };
 
     small_vector<const ShaderStageState*, 3> stages = last_bound.GetStages();
 
@@ -239,16 +316,22 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
             const auto& ds_layout_def = *set_info->dsl->GetLayoutDef();
             const VkDescriptorType type = ds_layout_def.GetTypeFromBinding(var_binding);
             const uint32_t count = ds_layout_def.GetDescriptorCountFromBinding(var_binding);
+            vvl::Field size_field = DescriptorBufferSizeField(dev_data.enabled_features.robustBufferAccess, type);
 
             if (!set_info->embedded) {
-                descriptor_size = (uint32_t)dev_data.device_state->cached_descriptor_size.GetSize(type, false);
+                if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+                    descriptor_size =
+                        (uint32_t)dev_data.phys_dev_ext_props.descriptor_buffer_props.combinedImageSamplerDescriptorSize;
+                } else {
+                    descriptor_size = (uint32_t)dev_data.device_state->cached_descriptor_size.GetSize(type, false);
+                }
                 DispatchGetDescriptorSetLayoutBindingOffsetEXT(dev_data.device, set_info->dsl->VkHandle(), var_binding,
                                                                &binding_offset);
                 const VkDeviceAddress binding_start_address = set_info->range.begin + binding_offset;
                 binding_range = {binding_start_address, binding_start_address + (descriptor_size * count)};
             }
 
-            set_info->bindings.emplace_back(BindingInfo{var_binding, type, set_info->embedded, count, descriptor_size,
+            set_info->bindings.emplace_back(BindingInfo{var_binding, type, set_info->embedded, count, descriptor_size, size_field,
                                                         binding_offset, binding_range, resource_variable.debug_name});
         }
 
@@ -264,7 +347,11 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
 
             std::sort(set_info.bindings.begin(), set_info.bindings.end());
             for (BindingInfo& binding_info : set_info.bindings) {
-                binding_info.Print(ss, dev_data.enabled_features.robustBufferAccess);
+                binding_info.Print(ss);
+
+                if (dev_data.global_settings.descriptor_hashing && !binding_info.embedded) {
+                    found_warning |= binding_info.ValidateDescriptor(ss, dev_data);
+                }
             }
         }
     }

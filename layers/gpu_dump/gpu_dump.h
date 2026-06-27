@@ -46,9 +46,12 @@ class GpuDump : public vvl::DeviceProxy {
     // TODO - will likely need to share so GPU-AV can use as well
     // Currnetly only want to gather once for lifetime of device
     // (When |descriptor_hashing| is turned on)
-    VkDeviceSize max_descriptor_size = 0;
-    std::vector<VkDeviceSize> all_descriptor_sizes;
+    VkDeviceSize heap_max_descriptor_size = 0;
+    std::vector<VkDeviceSize> heap_all_descriptor_sizes;
+    VkDeviceSize buffer_max_descriptor_size = 0;
+    std::vector<VkDeviceSize> buffer_all_descriptor_sizes;
     uint32_t null_descriptor_dword = 0;
+    bool null_descriptor_allowed = false;
 };
 
 }  // namespace gpudump

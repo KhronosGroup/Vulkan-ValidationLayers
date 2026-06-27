@@ -2071,6 +2071,8 @@ class DeviceState : public vvl::BaseDevice {
     void PostCallRecordWriteSamplerDescriptorsEXT(VkDevice device, uint32_t samplerCount, const VkSamplerCreateInfo* pSamplers,
                                                   const VkHostAddressRangeEXT* pDescriptors,
                                                   const RecordObject& record_obj) override;
+    void PostCallRecordGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize,
+                                        void* pDescriptor, const RecordObject& record_obj) override;
 
     inline std::shared_ptr<vvl::ShaderModule> GetShaderModuleStateFromIdentifier(const VkShaderModuleIdentifierEXT& ident) {
         ReadLockGuard guard(shader_identifier_map_lock_);

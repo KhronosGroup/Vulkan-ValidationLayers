@@ -23,6 +23,7 @@
 #include "containers/container_utils.h"
 #include "containers/custom_containers.h"
 #include "generated/dispatch_functions.h"
+#include "generated/error_location_helper.h"
 #include "generated/spirv_grammar_helper.h"
 #include "generated/vk_extension_helper.h"
 #include "state_tracker/shader_module.h"
@@ -50,32 +51,32 @@ uint32_t CountDescriptorHeapEmbeddedSamplers(const void* pNext) {
     return count;
 }
 
-const char* DescribeDescriptorBufferSize(bool robust, VkDescriptorType type) {
+vvl::Field DescriptorBufferSizeField(bool robust, VkDescriptorType type) {
     switch (type) {
         case VK_DESCRIPTOR_TYPE_SAMPLER:
-            return "samplerDescriptorSize";
+            return vvl::Field::samplerDescriptorSize;
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            return "combinedImageSamplerDescriptorSize";
+            return vvl::Field::combinedImageSamplerDescriptorSize;
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            return "sampledImageDescriptorSize";
+            return vvl::Field::sampledImageDescriptorSize;
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-            return "storageImageDescriptorSize";
+            return vvl::Field::storageImageDescriptorSize;
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-            return robust ? "robustUniformTexelBufferDescriptorSize" : "uniformTexelBufferDescriptorSize";
+            return robust ? vvl::Field::robustUniformTexelBufferDescriptorSize : vvl::Field::uniformTexelBufferDescriptorSize;
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-            return robust ? "robustStorageTexelBufferDescriptorSize" : "storageTexelBufferDescriptorSize";
+            return robust ? vvl::Field::robustStorageTexelBufferDescriptorSize : vvl::Field::storageTexelBufferDescriptorSize;
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-            return robust ? "robustUniformBufferDescriptorSize" : "uniformBufferDescriptorSize";
+            return robust ? vvl::Field::robustUniformBufferDescriptorSize : vvl::Field::uniformBufferDescriptorSize;
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-            return robust ? "robustStorageBufferDescriptorSize" : "storageBufferDescriptorSize";
+            return robust ? vvl::Field::robustStorageBufferDescriptorSize : vvl::Field::storageBufferDescriptorSize;
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-            return "inputAttachmentDescriptorSize";
+            return vvl::Field::inputAttachmentDescriptorSize;
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            return "accelerationStructureDescriptorSize";
+            return vvl::Field::accelerationStructureDescriptorSize;
         default:
             break;
     }
-    return "[Unknown]";
+    return vvl::Field::Empty;
 }
 
 bool IsResourceVaribleInMapping(const VkDescriptorSetAndBindingMappingEXT& mapping,
@@ -286,6 +287,19 @@ bool HasCombinedImageSamplerIndex(const VkDescriptorSetAndBindingMappingEXT& map
                mapping.sourceData.indirectIndexArray.useCombinedImageSamplerIndex;
     }
     return false;
+}
+
+// Asking for more here https://gitlab.khronos.org/vulkan/vulkan/-/issues/4885
+uint32_t GetNullDescriptorDWord(const VkPhysicalDeviceProperties& phys_dev_props) {
+    if (phys_dev_props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU && phys_dev_props.vendorID == 0x8086) {
+        // For Intel Integrated GPUs (from Metorlake+ which support heaps) they have a special null descriptor
+        return 0xe0000000;
+
+        // Note: For Lavapipe, it has a special 64-byte sequence that will be different from each descriptor type
+        // For now not going to support it unless desired, but this debugging feature was never ment for Lavapipe
+    }
+    // Printing out the nullDescriptor (and confirm with driver dev) both NVIDIA and AMD use zero as a null descriptor
+    return 0;
 }
 
 void CachedDescriptorSize::Init(const vvl::DeviceState& device_state) {

@@ -30,31 +30,31 @@ VkLayerSettingsCreateInfoEXT kAllDumpSettingCi = {VK_STRUCTURE_TYPE_LAYER_SETTIN
 
 class NegativeGpuDump : public VkLayerTest {
   public:
-    void InitDescriptorBuffer();
-    void InitDescriptorHeap();
+    void InitDescriptorBuffer(VkLayerSettingsCreateInfoEXT* custom_setting = nullptr);
+    void InitDescriptorHeap(VkLayerSettingsCreateInfoEXT* custom_setting = nullptr);
     VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_props = vku::InitStructHelper();
 };
 
-void NegativeGpuDump::InitDescriptorBuffer() {
+void NegativeGpuDump::InitDescriptorBuffer(VkLayerSettingsCreateInfoEXT* custom_setting) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBuffer);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
+    RETURN_IF_SKIP(InitFramework(custom_setting ? custom_setting : &kAllDumpSettingCi));
     RETURN_IF_SKIP(InitState());
 
     GetPhysicalDeviceProperties2(descriptor_buffer_props);
 }
 
-void NegativeGpuDump::InitDescriptorHeap() {
+void NegativeGpuDump::InitDescriptorHeap(VkLayerSettingsCreateInfoEXT* custom_setting) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitFramework(&kAllDumpSettingCi));
+    RETURN_IF_SKIP(InitFramework(custom_setting ? custom_setting : &kAllDumpSettingCi));
     RETURN_IF_SKIP(InitState());
 
     GetPhysicalDeviceProperties2(heap_props);
@@ -200,6 +200,54 @@ TEST_F(NegativeGpuDump, DescriptorBufferWrongBindPoint) {
     // from core checks, which the user might not see
     m_errorMonitor->SetAllowedFailureMsg("WARNING-Missing-vkCmdSetDescriptorBufferOffsets");
     m_errorMonitor->SetDesiredWarning("vkCmdSetDescriptorBufferOffsetsEXT was called with VK_PIPELINE_BIND_POINT_GRAPHICS");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeGpuDump, DescriptorBufferNoDescriptor) {
+    static const VkLayerSettingEXT layer_settings[2] = {
+        {OBJECT_LAYER_NAME, "gpu_dump_descriptors", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+        {OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+    };
+    VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
+    RETURN_IF_SKIP(InitDescriptorBuffer(&layer_setting_ci));
+
+    vkt::DescriptorSetLayout ds_layout(*m_device, {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
+
+    vkt::Buffer descriptor_buffer(*m_device, 256, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout (set = 0, binding = 0) buffer SSBO_0 {
+            uint a;
+        };
+        void main() {
+            a = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+    VkDescriptorBufferBindingInfoEXT descriptor_buffer_binding_info = vku::InitStructHelper();
+    descriptor_buffer_binding_info.address = descriptor_buffer.Address();
+    descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &descriptor_buffer_binding_info);
+
+    uint32_t buffer_index = 0;
+    VkDeviceSize buffer_offset = 0;
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
+                                         &buffer_offset);
+    m_errorMonitor->SetDesiredWarning("NO DESCRIPTOR");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -1687,18 +1735,13 @@ TEST_F(NegativeGpuDump, DescriptorHeapPushOffsetOOB) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapNoDescriptor) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
     static const VkLayerSettingEXT layer_settings[2] = {
         {OBJECT_LAYER_NAME, "gpu_dump_descriptors", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
         {OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
     };
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
-    RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
-    RETURN_IF_SKIP(InitState());
-    GetPhysicalDeviceProperties2(heap_props);
+    RETURN_IF_SKIP(InitDescriptorHeap(&layer_setting_ci));
+
     if (heap_props.minResourceHeapReservedRange != 0) {
         GTEST_SKIP() << "minResourceHeapReservedRange is not zero";
     }
@@ -1733,18 +1776,12 @@ TEST_F(NegativeGpuDump, DescriptorHeapNoDescriptor) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptor) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
     static const VkLayerSettingEXT layer_settings[2] = {
         {OBJECT_LAYER_NAME, "gpu_dump_descriptors", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
         {OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
     };
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
-    RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
-    RETURN_IF_SKIP(InitState());
-    GetPhysicalDeviceProperties2(heap_props);
+    RETURN_IF_SKIP(InitDescriptorHeap(&layer_setting_ci));
 
     if (heap_props.minResourceHeapReservedRange != 0) {
         GTEST_SKIP() << "minResourceHeapReservedRange is not zero";
@@ -1789,18 +1826,12 @@ TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptor) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptorSampler) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
     static const VkLayerSettingEXT layer_settings[2] = {
         {OBJECT_LAYER_NAME, "gpu_dump_descriptors", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
         {OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
     };
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
-    RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
-    RETURN_IF_SKIP(InitState());
-    GetPhysicalDeviceProperties2(heap_props);
+    RETURN_IF_SKIP(InitDescriptorHeap(&layer_setting_ci));
 
     if (heap_props.minResourceHeapReservedRange != 0) {
         GTEST_SKIP() << "minResourceHeapReservedRange is not zero";
@@ -1841,18 +1872,12 @@ TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptorSampler) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptorNotSampler) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
     static const VkLayerSettingEXT layer_settings[2] = {
         {OBJECT_LAYER_NAME, "gpu_dump_descriptors", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
         {OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
     };
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
-    RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
-    RETURN_IF_SKIP(InitState());
-    GetPhysicalDeviceProperties2(heap_props);
+    RETURN_IF_SKIP(InitDescriptorHeap(&layer_setting_ci));
 
     if (heap_props.minResourceHeapReservedRange != 0 || heap_props.minSamplerHeapReservedRange != 0) {
         GTEST_SKIP() << "heapReservedRange is not zero";
@@ -1916,18 +1941,12 @@ TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptorNotSampler) {
 }
 
 TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptorDebugNames) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
     static const VkLayerSettingEXT layer_settings[2] = {
         {OBJECT_LAYER_NAME, "gpu_dump_descriptors", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
         {OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
     };
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
-    RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
-    RETURN_IF_SKIP(InitState());
-    GetPhysicalDeviceProperties2(heap_props);
+    RETURN_IF_SKIP(InitDescriptorHeap(&layer_setting_ci));
 
     if (heap_props.minResourceHeapReservedRange != 0) {
         GTEST_SKIP() << "minResourceHeapReservedRange is not zero";
