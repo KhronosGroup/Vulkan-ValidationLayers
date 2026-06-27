@@ -321,8 +321,8 @@
             "settings": [
                 {
                     "key": "validation_control",
-                    "label": "Validation Areas",
-                    "description": "Control of the Validation layer validation",
+                    "label": "CPU Centric Validation",
+                    "description": "Control the Validation done only on the CPU",
                     "type": "GROUP",
                     "expanded": true,
                     "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
@@ -334,6 +334,7 @@
                             "description": "Enable fine grained locking for Core Validation, which should improve performance in multithreaded applications. This setting allows the optimization to be disabled for debugging.",
                             "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/fine_grained_locking_usage.md",
                             "type": "BOOL",
+                            "view": "HIDDEN",
                             "default": true
                         },
                         {
@@ -491,13 +492,6 @@
                             "default": true
                         },
                         {
-                            "key": "legacy_detection",
-                            "label": "Legacy Detection",
-                            "description": "Give warnings when using legacy parts of the API.",
-                            "type": "BOOL",
-                            "default": false
-                        },
-                        {
                             "key": "thread_safety",
                             "label": "Thread Safety",
                             "description": "Thread checks. In order to not degrade performance, it might be best to run your program with thread-checking disabled most of the time, enabling it occasionally for a quick sanity check or when debugging difficult application behaviors.",
@@ -578,6 +572,92 @@
                                 }
                             ]
                         },
+                        {
+                            "key": "legacy_detection",
+                            "label": "Legacy Detection",
+                            "description": "Give warnings when using legacy parts of the API.",
+                            "type": "BOOL",
+                            "default": false
+                        },
+                        {
+                            "key": "validate_best_practices",
+                            "label": "Best Practices",
+                            "description": "Outputs warnings related to common misuse of the API, but which are not explicitly prohibited by the specification.",
+                            "url": "${LUNARG_SDK}/best_practices.html",
+                            "type": "BOOL",
+                            "default": false,
+                            "expanded": true,
+                            "status": "STABLE",
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
+                            "settings": [
+                                {
+                                    "key": "validate_best_practices_arm",
+                                    "label": "ARM-specific best practices",
+                                    "description": "Outputs warnings for spec-conforming but non-ideal code on ARM GPUs.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "validate_best_practices", "value": true }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "validate_best_practices_amd",
+                                    "label": "AMD-specific best practices",
+                                    "description": "Outputs warnings for spec-conforming but non-ideal code on AMD GPUs.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "validate_best_practices", "value": true }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "validate_best_practices_img",
+                                    "label": "IMG-specific best practices",
+                                    "description": "Outputs warnings for spec-conforming but non-ideal code on Imagination GPUs.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "validate_best_practices", "value": true }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "validate_best_practices_nvidia",
+                                    "label": "NVIDIA-specific best practices",
+                                    "description": "Outputs warnings for spec-conforming but non-ideal code on NVIDIA GPUs.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "platforms": [ "WINDOWS", "LINUX", "ANDROID" ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "validate_best_practices", "value": true }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "key": "validation_control_gpu",
+                    "label": "GPU Centric Validation",
+                    "description": "Control the Validation for GPU centric API",
+                    "type": "GROUP",
+                    "expanded": true,
+                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
+                    "settings": [
                         {
                             "key": "printf_only_preset",
                             "label": "Debug Printf only preset",
@@ -692,7 +772,7 @@
                         },
                         {
                             "key": "gpuav_enable",
-                            "label": "GPU Assisted Validation",
+                            "label": "GPU Assisted Validation (GPU-AV)",
                             "description": "Enable validation that cannot be done the CPU and needs hooks into the GPU execution",
                             "url": "${LUNARG_SDK}/gpu_validation.html",
                             "type": "BOOL",
@@ -1174,195 +1254,125 @@
                             ]
                         },
                         {
+                            "key": "gpu_dump",
+                            "label": "GPU Dump",
+                            "description": "Similar to API Dump, but using all the state tracking information, print out information for GPU centric extensions.",
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
+                            "type": "GROUP",
+                            "expanded": true,
+                            "settings": [
+                                {
+                                    "key": "gpu_dump_descriptors",
+                                    "label": "Dump Descriptor Heap/Buffer",
+                                    "description": "Dump all the information at every draw/dispatch when recording VK_EXT_descriptor_heap or VK_EXT_descriptor_buffer",
+                                    "type": "BOOL",
+                                    "default": false
+                                },
+                                {
+                                    "key": "gpu_dump_copy_memory_indirect",
+                                    "label": "Dump VK_KHR_copy_memory_indirect",
+                                    "description": "Dump information at each copy command when recording",
+                                    "type": "BOOL",
+                                    "default": false
+                                },
+                                {
+                                    "key": "gpu_dump_device_generated_commands",
+                                    "label": "Dump VK_EXT_device_generated_commands",
+                                    "description": "Dump information at each vkCmdExecuteGeneratedCommands when recording",
+                                    "type": "BOOL",
+                                    "default": false
+                                },
+                                {
+                                    "key": "gpu_dump_to_stdout",
+                                    "label": "Redirect all GPU Dump to stdout",
+                                    "description": "Instead of using the debug callback with information severity, redirect to stdout instead.",
+                                    "type": "BOOL",
+                                    "default": false
+                                },
+                                {
+                                    "key": "gpu_dump_device_copy",
+                                    "label": "Force Device Copy",
+                                    "view": "DEBUG",
+                                    "description": "[Very experimental] For non-host visible memory, try and do a device copy during command recording to view the data inside a buffer.",
+                                    "type": "BOOL",
+                                    "default": false
+                                }
+                            ],
+                            "messages": [
+                                {
+                                    "key": "gpu_dump_enable_msg1",
+                                    "title": "Warning: GPU Dump without info level message severity flag",
+                                    "version": 1,
+                                    "description": "Enabling GPU Dump for Descriptors, with output directed to the debug callback, but info/warning level message severity is disabled, so printf message won't be shown.",
+                                    "informative": "Adding 'info' and 'warning' level to 'Message Severity'",
+                                    "severity": "INFORMATION",
+                                    "conditions": [
+                                        { "setting": { "key": "gpu_dump_descriptors", "value": true }},
+                                        { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
+                                        { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
+                                    ],
+                                    "actions": {
+                                        "default": "BUTTON0",
+                                        "BUTTON0": {
+                                            "type": "OK",
+                                            "changes": [
+                                                { "setting": { "key": "report_flags", "value": ["warn"] }, "operator": "APPEND" }
+                                            ]
+                                        }
+                                    }
+                                },
+                                {
+                                    "key": "gpu_dump_enable_msg2",
+                                    "title": "Warning: GPU Dump without info level message severity flag",
+                                    "version": 1,
+                                    "description": "Enabling GPU Dump for Copy Memory Indirect, with output directed to the debug callback, but info/warning level message severity is disabled, so printf message won't be shown.",
+                                    "informative": "Adding 'info' and 'warning' level to 'Message Severity'",
+                                    "severity": "INFORMATION",
+                                    "conditions": [
+                                        { "setting": { "key": "gpu_dump_copy_memory_indirect", "value": true }},
+                                        { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
+                                        { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
+                                    ],
+                                    "actions": {
+                                        "default": "BUTTON0",
+                                        "BUTTON0": {
+                                            "type": "OK",
+                                            "changes": [
+                                                { "setting": { "key": "report_flags", "value": ["warn"] }, "operator": "APPEND" }
+                                            ]
+                                        }
+                                    }
+                                },
+                                {
+                                    "key": "gpu_dump_enable_msg3",
+                                    "title": "Warning: GPU Dump without info level message severity flag",
+                                    "version": 1,
+                                    "description": "Enabling GPU Dump for Device Generated Commands, with output directed to the debug callback, but info/warning level message severity is disabled, so printf message won't be shown.",
+                                    "informative": "Adding 'info' and 'warning' level to 'Message Severity'",
+                                    "severity": "INFORMATION",
+                                    "conditions": [
+                                        { "setting": { "key": "gpu_dump_device_generated_commands", "value": true }},
+                                        { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
+                                        { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
+                                    ],
+                                    "actions": {
+                                        "default": "BUTTON0",
+                                        "BUTTON0": {
+                                            "type": "OK",
+                                            "changes": [
+                                                { "setting": { "key": "report_flags", "value": ["warn"] }, "operator": "APPEND" }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "key": "descriptor_hashing",
                             "label": "Descriptor Hashing",
                             "description": "When enabled and using VK_EXT_descriptor_heap/VK_EXT_descriptor_buffer, this will attempt to track all descriptors seen such that GPU-AV and GPU Dump can detect more errors. This will increase the memory footprint.",
                             "type": "BOOL",
                             "default": false
-                        },
-                        {
-                            "key": "validate_best_practices",
-                            "label": "Best Practices",
-                            "description": "Outputs warnings related to common misuse of the API, but which are not explicitly prohibited by the specification.",
-                            "url": "${LUNARG_SDK}/best_practices.html",
-                            "type": "BOOL",
-                            "default": false,
-                            "expanded": true,
-                            "status": "STABLE",
-                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
-                            "settings": [
-                                {
-                                    "key": "validate_best_practices_arm",
-                                    "label": "ARM-specific best practices",
-                                    "description": "Outputs warnings for spec-conforming but non-ideal code on ARM GPUs.",
-                                    "type": "BOOL",
-                                    "default": false,
-                                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
-                                    "dependence": {
-                                        "mode": "ALL",
-                                        "settings": [
-                                            { "key": "validate_best_practices", "value": true }
-                                        ]
-                                    }
-                                },
-                                {
-                                    "key": "validate_best_practices_amd",
-                                    "label": "AMD-specific best practices",
-                                    "description": "Outputs warnings for spec-conforming but non-ideal code on AMD GPUs.",
-                                    "type": "BOOL",
-                                    "default": false,
-                                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
-                                    "dependence": {
-                                        "mode": "ALL",
-                                        "settings": [
-                                            { "key": "validate_best_practices", "value": true }
-                                        ]
-                                    }
-                                },
-                                {
-                                    "key": "validate_best_practices_img",
-                                    "label": "IMG-specific best practices",
-                                    "description": "Outputs warnings for spec-conforming but non-ideal code on Imagination GPUs.",
-                                    "type": "BOOL",
-                                    "default": false,
-                                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
-                                    "dependence": {
-                                        "mode": "ALL",
-                                        "settings": [
-                                            { "key": "validate_best_practices", "value": true }
-                                        ]
-                                    }
-                                },
-                                {
-                                    "key": "validate_best_practices_nvidia",
-                                    "label": "NVIDIA-specific best practices",
-                                    "description": "Outputs warnings for spec-conforming but non-ideal code on NVIDIA GPUs.",
-                                    "type": "BOOL",
-                                    "default": false,
-                                    "platforms": [ "WINDOWS", "LINUX", "ANDROID" ],
-                                    "dependence": {
-                                        "mode": "ALL",
-                                        "settings": [
-                                            { "key": "validate_best_practices", "value": true }
-                                        ]
-                                    }
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "key": "gpu_dump",
-                    "label": "GPU Dump",
-                    "description": "Similar to API Dump, but using all the state tracking information, print out information for GPU centric extensions.",
-                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
-                    "type": "GROUP",
-                    "status": "ALPHA",
-                    "expanded": true,
-                    "settings": [
-                        {
-                            "key": "gpu_dump_descriptors",
-                            "label": "Dump Descriptors (VK_EXT_descriptor_buffer and VK_EXT_descriptor_heap)",
-                            "description": "Dump all the information at every draw/dispatch when recording",
-                            "type": "BOOL",
-                            "default": false
-                        },
-                        {
-                            "key": "gpu_dump_copy_memory_indirect",
-                            "label": "Dump VK_KHR_copy_memory_indirect",
-                            "description": "Dump information at each copy command when recording",
-                            "type": "BOOL",
-                            "default": false
-                        },
-                        {
-                            "key": "gpu_dump_device_generated_commands",
-                            "label": "Dump VK_EXT_device_generated_commands",
-                            "description": "Dump information at each vkCmdExecuteGeneratedCommands when recording",
-                            "type": "BOOL",
-                            "default": false
-                        },
-                        {
-                            "key": "gpu_dump_to_stdout",
-                            "label": "Redirect all GPU Dump to stdout",
-                            "description": "Instead of using the debug callback with information severity, redirect to stdout instead.",
-                            "type": "BOOL",
-                            "default": false
-                        },
-                        {
-                            "key": "gpu_dump_device_copy",
-                            "label": "Force Device Copy",
-                            "view": "DEBUG",
-                            "description": "[Very experimental] For non-host visible memory, try and do a device copy during command recording to view the data inside a buffer.",
-                            "type": "BOOL",
-                            "default": false
-                        }
-                    ],
-                    "messages": [
-                        {
-                            "key": "gpu_dump_enable_msg1",
-                            "title": "Warning: GPU Dump without info level message severity flag",
-                            "version": 1,
-                            "description": "Enabling GPU Dump for Descriptors, with output directed to the debug callback, but info/warning level message severity is disabled, so printf message won't be shown.",
-                            "informative": "Adding 'info' and 'warning' level to 'Message Severity'",
-                            "severity": "INFORMATION",
-                            "conditions": [
-                                { "setting": { "key": "gpu_dump_descriptors", "value": true }},
-                                { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
-                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
-                            ],
-                            "actions": {
-                                "default": "BUTTON0",
-                                "BUTTON0": {
-                                    "type": "OK",
-                                    "changes": [
-                                        { "setting": { "key": "report_flags", "value": ["warn"] }, "operator": "APPEND" }
-                                    ]
-                                }
-                            }
-                        },
-                        {
-                            "key": "gpu_dump_enable_msg2",
-                            "title": "Warning: GPU Dump without info level message severity flag",
-                            "version": 1,
-                            "description": "Enabling GPU Dump for Copy Memory Indirect, with output directed to the debug callback, but info/warning level message severity is disabled, so printf message won't be shown.",
-                            "informative": "Adding 'info' and 'warning' level to 'Message Severity'",
-                            "severity": "INFORMATION",
-                            "conditions": [
-                                { "setting": { "key": "gpu_dump_copy_memory_indirect", "value": true }},
-                                { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
-                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
-                            ],
-                            "actions": {
-                                "default": "BUTTON0",
-                                "BUTTON0": {
-                                    "type": "OK",
-                                    "changes": [
-                                        { "setting": { "key": "report_flags", "value": ["warn"] }, "operator": "APPEND" }
-                                    ]
-                                }
-                            }
-                        },
-                        {
-                            "key": "gpu_dump_enable_msg3",
-                            "title": "Warning: GPU Dump without info level message severity flag",
-                            "version": 1,
-                            "description": "Enabling GPU Dump for Device Generated Commands, with output directed to the debug callback, but info/warning level message severity is disabled, so printf message won't be shown.",
-                            "informative": "Adding 'info' and 'warning' level to 'Message Severity'",
-                            "severity": "INFORMATION",
-                            "conditions": [
-                                { "setting": { "key": "gpu_dump_device_generated_commands", "value": true }},
-                                { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
-                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
-                            ],
-                            "actions": {
-                                "default": "BUTTON0",
-                                "BUTTON0": {
-                                    "type": "OK",
-                                    "changes": [
-                                        { "setting": { "key": "report_flags", "value": ["warn"] }, "operator": "APPEND" }
-                                    ]
-                                }
-                            }
                         }
                     ]
                 },
