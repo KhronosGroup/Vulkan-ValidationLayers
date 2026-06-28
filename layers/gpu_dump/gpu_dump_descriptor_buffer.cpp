@@ -158,8 +158,7 @@ bool BindingInfo::ValidateDescriptor(std::ostringstream& ss, GpuDump& dev_data) 
         }
     }
 
-    const vvlDescriptorType found_type = (vvlDescriptorType)it->second.type;
-    if (found_type != GetMaskFromDescriptorType(type)) {
+    if ((it->second.types & (1 << (uint8_t)GetMaskFromDescriptorType(type))) == 0) {
         ss << "      - [WARNING] WRONG DESCRIPTOR - expected a " << string_VkDescriptorType(type)
            << " descriptor, but instead found a descriptor for: " << descriptor_hash.Describe(*dev_data.device_state, key) << "\n";
         return true;

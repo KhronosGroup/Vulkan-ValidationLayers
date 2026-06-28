@@ -2246,7 +2246,12 @@ class DeviceState : public vvl::BaseDevice {
         };
         struct EntrySampler {};
         struct Entry {
-            uint8_t type;  // vvlDescriptorType
+            // It is possible two different types are the same descriptor hash, so need a bit mask here
+            // each type is applied here as
+            //    1 << vvlDescriptorType
+            // Will be updated if a second type is found
+            uint32_t types;
+
             union Data {
                 EntryBuffer buffer;
                 EntryTexelBuffer texel_buffer;
@@ -2261,11 +2266,12 @@ class DeviceState : public vvl::BaseDevice {
                 explicit Data(EntrySampler s) : sampler(s) {}
             } data;
 
-            Entry(uint8_t t, EntryBuffer b) : type(t), data(b) {}
-            Entry(uint8_t t, EntryTexelBuffer j) : type(t), data(j) {}
-            Entry(uint8_t t, EntryAS a) : type(t), data(a) {}
-            Entry(uint8_t t, EntryImage i) : type(t), data(i) {}
-            Entry(uint8_t t, EntrySampler s) : type(t), data(s) {}
+            // Pass in vvlDescriptorType
+            Entry(uint8_t t, EntryBuffer b) : types(1 << t), data(b) {}
+            Entry(uint8_t t, EntryTexelBuffer j) : types(1 << t), data(j) {}
+            Entry(uint8_t t, EntryAS a) : types(1 << t), data(a) {}
+            Entry(uint8_t t, EntryImage i) : types(1 << t), data(i) {}
+            Entry(uint8_t t, EntrySampler s) : types(1 << t), data(s) {}
         };
         vvl::unordered_map<uint64_t, Entry> map;
         // Users can pass in VkDebugUtilsObjectNameInfoEXT when getting the descriptor to provide a name
