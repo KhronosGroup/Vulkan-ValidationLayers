@@ -648,11 +648,7 @@ enum class Feature {
     nestedCommandBufferSimultaneousUse,
     // VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT
     nonSeamlessCubeMap,
-    // VkPhysicalDeviceOpacityMicromapFeaturesEXT
-    micromapCaptureReplay,
-    // VkPhysicalDeviceOpacityMicromapFeaturesEXT
-    micromapHostCommands,
-    // VkPhysicalDeviceOpacityMicromapFeaturesEXT, VkPhysicalDeviceOpacityMicromapFeaturesKHR
+    // VkPhysicalDeviceOpacityMicromapFeaturesKHR
     micromap,
     // VkPhysicalDeviceOpticalFlowFeaturesNV
     opticalFlow,

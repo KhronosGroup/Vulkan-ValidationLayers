@@ -786,6 +786,18 @@ TEST_F(NegativeShaderObject, FlagFragmentDensityMap) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeShaderObject, OMMShaderFlag) {
+    AddRequiredExtensions(VK_KHR_OPACITY_MICROMAP_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoFlag(
+        spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_CREATE_OPACITY_MICROMAP_DISALLOW_MIXED_SPECIAL_INDEX_BIT_EXT);
+    VkShaderEXT shader;
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-micromap-11623");
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeShaderObject, MissingLinkStageBit) {
     TEST_DESCRIPTION("Create a linked and non-linked shader in the same call.");
 

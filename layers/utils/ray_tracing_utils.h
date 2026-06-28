@@ -39,4 +39,8 @@ inline const VkAccelerationStructureGeometryKHR &GetGeometry(const VkAcceleratio
     return info.pGeometries ? info.pGeometries[geometry_i] : *info.ppGeometries[geometry_i];
 }
 
+inline const VkMicromapUsageKHR& GetMicroMapUsage(const VkAccelerationStructureGeometryMicromapDataKHR& info, uint32_t count_i) {
+    return info.pUsageCounts ? info.pUsageCounts[count_i] : *info.ppUsageCounts[count_i];
+}
+
 }  // namespace rt

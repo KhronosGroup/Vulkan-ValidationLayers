@@ -36,6 +36,11 @@ bool Device::ValidateCreateShadersFlags(VkShaderCreateFlagsEXT flags, VkShaderSt
             LogError("VUID-VkShaderCreateInfoEXT-flags-08489", device, flag_loc,
                      "is %s, but the fragmentDensityMap feature was not enabled.", string_VkShaderCreateFlagsEXT(flags).c_str());
     }
+    if ((flags & VK_SHADER_CREATE_OPACITY_MICROMAP_DISALLOW_MIXED_SPECIAL_INDEX_BIT_EXT) != 0 && !enabled_features.micromap) {
+        skip |= LogError("VUID-VkShaderCreateInfoEXT-micromap-11623", device, flag_loc,
+                         "is %s, but the VkPhysicalDeviceOpacityMicromapFeaturesKHR::micromap feature was not enabled.",
+                         string_VkShaderCreateFlagsEXT(flags).c_str());
+    }
     if ((flags & VK_SHADER_CREATE_64_BIT_INDEXING_BIT_EXT) != 0 && enabled_features.shader64BitIndexing == VK_FALSE) {
         skip |=
             LogError("VUID-VkShaderCreateInfoEXT-flags-11758", device, flag_loc,

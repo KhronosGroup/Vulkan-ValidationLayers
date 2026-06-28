@@ -46,6 +46,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
             "VkPhysicalDeviceFaultFeaturesEXT",
             'VkPhysicalDeviceBufferDeviceAddressFeaturesEXT',
             'VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV',
+            'VkPhysicalDeviceOpacityMicromapFeaturesEXT',
         }
 
     def generate(self):

@@ -305,7 +305,7 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline& pipeline
         {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04721", VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR},
         {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04722", VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR},
         {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04723", VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR},
-        {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-07403", VK_PIPELINE_CREATE_RAY_TRACING_OPACITY_MICROMAP_BIT_EXT},
+        {"VUID-VkRayTracingPipelineCreateInfoKHR-pLibraries-11598", VK_PIPELINE_CREATE_RAY_TRACING_OPACITY_MICROMAP_BIT_KHR},
     }};
 
     // Use "pipeline" to refer to the pipeline be created

@@ -1470,9 +1470,9 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPACITY_MICROMAP_FEATURES_EXT: {
                 const VkPhysicalDeviceOpacityMicromapFeaturesEXT* enabled =
                     reinterpret_cast<const VkPhysicalDeviceOpacityMicromapFeaturesEXT*>(pNext);
-                features->micromap |= enabled->micromap == VK_TRUE;
-                features->micromapCaptureReplay |= enabled->micromapCaptureReplay == VK_TRUE;
-                features->micromapHostCommands |= enabled->micromapHostCommands == VK_TRUE;
+                features->micromapEXT |= enabled->micromap == VK_TRUE;
+                features->micromapCaptureReplayEXT |= enabled->micromapCaptureReplay == VK_TRUE;
+                features->micromapHostCommandsEXT |= enabled->micromapHostCommands == VK_TRUE;
                 break;
             }
 #ifdef VK_ENABLE_BETA_EXTENSIONS

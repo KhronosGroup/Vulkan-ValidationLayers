@@ -4701,41 +4701,11 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
             return {&vk_struct->nonSeamlessCubeMap, "VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT::nonSeamlessCubeMap"};
         }
 
-        case Feature::micromapCaptureReplay: {
-            auto vk_struct = const_cast<VkPhysicalDeviceOpacityMicromapFeaturesEXT*>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceOpacityMicromapFeaturesEXT>(*inout_pnext_chain));
-            if (!vk_struct) {
-                vk_struct = new VkPhysicalDeviceOpacityMicromapFeaturesEXT;
-                *vk_struct = vku::InitStructHelper();
-                if (*inout_pnext_chain) {
-                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
-                } else {
-                    *inout_pnext_chain = vk_struct;
-                }
-            }
-            return {&vk_struct->micromapCaptureReplay, "VkPhysicalDeviceOpacityMicromapFeaturesEXT::micromapCaptureReplay"};
-        }
-
-        case Feature::micromapHostCommands: {
-            auto vk_struct = const_cast<VkPhysicalDeviceOpacityMicromapFeaturesEXT*>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceOpacityMicromapFeaturesEXT>(*inout_pnext_chain));
-            if (!vk_struct) {
-                vk_struct = new VkPhysicalDeviceOpacityMicromapFeaturesEXT;
-                *vk_struct = vku::InitStructHelper();
-                if (*inout_pnext_chain) {
-                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
-                } else {
-                    *inout_pnext_chain = vk_struct;
-                }
-            }
-            return {&vk_struct->micromapHostCommands, "VkPhysicalDeviceOpacityMicromapFeaturesEXT::micromapHostCommands"};
-        }
-
         case Feature::micromap: {
-            auto vk_struct = const_cast<VkPhysicalDeviceOpacityMicromapFeaturesEXT*>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceOpacityMicromapFeaturesEXT>(*inout_pnext_chain));
+            auto vk_struct = const_cast<VkPhysicalDeviceOpacityMicromapFeaturesKHR*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceOpacityMicromapFeaturesKHR>(*inout_pnext_chain));
             if (!vk_struct) {
-                vk_struct = new VkPhysicalDeviceOpacityMicromapFeaturesEXT;
+                vk_struct = new VkPhysicalDeviceOpacityMicromapFeaturesKHR;
                 *vk_struct = vku::InitStructHelper();
                 if (*inout_pnext_chain) {
                     vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
@@ -4743,7 +4713,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
                     *inout_pnext_chain = vk_struct;
                 }
             }
-            return {&vk_struct->micromap, "VkPhysicalDeviceOpacityMicromapFeaturesEXT::micromap"};
+            return {&vk_struct->micromap, "VkPhysicalDeviceOpacityMicromapFeaturesKHR::micromap"};
         }
 
         case Feature::opticalFlow: {
@@ -5055,17 +5025,17 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
             case Feature::constantAlphaColorBlendFactors: {
-            auto vk_struct = const_cast<VkPhysicalDevicePortabilitySubsetFeaturesKHR*>(
-                vku::FindStructInPNextChain<VkPhysicalDevicePortabilitySubsetFeaturesKHR>(*inout_pnext_chain));
-            if (!vk_struct) {
-                vk_struct = new VkPhysicalDevicePortabilitySubsetFeaturesKHR;
-                *vk_struct = vku::InitStructHelper();
-                if (*inout_pnext_chain) {
-                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
-                } else {
-                    *inout_pnext_chain = vk_struct;
+                auto vk_struct = const_cast<VkPhysicalDevicePortabilitySubsetFeaturesKHR*>(
+                    vku::FindStructInPNextChain<VkPhysicalDevicePortabilitySubsetFeaturesKHR>(*inout_pnext_chain));
+                if (!vk_struct) {
+                    vk_struct = new VkPhysicalDevicePortabilitySubsetFeaturesKHR;
+                    *vk_struct = vku::InitStructHelper();
+                    if (*inout_pnext_chain) {
+                        vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                    } else {
+                        *inout_pnext_chain = vk_struct;
+                    }
                 }
-            }
             return {&vk_struct->constantAlphaColorBlendFactors,
                     "VkPhysicalDevicePortabilitySubsetFeaturesKHR::constantAlphaColorBlendFactors"};
         }

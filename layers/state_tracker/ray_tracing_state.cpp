@@ -89,6 +89,12 @@ void AccelerationStructureKHR::Build(const VkAccelerationStructureBuildGeometryI
 
 void AccelerationStructureKHR::UpdateBuildRangeInfos(const VkAccelerationStructureBuildRangeInfoKHR* p_build_range_infos,
                                                      uint32_t geometry_count) {
+    // range info is null for indirect builds (vkCmdBuildAccelerationStructuresIndirectKHR) or VK_GEOMETRY_TYPE_MICROMAP_KHR
+    if (!p_build_range_infos) {
+        build_range_infos.clear();
+        return;
+    }
+
     build_range_infos.resize(geometry_count);
     for (const auto [i, build_range] : vvl::enumerate(p_build_range_infos, geometry_count)) {
         build_range_infos[i] = build_range;
