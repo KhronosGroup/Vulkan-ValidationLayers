@@ -681,23 +681,7 @@ class DeviceState : public vvl::BaseDevice {
 
     VkDeviceAddress GetBufferDeviceAddressHelper(VkBuffer buffer, const DeviceExtensions* exts = nullptr) const;
 
-    // From the spec:
-    // If multiple VkBuffer objects are bound to overlapping ranges of VkDeviceMemory, implementations may return
-    // address ranges which overlap. In this case, it is ambiguous which VkBuffer is associated with any given
-    // device address. For purposes of valid usage, if multiple VkBuffer objects can be attributed to
-    // a device address, a VkBuffer is selected such that valid usage passes, if it exists.
-    // Regarding using raw pointers instead of shared: The reason is performance, because arrays of vvl::Buffer* are used, it is
-    // more efficient to store them using raw pointers. It is safe to do so (at time of writing) because those raw pointers come
-    // from shared ones created when the buffer is first recorded, and they are removed from buffer_address_map_ at BufferDestroy
-    // time
-    vvl::span<vvl::Buffer* const> GetBuffersByAddress(VkDeviceAddress address) const {
-        ReadLockGuard guard(buffer_address_lock_);
-        auto found_it = buffer_address_map_.find(address);
-        if (found_it == buffer_address_map_.end()) {
-            return vvl::make_span<vvl::Buffer* const>(nullptr, static_cast<size_t>(0));
-        }
-        return found_it->second;
-    }
+    vvl::span<vvl::Buffer* const> GetBuffersByAddress(VkDeviceAddress address) const;
 
     small_vector<vvl::Buffer*, 2> GetBuffersByAddressRange(const VkDeviceAddressRangeKHR& address_range,
                                                            VkBufferUsageFlags2 buffer_usage_flags = VkBufferUsageFlags2(0)) const;
@@ -710,51 +694,11 @@ class DeviceState : public vvl::BaseDevice {
     }
 
     // Used to help report error message
-    NearestBufferResult GetNearestBuffersByAddress(VkDeviceAddress address) const {
-        ReadLockGuard guard(buffer_address_lock_);
-
-        NearestBufferResult result = {vvl::range<VkDeviceAddress>(), vvl::range<VkDeviceAddress>(),
-                                      vvl::make_span<vvl::Buffer* const>(nullptr, static_cast<size_t>(0)),
-                                      vvl::make_span<vvl::Buffer* const>(nullptr, static_cast<size_t>(0))};
-
-        if (buffer_address_map_.empty()) {
-            return result;
-        }
-
-        // lower_bound returns the first range that ends *after* the address.
-        // Since we assume 'find' has already failed (address is in a gap),
-        // this will point to the nearest range *above* the requested address.
-        const auto range_key = vvl::range<VkDeviceAddress>(address, address + 1);
-        auto it = buffer_address_map_.lower_bound(range_key);
-
-        if (it != buffer_address_map_.end()) {
-            result.above_range = it->first;
-            result.above_buffers = it->second;
-        }
-
-        // If at the beginning, there is nothing below.
-        // Otherwise, the element immediately preceding the lower_bound
-        // is the nearest range below the address.
-        if (it != buffer_address_map_.begin()) {
-            auto prev = it;
-            --prev;
-            result.below_range = prev->first;
-            result.below_buffers = prev->second;
-        }
-
-        return result;
-    }
+    NearestBufferResult GetNearestBuffersByAddress(VkDeviceAddress address) const;
 
     using BufferAddressRange = vvl::range<VkDeviceAddress>;
     [[nodiscard]] size_t GetBufferAddressRangesCount() { return buffer_address_map_.size(); }
-    void GetBufferAddressRanges(BufferAddressRange* ranges) const {
-        ReadLockGuard guard(buffer_address_lock_);
-
-        size_t written_count = 0;
-        for (const auto& [address_range, buffers] : buffer_address_map_) {
-            ranges[written_count++] = address_range;
-        }
-    }
+    void GetBufferAddressRanges(BufferAddressRange* ranges) const;
 
     // small_vector size comes from field experience, where because of how they recycle memory
     // some games end up having the same buffer backing 2 acceleration structures,
@@ -2074,28 +2018,9 @@ class DeviceState : public vvl::BaseDevice {
     void PostCallRecordGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize,
                                         void* pDescriptor, const RecordObject& record_obj) override;
 
-    inline std::shared_ptr<vvl::ShaderModule> GetShaderModuleStateFromIdentifier(const VkShaderModuleIdentifierEXT& ident) {
-        ReadLockGuard guard(shader_identifier_map_lock_);
-        if (const auto itr = shader_identifier_map_.find(ident); itr != shader_identifier_map_.cend()) {
-            return itr->second;
-        }
-        return {};
-    }
-
-    inline std::shared_ptr<vvl::ShaderModule> GetShaderModuleStateFromIdentifier(
-        const VkPipelineShaderStageModuleIdentifierCreateInfoEXT& shader_stage_id) const {
-        if (shader_stage_id.pIdentifier) {
-            VkShaderModuleIdentifierEXT shader_id = vku::InitStructHelper();
-            shader_id.identifierSize = shader_stage_id.identifierSize;
-            const uint32_t copy_size = std::min(VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT, shader_stage_id.identifierSize);
-            std::copy(shader_stage_id.pIdentifier, shader_stage_id.pIdentifier + copy_size, shader_id.identifier);
-            ReadLockGuard guard(shader_identifier_map_lock_);
-            if (const auto itr = shader_identifier_map_.find(shader_id); itr != shader_identifier_map_.cend()) {
-                return itr->second;
-            }
-        }
-        return {};
-    }
+    std::shared_ptr<vvl::ShaderModule> GetShaderModuleStateFromIdentifier(const VkShaderModuleIdentifierEXT& ident) const;
+    std::shared_ptr<vvl::ShaderModule> GetShaderModuleStateFromIdentifier(
+        const VkPipelineShaderStageModuleIdentifierCreateInfoEXT& shader_stage_id) const;
 
     // Get device-specific canonical id for the provided set layout definition
     DescriptorSetLayoutId GetCanonicalId(const VkDescriptorSetLayoutCreateInfo* p_create_info);

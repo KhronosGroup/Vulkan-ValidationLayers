@@ -122,6 +122,24 @@ VkDeviceAddress DeviceState::GetBufferDeviceAddressHelper(VkBuffer buffer, const
     }
 }
 
+// From the spec:
+// If multiple VkBuffer objects are bound to overlapping ranges of VkDeviceMemory, implementations may return
+// address ranges which overlap. In this case, it is ambiguous which VkBuffer is associated with any given
+// device address. For purposes of valid usage, if multiple VkBuffer objects can be attributed to
+// a device address, a VkBuffer is selected such that valid usage passes, if it exists.
+// Regarding using raw pointers instead of shared: The reason is performance, because arrays of vvl::Buffer* are used, it is
+// more efficient to store them using raw pointers. It is safe to do so (at time of writing) because those raw pointers come
+// from shared ones created when the buffer is first recorded, and they are removed from buffer_address_map_ at BufferDestroy
+// time
+vvl::span<vvl::Buffer* const> DeviceState::GetBuffersByAddress(VkDeviceAddress address) const {
+    ReadLockGuard guard(buffer_address_lock_);
+    auto found_it = buffer_address_map_.find(address);
+    if (found_it == buffer_address_map_.end()) {
+        return vvl::make_span<vvl::Buffer* const>(nullptr, static_cast<size_t>(0));
+    }
+    return found_it->second;
+}
+
 small_vector<vvl::Buffer*, 2> DeviceState::GetBuffersByAddressRange(const VkDeviceAddressRangeKHR& address_range,
                                                                     VkBufferUsageFlags2 buffer_usage_flags) const {
     small_vector<vvl::Buffer*, 2> filtered_buffers;
@@ -211,6 +229,29 @@ std::vector<std::shared_ptr<const ImageView>> DeviceState::GetAttachmentViews(co
                                                                               const Framebuffer& fb_state) const {
     auto get_fn = [this](VkImageView handle) { return this->Get<ImageView>(handle); };
     return GetAttachmentViewsImpl<std::shared_ptr<const ImageView>>(rp_begin, fb_state, get_fn);
+}
+
+std::shared_ptr<vvl::ShaderModule> DeviceState::GetShaderModuleStateFromIdentifier(const VkShaderModuleIdentifierEXT& ident) const {
+    ReadLockGuard guard(shader_identifier_map_lock_);
+    if (const auto itr = shader_identifier_map_.find(ident); itr != shader_identifier_map_.cend()) {
+        return itr->second;
+    }
+    return {};
+}
+
+std::shared_ptr<vvl::ShaderModule> DeviceState::GetShaderModuleStateFromIdentifier(
+    const VkPipelineShaderStageModuleIdentifierCreateInfoEXT& shader_stage_id) const {
+    if (shader_stage_id.pIdentifier) {
+        VkShaderModuleIdentifierEXT shader_id = vku::InitStructHelper();
+        shader_id.identifierSize = shader_stage_id.identifierSize;
+        const uint32_t copy_size = std::min(VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT, shader_stage_id.identifierSize);
+        std::copy(shader_stage_id.pIdentifier, shader_stage_id.pIdentifier + copy_size, shader_id.identifier);
+        ReadLockGuard guard(shader_identifier_map_lock_);
+        if (const auto itr = shader_identifier_map_.find(shader_id); itr != shader_identifier_map_.cend()) {
+            return itr->second;
+        }
+    }
+    return {};
 }
 
 DescriptorSetLayoutId DeviceState::GetCanonicalId(const VkDescriptorSetLayoutCreateInfo* p_create_info) {
@@ -6867,6 +6908,50 @@ void DeviceState::PostCallRecordGetAccelerationStructureDeviceAddressKHR(VkDevic
             as_with_addresses.array.reserve(as_with_addresses.array.capacity() * 2);
         }
         as_with_addresses.array.emplace_back(as_state.get());
+    }
+}
+
+NearestBufferResult DeviceState::GetNearestBuffersByAddress(VkDeviceAddress address) const {
+    ReadLockGuard guard(buffer_address_lock_);
+
+    NearestBufferResult result = {vvl::range<VkDeviceAddress>(), vvl::range<VkDeviceAddress>(),
+                                  vvl::make_span<vvl::Buffer* const>(nullptr, static_cast<size_t>(0)),
+                                  vvl::make_span<vvl::Buffer* const>(nullptr, static_cast<size_t>(0))};
+
+    if (buffer_address_map_.empty()) {
+        return result;
+    }
+
+    // lower_bound returns the first range that ends *after* the address.
+    // Since we assume 'find' has already failed (address is in a gap),
+    // this will point to the nearest range *above* the requested address.
+    const auto range_key = vvl::range<VkDeviceAddress>(address, address + 1);
+    auto it = buffer_address_map_.lower_bound(range_key);
+
+    if (it != buffer_address_map_.end()) {
+        result.above_range = it->first;
+        result.above_buffers = it->second;
+    }
+
+    // If at the beginning, there is nothing below.
+    // Otherwise, the element immediately preceding the lower_bound
+    // is the nearest range below the address.
+    if (it != buffer_address_map_.begin()) {
+        auto prev = it;
+        --prev;
+        result.below_range = prev->first;
+        result.below_buffers = prev->second;
+    }
+
+    return result;
+}
+
+void DeviceState::GetBufferAddressRanges(BufferAddressRange* ranges) const {
+    ReadLockGuard guard(buffer_address_lock_);
+
+    size_t written_count = 0;
+    for (const auto& [address_range, buffers] : buffer_address_map_) {
+        ranges[written_count++] = address_range;
     }
 }
 
