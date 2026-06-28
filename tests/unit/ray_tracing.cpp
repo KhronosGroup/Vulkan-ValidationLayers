@@ -4119,7 +4119,7 @@ TEST_F(NegativeRayTracing, GetAccelerationStructureBuildSizesNullMaxPrimitiveCou
     build_info.ppGeometries = NULL;
     build_info.scratchData.deviceAddress = 0;
     VkAccelerationStructureBuildSizesInfoKHR build_sizes_info = vku::InitStructHelper();
-    m_errorMonitor->SetDesiredError("VUID-vkGetAccelerationStructureBuildSizesKHR-pBuildInfo-03619");
+    m_errorMonitor->SetDesiredError("VUID-vkGetAccelerationStructureBuildSizesKHR-pMaxPrimitiveCounts-11612");
     vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, &build_info,
                                               nullptr, &build_sizes_info);
     m_errorMonitor->VerifyFound();

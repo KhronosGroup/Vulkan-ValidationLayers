@@ -62,12 +62,14 @@ bool CoreChecks::PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
                          pCreateInfo->offset, pCreateInfo->size, buffer_state->GetSize());
     }
 
-    if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
-        !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
-        skip |= LogError("VUID-vkCreateAccelerationStructureKHR-device-03489", device, error_obj.location,
-                         "device was created with multiple physical devices (%" PRIu32
-                         "), but the bufferDeviceAddressMultiDevice feature was not enabled.",
-                         device_state->physical_device_count);
+    if (pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR) {
+        if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
+            !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
+            skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-createFlags-11673", device, error_obj.location,
+                             "device was created with multiple physical devices (%" PRIu32
+                             "), but the bufferDeviceAddressMultiDevice feature was not enabled.",
+                             device_state->physical_device_count);
+        }
     }
     return skip;
 }
@@ -107,12 +109,14 @@ bool CoreChecks::PreCallValidateCreateAccelerationStructure2KHR(VkDevice device,
                                        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
                                        "VUID-VkAccelerationStructureCreateInfo2KHR-addressRange-11603");
 
-    if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
-        !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
-        skip |= LogError("VUID-vkCreateAccelerationStructure2KHR-device-03489", device, error_obj.location,
-                         "device was created with multiple physical devices (%" PRIu32
-                         "), but the bufferDeviceAddressMultiDevice feature was not enabled.",
-                         device_state->physical_device_count);
+    if (pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR) {
+        if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
+            !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
+            skip |= LogError("VUID-VkAccelerationStructureCreateInfo2KHR-createFlags-11673", device, error_obj.location,
+                             "device was created with multiple physical devices (%" PRIu32
+                             "), but the bufferDeviceAddressMultiDevice feature was not enabled.",
+                             device_state->physical_device_count);
+        }
     }
 
     skip |= ValidateDeviceAddressCommands(device, pCreateInfo->addressRange.address, pCreateInfo->addressRange.size,

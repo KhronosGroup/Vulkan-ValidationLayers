@@ -42,6 +42,12 @@ static VkAccelerationStructureBuildSizesInfoKHR ComputeBuildSizes(const VkDevice
 VkDeviceSize ComputeScratchSize(BuildType build_type, const VkDevice device,
                                 const VkAccelerationStructureBuildGeometryInfoKHR& build_info,
                                 const VkAccelerationStructureBuildRangeInfoKHR* range_infos) {
+    if (!range_infos) {
+        // range_infos is null for indirect builds (vkCmdBuildAccelerationStructuresIndirectKHR) or VK_GEOMETRY_TYPE_MICROMAP_KHR
+        // but because build ranges are stored in device memory and cannot be accessed during CPU-side validation. In this case, we
+        // cannot compute the actual acceleration structure size, so return 0.
+        return 0;
+    }
     const VkAccelerationStructureBuildSizesInfoKHR size_info =
         ComputeBuildSizes(device,
                           build_type == BuildType::Device ? VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR
@@ -62,6 +68,13 @@ VkDeviceSize ComputeScratchSize(BuildType build_type, const VkDevice device,
 VkDeviceSize ComputeAccelerationStructureSize(BuildType build_type, const VkDevice device,
                                               const VkAccelerationStructureBuildGeometryInfoKHR& build_info,
                                               const VkAccelerationStructureBuildRangeInfoKHR* range_infos) {
+    if (!range_infos) {
+        // range_infos is null for indirect builds (vkCmdBuildAccelerationStructuresIndirectKHR) or VK_GEOMETRY_TYPE_MICROMAP_KHR
+        // but because build ranges are stored in device memory and cannot be accessed during CPU-side validation. In this case, we
+        // cannot compute the actual acceleration structure size, so return 0.
+        return 0;
+    }
+
     const VkAccelerationStructureBuildSizesInfoKHR size_info =
         ComputeBuildSizes(device,
                           build_type == BuildType::Device ? VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR
