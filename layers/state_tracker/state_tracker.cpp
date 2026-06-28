@@ -7084,9 +7084,23 @@ std::string DeviceState::DescriptorHash::Describe(const DeviceState& device_stat
         return "[Bad Key]";
     }
 
-    const vvlDescriptorType vvl_type = (vvlDescriptorType)it->second.type;
-    const VkDescriptorType vk_type = GetDescriptorTypeFromMask(vvl_type);
-    ss << string_VkDescriptorType(vk_type);
+    vvlDescriptorType vvl_type = vvlDescriptorType::Invalid;
+
+    bool first = true;
+    // Loop all possible vvlDescriptorType (as might be multiple types)
+    for (uint8_t i = 0; i < vvlDescriptorMaxBit; i++) {
+        if (it->second.types & (1 << i)) {
+            // ok to set the second time (if more than one type)
+            // as they should be in the same group below
+            vvl_type = static_cast<vvlDescriptorType>(i);
+            VkDescriptorType vk_type = GetDescriptorTypeFromMask(vvl_type);
+            if (!first) {
+                ss << " | ";
+            }
+            ss << string_VkDescriptorType(vk_type);
+            first = false;
+        }
+    }
 
     auto list_buffers = [&device_state, &ss](VkDeviceAddress address) {
         auto buffer_states = device_state.GetBuffersByAddress(address);
@@ -7143,6 +7157,7 @@ std::string DeviceState::DescriptorHash::Describe(const DeviceState& device_stat
             break;
         }
         case vvlDescriptorType::CombinedSampler:
+        case vvlDescriptorType::Invalid:
             assert(false);  // this should not be hit
             break;
     }
@@ -7175,6 +7190,16 @@ void DeviceState::PostCallRecordWriteResourceDescriptorsEXT(VkDevice device, uin
                 descriptor_hash.debug_names.emplace(key, debug_info->pObjectName);
             }
         }
+
+        // It is possible that 2 descriptor of different types create the same descriptor
+        // Since we don't add null descriptors, should just skip those
+        // (Note - should only need to do for same "group" of descriptors
+        auto search_it = descriptor_hash.map.find(key);
+        if (search_it != descriptor_hash.map.end()) {
+            search_it->second.types |= 1 << vvl_type;
+            continue;
+        }
+
         switch (resource.type) {
             case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
             case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: {
@@ -7280,6 +7305,14 @@ void DeviceState::PostCallRecordGetDescriptorEXT(VkDevice device, const VkDescri
         if (debug_info->pObjectName) {
             descriptor_hash.debug_names.emplace(key, debug_info->pObjectName);
         }
+    }
+
+    // It is possible that 2 descriptor of different types create the same descriptor
+    // Since we don't add null descriptors, should just skip those
+    auto search_it = descriptor_hash.map.find(key);
+    if (search_it != descriptor_hash.map.end()) {
+        search_it->second.types |= 1 << vvl_type;
+        return;
     }
 
     switch (vk_type) {

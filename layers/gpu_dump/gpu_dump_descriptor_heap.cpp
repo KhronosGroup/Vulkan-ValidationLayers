@@ -484,8 +484,7 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address) {
         }
     }
 
-    const vvlDescriptorType found_type = (vvlDescriptorType)it->second.type;
-    if (found_type != GetMaskFromDescriptorType(dump.descriptor_type)) {
+    if ((it->second.types & (1 << (uint8_t)GetMaskFromDescriptorType(dump.descriptor_type))) == 0) {
         ss << new_bullet_line << "[WARNING] WRONG DESCRIPTOR - At 0x" << std::hex << address << " expected a "
            << string_VkDescriptorType(dump.descriptor_type)
            << " descriptor, but instead found a descriptor for: " << descriptor_hash.Describe(*dump.dev_data.device_state, key);
