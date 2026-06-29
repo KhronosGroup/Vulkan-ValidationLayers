@@ -30,14 +30,6 @@ const std::string& GetPipelineBinaryInfoVUID(const Location& loc, PipelineBinary
              {Key(Func::vkCreateExecutionGraphPipelinesAMDX), "VUID-vkCreateExecutionGraphPipelinesAMDX-pNext-09616"},
              {Key(Func::vkCreateComputePipelines), "VUID-vkCreateComputePipelines-pNext-09616"},
          }}},
-        {PipelineBinaryInfoError::PNext_09617,
-         {{
-             {Key(Func::vkCreateGraphicsPipelines), "VUID-vkCreateGraphicsPipelines-pNext-09617"},
-             {Key(Func::vkCreateRayTracingPipelinesNV), "VUID-vkCreateRayTracingPipelinesNV-pNext-09617"},
-             {Key(Func::vkCreateRayTracingPipelinesKHR), "VUID-vkCreateRayTracingPipelinesKHR-pNext-09617"},
-             {Key(Func::vkCreateExecutionGraphPipelinesAMDX), "VUID-vkCreateExecutionGraphPipelinesAMDX-pNext-09617"},
-             {Key(Func::vkCreateComputePipelines), "VUID-vkCreateComputePipelines-pNext-09617"},
-         }}},
         {PipelineBinaryInfoError::BinaryCount_09620,
          {{
              {Key(Func::vkCreateGraphicsPipelines), "VUID-vkCreateGraphicsPipelines-binaryCount-09620"},
@@ -61,22 +53,6 @@ const std::string& GetPipelineBinaryInfoVUID(const Location& loc, PipelineBinary
              {Key(Func::vkCreateRayTracingPipelinesKHR), "VUID-vkCreateRayTracingPipelinesKHR-binaryCount-09622"},
              {Key(Func::vkCreateExecutionGraphPipelinesAMDX), "VUID-vkCreateExecutionGraphPipelinesAMDX-binaryCount-09622"},
              {Key(Func::vkCreateComputePipelines), "VUID-vkCreateComputePipelines-binaryCount-09622"},
-         }}},
-        {PipelineBinaryInfoError::Flags_11311,
-         {{
-             {Key(Func::vkCreateGraphicsPipelines), "VUID-VkGraphicsPipelineCreateInfo-flags-11311"},
-             {Key(Func::vkCreateRayTracingPipelinesNV), "VUID-VkRayTracingPipelineCreateInfoNV-flags-11311"},
-             {Key(Func::vkCreateRayTracingPipelinesKHR), "VUID-VkRayTracingPipelineCreateInfoKHR-flags-11311"},
-             {Key(Func::vkCreateExecutionGraphPipelinesAMDX), "VUID-VkExecutionGraphPipelineCreateInfoAMDX-flags-11311"},
-             {Key(Func::vkCreateComputePipelines), "VUID-VkComputePipelineCreateInfo-flags-11311"},
-         }}},
-        {PipelineBinaryInfoError::Flags_11367,
-         {{
-             {Key(Func::vkCreateGraphicsPipelines), "UNASSIGNED"},  // not used
-             {Key(Func::vkCreateRayTracingPipelinesNV), "VUID-VkRayTracingPipelineCreateInfoNV-None-11368"},
-             {Key(Func::vkCreateRayTracingPipelinesKHR), "VUID-VkRayTracingPipelineCreateInfoKHR-None-11369"},
-             {Key(Func::vkCreateExecutionGraphPipelinesAMDX), "VUID-VkExecutionGraphPipelineCreateInfoAMDX-None-11363"},
-             {Key(Func::vkCreateComputePipelines), "VUID-VkComputePipelineCreateInfo-None-11367"},
          }}},
     };
 
@@ -123,6 +99,27 @@ const char *GetPipelineCreateFlagVUID(const Location &loc, PipelineCreateFlagErr
                 loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-flags-07369" :
                 loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-flags-07369" :
                 loc.function == Func::vkCreateDataGraphPipelinesARM   ? "VUID-VkDataGraphPipelineCreateInfoARM-flags-09773" :
+                kVUIDUndefined;
+        case PipelineCreateFlagError::PNext_09617:
+            return
+                loc.function == Func::vkCreateGraphicsPipelines       ? "VUID-vkCreateGraphicsPipelines-pNext-09617" :
+                loc.function == Func::vkCreateComputePipelines        ? "VUID-vkCreateComputePipelines-pNext-09617" :
+                loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-vkCreateRayTracingPipelinesKHR-pNext-09617" :
+                loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-vkCreateRayTracingPipelinesNV-pNext-09617" :
+                kVUIDUndefined;
+        case PipelineCreateFlagError::Flags_11311:
+            return
+                loc.function == Func::vkCreateGraphicsPipelines       ? "VUID-VkGraphicsPipelineCreateInfo-flags-11311" :
+                loc.function == Func::vkCreateComputePipelines        ? "VUID-VkComputePipelineCreateInfo-flags-11311" :
+                loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-flags-11311" :
+                loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-flags-11311" :
+                kVUIDUndefined;
+        case PipelineCreateFlagError::Flags_11367:
+            return
+                // vkCreateGraphicsPipelines not used
+                loc.function == Func::vkCreateComputePipelines        ? "VUID-VkComputePipelineCreateInfo-None-11367" :
+                loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-None-11369" :
+                loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-None-11368" :
                 kVUIDUndefined;
     }
     return "UNASSIGNED-CoreChecks-unhandled-pipeline-create-flags";
