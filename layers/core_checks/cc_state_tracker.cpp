@@ -1422,33 +1422,34 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
     }
 }
 
-RenderingAttachment::RenderingAttachment(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
-                                         const VkRenderingAttachmentInfo& info, const Location& loc, RenderingAttachment::Type type)
-    : cb_state(cb_state), rendering_info(rendering_info), info(info), loc(loc), type(type) {
-    image_view_state = cb_state.dev_data.Get<vvl::ImageView>(info.imageView);
-    resolve_view_state = cb_state.dev_data.Get<vvl::ImageView>(info.resolveImageView);
-}
+RenderingAttachment::RenderingAttachment(const VkRenderingInfo& rendering_info, const VkRenderingAttachmentInfo& info,
+                                         const Location& loc, const LogObjectList& objlist,
+                                         std::shared_ptr<const vvl::ImageView> image_view_state,
+                                         std::shared_ptr<const vvl::ImageView> resolve_view_state,
+                                         Type type)
+    : rendering_info(rendering_info), info(info), loc(loc), type(type), objlist(objlist),
+      image_view_state(std::move(image_view_state)), resolve_view_state(std::move(resolve_view_state)) {}
 
 LogObjectList RenderingAttachment::GetObjectList() const {
-    LogObjectList objlist(cb_state.Handle());
+    LogObjectList result = objlist;
     if (image_view_state) {
-        objlist.add(image_view_state->Handle(), image_view_state->image_state->Handle());
+        result.add(image_view_state->Handle(), image_view_state->image_state->Handle());
     }
     if (resolve_view_state) {
-        objlist.add(resolve_view_state->Handle(), resolve_view_state->image_state->Handle());
+        result.add(resolve_view_state->Handle(), resolve_view_state->image_state->Handle());
     }
-    return objlist;
+    return result;
 }
 
 LogObjectList RenderingAttachment::GetObjectList(const core::RenderingAttachment& other_attachment) const {
-    LogObjectList objlist = GetObjectList();
+    LogObjectList result = GetObjectList();
     if (other_attachment.image_view_state) {
-        objlist.add(other_attachment.image_view_state->Handle(), other_attachment.image_view_state->image_state->Handle());
+        result.add(other_attachment.image_view_state->Handle(), other_attachment.image_view_state->image_state->Handle());
     }
     if (other_attachment.resolve_view_state) {
-        objlist.add(other_attachment.resolve_view_state->Handle(), other_attachment.resolve_view_state->image_state->Handle());
+        result.add(other_attachment.resolve_view_state->Handle(), other_attachment.resolve_view_state->image_state->Handle());
     }
-    return objlist;
+    return result;
 }
 
 }  // namespace core
