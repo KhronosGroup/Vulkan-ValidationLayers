@@ -588,52 +588,25 @@ bool Device::ValidatePipelineShaderStageCreateInfoCommon(const Context& context,
 }
 
 // Called from graphics, compute, raytracing, etc
-bool Device::ValidatePipelineBinaryInfo(const void* next, VkPipelineCreateFlags flags, VkPipelineCache pipelineCache,
-                                        VkPipelineLayout layout, const Location& loc) const {
+bool Device::ValidatePipelineBinaryInfo(const void* next, VkPipelineCreateFlags2 create_flags_2, VkPipelineCache pipeline_cache,
+                                        const Location& loc) const {
     bool skip = false;
-    const auto* temp_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(next);
-    const VkPipelineCreateFlags2 create_flags_2 = temp_flags_2 ? temp_flags_2->flags : static_cast<VkPipelineCreateFlags2>(flags);
-    const Location flag_loc =
-        temp_flags_2 ? loc.pNext(Struct::VkPipelineCreateFlags2CreateInfo, Field::flags) : loc.dot(Field::flags);
-
-    if ((create_flags_2 & VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR) != 0 && (pipelineCache != VK_NULL_HANDLE)) {
-        skip |= LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::PNext_09617), device, flag_loc,
-                         "(%s) includes VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR while "
-                         "pipelineCache is not VK_NULL_HANDLE.",
-                         string_VkPipelineCreateFlags2(create_flags_2).c_str());
-    }
-
-    if ((create_flags_2 & VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT) != 0 && layout != VK_NULL_HANDLE) {
-        skip |= LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::Flags_11311), device, flag_loc,
-                         "(%s) includes VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT while layout is not VK_NULL_HANDLE (%s).",
-                         string_VkPipelineCreateFlags2(create_flags_2).c_str(), FormatHandle(layout).c_str());
-    } else if ((create_flags_2 & VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT) == 0 && layout == VK_NULL_HANDLE) {
-        // The check is not found directly in the graphics pipeline because of all the rules around dynamic rendering and GPL (it is
-        // all caught elsewhere where layout must be valid)
-        if (flag_loc.function != Func::vkCreateGraphicsPipelines) {
-            skip |= LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::Flags_11367), device, flag_loc,
-                             "(%s) does not include VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT while layout is VK_NULL_HANDLE.%s",
-                             string_VkPipelineCreateFlags2(flags).c_str(),
-                             !temp_flags_2 ? " (Make sure you set it with VkPipelineCreateFlags2CreateInfo)" : "");
-        }
-    }
 
     const auto binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(next);
 
     if (binary_info && (binary_info->binaryCount > 0)) {
-        if (pipelineCache != VK_NULL_HANDLE) {
+        if (pipeline_cache != VK_NULL_HANDLE) {
             skip |=
-                LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::PNext_09616), device,
+                LogError(GetPipelineBinaryInfoVUID(loc, vvl::PipelineBinaryInfoError::PNext_09616), device,
                          loc.pNext(Struct::VkPipelineBinaryInfoKHR, Field::binaryCount),
                          "(%" PRIu32 ") is greater than zero while pipelineCache is not VK_NULL_HANDLE.", binary_info->binaryCount);
         }
 
-        const auto creation_feedback = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(next);
-        if (creation_feedback) {
+        if (const auto creation_feedback = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(next)) {
             if (creation_feedback->pPipelineCreationFeedback->flags &
                 VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT) {
                 skip |= LogError(
-                    GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::BinaryCount_09620), device,
+                    GetPipelineBinaryInfoVUID(loc, vvl::PipelineBinaryInfoError::BinaryCount_09620), device,
                     loc.pNext(Struct::VkPipelineCreationFeedbackCreateInfo, Field::pPipelineCreationFeedback).dot(Field::flags),
                     "(%s) includes VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT while "
                     "binaryCount is greater than zero.",
@@ -643,7 +616,7 @@ bool Device::ValidatePipelineBinaryInfo(const void* next, VkPipelineCreateFlags 
             if (creation_feedback->pPipelineCreationFeedback->flags &
                 VK_PIPELINE_CREATION_FEEDBACK_BASE_PIPELINE_ACCELERATION_BIT) {
                 skip |= LogError(
-                    GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::BinaryCount_09621), device,
+                    GetPipelineBinaryInfoVUID(loc, vvl::PipelineBinaryInfoError::BinaryCount_09621), device,
                     loc.pNext(Struct::VkPipelineCreationFeedbackCreateInfo, Field::pPipelineCreationFeedback).dot(Field::flags),
                     "(%s) includes VK_PIPELINE_CREATION_FEEDBACK_BASE_PIPELINE_ACCELERATION_BIT while "
                     "binaryCount is greater than zero.",
@@ -652,10 +625,10 @@ bool Device::ValidatePipelineBinaryInfo(const void* next, VkPipelineCreateFlags 
         }
 
         if (create_flags_2 & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT) {
-            skip |= LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::BinaryCount_09622), device, flag_loc,
-                             "(%s) includes VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT while "
+            skip |= LogError(GetPipelineBinaryInfoVUID(loc, vvl::PipelineBinaryInfoError::BinaryCount_09622), device, loc,
+                             "flags (%s) includes VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT while "
                              "binaryCount is greater than zero.",
-                             string_VkPipelineCreateFlags2(flags).c_str());
+                             string_VkPipelineCreateFlags2(create_flags_2).c_str());
         }
     }
 
@@ -830,7 +803,8 @@ bool Device::ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2 f
     return skip;
 }
 
-bool Device::ValidateCreatePipelinesFlagsCommon(VkPipelineCreateFlags2 flags, const Location& flags_loc) const {
+bool Device::ValidateCreatePipelinesFlagsCommon(VkPipelineCreateFlags2 flags, const Location& flags_loc,
+                                                VkPipelineCache pipeline_cache, VkPipelineLayout layout) const {
     bool skip = false;
 
     if (flags_loc.function == Func::vkCreateGraphicsPipelines) {
@@ -876,6 +850,28 @@ bool Device::ValidateCreatePipelinesFlagsCommon(VkPipelineCreateFlags2 flags, co
         }
     }
 
+    if ((flags & VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR) != 0 && (pipeline_cache != VK_NULL_HANDLE)) {
+        skip |= LogError(GetPipelineCreateFlagVUID(flags_loc, vvl::PipelineCreateFlagError::PNext_09617), device, flags_loc,
+                         "(%s) includes VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR while "
+                         "pipelineCache is not VK_NULL_HANDLE.",
+                         string_VkPipelineCreateFlags2(flags).c_str());
+    }
+
+    if ((flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT) != 0 && layout != VK_NULL_HANDLE) {
+        skip |= LogError(GetPipelineCreateFlagVUID(flags_loc, vvl::PipelineCreateFlagError::Flags_11311), device, flags_loc,
+                         "(%s) includes VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT while layout is not VK_NULL_HANDLE (%s).",
+                         string_VkPipelineCreateFlags2(flags).c_str(), FormatHandle(layout).c_str());
+    } else if ((flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT) == 0 && layout == VK_NULL_HANDLE) {
+        // The check is not found directly in the graphics pipeline because of all the rules around dynamic rendering and GPL (it is
+        // all caught elsewhere where layout must be valid)
+        if (flags_loc.function != Func::vkCreateGraphicsPipelines) {
+            skip |= LogError(GetPipelineCreateFlagVUID(flags_loc, vvl::PipelineCreateFlagError::Flags_11367), device, flags_loc,
+                             "(%s) does not include VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT while layout is "
+                             "VK_NULL_HANDLE.\nHint: Make sure you set it with VkPipelineCreateFlags2CreateInfo",
+                             string_VkPipelineCreateFlags2(flags).c_str());
+        }
+    }
+
     return skip;
 }
 
@@ -907,7 +903,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         } else {
             skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, flags_loc);
         }
-        skip |= ValidateCreatePipelinesFlagsCommon(flags, flags_loc);
+        skip |= ValidateCreatePipelinesFlagsCommon(flags, flags_loc, pipelineCache, create_info.layout);
 
         const auto* graphics_lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
         if (graphics_lib_info) {
@@ -1779,8 +1775,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             }
         }
 
-        skip |=
-            ValidatePipelineBinaryInfo(create_info.pNext, create_info.flags, pipelineCache, create_info.layout, create_info_loc);
+        skip |= ValidatePipelineBinaryInfo(create_info.pNext, flags, pipelineCache, create_info_loc);
     }
 
     return skip;
@@ -1903,7 +1898,7 @@ bool Device::manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPip
         } else {
             skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, flags_loc);
         }
-        skip |= ValidateCreatePipelinesFlagsCommon(flags, flags_loc);
+        skip |= ValidateCreatePipelinesFlagsCommon(flags, flags_loc, pipelineCache, create_info.layout);
 
         // Make sure compute stage is selected
         if (create_info.stage.stage != VK_SHADER_STAGE_COMPUTE_BIT) {
@@ -1931,8 +1926,7 @@ bool Device::manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 
         skip |= ValidatePipelineShaderStageCreateInfoCommon(context, create_info.stage, create_info_loc.dot(Field::stage));
 
-        skip |=
-            ValidatePipelineBinaryInfo(create_info.pNext, create_info.flags, pipelineCache, create_info.layout, create_info_loc);
+        skip |= ValidatePipelineBinaryInfo(create_info.pNext, flags, pipelineCache, create_info_loc);
     }
     return skip;
 }

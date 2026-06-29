@@ -68,7 +68,8 @@ bool Device::manual_PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, 
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         const VkDataGraphPipelineCreateInfoARM& create_info = pCreateInfos[i];
 
-        skip |= ValidateCreatePipelinesFlagsCommon(create_info.flags, create_info_loc.dot(Field::flags));
+        skip |= ValidateCreatePipelinesFlagsCommon(create_info.flags, create_info_loc.dot(Field::flags), pipelineCache,
+                                                   create_info.layout);
 
         if (deferredOperation != VK_NULL_HANDLE && (create_info.flags & VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT)) {
             skip |= LogError(
