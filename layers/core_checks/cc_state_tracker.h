@@ -258,7 +258,7 @@ class QueueSubState : public vvl::QueueSubState {
     vvl::SubmitTimeTracker* submit_time_tracker = nullptr;
 };
 
-// When validating vkCmdBeginRendering we need to loop the Color attachments, depth, stencil and their resolve attachments as well
+// When validating rendering info we need to loop the color attachments, depth, stencil and their resolve attachments as well
 // The goal is to have a single object so we only need to walk these attachments once and then all the various checks can use the
 // same data
 struct RenderingAttachment {
@@ -269,15 +269,17 @@ struct RenderingAttachment {
         Stencil,
     };
 
-    RenderingAttachment(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
-                        const VkRenderingAttachmentInfo& info, const Location& loc, Type type);
+    RenderingAttachment(const VkRenderingInfo& rendering_info, const VkRenderingAttachmentInfo& info, const Location& loc,
+                        const LogObjectList& objlist, std::shared_ptr<const vvl::ImageView> image_view_state,
+                        std::shared_ptr<const vvl::ImageView> resolve_view_state, Type type);
 
-    const vvl::CommandBuffer& cb_state;
     const VkRenderingInfo& rendering_info;
 
     const VkRenderingAttachmentInfo& info;
     vvl::LocationCapture loc;
     const Type type;
+
+    LogObjectList objlist;
 
     std::shared_ptr<const vvl::ImageView> image_view_state;
     std::shared_ptr<const vvl::ImageView> resolve_view_state;
