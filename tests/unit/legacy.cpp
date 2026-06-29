@@ -39,10 +39,6 @@ TEST_F(NegativeLegacy, MultipleDifferentWarnings) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework(&kLegacySettingCreateInfo));
     RETURN_IF_SKIP(InitState());
-    if (IsPlatformMockICD()) {
-        // Works locally
-        GTEST_SKIP() << "Github Action doesn't unload VVL and static reported bool is not reset";
-    }
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     VkSubpassDescription subpass = {};
@@ -73,10 +69,6 @@ TEST_F(NegativeLegacy, MuteSingleWarning) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
     RETURN_IF_SKIP(InitState());
-    if (IsPlatformMockICD()) {
-        // Works locally
-        GTEST_SKIP() << "Github Action doesn't unload VVL and static reported bool is not reset";
-    }
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     VkSubpassDescription subpass = {};
@@ -97,13 +89,6 @@ TEST_F(NegativeLegacy, GetPhysicalDeviceProperties2Extension) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework(&kLegacySettingCreateInfo));
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    if (IsPlatformMockICD()) {
-        // Works locally
-        GTEST_SKIP() << "Github Action doesn't unload VVL and static reported bool is not reset";
-    }
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(VK_USE_PLATFORM_METAL_EXT)
-    GTEST_SKIP() << "Android/macOS doesn't unload VVL and static reported bool is not reset";
-#endif
 
     m_errorMonitor->SetDesiredWarning("WARNING-legacy-gpdp2");
     VkPhysicalDeviceFeatures features{};
@@ -124,13 +109,6 @@ TEST_F(NegativeLegacy, GetPhysicalDeviceProperties2Version) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitFramework(&kLegacySettingCreateInfo));
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    if (IsPlatformMockICD()) {
-        // Works locally
-        GTEST_SKIP() << "Github Action doesn't unload VVL and static reported bool is not reset";
-    }
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(VK_USE_PLATFORM_METAL_EXT)
-    GTEST_SKIP() << "Android/macOS doesn't unload VVL and static reported bool is not reset";
-#endif
 
     m_errorMonitor->SetDesiredWarning("WARNING-legacy-gpdp2");
     VkPhysicalDeviceFeatures features{};

@@ -18,6 +18,7 @@
 
 import os
 from base_generator import BaseGenerator
+from generators.generator_utils import destroyObject
 
 class LegacyGenerator(BaseGenerator):
     def __init__(self):
@@ -109,6 +110,14 @@ class LegacyGenerator(BaseGenerator):
             prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
             out.append(f'bool PreCallValidate{prePrototype} const override;\n')
 
+        out.append('\n')
+        # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12556
+        out.append("// Make sure we only report each warning once for the user\n")
+        for command in [x for x in self.vk.commands.values() if x.legacy and x.instance]:
+            if destroyObject(command.name):
+                continue
+            out.append(f'mutable bool reported_{command.name[2:]} = false;\n')
+
         out.append('''
             };
 
@@ -125,12 +134,20 @@ class LegacyGenerator(BaseGenerator):
 
         for command in [x for x in self.vk.commands.values() if x.legacy and x.device]:
             # There is really no good use to warn developer both the create and destroy are superseded
-            if command.name.startswith('vkDestroy'):
+            if destroyObject(command.name):
                 continue
 
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
             prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
             out.append(f'bool PreCallValidate{prePrototype} const override;\n')
+
+        out.append('\n')
+        # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12556
+        out.append("// Make sure we only report each warning once for the user\n")
+        for command in [x for x in self.vk.commands.values() if x.legacy and x.device]:
+            if destroyObject(command.name):
+                continue
+            out.append(f'mutable bool reported_{command.name[2:]} = false;\n')
 
         out.append('};')
         out.append('}  // namespace legacy')
@@ -153,7 +170,7 @@ class LegacyGenerator(BaseGenerator):
         #    want to report those (as discussed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8072).
         for command in [x for x in self.vk.commands.values() if x.legacy]:
             # There is really no good use to warn developer both the create and destroy are superseded
-            if command.name.startswith('vkDestroy'):
+            if destroyObject(command.name):
                 continue
 
             extra = ''
@@ -167,10 +184,10 @@ class LegacyGenerator(BaseGenerator):
 
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
             prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
+            reportedMember = f'reported_{command.name[2:]}'
             out.append(f'''
                 bool {className}::PreCallValidate{prePrototype} const {{
-                    static bool reported = false;
-                    if (reported) return false;
+                    if ({reportedMember}) return false;
                 ''')
 
             firstCheck = True
@@ -184,7 +201,7 @@ class LegacyGenerator(BaseGenerator):
 
                 out.append(f'''
                     {logic} (api_version >= {command.legacy.version.nameApi}) {{
-                        reported = true;
+                        {reportedMember} = true;
                         LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
                             "{command.name} is a legacy command and this {handleName} was created with {command.legacy.version.name} {replacement}.{extra}\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                     }}''')
@@ -210,7 +227,7 @@ class LegacyGenerator(BaseGenerator):
 
                 out.append(f'''
                     {logic} (IsExtEnabled(extensions.{extension.lower()})) {{
-                        reported = true;
+                        {reportedMember} = true;
                         LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
                             "{command.name} is a legacy command and this {handleName} enabled the {extension} extension {replacement}.{extra}\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                     }}''')

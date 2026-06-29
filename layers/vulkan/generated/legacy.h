@@ -89,6 +89,18 @@ class Instance : public vvl::BaseInstance {
     bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                            uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
                                                            const ErrorObject& error_obj) const override;
+
+    // Make sure we only report each warning once for the user
+    mutable bool reported_GetPhysicalDeviceFeatures = false;
+    mutable bool reported_GetPhysicalDeviceFormatProperties = false;
+    mutable bool reported_GetPhysicalDeviceImageFormatProperties = false;
+    mutable bool reported_GetPhysicalDeviceProperties = false;
+    mutable bool reported_GetPhysicalDeviceQueueFamilyProperties = false;
+    mutable bool reported_GetPhysicalDeviceMemoryProperties = false;
+    mutable bool reported_EnumerateDeviceLayerProperties = false;
+    mutable bool reported_GetPhysicalDeviceSparseImageFormatProperties = false;
+    mutable bool reported_GetPhysicalDeviceSurfaceCapabilitiesKHR = false;
+    mutable bool reported_GetPhysicalDeviceSurfaceFormatsKHR = false;
 };
 
 class Device : public vvl::BaseDevice {
@@ -135,8 +147,6 @@ class Device : public vvl::BaseDevice {
                                             const ErrorObject& error_obj) const override;
     bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj) const override;
-    bool PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-                                           const VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj) const override;
     bool PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                              const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
                                              const VkCopyDescriptorSet* pDescriptorCopies,
@@ -279,6 +289,71 @@ class Device : public vvl::BaseDevice {
                                                          VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                          uint32_t maxDrawCount, uint32_t stride,
                                                          const ErrorObject& error_obj) const override;
+
+    // Make sure we only report each warning once for the user
+    mutable bool reported_QueueSubmit = false;
+    mutable bool reported_CmdUpdateBuffer = false;
+    mutable bool reported_CmdFillBuffer = false;
+    mutable bool reported_CmdPipelineBarrier = false;
+    mutable bool reported_CmdWriteTimestamp = false;
+    mutable bool reported_CmdCopyQueryPoolResults = false;
+    mutable bool reported_CreateBufferView = false;
+    mutable bool reported_CreatePipelineLayout = false;
+    mutable bool reported_CreateSampler = false;
+    mutable bool reported_CreateDescriptorSetLayout = false;
+    mutable bool reported_CreateDescriptorPool = false;
+    mutable bool reported_ResetDescriptorPool = false;
+    mutable bool reported_AllocateDescriptorSets = false;
+    mutable bool reported_UpdateDescriptorSets = false;
+    mutable bool reported_CmdBindDescriptorSets = false;
+    mutable bool reported_CmdDispatchIndirect = false;
+    mutable bool reported_CmdSetEvent = false;
+    mutable bool reported_CmdResetEvent = false;
+    mutable bool reported_CmdWaitEvents = false;
+    mutable bool reported_CmdPushConstants = false;
+    mutable bool reported_CreateFramebuffer = false;
+    mutable bool reported_CreateRenderPass = false;
+    mutable bool reported_GetRenderAreaGranularity = false;
+    mutable bool reported_CmdDrawIndirect = false;
+    mutable bool reported_CmdDrawIndexedIndirect = false;
+    mutable bool reported_CmdBeginRenderPass = false;
+    mutable bool reported_CmdNextSubpass = false;
+    mutable bool reported_CmdEndRenderPass = false;
+    mutable bool reported_CmdDrawIndirectCount = false;
+    mutable bool reported_CmdDrawIndexedIndirectCount = false;
+    mutable bool reported_CreateRenderPass2 = false;
+    mutable bool reported_CmdBeginRenderPass2 = false;
+    mutable bool reported_CmdNextSubpass2 = false;
+    mutable bool reported_CmdEndRenderPass2 = false;
+    mutable bool reported_CmdCopyBuffer2 = false;
+    mutable bool reported_CmdCopyBufferToImage2 = false;
+    mutable bool reported_CmdCopyImageToBuffer2 = false;
+    mutable bool reported_CmdBindDescriptorSets2 = false;
+    mutable bool reported_CmdPushConstants2 = false;
+    mutable bool reported_CmdBindIndexBuffer2 = false;
+    mutable bool reported_CmdSetDescriptorBufferOffsets2EXT = false;
+    mutable bool reported_CmdBindDescriptorBufferEmbeddedSamplers2EXT = false;
+    mutable bool reported_CmdBindTransformFeedbackBuffersEXT = false;
+    mutable bool reported_CmdBeginTransformFeedbackEXT = false;
+    mutable bool reported_CmdEndTransformFeedbackEXT = false;
+    mutable bool reported_CmdDrawIndirectByteCountEXT = false;
+    mutable bool reported_CmdBeginConditionalRenderingEXT = false;
+    mutable bool reported_CmdWriteBufferMarker2AMD = false;
+    mutable bool reported_CmdBindVertexBuffers2EXT = false;
+    mutable bool reported_GetDescriptorSetLayoutSizeEXT = false;
+    mutable bool reported_GetDescriptorSetLayoutBindingOffsetEXT = false;
+    mutable bool reported_GetDescriptorEXT = false;
+    mutable bool reported_CmdBindDescriptorBuffersEXT = false;
+    mutable bool reported_CmdSetDescriptorBufferOffsetsEXT = false;
+    mutable bool reported_CmdBindDescriptorBufferEmbeddedSamplersEXT = false;
+    mutable bool reported_GetBufferOpaqueCaptureDescriptorDataEXT = false;
+    mutable bool reported_GetImageOpaqueCaptureDescriptorDataEXT = false;
+    mutable bool reported_GetImageViewOpaqueCaptureDescriptorDataEXT = false;
+    mutable bool reported_GetSamplerOpaqueCaptureDescriptorDataEXT = false;
+    mutable bool reported_GetAccelerationStructureOpaqueCaptureDescriptorDataEXT = false;
+    mutable bool reported_CreateAccelerationStructureKHR = false;
+    mutable bool reported_CmdDrawMeshTasksIndirectEXT = false;
+    mutable bool reported_CmdDrawMeshTasksIndirectCountEXT = false;
 };
 }  // namespace legacy
 // NOLINTEND
