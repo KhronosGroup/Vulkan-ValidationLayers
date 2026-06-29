@@ -83,4 +83,22 @@ VkDeviceSize ComputeAccelerationStructureSize(BuildType build_type, const VkDevi
     return size_info.accelerationStructureSize;
 }
 
+uint64_t MicromapUsageTotalTriangleCount(const VkAccelerationStructureBuildGeometryInfoKHR& build_info) {
+    if (build_info.geometryCount == 0) {
+        return 0;
+    }
+
+    const VkAccelerationStructureGeometryKHR& geometry = GetGeometry(build_info, 0);
+    const auto* micromap_data = vku::FindStructInPNextChain<VkAccelerationStructureGeometryMicromapDataKHR>(geometry.pNext);
+    if (!micromap_data) {
+        return 0;
+    }
+
+    uint64_t total = 0;
+    for (uint32_t usage_i = 0; usage_i < micromap_data->usageCountsCount; ++usage_i) {
+        total += GetMicroMapUsage(*micromap_data, usage_i).count;
+    }
+    return total;
+}
+
 }  // namespace rt

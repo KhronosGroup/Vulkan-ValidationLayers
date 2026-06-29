@@ -3216,6 +3216,19 @@ void DeviceState::PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, 
             as_state->SetAccelerationStructureAddress(0);
         }
     }
+    // Remove any serialized_as_map_ entries whose source AS is being destroyed.
+    // Without this, the map grows unboundedly because entries are never removed.
+    // Once the source AS is gone its build info can no longer be propagated anyway.
+    {
+        WriteLockGuard guard(serialized_as_map_lock_);
+        for (auto it = serialized_as_map_.begin(); it != serialized_as_map_.end();) {
+            if (it->second == accelerationStructure) {
+                it = serialized_as_map_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
     Destroy<AccelerationStructureKHR>(accelerationStructure);
 }
 
@@ -6077,6 +6090,48 @@ void DeviceState::PostCallRecordCopyAccelerationStructureKHR(VkDevice device, Vk
     }
 }
 
+void DeviceState::PostCallRecordCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                                     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
+                                                                     const RecordObject& record_obj) {
+    // Might be deferred
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
+    // Record the mapping from serialized host address to original AS handle,
+    // so that when the data is later deserialized, we can copy the build info.
+    if (pInfo->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR && pInfo->dst.hostAddress != nullptr) {
+        WriteLockGuard guard(serialized_as_map_lock_);
+        serialized_as_map_[pInfo->dst.hostAddress] = pInfo->src;
+    }
+}
+
+void DeviceState::PostCallRecordCopyMemoryToAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                                     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
+                                                                     const RecordObject& record_obj) {
+    // Might be deferred
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
+    auto dst_as_state = Get<AccelerationStructureKHR>(pInfo->dst);
+    ASSERT_AND_RETURN(dst_as_state);
+    if (pInfo->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR) {
+        dst_as_state->MarkAsDeserialized();
+        // Look up the original AS from the serialized data address and copy its build info
+        if (pInfo->src.hostAddress != nullptr) {
+            ReadLockGuard guard(serialized_as_map_lock_);
+            auto it = serialized_as_map_.find(pInfo->src.hostAddress);
+            if (it != serialized_as_map_.end()) {
+                auto src_as_state = Get<AccelerationStructureKHR>(it->second);
+                // The source AS may have been destroyed between finding the entry in
+                // serialized_as_map_ and calling Get()
+                if (src_as_state) {
+                    dst_as_state->SetBuildInfo(src_as_state->GetBuildInfo());
+                }
+            }
+        }
+    }
+}
+
 void DeviceState::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                                 const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                                 const RecordObject& record_obj) {
@@ -6113,9 +6168,15 @@ void DeviceState::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkComman
                                                                         const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCommand(record_obj.location);
+
+    auto dst_as_state = Get<AccelerationStructureKHR>(pInfo->dst);
+    ASSERT_AND_RETURN(dst_as_state);
+
+    if (pInfo->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR) {
+        dst_as_state->MarkAsDeserialized();
+    }
+
     if (!disabled[command_buffer_state]) {
-        auto dst_as_state = Get<AccelerationStructureKHR>(pInfo->dst);
-        ASSERT_AND_RETURN(dst_as_state);
         cb_state->AddChild(dst_as_state);
 
         // Issue https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6461

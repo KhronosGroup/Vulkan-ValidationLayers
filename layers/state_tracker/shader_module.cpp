@@ -319,6 +319,9 @@ void ExecutionModeSet::Add(const Instruction& insn) {
         case spv::ExecutionModeShader64BitIndexingEXT:
             flags |= shader_64bit_indexing;
             break;
+        case spv::ExecutionModeOpacityMicromapIdKHR:
+            flags |= opacity_micromap_khr;
+            break;
         default:
             break;
     }
