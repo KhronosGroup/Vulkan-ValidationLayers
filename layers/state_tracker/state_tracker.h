@@ -1789,6 +1789,12 @@ class DeviceState : public vvl::BaseDevice {
     void PostCallRecordCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                     const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                     const RecordObject& record_obj) override;
+    void PostCallRecordCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                            const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
+                                                            const RecordObject& record_obj) override;
+    void PostCallRecordCopyMemoryToAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                            const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
+                                                            const RecordObject& record_obj) override;
     void PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                        const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                        const RecordObject& record_obj) override;
@@ -2217,6 +2223,12 @@ class DeviceState : public vvl::BaseDevice {
     void UpdateCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* cb_state, const vvl::range<VkDeviceAddress>& new_range,
                                                    bool is_sampler);
     void RemoveCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* cb_state);
+
+    // Map from serialized data host address to original AS handle.
+    // Used to track host-side serialization/deserialization of acceleration structures
+    // so that build info can be propagated from the original AS to the deserialized AS.
+    vvl::unordered_map<const void*, VkAccelerationStructureKHR> serialized_as_map_;
+    mutable std::shared_mutex serialized_as_map_lock_;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     // If vkGetMemoryWin32HandleKHR is called, keep track of HANDLE -> allocation info

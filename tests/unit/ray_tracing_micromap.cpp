@@ -594,8 +594,7 @@ TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureMicromapData) {
     }
 }
 
-// TODO - core checks
-TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureMicromapData2) {
+TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureMicromapData2) {
     RETURN_IF_SKIP(InitMicromapTest());
 
     // BLAS used as intentionally wrong dst type in block 3 to trigger dstAccelerationStructure validation
@@ -639,8 +638,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureMicroma
     m_command_buffer.End();
 }
 
-// TODO - core checks
-TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureMicromapUsage) {
+TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureMicromapUsage) {
     RETURN_IF_SKIP(InitMicromapTest());
 
     auto micromap_as = vkt::as::blueprint::AccelStructSimpleOnDeviceMicromap(*m_device, 4096);
@@ -685,8 +683,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureMicroma
     m_command_buffer.End();
 }
 
-// TODO - core checks
-TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureTriangleMicromap) {
+TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureTriangleMicromap) {
     RETURN_IF_SKIP(InitMicromapTest());
 
     auto micromap_as = vkt::as::blueprint::AccelStructSimpleOnDeviceMicromap(*m_device, 4096);
@@ -818,8 +815,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureTriangl
     }
 }
 
-// TODO - core checks
-TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureTriangleMicromapIndexValidation) {
+TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureTriangleMicromapIndexValidation) {
     RETURN_IF_SKIP(InitMicromapTest());
 
     auto micromap_as = vkt::as::blueprint::AccelStructSimpleOnDeviceMicromap(*m_device, 4096);
@@ -972,8 +968,7 @@ TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureTriangleMicromap
     m_command_buffer.End();
 }
 
-// TODO - core checks
-TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureIndexType) {
+TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureIndexType) {
     RETURN_IF_SKIP(InitMicromapTest());
 
     auto micromap_as = vkt::as::blueprint::AccelStructSimpleOnDeviceMicromap(*m_device, 4096);
@@ -1247,8 +1242,7 @@ TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructuresBuildSizesKHR) 
     }
 }
 
-// TODO - core checks
-TEST_F(NegativeRayTracingMicromap, DISABLED_WriteAccelerationStructuresProperties) {
+TEST_F(NegativeRayTracingMicromap, WriteAccelerationStructuresProperties) {
     AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
     RETURN_IF_SKIP(InitMicromapTest());
 
@@ -1265,7 +1259,6 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_WriteAccelerationStructuresPropertie
     constexpr size_t data_size = sizeof(VkDeviceSize) * stride;
     uint8_t data[data_size];
 
-    m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-11591");
     m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-11592");
     vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &as, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR,
                                                  data_size, data, sizeof(VkDeviceSize));
@@ -1273,8 +1266,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_WriteAccelerationStructuresPropertie
     vk::DestroyAccelerationStructureKHR(device(), as, nullptr);
 }
 
-// TODO - core checks
-TEST_F(NegativeRayTracingMicromap, DISABLED_CopyAccelerationStructureToMemoryKHR) {
+TEST_F(NegativeRayTracingMicromap, CopyAccelerationStructureToMemoryKHR) {
     AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
     RETURN_IF_SKIP(InitMicromapTest());
 
@@ -1319,7 +1311,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CopyAccelerationStructureToMemoryKHR
     vk::DestroyAccelerationStructureKHR(device(), as, nullptr);
 }
 
-// TODO - core checks
+// TODO - will add as part of GPU-AV
 TEST_F(NegativeRayTracingMicromap, DISABLED_CopyMemoryToAccelerationStructureKHR) {
     AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
     RETURN_IF_SKIP(InitMicromapTest());
@@ -1355,7 +1347,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CopyMemoryToAccelerationStructureKHR
     }
 }
 
-// TODO - core checks
+// TODO - will add as part of GPU-AV
 TEST_F(NegativeRayTracingMicromap, DISABLED_CopyMemoryToAccelerationStructureKHRFeatureDisabled) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -1389,8 +1381,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CopyMemoryToAccelerationStructureKHR
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - core checks
-TEST_F(NegativeRayTracingMicromap, DISABLED_CopyMemoryToFromAccelStructUnbound) {
+TEST_F(NegativeRayTracingMicromap, CopyMemoryToFromAccelStructUnbound) {
     AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
     RETURN_IF_SKIP(InitMicromapTest());
 
@@ -1484,7 +1475,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CopyMemoryToFromAccelStructUnbound) 
     }
 }
 
-// TODO - core checks
+// TODO - validation needs to be added as part of GPU-AV
 TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureUpdateMicromapConsistency) {
     RETURN_IF_SKIP(InitMicromapTest());
 
@@ -1654,7 +1645,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureUpdateM
     }
 }
 
-// TODO - core checks
+// TODO - validation needs to be added as part of GPU-AV
 TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelStructureUpdateMicromapDeserialized) {
     AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
     RETURN_IF_SKIP(InitMicromapTest());
@@ -1890,8 +1881,7 @@ TEST_F(NegativeRayTracingMicromap, BuildAccelStructInstanceMicromapFeatureDisabl
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - core checks
-TEST_F(NegativeRayTracingMicromap, DISABLED_BuildAccelStructInstanceDisableBuildFlag) {
+TEST_F(NegativeRayTracingMicromap, BuildAccelStructInstanceDisableBuildFlag) {
     AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
     RETURN_IF_SKIP(InitMicromapTest());
 
@@ -1985,7 +1975,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_BuildAccelStructInstanceDisableBuild
     vk::DestroyAccelerationStructureKHR(device(), tlas_handle, nullptr);
 }
 
-// TODO - core checks
+// TODO - will add in a follow up PR
 TEST_F(NegativeRayTracingMicromap, DISABLED_CmdCopyAccelStructToMemoryAlignment) {
     RETURN_IF_SKIP(InitMicromapTest());
 
@@ -2053,7 +2043,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CmdCopyAccelStructToMemoryAlignment)
     vk::DestroyAccelerationStructureKHR(device(), misaligned_micromap, nullptr);
 }
 
-// TODO - core checks
+// TODO - will add as part of GPU-AV
 TEST_F(NegativeRayTracingMicromap, DISABLED_DescriptorAccessDeserializedAS) {
     AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
     RETURN_IF_SKIP(InitMicromapTest());
@@ -2165,7 +2155,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_DescriptorAccessDeserializedAS) {
     m_command_buffer.End();
 }
 
-// TODO - core checks
+// TODO - will add as part of GPU-AV
 TEST_F(NegativeRayTracingMicromap, DISABLED_TraceRaysOMMPipelineFlagMissing) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
