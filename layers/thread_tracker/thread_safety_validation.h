@@ -46,12 +46,12 @@ static_assert(std::is_same<uint64_t, DISTINCT_NONDISPATCHABLE_PHONY_HANDLE>::val
 // Align ObjectUseData to a cache line to avoid false sharing of its atomics.
 // Some CPUs (e.g. Apple M1) have 128-byte lines. We still use 64 to save memory,
 // accepting possible false sharing there.
-inline constexpr size_t kObjectUserDataAlignment = 64;
+inline constexpr size_t kObjectUseDataAlignment = 64;
 
 // Sanity check on the build machine
-static_assert(vku::concurrent::get_hardware_destructive_interference_size() % kObjectUserDataAlignment == 0);
+static_assert(vku::concurrent::get_hardware_destructive_interference_size() % kObjectUseDataAlignment == 0);
 
-class alignas(kObjectUserDataAlignment) ObjectUseData {
+class alignas(kObjectUseDataAlignment) ObjectUseData {
   public:
     class WriteReadCount {
       public:
