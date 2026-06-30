@@ -2748,3 +2748,88 @@ TEST_F(NegativeDataGraph, OpticalFlowNoCost) {
     ASSERT_EQ(VK_ERROR_VALIDATION_FAILED, optical_flow.CreateDataGraphPipeline());
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDataGraph, OpticalFlowUnequalGridSizes) {
+    TEST_DESCRIPTION("Try to create an optical flow datagraph with non-zero hintGridSize not equal to outputGridSize");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    // Set different output and hint grid sizes
+    uint32_t queue_index = DefaultQueue()->family_index;
+    auto opt_flow_properties = vkt::dg::OpticalFlowHelper::QueryOpticalFlowProperties(*this, queue_index);
+    vkt::dg::OfHelperParameters params;
+    params.outputGridSize = vkt::dg::OpticalFlowHelper::GetAnyOpticalFlowGridSize(opt_flow_properties);
+    params.hintGridSize = vkt::dg::OpticalFlowHelper::GetAnyOpticalFlowGridSize(
+        opt_flow_properties, static_cast<VkDataGraphOpticalFlowGridSizeFlagBitsARM>(params.outputGridSize + 1));
+    vkt::dg::OpticalFlowHelper optical_flow(*this, params);
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-hintGridSize-09973");
+    optical_flow.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, OpticalFlowWrongOutputGridSize) {
+    TEST_DESCRIPTION("Try to create an optical flow datagraph with a wrong output grid size");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    // Set a wrong output grid size that is correct for hint grid size
+    vkt::dg::OfHelperParameters params;
+    params.outputGridSize = VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_UNKNOWN_ARM;
+    params.hintGridSize = VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_UNKNOWN_ARM;
+    vkt::dg::OpticalFlowHelper optical_flow(*this, params);
+    optical_flow.optical_flow_ci_.flags &= ~VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-outputGridSize-09971");
+    optical_flow.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, OpticalFlowWrongHintGridSize) {
+    TEST_DESCRIPTION("Try to create an optical flow datagraph with a wrong hint grid size");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    // Set a wrong hint grid size that is correct for output grid size
+    uint32_t queue_index = DefaultQueue()->family_index;
+    auto opt_flow_properties = vkt::dg::OpticalFlowHelper::QueryOpticalFlowProperties(*this, queue_index);
+    vkt::dg::OfHelperParameters params;
+    params.outputGridSize = vkt::dg::OpticalFlowHelper::GetAnyOpticalFlowGridSize(opt_flow_properties);
+    params.hintGridSize = params.outputGridSize;
+    vkt::dg::OpticalFlowHelper optical_flow(*this, params);
+    optical_flow.optical_flow_ci_.flags &= ~VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-hintGridSize-09972");
+    optical_flow.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, OpticalFlowWrongWidthHeight) {
+    TEST_DESCRIPTION("Try to create an optical flow datagraph with wrong image sizes");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    uint32_t queue_index = DefaultQueue()->family_index;
+    auto opt_flow_properties = vkt::dg::OpticalFlowHelper::QueryOpticalFlowProperties(*this, queue_index);
+    vkt::dg::OfHelperParameters params;
+
+    // Set widths and heights that are too low or too high
+    uint32_t good_width = params.width;
+    uint32_t good_height = params.height;
+    uint32_t under_width = opt_flow_properties.minWidth - 1;
+    uint32_t over_width = opt_flow_properties.maxWidth + 1;
+    uint32_t under_height = opt_flow_properties.minHeight - 1;
+    uint32_t over_height = opt_flow_properties.maxHeight + 1;
+
+    for (uint32_t w : {under_width, good_width, over_width}) {
+        for (uint32_t h : {under_height, good_height, over_height}) {
+            params.width = w;
+            params.height = h;
+            vkt::dg::OpticalFlowHelper optical_flow(*this, params);
+            if (w != good_width) {
+                m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-width-09966");
+            }
+            if (h != good_height) {
+                m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-height-09967");
+            }
+            optical_flow.CreateDataGraphPipeline();
+            m_errorMonitor->VerifyFound();
+        }
+    }
+}

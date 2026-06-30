@@ -357,8 +357,6 @@ TEST_F(PositiveDataGraph, OpticalFlow) {
     vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
 
     VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
-    optical_flow_di.meanFlowL1NormHint =
-        optical_flow.optical_flow_ci_.height;  // must be less than or equal to optical_flow_ci.height/optical_flow_ci.width
     VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
 
     m_command_buffer.Begin();

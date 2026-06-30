@@ -291,6 +291,96 @@ bool CoreChecks::ValidateOpticalFlowConnections(const VkDataGraphPipelineSingleN
     return skip;
 }
 
+bool CoreChecks::ValidateOpticalFlowGridSizes(const VkDataGraphPipelineOpticalFlowCreateInfoARM& optical_flow_ci,
+                                              const Location& optical_flow_ci_loc) const {
+    bool skip = false;
+
+    const VkDataGraphOpticalFlowGridSizeFlagsARM hint_grid_size = optical_flow_ci.hintGridSize;
+    const VkDataGraphOpticalFlowGridSizeFlagsARM output_grid_size = optical_flow_ci.outputGridSize;
+    if (hint_grid_size != 0 && hint_grid_size != output_grid_size) {
+        skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-hintGridSize-09973", device,
+                         optical_flow_ci_loc.dot(Field::hintGridSize), "(%s) is not the same as outputGridSize (%s).\n",
+                         string_VkDataGraphOpticalFlowGridSizeFlagsARM(hint_grid_size).c_str(),
+                         string_VkDataGraphOpticalFlowGridSizeFlagsARM(output_grid_size).c_str());
+    }
+
+    VkDataGraphOpticalFlowGridSizeFlagsARM supported_output_grid_sizes = VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_UNKNOWN_ARM;
+    VkDataGraphOpticalFlowGridSizeFlagsARM supported_hint_grid_sizes = VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_UNKNOWN_ARM;
+    for (const auto& entry : physical_device_state->data_graph.optical_flow_properties) {
+        supported_output_grid_sizes |= entry.second.supportedOutputGridSizes;
+        supported_hint_grid_sizes |= entry.second.supportedHintGridSizes;
+    }
+
+    auto matching_output_grid_sizes = output_grid_size & supported_output_grid_sizes;
+    if (matching_output_grid_sizes == 0) {
+        skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-outputGridSize-09971", device,
+                         optical_flow_ci_loc.dot(Field::outputGridSize), "(%s) not included in supported bits (%s).",
+                         string_VkDataGraphOpticalFlowGridSizeFlagsARM(output_grid_size).c_str(),
+                         string_VkDataGraphOpticalFlowGridSizeFlagsARM(supported_output_grid_sizes).c_str());
+    } else if (!IsSingleBitSet(matching_output_grid_sizes)) {
+        skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-outputGridSize-09971", device,
+                         optical_flow_ci_loc.dot(Field::outputGridSize), "(%s) has multiple bits selected.",
+                         string_VkDataGraphOpticalFlowGridSizeFlagsARM(output_grid_size).c_str());
+    }
+
+    const bool hint_enabled = (optical_flow_ci.flags & VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM) != 0;
+    auto matching_hint_grid_sizes = hint_grid_size & supported_hint_grid_sizes;
+    if (!hint_enabled) {
+        if (hint_grid_size != 0) {
+            skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-hintGridSize-09972", device,
+                             optical_flow_ci_loc.dot(Field::hintGridSize), "(%s) is not zero while the hint bit is not set.",
+                             string_VkDataGraphOpticalFlowGridSizeFlagsARM(hint_grid_size).c_str());
+        }
+    } else {
+        if (matching_hint_grid_sizes == 0) {
+            skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-hintGridSize-09972", device,
+                             optical_flow_ci_loc.dot(Field::hintGridSize), "(%s) not included in supported bits (%s).",
+                             string_VkDataGraphOpticalFlowGridSizeFlagsARM(hint_grid_size).c_str(),
+                             string_VkDataGraphOpticalFlowGridSizeFlagsARM(supported_hint_grid_sizes).c_str());
+        } else if (!IsSingleBitSet(matching_hint_grid_sizes)) {
+            skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-hintGridSize-09972", device,
+                             optical_flow_ci_loc.dot(Field::hintGridSize), "(%s) has multiple bits selected.",
+                             string_VkDataGraphOpticalFlowGridSizeFlagsARM(hint_grid_size).c_str());
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateOpticalFlowImageSizes(const VkDataGraphPipelineOpticalFlowCreateInfoARM& optical_flow_ci,
+                                               const Location& optical_flow_ci_loc) const {
+    bool skip = false;
+
+    uint32_t width = optical_flow_ci.width;
+    uint32_t height = optical_flow_ci.height;
+
+    uint32_t min_width = vvl::kU32Max;
+    uint32_t max_width = 0;
+    uint32_t min_height = vvl::kU32Max;
+    uint32_t max_height = 0;
+
+    for (const auto& entry : physical_device_state->data_graph.optical_flow_properties) {
+        min_width = std::min(min_width, entry.second.minWidth);
+        max_width = std::max(max_width, entry.second.maxWidth);
+        min_height = std::min(min_height, entry.second.minHeight);
+        max_height = std::max(max_height, entry.second.maxHeight);
+    }
+
+    if (width < min_width || width > max_width) {
+        skip |= LogError(
+            "VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-width-09966", device, optical_flow_ci_loc.dot(Field::width),
+            "(%" PRIu32 ") is outside the [minWidth, maxWidth] (%" PRIu32 ", %" PRIu32 ") range", width, min_width, max_width);
+    }
+
+    if (height < min_height || height > max_height) {
+        skip |= LogError(
+            "VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-height-09967", device, optical_flow_ci_loc.dot(Field::height),
+            "(%" PRIu32 ") is outside the [minHeight, maxHeight] (%" PRIu32 ", %" PRIu32 ") range", height, min_height, max_height);
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                             VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                             const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
@@ -403,6 +493,8 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
                 const Location optical_flow_ci_loc = create_info_loc.pNext(Struct::VkDataGraphPipelineOpticalFlowCreateInfoARM);
                 skip |= ValidateOpticalFlowFormats(*optical_flow_ci, optical_flow_ci_loc);
                 skip |= ValidateOpticalFlowFlags(*optical_flow_ci, optical_flow_ci_loc);
+                skip |= ValidateOpticalFlowGridSizes(*optical_flow_ci, optical_flow_ci_loc);
+                skip |= ValidateOpticalFlowImageSizes(*optical_flow_ci, optical_flow_ci_loc);
 
                 const Location single_node_ci_loc = create_info_loc.pNext(Struct::VkDataGraphPipelineSingleNodeCreateInfoARM);
                 skip |= ValidateOpticalFlowConnections(*single_node_ci, single_node_ci_loc, optical_flow_ci->hintGridSize);

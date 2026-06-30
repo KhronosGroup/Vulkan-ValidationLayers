@@ -1081,6 +1081,10 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateOpticalFlowConnections(const VkDataGraphPipelineSingleNodeCreateInfoARM& single_node_ci,
                                         const Location& single_node_ci_loc,
                                         VkDataGraphOpticalFlowGridSizeFlagsARM hint_grid_size) const;
+    bool ValidateOpticalFlowGridSizes(const VkDataGraphPipelineOpticalFlowCreateInfoARM& optical_flow_ci,
+                                      const Location& optical_flow_ci_loc) const;
+    bool ValidateOpticalFlowImageSizes(const VkDataGraphPipelineOpticalFlowCreateInfoARM& optical_flow_ci,
+                                       const Location& optical_flow_ci_loc) const;
 
     bool PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                     VkPipelineCache pipelineCache, uint32_t createInfoCount,
