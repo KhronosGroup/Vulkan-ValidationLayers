@@ -58,38 +58,37 @@ class alignas(kObjectUseDataAlignment) ObjectUseData {
   public:
     class WriteReadCount {
       public:
-        explicit WriteReadCount(int64_t v) : count(v) {}
-
-        int32_t GetReadCount() const { return static_cast<int32_t>(count & 0xFFFFFFFF); }
-        int32_t GetWriteCount() const { return static_cast<int32_t>(count >> 32); }
+        explicit WriteReadCount(uint64_t v) : count(v) {}
+        uint32_t GetReadCount() const { return static_cast<uint32_t>(count & 0xFFFFFFFF); }
+        uint32_t GetWriteCount() const { return static_cast<uint32_t>(count >> 32); }
 
       private:
-        int64_t count{};
+        uint64_t count{};
     };
 
     WriteReadCount AddWriter() {
-        int64_t prev = writer_reader_count.fetch_add(1ULL << 32);
+        const uint64_t prev = writer_reader_count.fetch_add(uint64_t(1) << 32);
         return WriteReadCount(prev);
     }
     WriteReadCount AddReader() {
-        int64_t prev = writer_reader_count.fetch_add(1ULL);
+        const uint64_t prev = writer_reader_count.fetch_add(uint64_t(1));
         return WriteReadCount(prev);
     }
     WriteReadCount RemoveWriter() {
-        int64_t prev = writer_reader_count.fetch_add(-(1LL << 32));
-        assert(prev > 0);
+        const uint64_t prev = writer_reader_count.fetch_sub(uint64_t(1) << 32);
+        assert((prev >> 32) != 0);
         return WriteReadCount(prev);
     }
     WriteReadCount RemoveReader() {
-        int64_t prev = writer_reader_count.fetch_add(-1LL);
-        assert(prev > 0);
+        const uint64_t prev = writer_reader_count.fetch_sub(uint64_t(1));
+        assert((prev & 0xFFFFFFFF) != 0);
         return WriteReadCount(prev);
     }
     WriteReadCount GetCount() { return WriteReadCount(writer_reader_count); }
 
     void WaitForObjectIdle(bool is_writer) {
         // Wait for thread-safe access to object instead of skipping call.
-        while (GetCount().GetReadCount() > (int)(!is_writer) || GetCount().GetWriteCount() > (int)is_writer) {
+        while (GetCount().GetReadCount() > (uint32_t)(!is_writer) || GetCount().GetWriteCount() > (uint32_t)is_writer) {
             std::this_thread::sleep_for(std::chrono::microseconds(1));
         }
     }
@@ -98,7 +97,7 @@ class alignas(kObjectUseDataAlignment) ObjectUseData {
 
   private:
     // Need to update write and read counts atomically. Writer in high 32 bits, reader in low 32 bits.
-    std::atomic<int64_t> writer_reader_count{};
+    std::atomic<uint64_t> writer_reader_count{};
 };
 
 template <typename T>
