@@ -25,6 +25,7 @@
 #include "error_message/logging.h"
 #include "error_message/error_location.h"
 #include "generated/error_location_helper.h"
+#include "generated/vk_validation_error_messages.h"
 #include "utils/hash_util.h"
 #include <cstring>
 #include <string>
@@ -461,7 +462,7 @@ bool SetLocalDisableSetting(std::string list_of_disabled, const std::string& del
     return used;
 }
 
-uint32_t TokenToUint(std::string& token) {
+uint32_t TokenToUint(const std::string& token) {
     uint32_t int_id = 0;
     if ((token.find("0x") == 0) || token.find("0X") == 0) {  // Handle hex format
         int_id = static_cast<uint32_t>(std::strtoul(token.c_str(), nullptr, 16));
@@ -471,20 +472,34 @@ uint32_t TokenToUint(std::string& token) {
     return int_id;
 }
 
-void CreateFilterMessageIdList(std::string raw_id_list, const std::string& delimiter, vvl::unordered_set<uint32_t>& filter_list) {
-    size_t pos = 0;
-    std::string token;
-    while (raw_id_list.length() != 0) {
-        token = GetNextToken(&raw_id_list, delimiter, &pos);
-        uint32_t int_id = TokenToUint(token);
-        if (int_id == 0) {
-            const uint32_t id_hash = hash_util::VuidHash(token);
-            if (id_hash != 0) {
-                int_id = id_hash;
+void CreateFilterMessageIdList(const std::vector<std::string>& message_id_filter, vvl::unordered_set<uint32_t>& filter_list) {
+    for (const std::string& message_id : message_id_filter) {
+        // There are 3 forms VUID can be filtered
+        // 1. The VUID hash is provided (can be in hex or dec format)
+        // 2. Pass in the entire VUID string so we can hash it
+        // 3. Pass in the VUID final 5 digits and we "glob" all VUs that match
+        //    This mainly is helpful for draw VUs where we have 40 variations
+        uint32_t filter_id = TokenToUint(message_id);
+        // Will be non-zero if hash was provided
+        if (filter_id == 0) {
+            filter_id = hash_util::VuidHash(message_id);
+            if (filter_id != 0) {
+                filter_list.insert(filter_id);  // option 2
             }
-        }
-        if ((int_id != 0) && filter_list.find(int_id) == filter_list.end()) {
-            filter_list.insert(int_id);
+        } else if (message_id.length() == 5) {
+            // User provided the 5 digit, search the VUID list
+            const vvl::unordered_map<std::string_view, vuid_info> vuid_map = GetVuidMap();
+            for (const auto& [key, info] : vuid_map) {
+                std::string_view vuid_digit = key.substr(key.length() - 5);
+                if (message_id == vuid_digit) {
+                    filter_id = hash_util::VuidHash(key);
+                    if (filter_id != 0) {
+                        filter_list.insert(filter_id);  // option 3
+                    }
+                }
+            }
+        } else {
+            filter_list.insert(filter_id);  // option 1
         }
     }
 }
@@ -614,8 +629,7 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings* settings_data, VkuL
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_ID_FILTER)) {
         vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_MESSAGE_ID_FILTER, message_id_filter);
     }
-    const std::string string_message_id_filter = Merge(message_id_filter);
-    CreateFilterMessageIdList(string_message_id_filter, ",", debug_report->filter_message_ids);
+    CreateFilterMessageIdList(message_id_filter, debug_report->filter_message_ids);
 
     // Duplicate message limit
     bool enable_message_limit = true;       // default in JSON
