@@ -1927,7 +1927,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             const bool src_multisample = src_image_state->GetSamples() != VK_SAMPLE_COUNT_1_BIT;
             const bool dst_multisample = dst_image_state->GetSamples() != VK_SAMPLE_COUNT_1_BIT;
             if (src_multisample || dst_multisample) {
-                vuid = is_2 ? "VUID-VkCopyImageInfo2-commandBuffer-12449" : "VUID-vkCmdCopyImage-commandBuffer-12449";
+                vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-12449" : "VUID-vkCmdCopyImage-commandBuffer-12449";
                 std::ostringstream ss;
                 ss << (src_multisample ? "srcImage" : "dstImage") << " was created with "
                    << (src_multisample ? string_VkSampleCountFlagBits(src_image_state->GetSamples())
