@@ -525,11 +525,10 @@ def main(argv):
     caching = not args.no_caching
     RunGenerators(args.api, registry, grammar, gen_dir, styleFile, args.target, caching)
 
-    # Generate vk_validation_error_messages.h (ignore if targeting a single generator)
+    # Generate vk_validation_error_messages.h/cpp (ignore if targeting a single generator)
     if (not args.target):
         valid_usage_file = os.path.abspath(os.path.join(os.path.dirname(registry), "validusage.json"))
-        error_message_file = os.path.join(gen_dir, 'vk_validation_error_messages.h')
-        GenerateSpecErrorMessage(args.api, valid_usage_file, error_message_file)
+        GenerateSpecErrorMessage(args.api, valid_usage_file, gen_dir)
 
     # optional post-generation steps
     if args.verify:

@@ -702,7 +702,7 @@ def main(argv):
         f'layers/{args.api}/generated/spirv_validation_helper.cpp',
         f'layers/{args.api}/generated/command_validation.cpp',
     ]]
-    # Be careful not to add vk_validation_error_messages.h or it will show 100% test coverage
+    # Be careful not to add vk_validation_error_messages.h/cpp or it will show 100% test coverage
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/core_checks/'), '*.cpp')))
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/stateless/'), '*.cpp')))
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/sync/'), '*.cpp')))
