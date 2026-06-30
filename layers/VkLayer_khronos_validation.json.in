@@ -350,6 +350,7 @@
                                     "label": "Image Layout",
                                     "description": "Check that the layout of each image subresource is correct whenever it is used by a command buffer. These checks are very CPU intensive for some applications.",
                                     "type": "BOOL",
+                                    "view": "HIDDEN",
                                     "default": true,
                                     "dependence": {
                                         "mode": "ALL",
@@ -363,6 +364,7 @@
                                     "label": "Command Buffer State",
                                     "description": "Check that all Vulkan objects used by a command buffer have not been destroyed. These checks can be CPU intensive for some applications.",
                                     "type": "BOOL",
+                                    "view": "HIDDEN",
                                     "default": true,
                                     "dependence": {
                                         "mode": "ALL",
@@ -376,6 +378,7 @@
                                     "label": "Object in Use",
                                     "description": "Check that Vulkan objects are not in use by a command buffer when they are destroyed.",
                                     "type": "BOOL",
+                                    "view": "HIDDEN",
                                     "default": true,
                                     "dependence": {
                                         "mode": "ALL",
@@ -389,6 +392,7 @@
                                     "label": "Query",
                                     "description": "Checks for commands that use VkQueryPool objects.",
                                     "type": "BOOL",
+                                    "view": "HIDDEN",
                                     "default": true,
                                     "dependence": {
                                         "mode": "ALL",
