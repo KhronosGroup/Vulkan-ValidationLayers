@@ -469,17 +469,18 @@ void Validator::InitSettings(const Location& loc) {
             adjustment_warnings += setting_object->DisableMessage();
         }
     }
-    if (!adjustment_warnings.empty()) {
-        AdjustmentWarning(device, loc, adjustment_warnings.c_str());
-    }
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) && phys_dev_ext_props.descriptor_buffer_props.maxResourceDescriptorBufferBindings == 1) {
-        AdjustmentWarning(
-            device, loc,
+        adjustment_warnings +=
             "VK_EXT_descriptor_buffer is enabled with a device that only supports maxResourceDescriptorBufferBindings of "
-            "1\nCurrently the limiation to support VK_EXT_descriptor_buffer is to use our own internal binding to inject a buffer into the shader. [Disabling debug_printf] [Disabling gpuav_shader_instrumentation]");
+            "1, Currently the limiation to support VK_EXT_descriptor_buffer is to use our own internal binding to inject a buffer "
+            "into the shader. [Disabling debug_printf] [Disabling gpuav_shader_instrumentation]";
         gpuav_settings.debug_printf_enabled = false;
         gpuav_settings.DisableShaderInstrumentationAndOptions();
+    }
+
+    if (!adjustment_warnings.empty()) {
+        AdjustmentWarning(device, loc, adjustment_warnings.c_str());
     }
 
     // If we have turned off all the possible things to instrument, turn off everything fully

@@ -356,7 +356,8 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
             adjustment_warnings += '\n';
         }
     }
-    if (!adjustment_warnings.empty()) {
+    if (!adjustment_warnings.empty() && !reported_gpdp2_warning_) {
+        reported_gpdp2_warning_ = true;
         AdjustmentWarning(physicalDevice, record_obj.location, adjustment_warnings.c_str());
     }
 

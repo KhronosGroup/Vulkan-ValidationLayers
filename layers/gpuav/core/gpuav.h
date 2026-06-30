@@ -61,6 +61,7 @@ class Instance : public vvl::InstanceProxy {
     void AdjustmentWarning(LogObjectList objlist, const Location& loc, const char* const specific_message) const;
     void AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceCreateInfo* modified_create_info, const Location& loc);
     bool timeline_khr_{false};
+    mutable bool reported_gpdp2_warning_{false};
 };
 
 class Validator : public GpuShaderInstrumentor {

@@ -90,7 +90,9 @@ TEST_F(NegativeOther, VuidHashStability) {
     ASSERT_TRUE(hash_util::VuidHash("VUID-RayTmaxKHR-RayTmaxKHR-04349") == 0x8e67514c);
     ASSERT_TRUE(hash_util::VuidHash("VUID-RuntimeSpirv-SubgroupUniformControlFlowKHR-06379") == 0x2f574188);
     ASSERT_TRUE(hash_util::VuidHash("VVL-DEBUG-PRINTF") == 0x4fe1fef9);
+    ASSERT_TRUE(hash_util::VuidHash("GPU-DUMP") == 0xe5c5edc1);
     ASSERT_TRUE(hash_util::VuidHash("WARNING-Setting-Limit-Adjusted") == 0x86fe6721);
+    ASSERT_TRUE(hash_util::VuidHash("VALIDATION-SETTINGS") == 0x7f1922d7);
 }
 
 TEST_F(NegativeOther, RequiredParameter) {
