@@ -134,8 +134,8 @@ class DataGraphPipelineHelper {
 struct OfHelperParameters {
     uint32_t height = 100;
     uint32_t width = 100;
-    VkDataGraphOpticalFlowGridSizeFlagsARM outputGridSize = VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_UNKNOWN_ARM;
-    VkDataGraphOpticalFlowGridSizeFlagsARM hintGridSize = VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_UNKNOWN_ARM;
+    VkDataGraphOpticalFlowGridSizeFlagsARM outputGridSize = VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_FLAG_BITS_MAX_ENUM_ARM;
+    VkDataGraphOpticalFlowGridSizeFlagsARM hintGridSize = VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_FLAG_BITS_MAX_ENUM_ARM;
     uint32_t n_inputs = 1;
     uint32_t n_references = 1;
     uint32_t n_outputs = 1;
