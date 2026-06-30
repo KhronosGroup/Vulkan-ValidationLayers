@@ -1120,9 +1120,12 @@ void CommandBuffer::RecordBeginVideoCoding(const VkVideoBeginCodingInfoKHR& begi
                 vvl::VideoPictureResource res(dev_data, *begin_info.pReferenceSlots[i].pPictureResource);
                 bound_video_picture_resources.emplace(std::make_pair(res, slot_index));
 
-                if (auto reference_image_view = dev_data.Get<vvl::ImageView>(begin_info.pReferenceSlots[i].pPictureResource->imageViewBinding)) {
-                    // Connect the image view to cmdBuffer
-                    AddChild(reference_image_view);
+                if (!dev_data.disabled[command_buffer_state]) {
+                    if (auto reference_image_view =
+                            dev_data.Get<vvl::ImageView>(begin_info.pReferenceSlots[i].pPictureResource->imageViewBinding)) {
+                        // Connect the image view to cmdBuffer
+                        AddChild(reference_image_view);
+                    }
                 }
             }
 
@@ -1224,8 +1227,10 @@ void vvl::CommandBuffer::RecordVideoInlineQueries(const VkVideoInlineQueryInfoKH
         updated_queries.insert(QueryObject(query_info.queryPool, query_info.firstQuery + i));
 
         // Connect this query pool to cmdBuffer
-        if (auto pool_state = dev_data.Get<vvl::QueryPool>(query_info.queryPool)) {
-            AddChild(pool_state);
+        if (!dev_data.disabled[command_buffer_state]) {
+            if (auto pool_state = dev_data.Get<vvl::QueryPool>(query_info.queryPool)) {
+                AddChild(pool_state);
+            }
         }
     }
 }
@@ -1236,8 +1241,10 @@ void vvl::CommandBuffer::RecordVideoEncodeQuantizationMap(const VkVideoEncodeQua
     }
 
     // Connect the quantization map image view to cmdBuffer
-    if (auto quant_map_image_view_state = dev_data.Get<vvl::ImageView>(quant_map_info.quantizationMap)) {
-        AddChild(quant_map_image_view_state);
+    if (!dev_data.disabled[command_buffer_state]) {
+        if (auto quant_map_image_view_state = dev_data.Get<vvl::ImageView>(quant_map_info.quantizationMap)) {
+            AddChild(quant_map_image_view_state);
+        }
     }
 }
 
@@ -1252,14 +1259,16 @@ void CommandBuffer::RecordDecodeVideo(const VkVideoDecodeInfoKHR& decode_info, c
         item.second->RecordDecodeVideo(*bound_video_session, decode_info, loc);
     }
 
-    // Connect the bitstream buffer to cmdBuffer
-    if (auto bitstream_buffer_state = dev_data.Get<vvl::Buffer>(decode_info.srcBuffer)) {
-        AddChild(bitstream_buffer_state);
-    }
+    if (!dev_data.disabled[command_buffer_state]) {
+        // Connect the bitstream buffer to cmdBuffer
+        if (auto bitstream_buffer_state = dev_data.Get<vvl::Buffer>(decode_info.srcBuffer)) {
+            AddChild(bitstream_buffer_state);
+        }
 
-    // Connect the decode output image view to cmdBuffer
-    if (auto output_image_view_state = dev_data.Get<vvl::ImageView>(decode_info.dstPictureResource.imageViewBinding)) {
-        AddChild(output_image_view_state);
+        // Connect the decode output image view to cmdBuffer
+        if (auto output_image_view_state = dev_data.Get<vvl::ImageView>(decode_info.dstPictureResource.imageViewBinding)) {
+            AddChild(output_image_view_state);
+        }
     }
 
     if (decode_info.pSetupReferenceSlot && decode_info.pSetupReferenceSlot->pPictureResource) {
@@ -1308,14 +1317,16 @@ void vvl::CommandBuffer::RecordEncodeVideo(const VkVideoEncodeInfoKHR& encode_in
         item.second->RecordEncodeVideo(*bound_video_session, encode_info, loc);
     }
 
-    // Connect the encode input image view to cmdBuffer
-    if (auto input_image_view_state = dev_data.Get<vvl::ImageView>(encode_info.srcPictureResource.imageViewBinding)) {
-        AddChild(input_image_view_state);
-    }
+    if (!dev_data.disabled[command_buffer_state]) {
+        // Connect the encode input image view to cmdBuffer
+        if (auto input_image_view_state = dev_data.Get<vvl::ImageView>(encode_info.srcPictureResource.imageViewBinding)) {
+            AddChild(input_image_view_state);
+        }
 
-    // Connect the bitstream buffer to cmdBuffer
-    if (auto bitstream_buffer_state = dev_data.Get<vvl::Buffer>(encode_info.dstBuffer)) {
-        AddChild(bitstream_buffer_state);
+        // Connect the bitstream buffer to cmdBuffer
+        if (auto bitstream_buffer_state = dev_data.Get<vvl::Buffer>(encode_info.dstBuffer)) {
+            AddChild(bitstream_buffer_state);
+        }
     }
 
     if (encode_info.pSetupReferenceSlot && encode_info.pSetupReferenceSlot->pPictureResource) {
