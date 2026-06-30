@@ -5,26 +5,6 @@
 
 # VK_LAYER_KHRONOS_validation
 
-# Command Buffer State
-# =====================
-# Check that all Vulkan objects used by a command buffer have not been destroyed. These checks can be CPU intensive for some applications.
-khronos_validation.check_command_buffer = true
-
-# Image Layout
-# =====================
-# Check that the layout of each image subresource is correct whenever it is used by a command buffer. These checks are very CPU intensive for some applications.
-khronos_validation.check_image_layout = true
-
-# Object in Use
-# =====================
-# Check that Vulkan objects are not in use by a command buffer when they are destroyed.
-khronos_validation.check_object_in_use = true
-
-# Query
-# =====================
-# Checks for commands that use VkQueryPool objects.
-khronos_validation.check_query = true
-
 # Shader
 # =====================
 # This will validate the contents of the SPIR-V which can be CPU intensive during application start up. This does internal checks as well as calling spirv-val. (Same effect using VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT)

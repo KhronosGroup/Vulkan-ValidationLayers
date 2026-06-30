@@ -159,6 +159,10 @@ const char* VK_LAYER_CHECK_SHADERS_CACHING = "check_shaders_caching";
 
 // Additional checks exposed in vkconfig, but not in VkValidationFeatureDisableEXT
 // ---
+// [DEPRECATED]
+// After the 1.4.350 SDK we found these were 10 years old and not sure if valuable anymore
+// These have not been tested and seem no one is properly checking they are used for newer extensions
+// Plan is to remove them, unless we find people are indeed using them
 const char* VK_LAYER_CHECK_COMMAND_BUFFER = "check_command_buffer";
 const char* VK_LAYER_CHECK_OBJECT_IN_USE = "check_object_in_use";
 const char* VK_LAYER_CHECK_QUERY = "check_query";
@@ -1407,6 +1411,27 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
             "Descriptor Hashing was turned on, but neither GPU-AV nor GPU Dump are enabled. Turning off as this setting has no "
             "effect.");
         global_settings.descriptor_hashing = false;
+    }
+
+    if (settings_data->disabled[command_buffer_state]) {
+        setting_warnings.emplace_back(
+            "VK_LAYER_CHECK_COMMAND_BUFFER (check_command_buffer) is deprecated and planned to be removed in the future. Please "
+            "inform us if you are still using this setting!");
+    }
+    if (settings_data->disabled[object_in_use]) {
+        setting_warnings.emplace_back(
+            "VK_LAYER_CHECK_OBJECT_IN_USE (check_object_in_use) is deprecated and planned to be removed in the future. Please "
+            "inform us if you are still using this setting!");
+    }
+    if (settings_data->disabled[query_validation]) {
+        setting_warnings.emplace_back(
+            "VK_LAYER_CHECK_QUERY (check_query) is deprecated and planned to be removed in the future. Please inform us if you are "
+            "still using this setting!");
+    }
+    if (settings_data->disabled[image_layout_validation]) {
+        setting_warnings.emplace_back(
+            "VK_LAYER_CHECK_IMAGE_LAYOUT (check_image_layout) is deprecated and planned to be removed in the future. Please inform "
+            "us if you are still using this setting!");
     }
 
     // Last as previous settings are needed so we can make sure they line up with the DebugReport settings
