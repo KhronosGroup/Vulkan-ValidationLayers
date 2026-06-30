@@ -120,9 +120,7 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
         // We want to print DebugPrintf message forever, otherwise user will mistake duplicate limit for things not printing
         (vuid_hash == 0x4fe1fef9) ||
         // GPU-DUMP
-        (vuid_hash == 0xe5c5edc1) ||
-        // GPU-AV gives lots of warnings on setup to inform user which settings we are adjusting under them
-        (vuid_hash == 0x86fe6721);
+        (vuid_hash == 0xe5c5edc1);
 
     // This lock needs to be here, duplicate_message_count_map is not safe to update on multiple threads
     // see https://issues.angleproject.org/issues/450466850
@@ -734,8 +732,17 @@ bool DebugReport::LogMessageVaList(VkFlags msg_flags, std::string_view vuid_text
 
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback([[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                       [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT message_type,
-                                                      [[maybe_unused]] const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+                                                      const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
                                                       [[maybe_unused]] void* user_data) {
+    // People use the break on warning/error to inspect THEIR code
+    // It is annoying to break on some of our internal device creation warnings
+    const uint32_t vuid_hash = callback_data ? (uint32_t)callback_data->messageIdNumber : 0;
+    if (vuid_hash == 0x86fe6721 ||  // "WARNING-Setting-Limit-Adjusted"
+        vuid_hash == 0x7f1922d7     // "VALIDATION-SETTINGS"
+    ) {
+        return false;
+    }
+
     // TODO: Consider to use https://github.com/scottt/debugbreak
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     DebugBreak();
