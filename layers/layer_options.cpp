@@ -1427,25 +1427,32 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
         global_settings.descriptor_hashing = false;
     }
 
-    if (settings_data->disabled[command_buffer_state]) {
-        setting_warnings.emplace_back(
-            "VK_LAYER_CHECK_COMMAND_BUFFER (check_command_buffer) is deprecated and planned to be removed in the future. Please "
-            "inform us if you are still using this setting!");
-    }
-    if (settings_data->disabled[object_in_use]) {
-        setting_warnings.emplace_back(
-            "VK_LAYER_CHECK_OBJECT_IN_USE (check_object_in_use) is deprecated and planned to be removed in the future. Please "
-            "inform us if you are still using this setting!");
-    }
-    if (settings_data->disabled[query_validation]) {
-        setting_warnings.emplace_back(
-            "VK_LAYER_CHECK_QUERY (check_query) is deprecated and planned to be removed in the future. Please inform us if you are "
-            "still using this setting!");
-    }
-    if (settings_data->disabled[image_layout_validation]) {
-        setting_warnings.emplace_back(
-            "VK_LAYER_CHECK_IMAGE_LAYOUT (check_image_layout) is deprecated and planned to be removed in the future. Please inform "
-            "us if you are still using this setting!");
+    // Our way to to try and get rid of these settings
+    // Detect if people have core, but manually turned off these settings
+    if (!settings_data->disabled[core_checks]) {
+        if (settings_data->disabled[command_buffer_state]) {
+            setting_warnings.emplace_back(
+                "VK_LAYER_CHECK_COMMAND_BUFFER (check_command_buffer) is deprecated and planned to be removed in the future. "
+                "Please "
+                "inform us if you are still using this setting!");
+        }
+        if (settings_data->disabled[object_in_use]) {
+            setting_warnings.emplace_back(
+                "VK_LAYER_CHECK_OBJECT_IN_USE (check_object_in_use) is deprecated and planned to be removed in the future. Please "
+                "inform us if you are still using this setting!");
+        }
+        if (settings_data->disabled[query_validation]) {
+            setting_warnings.emplace_back(
+                "VK_LAYER_CHECK_QUERY (check_query) is deprecated and planned to be removed in the future. Please inform us if you "
+                "are "
+                "still using this setting!");
+        }
+        if (settings_data->disabled[image_layout_validation]) {
+            setting_warnings.emplace_back(
+                "VK_LAYER_CHECK_IMAGE_LAYOUT (check_image_layout) is deprecated and planned to be removed in the future. Please "
+                "inform "
+                "us if you are still using this setting!");
+        }
     }
 
     // Last as previous settings are needed so we can make sure they line up with the DebugReport settings
