@@ -558,7 +558,16 @@ bool Device::ValidateCreateImageStencilUsage(const VkImageCreateInfo& create_inf
     if (!stencil_usage_opt.has_value()) {
         return skip;
     }
-    Location stencil_usage_loc = vku::FindStructInPNextChain<VkImageStencilUsage2CreateInfoKHR>(create_info.pNext)
+
+    const auto has_stencil_usage = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(create_info.pNext) != nullptr;
+    const auto has_stencil_usage_2 = vku::FindStructInPNextChain<VkImageStencilUsage2CreateInfoKHR>(create_info.pNext) != nullptr;
+    if (has_stencil_usage && has_stencil_usage_2) {
+        skip |= LogError("VUID-vkCreateImage-pNext-12442", device, create_info_loc.dot(Field::pNext),
+                         "contains both VkImageStencilUsageCreateInfo and VkImageStencilUsage2CreateInfoKHR.");
+        return skip;
+    }
+
+    Location stencil_usage_loc = has_stencil_usage_2
                                      ? create_info_loc.pNext(Struct::VkImageStencilUsage2CreateInfoKHR, Field::stencilUsage)
                                      : create_info_loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage);
     const VkImageUsageFlags2KHR stencil_usage = stencil_usage_opt.value();
@@ -567,8 +576,8 @@ bool Device::ValidateCreateImageStencilUsage(const VkImageCreateInfo& create_inf
         const VkImageUsageFlags2KHR legal_flags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
                                                   VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
         if ((stencil_usage & ~legal_flags) != 0) {
-            // Todo, update when VkImageStencilUsage2CreateInfoKHR VUID gets a number
-            const char* vuid = "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539";
+            const char* vuid = has_stencil_usage_2 ? "VUID-VkImageStencilUsage2CreateInfoKHR-stencilUsage-12443"
+                                                   : "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539";
             skip |= LogError(vuid, device, stencil_usage_loc, "is %s.", string_VkImageUsageFlags2KHR(stencil_usage).c_str());
         }
     }
@@ -925,6 +934,13 @@ bool Device::ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo& crea
 
 bool Device::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
+
+    const auto has_image_view_usage = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(create_info.pNext) != nullptr;
+    const auto has_image_view_usage_2 = vku::FindStructInPNextChain<VkImageViewUsage2CreateInfoKHR>(create_info.pNext) != nullptr;
+    if (has_image_view_usage && has_image_view_usage_2) {
+        skip |= LogError("VUID-vkCreateImageView-pNext-12444", create_info.image, create_info_loc.dot(Field::pNext),
+                         "contains both VkImageViewUsageCreateInfo and VkImageViewUsage2CreateInfoKHR.");
+    }
 
     if ((create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) && (!enabled_features.imageCubeArray)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-viewType-01004", create_info.image, create_info_loc.dot(Field::viewType),
