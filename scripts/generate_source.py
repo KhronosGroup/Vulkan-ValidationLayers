@@ -97,7 +97,90 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
 
     # These set fields that are needed by both OutputGenerator and BaseGenerator,
     # but are uniform and don't need to be set at a per-generated file level
-    from base_generator import SetOutputDirectory, SetTargetApiName, SetMergedApiNames, EnableCaching
+
+    # HACK: force VkDebugUtilsObjectNameInfoEXT/VkDebugUtilsObjectTagInfoEXT to extend these structs
+    # Remove after merging https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8336
+    debug_utils_hack = ["VkResourceDescriptorInfoEXT",
+                        "VkDescriptorGetInfoEXT",
+                        "VkInstanceCreateInfo",
+                        "VkDeviceCreateInfo",
+                        "VkSemaphoreCreateInfo",
+                        "VkFenceCreateInfo",
+                        "VkCommandBufferAllocateInfo",
+                        "VkMemoryAllocateInfo",
+                        "VkBufferCreateInfo",
+                        "VkImageCreateInfo",
+                        "VkEventCreateInfo",
+                        "VkQueryPoolCreateInfo",
+                        "VkBufferViewCreateInfo",
+                        "VkImageViewCreateInfo",
+                        "VkShaderModuleCreateInfo",
+                        "VkPipelineShaderStageCreateInfo",
+                        "VkPipelineCacheCreateInfo",
+                        "VkPipelineLayoutCreateInfo",
+                        "VkRenderPassCreateInfo",
+                        "VkGraphicsPipelineCreateInfo",
+                        "VkComputePipelineCreateInfo",
+                        "VkRayTracingPipelineCreateInfoKHR",
+                        "VkRayTracingPipelineCreateInfoNV",
+                        "VkExecutionGraphPipelineCreateInfoAMDX",
+                        "VkDataGraphPipelineCreateInfoARM",
+                        "VkDescriptorSetLayoutCreateInfo",
+                        "VkSamplerCreateInfo",
+                        "VkDescriptorPoolCreateInfo",
+                        "VkDescriptorSetAllocateInfo",
+                        "VkFramebufferCreateInfo",
+                        "VkCommandPoolCreateInfo",
+                        "VkDescriptorUpdateTemplateCreateInfo",
+                        "VkSamplerYcbcrConversionCreateInfo",
+                        "VkPrivateDataSlotCreateInfo",
+                        "VkDisplaySurfaceCreateInfoKHR",
+                        "VkXlibSurfaceCreateInfoKHR",
+                        "VkXcbSurfaceCreateInfoKHR",
+                        "VkWaylandSurfaceCreateInfoKHR",
+                        "VkAndroidSurfaceCreateInfoKHR",
+                        "VkWin32SurfaceCreateInfoKHR",
+                        "VkStreamDescriptorSurfaceCreateInfoGGP",
+                        "VkViSurfaceCreateInfoNN",
+                        "VkIOSSurfaceCreateInfoMVK",
+                        "VkMacOSSurfaceCreateInfoMVK",
+                        "VkImagePipeSurfaceCreateInfoFUCHSIA",
+                        "VkMetalSurfaceCreateInfoEXT",
+                        "VkHeadlessSurfaceCreateInfoEXT",
+                        "VkDirectFBSurfaceCreateInfoEXT",
+                        "VkScreenSurfaceCreateInfoQNX",
+                        "VkSurfaceCreateInfoOHOS",
+                        "VkUbmSurfaceCreateInfoSEC",
+                        "VkSwapchainCreateInfoKHR",
+                        "VkDisplayModeCreateInfoKHR",
+                        "VkVideoSessionCreateInfoKHR",
+                        "VkVideoSessionParametersCreateInfoKHR",
+                        "VkCuFunctionCreateInfoNVX",
+                        "VkCuModuleCreateInfoNVX",
+                        "VkGpaSessionCreateInfoAMD",
+                        "VkAccelerationStructureCreateInfoKHR",
+                        "VkAccelerationStructureCreateInfo2KHR",
+                        "VkAccelerationStructureCreateInfoNV",
+                        "VkMicromapCreateInfoEXT",
+                        "VkTensorCreateInfoARM",
+                        "VkTensorViewCreateInfoARM",
+                        "VkOpticalFlowSessionCreateInfoNV",
+                        "VkShaderCreateInfoEXT",
+                        "VkDataGraphPipelineSessionCreateInfoARM",
+                        "VkExternalComputeQueueCreateInfoNV",
+                        "VkIndirectCommandsLayoutCreateInfoEXT",
+                        "VkIndirectExecutionSetCreateInfoEXT",
+                        "VkShaderInstrumentationCreateInfoARM"]
+
+    from base_generator import BaseGenerator, SetOutputDirectory, SetTargetApiName, SetMergedApiNames, EnableCaching
+    _orig_endFile = BaseGenerator.endFile
+    def _patched_endFile(self):
+        for struct_name in debug_utils_hack:
+            if struct_name in self.vk.structs:
+                self.vk.structs[struct_name].extendedBy.extend(['VkDebugUtilsObjectNameInfoEXT', 'VkDebugUtilsObjectTagInfoEXT'])
+        _orig_endFile(self)
+    BaseGenerator.endFile = _patched_endFile
+
     SetOutputDirectory(directory)
     SetTargetApiName(api)
 

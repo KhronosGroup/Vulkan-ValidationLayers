@@ -468,6 +468,19 @@ void DebugReport::SetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT* pNameI
     }
 }
 
+void DebugReport::SetUtilsObjectName(const void* pNext, uint64_t object_handle) {
+    if (object_handle == (uint64_t)VK_NULL_HANDLE) {
+        return;
+    }
+    if (auto name_info = vku::FindStructInPNextChain<VkDebugUtilsObjectNameInfoEXT>(pNext); name_info && name_info->pObjectName) {
+        std::unique_lock<std::mutex> lock(debug_output_mutex);
+        debug_utils_object_name_map[object_handle] = name_info->pObjectName;
+
+        // Given this function is called at object creation time,
+        // no need to try to erase object name: it cannot possibly be there already
+    }
+}
+
 void DebugReport::SetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT* pNameInfo) {
     std::unique_lock<std::mutex> lock(debug_output_mutex);
     if (pNameInfo->pObjectName) {

@@ -694,3 +694,19 @@ TEST_F(NegativeDebugExtensions, DebugUtilsRecording) {
     vk::CmdInsertDebugUtilsLabelEXT(m_command_buffer, &label);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDebugExtensions, VkDebugUtilsObjectNameInfoEXTExtendsCreateInfo) {
+    RETURN_IF_SKIP(Init());
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
+    name_info.pObjectName = "my buffer";
+    VkBufferCreateInfo buff_ci = vku::InitStructHelper(&name_info);
+    buff_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    buff_ci.size = 256;
+    // Buffer is not bound to memory
+    vkt::Buffer buffer(*m_device, buff_ci, vkt::no_mem);
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkBufferViewCreateInfo-buffer-00935", "my buffer");
+    vkt::BufferView buffer_view(*m_device, buffer, VK_FORMAT_R8_UNORM);
+    m_errorMonitor->VerifyFound();
+}
