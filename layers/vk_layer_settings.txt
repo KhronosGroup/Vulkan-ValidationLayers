@@ -222,7 +222,7 @@ khronos_validation.printf_enable = false
 
 # Debug Printf only preset
 # =====================
-# A single, quick setting to turn on only DebugPrintf and turn off everything else
+# A single, quick setting to turn on only DebugPrintf and turn off everything else. Main usage is for people not able to use VkConfig and still want a fast preset to use.
 khronos_validation.printf_only_preset = false
 
 # Redirect Printf messages to stdout
@@ -238,7 +238,7 @@ khronos_validation.printf_verbose = false
 # Message Severity
 # =====================
 # Comma-delineated list of options specifying the types of messages to be reported
-khronos_validation.report_flags = error
+khronos_validation.report_flags = error,warn
 
 # Stateless Parameter
 # =====================
