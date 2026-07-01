@@ -19,7 +19,6 @@
 #pragma once
 
 #include <atomic>
-#include <chrono>
 #include <shared_mutex>
 #include <string>
 #include <thread>
@@ -83,14 +82,6 @@ class alignas(kObjectUseDataAlignment) ObjectUseData {
         const uint64_t prev = writer_reader_count.fetch_sub(uint64_t(1));
         assert((prev & 0xFFFFFFFF) != 0);
         return WriteReadCount(prev);
-    }
-    WriteReadCount GetCount() { return WriteReadCount(writer_reader_count); }
-
-    void WaitForObjectIdle(bool is_writer) {
-        // Wait for thread-safe access to object instead of skipping call.
-        while (GetCount().GetReadCount() > (uint32_t)(!is_writer) || GetCount().GetWriteCount() > (uint32_t)is_writer) {
-            std::this_thread::sleep_for(std::chrono::microseconds(1));
-        }
     }
 
     std::atomic<std::thread::id> thread{};
@@ -225,28 +216,13 @@ class Counter {
     void HandleErrorOnWrite(const std::shared_ptr<ObjectUseData>& use_data, T object, const Location& loc) {
         const std::thread::id tid = std::this_thread::get_id();
         const std::string error_message = GetErrorMessage(tid, use_data->thread.load(std::memory_order_relaxed));
-        const bool skip = logger->LogError("UNASSIGNED-Threading-MultipleThreads-Write", object, loc, "%s", error_message.c_str());
-        if (skip) {
-            // Wait for thread-safe access to object instead of skipping call.
-            use_data->WaitForObjectIdle(true);
-            // There is now no current use of the object. Record writer thread.
-            use_data->thread = tid;
-        } else {
-            // There is now no current use of the object. Record writer thread.
-            use_data->thread = tid;
-        }
+        logger->LogError("UNASSIGNED-Threading-MultipleThreads-Write", object, loc, "%s", error_message.c_str());
     }
 
     void HandleErrorOnRead(const std::shared_ptr<ObjectUseData>& use_data, T object, const Location& loc) {
         const std::thread::id tid = std::this_thread::get_id();
-        // There is a writer of the object.
         const auto error_message = GetErrorMessage(tid, use_data->thread.load(std::memory_order_relaxed));
-        const bool skip = logger->LogError("UNASSIGNED-Threading-MultipleThreads-Read", object, loc, "%s", error_message.c_str());
-        if (skip) {
-            // Wait for thread-safe access to object instead of skipping call.
-            use_data->WaitForObjectIdle(false);
-            use_data->thread = tid;
-        }
+        logger->LogError("UNASSIGNED-Threading-MultipleThreads-Read", object, loc, "%s", error_message.c_str());
     }
 
   private:
