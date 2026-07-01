@@ -4940,8 +4940,8 @@ TEST_F(NegativeImage, StencilExtendedFlags) {
     VkImageCreateFlags2CreateInfoKHR create_flags_2 = vku::InitStructHelper(&usage_flags_2);
     create_flags_2.flags = VK_IMAGE_CREATE_2_MUTABLE_FORMAT_BIT_KHR;
 
-    VkImageStencilUsageCreateInfo image_stencil_create_info = vku::InitStructHelper(&create_flags_2);
-    image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_STORAGE_BIT;
+    VkImageStencilUsage2CreateInfoKHR image_stencil_create_info = vku::InitStructHelper(&create_flags_2);
+    image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_2_STORAGE_BIT_KHR;
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper(&image_stencil_create_info);
     image_create_info.flags = 0;
@@ -4967,11 +4967,11 @@ TEST_F(NegativeImage, StencilExtendedFlags) {
     // when including VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, must not include bits other than
     // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT or VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
     image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
-    m_errorMonitor->SetDesiredError("VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539");
+    m_errorMonitor->SetDesiredError("VUID-VkImageStencilUsage2CreateInfoKHR-stencilUsage-12443");
     vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical(), &image_format_info2, &image_format_properties2);
     m_errorMonitor->VerifyFound();
     // test vkCreateImage as well for this case
-    CreateImageTest(image_create_info, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539");
+    CreateImageTest(image_create_info, "VUID-VkImageStencilUsage2CreateInfoKHR-stencilUsage-12443");
 }
 
 TEST_F(NegativeImage, DuplicatedStencilUsage) {
@@ -4981,7 +4981,7 @@ TEST_F(NegativeImage, DuplicatedStencilUsage) {
     AddRequiredFeature(vkt::Feature::extendedFlags);
     RETURN_IF_SKIP(Init());
 
-    VkImageStencilUsage2CreateInfoKHR stencil_usage_2= vku::InitStructHelper();
+    VkImageStencilUsage2CreateInfoKHR stencil_usage_2 = vku::InitStructHelper();
     stencil_usage_2.stencilUsage = VK_IMAGE_USAGE_STORAGE_BIT;
 
     VkImageStencilUsageCreateInfo stencil_usage = vku::InitStructHelper(&stencil_usage_2);
@@ -4997,7 +4997,7 @@ TEST_F(NegativeImage, DuplicatedStencilUsage) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_STORAGE_BIT;
-    CreateImageTest(image_create_info, "UNASSIGNED-VkImageStencilUsageCreateInfo-None");
+    CreateImageTest(image_create_info, "VUID-vkCreateImage-pNext-12442");
 }
 
 TEST_F(NegativeImage, CreateSamplerWithIncorrectBlockMatchWindowExtent) {
@@ -5822,4 +5822,26 @@ TEST_F(NegativeImage, ImageBlockMatchWindowWithAsymmetricClampToEdge) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeImage, DuplicatedImageViewUsage) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTENDED_FLAGS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedFlags);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    VkImageViewUsage2CreateInfoKHR image_view_usage_2 = vku::InitStructHelper();
+    image_view_usage_2.usage = VK_IMAGE_USAGE_2_SAMPLED_BIT_KHR;
+
+    VkImageViewUsageCreateInfo image_view_usage = vku::InitStructHelper(&image_view_usage_2);
+    image_view_usage.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    VkImageViewCreateInfo image_view_create_info = vku::InitStructHelper(&image_view_usage);
+    image_view_create_info.image = image;
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_view_create_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    CreateImageViewTest(image_view_create_info, "VUID-vkCreateImageView-pNext-12444");
 }
