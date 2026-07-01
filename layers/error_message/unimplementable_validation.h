@@ -334,6 +334,8 @@ const char* unimplementable_validation[] = {
     "VUID-VkAccelerationStructureTrianglesOpacityMicromapEXT-ppUsageCounts-parameter",
     "VUID-VkAccelerationStructureTrianglesDisplacementMicromapNV-pUsageCounts-parameter",
     "VUID-VkAccelerationStructureTrianglesDisplacementMicromapNV-ppUsageCounts-parameter",
+    "VUID-VkAccelerationStructureGeometryMicromapDataKHR-ppUsageCounts-parameter",
+    "VUID-VkAccelerationStructureGeometryMicromapDataKHR-pUsageCounts-parameter",
     "VUID-VkShaderCreateInfoEXT-pPushConstantRanges-parameter",
     "VUID-VkLatencySurfaceCapabilitiesNV-pPresentModes-parameter",
     "VUID-vkCmdBeginTransformFeedbackEXT-pCounterBufferOffsets-parameter",
@@ -687,6 +689,8 @@ const char* unimplementable_validation[] = {
     "VUID-VkPastPresentationTimingEXT-sType-sType",
     "VUID-VkPhysicalDeviceShaderAbortPropertiesKHR-sType-sType",
     "VUID-VkPhysicalDeviceFaultPropertiesKHR-sType-sType",
+    "VUID-VkPhysicalDeviceShaderSplitBarrierPropertiesEXT-sType-sType",
+    "VUID-VkPhysicalDeviceOpacityMicromapPropertiesKHR-sType-sType",
 
     // Needs to be correct for VVL to even know about the struct
     "VUID-VkLayerSettingsCreateInfoEXT-sType-sType"
