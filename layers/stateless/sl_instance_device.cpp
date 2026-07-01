@@ -898,6 +898,15 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
 
     if (pImageFormatInfo != nullptr) {
         const Location format_info_loc = error_obj.location.dot(Field::pImageFormatInfo);
+
+        const auto has_stencil_usage =
+            vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(pImageFormatInfo->pNext) != nullptr;
+        const auto has_stencil_usage_2 =
+            vku::FindStructInPNextChain<VkImageStencilUsage2CreateInfoKHR>(pImageFormatInfo->pNext) != nullptr;
+        if (has_stencil_usage && has_stencil_usage_2) {
+            skip |= LogError("VUID-vkCreateImage-pNext-12442", physicalDevice, error_obj.location.dot(Field::pNext),
+                             "contains both VkImageStencilUsageCreateInfo and VkImageStencilUsage2CreateInfoKHR.");
+        }
         const auto stencil_usage = GetImageStencilUsageFlags(pImageFormatInfo->pNext);
         if (stencil_usage.has_value()) {
             if ((stencil_usage.value() & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0) {
@@ -906,8 +915,12 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
                 // No flags other than the legal attachment bits may be set
                 legal_flags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
                 if ((stencil_usage.value() & ~legal_flags) != 0) {
-                    skip |= LogError("VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539", physicalDevice,
-                                     format_info_loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage), "is %s.",
+                    const char* vuid = has_stencil_usage_2 ? "VUID-VkImageStencilUsage2CreateInfoKHR-stencilUsage-12443"
+                                                           : "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539";
+                    Location stencil_usage_loc =
+                        has_stencil_usage_2 ? format_info_loc.pNext(Struct::VkImageStencilUsage2CreateInfoKHR, Field::stencilUsage)
+                                            : format_info_loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage);
+                    skip |= LogError(vuid, physicalDevice, stencil_usage_loc, "is %s.",
                                      string_VkImageUsageFlags2KHR(stencil_usage.value()).c_str());
                 }
             }
