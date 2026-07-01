@@ -35,18 +35,19 @@ void FlushValidationCmds(Validator &gpuav, CommandBufferSubState &cb_state);
 
 // Note: For lifetime reasons, `vuid` *has* to be statically allocated.
 template <typename IndirectCommand>
-void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, const LastBound &last_bound,
-                   VkBuffer buffer, VkDeviceSize offset, uint32_t draw_count, VkBuffer count_buffer,
+void FirstInstance(Validator& gpuav, CommandBufferSubState& cb_state, const Location& loc, const LastBound& last_bound,
+                   VkBuffer buffer, VkDeviceSize offset, uint32_t draw_count, uint32_t stride, VkBuffer count_buffer,
                    VkDeviceSize count_buffer_offset);
 
 template <>
-void FirstInstance<VkDrawIndirectCommand>(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc,
-                                          const LastBound &last_bound, VkBuffer buffer, VkDeviceSize offset, uint32_t draw_count,
-                                          VkBuffer count_buffer, VkDeviceSize count_buffer_offset);
+void FirstInstance<VkDrawIndirectCommand>(Validator& gpuav, CommandBufferSubState& cb_state, const Location& loc,
+                                          const LastBound& last_bound, VkBuffer buffer, VkDeviceSize offset, uint32_t draw_count,
+                                          uint32_t stride, VkBuffer count_buffer, VkDeviceSize count_buffer_offset);
 template <>
-void FirstInstance<VkDrawIndexedIndirectCommand>(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc,
-                                                 const LastBound &last_bound, VkBuffer buffer, VkDeviceSize offset,
-                                                 uint32_t draw_count, VkBuffer count_buffer, VkDeviceSize count_buffer_offset);
+void FirstInstance<VkDrawIndexedIndirectCommand>(Validator& gpuav, CommandBufferSubState& cb_state, const Location& loc,
+                                                 const LastBound& last_bound, VkBuffer buffer, VkDeviceSize offset,
+                                                 uint32_t draw_count, uint32_t stride, VkBuffer count_buffer,
+                                                 VkDeviceSize count_buffer_offset);
 
 // Use "api_" prefix to make it clear which buffer/offset/etc we are talking about
 // "api" helps to distinguish it is input from the user at the API level

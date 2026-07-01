@@ -303,29 +303,30 @@ static FirstInstanceValidationVuidSelector GetFirstInstanceValidationVuidSelecto
 template <>
 void FirstInstance<VkDrawIndirectCommand>(Validator& gpuav, CommandBufferSubState& cb_state, const Location& loc,
                                           const LastBound& last_bound, VkBuffer buffer, VkDeviceSize offset, uint32_t draw_count,
-                                          VkBuffer count_buffer, VkDeviceSize count_buffer_offset) {
+                                          uint32_t stride, VkBuffer count_buffer, VkDeviceSize count_buffer_offset) {
     FirstInstanceVUIDs vuids;
     vuids.vuid_09461 = "VUID-VkDrawIndirectCommand-pNext-09461";
     vuids.vuid_09462 = "VUID-VkDrawIndirectCommand-None-09462";
     vuids.vuid_00501_00554 = "VUID-VkDrawIndirectCommand-firstInstance-00501";
 
     FirstInstanceValidationVuidSelector vuid_selector = GetFirstInstanceValidationVuidSelector(vuids);
-    FirstInstance(gpuav, cb_state, loc, last_bound, buffer, offset, sizeof(VkDrawIndirectCommand),
-                  vvl::Struct::VkDrawIndirectCommand, 3, draw_count, count_buffer, count_buffer_offset, vuid_selector);
+    FirstInstance(gpuav, cb_state, loc, last_bound, buffer, offset, stride, vvl::Struct::VkDrawIndirectCommand, 3, draw_count,
+                  count_buffer, count_buffer_offset, vuid_selector);
 }
 
 template <>
 void FirstInstance<VkDrawIndexedIndirectCommand>(Validator& gpuav, CommandBufferSubState& cb_state, const Location& loc,
                                                  const LastBound& last_bound, VkBuffer buffer, VkDeviceSize offset,
-                                                 uint32_t draw_count, VkBuffer count_buffer, VkDeviceSize count_buffer_offset) {
+                                                 uint32_t draw_count, uint32_t stride, VkBuffer count_buffer,
+                                                 VkDeviceSize count_buffer_offset) {
     FirstInstanceVUIDs vuids;
     vuids.vuid_09461 = "VUID-VkDrawIndexedIndirectCommand-pNext-09461";
     vuids.vuid_09462 = "VUID-VkDrawIndexedIndirectCommand-None-09462";
     vuids.vuid_00501_00554 = "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554";
 
     FirstInstanceValidationVuidSelector vuid_selector = GetFirstInstanceValidationVuidSelector(vuids);
-    FirstInstance(gpuav, cb_state, loc, last_bound, buffer, offset, sizeof(VkDrawIndexedIndirectCommand),
-                  vvl::Struct::VkDrawIndexedIndirectCommand, 4, draw_count, count_buffer, count_buffer_offset, vuid_selector);
+    FirstInstance(gpuav, cb_state, loc, last_bound, buffer, offset, stride, vvl::Struct::VkDrawIndexedIndirectCommand, 4,
+                  draw_count, count_buffer, count_buffer_offset, vuid_selector);
 }
 
 struct CountBufferValidationShader {

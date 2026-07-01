@@ -11,12 +11,15 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <cstdint>
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "buffer_helper.h"
 #include "ray_tracing_objects.h"
+#include "render.h"
 #include "shader_object_helper.h"
 #include "shader_templates.h"
+#include "test_framework.h"
 
 class PositiveGpuAVIndirectBuffer : public GpuAVTest {};
 
@@ -418,5 +421,44 @@ TEST_F(PositiveGpuAVIndirectBuffer, BufferUsageFlags2) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatchIndirect(m_command_buffer, indirect_buffer, 0);
     m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVIndirectBuffer, FirstInstanceCustomStride) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12575");
+    AddRequiredFeature(vkt::Feature::multiDrawIndirect);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    struct CustomDrawIndirectCommand {
+        uint32_t vertexCount;
+        uint32_t instanceCount;
+        uint32_t firstVertex;
+        uint32_t firstInstance;
+        uint32_t padding;
+    };
+
+    constexpr uint32_t draw_cmd_size = sizeof(CustomDrawIndirectCommand);  // 20
+    vkt::Buffer indirect_buffer(*m_device, draw_cmd_size * 6, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    CustomDrawIndirectCommand* draw_params = (CustomDrawIndirectCommand*)(indirect_buffer.Memory().Map());
+    draw_params[0] = {3, 1, 0, 1, 8};  // unused, offset is after
+    draw_params[1] = {3, 1, 0, 0, 8};
+    draw_params[2] = {3, 1, 0, 0, 8};
+    draw_params[3] = {3, 1, 0, 0, 8};
+    draw_params[4] = {3, 1, 0, 0, 8};
+    draw_params[5] = {3, 1, 0, 0, 8};
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_command_buffer.Begin(&begin_info);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawIndirect(m_command_buffer, indirect_buffer, draw_cmd_size, 5, draw_cmd_size);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
