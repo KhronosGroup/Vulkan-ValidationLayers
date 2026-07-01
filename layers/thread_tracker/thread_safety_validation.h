@@ -103,14 +103,9 @@ class alignas(kObjectUseDataAlignment) ObjectUseData {
 template <typename T>
 class Counter {
   public:
-    VulkanObjectType object_type{};
-    Logger *logger{};
-
-    vvl::concurrent_unordered_map<T, std::shared_ptr<ObjectUseData>, 6> object_table;
-
-    void Init(VulkanObjectType type, Logger *val_obj) {
+    void Init(VulkanObjectType type, Logger* logger) {
         object_type = type;
-        logger = val_obj;
+        this->logger = logger;
     }
 
     void CreateObject(T object) { object_table.insert(object, std::make_shared<ObjectUseData>()); }
@@ -118,20 +113,6 @@ class Counter {
     void DestroyObject(T object) {
         if (object) {
             object_table.erase(object);
-        }
-    }
-
-    std::shared_ptr<ObjectUseData> FindObject(T object, const Location& loc) {
-        assert(object_table.contains(object));
-        auto iter = object_table.find(object);
-        if (iter != object_table.end()) {
-            return iter->second;
-        } else {
-            logger->LogError("UNASSIGNED-Threading-Info", object, loc,
-                             "Couldn't find %s Object 0x%" PRIxLEAST64
-                             ". This should not happen and may indicate a bug in the application.",
-                             string_VulkanObjectType(object_type), (uint64_t)(object));
-            return nullptr;
         }
     }
 
@@ -220,6 +201,20 @@ class Counter {
     }
 
   private:
+    std::shared_ptr<ObjectUseData> FindObject(T object, const Location& loc) {
+        assert(object_table.contains(object));
+        auto iter = object_table.find(object);
+        if (iter != object_table.end()) {
+            return iter->second;
+        } else {
+            logger->LogError("UNASSIGNED-Threading-Info", object, loc,
+                             "Couldn't find %s Object 0x%" PRIxLEAST64
+                             ". This should not happen and may indicate a bug in the application.",
+                             string_VulkanObjectType(object_type), (uint64_t)(object));
+            return nullptr;
+        }
+    }
+
     std::string GetErrorMessage(std::thread::id tid, std::thread::id other_tid) const {
         std::ostringstream err_str;
         err_str << "THREADING ERROR : object of type " << string_VulkanObjectType(object_type)
@@ -227,7 +222,7 @@ class Counter {
         return err_str.str();
     }
 
-    void HandleErrorOnWrite(const std::shared_ptr<ObjectUseData> &use_data, T object, const Location& loc) {
+    void HandleErrorOnWrite(const std::shared_ptr<ObjectUseData>& use_data, T object, const Location& loc) {
         const std::thread::id tid = std::this_thread::get_id();
         const std::string error_message = GetErrorMessage(tid, use_data->thread.load(std::memory_order_relaxed));
         const bool skip = logger->LogError("UNASSIGNED-Threading-MultipleThreads-Write", object, loc, "%s", error_message.c_str());
@@ -242,7 +237,7 @@ class Counter {
         }
     }
 
-    void HandleErrorOnRead(const std::shared_ptr<ObjectUseData> &use_data, T object, const Location& loc) {
+    void HandleErrorOnRead(const std::shared_ptr<ObjectUseData>& use_data, T object, const Location& loc) {
         const std::thread::id tid = std::this_thread::get_id();
         // There is a writer of the object.
         const auto error_message = GetErrorMessage(tid, use_data->thread.load(std::memory_order_relaxed));
@@ -253,6 +248,11 @@ class Counter {
             use_data->thread = tid;
         }
     }
+
+  private:
+    VulkanObjectType object_type{};
+    Logger* logger{};
+    vvl::concurrent_unordered_map<T, std::shared_ptr<ObjectUseData>, 6> object_table;
 };
 
 #define WRAPPER(type)                                                                               \
