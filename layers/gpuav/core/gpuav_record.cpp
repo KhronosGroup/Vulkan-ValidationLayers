@@ -446,7 +446,7 @@ void Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBu
     auto& sub_state = SubState(*cb_state);
 
     const LastBound& last_bound = cb_state->GetLastBoundGraphics();
-    valcmd::FirstInstance<VkDrawIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset, count,
+    valcmd::FirstInstance<VkDrawIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset, count, stride,
                                                  VK_NULL_HANDLE, 0);
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
 }
@@ -462,7 +462,7 @@ void Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffe
                                            VK_NULL_HANDLE, 0, "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
 
     valcmd::FirstInstance<VkDrawIndexedIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset, count,
-                                                        VK_NULL_HANDLE, 0);
+                                                        stride, VK_NULL_HANDLE, 0);
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
 }
 
@@ -494,7 +494,7 @@ void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer,
     valcmd::CountBuffer(*this, sub_state, record_obj.location, last_bound, buffer, offset, sizeof(VkDrawIndirectCommand),
                         vvl::Struct::VkDrawIndirectCommand, stride, countBuffer, countBufferOffset, vuid);
     valcmd::FirstInstance<VkDrawIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset, maxDrawCount,
-                                                 countBuffer, countBufferOffset);
+                                                 stride, countBuffer, countBufferOffset);
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
 }
 
@@ -511,11 +511,12 @@ void Validator::PreCallRecordCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, 
     const VkBuffer buffer = buffer_states[0]->VkHandle();
     const VkDeviceSize offset = pInfo->addressRange.address - buffer_states[0]->deviceAddress;
     const uint32_t draw_count = pInfo->drawCount;
+    const uint32_t stride = static_cast<uint32_t>(pInfo->addressRange.stride);
     auto& sub_state = SubState(*cb_state);
 
     const LastBound& last_bound = cb_state->GetLastBoundGraphics();
     valcmd::FirstInstance<VkDrawIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset, draw_count,
-                                                 VK_NULL_HANDLE, 0);
+                                                 stride, VK_NULL_HANDLE, 0);
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
     return;
 }
@@ -542,7 +543,7 @@ void Validator::PreCallRecordCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandB
                                            VK_NULL_HANDLE, 0, "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
 
     valcmd::FirstInstance<VkDrawIndexedIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset,
-                                                        draw_count, VK_NULL_HANDLE, 0);
+                                                        draw_count, stride, VK_NULL_HANDLE, 0);
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
     return;
 }
@@ -625,7 +626,7 @@ void Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer command
                         vvl::Struct::VkDrawIndexedIndirectCommand, stride, countBuffer, countBufferOffset,
                         "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02717");
     valcmd::FirstInstance<VkDrawIndexedIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset,
-                                                        maxDrawCount, countBuffer, countBufferOffset);
+                                                        maxDrawCount, stride, countBuffer, countBufferOffset);
 
     valcmd::DrawIndexedIndirectIndexBuffer(*this, sub_state, record_obj.location, last_bound, buffer, offset, stride, maxDrawCount,
                                            countBuffer, countBufferOffset,
