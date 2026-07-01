@@ -833,7 +833,7 @@ std::vector<std::shared_ptr<const vvl::PipelineLayout>> Pipeline::PipelineLayout
     // Only need to check pre-raster _or_ fragment shader layout; if either one is not merged_graphics_layout, then
     // merged_graphics_layout is a union
     if (pre_raster_state) {
-        if (pre_raster_state->pipeline_layout != fragment_shader_state->pipeline_layout) {
+        if (fragment_shader_state && (pre_raster_state->pipeline_layout != fragment_shader_state->pipeline_layout)) {
             return {pre_raster_state->pipeline_layout, fragment_shader_state->pipeline_layout};
         } else {
             return {pre_raster_state->pipeline_layout};
