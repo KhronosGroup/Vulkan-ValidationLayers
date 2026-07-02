@@ -1638,6 +1638,17 @@ bool CoreChecks::PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevic
             }
         }
 
+        if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR) {
+            if (as_state->GetType() != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR) {
+                const LogObjectList objlist(device, pAccelerationStructures[i]);
+                skip |= LogError("VUID-vkWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-12425", objlist, as_loc,
+                                 "was created with type %s, but queryType is "
+                                 "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR which requires "
+                                 "VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR.",
+                                 string_VkAccelerationStructureTypeKHR(as_state->GetType()));
+            }
+        }
+
         if (as_state->UsesCreateInfo2()) {
             skip |= LogError("VUID-vkWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-11592",
                              pAccelerationStructures[i], as_loc,
@@ -1690,6 +1701,17 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
                     LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-accelerationStructures-03431", commandBuffer,
                              as_loc, "was built with %s, but queryType is VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR.",
                              string_VkBuildAccelerationStructureFlagsKHR(as_state->GetBuildInfo()->flags).c_str());
+            }
+        }
+
+        if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR) {
+            if (as_state->GetType() != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR) {
+                skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-12425", commandBuffer,
+                                 as_loc,
+                                 "was created with type %s, but queryType is "
+                                 "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR which requires "
+                                 "VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR.",
+                                 string_VkAccelerationStructureTypeKHR(as_state->GetType()));
             }
         }
     }

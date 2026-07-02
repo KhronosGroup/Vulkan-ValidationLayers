@@ -736,3 +736,101 @@ TEST_F(PositiveRayTracingMicromap, OpacityMicromapPipelineFlagAndTrace) {
     vk::DestroyAccelerationStructureKHR(*m_device, bottomAS, NULL);
     vk::DestroyAccelerationStructureKHR(*m_device, micromapAS, NULL);
 }
+
+TEST_F(PositiveRayTracingMicromap, WriteMicromapsProperties) {
+    TEST_DESCRIPTION(
+        "Use vkWriteMicromapsPropertiesEXT (host) with VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT "
+        "and vkCmdWriteMicromapsPropertiesEXT (device) with VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    VkPhysicalDeviceOpacityMicromapFeaturesEXT ext_features = vku::InitStructHelper();
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper(&ext_features);
+    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_features = vku::InitStructHelper(&accel_features);
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&buffer_features);
+    vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
+    if (!ext_features.micromap) {
+        GTEST_SKIP() << "micromap feature not supported";
+    }
+    ext_features.micromap = VK_TRUE;
+    accel_features.accelerationStructure = VK_TRUE;
+    buffer_features.bufferDeviceAddress = VK_TRUE;
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
+    VkMicromapUsageEXT mm_usage = {};
+    mm_usage.count = 1;
+    mm_usage.subdivisionLevel = 0;
+    mm_usage.format = VK_OPACITY_MICROMAP_FORMAT_2_STATE_EXT;
+
+    VkMicromapBuildInfoEXT mm_build_info = vku::InitStructHelper();
+    mm_build_info.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
+    mm_build_info.flags = 0;
+    mm_build_info.mode = VK_BUILD_MICROMAP_MODE_BUILD_EXT;
+    mm_build_info.usageCountsCount = 1;
+    mm_build_info.pUsageCounts = &mm_usage;
+
+    VkMicromapBuildSizesInfoEXT size_info = vku::InitStructHelper();
+    vk::GetMicromapBuildSizesEXT(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &mm_build_info, &size_info);
+
+    // Micromap buffer must be host-visible for vkWriteMicromapsPropertiesEXT
+    vkt::Buffer micromap_buffer(*m_device, size_info.micromapSize, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT,
+                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    VkMicromapCreateInfoEXT mm_ci = vku::InitStructHelper();
+    mm_ci.buffer = micromap_buffer;
+    mm_ci.size = size_info.micromapSize;
+    mm_ci.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
+
+    VkMicromapEXT micromap = VK_NULL_HANDLE;
+    vk::CreateMicromapEXT(device(), &mm_ci, nullptr, &micromap);
+
+    vkt::Buffer data_buffer(*m_device, 512,
+                            VK_BUFFER_USAGE_MICROMAP_BUILD_INPUT_READ_ONLY_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                            vkt::device_address);
+    {
+        uint8_t* data = (uint8_t*)data_buffer.Memory().Map();
+        memset(data, 0, 512);
+        VkMicromapTriangleEXT* tri = (VkMicromapTriangleEXT*)data;
+        tri->dataOffset = 0;
+        tri->subdivisionLevel = 0;
+        tri->format = VK_OPACITY_MICROMAP_FORMAT_2_STATE_EXT;
+        data[256] = 0x01;
+        data_buffer.Memory().Unmap();
+    }
+
+    vkt::Buffer scratch_buffer(*m_device, std::max(size_info.buildScratchSize, VkDeviceSize(4)),
+                               VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, vkt::device_address);
+
+    mm_build_info.dstMicromap = micromap;
+    mm_build_info.data.deviceAddress = data_buffer.Address() + 256;
+    mm_build_info.triangleArray.deviceAddress = data_buffer.Address();
+    mm_build_info.triangleArrayStride = sizeof(VkMicromapTriangleEXT);
+    mm_build_info.scratchData.deviceAddress = scratch_buffer.Address();
+
+    m_command_buffer.Begin();
+    vk::CmdBuildMicromapsEXT(m_command_buffer, 1, &mm_build_info);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    // Use vkWriteMicromapsPropertiesEXT (host command) with SERIALIZATION_SIZE
+    VkDeviceSize serialization_size = 0;
+    vk::WriteMicromapsPropertiesEXT(device(), 1, &micromap, VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT, sizeof(VkDeviceSize),
+                                    &serialization_size, sizeof(VkDeviceSize));
+
+    // Use vkCmdWriteMicromapsPropertiesEXT (device command) with COMPACTED_SIZE
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT, 1);
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+    vk::CmdWriteMicromapsPropertiesEXT(m_command_buffer, 1, &micromap, VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT, query_pool, 0);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    vk::DestroyMicromapEXT(device(), micromap, nullptr);
+}
