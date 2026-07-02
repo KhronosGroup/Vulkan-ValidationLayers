@@ -2485,7 +2485,7 @@ TEST_F(NegativeSyncVal, DrawMeshTasksIndirectTestUpdate) {
 
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     vkt::Image image(*m_device, 64, 64, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
+    vkt::ImageView image_view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = image_view;
@@ -6206,7 +6206,7 @@ TEST_F(NegativeSyncVal, ExternalDependencyDoesNotSyncLayoutTransition) {
     const uint32_t h = 128;
 
     vkt::Image image(*m_device, w, h, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
+    vkt::ImageView image_view = image.CreateView();
 
     // Configure render pass with subpass dependencies
     VkAttachmentDescription attachment = {};

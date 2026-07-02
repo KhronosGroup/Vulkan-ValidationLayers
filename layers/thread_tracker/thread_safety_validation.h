@@ -151,7 +151,7 @@ class Counter {
             ReportError("UNASSIGNED-Threading-MultipleThreads-Read", use_data, object, loc);
         } else {
             // There are other readers of the object or we have other uses in the
-            // same call and all this is safe.
+            // same call and this is safe
         }
     }
 
