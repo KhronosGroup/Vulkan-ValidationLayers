@@ -53,6 +53,14 @@ inline constexpr size_t kObjectUseDataAlignment = 64;
 // Sanity check on the build machine
 static_assert(vku::concurrent::get_hardware_destructive_interference_size() % kObjectUseDataAlignment == 0);
 
+// Alternative to std::thread::id that is guaranteed to be uint32_t.
+// Internally implemented as atomic counter.
+// We combine this 32-bit value and vvl::Func to get 64-bit value for atomic operations
+uint32_t GetCurrentInternalThreadId();
+
+// Map internal id to std::thread::id
+std::thread::id GetStdThreadIdFromInternal(uint32_t internal_thread_id);
+
 class alignas(kObjectUseDataAlignment) ObjectUseData {
   public:
     struct UseStatus {
@@ -78,7 +86,15 @@ class alignas(kObjectUseDataAlignment) ObjectUseData {
         assert((prev & 0xFFFFFFFF) != 0);
     }
 
-    std::atomic<std::thread::id> thread{};
+    void UpdateThreadAndFunc(uint32_t internal_tid, vvl::Func func) {
+        const uint64_t value = static_cast<uint64_t>(func) << 32 | internal_tid;
+        thread_and_func.store(value);
+    }
+
+    uint32_t GetStoredInternalThreadId() const { return thread_and_func.load() & 0xffffffff; }
+
+    // 32-bit internal thread id and vvl::Func
+    std::atomic<uint64_t> thread_and_func{};
 
   private:
     // Need to update write and read counts atomically. Writer in high 32 bits, reader in low 32 bits.
@@ -109,13 +125,13 @@ class Counter {
         if (!use_data) {
             return;
         }
-        const std::thread::id tid = std::this_thread::get_id();
+        const uint32_t current_internal_tid = GetCurrentInternalThreadId();
         const auto [prev_read, prev_write] = use_data->AddWriter();
 
         if (!prev_read && !prev_write) {
             // There is no current use of the object. Record writer thread
-            use_data->thread = tid;
-        } else if (use_data->thread != tid) {
+            use_data->UpdateThreadAndFunc(current_internal_tid, loc.function);
+        } else if (use_data->GetStoredInternalThreadId() != current_internal_tid) {
             // Write collided with existing write or read
             ReportError("UNASSIGNED-Threading-MultipleThreads-Write", use_data, object, loc);
         } else {
@@ -140,13 +156,13 @@ class Counter {
         if (!use_data) {
             return;
         }
-        const std::thread::id tid = std::this_thread::get_id();
+        const uint32_t current_internal_tid = GetCurrentInternalThreadId();
         const auto [prev_read, prev_write] = use_data->AddReader();
 
         if (!prev_read && !prev_write) {
             // There is no current use of the object. Record reader thread
-            use_data->thread = tid;
-        } else if (prev_write && use_data->thread != tid) {
+            use_data->UpdateThreadAndFunc(current_internal_tid, loc.function);
+        } else if (prev_write && use_data->GetStoredInternalThreadId() != current_internal_tid) {
             // Read collided with existing write
             ReportError("UNASSIGNED-Threading-MultipleThreads-Read", use_data, object, loc);
         } else {
@@ -180,11 +196,25 @@ class Counter {
     }
 
     void ReportError(const char* vuid, const std::shared_ptr<ObjectUseData>& use_data, T object, const Location& loc) {
-        const std::thread::id tid = std::this_thread::get_id();
-        const std::thread::id other_tid = use_data->thread.load(std::memory_order_relaxed);
+        const uint64_t value = use_data->thread_and_func.load();
+        const uint32_t other_internal_tid = value & 0xffffffff;
+        const vvl::Func other_func = static_cast<vvl::Func>(value >> 32);
+        const std::thread::id current_tid = std::this_thread::get_id();
+
         std::ostringstream ss;
         ss << "THREADING ERROR : object of type " << string_VulkanObjectType(object_type)
-           << " is simultaneously used in current thread " << tid << " and thread " << other_tid;
+           << " is simultaneously used in current thread " << current_tid << " (" << vvl::String(loc.function) << ") and ";
+
+        if (other_internal_tid != 0) {  // common case
+            const std::thread::id other_tid = GetStdThreadIdFromInternal(other_internal_tid);
+            ss << "thread " << other_tid << " (" << vvl::String(other_func) << ")";
+        } else {  // rare case
+            // The object was just created and two racing threads access it for the first time.
+            // The other side of the race is not recorded yet (other_internal_tid == 0).
+            // Report only this side.
+            ss << "another thread";
+        }
+
         logger->LogError(vuid, object, loc, "%s", ss.str().c_str());
     }
 
