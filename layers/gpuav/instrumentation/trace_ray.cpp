@@ -343,6 +343,19 @@ void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState
 
     DispatchCmdBindPipeline(cb.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, as_gpu_state_update_pipeline.pipeline);
 
+    VkPipelineStageFlags all_shaders_stage_mask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+    if (gpuav.enabled_features.rayTracingPipeline) {
+        all_shaders_stage_mask |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+    }
+
+    {
+        VkMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
+        barrier_write_after_read.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        barrier_write_after_read.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        DispatchCmdPipelineBarrier(cb.VkHandle(), all_shaders_stage_mask, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1,
+                                   &barrier_write_after_read, 0, nullptr, 0, nullptr);
+    }
+
     for (uint32_t info_i = 0; info_i < info_count; ++info_i) {
         const VkAccelerationStructureBuildGeometryInfoKHR& info = infos[info_i];
 
@@ -365,35 +378,16 @@ void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState
         if (!as_gpu_state_update_pipeline.BindShaderResources(gpuav, cb, shader_resources)) {
             return;
         }
-        VkPipelineStageFlags all_shaders_stage_mask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-        if (gpuav.enabled_features.rayTracingPipeline) {
-            all_shaders_stage_mask |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
-        }
-        {
-            VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
-            barrier_write_after_read.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            barrier_write_after_read.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-            barrier_write_after_read.buffer = dst_as_gpuav_state.gpu_state.buffer;
-            barrier_write_after_read.offset = dst_as_gpuav_state.gpu_state.offset;
-            barrier_write_after_read.size = dst_as_gpuav_state.gpu_state.size;
-
-            DispatchCmdPipelineBarrier(cb.VkHandle(), all_shaders_stage_mask, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
-                                       1, &barrier_write_after_read, 0, nullptr);
-        }
 
         DispatchCmdDispatch(cb.VkHandle(), 1, 1, 1);
+    }
 
-        {
-            VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
-            barrier_read_after_write.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-            barrier_read_after_write.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            barrier_read_after_write.buffer = dst_as_gpuav_state.gpu_state.buffer;
-            barrier_read_after_write.offset = dst_as_gpuav_state.gpu_state.offset;
-            barrier_read_after_write.size = dst_as_gpuav_state.gpu_state.size;
-
-            DispatchCmdPipelineBarrier(cb.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, all_shaders_stage_mask, 0, 0, nullptr,
-                                       1, &barrier_read_after_write, 0, nullptr);
-        }
+    {
+        VkMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
+        barrier_read_after_write.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        barrier_read_after_write.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        DispatchCmdPipelineBarrier(cb.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, all_shaders_stage_mask, 0, 1,
+                                   &barrier_read_after_write, 0, nullptr, 0, nullptr);
     }
 }
 
