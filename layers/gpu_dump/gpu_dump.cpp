@@ -21,6 +21,7 @@
 #include "generated/vk_extension_helper.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/device_memory_state.h"
+#include "state_tracker/ray_tracing_state.h"
 
 namespace gpudump {
 
@@ -86,7 +87,6 @@ std::vector<uint8_t> GpuDump::CopyDataFromMemory(VkDeviceAddress memory_addresss
     return result;
 }
 
-// return for warning if no buffer found
 bool GpuDump::ListBuffers(std::ostringstream& ss, VkDeviceAddress address, uint32_t indents, bool new_line_start) {
     if (new_line_start) {
         ss << "\n";
@@ -117,6 +117,39 @@ bool GpuDump::ListBuffers(std::ostringstream& ss, VkDeviceAddress address, uint3
     }
 
     return buffer_states.empty();
+}
+
+bool GpuDump::ListAccelerationStructures(std::ostringstream& ss, VkDeviceAddress address, uint32_t indents, bool new_line_start) {
+    if (new_line_start) {
+        ss << "\n";
+    }
+
+    auto as_states = GetAccelerationStructuresByAddress(address);
+
+    for (uint32_t i = 0; i < indents; i++) {
+        ss << "    ";
+    }
+
+    for (uint32_t i = 0; i < as_states.size(); i++) {
+        if (i != 0) {
+            ss << '\n';
+            for (uint32_t j = 0; j < indents; j++) {
+                ss << "    ";
+            }
+        }
+        auto& as_state = as_states[i];
+        ss << "- " << as_state->Describe(*this);
+    }
+
+    if (as_states.empty()) {
+        ss << "- [WARNING] No VkAccelerationStructureKHR found at 0x" << std::hex << address;
+    }
+
+    if (!new_line_start) {
+        ss << "\n";
+    }
+
+    return as_states.empty();
 }
 
 void GpuDump::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {

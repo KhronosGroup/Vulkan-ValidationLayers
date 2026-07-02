@@ -21,6 +21,8 @@
 #include "shader_templates.h"
 #include "test_framework.h"
 #include "utils/math_utils.h"
+#include "descriptor_heap_object.h"
+#include "ray_tracing_objects.h"
 
 static const VkLayerSettingEXT kAllDumpSettings[3] = {
     {OBJECT_LAYER_NAME, "gpu_dump_device_generated_commands", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
@@ -2085,6 +2087,471 @@ TEST_F(NegativeGpuDump, DescriptorHeapHashConflict) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredInfo("GPU-DUMP");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeGpuDump, AccelStructPushAddressValid) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(InitDescriptorHeap());
+
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer);
+
+    VkDebugUtilsObjectNameInfoEXT tlas_dbg_name = vku::InitStructHelper();
+    tlas_dbg_name.objectType = VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
+    tlas_dbg_name.pObjectName = "my_tlas";
+    tlas_dbg_name.objectHandle = (uint64_t)tlas.GetDstAS()->handle();
+    vk::SetDebugUtilsObjectNameEXT(device(), &tlas_dbg_name);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = vku::InitStructHelper();
+    mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
+    mapping.sourceData.pushAddressOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+    pipeline.AddCreateInfoFlags2(VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT);
+
+    const char* ray_gen = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+
+        layout(location = 0) rayPayloadEXT vec3 hit;
+
+        void main() {
+            vec3 ray_origin = vec3(0,0,-50);
+            vec3 ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,-50);
+            ray_direction = vec3(0,0,-1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,50);
+            ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            ray_origin = vec3(0,0,50);
+            ray_direction = vec3(0,0,-1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,0);
+            ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+        }
+    )glsl";
+    pipeline.SetGlslRayGenShader(ray_gen, nullptr, &mapping_info);
+
+    const char* miss = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+
+        void main() {
+            hit = vec3(0.1, 0.2, 0.3);
+        }
+    )glsl";
+    pipeline.AddGlslMissShader(miss, nullptr, &mapping_info);
+
+    const char* closest_hit = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        #extension GL_ARB_gpu_shader_int64 : enable
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+        hitAttributeEXT vec2 baryCoord;
+
+        void main() {
+            const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
+            hit = barycentricCoords;
+        }
+    )glsl";
+    pipeline.AddGlslClosestHitShader(closest_hit, nullptr, &mapping_info);
+    pipeline.Build();
+
+    const uint32_t ray_gen_width = 1;
+    const uint32_t ray_gen_height = 4;
+    const uint32_t ray_gen_depth = 1;
+
+    m_command_buffer.Begin();
+    const VkDeviceAddress as_addr = tlas.GetDstAS()->GetAccelerationStructureDeviceAddress();
+    m_command_buffer.PushData(0, sizeof(as_addr), &as_addr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+    vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
+
+    m_errorMonitor->SetDesiredInfo("my_tlas");
+    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt, ray_gen_width, ray_gen_height, ray_gen_depth);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeGpuDump, AccelStructPushAddressInvalid) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(InitDescriptorHeap());
+
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer);
+
+    VkDebugUtilsObjectNameInfoEXT tlas_dbg_name = vku::InitStructHelper();
+    tlas_dbg_name.objectType = VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
+    tlas_dbg_name.pObjectName = "my_tlas";
+    tlas_dbg_name.objectHandle = (uint64_t)tlas.GetDstAS()->handle();
+    vk::SetDebugUtilsObjectNameEXT(device(), &tlas_dbg_name);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = vku::InitStructHelper();
+    mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
+    mapping.sourceData.pushAddressOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+    pipeline.AddCreateInfoFlags2(VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT);
+
+    const char* ray_gen = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+
+        layout(location = 0) rayPayloadEXT vec3 hit;
+
+        void main() {
+            vec3 ray_origin = vec3(0,0,-50);
+            vec3 ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,-50);
+            ray_direction = vec3(0,0,-1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,50);
+            ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            ray_origin = vec3(0,0,50);
+            ray_direction = vec3(0,0,-1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,0);
+            ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+        }
+    )glsl";
+    pipeline.SetGlslRayGenShader(ray_gen, nullptr, &mapping_info);
+
+    const char* miss = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+
+        void main() {
+            hit = vec3(0.1, 0.2, 0.3);
+        }
+    )glsl";
+    pipeline.AddGlslMissShader(miss, nullptr, &mapping_info);
+
+    const char* closest_hit = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+        hitAttributeEXT vec2 baryCoord;
+
+        void main() {
+            const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
+            hit = barycentricCoords;
+        }
+    )glsl";
+    pipeline.AddGlslClosestHitShader(closest_hit, nullptr, &mapping_info);
+    pipeline.Build();
+
+    const uint32_t ray_gen_width = 1;
+    const uint32_t ray_gen_height = 4;
+    const uint32_t ray_gen_depth = 1;
+
+    m_command_buffer.Begin();
+    // Invalidate AS address
+    const VkDeviceAddress as_addr = tlas.GetDstAS()->GetAccelerationStructureDeviceAddress() + 256;
+    m_command_buffer.PushData(0, sizeof(as_addr), &as_addr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+    vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
+
+    m_errorMonitor->SetDesiredWarning("No VkAccelerationStructureKHR found");
+    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt, ray_gen_width, ray_gen_height, ray_gen_depth);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeGpuDump, AccelStructHeapIndirectAddressValid) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(InitDescriptorHeap());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD (TLAS address will end up being garbage)";
+    }
+
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer);
+
+    VkDebugUtilsObjectNameInfoEXT tlas_dbg_name = vku::InitStructHelper();
+    tlas_dbg_name.objectType = VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
+    tlas_dbg_name.pObjectName = "my_tlas";
+    tlas_dbg_name.objectHandle = (uint64_t)tlas.GetDstAS()->handle();
+    vk::SetDebugUtilsObjectNameEXT(device(), &tlas_dbg_name);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = vku::InitStructHelper();
+    mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
+    mapping.sourceData.indirectAddress.pushOffset = 0;
+    mapping.sourceData.indirectAddress.addressOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+    pipeline.AddCreateInfoFlags2(VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT);
+
+    const char* ray_gen = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+
+        layout(location = 0) rayPayloadEXT vec3 hit;
+
+        void main() {
+            vec3 ray_origin = vec3(0,0,-50);
+            vec3 ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,-50);
+            ray_direction = vec3(0,0,-1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,50);
+            ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            ray_origin = vec3(0,0,50);
+            ray_direction = vec3(0,0,-1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,0);
+            ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+        }
+    )glsl";
+    pipeline.SetGlslRayGenShader(ray_gen, nullptr, &mapping_info);
+
+    const char* miss = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+
+        void main() {
+            hit = vec3(0.1, 0.2, 0.3);
+        }
+    )glsl";
+    pipeline.AddGlslMissShader(miss, nullptr, &mapping_info);
+
+    const char* closest_hit = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        #extension GL_ARB_gpu_shader_int64 : enable
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+        hitAttributeEXT vec2 baryCoord;
+
+        void main() {
+            const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
+            hit = barycentricCoords;
+        }
+    )glsl";
+    pipeline.AddGlslClosestHitShader(closest_hit, nullptr, &mapping_info);
+    pipeline.Build();
+
+    const uint32_t ray_gen_width = 1;
+    const uint32_t ray_gen_height = 4;
+    const uint32_t ray_gen_depth = 1;
+
+    const VkDeviceAddress as_addr = tlas.GetDstAS()->GetAccelerationStructureDeviceAddress();
+
+    vkt::Buffer indirect_buffer(*m_device, sizeof(VkDeviceAddress),
+                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT, vkt::device_address);
+    auto indirect_buffer_ptr = (VkDeviceAddress*)indirect_buffer.Memory().Map();
+    *indirect_buffer_ptr = as_addr;
+    indirect_buffer.Memory().Unmap();
+    const VkDeviceAddress indirect_buffer_addr = indirect_buffer.Address();
+
+    m_command_buffer.Begin();
+
+    m_command_buffer.PushData(0, sizeof(indirect_buffer_addr), &indirect_buffer_addr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+    vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
+
+    m_errorMonitor->SetDesiredInfo("my_tlas");
+    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt, ray_gen_width, ray_gen_height, ray_gen_depth);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeGpuDump, AccelStructHeapIndirectAddressInvalid) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(InitDescriptorHeap());
+
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer);
+
+    VkDebugUtilsObjectNameInfoEXT tlas_dbg_name = vku::InitStructHelper();
+    tlas_dbg_name.objectType = VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
+    tlas_dbg_name.pObjectName = "my_tlas";
+    tlas_dbg_name.objectHandle = (uint64_t)tlas.GetDstAS()->handle();
+    vk::SetDebugUtilsObjectNameEXT(device(), &tlas_dbg_name);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = vku::InitStructHelper();
+    mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
+    mapping.sourceData.indirectAddress.pushOffset = 0;
+    mapping.sourceData.indirectAddress.addressOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+    pipeline.AddCreateInfoFlags2(VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT);
+
+    const char* ray_gen = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+
+        layout(location = 0) rayPayloadEXT vec3 hit;
+
+        void main() {
+            vec3 ray_origin = vec3(0,0,-50);
+            vec3 ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,-50);
+            ray_direction = vec3(0,0,-1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,50);
+            ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            ray_origin = vec3(0,0,50);
+            ray_direction = vec3(0,0,-1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+            // Will miss
+            ray_origin = vec3(0,0,0);
+            ray_direction = vec3(0,0,1);
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+        }
+    )glsl";
+    pipeline.SetGlslRayGenShader(ray_gen, nullptr, &mapping_info);
+
+    const char* miss = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+
+        void main() {
+            hit = vec3(0.1, 0.2, 0.3);
+        }
+    )glsl";
+    pipeline.AddGlslMissShader(miss, nullptr, &mapping_info);
+
+    const char* closest_hit = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        #extension GL_ARB_gpu_shader_int64 : enable
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+        hitAttributeEXT vec2 baryCoord;
+
+        void main() {
+            const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
+            hit = barycentricCoords;
+        }
+    )glsl";
+    pipeline.AddGlslClosestHitShader(closest_hit, nullptr, &mapping_info);
+    pipeline.Build();
+
+    const uint32_t ray_gen_width = 1;
+    const uint32_t ray_gen_height = 4;
+    const uint32_t ray_gen_depth = 1;
+
+    const VkDeviceAddress as_addr = tlas.GetDstAS()->GetAccelerationStructureDeviceAddress();
+
+    vkt::Buffer indirect_buffer(*m_device, sizeof(VkDeviceAddress),
+                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT, vkt::device_address);
+    auto indirect_buffer_ptr = (VkDeviceAddress*)indirect_buffer.Memory().Map();
+    // Invalid AS addr
+    *indirect_buffer_ptr = as_addr + 256;
+    indirect_buffer.Memory().Unmap();
+    const VkDeviceAddress indirect_buffer_addr = indirect_buffer.Address();
+
+    m_command_buffer.Begin();
+
+    m_command_buffer.PushData(0, sizeof(indirect_buffer_addr), &indirect_buffer_addr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+    vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
+
+    m_errorMonitor->SetDesiredWarning("No VkAccelerationStructureKHR found");
+    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt, ray_gen_width, ray_gen_height, ray_gen_depth);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
