@@ -1650,6 +1650,9 @@ class DeviceState : public vvl::BaseDevice {
                                                                    const VkAccelerationStructureKHR* pAccelerationStructures,
                                                                    VkQueryType queryType, VkQueryPool queryPool,
                                                                    uint32_t firstQuery, const RecordObject& record_obj) override;
+    void PostCallRecordCmdWriteMicromapsPropertiesEXT(VkCommandBuffer commandBuffer, uint32_t micromapCount,
+                                                      const VkMicromapEXT* pMicromaps, VkQueryType queryType, VkQueryPool queryPool,
+                                                      uint32_t firstQuery, const RecordObject& record_obj) override;
     void PostCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                                 const VkViewportWScalingNV* pViewportWScalings,
                                                 const RecordObject& record_obj) override;

@@ -594,6 +594,15 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer& cb_state, const Qu
                              FormatHandle(query_obj.pool).c_str(), string_VkQueryType(query_pool_ci.queryType));
             break;
         }
+        case VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT:
+        case VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT: {
+            const char* vuid =
+                is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-08972" : "VUID-vkCmdBeginQuery-queryType-08972";
+            const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
+            skip |= LogError(vuid, objlist, loc.dot(Field::queryPool), "(%s) was created with queryType %s.",
+                             FormatHandle(query_obj.pool).c_str(), string_VkQueryType(query_pool_ci.queryType));
+            break;
+        }
         case VK_QUERY_TYPE_PIPELINE_STATISTICS: {
             if ((cb_state.command_pool.queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
                 if (query_pool_ci.pipelineStatistics &
@@ -881,6 +890,8 @@ bool CoreChecks::VerifyQueryIsReset(const vvl::CommandBuffer& cb_state, const Qu
                            : (command == Func::vkCmdEncodeVideoKHR)       ? "VUID-vkCmdEncodeVideoKHR-pNext-08361"
                            : (command == Func::vkCmdWriteAccelerationStructuresPropertiesKHR)
                                ? "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryPool-02494"
+                           : (command == Func::vkCmdWriteMicromapsPropertiesEXT)
+                               ? "VUID-vkCmdWriteMicromapsPropertiesEXT-None-12417"
                                : unexpected_caller_vuid;
         assert(strcmp(vuid, unexpected_caller_vuid) != 0);
 

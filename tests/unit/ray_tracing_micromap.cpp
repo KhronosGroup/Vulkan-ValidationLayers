@@ -2365,3 +2365,82 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_TraceRaysOMMPipelineFlagMissing) {
 
     vk::DestroyPipeline(device(), rt_pipeline, nullptr);
 }
+
+TEST_F(NegativeRayTracingMicromap, BeginQueryQueryPoolType) {
+    TEST_DESCRIPTION("Test CmdBeginQuery with invalid micromap queryPool queryType");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::micromap);
+    RETURN_IF_SKIP(Init());
+
+    const bool ext_transform_feedback = IsExtensionsEnabled(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+
+    auto cmd_begin_query_micromap = [this, ext_transform_feedback](VkQueryType query_type, auto vuid_begin_query,
+                                                                   auto vuid_begin_query_indexed) {
+        vkt::QueryPool query_pool(*m_device, query_type, 1);
+
+        m_command_buffer.Begin();
+        m_errorMonitor->SetDesiredError(vuid_begin_query);
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        if (ext_transform_feedback) {
+            m_errorMonitor->SetDesiredError(vuid_begin_query_indexed);
+            vk::CmdBeginQueryIndexedEXT(m_command_buffer, query_pool, 0, 0, 0);
+            m_errorMonitor->VerifyFound();
+        }
+        m_command_buffer.End();
+    };
+
+    cmd_begin_query_micromap(VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT, "VUID-vkCmdBeginQuery-queryType-08972",
+                             "VUID-vkCmdBeginQueryIndexedEXT-queryType-08972");
+    cmd_begin_query_micromap(VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT, "VUID-vkCmdBeginQuery-queryType-08972",
+                             "VUID-vkCmdBeginQueryIndexedEXT-queryType-08972");
+}
+
+TEST_F(NegativeRayTracingMicromap, WriteMicromapsPropertiesQueryNotReset) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    VkPhysicalDeviceOpacityMicromapFeaturesEXT ext_features = vku::InitStructHelper();
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&ext_features);
+    RETURN_IF_SKIP(InitFramework());
+    vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
+    if (!ext_features.micromap) {
+        GTEST_SKIP() << "micromap feature not supported";
+    }
+    ext_features.micromap = VK_TRUE;
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT);
+
+    VkMicromapCreateInfoEXT mm_ci = vku::InitStructHelper();
+    mm_ci.createFlags = 0;
+    mm_ci.buffer = buffer;
+    mm_ci.offset = 0;
+    mm_ci.size = 4096;
+    mm_ci.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
+    mm_ci.deviceAddress = 0ull;
+
+    VkMicromapEXT micromap = VK_NULL_HANDLE;
+    vk::CreateMicromapEXT(device(), &mm_ci, nullptr, &micromap);
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT, 1);
+
+    m_command_buffer.Begin();
+    vk::CmdWriteMicromapsPropertiesEXT(m_command_buffer, 1, &micromap, VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT, query_pool,
+                                       0);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWriteMicromapsPropertiesEXT-None-12417");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyMicromapEXT(device(), micromap, nullptr);
+}

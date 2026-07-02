@@ -3917,6 +3917,14 @@ void DeviceState::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
     cb_state->RecordWriteAccelerationStructuresProperties(queryPool, firstQuery, accelerationStructureCount, record_obj.location);
 }
 
+void DeviceState::PostCallRecordCmdWriteMicromapsPropertiesEXT(VkCommandBuffer commandBuffer, uint32_t micromapCount,
+                                                               const VkMicromapEXT* pMicromaps, VkQueryType queryType,
+                                                               VkQueryPool queryPool, uint32_t firstQuery,
+                                                               const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordWriteAccelerationStructuresProperties(queryPool, firstQuery, micromapCount, record_obj.location);
+}
+
 void DeviceState::PostCallRecordCreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkVideoSessionKHR* pVideoSession,
                                                       const RecordObject& record_obj) {
