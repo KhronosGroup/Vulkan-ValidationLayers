@@ -55,33 +55,27 @@ static_assert(vku::concurrent::get_hardware_destructive_interference_size() % kO
 
 class alignas(kObjectUseDataAlignment) ObjectUseData {
   public:
-    class WriteReadCount {
-      public:
-        explicit WriteReadCount(uint64_t v) : count(v) {}
-        uint32_t GetReadCount() const { return static_cast<uint32_t>(count & 0xFFFFFFFF); }
-        uint32_t GetWriteCount() const { return static_cast<uint32_t>(count >> 32); }
-
-      private:
-        uint64_t count{};
+    struct UseStatus {
+        explicit UseStatus(uint64_t v) : has_read((v & 0xFFFFFFFF) != 0), has_write((v >> 32) != 0) {}
+        bool has_read;
+        bool has_write;
     };
 
-    WriteReadCount AddWriter() {
+    UseStatus AddWriter() {
         const uint64_t prev = writer_reader_count.fetch_add(uint64_t(1) << 32);
-        return WriteReadCount(prev);
+        return UseStatus(prev);
     }
-    WriteReadCount AddReader() {
+    UseStatus AddReader() {
         const uint64_t prev = writer_reader_count.fetch_add(uint64_t(1));
-        return WriteReadCount(prev);
+        return UseStatus(prev);
     }
-    WriteReadCount RemoveWriter() {
-        const uint64_t prev = writer_reader_count.fetch_sub(uint64_t(1) << 32);
+    void RemoveWriter() {
+        [[maybe_unused]] const uint64_t prev = writer_reader_count.fetch_sub(uint64_t(1) << 32);
         assert((prev >> 32) != 0);
-        return WriteReadCount(prev);
     }
-    WriteReadCount RemoveReader() {
-        const uint64_t prev = writer_reader_count.fetch_sub(uint64_t(1));
+    void RemoveReader() {
+        [[maybe_unused]] const uint64_t prev = writer_reader_count.fetch_sub(uint64_t(1));
         assert((prev & 0xFFFFFFFF) != 0);
-        return WriteReadCount(prev);
     }
 
     std::atomic<std::thread::id> thread{};
@@ -115,33 +109,17 @@ class Counter {
         if (!use_data) {
             return;
         }
-
         const std::thread::id tid = std::this_thread::get_id();
-        const ObjectUseData::WriteReadCount prev_count = use_data->AddWriter();
-        const bool prev_read = prev_count.GetReadCount() != 0;
-        const bool prev_write = prev_count.GetWriteCount() != 0;
+        const auto [prev_read, prev_write] = use_data->AddWriter();
 
         if (!prev_read && !prev_write) {
-            // There is no current use of the object. Record writer thread.
+            // There is no current use of the object. Record writer thread
             use_data->thread = tid;
-        } else if (!prev_read) {
-            assert(prev_write);
-            // There are no other readers but there is another writer. Two writers just collided.
-            if (use_data->thread != tid) {
-                HandleErrorOnWrite(use_data, object, loc);
-            } else {
-                // This is either safe multiple use in one call, or recursive use.
-                // There is no way to make recursion safe. Just forge ahead.
-            }
+        } else if (use_data->thread != tid) {
+            // Write collided with existing write or read
+            ReportError("UNASSIGNED-Threading-MultipleThreads-Write", use_data, object, loc);
         } else {
-            assert(prev_read);
-            // There are other readers. This writer collided with them.
-            if (use_data->thread != tid) {
-                HandleErrorOnWrite(use_data, object, loc);
-            } else {
-                // This is either safe multiple use in one call, or recursive use.
-                // There is no way to make recursion safe. Just forge ahead.
-            }
+            // We have other uses in the same call which is safe
         }
     }
 
@@ -149,11 +127,9 @@ class Counter {
         if (object == VK_NULL_HANDLE) {
             return;
         }
-        auto use_data = FindObject(object, loc);
-        if (!use_data) {
-            return;
+        if (auto use_data = FindObject(object, loc)) {
+            use_data->RemoveWriter();
         }
-        use_data->RemoveWriter();
     }
 
     void StartRead(T object, const Location& loc) {
@@ -164,19 +140,18 @@ class Counter {
         if (!use_data) {
             return;
         }
-
         const std::thread::id tid = std::this_thread::get_id();
-        const ObjectUseData::WriteReadCount prev_count = use_data->AddReader();
-        const bool prev_read = prev_count.GetReadCount() != 0;
-        const bool prev_write = prev_count.GetWriteCount() != 0;
+        const auto [prev_read, prev_write] = use_data->AddReader();
 
         if (!prev_read && !prev_write) {
-            // There is no current use of the object. Record reader thread.
+            // There is no current use of the object. Record reader thread
             use_data->thread = tid;
         } else if (prev_write && use_data->thread != tid) {
-            HandleErrorOnRead(use_data, object, loc);
+            // Read collided with existing write
+            ReportError("UNASSIGNED-Threading-MultipleThreads-Read", use_data, object, loc);
         } else {
-            // There are other readers of the object.
+            // There are other readers of the object or we have other uses in the
+            // same call and all this is safe.
         }
     }
 
@@ -184,11 +159,9 @@ class Counter {
         if (object == VK_NULL_HANDLE) {
             return;
         }
-        auto use_data = FindObject(object, loc);
-        if (!use_data) {
-            return;
+        if (auto use_data = FindObject(object, loc)) {
+            use_data->RemoveReader();
         }
-        use_data->RemoveReader();
     }
 
   private:
@@ -206,23 +179,13 @@ class Counter {
         }
     }
 
-    std::string GetErrorMessage(std::thread::id tid, std::thread::id other_tid) const {
-        std::ostringstream err_str;
-        err_str << "THREADING ERROR : object of type " << string_VulkanObjectType(object_type)
-                << " is simultaneously used in current thread " << tid << " and thread " << other_tid;
-        return err_str.str();
-    }
-
-    void HandleErrorOnWrite(const std::shared_ptr<ObjectUseData>& use_data, T object, const Location& loc) {
+    void ReportError(const char* vuid, const std::shared_ptr<ObjectUseData>& use_data, T object, const Location& loc) {
         const std::thread::id tid = std::this_thread::get_id();
-        const std::string error_message = GetErrorMessage(tid, use_data->thread.load(std::memory_order_relaxed));
-        logger->LogError("UNASSIGNED-Threading-MultipleThreads-Write", object, loc, "%s", error_message.c_str());
-    }
-
-    void HandleErrorOnRead(const std::shared_ptr<ObjectUseData>& use_data, T object, const Location& loc) {
-        const std::thread::id tid = std::this_thread::get_id();
-        const auto error_message = GetErrorMessage(tid, use_data->thread.load(std::memory_order_relaxed));
-        logger->LogError("UNASSIGNED-Threading-MultipleThreads-Read", object, loc, "%s", error_message.c_str());
+        const std::thread::id other_tid = use_data->thread.load(std::memory_order_relaxed);
+        std::ostringstream ss;
+        ss << "THREADING ERROR : object of type " << string_VulkanObjectType(object_type)
+           << " is simultaneously used in current thread " << tid << " and thread " << other_tid;
+        logger->LogError(vuid, object, loc, "%s", ss.str().c_str());
     }
 
   private:
