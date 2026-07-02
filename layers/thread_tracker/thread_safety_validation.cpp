@@ -22,6 +22,25 @@
 
 namespace threadsafety {
 
+static std::atomic_uint32_t next_thread_id{1};  // 0 is reserved as default state (no thread)
+static vvl::concurrent_unordered_map<uint32_t, std::thread::id, 4> thread_id_map;
+
+static uint32_t RegisterCurrentThread() {
+    const uint32_t id = next_thread_id.fetch_add(1);
+    thread_id_map.insert(id, std::this_thread::get_id());
+    return id;
+}
+
+uint32_t GetCurrentInternalThreadId() {
+    thread_local uint32_t tls_id = RegisterCurrentThread();  // this runs once per thread
+    return tls_id;
+}
+
+std::thread::id GetStdThreadIdFromInternal(uint32_t internal_thread_id) {
+    auto it = thread_id_map.find(internal_thread_id);
+    return it != thread_id_map.end() ? it->second : std::thread::id{};
+}
+
 ReadLockGuard Device::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
 
 WriteLockGuard Device::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
