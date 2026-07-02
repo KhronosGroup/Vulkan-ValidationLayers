@@ -625,10 +625,25 @@ ImageInstruction::ImageInstruction(const uint32_t* words) {
         case spv::OpImageQueryLod:
         case spv::OpFragmentFetchAMD:
         case spv::OpFragmentMaskFetchAMD:
-        // Image atomics can only be accessed with these 3 atomics
         case spv::OpAtomicLoad:
         case spv::OpAtomicStore:
         case spv::OpAtomicExchange:
+        case spv::OpAtomicCompareExchange:
+        case spv::OpAtomicCompareExchangeWeak:
+        case spv::OpAtomicIIncrement:
+        case spv::OpAtomicIDecrement:
+        case spv::OpAtomicIAdd:
+        case spv::OpAtomicISub:
+        case spv::OpAtomicSMin:
+        case spv::OpAtomicUMin:
+        case spv::OpAtomicSMax:
+        case spv::OpAtomicUMax:
+        case spv::OpAtomicAnd:
+        case spv::OpAtomicOr:
+        case spv::OpAtomicXor:
+        case spv::OpAtomicFMinEXT:
+        case spv::OpAtomicFMaxEXT:
+        case spv::OpAtomicFAddEXT:
             break;
 
         case spv::OpImageSampleWeightedQCOM:
@@ -668,7 +683,7 @@ ImageInstruction::ImageInstruction(const uint32_t* words) {
     // Find any optional Image Operands
     const uint32_t image_operand_position = OpcodeImageOperandsPosition(image_opcode);
     const uint32_t length = words[0] >> 16;
-    if (length > image_operand_position) {
+    if (image_operand_position != 0 && length > image_operand_position) {
         const uint32_t image_operand_word = words[image_operand_position];
 
         if (is_sampler_sampled) {
