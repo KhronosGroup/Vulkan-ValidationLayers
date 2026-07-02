@@ -813,6 +813,46 @@ TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureTriangleMicromap
         m_errorMonitor->VerifyFound();
         m_command_buffer.End();
     }
+
+    {
+        vkt::Buffer temp_as_buffer(*m_device, 4096, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, vkt::device_address);
+        VkAccelerationStructureCreateInfoKHR temp_as_ci = vku::InitStructHelper();
+        temp_as_ci.buffer = temp_as_buffer;
+        temp_as_ci.offset = 0;
+        temp_as_ci.size = 4096;
+        temp_as_ci.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        VkAccelerationStructureKHR invalid_micromap;
+        vk::CreateAccelerationStructureKHR(device(), &temp_as_ci, nullptr, &invalid_micromap);
+        vk::DestroyAccelerationStructureKHR(device(), invalid_micromap, nullptr);
+
+        VkAccelerationStructureTrianglesOpacityMicromapKHR triangle_mm = vku::InitStructHelper();
+        triangle_mm.indexType = VK_INDEX_TYPE_UINT16;
+        triangle_mm.indexBuffer = micromap_buffer.Address();
+        triangle_mm.indexStride = 2;
+        triangle_mm.micromap = invalid_micromap;
+
+        VkAccelerationStructureGeometryKHR geometry = vku::InitStructHelper();
+        geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+        geometry.geometry.triangles = vku::InitStructHelper(&triangle_mm);
+        geometry.geometry.triangles.indexType = VK_INDEX_TYPE_NONE_KHR;
+        geometry.geometry.triangles.maxVertex = 3;
+        geometry.geometry.triangles.transformData.deviceAddress = triangle_buffer.Address();
+        geometry.geometry.triangles.vertexData.deviceAddress = triangle_buffer.Address();
+        geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+
+        build_info.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+        build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        build_info.srcAccelerationStructure = nullptr;
+        build_info.dstAccelerationStructure = blas1->handle();
+        build_info.geometryCount = 1;
+        build_info.pGeometries = &geometry;
+
+        m_command_buffer.Begin();
+        m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureTrianglesOpacityMicromapKHR-micromap-parameter");
+        vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &build_info, &range_info_ptr);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+    }
 }
 
 TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureTriangleMicromapIndexValidation) {
@@ -1024,6 +1064,38 @@ TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureIndexType) {
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBuildAccelerationStructuresKHR-commandBuffer-cmdpool");
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureTrianglesOpacityMicromapKHR-indexType-11570");
     vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &build_info, &range_info_ptr);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructuresBuildRangeInfosNull) {
+    RETURN_IF_SKIP(InitMicromapTest());
+
+    auto tlas = vkt::as::blueprint::AccelStructSimpleOnDeviceTopLevel(*m_device, 4096);
+    tlas->Create();
+
+    vkt::Buffer scratch_buffer(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                               vkt::device_address);
+
+    VkAccelerationStructureGeometryKHR geometry = vku::InitStructHelper();
+    geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+    geometry.geometry.instances = vku::InitStructHelper();
+    geometry.geometry.instances.arrayOfPointers = VK_FALSE;
+    geometry.geometry.instances.data.deviceAddress = 0;
+
+    VkAccelerationStructureBuildGeometryInfoKHR build_info = vku::InitStructHelper();
+    build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    build_info.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    build_info.geometryCount = 1;
+    build_info.pGeometries = &geometry;
+    build_info.dstAccelerationStructure = tlas->handle();
+    build_info.scratchData.deviceAddress = scratch_buffer.Address();
+
+    const VkAccelerationStructureBuildRangeInfoKHR* range_info_null = nullptr;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-ppBuildRangeInfos-11543");
+    vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &build_info, &range_info_null);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }

@@ -889,6 +889,33 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructure) {
     vk::DestroyAccelerationStructureKHR(device(), as, NULL);
 }
 
+TEST_F(NegativeRayTracing, BuildAccelerationStructureKHRSrcUnbound) {
+    TEST_DESCRIPTION("vkBuildAccelerationStructuresKHR with srcAccelerationStructure buffer not bound to memory");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(Init());
+
+    auto src_blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
+    src_blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+    src_blas.BuildHost();
+
+    src_blas.GetDstAS()->GetBuffer().Memory().Destroy();
+
+    auto update_blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
+    update_blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    update_blas.SetSrcAS(src_blas.GetDstAS());
+    update_blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+
+    m_errorMonitor->SetDesiredError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03708");
+    update_blas.BuildHost();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRayTracing, BuildAccelerationStructureKHR) {
     TEST_DESCRIPTION("Validate buffers used in vkBuildAccelerationStructureKHR");
 
@@ -946,6 +973,33 @@ TEST_F(NegativeRayTracing, DISABLED_BuildAccelerationStructureModeUpdate) {
 
     m_errorMonitor->SetDesiredError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03667");
     host_cached_blas.BuildHost();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDestroyedMemory) {
+    TEST_DESCRIPTION("vkWriteAccelerationStructuresPropertiesKHR with acceleration structure buffer memory destroyed");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(Init());
+
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
+    blas.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
+    blas.BuildHost();
+
+    blas.GetDstAS()->GetBuffer().Memory().Destroy();
+
+    constexpr size_t stride = sizeof(VkDeviceSize);
+    constexpr size_t data_size = sizeof(VkDeviceSize) * stride;
+    uint8_t data[data_size];
+
+    m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-buffer-03736");
+    vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &blas.GetDstAS()->handle(),
+                                                 VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, data_size, data, stride);
     m_errorMonitor->VerifyFound();
 }
 
