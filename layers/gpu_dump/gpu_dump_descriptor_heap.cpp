@@ -1294,8 +1294,13 @@ void CommandBufferSubState::DumpDescriptorHeapPushAddress(std::ostringstream& ss
     VkDeviceSize indirect_address = GetPushData(ss, warn, pushAddressOffset, 8);
 
     warn.AlignmentIndirectAddress(indirect_address);
-    warn.ResourceBufferUsage(indirect_address);
-    warn.indirect_buffer |= dev_data.ListBuffers(ss, indirect_address, 3, true);
+
+    if (warn.dump.resource_variable.is_acceleration_structure) {
+        warn.indirect_buffer |= dev_data.ListAccelerationStructures(ss, indirect_address, 3, true);
+    } else {
+        warn.ResourceBufferUsage(indirect_address);
+        warn.indirect_buffer |= dev_data.ListBuffers(ss, indirect_address, 3, true);
+    }
 }
 
 void CommandBufferSubState::DumpDescriptorHeapIndirectAddress(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
@@ -1318,8 +1323,13 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectAddress(std::ostringstream
         ss << new_bullet_line << "Resource Adresss 0x" << std::hex << resource_address;
 
         warn.AlignmentIndirectAddress(resource_address, true);
-        warn.ResourceBufferUsage(resource_address);
-        warn.indirect_buffer |= dev_data.ListBuffers(ss, resource_address, 3, true);
+
+        if (warn.dump.resource_variable.is_acceleration_structure) {
+            warn.indirect_buffer |= dev_data.ListAccelerationStructures(ss, resource_address, 3, true);
+        } else {
+            warn.ResourceBufferUsage(resource_address);
+            warn.indirect_buffer |= dev_data.ListBuffers(ss, resource_address, 3, true);
+        }
     }
 }
 

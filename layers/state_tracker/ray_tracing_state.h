@@ -167,6 +167,8 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     }
     const std::vector<VkAccelerationStructureBuildRangeInfoKHR> &GetBuildRangeInfos() const { return build_range_infos; }
 
+    std::string Describe(const Logger& dev_data) const;
+
   private:
     struct CreateInfo1 {
         CreateInfo1(const VkAccelerationStructureCreateInfoKHR *pCreateInfo, std::shared_ptr<vvl::Buffer> buffer)
