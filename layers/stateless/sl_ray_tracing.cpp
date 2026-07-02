@@ -1524,6 +1524,14 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
                     context, geometry, build_range, geometry_ptr_loc,
                     error_obj.location.dot(Field::ppBuildRangeInfos, info_i).brackets(geom_i));
             }
+
+            if (info.type != VK_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_KHR &&
+                geometry.geometryType != VK_GEOMETRY_TYPE_DENSE_GEOMETRY_FORMAT_TRIANGLES_AMDX) {
+                skip |= context.ValidateArray(info_loc.dot(Field::geometryCount),
+                                              error_obj.location.dot(Field::ppBuildRangeInfos, info_i), info.geometryCount,
+                                              &ppBuildRangeInfos[info_i], false, true, kVUIDUndefined,
+                                              "VUID-vkCmdBuildAccelerationStructuresKHR-ppBuildRangeInfos-11543");
+            }
         }
     }
 

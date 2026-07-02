@@ -733,6 +733,12 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
                                          uint64_t(geometry_build_range_primitive_count - 1) + uint64_t(micromap_khr->baseTriangle));
                         }
                     }
+                } else if (micromap_khr->micromap != VK_NULL_HANDLE) {
+                    skip |= LogError("VUID-VkAccelerationStructureTrianglesOpacityMicromapKHR-micromap-parameter", cb_objlist,
+                                     p_geom_geom_triangles_loc.pNext(Struct::VkAccelerationStructureTrianglesOpacityMicromapKHR,
+                                                                     Field::micromap),
+                                     "(%s) is not a valid VkAccelerationStructureKHR handle.",
+                                     FormatHandle(micromap_khr->micromap).c_str());
                 }
             }
         } else if (geom.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
@@ -1318,6 +1324,7 @@ bool CoreChecks::ValidateAccelerationStructureTrianglesOpacityMicromapKHR(
                              pInfo.indexStride, vvl::kU32Max);
         }
     }
+
     return skip;
 }
 
@@ -1336,11 +1343,36 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
 
         if (src_as_state) {
             if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
-                skip |= ValidateAccelStructBufferMemoryIsHostVisible(*src_as_state, info_loc.dot(Field::srcAccelerationStructure),
+                bool src_memory_is_bound = true;
+
+                if (src_as_state->UsesCreateInfo1()) {
+                    const auto src_as_buffer = src_as_state->GetFirstValidBuffer(*device_state);
+                    if (!src_as_buffer) {
+                        const LogObjectList objlist(device, info.srcAccelerationStructure);
+                        skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03708", objlist, info_loc.dot(Field::mode),
+                                         "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR but the buffer associated with "
+                                         "srcAccelerationStructure is not valid.");
+                        src_memory_is_bound = false;
+                    } else {
+                        const bool memory_not_bound = ValidateMemoryIsBoundToBuffer(
+                            device, *src_as_buffer.state, info_loc.dot(Field::srcAccelerationStructure),
+                            "VUID-vkBuildAccelerationStructuresKHR-pInfos-03708");
+                        skip |= memory_not_bound;
+                        if (memory_not_bound) {
+                            src_memory_is_bound = false;
+                        }
+                    }
+                }
+
+                if (src_memory_is_bound) {
+                    skip |=
+                        ValidateAccelStructBufferMemoryIsHostVisible(*src_as_state, info_loc.dot(Field::srcAccelerationStructure),
                                                                      "VUID-vkBuildAccelerationStructuresKHR-pInfos-03723");
-                skip |=
-                    ValidateAccelStructBufferMemoryIsNotMultiInstance(*src_as_state, info_loc.dot(Field::srcAccelerationStructure),
-                                                                      "VUID-vkBuildAccelerationStructuresKHR-pInfos-03776");
+                    skip |= ValidateAccelStructBufferMemoryIsNotMultiInstance(*src_as_state,
+                                                                              info_loc.dot(Field::srcAccelerationStructure),
+                                                                              "VUID-vkBuildAccelerationStructuresKHR-pInfos-03776");
+                }
+
                 skip |= ValidateAccelerationStructureBuildGeometryInfoUpdate(*src_as_state, info, info_loc, error_obj.handle);
             }
         }
@@ -1621,11 +1653,22 @@ bool CoreChecks::PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevic
         auto as_state = Get<vvl::AccelerationStructureKHR>(pAccelerationStructures[i]);
         ASSERT_AND_CONTINUE(as_state);
 
-        skip |= ValidateAccelStructBufferMemoryIsHostVisible(*as_state, as_loc,
-                                                             "VUID-vkWriteAccelerationStructuresPropertiesKHR-buffer-03733");
+        const auto as_buffer = as_state->GetFirstValidBuffer(*device_state);
+        bool memory_is_bound = false;
+        if (as_buffer && !as_buffer.state->Destroyed()) {
+            const bool memory_not_bound =
+                ValidateMemoryIsBoundToBuffer(device, *as_buffer.state, as_loc.dot(Field::buffer),
+                                              "VUID-vkWriteAccelerationStructuresPropertiesKHR-buffer-03736");
+            skip |= memory_not_bound;
+            memory_is_bound = !memory_not_bound;
+        }
 
-        skip |= ValidateAccelStructBufferMemoryIsNotMultiInstance(*as_state, as_loc,
-                                                                  "VUID-vkWriteAccelerationStructuresPropertiesKHR-buffer-03784");
+        if (memory_is_bound) {
+            skip |= ValidateAccelStructBufferMemoryIsHostVisible(*as_state, as_loc,
+                                                                 "VUID-vkWriteAccelerationStructuresPropertiesKHR-buffer-03733");
+            skip |= ValidateAccelStructBufferMemoryIsNotMultiInstance(
+                *as_state, as_loc, "VUID-vkWriteAccelerationStructuresPropertiesKHR-buffer-03784");
+        }
 
         if (as_state->GetBuildInfo().has_value()) {
             if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR) {
