@@ -321,6 +321,7 @@ void ExecutionModeSet::Add(const Instruction& insn) {
             break;
         case spv::ExecutionModeOpacityMicromapIdKHR:
             flags |= opacity_micromap_khr;
+            opacity_micromap_id = value;
             break;
         default:
             break;
@@ -590,6 +591,9 @@ EntryPoint::Accessible EntryPoint::GetAccessibleIds(const Module& module_state, 
         FindPointersAndObjects(entrypoint.entrypoint_insn, worklist);
     }
 
+    vvl::unordered_set<uint32_t> ray_query_init_as_vars{};
+    bool has_ray_query_proceed = false;
+
     std::unordered_map<uint32_t, uint32_t> entry_exit_pairs = {
         {spv::OpFunction, spv::OpFunctionEnd},
         {spv::OpGraphARM, spv::OpGraphEndARM},
@@ -640,11 +644,31 @@ EntryPoint::Accessible EntryPoint::GetAccessibleIds(const Module& module_state, 
                     case spv::OpEmitStreamVertex:
                         entrypoint.emit_vertex_geometry = true;
                         break;
+                    case spv::OpRayQueryProceedKHR:
+                        has_ray_query_proceed = true;
+                        break;
+                    case spv::OpRayQueryInitializeKHR: {
+                        const auto* as_insn = module_state.FindDef(insn.Operand(1));
+                        if (as_insn && as_insn->Opcode() == spv::OpLoad) {
+                            const auto* ptr_insn = module_state.FindDef(as_insn->Operand(0));
+                            if (ptr_insn && ptr_insn->IsAccessChain()) {
+                                ptr_insn = module_state.FindDef(ptr_insn->Operand(0));
+                            }
+                            if (ptr_insn && ptr_insn->Opcode() == spv::OpVariable) {
+                                ray_query_init_as_vars.insert(ptr_insn->ResultId());
+                            }
+                        }
+                        break;
+                    }
                     default:
                         break;
                 }
             }
         }
+    }
+
+    if (has_ray_query_proceed) {
+        entrypoint.ray_query_proceed_as_variables = std::move(ray_query_init_as_vars);
     }
 
     return accessible;
@@ -2765,6 +2789,13 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
         // Additionally allow PTLAS if shader uses cluster acceleration structure features
         if (module_state.HasCapability(spv::CapabilityRayTracingClusterAccelerationStructureNV)) {
             is_partitioned_acceleration_structure = true;
+        }
+
+        info.has_ray_query_proceed = entrypoint.ray_query_proceed_as_variables.count(id) != 0;
+        if (entrypoint.execution_mode.Has(ExecutionModeSet::opacity_micromap_khr)) {
+            const auto* omm_id_insn = module_state.FindDef(entrypoint.execution_mode.opacity_micromap_id);
+            info.has_opacity_micromap_id_khr =
+                omm_id_insn && (omm_id_insn->Opcode() == spv::OpConstantTrue || omm_id_insn->Opcode() == spv::OpSpecConstantTrue);
         }
     }
 

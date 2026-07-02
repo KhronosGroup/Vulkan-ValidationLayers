@@ -2293,3 +2293,185 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_TraceRaysOMMPipelineFlagMissing) {
 
     vk::DestroyPipeline(device(), rt_pipeline, nullptr);
 }
+
+TEST_F(NegativeRayTracingMicromap, RayQueryProceedWithoutOpacityMicromapIdExecutionMode) {
+    TEST_DESCRIPTION("Try to dispatch a ray query shader that omits OpacityMicromapIdKHR for an acceleration structure built with an "
+                     "opacity micromap.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::micromap);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(Init());
+
+    auto micromap = vkt::as::blueprint::BuildGeometryInfoOnDeviceMicromap(*m_device);
+    m_command_buffer.Begin();
+    micromap.SetupBuild(true);
+    micromap.VkCmdBuildAccelerationStructuresKHR(m_command_buffer, true, true);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Triangle);
+    blas.GetDstAS()->SetType(VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR);
+    vkt::as::GeometryKHR& triangles = blas.GetGeometries()[0];
+    VkAccelerationStructureTrianglesOpacityMicromapKHR micromap_geometry = vku::InitStructHelper();
+    micromap_geometry.indexType = triangles.GetVkObj().geometry.triangles.indexType;
+    micromap_geometry.indexBuffer = triangles.GetVkObj().geometry.triangles.indexData.deviceAddress;
+    micromap_geometry.indexStride = 3 * triangles.GetTrianglesIndexTypeByteSize();
+    micromap_geometry.baseTriangle = 0;
+    micromap_geometry.micromap = micromap.GetDstAS()->handle();
+    triangles.SetTrianglesOpacityMicromap(&micromap_geometry);
+
+    m_command_buffer.Begin();
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    const char* shader_source = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_query : require
+        layout(set = 0, binding = 0) uniform accelerationStructureEXT as;
+        void main() {
+            rayQueryEXT query;
+            rayQueryInitializeEXT(query, as, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0), 0.1, vec3(0,0,1), 100.0);
+            rayQueryProceedEXT(query);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipeline{*this};
+    pipeline.cs_ = VkShaderObj{*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2};
+    pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipeline.CreateComputePipeline();
+
+    VkAccelerationStructureKHR blas_handle = blas.GetDstAS()->handle();
+    pipeline.descriptor_set_.WriteDescriptorAccelStruct(0, 1, &blas_handle);
+    pipeline.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_, 0, 1,
+                              &pipeline.descriptor_set_.set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-micromap-11636");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeRayTracingMicromap, RayQueryProceedWithOpacityMicromapAndPlainAS) {
+    TEST_DESCRIPTION("Try to dispatch a ray query shader that omits OpacityMicromapIdKHR when "
+                     "one of two bound acceleration structures was built with an opacity micromap.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::micromap);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(Init());
+
+    auto plain_blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Triangle);
+    plain_blas.GetDstAS()->SetType(VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR);
+    m_command_buffer.Begin();
+    plain_blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    auto micromap = vkt::as::blueprint::BuildGeometryInfoOnDeviceMicromap(*m_device);
+    m_command_buffer.Begin();
+    micromap.SetupBuild(true);
+    micromap.VkCmdBuildAccelerationStructuresKHR(m_command_buffer, true, true);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    auto micromap_blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Triangle);
+    micromap_blas.GetDstAS()->SetType(VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR);
+    vkt::as::GeometryKHR& triangles = micromap_blas.GetGeometries()[0];
+    VkAccelerationStructureTrianglesOpacityMicromapKHR micromap_geometry = vku::InitStructHelper();
+    micromap_geometry.indexType = triangles.GetVkObj().geometry.triangles.indexType;
+    micromap_geometry.indexBuffer = triangles.GetVkObj().geometry.triangles.indexData.deviceAddress;
+    micromap_geometry.indexStride = 3 * triangles.GetTrianglesIndexTypeByteSize();
+    micromap_geometry.baseTriangle = 0;
+    micromap_geometry.micromap = micromap.GetDstAS()->handle();
+    triangles.SetTrianglesOpacityMicromap(&micromap_geometry);
+
+    m_command_buffer.Begin();
+    micromap_blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    const char* spv_source = R"asm(
+               OpCapability Shader
+               OpCapability RayQueryKHR
+               OpExtension "SPV_KHR_ray_query"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %as0 %as1
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %as0 DescriptorSet 0
+               OpDecorate %as0 Binding 0
+               OpDecorate %as1 DescriptorSet 0
+               OpDecorate %as1 Binding 1
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %bool = OpTypeBool
+       %uint = OpTypeInt 32 0
+     %uint_4 = OpConstant %uint 4
+   %uint_255 = OpConstant %uint 255
+      %float = OpTypeFloat 32
+    %float_0 = OpConstant %float 0
+  %float_0_1 = OpConstant %float 0.1
+    %float_1 = OpConstant %float 1
+  %float_100 = OpConstant %float 100
+    %v3float = OpTypeVector %float 3
+     %origin = OpConstantComposite %v3float %float_0 %float_0 %float_0
+        %dir = OpConstantComposite %v3float %float_0 %float_0 %float_1
+    %as_type = OpTypeAccelerationStructureKHR
+     %as_ptr = OpTypePointer UniformConstant %as_type
+    %rq_type = OpTypeRayQueryKHR
+     %rq_ptr = OpTypePointer Function %rq_type
+        %as0 = OpVariable %as_ptr UniformConstant
+        %as1 = OpVariable %as_ptr UniformConstant
+       %main = OpFunction %void None %3
+ %main_label = OpLabel
+     %query0 = OpVariable %rq_ptr Function
+     %query1 = OpVariable %rq_ptr Function
+ %loaded_as0 = OpLoad %as_type %as0
+               OpRayQueryInitializeKHR %query0 %loaded_as0 %uint_4 %uint_255 %origin %float_0_1 %dir %float_100
+         %r0 = OpRayQueryProceedKHR %bool %query0
+ %loaded_as1 = OpLoad %as_type %as1
+               OpRayQueryInitializeKHR %query1 %loaded_as1 %uint_4 %uint_255 %origin %float_0_1 %dir %float_100
+         %r1 = OpRayQueryProceedKHR %bool %query1
+               OpReturn
+               OpFunctionEnd
+    )asm";
+
+    CreateComputePipelineHelper pipeline{*this};
+    pipeline.cs_ = VkShaderObj{*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM};
+    pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                              {1, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipeline.CreateComputePipeline();
+
+    VkAccelerationStructureKHR micromap_blas_handle = micromap_blas.GetDstAS()->handle();
+    VkAccelerationStructureKHR plain_blas_handle = plain_blas.GetDstAS()->handle();
+    pipeline.descriptor_set_.WriteDescriptorAccelStruct(0, 1, &micromap_blas_handle);
+    pipeline.descriptor_set_.WriteDescriptorAccelStruct(1, 1, &plain_blas_handle);
+    pipeline.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_, 0, 1,
+                              &pipeline.descriptor_set_.set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-micromap-11636");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}

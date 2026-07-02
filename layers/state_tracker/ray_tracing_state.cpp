@@ -85,6 +85,7 @@ void AccelerationStructureKHR::Build(const VkAccelerationStructureBuildGeometryI
         build_geometry_info = vku::safe_VkAccelerationStructureBuildGeometryInfoKHR();
     }
     build_geometry_info->initialize(pInfo, is_host, build_range_info);
+    UpdateOpacityMicromapFlag();
 };
 
 void AccelerationStructureKHR::UpdateBuildRangeInfos(const VkAccelerationStructureBuildRangeInfoKHR* p_build_range_infos,
@@ -105,6 +106,25 @@ bool AccelerationStructureKHR::UsesCreateInfo1() const { return std::get_if<Crea
 
 bool AccelerationStructureKHR::UsesCreateInfo2() const {
     return std::get_if<vku::safe_VkAccelerationStructureCreateInfo2KHR>(&create_info) != nullptr;
+}
+
+void AccelerationStructureKHR::UpdateOpacityMicromapFlag() {
+    if (!build_geometry_info.has_value()) {
+        built_with_opacity_micromap_ = false;
+        return;
+    }
+    for (uint32_t index = 0; index < build_geometry_info->geometryCount; ++index) {
+        const auto* geometry = build_geometry_info->pGeometries ? &build_geometry_info->pGeometries[index] : nullptr;
+        if (!geometry && build_geometry_info->ppGeometries) {
+            geometry = build_geometry_info->ppGeometries[index];
+        }
+        if (geometry && geometry->geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR &&
+            vku::FindStructInPNextChain<VkAccelerationStructureTrianglesOpacityMicromapKHR>(geometry->geometry.triangles.pNext)) {
+            built_with_opacity_micromap_ = true;
+            return;
+        }
+    }
+    built_with_opacity_micromap_ = false;
 }
 
 BufferAndOffset AccelerationStructureKHR::GetFirstValidBuffer(const vvl::DeviceState& device_state) const {

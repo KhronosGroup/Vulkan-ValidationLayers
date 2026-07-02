@@ -164,10 +164,15 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     const std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> &GetBuildInfo() const { return build_geometry_info; }
     void SetBuildInfo(const std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> &info) {
         build_geometry_info = info;
+        UpdateOpacityMicromapFlag();
     }
     const std::vector<VkAccelerationStructureBuildRangeInfoKHR> &GetBuildRangeInfos() const { return build_range_infos; }
 
+    bool BuiltWithOpacityMicromap() const { return built_with_opacity_micromap_; }
+
   private:
+    void UpdateOpacityMicromapFlag();
+
     struct CreateInfo1 {
         CreateInfo1(const VkAccelerationStructureCreateInfoKHR *pCreateInfo, std::shared_ptr<vvl::Buffer> buffer)
             : ci(pCreateInfo), buffer_state(std::move(buffer)) {}
@@ -178,6 +183,7 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     std::variant<CreateInfo1, vku::safe_VkAccelerationStructureCreateInfo2KHR> create_info;
     VkDeviceAddressRangeKHR device_address_range{};
     bool was_deserialized_ = false;
+    bool built_with_opacity_micromap_ = false;
     uint64_t opaque_handle = 0;
     std::atomic<VkDeviceAddress> acceleration_structure_address = 0;
     std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> build_geometry_info;

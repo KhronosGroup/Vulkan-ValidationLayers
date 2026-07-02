@@ -1484,6 +1484,17 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  FormatHandle(mem_binding->Handle()).c_str(), DescribeInstruction().c_str());
             }
         }
+
+        if (resource_variable.info.has_ray_query_proceed && !resource_variable.info.has_opacity_micromap_id_khr &&
+            acc_node && !acc_node->Destroyed() && !IsExtEnabled(dev_proxy.extensions.vk_ext_opacity_micromap) &&
+            acc_node->BuiltWithOpacityMicromap()) {
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), acc_node->Handle());
+            skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::MICROMAP_11636), objlist, loc.Get(),
+                             "the %s is using acceleration structure %s that was built with an opacity micromap, but the shader "
+                             "does not specify the OpacityMicromapIdKHR execution mode as VK_TRUE.%s",
+                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(acc).c_str(),
+                             DescribeInstruction().c_str());
+        }
     } else {
         auto acc = descriptor.GetAccelerationStructureNV();
         auto acc_node = descriptor.GetAccelerationStructureStateNV();

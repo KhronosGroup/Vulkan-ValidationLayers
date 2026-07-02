@@ -225,6 +225,8 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::INDEPENDENT_SETS_13364: suffix = "flags-13364"; break;
         // ### VUID-vkCmdDraw-flags-13365
         case ActionVUID::INDEPENDENT_SETS_13365: suffix = "flags-13365"; break;
+        // ### VUID-vkCmdDraw-micromap-11636
+        case ActionVUID::MICROMAP_11636: suffix = "micromap-11636"; break;
 
         // ### VUID-vkCmdDraw-None-08608
         case ActionVUID::DYNAMIC_STATE_ALL_SET_08608: suffix = "None-08608"; break;

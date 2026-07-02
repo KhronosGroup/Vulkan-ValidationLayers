@@ -190,6 +190,7 @@ struct ExecutionModeSet {
     uint32_t output_vertices = kInvalidValue;
     uint32_t output_primitives = 0;
     uint32_t invocations = 0;
+    uint32_t opacity_micromap_id = kInvalidValue;
 
     void Add(const Instruction &insn);
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
@@ -494,6 +495,9 @@ struct ResourceInterfaceVariable : public VariableBase {
         bool is_read_without_format{false};   // For storage images
         bool is_write_without_format{false};  // For storage images
 
+        bool has_ray_query_proceed{false};
+        bool has_opacity_micromap_id_khr{false};
+
         // If a variable is used as a function argument, but never actually used, it will be found in EntryPoint::accessible so
         // we need to have a dedicated mark if it was accessed.
         // We use this for variable hashing, but the VariableBase has the helper functions to read this value.
@@ -578,6 +582,10 @@ struct EntryPoint {
 
     // Values found while gather the Accessible Ids
     bool emit_vertex_geometry;
+
+    // Variable Ids of acceleration structures passed to OpRayQueryInitializeKHR
+    // in an entrypoint that also contains OpRayQueryProceedKHR
+    vvl::unordered_set<uint32_t> ray_query_proceed_as_variables;
 
     // With multiple entry points we want to make sure we only look for instructions found in those entrypoints. These are all the
     // list of various instructions that have been found looking through all statically reachable functions in the module

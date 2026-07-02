@@ -14,6 +14,7 @@
 
 #include "layer_validation_tests.h"
 #include "descriptor_helper.h"
+#include "pipeline_helper.h"
 #include "ray_tracing_objects.h"
 
 class PositiveRayTracingMicromap : public RayTracingTest {};
@@ -735,4 +736,104 @@ TEST_F(PositiveRayTracingMicromap, OpacityMicromapPipelineFlagAndTrace) {
     vk::DestroyAccelerationStructureKHR(*m_device, topAS, NULL);
     vk::DestroyAccelerationStructureKHR(*m_device, bottomAS, NULL);
     vk::DestroyAccelerationStructureKHR(*m_device, micromapAS, NULL);
+}
+
+TEST_F(PositiveRayTracingMicromap, RayQueryProceedWithOpacityMicromapIdExecutionMode) {
+    TEST_DESCRIPTION("Dispatch a ray query shader that declares OpacityMicromapIdKHR when accessing an acceleration structure built with an "
+                     "opacity micromap.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::micromap);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(Init());
+
+    auto micromap = vkt::as::blueprint::BuildGeometryInfoOnDeviceMicromap(*m_device);
+    m_command_buffer.Begin();
+    micromap.SetupBuild(true);
+    micromap.VkCmdBuildAccelerationStructuresKHR(m_command_buffer, true, true);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Triangle);
+    blas.GetDstAS()->SetType(VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR);
+    vkt::as::GeometryKHR& triangles = blas.GetGeometries()[0];
+    VkAccelerationStructureTrianglesOpacityMicromapKHR micromap_geometry = vku::InitStructHelper();
+    micromap_geometry.indexType = triangles.GetVkObj().geometry.triangles.indexType;
+    micromap_geometry.indexBuffer = triangles.GetVkObj().geometry.triangles.indexData.deviceAddress;
+    micromap_geometry.indexStride = 3 * triangles.GetTrianglesIndexTypeByteSize();
+    micromap_geometry.baseTriangle = 0;
+    micromap_geometry.micromap = micromap.GetDstAS()->handle();
+    triangles.SetTrianglesOpacityMicromap(&micromap_geometry);
+
+    m_command_buffer.Begin();
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    const char* spv_source = R"asm(
+               OpCapability Shader
+               OpCapability RayQueryKHR
+               OpCapability RayTracingOpacityMicromapKHR
+               OpCapability RayTracingOpacityMicromapExecutionModeKHR
+               OpExtension "SPV_KHR_opacity_micromap"
+               OpExtension "SPV_KHR_ray_query"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %as
+               OpExecutionMode %main LocalSize 1 1 1
+               OpExecutionModeId %main OpacityMicromapIdKHR %omm
+               OpDecorate %as DescriptorSet 0
+               OpDecorate %as Binding 0
+               OpDecorate %omm SpecId 4
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %bool = OpTypeBool
+        %omm = OpSpecConstantTrue %bool
+       %uint = OpTypeInt 32 0
+     %uint_4 = OpConstant %uint 4
+   %uint_255 = OpConstant %uint 255
+      %float = OpTypeFloat 32
+    %float_0 = OpConstant %float 0
+  %float_0_1 = OpConstant %float 0.1
+    %float_1 = OpConstant %float 1
+  %float_100 = OpConstant %float 100
+    %v3float = OpTypeVector %float 3
+     %origin = OpConstantComposite %v3float %float_0 %float_0 %float_0
+        %dir = OpConstantComposite %v3float %float_0 %float_0 %float_1
+    %as_type = OpTypeAccelerationStructureKHR
+     %as_ptr = OpTypePointer UniformConstant %as_type
+    %rq_type = OpTypeRayQueryKHR
+     %rq_ptr = OpTypePointer Function %rq_type
+         %as = OpVariable %as_ptr UniformConstant
+       %main = OpFunction %void None %3
+ %main_label = OpLabel
+      %query = OpVariable %rq_ptr Function
+  %loaded_as = OpLoad %as_type %as
+               OpRayQueryInitializeKHR %query %loaded_as %uint_4 %uint_255 %origin %float_0_1 %dir %float_100
+         %33 = OpRayQueryProceedKHR %bool %query
+               OpReturn
+               OpFunctionEnd
+    )asm";
+
+    CreateComputePipelineHelper pipeline{*this};
+    pipeline.cs_ = VkShaderObj{*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM};
+    pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipeline.CreateComputePipeline();
+
+    VkAccelerationStructureKHR blas_handle = blas.GetDstAS()->handle();
+    pipeline.descriptor_set_.WriteDescriptorAccelStruct(0, 1, &blas_handle);
+    pipeline.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_, 0, 1,
+                              &pipeline.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
 }
