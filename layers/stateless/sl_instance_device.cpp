@@ -904,7 +904,7 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
         const auto has_stencil_usage_2 =
             vku::FindStructInPNextChain<VkImageStencilUsage2CreateInfoKHR>(pImageFormatInfo->pNext) != nullptr;
         if (has_stencil_usage && has_stencil_usage_2) {
-            skip |= LogError("VUID-vkCreateImage-pNext-12442", physicalDevice, error_obj.location.dot(Field::pNext),
+            skip |= LogError("VUID-vkCreateImage-pNext-12442", physicalDevice, format_info_loc.dot(Field::pNext),
                              "contains both VkImageStencilUsageCreateInfo and VkImageStencilUsage2CreateInfoKHR.");
         }
         const auto stencil_usage = GetImageStencilUsageFlags(pImageFormatInfo->pNext);
