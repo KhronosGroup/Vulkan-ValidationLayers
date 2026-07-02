@@ -2813,3 +2813,49 @@ TEST_F(PositiveGpuAVDescriptorIndexing, CooperativeMatrixRuntimeArray) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveGpuAVDescriptorIndexing, ImageNonUniformAtomicOr) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::shaderStorageImageArrayNonUniformIndexing);
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 1u, VK_FORMAT_R32_UINT, VK_IMAGE_USAGE_STORAGE_BIT);
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT is not supported.";
+    }
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : require
+
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+        layout(r32ui, set = 0, binding = 0) uniform uimage2D images[];
+
+        void main()
+        {
+            const uint index = gl_GlobalInvocationID.x;
+            imageAtomicOr(images[nonuniformEXT(index)], ivec2(0), 12345);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    pipe.CreateComputePipeline();
+
+    pipe.descriptor_set_.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                  VK_IMAGE_LAYOUT_GENERAL);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
