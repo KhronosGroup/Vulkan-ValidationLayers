@@ -3323,6 +3323,26 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OCP_MICROSCALING_TYPES_FEATURES_EXT: {
+                VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT*>(current);
+                if (enabling->shaderFloat4 && !supported.shaderFloat4) {
+                    ss << "VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderFloat4 is not supported\n";
+                }
+                if (enabling->shaderFloat6 && !supported.shaderFloat6) {
+                    ss << "VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderFloat6 is not supported\n";
+                }
+                if (enabling->shaderFloat8UnsignedE8M0 && !supported.shaderFloat8UnsignedE8M0) {
+                    ss << "VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderFloat8UnsignedE8M0 is not supported\n";
+                }
+                if (enabling->shaderMXInt8 && !supported.shaderMXInt8) {
+                    ss << "VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderMXInt8 is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT: {
                 VkPhysicalDeviceShaderObjectFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

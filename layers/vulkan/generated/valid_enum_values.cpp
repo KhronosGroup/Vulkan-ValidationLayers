@@ -1374,6 +1374,12 @@ ValidValue stateless::Context::IsValidEnumValue(VkComponentTypeKHR value) const 
         case VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT:
         case VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT:
             return IsExtEnabled(extensions.vk_ext_shader_float8) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_COMPONENT_TYPE_FLOAT6_E2M3_EXT:
+        case VK_COMPONENT_TYPE_FLOAT6_E3M2_EXT:
+        case VK_COMPONENT_TYPE_FLOAT4_E2M1_EXT:
+        case VK_COMPONENT_TYPE_FLOAT8_UNSIGNED_E8M0_EXT:
+        case VK_COMPONENT_TYPE_MXINT8_EXT:
+            return IsExtEnabled(extensions.vk_ext_shader_ocp_microscaling_types) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -3548,6 +3554,12 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkComponentTypeKHR value) 
         case VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT:
         case VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT:
             return {vvl::Extension::_VK_EXT_shader_float8};
+        case VK_COMPONENT_TYPE_FLOAT6_E2M3_EXT:
+        case VK_COMPONENT_TYPE_FLOAT6_E3M2_EXT:
+        case VK_COMPONENT_TYPE_FLOAT4_E2M1_EXT:
+        case VK_COMPONENT_TYPE_FLOAT8_UNSIGNED_E8M0_EXT:
+        case VK_COMPONENT_TYPE_MXINT8_EXT:
+            return {vvl::Extension::_VK_EXT_shader_ocp_microscaling_types};
         default:
             return {};
     };

@@ -4093,6 +4093,11 @@ void PnextChainFree(void* chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT*>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OCP_MICROSCALING_TYPES_FEATURES_EXT:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT*>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;

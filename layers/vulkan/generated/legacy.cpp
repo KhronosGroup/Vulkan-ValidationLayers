@@ -1265,6 +1265,80 @@ bool Device::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorDataE
     return false;
 }
 
+bool Device::PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
+                                              const VkMicromapBuildInfoEXT* pInfos, const ErrorObject& error_obj) const {
+    if (reported_BuildMicromapsEXT) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_opacity_micromap)) {
+        reported_BuildMicromapsEXT = true;
+        LogWarning("WARNING-legacy-host-builds", device, error_obj.location,
+                   "vkBuildMicromapsEXT is a legacy command and this VkDevice enabled the VK_EXT_opacity_micromap extension which "
+                   "contains vkCmdBuildMicromapsEXT that can be used instead.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCopyMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                            const VkCopyMicromapInfoEXT* pInfo, const ErrorObject& error_obj) const {
+    if (reported_CopyMicromapEXT) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_opacity_micromap)) {
+        reported_CopyMicromapEXT = true;
+        LogWarning("WARNING-legacy-host-builds", device, error_obj.location,
+                   "vkCopyMicromapEXT is a legacy command and this VkDevice enabled the VK_EXT_opacity_micromap extension which "
+                   "contains vkCmdCopyMicromapEXT that can be used instead.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCopyMicromapToMemoryEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                    const VkCopyMicromapToMemoryInfoEXT* pInfo,
+                                                    const ErrorObject& error_obj) const {
+    if (reported_CopyMicromapToMemoryEXT) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_opacity_micromap)) {
+        reported_CopyMicromapToMemoryEXT = true;
+        LogWarning("WARNING-legacy-host-builds", device, error_obj.location,
+                   "vkCopyMicromapToMemoryEXT is a legacy command and this VkDevice enabled the VK_EXT_opacity_micromap extension "
+                   "which contains vkCmdCopyMicromapToMemoryEXT that can be used instead.\nSee more information about this legacy "
+                   "in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCopyMemoryToMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                    const VkCopyMemoryToMicromapInfoEXT* pInfo,
+                                                    const ErrorObject& error_obj) const {
+    if (reported_CopyMemoryToMicromapEXT) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_opacity_micromap)) {
+        reported_CopyMemoryToMicromapEXT = true;
+        LogWarning("WARNING-legacy-host-builds", device, error_obj.location,
+                   "vkCopyMemoryToMicromapEXT is a legacy command and this VkDevice enabled the VK_EXT_opacity_micromap extension "
+                   "which contains vkCmdCopyMemoryToMicromapEXT that can be used instead.\nSee more information about this legacy "
+                   "in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateWriteMicromapsPropertiesEXT(VkDevice device, uint32_t micromapCount, const VkMicromapEXT* pMicromaps,
+                                                        VkQueryType queryType, size_t dataSize, void* pData, size_t stride,
+                                                        const ErrorObject& error_obj) const {
+    if (reported_WriteMicromapsPropertiesEXT) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_opacity_micromap)) {
+        reported_WriteMicromapsPropertiesEXT = true;
+        LogWarning(
+            "WARNING-legacy-host-builds", device, error_obj.location,
+            "vkWriteMicromapsPropertiesEXT is a legacy command and this VkDevice enabled the VK_EXT_opacity_micromap extension "
+            "which contains vkCmdWriteMicromapsPropertiesEXT that can be used instead.\nSee more information about this legacy in "
+            "the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds");
+    }
+    return false;
+}
+
 bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkAccelerationStructureKHR* pAccelerationStructure,
@@ -1278,6 +1352,89 @@ bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, cons
             "vkCreateAccelerationStructureKHR is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
             "extension which contains vkCreateAccelerationStructure2KHR that can be used instead.\nSee more information about this "
             "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateBuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                           uint32_t infoCount,
+                                                           const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                                                           const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
+                                                           const ErrorObject& error_obj) const {
+    if (reported_BuildAccelerationStructuresKHR) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_acceleration_structure)) {
+        reported_BuildAccelerationStructuresKHR = true;
+        LogWarning(
+            "WARNING-legacy-host-builds", device, error_obj.location,
+            "vkBuildAccelerationStructuresKHR is a legacy command and this VkDevice enabled the VK_KHR_acceleration_structure "
+            "extension which contains vkCmdBuildAccelerationStructuresKHR that can be used instead.\nSee more information about "
+            "this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                         const VkCopyAccelerationStructureInfoKHR* pInfo,
+                                                         const ErrorObject& error_obj) const {
+    if (reported_CopyAccelerationStructureKHR) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_acceleration_structure)) {
+        reported_CopyAccelerationStructureKHR = true;
+        LogWarning(
+            "WARNING-legacy-host-builds", device, error_obj.location,
+            "vkCopyAccelerationStructureKHR is a legacy command and this VkDevice enabled the VK_KHR_acceleration_structure "
+            "extension which contains vkCmdCopyAccelerationStructureKHR that can be used instead.\nSee more information about this "
+            "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                                 const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
+                                                                 const ErrorObject& error_obj) const {
+    if (reported_CopyAccelerationStructureToMemoryKHR) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_acceleration_structure)) {
+        reported_CopyAccelerationStructureToMemoryKHR = true;
+        LogWarning("WARNING-legacy-host-builds", device, error_obj.location,
+                   "vkCopyAccelerationStructureToMemoryKHR is a legacy command and this VkDevice enabled the "
+                   "VK_KHR_acceleration_structure extension which contains vkCmdCopyAccelerationStructureToMemoryKHR that can be "
+                   "used instead.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCopyMemoryToAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                                 const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
+                                                                 const ErrorObject& error_obj) const {
+    if (reported_CopyMemoryToAccelerationStructureKHR) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_acceleration_structure)) {
+        reported_CopyMemoryToAccelerationStructureKHR = true;
+        LogWarning("WARNING-legacy-host-builds", device, error_obj.location,
+                   "vkCopyMemoryToAccelerationStructureKHR is a legacy command and this VkDevice enabled the "
+                   "VK_KHR_acceleration_structure extension which contains vkCmdCopyMemoryToAccelerationStructureKHR that can be "
+                   "used instead.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevice device, uint32_t accelerationStructureCount,
+                                                                     const VkAccelerationStructureKHR* pAccelerationStructures,
+                                                                     VkQueryType queryType, size_t dataSize, void* pData,
+                                                                     size_t stride, const ErrorObject& error_obj) const {
+    if (reported_WriteAccelerationStructuresPropertiesKHR) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_acceleration_structure)) {
+        reported_WriteAccelerationStructuresPropertiesKHR = true;
+        LogWarning("WARNING-legacy-host-builds", device, error_obj.location,
+                   "vkWriteAccelerationStructuresPropertiesKHR is a legacy command and this VkDevice enabled the "
+                   "VK_KHR_acceleration_structure extension which contains vkCmdWriteAccelerationStructuresPropertiesKHR that can "
+                   "be used instead.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds");
     }
     return false;
 }

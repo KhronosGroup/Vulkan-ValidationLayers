@@ -311,6 +311,18 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityDotProductFloat8AccFloat32VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat8AccFloat32, nullptr, ""}},
         {spv::CapabilityConstantDataKHR, {0, &DeviceFeatures::shaderConstantData, nullptr, ""}},
         {spv::CapabilityAbortKHR, {0, &DeviceFeatures::shaderAbort, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityFloat4EXT, {0, &DeviceFeatures::shaderFloat4, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityFloat6EXT, {0, &DeviceFeatures::shaderFloat6, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityFloat8UnsignedE8M0EXT, {0, &DeviceFeatures::shaderFloat8UnsignedE8M0, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityMXInt8EXT, {0, &DeviceFeatures::shaderMXInt8, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityBitcastExtractEXT, {0, &DeviceFeatures::shaderFloat4, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityBitcastExtractEXT, {0, &DeviceFeatures::shaderFloat6, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -456,6 +468,7 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo>& GetSpirvExte
         {"SPV_VALVE_mixed_float_dot_product", {0, nullptr, &DeviceExtensions::vk_valve_shader_mixed_float_dot_product, ""}},
         {"SPV_KHR_abort", {0, nullptr, &DeviceExtensions::vk_khr_shader_abort, ""}},
         {"SPV_KHR_constant_data", {0, nullptr, &DeviceExtensions::vk_khr_shader_constant_data, ""}},
+        {"SPV_EXT_ocp_microscaling_types", {0, nullptr, &DeviceExtensions::vk_ext_shader_ocp_microscaling_types, ""}},
     };
     // clang-format on
     return spirv_extensions;
@@ -1439,6 +1452,7 @@ static inline std::string SpvExtensionRequirements(std::string_view extension) {
     {"SPV_VALVE_mixed_float_dot_product", {{vvl::Extension::_VK_VALVE_shader_mixed_float_dot_product}}},
     {"SPV_KHR_abort", {{vvl::Extension::_VK_KHR_shader_abort}}},
     {"SPV_KHR_constant_data", {{vvl::Extension::_VK_KHR_shader_constant_data}}},
+    {"SPV_EXT_ocp_microscaling_types", {{vvl::Extension::_VK_EXT_shader_ocp_microscaling_types}}},
     };
 
     // VUs before catch unknown extensions
