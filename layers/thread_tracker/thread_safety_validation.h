@@ -45,13 +45,10 @@ static_assert(std::is_same<uint64_t, DISTINCT_NONDISPATCHABLE_PHONY_HANDLE>::val
               "Mismatched non-dispatchable handle handle, expected uint64_t.");
 #endif
 
-// Align ObjectUseData to a cache line to avoid false sharing of its atomics.
-// Some CPUs (e.g. Apple M1) have 128-byte lines. We still use 64 to save memory,
-// accepting possible false sharing there.
-inline constexpr size_t kObjectUseDataAlignment = 64;
-
-// Sanity check on the build machine
-static_assert(vku::concurrent::get_hardware_destructive_interference_size() % kObjectUseDataAlignment == 0);
+struct ThreadInfo {
+    std::thread::id tid;
+    std::string thread_name;
+};
 
 // Alternative to std::thread::id that is guaranteed to be uint32_t.
 // Internally implemented as atomic counter.
@@ -59,7 +56,19 @@ static_assert(vku::concurrent::get_hardware_destructive_interference_size() % kO
 uint32_t GetCurrentInternalThreadId();
 
 // Map internal id to std::thread::id
-std::thread::id GetStdThreadIdFromInternal(uint32_t internal_thread_id);
+ThreadInfo GetThreadInfo(uint32_t internal_thread_id);
+
+// Return OS name of the calling thread or an empty string if the thread is unnamed
+// or the name cannot be retrieved
+std::string GetCurrentThreadName();
+
+// Align ObjectUseData to a cache line to avoid false sharing of its atomics.
+// Some CPUs (e.g. Apple M1) have 128-byte lines. We still use 64 to save memory,
+// accepting possible false sharing there.
+inline constexpr size_t kObjectUseDataAlignment = 64;
+
+// Sanity check on the build machine
+static_assert(vku::concurrent::get_hardware_destructive_interference_size() % kObjectUseDataAlignment == 0);
 
 class alignas(kObjectUseDataAlignment) ObjectUseData {
   public:
@@ -199,15 +208,25 @@ class Counter {
         const uint64_t value = use_data->thread_and_func.load();
         const uint32_t other_internal_tid = value & 0xffffffff;
         const vvl::Func other_func = static_cast<vvl::Func>(value >> 32);
+
         const std::thread::id current_tid = std::this_thread::get_id();
+        const std::string current_name = GetCurrentThreadName();
 
         std::ostringstream ss;
         ss << "THREADING ERROR : object of type " << string_VulkanObjectType(object_type)
-           << " is simultaneously used in current thread " << current_tid << " (" << vvl::String(loc.function) << ") and ";
+           << " is simultaneously used in current thread " << current_tid;
+        if (!current_name.empty()) {
+            ss << " \"" << current_name << "\"";
+        }
+        ss << " (" << vvl::String(loc.function) << ") and ";
 
         if (other_internal_tid != 0) {  // common case
-            const std::thread::id other_tid = GetStdThreadIdFromInternal(other_internal_tid);
-            ss << "thread " << other_tid << " (" << vvl::String(other_func) << ")";
+            const ThreadInfo other_info = GetThreadInfo(other_internal_tid);
+            ss << "thread " << other_info.tid;
+            if (!other_info.thread_name.empty()) {
+                ss << " \"" << other_info.thread_name << "\"";
+            }
+            ss << " (" << vvl::String(other_func) << ")";
         } else {  // rare case
             // The object was just created and two racing threads access it for the first time.
             // The other side of the race is not recorded yet (other_internal_tid == 0).
