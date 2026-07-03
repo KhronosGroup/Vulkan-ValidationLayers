@@ -3437,14 +3437,14 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                 vuid = is_2 ? "VUID-VkBlitImageInfo2-dstOffset-00249" : "VUID-vkCmdBlitImage-dstOffset-00249";
                 skip |= LogError(vuid, dst_objlist, region_loc.dot(Field::dstOffsets, 0).dot(Field::y),
                                  "is %" PRId32 " and dstOffsets[1].y is %" PRId32 " but both offsets must be greater than zero.",
-                                 region.dstOffsets[0].x, region.dstOffsets[1].x);
+                                 region.dstOffsets[0].y, region.dstOffsets[1].y);
             } else if (region.dstOffsets[0].y > static_cast<int32_t>(dst_extent.height) ||
                        region.dstOffsets[1].y > static_cast<int32_t>(dst_extent.height)) {
                 vuid = is_2 ? "VUID-VkBlitImageInfo2-dstOffset-00249" : "VUID-vkCmdBlitImage-dstOffset-00249";
                 skip |= LogError(vuid, dst_objlist, region_loc.dot(Field::dstOffsets, 0).dot(Field::y),
                                  "is %" PRId32 " and dstOffsets[1].y is %" PRId32
                                  " which exceed dstSubresource height extent (%" PRIu32 ").\n%s",
-                                 region.dstOffsets[0].x, region.dstOffsets[1].x, dst_extent.height,
+                                 region.dstOffsets[0].y, region.dstOffsets[1].y, dst_extent.height,
                                  dst_image_state->DescribeSubresourceLayers(dst_subresource).c_str());
             } else if (region.dstOffsets[0].z < 0 || region.dstOffsets[1].z < 0) {
                 vuid = is_2 ? "VUID-VkBlitImageInfo2-dstOffset-00251" : "VUID-vkCmdBlitImage-dstOffset-00251";
