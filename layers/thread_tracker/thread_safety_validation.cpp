@@ -20,14 +20,71 @@
 #include "containers/span.h"
 #include "containers/container_utils.h"
 
+// Get current thread description on Windows
+#if defined(_WIN32)
+#include <windows.h>
+#include <vector>
+static std::string GetWin32ThreadDescription() {
+    // GetThreadDescription is missing before Windows 10 1607 so resolve at runtime
+    using GetThreadDescriptionFunc = HRESULT(WINAPI*)(HANDLE, PWSTR*);
+    static const GetThreadDescriptionFunc get_thread_description = reinterpret_cast<GetThreadDescriptionFunc>(
+        (void*)::GetProcAddress(::GetModuleHandleW(L"kernel32.dll"), "GetThreadDescription"));
+
+    if (!get_thread_description) {
+        return {};
+    }
+    PWSTR description = nullptr;
+    if (FAILED(get_thread_description(::GetCurrentThread(), &description))) {
+        return {};
+    }
+    const int buffer_size = ::WideCharToMultiByte(CP_UTF8, 0, description, -1, nullptr, 0, nullptr, nullptr);
+    if (buffer_size <= 0) {
+        ::LocalFree(description);
+        return {};
+    }
+    std::vector<char> buffer(buffer_size);
+    const int bytes_written = ::WideCharToMultiByte(CP_UTF8, 0, description, -1, buffer.data(), buffer_size, nullptr, nullptr);
+    ::LocalFree(description);
+    if (bytes_written <= 0) {
+        return {};
+    }
+    return std::string(buffer.data());
+}
+#endif
+
+// Get thread name on Linux, Android (API >= 26) and Mac
+#if defined(__linux__) || defined(__APPLE__)
+#include <pthread.h>
+static std::string GetPThreadName() {
+    char name[64] = {};  // on linux only 16 bytes are used, on Mac it can be more
+    if (pthread_getname_np(pthread_self(), name, sizeof(name)) != 0) {
+        return {};
+    }
+    // On Linux unnamed thread goes with default name (executable).
+    // On Mac default thread name is empty (similar to Windows)
+    return name;
+}
+#endif
+
 namespace threadsafety {
 
 static std::atomic_uint32_t next_thread_id{1};  // 0 is reserved as default state (no thread)
-static vvl::concurrent_unordered_map<uint32_t, std::thread::id, 4> thread_id_map;
+static vvl::concurrent_unordered_map<uint32_t, ThreadInfo, 4> thread_id_map;
+
+std::string GetCurrentThreadName() {
+#if defined(_WIN32)
+    return GetWin32ThreadDescription();
+#elif defined(__linux__) || defined(__APPLE__)  // this also includes Android
+    return GetPThreadName();
+#else
+    return {};
+#endif
+}
 
 static uint32_t RegisterCurrentThread() {
     const uint32_t id = next_thread_id.fetch_add(1);
-    thread_id_map.insert(id, std::this_thread::get_id());
+    const std::string thread_name = GetCurrentThreadName();
+    thread_id_map.insert(id, ThreadInfo{std::this_thread::get_id(), thread_name});
     return id;
 }
 
@@ -36,9 +93,9 @@ uint32_t GetCurrentInternalThreadId() {
     return tls_id;
 }
 
-std::thread::id GetStdThreadIdFromInternal(uint32_t internal_thread_id) {
+ThreadInfo GetThreadInfo(uint32_t internal_thread_id) {
     auto it = thread_id_map.find(internal_thread_id);
-    return it != thread_id_map.end() ? it->second : std::thread::id{};
+    return it != thread_id_map.end() ? it->second : ThreadInfo{};
 }
 
 ReadLockGuard Device::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
