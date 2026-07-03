@@ -4335,7 +4335,7 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
         skip |= LogError(vuid, objlist, loc.dot(Field::set),
                          "(%" PRIu32
                          ") in the layout does not point to a valid VkDescriptorSetLayout, it is possible the "
-                         "VkDescriptorUpdateTemplateCreateInfo::descriptorSetLayout was accidentally destroy.",
+                         "VkDescriptorUpdateTemplateCreateInfo::descriptorSetLayout was accidentally destroyed.",
                          set);
     } else {
         // Create an empty proxy in order to use the existing descriptor set update validation
