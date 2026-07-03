@@ -562,7 +562,7 @@ bool Device::ValidateCreateImageStencilUsage(const VkImageCreateInfo& create_inf
     const auto has_stencil_usage = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(create_info.pNext) != nullptr;
     const auto has_stencil_usage_2 = vku::FindStructInPNextChain<VkImageStencilUsage2CreateInfoKHR>(create_info.pNext) != nullptr;
     if (has_stencil_usage && has_stencil_usage_2) {
-        skip |= LogError("VUID-vkCreateImage-pNext-12442", device, create_info_loc.dot(Field::pNext),
+        skip |= LogError("VUID-VkImageCreateInfo-pNext-12442", device, create_info_loc.dot(Field::pNext),
                          "contains both VkImageStencilUsageCreateInfo and VkImageStencilUsage2CreateInfoKHR.");
         return skip;
     }

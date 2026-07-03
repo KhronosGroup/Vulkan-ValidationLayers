@@ -4997,7 +4997,7 @@ TEST_F(NegativeImage, DuplicatedStencilUsage) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_STORAGE_BIT;
-    CreateImageTest(image_create_info, "VUID-vkCreateImage-pNext-12442");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-pNext-12442");
 }
 
 TEST_F(NegativeImage, CreateSamplerWithIncorrectBlockMatchWindowExtent) {
