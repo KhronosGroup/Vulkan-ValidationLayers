@@ -1372,7 +1372,7 @@ bool CoreChecks::ValidateRenderPassBarriers(const Location& outer_loc, const vvl
 
         skip |= state.ValidateStage(barrier_loc, img_barrier.srcStageMask, img_barrier.dstStageMask);
         skip |= state.ValidateAccess(barrier_loc, img_barrier.srcAccessMask, img_barrier.dstAccessMask);
-        skip |= ValidateRenderPassPipelineStage(state.rp_handle, outer_loc, img_barrier.srcAccessMask, img_barrier.dstAccessMask);
+        skip |= ValidateRenderPassPipelineStage(state.rp_handle, outer_loc, img_barrier.srcStageMask, img_barrier.dstStageMask);
         skip |= ValidateRenderPassInstanceNoLayoutChange(LogObjectList(cb_state.Handle(), rp_state->Handle(), img_barrier.image),
                                                          barrier_loc, img_barrier.oldLayout, img_barrier.newLayout);
 
