@@ -1819,6 +1819,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT", 52},
     {"VkPhysicalDeviceShaderMultipleWaitQueuesFeaturesQCOM", 53},
     {"VkPhysicalDeviceShaderMultipleWaitQueuesPropertiesQCOM", 55},
+    {"VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT", 54},
     {"VkPhysicalDeviceShaderObjectFeaturesEXT", 40},
     {"VkPhysicalDeviceShaderObjectPropertiesEXT", 42},
     {"VkPhysicalDeviceShaderQuadControlFeaturesKHR", 45},
@@ -5098,9 +5099,12 @@ const char* String(Field field) {
     {"shaderExpectAssume", 19},
     {"shaderFloat16", 14},
     {"shaderFloat16VectorAtomics", 27},
+    {"shaderFloat4", 13},
+    {"shaderFloat6", 13},
     {"shaderFloat64", 14},
     {"shaderFloat8", 13},
     {"shaderFloat8CooperativeMatrix", 30},
+    {"shaderFloat8UnsignedE8M0", 25},
     {"shaderFloatControls2", 21},
     {"shaderFmaFloat16", 17},
     {"shaderFmaFloat32", 17},
@@ -5123,6 +5127,7 @@ const char* String(Field field) {
     {"shaderInt8", 11},
     {"shaderIntegerDotProduct", 24},
     {"shaderIntegerFunctions2", 24},
+    {"shaderMXInt8", 13},
     {"shaderMaximalReconvergence", 27},
     {"shaderMeshEnqueue", 18},
     {"shaderMixedFloatDotProductBFloat16Acc", 38},
@@ -6225,6 +6230,7 @@ const char* String(Extension extension) {
     {"VK_EXT_shader_long_vector", 26},
     {"VK_EXT_shader_module_identifier", 32},
     {"VK_EXT_shader_object", 21},
+    {"VK_EXT_shader_ocp_microscaling_types", 37},
     {"VK_EXT_shader_replicated_composites", 36},
     {"VK_EXT_shader_split_barrier", 28},
     {"VK_EXT_shader_stencil_export", 29},
@@ -9622,6 +9628,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT;
     case VK_STRUCTURE_TYPE_UBM_SURFACE_CREATE_INFO_SEC:
        return Struct::VkUbmSurfaceCreateInfoSEC;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OCP_MICROSCALING_TYPES_FEATURES_EXT:
+       return Struct::VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE:
        return Struct::VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE;
     case VK_STRUCTURE_TYPE_THROTTLE_HINT_SUBMIT_INFO_SEC:

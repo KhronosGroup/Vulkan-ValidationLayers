@@ -962,6 +962,14 @@ struct DeviceFeatures {
     bool shaderModuleIdentifier;
     // VkPhysicalDeviceShaderMultipleWaitQueuesFeaturesQCOM
     bool shaderMultipleWaitQueues;
+    // VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT
+    bool shaderFloat4;
+    // VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT
+    bool shaderFloat6;
+    // VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT
+    bool shaderFloat8UnsignedE8M0;
+    // VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT
+    bool shaderMXInt8;
     // VkPhysicalDeviceShaderObjectFeaturesEXT
     bool shaderObject;
     // VkPhysicalDeviceShaderQuadControlFeaturesKHR

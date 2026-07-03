@@ -2064,6 +2064,15 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->shaderSubgroupPartitioned |= enabled->shaderSubgroupPartitioned == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OCP_MICROSCALING_TYPES_FEATURES_EXT: {
+                const VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT*>(pNext);
+                features->shaderFloat4 |= enabled->shaderFloat4 == VK_TRUE;
+                features->shaderFloat6 |= enabled->shaderFloat6 == VK_TRUE;
+                features->shaderFloat8UnsignedE8M0 |= enabled->shaderFloat8UnsignedE8M0 == VK_TRUE;
+                features->shaderMXInt8 |= enabled->shaderMXInt8 == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE: {
                 const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE* enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE*>(pNext);

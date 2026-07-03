@@ -946,6 +946,14 @@ enum class Feature {
     shaderModuleIdentifier,
     // VkPhysicalDeviceShaderMultipleWaitQueuesFeaturesQCOM
     shaderMultipleWaitQueues,
+    // VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT
+    shaderFloat4,
+    // VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT
+    shaderFloat6,
+    // VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT
+    shaderFloat8UnsignedE8M0,
+    // VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT
+    shaderMXInt8,
     // VkPhysicalDeviceShaderObjectFeaturesEXT
     shaderObject,
     // VkPhysicalDeviceShaderQuadControlFeaturesKHR

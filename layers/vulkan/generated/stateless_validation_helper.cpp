@@ -3613,6 +3613,24 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OCP_MICROSCALING_TYPES_FEATURES_EXT: {  // Covers
+                                                                                              // VUID-VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT);
+                VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT* structure =
+                    (VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderFloat4), structure->shaderFloat4);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderFloat6), structure->shaderFloat6);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderFloat8UnsignedE8M0), structure->shaderFloat8UnsignedE8M0);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderMXInt8), structure->shaderMXInt8);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE: {  // Covers
                                                                                                  // VUID-VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE-sType-sType
@@ -9188,7 +9206,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 283> allowed_structs_VkDeviceCreateInfo = {
+        constexpr std::array<VkStructureType, 284> allowed_structs_VkDeviceCreateInfo = {
             VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
@@ -9415,6 +9433,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MULTIPLE_WAIT_QUEUES_FEATURES_QCOM,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OCP_MICROSCALING_TYPES_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_QUAD_CONTROL_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_RELAXED_EXTENDED_INSTRUCTION_FEATURES_KHR,

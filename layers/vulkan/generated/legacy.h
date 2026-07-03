@@ -278,10 +278,41 @@ class Device : public vvl::BaseDevice {
     bool PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
         VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo, void* pData,
         const ErrorObject& error_obj) const override;
+    bool PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
+                                          const VkMicromapBuildInfoEXT* pInfos, const ErrorObject& error_obj) const override;
+    bool PreCallValidateCopyMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                        const VkCopyMicromapInfoEXT* pInfo, const ErrorObject& error_obj) const override;
+    bool PreCallValidateCopyMicromapToMemoryEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                const VkCopyMicromapToMemoryInfoEXT* pInfo,
+                                                const ErrorObject& error_obj) const override;
+    bool PreCallValidateCopyMemoryToMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                const VkCopyMemoryToMicromapInfoEXT* pInfo,
+                                                const ErrorObject& error_obj) const override;
+    bool PreCallValidateWriteMicromapsPropertiesEXT(VkDevice device, uint32_t micromapCount, const VkMicromapEXT* pMicromaps,
+                                                    VkQueryType queryType, size_t dataSize, void* pData, size_t stride,
+                                                    const ErrorObject& error_obj) const override;
     bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator,
                                                        VkAccelerationStructureKHR* pAccelerationStructure,
                                                        const ErrorObject& error_obj) const override;
+    bool PreCallValidateBuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                       uint32_t infoCount,
+                                                       const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                                                       const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
+                                                       const ErrorObject& error_obj) const override;
+    bool PreCallValidateCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                     const VkCopyAccelerationStructureInfoKHR* pInfo,
+                                                     const ErrorObject& error_obj) const override;
+    bool PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                             const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
+                                                             const ErrorObject& error_obj) const override;
+    bool PreCallValidateCopyMemoryToAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                             const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
+                                                             const ErrorObject& error_obj) const override;
+    bool PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevice device, uint32_t accelerationStructureCount,
+                                                                 const VkAccelerationStructureKHR* pAccelerationStructures,
+                                                                 VkQueryType queryType, size_t dataSize, void* pData, size_t stride,
+                                                                 const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                     uint32_t drawCount, uint32_t stride,
                                                     const ErrorObject& error_obj) const override;
@@ -351,7 +382,17 @@ class Device : public vvl::BaseDevice {
     mutable bool reported_GetImageViewOpaqueCaptureDescriptorDataEXT = false;
     mutable bool reported_GetSamplerOpaqueCaptureDescriptorDataEXT = false;
     mutable bool reported_GetAccelerationStructureOpaqueCaptureDescriptorDataEXT = false;
+    mutable bool reported_BuildMicromapsEXT = false;
+    mutable bool reported_CopyMicromapEXT = false;
+    mutable bool reported_CopyMicromapToMemoryEXT = false;
+    mutable bool reported_CopyMemoryToMicromapEXT = false;
+    mutable bool reported_WriteMicromapsPropertiesEXT = false;
     mutable bool reported_CreateAccelerationStructureKHR = false;
+    mutable bool reported_BuildAccelerationStructuresKHR = false;
+    mutable bool reported_CopyAccelerationStructureKHR = false;
+    mutable bool reported_CopyAccelerationStructureToMemoryKHR = false;
+    mutable bool reported_CopyMemoryToAccelerationStructureKHR = false;
+    mutable bool reported_WriteAccelerationStructuresPropertiesKHR = false;
     mutable bool reported_CmdDrawMeshTasksIndirectEXT = false;
     mutable bool reported_CmdDrawMeshTasksIndirectCountEXT = false;
 };
