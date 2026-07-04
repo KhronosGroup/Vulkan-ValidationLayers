@@ -3911,7 +3911,7 @@ bool CoreChecks::ValidateResolveImageModeInfo(VkCommandBuffer commandBuffer, con
                 first_region_with_stencil_aspect = i;
             }
 
-            if (first_region_without_both_depth_and_stencil_aspects != vvl::kNoIndex32 &&
+            if (first_region_without_both_depth_and_stencil_aspects == vvl::kNoIndex32 &&
                 (!(region.srcSubresource.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) ||
                  !(region.srcSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) ||
 
@@ -3933,8 +3933,8 @@ bool CoreChecks::ValidateResolveImageModeInfo(VkCommandBuffer commandBuffer, con
             skip |= LogError("VUID-VkResolveImageInfo2-srcImage-10988", src_objlist,
                              resolve_info_loc.dot(Field::pRegions, first_region_with_stencil_aspect).dot(Field::aspectMask),
                              "has VK_IMAGE_ASPECT_STENCIL_BIT but %s is %s.",
-                             resolve_info_loc.pNext(Struct::VkResolveImageModeInfoKHR, Field::resolveMode).Fields().c_str(),
-                             string_VkResolveModeFlagBits(resolve_mode_info->resolveMode));
+                             resolve_info_loc.pNext(Struct::VkResolveImageModeInfoKHR, Field::stencilResolveMode).Fields().c_str(),
+                             string_VkResolveModeFlagBits(resolve_mode_info->stencilResolveMode));
         }
 
         if (first_region_with_depth_aspect != vvl::kNoIndex32 && resolve_mode_info->resolveMode != VK_RESOLVE_MODE_NONE &&
@@ -3955,17 +3955,19 @@ bool CoreChecks::ValidateResolveImageModeInfo(VkCommandBuffer commandBuffer, con
                              "has VK_IMAGE_ASPECT_STENCIL_BIT but "
                              "VkPhysicalDeviceDepthStencilResolveProperties::supportedStencilResolveModes is %s and %s is %s.",
                              string_VkResolveModeFlags(phys_dev_props_core12.supportedStencilResolveModes).c_str(),
-                             resolve_info_loc.pNext(Struct::VkResolveImageModeInfoKHR, Field::resolveMode).Fields().c_str(),
-                             string_VkResolveModeFlagBits(resolve_mode_info->resolveMode));
+                             resolve_info_loc.pNext(Struct::VkResolveImageModeInfoKHR, Field::stencilResolveMode).Fields().c_str(),
+                             string_VkResolveModeFlagBits(resolve_mode_info->stencilResolveMode));
         }
 
         if (first_region_with_depth_aspect != vvl::kNoIndex32 && first_region_with_stencil_aspect != vvl::kNoIndex32 &&
             !phys_dev_props_core12.independentResolve) {
             if (resolve_mode_info->resolveMode != resolve_mode_info->stencilResolveMode) {
-                skip |= LogError("VUID-VkResolveImageInfo2-srcImage-10991", src_objlist, resolve_info_loc.dot(Field::resolveMode),
-                                 "is %s but %s is %s.", string_VkResolveModeFlagBits(resolve_mode_info->resolveMode),
-                                 resolve_info_loc.dot(Field::stencilResolveMode).Fields().c_str(),
-                                 string_VkResolveModeFlagBits(resolve_mode_info->stencilResolveMode));
+                skip |=
+                    LogError("VUID-VkResolveImageInfo2-srcImage-10991", src_objlist,
+                             resolve_info_loc.pNext(Struct::VkResolveImageModeInfoKHR, Field::resolveMode), "is %s but %s is %s.",
+                             string_VkResolveModeFlagBits(resolve_mode_info->resolveMode),
+                             resolve_info_loc.pNext(Struct::VkResolveImageModeInfoKHR, Field::stencilResolveMode).Fields().c_str(),
+                             string_VkResolveModeFlagBits(resolve_mode_info->stencilResolveMode));
             }
         }
 
