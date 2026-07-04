@@ -1350,6 +1350,49 @@ TEST_F(PositiveGpuAVDescriptorHeap, SecondaryInheritance) {
     ASSERT_TRUE(ssbo_data[0] == 42);
 }
 
+TEST_F(PositiveGpuAVDescriptorHeap, ImageSamplerDynamicIndex) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    const VkDeviceSize image_stride = heap_props.imageDescriptorSize;
+    const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
+    const VkDeviceSize buffer_offset = AlignResource(image_stride * 2u);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[3];
+    mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapArrayStride = static_cast<uint32_t>(image_stride);
+    mappings[1] = MakeSetAndBindingMapping(1, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapArrayStride = static_cast<uint32_t>(sampler_stride);
+    mappings[2] = MakeSetAndBindingMapping(2, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT);
+    mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[2].sourceData.constantOffset.heapOffset = static_cast<uint32_t>(buffer_offset);
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 3u;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+
+        layout(set = 0, binding = 0) uniform texture2D textureImage[2];
+        layout(set = 1, binding = 0) uniform sampler textureSampler[2];
+        layout(set = 2, binding = 0) buffer OutBuffer {
+            vec4 color;
+        };
+
+        layout(push_constant) uniform PushConsts {
+            int index;
+        } pushConsts;
+
+        void main() {
+            color = texture(sampler2D(textureImage[pushConsts.index], textureSampler[pushConsts.index]), vec2(0.5f));
+        }
+    )glsl";
+
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+}
+
 TEST_F(PositiveGpuAVDescriptorHeap, SecondaryBind) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
