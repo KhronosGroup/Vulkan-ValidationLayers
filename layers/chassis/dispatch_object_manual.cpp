@@ -1222,7 +1222,7 @@ VkResult DispatchDevice::CreateGraphicsPipelines(VkDevice device, VkPipelineCach
     VkResult result = device_dispatch_table.CreateGraphicsPipelines(device, pipelineCache, createInfoCount,
                                                                     local_pCreateInfos->ptr(), pAllocator, pPipelines);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        if (pCreateInfos[i].pNext != VK_NULL_HANDLE) {
+        if (pCreateInfos[i].pNext != nullptr) {
             CopyCreatePipelineFeedbackData(local_pCreateInfos[i].pNext, pCreateInfos[i].pNext);
         }
     }
@@ -2009,7 +2009,7 @@ VkResult DispatchDevice::CreateRayTracingPipelinesKHR(VkDevice device, VkDeferre
         }
 
         for (uint32_t i = 0; i < createInfoCount; ++i) {
-            if (pCreateInfos[i].pNext != VK_NULL_HANDLE) {
+            if (pCreateInfos[i].pNext != nullptr) {
                 CopyCreatePipelineFeedbackData(local_pCreateInfos[i].pNext, pCreateInfos[i].pNext);
             }
         }
@@ -2452,7 +2452,7 @@ VkResult DispatchDevice::CreateComputePipelines(VkDevice device, VkPipelineCache
     VkResult result = device_dispatch_table.CreateComputePipelines(
         device, pipelineCache, createInfoCount, (const VkComputePipelineCreateInfo*)local_pCreateInfos, pAllocator, pPipelines);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        if (pCreateInfos[i].pNext != VK_NULL_HANDLE) {
+        if (pCreateInfos[i].pNext != nullptr) {
             CopyCreatePipelineFeedbackData(local_pCreateInfos[i].pNext, pCreateInfos[i].pNext);
         }
     }
@@ -2511,7 +2511,7 @@ VkResult DispatchDevice::CreateRayTracingPipelinesNV(VkDevice device, VkPipeline
                                                                         (const VkRayTracingPipelineCreateInfoNV*)local_pCreateInfos,
                                                                         pAllocator, pPipelines);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        if (pCreateInfos[i].pNext != VK_NULL_HANDLE) {
+        if (pCreateInfos[i].pNext != nullptr) {
             CopyCreatePipelineFeedbackData(local_pCreateInfos[i].pNext, pCreateInfos[i].pNext);
         }
     }
@@ -2852,7 +2852,7 @@ VkResult DispatchDevice::CreateDataGraphPipelinesARM(VkDevice device, VkDeferred
                                                                         (const VkDataGraphPipelineCreateInfoARM*)local_pCreateInfos,
                                                                         pAllocator, pPipelines);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        if (pCreateInfos[i].pNext != VK_NULL_HANDLE) {
+        if (pCreateInfos[i].pNext != nullptr) {
             CopyCreatePipelineFeedbackData(local_pCreateInfos[i].pNext, pCreateInfos[i].pNext);
         }
     }
