@@ -700,6 +700,15 @@ bool Device::ValidateCreatePipelinesFlags2(const VkPipelineCreateFlags flags1, c
                            "has flags set to zero.",
                            string_VkPipelineCreateFlags(flags1).c_str());
     }
+    // From a real world user who thought flags2 would "append" and not override.
+    // To prevent noise, we only report if there is no shared flags which would indicate this behavior
+    if (flags2 != 0 && flags1 != 0 && ((flags1 & flags2) == 0)) {
+        skip |= LogWarning(
+            "WARNING-VkPipelineCreateFlags2-flags-appending", device, flags1_loc,
+            "is %s and pNext<VkPipelineCreateFlags2CreateInfo>.flags is %s\nIf VkPipelineCreateFlags2CreateInfo is included in the "
+            "pNext chain, those flags are used INSTEAD of the original flags. This struct does NOT append flags.",
+            string_VkPipelineCreateFlags(flags1).c_str(), string_VkPipelineCreateFlags2(flags2).c_str());
+    }
     return skip;
 }
 
@@ -901,7 +910,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             skip |= context.ValidateFlags(flags_loc, vvl::FlagBitmask::VkPipelineCreateFlagBits, AllVkPipelineCreateFlagBits,
                                           create_info.flags, kOptionalFlags, "VUID-VkGraphicsPipelineCreateInfo-None-09497");
         } else {
-            skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, flags_loc);
+            skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, create_info_loc.dot(Field::flags));
         }
         skip |= ValidateCreatePipelinesFlagsCommon(flags, flags_loc, pipelineCache, create_info.layout);
 
@@ -1896,7 +1905,7 @@ bool Device::manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPip
             skip |= context.ValidateFlags(flags_loc, vvl::FlagBitmask::VkPipelineCreateFlagBits, AllVkPipelineCreateFlagBits,
                                           create_info.flags, kOptionalFlags, "VUID-VkComputePipelineCreateInfo-None-09497");
         } else {
-            skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, flags_loc);
+            skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, create_info_loc.dot(Field::flags));
         }
         skip |= ValidateCreatePipelinesFlagsCommon(flags, flags_loc, pipelineCache, create_info.layout);
 

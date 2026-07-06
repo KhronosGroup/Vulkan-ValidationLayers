@@ -17,6 +17,7 @@
 #include <algorithm>
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
+#include "shader_templates.h"
 #include "utils/hash_util.h"
 #include "generated/vk_validation_error_messages.h"
 
@@ -1426,7 +1427,7 @@ TEST_F(NegativeOther, MissingExtensionPipelineCreateFlags2) {
 }
 
 TEST_F(NegativeOther, OverridePipelineCreateFlags2) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
@@ -1440,7 +1441,27 @@ TEST_F(NegativeOther, OverridePipelineCreateFlags2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, UnkonwnStructType) {
+TEST_F(NegativeOther, AppendingPipelineCreateFlags2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    RETURN_IF_SKIP(Init());
+
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
+    flags2.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &flags2);
+    pipe.cp_ci_.flags = VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
+    VkShaderObj cs_module = VkShaderObj(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredWarning("WARNING-VkPipelineCreateFlags2-flags-appending");
+    pipe.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeOther, UnknownStructType) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     VkBaseOutStructure bogus_struct{};
