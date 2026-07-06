@@ -1,7 +1,7 @@
-/* Copyright (c) 2021-2025 The Khronos Group Inc.
- * Copyright (c) 2021-2025 Valve Corporation
- * Copyright (c) 2021-2025 LunarG, Inc.
- * Copyright (C) 2021-2025 Google Inc.
+/* Copyright (c) 2021-2026 The Khronos Group Inc.
+ * Copyright (c) 2021-2026 Valve Corporation
+ * Copyright (c) 2021-2026 LunarG, Inc.
+ * Copyright (C) 2021-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,6 +121,7 @@ enum class DynamicRenderingBarrierError {
     kFeatureError,
     kFramebufferSpace,
     kNoBuffersOrImages,
+    kAccessFlags,
     kImageLayout,
     kDependencyFlags,
 };

@@ -1711,6 +1711,11 @@ const std::string& GetDynamicRenderingBarrierVUID(const Location& loc, DynamicRe
              {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-None-09554"},
              {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-None-09554"},
          }},
+        {DynamicRenderingBarrierError::kAccessFlags,
+         {
+             {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-None-09586"},
+             {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-None-09586"},
+         }},
         {DynamicRenderingBarrierError::kImageLayout,
          {
              {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-image-09555"},
