@@ -12,6 +12,7 @@
  */
 
 #include "layer_validation_tests.h"
+#include "pipeline_helper.h"
 #include <cstdlib>
 
 class PositiveOther : public VkLayerTest {};
@@ -727,4 +728,19 @@ TEST_F(PositiveOther, GetDeviceFaultReportsWithTimeout) {
     uint32_t fault_counts = 0;
     VkResult result = vk::GetDeviceFaultReportsKHR(device(), 1000u, &fault_counts, nullptr);
     ASSERT_EQ(VK_TIMEOUT, result);
+}
+
+TEST_F(PositiveOther, AppendingPipelineCreateFlags2) {
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+
+    // If the values overlap, we don't want to risk noise
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
+    flags2.flags = VK_PIPELINE_CREATE_2_ALLOW_DERIVATIVES_BIT | VK_PIPELINE_CREATE_2_DISABLE_OPTIMIZATION_BIT;
+
+    CreateComputePipelineHelper pipe(*this, &flags2);
+    pipe.cp_ci_.flags = VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT;
+    pipe.CreateComputePipeline();
 }

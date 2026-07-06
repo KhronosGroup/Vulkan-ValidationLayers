@@ -338,7 +338,7 @@ bool Device::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, 
             skip |= context.ValidateFlags(flags_loc, vvl::FlagBitmask::VkPipelineCreateFlagBits, AllVkPipelineCreateFlagBits,
                                           create_info.flags, kOptionalFlags, "VUID-VkRayTracingPipelineCreateInfoNV-None-09497");
         } else {
-            skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, flags_loc);
+            skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, create_info_loc.dot(Field::flags));
         }
         skip |= ValidateCreatePipelinesFlagsCommon(flags, flags_loc, pipelineCache, create_info.layout);
 
