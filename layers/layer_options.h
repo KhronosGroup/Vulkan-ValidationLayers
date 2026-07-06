@@ -112,6 +112,7 @@ class DebugReport;
 struct GpuAVSettings;
 struct SyncValSettings;
 struct GpuDumpSettings;
+struct LegacyDetectionSettings;
 struct MessageFormatSettings;
 struct ConfigAndEnvSettings {
     // Matches up with what is passed down to VK_EXT_layer_settings
@@ -133,6 +134,7 @@ struct ConfigAndEnvSettings {
     GpuAVSettings *gpuav_settings;
     SyncValSettings *syncval_settings;
     GpuDumpSettings* gpu_dump_settings;
+    LegacyDetectionSettings* legacy_detection_settings;
 };
 const std::vector<std::string> &GetDisableFlagNameHelper();
 const std::vector<std::string> &GetEnableFlagNameHelper();

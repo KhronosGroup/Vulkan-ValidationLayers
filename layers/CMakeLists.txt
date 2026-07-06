@@ -376,6 +376,7 @@ target_sources(vvl PRIVATE
     gpu_dump/gpu_dump_state.h
     gpu_dump/gpu_dump_state.cpp
     legacy/legacy_manual.cpp
+    legacy/legacy_settings.h
     object_tracker/object_lifetime_validation.cpp
     object_tracker/object_lifetime_validation.h
     state_tracker/bind_point.h

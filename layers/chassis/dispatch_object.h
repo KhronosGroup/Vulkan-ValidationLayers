@@ -35,6 +35,7 @@
 #include "gpuav/core/gpuav_settings.h"
 #include "sync/sync_settings.h"
 #include "gpu_dump/gpu_dump_settings.h"
+#include "legacy/legacy_settings.h"
 #include "generated/device_features.h"
 #include "generated/vk_api_version.h"
 #include "generated/vk_extension_helper.h"
@@ -181,6 +182,7 @@ struct Settings {
     GpuAVSettings gpuav_settings = {};
     SyncValSettings syncval_settings = {};
     GpuDumpSettings gpu_dump_settings = {};
+    LegacyDetectionSettings legacy_detection_settings = {};
 
     ValidationDisabled disabled = {};
     ValidationEnabled enabled = {};

@@ -1,8 +1,8 @@
 /***************************************************************************
  *
- * Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+ * Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@
 #include "generated/legacy.h"
 
 namespace legacy {
-
-static const char* kLegacyExtensionVUID = "WARNING-legacy-extension";
 
 bool Instance::ValidateLegacyExtensions(const Location& loc, vvl::Extension extension, APIVersion version) const {
     bool skip = false;
@@ -45,19 +43,41 @@ bool Instance::ValidateLegacyExtensions(const Location& loc, vvl::Extension exte
             (dep_info.target.version == vvl::Version::_VK_VERSION_1_2 && (version >= VK_API_VERSION_1_2)) ||
             (dep_info.target.version == vvl::Version::_VK_VERSION_1_3 && (version >= VK_API_VERSION_1_3)) ||
             (dep_info.target.version == vvl::Version::_VK_VERSION_1_4 && (version >= VK_API_VERSION_1_4))) {
-            skip |= LogWarning(kLegacyExtensionVUID, instance, loc,
+            // Due to the sheer number of extension that get promoted, only warn currently if the user min version matches it
+            skip |= LogWarning("WARNING-legacy-extension-version", instance, loc,
                                "Attempting to enable legacy extension %s, but this extension has been %s %s.", String(extension),
                                reason_to_string(dep_info.reason), String(dep_info.target).c_str());
         } else if (dep_info.target.version == vvl::Version::Empty) {
             if (dep_info.target.extension == vvl::Extension::Empty) {
-                skip |= LogWarning(kLegacyExtensionVUID, instance, loc,
+                skip |= LogWarning("WARNING-legacy-extension-no-replacement", instance, loc,
                                    "Attempting to enable legacy extension %s, but this extension has been deprecated "
                                    "without replacement.",
                                    String(extension));
             } else {
-                skip |= LogWarning(kLegacyExtensionVUID, instance, loc,
-                                   "Attempting to enable legacy extension %s, but this extension has been %s %s.",
-                                   String(extension), reason_to_string(dep_info.reason), String(dep_info.target).c_str());
+                auto info = extensions.GetInfo(dep_info.target.extension);
+                // unknown extensions can't be enabled in extension struct
+                ExtEnabled state = info.state ? extensions.*(info.state) : kNotSupported;
+                if (legacy_detection_settings.only_enabled && IsExtEnabled(state)) {
+                    skip |= LogWarning(
+                        "WARNING-legacy-extension-new", instance, loc,
+                        "Attempting to enable legacy extension %s, but this extension has been %s the enabled extension %s.",
+                        String(extension), reason_to_string(dep_info.reason), String(dep_info.target).c_str());
+                } else if (legacy_detection_settings.only_supported && IsExtSupported(state)) {
+                    skip |= LogWarning(
+                        "WARNING-legacy-extension-new", instance, loc,
+                        "Attempting to enable legacy extension %s, but this extension has been %s the supported extension %s.",
+                        String(extension), reason_to_string(dep_info.reason), String(dep_info.target).c_str());
+                } else if (legacy_detection_settings.always) {
+                    skip |= LogWarning("WARNING-legacy-extension-new", instance, loc,
+                                       "Attempting to enable legacy extension %s, but this extension has been %s the extension "
+                                       "%s.\nTo limit warnings "
+                                       "by only what the VkDevice currently supports/enables, you can turn on the "
+                                       "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
+                                       "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
+                                       "(legacy_detection_only_enabled) "
+                                       "setting.",
+                                       String(extension), reason_to_string(dep_info.reason), String(dep_info.target).c_str());
+                }
             }
         }
     }
