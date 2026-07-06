@@ -103,6 +103,13 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         return false;
     }
 
+    if (meta.access_path.ac_list.empty()) {
+        // Apperently thie is possible, but not sure if this means we should consider this offset zero into the buffer, as that
+        // technically not allowed with typed pointers, so for now just skip these as seems no actual code generators produce this
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12618
+        return false;
+    }
+
     uint32_t storage_class = meta.access_path.variable->StorageClass();
     // The idea is General Buffer will not include any UniformConstant descriptor type
     if (storage_class != spv::StorageClassUniform && storage_class != spv::StorageClassStorageBuffer) {

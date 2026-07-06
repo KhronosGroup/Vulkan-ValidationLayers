@@ -974,6 +974,7 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
         }
     }
 
+    // For things like Untyped pointers Buffers and Atomic Images we will find this already
     if (path.descriptor_type == VK_DESCRIPTOR_TYPE_MAX_ENUM) {
         if (image_access) {
             const Type* image_type = FindTypeById(path.image_load_inst->TypeId());
@@ -987,7 +988,14 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
         } else if (path.access_type->spv_type_ == SpvType::kAccelerationStructureKHR) {
             path.descriptor_type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         } else {
-            spv::StorageClass access_sc = FindTypeById(path.ac_list.front()->TypeId())->inst_.StorageClass();
+            // Normally buffers will need an access chain, but if a direct access, safe to use the variable
+            spv::StorageClass access_sc = spv::StorageClassMax;
+            if (path.ac_list.empty()) {
+                access_sc = path.variable->type_.inst_.StorageClass();
+            } else {
+                access_sc = FindTypeById(path.ac_list.front()->TypeId())->inst_.StorageClass();
+            }
+
             if (access_sc == spv::StorageClassStorageBuffer) {
                 path.descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             } else if (access_sc == spv::StorageClassUniform) {
