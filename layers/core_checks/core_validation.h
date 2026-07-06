@@ -377,6 +377,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidateDynamicRenderingPipelineStage(const LogObjectList& objlist, const Location& loc, VkPipelineStageFlags2 stage_mask,
                                                VkDependencyFlags dependency_flags) const;
+    bool ValidateDynamicRenderingAccess(const LogObjectList& objlist, const Location& loc, VkAccessFlags2 access_mask) const;
     bool ValidateDynamicRenderingImageBarrierLayoutMismatch(const vvl::CommandBuffer& cb_state,
                                                             const VkImageMemoryBarrier& image_barrier,
                                                             const Location& image_loc) const;

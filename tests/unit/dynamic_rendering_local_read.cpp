@@ -1766,3 +1766,42 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexArray2) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentAccessValidStages) {
+    TEST_DESCRIPTION("Validate stage mask when acces mask is INPUT_ATTACHMENT_READ");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    m_command_buffer.Begin();
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.renderArea.extent = {32, 32};
+    begin_rendering_info.layerCount = 1;
+
+    m_command_buffer.BeginRendering(begin_rendering_info);
+
+    VkMemoryBarrier2 memory_barrier_invalid_src = vku::InitStructHelper();
+    memory_barrier_invalid_src.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    memory_barrier_invalid_src.srcAccessMask = VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT;
+    memory_barrier_invalid_src.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    memory_barrier_invalid_src.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+
+    VkMemoryBarrier2 memory_barrier_invalid_dst = vku::InitStructHelper();
+    memory_barrier_invalid_dst.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    memory_barrier_invalid_dst.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+    memory_barrier_invalid_dst.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    memory_barrier_invalid_dst.dstAccessMask = VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT;
+
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-03903");
+    m_command_buffer.Barrier(memory_barrier_invalid_src, VK_DEPENDENCY_BY_REGION_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-03903");
+    m_command_buffer.Barrier(memory_barrier_invalid_dst, VK_DEPENDENCY_BY_REGION_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}

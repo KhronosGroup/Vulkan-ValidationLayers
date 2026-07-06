@@ -2826,6 +2826,23 @@ bool CoreChecks::ValidateDynamicRenderingPipelineStage(const LogObjectList& objl
     return skip;
 }
 
+bool CoreChecks::ValidateDynamicRenderingAccess(const LogObjectList& objlist, const Location& loc,
+                                                VkAccessFlags2 access_mask) const {
+    bool skip = false;
+    if (!enabled_features.dynamicRenderingLocalRead) {
+        const VkAccessFlags2 allowed_accesses = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT |
+                                                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        const VkAccessFlags2 forbiden_accesses = access_mask & ~allowed_accesses;
+        if (forbiden_accesses != 0) {
+            const auto& vuid = GetDynamicRenderingBarrierVUID(loc, vvl::DynamicRenderingBarrierError::kAccessFlags);
+            skip |= LogError(vuid, objlist, loc, "(%s) includes forbidden accesses %s", string_VkAccessFlags2(access_mask).c_str(),
+                             string_VkAccessFlags2(forbiden_accesses).c_str());
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidateDynamicRenderingImageBarrierLayoutMismatch(const vvl::CommandBuffer& cb_state,
                                                                     const VkImageMemoryBarrier& image_barrier,
                                                                     const Location& image_loc) const {
@@ -2901,6 +2918,8 @@ bool CoreChecks::ValidateDynamicRenderingBarriers(const LogObjectList& objlist, 
                                                       dep_info.dependencyFlags);
         skip |= ValidateDynamicRenderingPipelineStage(objlist, loc.dot(Field::dstStageMask), mem_barrier.dstStageMask,
                                                       dep_info.dependencyFlags);
+        skip |= ValidateDynamicRenderingAccess(objlist, loc.dot(Field::srcAccessMask), mem_barrier.srcAccessMask);
+        skip |= ValidateDynamicRenderingAccess(objlist, loc.dot(Field::dstAccessMask), mem_barrier.dstAccessMask);
     }
     for (const auto [i, image_barrier] : vvl::enumerate(dep_info.pImageMemoryBarriers, dep_info.imageMemoryBarrierCount)) {
         const Location barrier_loc = outer_loc.dot(Field::pImageMemoryBarriers, i);
@@ -2923,6 +2942,11 @@ bool CoreChecks::ValidateDynamicRenderingBarriers(const LogObjectList& objlist, 
     skip |= ValidateDynamicRenderingPipelineStage(objlist, outer_loc.dot(Field::srcStageMask), src_stage_mask, dependency_flags);
     skip |= ValidateDynamicRenderingPipelineStage(objlist, outer_loc.dot(Field::dstStageMask), dst_stage_mask, dependency_flags);
 
+    for (const auto [i, memory_barrier] : vvl::enumerate(memory_barriers, memory_barrier_count)) {
+        const Location barrier_loc = outer_loc.dot(Field::pMemoryBarriers, i);
+        skip |= ValidateDynamicRenderingAccess(objlist, barrier_loc.dot(Field::srcAccessMask), memory_barrier.srcAccessMask);
+        skip |= ValidateDynamicRenderingAccess(objlist, barrier_loc.dot(Field::dstAccessMask), memory_barrier.dstAccessMask);
+    }
     for (const auto [i, image_barrier] : vvl::enumerate(image_barriers, image_barrier_count)) {
         const Location barrier_loc = outer_loc.dot(Field::pImageMemoryBarriers, i);
         LogObjectList layout_check_objlist(objlist);
