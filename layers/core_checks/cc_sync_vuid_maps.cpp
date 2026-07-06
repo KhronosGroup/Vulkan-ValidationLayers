@@ -36,7 +36,7 @@ const vvl::unordered_map<VkPipelineStageFlags2, std::string>& GetFeatureNameMap(
         {VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT, "taskShader"},
         {VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI, "subpassShading"},
         {VK_PIPELINE_STAGE_2_INVOCATION_MASK_BIT_HUAWEI, "invocationMask"},
-        {VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, "rayTracing"},
+        {VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, "rayTracingPipeline"},
         {VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, "shadingRate"},
         {VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, "accelerationStructure"},
         {VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR, "rayTracingMaintenance1"},
