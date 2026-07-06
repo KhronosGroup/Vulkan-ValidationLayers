@@ -557,6 +557,41 @@
                                         ]
                                     }
                                 }
+                            ],
+                            "messages": [
+                                {
+                                    "key": "legacy_detection_msg1",
+                                    "title": "Only Supported and Only Enabled together",
+                                    "version": 1,
+                                    "description": "Having both 'Only warn if supported' means 'Only warn if enabled' is non-sense since something must be supported in able to be enabled.",
+                                    "informative": "legacy_detection_only_supported will not do anything now",
+                                    "severity": "INFORMATION",
+                                    "conditions": [
+                                        { "setting": { "key": "legacy_detection_only_supported", "value": true }},
+                                        { "setting": { "key": "legacy_detection_only_enabled", "value": true }}
+                                    ]
+                                },
+                                {
+                                    "key": "legacy_detection_msg2",
+                                    "title": "Legacy Detection without 'warning' level message severity flag",
+                                    "version": 1,
+                                    "description": "Enabling Legacy Detection, but 'warning' level message severity is disabled, so message won't be shown.",
+                                    "informative": "Adding 'warning' level to 'Message Severity'",
+                                    "severity": "INFORMATION",
+                                    "conditions": [
+                                        { "setting": { "key": "legacy_detection", "value": true }},
+                                        { "setting": { "key": "report_flags", "value": ["warning"]}, "operator": "NOT" }
+                                    ],
+                                    "actions": {
+                                        "default": "BUTTON0",
+                                        "BUTTON0": {
+                                            "type": "OK",
+                                            "changes": [
+                                                { "setting": { "key": "report_flags", "value": ["warning"]}, "operator": "APPEND" }
+                                            ]
+                                        }
+                                    }
+                                }
                             ]
                         },
                         {
