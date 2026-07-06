@@ -239,10 +239,8 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityTextureBoxFilterQCOM, {0, &DeviceFeatures::textureBoxFilter, nullptr, ""}},
         {spv::CapabilityTextureBlockMatchQCOM, {0, &DeviceFeatures::textureBlockMatch, nullptr, ""}},
         {spv::CapabilityTextureBlockMatch2QCOM, {0, &DeviceFeatures::textureBlockMatch2, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityImageGatherLinearQCOM, {0, &DeviceFeatures::imageGatherLinear, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityImageGatherExtendedModesQCOM, {0, &DeviceFeatures::imageGatherExtendedModes, nullptr, ""}},
+        {spv::CapabilityImageGatherLinearQCOM, {0, &DeviceFeatures::imageGatherLinear, nullptr, ""}},
+        {spv::CapabilityImageGatherExtendedModesQCOM, {0, &DeviceFeatures::imageGatherExtendedModes, nullptr, ""}},
         {spv::CapabilityMeshShadingEXT, {0, nullptr, &DeviceExtensions::vk_ext_mesh_shader, ""}},
         // Not found in current SPIR-V Headers
         // {spv::CapabilityRayTracingOpacityMicromapEXT, {0, nullptr, &DeviceExtensions::vk_ext_opacity_micromap, ""}},
@@ -290,8 +288,7 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityShaderInvocationReorderEXT, {0, nullptr, &DeviceExtensions::vk_ext_ray_tracing_invocation_reorder, ""}},
         {spv::CapabilityTileShadingQCOM, {0, &DeviceFeatures::tileShading, nullptr, ""}},
         {spv::CapabilitySplitBarrierEXT, {0, &DeviceFeatures::shaderSplitBarrier, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityMultipleWaitQueuesQCOM, {0, &DeviceFeatures::shaderMultipleWaitQueues, nullptr, ""}},
+        {spv::CapabilityMultipleWaitQueuesQCOM, {0, &DeviceFeatures::shaderMultipleWaitQueues, nullptr, ""}},
         {spv::CapabilityTensorsARM, {0, &DeviceFeatures::shaderTensorAccess, nullptr, ""}},
         {spv::CapabilityStorageTensorArrayDynamicIndexingARM, {0, &DeviceFeatures::shaderStorageTensorArrayDynamicIndexing, nullptr, ""}},
         {spv::CapabilityStorageTensorArrayNonUniformIndexingARM, {0, &DeviceFeatures::shaderStorageTensorArrayNonUniformIndexing, nullptr, ""}},
@@ -311,18 +308,12 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityDotProductFloat8AccFloat32VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat8AccFloat32, nullptr, ""}},
         {spv::CapabilityConstantDataKHR, {0, &DeviceFeatures::shaderConstantData, nullptr, ""}},
         {spv::CapabilityAbortKHR, {0, &DeviceFeatures::shaderAbort, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityFloat4EXT, {0, &DeviceFeatures::shaderFloat4, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityFloat6EXT, {0, &DeviceFeatures::shaderFloat6, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityFloat8UnsignedE8M0EXT, {0, &DeviceFeatures::shaderFloat8UnsignedE8M0, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityMXInt8EXT, {0, &DeviceFeatures::shaderMXInt8, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityBitcastExtractEXT, {0, &DeviceFeatures::shaderFloat4, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityBitcastExtractEXT, {0, &DeviceFeatures::shaderFloat6, nullptr, ""}},
+        {spv::CapabilityFloat4EXT, {0, &DeviceFeatures::shaderFloat4, nullptr, ""}},
+        {spv::CapabilityFloat6EXT, {0, &DeviceFeatures::shaderFloat6, nullptr, ""}},
+        {spv::CapabilityFloat8UnsignedE8M0EXT, {0, &DeviceFeatures::shaderFloat8UnsignedE8M0, nullptr, ""}},
+        {spv::CapabilityMXInt8EXT, {0, &DeviceFeatures::shaderMXInt8, nullptr, ""}},
+        {spv::CapabilityBitcastExtractEXT, {0, &DeviceFeatures::shaderFloat4, nullptr, ""}},
+        {spv::CapabilityBitcastExtractEXT, {0, &DeviceFeatures::shaderFloat6, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -614,6 +605,16 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "Float8EXT";
         case spv::CapabilityFloat8CooperativeMatrixEXT:
             return "Float8CooperativeMatrixEXT";
+        case spv::CapabilityFloat6EXT:
+            return "Float6EXT";
+        case spv::CapabilityFloat4EXT:
+            return "Float4EXT";
+        case spv::CapabilityFloat8UnsignedE8M0EXT:
+            return "Float8UnsignedE8M0EXT";
+        case spv::CapabilityMXInt8EXT:
+            return "MXInt8EXT";
+        case spv::CapabilityBitcastExtractEXT:
+            return "BitcastExtractEXT";
         case spv::CapabilityFragmentShadingRateKHR:
             return "FragmentShadingRateKHR";
         case spv::CapabilitySubgroupBallotKHR:
@@ -686,6 +687,12 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "CooperativeMatrixConversionQCOM";
         case spv::CapabilityTextureBlockMatch2QCOM:
             return "TextureBlockMatch2QCOM";
+        case spv::CapabilityMultipleWaitQueuesQCOM:
+            return "MultipleWaitQueuesQCOM";
+        case spv::CapabilityImageGatherLinearQCOM:
+            return "ImageGatherLinearQCOM";
+        case spv::CapabilityImageGatherExtendedModesQCOM:
+            return "ImageGatherExtendedModesQCOM";
         case spv::CapabilityFloat16ImageAMD:
             return "Float16ImageAMD";
         case spv::CapabilityImageGatherBiasLodAMD:
@@ -1272,6 +1279,8 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityTextureBoxFilterQCOM, "VkPhysicalDeviceImageProcessingFeaturesQCOM::textureBoxFilter"},
     {spv::CapabilityTextureBlockMatchQCOM, "VkPhysicalDeviceImageProcessingFeaturesQCOM::textureBlockMatch"},
     {spv::CapabilityTextureBlockMatch2QCOM, "VkPhysicalDeviceImageProcessing2FeaturesQCOM::textureBlockMatch2"},
+    {spv::CapabilityImageGatherLinearQCOM, "VkPhysicalDeviceImageProcessing3FeaturesQCOM::imageGatherLinear"},
+    {spv::CapabilityImageGatherExtendedModesQCOM, "VkPhysicalDeviceImageProcessing3FeaturesQCOM::imageGatherExtendedModes"},
     {spv::CapabilityMeshShadingEXT, "VK_EXT_mesh_shader"},
     {spv::CapabilityRayTracingOpacityMicromapKHR, "VkPhysicalDeviceOpacityMicromapFeaturesKHR::micromap"},
     {spv::CapabilityRayTracingOpacityMicromapExecutionModeKHR, "VkPhysicalDeviceOpacityMicromapFeaturesKHR::micromap"},
@@ -1312,6 +1321,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityShaderInvocationReorderEXT, "VK_EXT_ray_tracing_invocation_reorder"},
     {spv::CapabilityTileShadingQCOM, "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShading"},
     {spv::CapabilitySplitBarrierEXT, "VkPhysicalDeviceShaderSplitBarrierFeaturesEXT::shaderSplitBarrier"},
+    {spv::CapabilityMultipleWaitQueuesQCOM, "VkPhysicalDeviceShaderMultipleWaitQueuesFeaturesQCOM::shaderMultipleWaitQueues"},
     {spv::CapabilityTensorsARM, "VkPhysicalDeviceTensorFeaturesARM::shaderTensorAccess"},
     {spv::CapabilityStorageTensorArrayDynamicIndexingARM, "VkPhysicalDeviceTensorFeaturesARM::shaderStorageTensorArrayDynamicIndexing"},
     {spv::CapabilityStorageTensorArrayNonUniformIndexingARM, "VkPhysicalDeviceTensorFeaturesARM::shaderStorageTensorArrayNonUniformIndexing"},
@@ -1329,6 +1339,11 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityDotProductFloat8AccFloat32VALVE, "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat8AccFloat32"},
     {spv::CapabilityConstantDataKHR, "VkPhysicalDeviceShaderConstantDataFeaturesKHR::shaderConstantData"},
     {spv::CapabilityAbortKHR, "VkPhysicalDeviceShaderAbortFeaturesKHR::shaderAbort"},
+    {spv::CapabilityFloat4EXT, "VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderFloat4"},
+    {spv::CapabilityFloat6EXT, "VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderFloat6"},
+    {spv::CapabilityFloat8UnsignedE8M0EXT, "VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderFloat8UnsignedE8M0"},
+    {spv::CapabilityMXInt8EXT, "VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderMXInt8"},
+    {spv::CapabilityBitcastExtractEXT, "VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderFloat4 OR VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderFloat6"},
     };
 
     // VUs before catch unknown capabilities
