@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,12 +30,18 @@ const VulkanTypedHandle* vvl::StateObject::InUse() const {
     // with the read lock held.
     auto guard = ReadLockTree();
     for (auto& item : parent_nodes_) {
-        auto node = item.second.lock();
-        if (!node) {
+        auto parent = item.second.lock();
+        if (!parent) {
             continue;
         }
-        if (node->InUse()) {
-            return &node->Handle();
+        if (auto grandparent_handle = parent->InUse()) {
+            // Detect internal set used by the push descriptors. There is no real descriptor set to
+            // report in the error message. Return parent of the direct parent as the owner.
+            if (parent->Handle().handle == 0 && parent->Handle().type == kVulkanObjectTypeDescriptorSet) {
+                return grandparent_handle;
+            }
+
+            return &parent->Handle();
         }
     }
     return nullptr;
