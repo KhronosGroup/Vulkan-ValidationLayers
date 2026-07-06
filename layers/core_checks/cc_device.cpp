@@ -29,9 +29,13 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"
+#include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/device_state.h"
+#include "state_tracker/wsi_state.h"
+#include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/render_pass_state.h"
+#include "state_tracker/tensor_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
 #include <spirv-tools/libspirv.h>
@@ -673,6 +677,79 @@ bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool 
     return skip;
 }
 
+// Get the parent handle of node_handle.
+// node_handle is expected to be an intermediate node: an object sitting between the one being
+// validated and the command buffer at the top of the chain. Anything else returns nullptr.
+//
+// NOTE: We switch on the type instead of traversing parents in a loop because InUse() returns
+// a VulkanTypedHandle, not a StateObject. One option (not taken) is for InUse() to return a
+// shared_ptr. Internally, InUse() locks parent weak_ptr so shared_ptr is available. That costs
+// a few atomic ops and, more importantly, it's not clear if extending parent lifetime is safe.
+// The current solution stays with the existing tracking model. This can be revisited if needed
+static const VulkanTypedHandle* GetUserOfIntermediateNode(const CoreChecks& core, const VulkanTypedHandle& node_handle) {
+    // Enumerate all types that can be used as intermediate nodes
+    switch (node_handle.type) {
+        case kVulkanObjectTypeImage:
+            if (auto child = core.Get<vvl::Image>(node_handle.Cast<VkImage>())) {
+                return child->InUse();
+            }
+            break;
+        case kVulkanObjectTypeImageView:
+            if (auto child = core.Get<vvl::ImageView>(node_handle.Cast<VkImageView>())) {
+                return child->InUse();
+            }
+            break;
+        case kVulkanObjectTypeBuffer:
+            if (auto child = core.Get<vvl::Buffer>(node_handle.Cast<VkBuffer>())) {
+                return child->InUse();
+            }
+            break;
+        case kVulkanObjectTypeBufferView:
+            if (auto child = core.Get<vvl::BufferView>(node_handle.Cast<VkBufferView>())) {
+                return child->InUse();
+            }
+            break;
+        case kVulkanObjectTypeDescriptorSet:
+            if (auto child = core.Get<vvl::DescriptorSet>(node_handle.Cast<VkDescriptorSet>())) {
+                return child->InUse();
+            }
+            break;
+        case kVulkanObjectTypeFramebuffer:
+            if (auto child = core.Get<vvl::Framebuffer>(node_handle.Cast<VkFramebuffer>())) {
+                return child->InUse();
+            }
+            break;
+        case kVulkanObjectTypeSwapchainKHR:
+            if (auto child = core.Get<vvl::Swapchain>(node_handle.Cast<VkSwapchainKHR>())) {
+                return child->InUse();
+            }
+            break;
+        case kVulkanObjectTypeAccelerationStructureKHR:
+            if (auto child = core.Get<vvl::AccelerationStructureKHR>(node_handle.Cast<VkAccelerationStructureKHR>())) {
+                return child->InUse();
+            }
+            break;
+        case kVulkanObjectTypeAccelerationStructureNV:
+            if (auto child = core.Get<vvl::AccelerationStructureNV>(node_handle.Cast<VkAccelerationStructureNV>())) {
+                return child->InUse();
+            }
+            break;
+        case kVulkanObjectTypeTensorARM:
+            if (auto child = core.Get<vvl::Tensor>(node_handle.Cast<VkTensorARM>())) {
+                return child->InUse();
+            }
+            break;
+        case kVulkanObjectTypeTensorViewARM:
+            if (auto child = core.Get<vvl::TensorView>(node_handle.Cast<VkTensorViewARM>())) {
+                return child->InUse();
+            }
+            break;
+        default:
+            break;
+    }
+    return nullptr;
+}
+
 bool CoreChecks::ValidateObjectNotInUse(const vvl::StateObject* obj_node, const Location& loc, const char* error_code) const {
     bool skip = false;
     if (disabled[object_in_use]) {
@@ -702,8 +779,21 @@ bool CoreChecks::ValidateObjectNotInUse(const vvl::StateObject* obj_node, const 
         }
     }
 
-    skip |= LogError(error_code, device, loc, "can't be called on %s that is currently in use by %s.",
-                     FormatHandle(obj_handle).c_str(), FormatHandle(*user_handle).c_str());
+    // Try to find parent command buffer if one exists
+    const VulkanTypedHandle* next_user_handle = nullptr;
+    if (user_handle->type != kVulkanObjectTypeCommandBuffer) {
+        next_user_handle = GetUserOfIntermediateNode(*this, *user_handle);
+        while (next_user_handle && next_user_handle->type != kVulkanObjectTypeCommandBuffer) {
+            next_user_handle = GetUserOfIntermediateNode(*this, *next_user_handle);
+        }
+    }
+
+    std::ostringstream ss;
+    ss << "can't be called on " << FormatHandle(obj_handle) << " that is currently in use by " << FormatHandle(*user_handle);
+    if (next_user_handle) {
+        ss << " which is in use by " << FormatHandle(*next_user_handle);
+    }
+    skip |= LogError(error_code, device, loc, "%s", ss.str().c_str());
     return skip;
 }
 
