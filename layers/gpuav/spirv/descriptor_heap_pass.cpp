@@ -159,6 +159,37 @@ uint32_t DescriptorHeapPass::GetMinBufferAlignment(const InstructionMeta& meta) 
 
 uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
                                                 bool is_seperate_sampler) {
+    // TODO - This logic is not obvious and should be either fixed or moved to a common util
+    // If dealing with a seperate sampler, only need to do it on the resource
+    // To add to the fire, this needs to go first otherwise the Function::CreateInstruction will break the inst_it
+    if (meta.access_path.image_load_inst && !is_seperate_sampler) {
+        const uint32_t opcode = meta.target_instruction->Opcode();
+        if (opcode != spv::OpImageRead && opcode != spv::OpImageFetch && opcode != spv::OpImageWrite) {
+            // if not a direct read/write/fetch, will be a OpSampledImage
+            // "All OpSampledImage instructions must be in the same block in which their Result <id> are consumed"
+            // the simple way around this is to add a OpCopyObject to be consumed by the target instruction
+            uint32_t image_id = meta.target_instruction->Operand(0);
+            const Instruction* sampled_image_inst = block.function_->FindInstruction(image_id);
+            // TODO - Add tests to understand what else can be here other then OpSampledImage
+            if (sampled_image_inst->Opcode() == spv::OpSampledImage) {
+                const uint32_t type_id = sampled_image_inst->TypeId();
+                const uint32_t copy_id = module_.TakeNextId();
+                const_cast<Instruction*>(meta.target_instruction)->ReplaceOperandId(image_id, copy_id);
+
+                // incase the OpSampledImage is shared, copy the previous OpCopyObject
+                auto copied = copy_object_map_.find(image_id);
+                if (copied != copy_object_map_.end()) {
+                    image_id = copied->second;
+                    block.CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id}, inst_it);
+                } else {
+                    copy_object_map_.emplace(image_id, copy_id);
+                    // slower, but need to guarantee it is placed after a OpSampledImage
+                    block.function_->CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id}, image_id, inst_it);
+                }
+            }
+        }
+    }
+
     const Variable& descriptor_variable = is_seperate_sampler ? *meta.access_path.sampler_variable : *meta.access_path.variable;
     const uint32_t descriptor_index =
         is_seperate_sampler ? meta.access_path.sampler_descriptor_index_id : meta.access_path.descriptor_index_id;
@@ -196,36 +227,6 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
 
     uint32_t function_result = module_.TakeNextId();
     const uint32_t bool_type = type_manager_.GetTypeBool().Id();
-
-    // TODO - This logic is not obvious and should be either fixed or moved to a common util
-    // If dealing with a seperate sampler, only need to do it on the resource
-    if (meta.access_path.image_load_inst && !is_seperate_sampler) {
-        const uint32_t opcode = meta.target_instruction->Opcode();
-        if (opcode != spv::OpImageRead && opcode != spv::OpImageFetch && opcode != spv::OpImageWrite) {
-            // if not a direct read/write/fetch, will be a OpSampledImage
-            // "All OpSampledImage instructions must be in the same block in which their Result <id> are consumed"
-            // the simple way around this is to add a OpCopyObject to be consumed by the target instruction
-            uint32_t image_id = meta.target_instruction->Operand(0);
-            const Instruction* sampled_image_inst = block.function_->FindInstruction(image_id);
-            // TODO - Add tests to understand what else can be here other then OpSampledImage
-            if (sampled_image_inst->Opcode() == spv::OpSampledImage) {
-                const uint32_t type_id = sampled_image_inst->TypeId();
-                const uint32_t copy_id = module_.TakeNextId();
-                const_cast<Instruction*>(meta.target_instruction)->ReplaceOperandId(image_id, copy_id);
-
-                // incase the OpSampledImage is shared, copy the previous OpCopyObject
-                auto copied = copy_object_map_.find(image_id);
-                if (copied != copy_object_map_.end()) {
-                    image_id = copied->second;
-                    block.CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id}, inst_it);
-                } else {
-                    copy_object_map_.emplace(image_id, copy_id);
-                    // slower, but need to guarantee it is placed after a OpSampledImage
-                    block.function_->CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id}, image_id, inst_it);
-                }
-            }
-        }
-    }
 
     const uint32_t binding_offset = mapping ? descriptor_variable.interface_.binding - mapping->firstBinding : 0;
     const bool combined_index = meta.access_path.is_combined_image_sampler && mapping && HasCombinedImageSamplerIndex(*mapping);

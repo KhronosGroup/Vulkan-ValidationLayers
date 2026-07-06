@@ -51,11 +51,9 @@ uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId(bool is_combined_image_sam
 }
 
 uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
-    const DescriptorInterface& interface = meta.access_path.variable->interface_;
-    const Constant& set_constant = type_manager_.GetConstantUInt32(interface.set);
-    const Constant& binding_constant = type_manager_.GetConstantUInt32(interface.binding);
-    const uint32_t descriptor_index_id = CastToUint32(meta.access_path.descriptor_index_id, block, inst_it);  // might be int32
-
+    // TODO - This logic is not obvious and should be either fixed or moved to a common util
+    // If dealing with a seperate sampler, only need to do it on the resource
+    // To add to the fire, this needs to go first otherwise the Function::CreateInstruction will break the inst_it
     if (meta.access_path.image_load_inst) {
         const uint32_t opcode = meta.target_instruction->Opcode();
         if (opcode != spv::OpImageRead && opcode != spv::OpImageFetch && opcode != spv::OpImageWrite) {
@@ -83,6 +81,11 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
             }
         }
     }
+
+    const DescriptorInterface& interface = meta.access_path.variable->interface_;
+    const Constant& set_constant = type_manager_.GetConstantUInt32(interface.set);
+    const Constant& binding_constant = type_manager_.GetConstantUInt32(interface.binding);
+    const uint32_t descriptor_index_id = CastToUint32(meta.access_path.descriptor_index_id, block, inst_it);  // might be int32
 
     const auto& layout_lut = module_.interface_.instrumentation_dsl.set_index_to_bindings_layout_lut;
     BindingLayout binding_layout = layout_lut[interface.set][interface.binding];

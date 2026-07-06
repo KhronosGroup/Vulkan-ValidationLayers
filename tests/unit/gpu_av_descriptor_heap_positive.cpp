@@ -33,7 +33,7 @@ void GpuAVDescriptorHeap::InitGpuAVDescriptorHeap(std::vector<VkLayerSettingEXT>
 TEST_F(PositiveGpuAVDescriptorHeap, BufferPointerOffset) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     InitRenderTarget();
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
@@ -65,7 +65,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, SamplerPointerOffset) {
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     InitRenderTarget();
 
     const uint32_t buffer_index = 16u;
@@ -149,7 +149,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, SamplerPointerOffset) {
 
 TEST_F(PositiveGpuAVDescriptorHeap, HeapBoundInMultimpleCmdBuffers) {
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     InitRenderTarget();
 
     const VkDeviceSize heap_size = 256;
@@ -174,7 +174,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, HeapBoundInMultimpleCmdBuffers) {
 
 TEST_F(PositiveGpuAVDescriptorHeap, PushAddress) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     InitRenderTarget();
 
     vkt::Buffer read_buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -275,7 +275,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, ResourceHeapImage) {
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     InitRenderTarget();
 
     const uint32_t buffer_index = 16u;
@@ -491,7 +491,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, CombinedAndSeparateImageSampler) {
 
 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4874
 TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitPushIndex) {
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride * 4);
 
@@ -532,7 +532,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitPushIndex) {
 
 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4874
 TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitIndirectIndex) {
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride * 4);
 
@@ -578,7 +578,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitIndirectIndex) {
 
 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4874
 TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitHeapData) {
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride * 4);
 
@@ -629,7 +629,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitHeapData) {
 TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitPushData) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::scalarBlockLayout);
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride);
 
@@ -674,7 +674,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitPushData) {
 
 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4874
 TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitPushAddress) {
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
@@ -709,7 +709,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitPushAddress) {
 
 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4874
 TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitIndirectAddress) {
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
@@ -747,7 +747,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitIndirectAddress) {
 
 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4874
 TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitShader) {
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride);
 
@@ -791,7 +791,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitShader) {
 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4874
 TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitShaderAndMapping) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
@@ -835,7 +835,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitShaderAndMapping) {
 TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitMulitipleDispatch) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::scalarBlockLayout);
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride * 2);
 
@@ -894,7 +894,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, PushDataLimitNoShaderInstrumentation) {
     std::vector<VkLayerSettingEXT> layer_settings = {
         {OBJECT_LAYER_NAME, "gpuav_shader_instrumentation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
     };
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap(layer_settings));
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap(layer_settings, false));
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
@@ -928,7 +928,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, PushDataLimitNoShaderInstrumentation) {
 }
 
 TEST_F(PositiveGpuAVDescriptorHeap, SamplerHeapOffset) {
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
 
     const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
     const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
@@ -992,7 +992,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, GraphicsPipelineLibraryInlined) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
     AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     InitRenderTarget();
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride * 4);
@@ -1103,7 +1103,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, GraphicsPipelineLibraryWithShaderModule) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
     AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     InitRenderTarget();
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride * 4);
@@ -1218,7 +1218,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, GraphicsPipelineLibraryWithShaderModule) {
 TEST_F(PositiveGpuAVDescriptorHeap, UntypedPointersOffsetIdNonArray) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride * 3);
@@ -1301,7 +1301,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, UntypedPointersOffsetIdNonArray) {
 }
 
 TEST_F(PositiveGpuAVDescriptorHeap, SecondaryInheritance) {
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride);
 
@@ -1351,7 +1351,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, SecondaryInheritance) {
 }
 
 TEST_F(PositiveGpuAVDescriptorHeap, ImageSamplerDynamicIndex) {
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     const VkDeviceSize image_stride = heap_props.imageDescriptorSize;
     const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
     const VkDeviceSize buffer_offset = AlignResource(image_stride * 2u);
@@ -1394,7 +1394,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, ImageSamplerDynamicIndex) {
 }
 
 TEST_F(PositiveGpuAVDescriptorHeap, SecondaryBind) {
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(resource_stride);
 
