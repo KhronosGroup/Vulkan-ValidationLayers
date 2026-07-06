@@ -270,6 +270,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpGraphConstantARM:
         case spv::OpGraphARM:
         case spv::OpGraphInputARM:
+        case spv::OpBitcastExtractEXT:
         case spv::OpUntypedVariableKHR:
         case spv::OpUntypedAccessChainKHR:
         case spv::OpUntypedInBoundsAccessChainKHR:
@@ -313,6 +314,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpCompositeConstructCoopMatQCOM:
         case spv::OpCompositeExtractCoopMatQCOM:
         case spv::OpExtractSubArrayQCOM:
+        case spv::OpImageGatherQCOM:
         case spv::OpGroupIAddNonUniformAMD:
         case spv::OpGroupFAddNonUniformAMD:
         case spv::OpGroupFMinNonUniformAMD:
@@ -745,6 +747,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpGraphARM:
         case spv::OpGraphInputARM:
         case spv::OpTypeGraphARM:
+        case spv::OpBitcastExtractEXT:
         case spv::OpTypeUntypedPointerKHR:
         case spv::OpUntypedVariableKHR:
         case spv::OpUntypedAccessChainKHR:
@@ -791,6 +794,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpCompositeConstructCoopMatQCOM:
         case spv::OpCompositeExtractCoopMatQCOM:
         case spv::OpExtractSubArrayQCOM:
+        case spv::OpImageGatherQCOM:
         case spv::OpGroupIAddNonUniformAMD:
         case spv::OpGroupFAddNonUniformAMD:
         case spv::OpGroupFMinNonUniformAMD:
@@ -1066,6 +1070,7 @@ static constexpr bool ImageGatherOperation(uint32_t opcode) {
         case spv::OpImageSparseDrefGather:
         case spv::OpImageBlockMatchGatherSSDQCOM:
         case spv::OpImageBlockMatchGatherSADQCOM:
+        case spv::OpImageGatherQCOM:
             return true;
         default:
             return false;
@@ -1279,6 +1284,7 @@ static constexpr uint32_t OpcodeImageOperandsPosition(uint32_t opcode) {
         case spv::OpImageSparseGather:
         case spv::OpImageSparseDrefGather:
             return 6;
+        case spv::OpImageGatherQCOM:
         case spv::OpImageSampleFootprintNV:
             return 7;
 
@@ -1325,6 +1331,7 @@ static constexpr uint32_t OpcodeImageAccessPosition(uint32_t opcode) {
         case spv::OpImageSparseGather:
         case spv::OpImageSparseDrefGather:
         case spv::OpImageSparseRead:
+        case spv::OpImageGatherQCOM:
         case spv::OpFragmentMaskFetchAMD:
         case spv::OpFragmentFetchAMD:
         case spv::OpImageSampleFootprintNV:

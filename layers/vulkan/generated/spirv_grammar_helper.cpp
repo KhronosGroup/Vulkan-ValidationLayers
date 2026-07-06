@@ -615,6 +615,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpGraphEndARM";
         case spv::OpTypeGraphARM:
             return "OpTypeGraphARM";
+        case spv::OpBitcastExtractEXT:
+            return "OpBitcastExtractEXT";
         case spv::OpTerminateInvocation:
             return "OpTerminateInvocation";
         case spv::OpTypeUntypedPointerKHR:
@@ -729,6 +731,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpCompositeExtractCoopMatQCOM";
         case spv::OpExtractSubArrayQCOM:
             return "OpExtractSubArrayQCOM";
+        case spv::OpImageGatherQCOM:
+            return "OpImageGatherQCOM";
         case spv::OpGroupIAddNonUniformAMD:
             return "OpGroupIAddNonUniformAMD";
         case spv::OpGroupFAddNonUniformAMD:
@@ -2247,6 +2251,16 @@ const char* string_SpvFPEncoding(spv::FPEncoding value) {
             return "Float8E4M3EXT";
         case spv::FPEncodingFloat8E5M2EXT:
             return "Float8E5M2EXT";
+        case spv::FPEncodingFloat6E2M3EXT:
+            return "Float6E2M3EXT";
+        case spv::FPEncodingFloat6E3M2EXT:
+            return "Float6E3M2EXT";
+        case spv::FPEncodingFloat4E2M1EXT:
+            return "Float4E2M1EXT";
+        case spv::FPEncodingFloat8UnsignedE8M0EXT:
+            return "Float8UnsignedE8M0EXT";
+        case spv::FPEncodingMXInt8EXT:
+            return "MXInt8EXT";
 
         default:
             return "IEEE-754";  // default for 16-bit
@@ -2549,6 +2563,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpGraphSetOutputARM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpGraphEndARM, {{}}},
         {spv::OpTypeGraphARM, {{OperandKind::Literal, OperandKind::Id}}},
+        {spv::OpBitcastExtractEXT, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpTerminateInvocation, {{}}},
         {spv::OpTypeUntypedPointerKHR, {{OperandKind::ValueEnum}}},
         {spv::OpUntypedVariableKHR, {{OperandKind::ValueEnum, OperandKind::Id, OperandKind::Id}}},
@@ -2606,6 +2621,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpCompositeConstructCoopMatQCOM, {{OperandKind::Id}}},
         {spv::OpCompositeExtractCoopMatQCOM, {{OperandKind::Id}}},
         {spv::OpExtractSubArrayQCOM, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpImageGatherQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpGroupIAddNonUniformAMD, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupFAddNonUniformAMD, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupFMinNonUniformAMD, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
