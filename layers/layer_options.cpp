@@ -35,6 +35,7 @@
 #include "gpuav/core/gpuav_settings.h"
 #include "sync/sync_settings.h"
 #include "gpu_dump/gpu_dump_settings.h"
+#include "legacy/legacy_settings.h"
 
 #include "vk_layer_config.h"
 
@@ -122,8 +123,9 @@ const std::vector<std::string>& GetEnableFlagNameHelper() {
         "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA",                      // vendor_specific_nvidia,
         "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",                       // debug_printf,
         "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT",         // sync_validation,
-        "VK_VALIDATION_LEGACY_DETECTION",                                      // legacy_detection,
-        "VK_VALIDATION_GPU_DUMP",                                              // gpu_dump,
+        // These were added after we got rid of VkValidationFeatureDisableEXT
+        "VK_LAYER_LEGACY_DETECTION",      // legacy_detection,
+        "VK_LAYER_GPU_DUMP_DESCRIPTORS",  // gpu_dump,
     };
     return enable_flag_name_helper;
 }
@@ -152,7 +154,6 @@ const char* VK_LAYER_DISABLES = "disables";
 const char* VK_LAYER_CHECK_SHADERS = "check_shaders";
 const char* VK_LAYER_THREAD_SAFETY = "thread_safety";
 const char* VK_LAYER_STATELESS_PARAM = "stateless_param";
-const char* VK_LAYER_LEGACY_DETECTION = "legacy_detection";
 const char* VK_LAYER_OBJECT_LIFETIME = "object_lifetime";
 const char* VK_LAYER_VALIDATE_CORE = "validate_core";
 const char* VK_LAYER_UNIQUE_HANDLES = "unique_handles";
@@ -259,6 +260,12 @@ const char* VK_LAYER_GPU_DUMP_DEVICE_GENERATED_COMMANDS = "gpu_dump_device_gener
 const char* VK_LAYER_GPU_DUMP_TO_STDOUT = "gpu_dump_to_stdout";
 // Experimental
 const char* VK_LAYER_GPU_DUMP_DEVICE_COPY = "gpu_dump_device_copy";
+
+// Legacy Detection
+// ---
+const char* VK_LAYER_LEGACY_DETECTION = "legacy_detection";
+const char* VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED = "legacy_detection_only_supported";
+const char* VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED = "legacy_detection_only_enabled";
 
 // Don't need any setting helper when using self vvl and don't want unused function warnings
 #if !defined(BUILD_SELF_VVL)
@@ -1269,6 +1276,22 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPU_DUMP_DEVICE_COPY, gpu_dump_settings.device_copy);
     }
 
+    LegacyDetectionSettings& legacy_detection_settings = *settings_data->legacy_detection_settings;
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED,
+                                legacy_detection_settings.only_supported);
+    }
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED, legacy_detection_settings.only_enabled);
+    }
+    if (legacy_detection_settings.only_supported && legacy_detection_settings.only_enabled) {
+        setting_warnings.emplace_back(
+            "Having both VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED and VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED both enable makes "
+            "non-sense because you must first have something supported before it can be enabled.");
+    }
+    legacy_detection_settings.always = !legacy_detection_settings.only_supported && !legacy_detection_settings.only_enabled;
+
+    // Feel safe to remove by end of 2026, will have enough SDK cycles by then
     const char* REMOVED_VK_LAYER_SYNCVAL_MESSAGE_EXTRA_PROPERTIES_PRETTY_PRINT = "syncval_message_extra_properties_pretty_print";
     if (vkuHasLayerSetting(layer_setting_set, REMOVED_VK_LAYER_SYNCVAL_MESSAGE_EXTRA_PROPERTIES_PRETTY_PRINT)) {
         setting_warnings.emplace_back(std::string(REMOVED_VK_LAYER_SYNCVAL_MESSAGE_EXTRA_PROPERTIES_PRETTY_PRINT) +
@@ -1297,10 +1320,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
         SetValidationSetting(layer_setting_set, settings_data->enabled, vendor_specific_nvidia,
                              VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA);
         SetValidationSetting(layer_setting_set, settings_data->enabled, sync_validation, VK_LAYER_VALIDATE_SYNC);
-        SetValidationSetting(layer_setting_set, settings_data->enabled, legacy_detection, VK_LAYER_LEGACY_DETECTION);
-
-        settings_data->enabled[gpu_dump] = gpu_dump_settings.EnableLayer();
     }
+
+    // These don't have a VkValidationFeaturesEXT equivalent, so always check these
+    SetValidationSetting(layer_setting_set, settings_data->enabled, legacy_detection, VK_LAYER_LEGACY_DETECTION);
+    settings_data->enabled[gpu_dump] = gpu_dump_settings.EnableLayer();
 
     // Only read the legacy disables flags when used, not their replacement.
     // Avoid Android C.I. performance regression from reading Android env variables
@@ -1429,6 +1453,9 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
 
     // Our way to to try and get rid of these settings
     // Detect if people have core, but manually turned off these settings
+    //
+    // These were added 10 years ago and were not properly maintained nor tested
+    // We added this warning at 1.4.355 and want to give a few SDK cycles before fully removing
     if (!settings_data->disabled[core_checks]) {
         if (settings_data->disabled[command_buffer_state]) {
             setting_warnings.emplace_back(

@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2025 LunarG, Inc. -->
+<!-- Copyright 2025-2026 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -48,14 +48,36 @@ instance_ci.pNext = &layer_settings_create_info;
 
 ```bash
 # Windows
-set VK_VALIDATION_LEGACY_DETECTION=1
+set VK_LAYER_LEGACY_DETECTION=1
 
 # Linux
-export VK_VALIDATION_LEGACY_DETECTION=1
+export VK_LAYER_LEGACY_DETECTION=1
 
 # Android
 adb shell setprop debug.vulkan.khronos_validation.legacy_detection=1
 ```
+
+## Why is it reporting extensions my device doesn't even support?
+
+By default, if the user is using `VK_EXT_foo` and there is a `VK_KHR_foo` in the current headers VVL was built with, it will warn the user. Some people will not want this warning unless their local device actually supports `VK_KHR_foo`.
+
+For this case, there is an additional `VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED` setting, that when set, will only give a warning if the `VkInstance`/`VkDevice` actually supports `VK_KHR_foo`.
+
+There is even a `VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED` setting, that goes further and will only give a warning you have enabled `VK_KHR_foo`, but still using `VK_EXT_foo`.
+
+The argument for the default being to still report `VK_KHR_foo` is that an application developer can always opt out of warnings for things they know they want to ignore, but opting in to warnings requires them to already know those things exist, which would mean they didn't need the extension to tell them about them in the first place.
+
+## Can I mute warnings?
+
+Yes, if the user wants to mute a certain error they can simply go `VK_LAYER_MESSAGE_ID_FILTER=WARNING-legacy-gpdp2`
+
+## Should I keep this on all the time?
+
+The layer is very simple and likely will cause very little overhead and you likely **could**.
+
+**Should** you... likely no.
+
+The goal of this Legacy Detection was to provide a tool so people could learn about newer Vulkan functionality. Just turning it on once and awhile and seeing what it reports might be enough for the majority of people.
 
 ## Extra reference
 

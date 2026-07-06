@@ -713,7 +713,8 @@ DispatchInstance::DispatchInstance(const VkInstanceCreateInfo* pCreateInfo) : Ha
                                                       &settings.global_settings,
                                                       &settings.gpuav_settings,
                                                       &settings.syncval_settings,
-                                                      &settings.gpu_dump_settings};
+                                                      &settings.gpu_dump_settings,
+                                                      &settings.legacy_detection_settings};
     ProcessConfigAndEnvSettings(&config_and_env_settings_data);
 
     if (settings.disabled[handle_wrapping]) {

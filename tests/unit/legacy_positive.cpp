@@ -11,6 +11,8 @@
  */
 // stype-check off
 #include <vulkan/vulkan_core.h>
+#include "binding.h"
+#include "generated/vk_function_pointers.h"
 #include "layer_validation_tests.h"
 
 void LegacyTest::CreateRenderPass() {
@@ -85,9 +87,11 @@ TEST_F(PositiveLegacy, MuteMultipleWarnings) {
 
 TEST_F(PositiveLegacy, GetPhysicalDeviceProperties2Extension) {
     TEST_DESCRIPTION("Show Instance extensions currently only detected if enabled, not if supported");
-    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
-    VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &layer_setting};
-
+    VkLayerSettingEXT layer_setting[2] = {
+        {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+        {OBJECT_LAYER_NAME, "legacy_detection_only_enabled", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
+    static VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2,
+                                                            layer_setting};
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
@@ -96,4 +100,83 @@ TEST_F(PositiveLegacy, GetPhysicalDeviceProperties2Extension) {
 
     VkFormatProperties format_properties{};
     vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, &format_properties);
+}
+
+TEST_F(PositiveLegacy, DescriptorHeapOnlySupported) {
+    VkLayerSettingEXT layer_setting[2] = {
+        {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+        {OBJECT_LAYER_NAME, "legacy_detection_only_supported", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
+    static VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2,
+                                                            layer_setting};
+    RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
+    RETURN_IF_SKIP(InitState());
+    if (DeviceExtensionSupported(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME)) {
+        GTEST_SKIP() << VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME << " is supported.";
+    }
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1};
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+    vkt::DescriptorPool(*m_device, ds_pool_ci);
+}
+
+TEST_F(PositiveLegacy, DescriptorHeapOnlyEnabled) {
+    VkLayerSettingEXT layer_setting[2] = {
+        {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+        {OBJECT_LAYER_NAME, "legacy_detection_only_enabled", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
+    static VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2,
+                                                            layer_setting};
+    RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
+    RETURN_IF_SKIP(InitState());
+    if (!DeviceExtensionSupported(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME)) {
+        GTEST_SKIP() << VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME << " is not supported.";
+    }
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1};
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+    vkt::DescriptorPool(*m_device, ds_pool_ci);
+}
+
+TEST_F(PositiveLegacy, UseDeprecatedDeviceExtensionsPromoted) {
+    // We need to explicitly allow promoted extensions to be enabled as this test relies on this behavior
+    AllowPromotedExtensions();
+
+    AddRequiredExtensions(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
+    const char* ids[] = {"WARNING-legacy-gpdp2"};
+    VkLayerSettingEXT layer_settings[3] = {
+        {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+        {OBJECT_LAYER_NAME, "legacy_detection_only_supported", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+        {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids}};
+    VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 3, layer_settings};
+    RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
+    RETURN_IF_SKIP(InitState());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+
+    if (DeviceExtensionSupported(VK_KHR_DEVICE_FAULT_EXTENSION_NAME)) {
+        GTEST_SKIP() << VK_KHR_DEVICE_FAULT_EXTENSION_NAME << " is supported.";
+    }
+
+    VkDevice local_device;
+    VkDeviceCreateInfo dev_info = vku::InitStructHelper();
+    VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
+    queue_info.queueFamilyIndex = 0;
+    queue_info.queueCount = 1;
+    float qp = 1;
+    queue_info.pQueuePriorities = &qp;
+    dev_info.queueCreateInfoCount = 1;
+    dev_info.pQueueCreateInfos = &queue_info;
+    dev_info.enabledLayerCount = 0;
+    dev_info.ppEnabledLayerNames = nullptr;
+    dev_info.enabledExtensionCount = m_device_extension_names.size();
+    dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    vk::CreateDevice(this->Gpu(), &dev_info, nullptr, &local_device);
+    vk::DestroyDevice(local_device, nullptr);
 }
