@@ -458,23 +458,23 @@ TEST_F(NegativeGpuDump, DescriptorHeapDescriptorIndexing) {
     VkDeviceAddress indirect_ubo_address = ubo_buffer.Address();
     m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_ubo_address);
 
-    if (m_device->Physical().limits_.minUniformBufferOffsetAlignment <= 4) {
-        mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
-        mapping.sourceData.indirectIndex.heapOffset = 0;
-        mapping.sourceData.indirectIndex.pushOffset = 0;
-        mapping.sourceData.indirectIndex.addressOffset = 4;  // start at SSBO[2]
-        mapping.sourceData.indirectIndex.heapIndexStride = 1;
-        mapping.sourceData.indirectIndex.heapArrayStride = (uint32_t)resource_stride;
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
+    mapping.sourceData.indirectIndex.heapOffset = 0;
+    mapping.sourceData.indirectIndex.pushOffset = 0;
+    mapping.sourceData.indirectIndex.addressOffset = 4;  // start at SSBO[2]
+    mapping.sourceData.indirectIndex.heapIndexStride = 1;
+    mapping.sourceData.indirectIndex.heapArrayStride = (uint32_t)resource_stride;
+    // INDIRECT_INDEX Static array
+    vkt::HeapComputePipeline pipe5(*m_device, cs_source_static, SPV_ENV_VULKAN_1_0, &mapping_info);
+    // INDIRECT_INDEX runtime array
+    vkt::HeapComputePipeline pipe6(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_0, &mapping_info);
 
-        // INDIRECT_INDEX Static array
-        vkt::HeapComputePipeline pipe5(*m_device, cs_source_static, SPV_ENV_VULKAN_1_0, &mapping_info);
+    if (m_device->Physical().limits_.minUniformBufferOffsetAlignment <= 4) {
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe5);
         m_errorMonitor->SetDesiredWarning("OUT OF BOUNDS");
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_errorMonitor->VerifyFound();
 
-        // INDIRECT_INDEX runtime array
-        vkt::HeapComputePipeline pipe6(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_0, &mapping_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe6);
         m_errorMonitor->SetDesiredInfo("GPU-DUMP");
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -2037,13 +2037,13 @@ TEST_F(NegativeGpuDump, DescriptorHeapHashConflict) {
     descriptor_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &resource_host);
 
-    if (memcmp(storage_descriptor, sampled_descriptor, heap_props.bufferDescriptorSize) != 0) {
+    if (memcmp(storage_descriptor, sampled_descriptor, heap_props.imageDescriptorSize) != 0) {
         GTEST_SKIP() << "UBO and SSBO are different descriptors";
     }
 
     vkt::Buffer resource_heap(*m_device, 1024, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
     void* heap_data = resource_heap.Memory().Map();
-    memcpy(heap_data, storage_descriptor, heap_props.bufferDescriptorSize);
+    memcpy(heap_data, storage_descriptor, heap_props.imageDescriptorSize);
 
     vkt::Buffer sampler_heap(*m_device, 1024, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
     heap_data = sampler_heap.Memory().Map();
