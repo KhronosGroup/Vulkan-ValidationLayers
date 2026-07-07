@@ -381,6 +381,7 @@ TEST_F(PositiveGpuAVSpirv, FindMultipleStores) {
 }
 
 TEST_F(PositiveGpuAVSpirv, UniformWithoutAccessChain) {
+    TEST_DESCRIPTION("dEQP-VK.spirv_assembly.instruction.compute.composite_insert.nested_struct");
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -463,4 +464,57 @@ TEST_F(PositiveGpuAVSpirv, UniformWithoutAccessChain) {
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     pipe.cs_ = VkShaderObj(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveGpuAVSpirv, TypeSampledImageAsParameter) {
+    TEST_DESCRIPTION("dEQP-VK.spirv_assembly.instruction.function_params.sampler_param");
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const char* fs_source = R"(
+                           OpCapability Shader
+                           OpMemoryModel Logical GLSL450
+                           OpEntryPoint Fragment %main "main" %frag_color
+                           OpExecutionMode %main OriginUpperLeft
+                           OpDecorate %frag_color Location 0
+                           OpDecorate %sampled_img_var DescriptorSet 0
+                           OpDecorate %sampled_img_var Binding 0
+                   %void = OpTypeVoid
+            %void_func_t = OpTypeFunction %void
+                  %float = OpTypeFloat 32
+                %v2float = OpTypeVector %float 2
+                %v4float = OpTypeVector %float 4
+               %image_2d = OpTypeImage %float 2D 0 0 0 1 Unknown
+             %sampled_img = OpTypeSampledImage %image_2d
+        %sampling_func_t = OpTypeFunction %v4float %sampled_img %v2float
+%sampled_img_uniform_ptr = OpTypePointer UniformConstant %sampled_img
+        %v4float_out_ptr = OpTypePointer Output %v4float
+                %float_0 = OpConstant %float 0
+                 %coords = OpConstantComposite %v2float %float_0 %float_0
+             %frag_color = OpVariable %v4float_out_ptr Output
+        %sampled_img_var = OpVariable %sampled_img_uniform_ptr UniformConstant
+
+                   %main = OpFunction %void None %void_func_t
+             %main_label = OpLabel
+             %sample_arg = OpLoad %sampled_img %sampled_img_var
+                  %color = OpFunctionCall %v4float %sampling_func %sample_arg %coords
+                           OpStore %frag_color %color
+                           OpReturn
+                           OpFunctionEnd
+
+          %sampling_func = OpFunction %v4float None %sampling_func_t
+                %sampler = OpFunctionParameter %sampled_img
+            %tex_coords = OpFunctionParameter %v2float
+    %sampling_func_label = OpLabel
+                 %retval = OpImageSampleImplicitLod %v4float %sampler %tex_coords
+                           OpReturnValue %retval
+                           OpFunctionEnd
+    )";
+
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    pipe.CreateGraphicsPipeline();
 }
