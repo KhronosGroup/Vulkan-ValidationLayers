@@ -1848,9 +1848,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                                    const VkAccelerationStructureBuildGeometryInfoKHR& info,
                                                    const VkAccelerationStructureBuildRangeInfoKHR* geometry_build_ranges,
                                                    const Location& info_loc) const;
-    bool ValidateAccelerationStructureBuildGeometryInfoUpdate(const vvl::AccelerationStructureKHR& src_as_state,
-                                                              const VkAccelerationStructureBuildGeometryInfoKHR& info,
-                                                              const Location& info_loc, const VulkanTypedHandle& handle) const;
     bool ValidateAccelerationStructureBuildDst(const vvl::AccelerationStructureKHR& dst_as_state,
                                                const VkAccelerationStructureBuildGeometryInfoKHR& info, const Location& info_loc,
                                                const VulkanTypedHandle& handle) const;

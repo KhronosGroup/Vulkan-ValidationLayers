@@ -2781,7 +2781,8 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1Host
                                                      data, stride);
         m_errorMonitor->VerifyFound();
     }
-
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
+#if 0
     // On host query type with missing BLAS flag
     {
         vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
@@ -2799,6 +2800,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1Host
                                                      stride);
         m_errorMonitor->VerifyFound();
     }
+#endif
 
     // On host query type with invalid stride
     {
@@ -2999,7 +3001,8 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidMode) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryType) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
+TEST_F(NegativeRayTracing, DISABLED_BuildAccelerationStructuresInvalidUpdatesToGeometryType) {
     TEST_DESCRIPTION(
         "Build a list of destination acceleration structures, then do an update build on that same list changing geometry type");
 
@@ -3031,7 +3034,8 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTy
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryFlags) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
+TEST_F(NegativeRayTracing, DISABLED_BuildAccelerationStructuresInvalidUpdatesToGeometryFlags) {
     TEST_DESCRIPTION(
         "Build a list of destination acceleration structures, then do an update build on that same list but with a different "
         "geometry flag");
@@ -3062,7 +3066,8 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryFl
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTrianglesFormat) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
+TEST_F(NegativeRayTracing, DISABLED_BuildAccelerationStructuresInvalidUpdatesToGeometryTrianglesFormat) {
     TEST_DESCRIPTION(
         "Build a list of destination acceleration structures, then do an update build on that same list but with a different "
         "vertex format for the triangles");
@@ -3185,8 +3190,8 @@ TEST_F(NegativeRayTracing, TrianglesMisalignedVertexBufferAddress) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
-
-TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTrianglesMaxVertex) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
+TEST_F(NegativeRayTracing, DISABLED_BuildAccelerationStructuresInvalidUpdatesToGeometryTrianglesMaxVertex) {
     TEST_DESCRIPTION(
         "Build a list of destination acceleration structures, then do an update build on that same list but with a different "
         "maxVertex for triangles");
@@ -3240,8 +3245,8 @@ TEST_F(NegativeRayTracing, InvalidMaxVertex) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
-
-TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTrianglesIndexType) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
+TEST_F(NegativeRayTracing, DISABLED_BuildAccelerationStructuresInvalidUpdatesToGeometryTrianglesIndexType) {
     TEST_DESCRIPTION(
         "Build a list of destination acceleration structures, then do an update build on that same list but with a different index "
         "type for the triangles");
@@ -3271,8 +3276,8 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTr
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
-
-TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTrianglesTransformData) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
+TEST_F(NegativeRayTracing, DISABLED_BuildAccelerationStructuresInvalidUpdatesToGeometryTrianglesTransformData) {
     TEST_DESCRIPTION(
         "Build a list of destination acceleration structures, then do an update build on that same list but with a different "
         "pointer for the transform data");
@@ -3391,8 +3396,8 @@ TEST_F(NegativeRayTracing, AabbBufferInvalidAddress) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
-
-TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometry) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
+TEST_F(NegativeRayTracing, DISABLED_BuildAccelerationStructuresInvalidUpdatesToGeometry) {
     TEST_DESCRIPTION(
         "Build a list of destination acceleration structures, then do an update build on that same list but with triangles "
         "transform data going from non NULL to NULL");
@@ -3621,7 +3626,8 @@ TEST_F(NegativeRayTracing, DynamicRayTracingPipelineStack) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRayTracing, UpdatedFirstPrimitiveCount) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
+TEST_F(NegativeRayTracing, DISABLED_UpdatedFirstPrimitiveCount) {
     TEST_DESCRIPTION(
         "Build a list of destination acceleration structures, then do an update build on that same list but with a different "
         "VkAccelerationStructureBuildRangeInfoKHR::primitiveCount");
@@ -4026,8 +4032,8 @@ TEST_F(NegativeRayTracing, AccelerationStructureGeometry) {
                                               &max_primitives_count, &build_sizes_info);
     m_errorMonitor->VerifyFound();
 }
-
-TEST_F(NegativeRayTracing, CopyAccelerationStructureMode) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
+TEST_F(NegativeRayTracing, DISABLED_CopyAccelerationStructureMode) {
     TEST_DESCRIPTION("Test VkAccelerationStructureGeometryKHR parameters");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);

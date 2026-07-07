@@ -814,10 +814,6 @@ class DeviceState : public vvl::BaseDevice {
                                                        const VkAllocationCallbacks* pAllocator,
                                                        VkAccelerationStructureKHR* pAccelerationStructure,
                                                        const RecordObject& record_obj) override;
-    void PostCallRecordBuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
-                                                      const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-                                                      const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
-                                                      const RecordObject& record_obj) override;
     void RecordDeviceAccelerationStructureBuildInfo(vvl::CommandBuffer& cb_state,
                                                     const VkAccelerationStructureBuildGeometryInfoKHR& info);
     void PostCallRecordCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
@@ -1790,9 +1786,6 @@ class DeviceState : public vvl::BaseDevice {
     void UpdateBindBufferMemoryState(const VkBindBufferMemoryInfo& bind_info);
     void UpdateBindImageMemoryState(const VkBindImageMemoryInfo& bind_info);
 
-    void PostCallRecordCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                    const VkCopyAccelerationStructureInfoKHR* pInfo,
-                                                    const RecordObject& record_obj) override;
     void PostCallRecordCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                             const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
                                                             const RecordObject& record_obj) override;

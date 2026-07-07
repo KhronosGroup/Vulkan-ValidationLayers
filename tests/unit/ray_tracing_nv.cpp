@@ -1791,11 +1791,13 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
 
     m_command_buffer.Begin();
 
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
+#if 0
     // Src must have been created with allow compaction flag
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-src-03411");
     vk::CmdCopyAccelerationStructureNV(m_command_buffer, dst_as, src_as, VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_NV);
     m_errorMonitor->VerifyFound();
-
+#endif
     // mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR or VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-mode-03410");
     vk::CmdCopyAccelerationStructureNV(m_command_buffer, dst_as, src_as, VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR);

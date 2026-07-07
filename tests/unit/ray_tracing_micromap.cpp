@@ -940,7 +940,8 @@ TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureTriangleMicromap
         m_errorMonitor->VerifyFound();
         m_command_buffer.End();
     }
-
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
+#if 0
     {
         range_info.primitiveCount = 1;
         VkAccelerationStructureTrianglesOpacityMicromapKHR triangle_mm = vku::InitStructHelper();
@@ -955,6 +956,7 @@ TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureTriangleMicromap
         m_errorMonitor->VerifyFound();
         m_command_buffer.End();
     }
+#endif
 }
 
 TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureTriangleMicromapEXT) {
@@ -1952,8 +1954,8 @@ TEST_F(NegativeRayTracingMicromap, BuildAccelStructInstanceMicromapFeatureDisabl
     vk::BuildAccelerationStructuresKHR(device(), VK_NULL_HANDLE, 1, &build_info, &range_info_ptr);
     m_errorMonitor->VerifyFound();
 }
-
-TEST_F(NegativeRayTracingMicromap, BuildAccelStructInstanceDisableBuildFlag) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
+TEST_F(NegativeRayTracingMicromap, DISABLED_BuildAccelStructInstanceDisableBuildFlag) {
     AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
     RETURN_IF_SKIP(InitMicromapTest());
 

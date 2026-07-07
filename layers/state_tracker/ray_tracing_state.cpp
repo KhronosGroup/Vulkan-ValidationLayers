@@ -79,28 +79,6 @@ void AccelerationStructureKHR::NotifyInvalidate(const StateObject::NodeList& inv
     StateObject::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-void AccelerationStructureKHR::Build(const VkAccelerationStructureBuildGeometryInfoKHR* pInfo, const bool is_host,
-                                     const VkAccelerationStructureBuildRangeInfoKHR* build_range_info) {
-    if (!GetBuildInfo().has_value()) {
-        build_geometry_info = vku::safe_VkAccelerationStructureBuildGeometryInfoKHR();
-    }
-    build_geometry_info->initialize(pInfo, is_host, build_range_info);
-};
-
-void AccelerationStructureKHR::UpdateBuildRangeInfos(const VkAccelerationStructureBuildRangeInfoKHR* p_build_range_infos,
-                                                     uint32_t geometry_count) {
-    // range info is null for indirect builds (vkCmdBuildAccelerationStructuresIndirectKHR) or VK_GEOMETRY_TYPE_MICROMAP_KHR
-    if (!p_build_range_infos) {
-        build_range_infos.clear();
-        return;
-    }
-
-    build_range_infos.resize(geometry_count);
-    for (const auto [i, build_range] : vvl::enumerate(p_build_range_infos, geometry_count)) {
-        build_range_infos[i] = build_range;
-    }
-}
-
 bool AccelerationStructureKHR::UsesCreateInfo1() const { return std::get_if<CreateInfo1>(&create_info) != nullptr; }
 
 bool AccelerationStructureKHR::UsesCreateInfo2() const {
