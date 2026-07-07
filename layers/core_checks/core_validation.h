@@ -943,6 +943,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                    const Location& loc) const;
     bool ValidateCooperativeVector(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const Location& loc) const;
+    bool ValidateCooperativeExtractSubArray(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                            const Location& loc) const;
     bool ValidateDescriptorMappingSourceHeap(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                              const spirv::ResourceInterfaceVariable& resource_variable,
                                              const VkDescriptorSetAndBindingMappingEXT& mapping, const Location& mapping_loc) const;

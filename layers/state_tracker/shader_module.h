@@ -741,6 +741,7 @@ struct Module {
         std::vector<const Instruction*> constant_size_of_inst;
         std::vector<const Instruction *> array_length_inst;
         std::vector<const Instruction *> vector_type_inst;
+        std::vector<const Instruction *> extract_sub_array_inst;
 
         // For descriptor indexing there are 3 situations
         //  1. OpConstant is used, we will find later

@@ -971,3 +971,210 @@ TEST_F(NegativeShaderCooperativeMatrix, RequiredVulkanVersionShaderObject) {
     const vkt::Shader comp_shader(*m_device, shader_ci);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderCooperativeMatrix, SourceArrayOperandLengthMismatch) {
+    TEST_DESCRIPTION("Check if OpExtractSubArrayQCOM source array operand length matches any "
+                     "supported VkCooperativeMatrixPropertiesKHR::NSize.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_COOPERATIVE_MATRIX_CONVERSION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixConversion);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+
+    uint32_t props_count = 0;
+    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, nullptr);
+    std::vector<VkCooperativeMatrixPropertiesKHR> cooperative_matrix_props{};
+    cooperative_matrix_props.resize(props_count, vku::InitStructHelper());
+    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, cooperative_matrix_props.data());
+
+    uint32_t max_n_size = cooperative_matrix_props[0].NSize;
+    for (uint32_t index = 1; index < props_count; ++index) {
+        max_n_size = std::max(max_n_size, cooperative_matrix_props[index].NSize);
+    }
+
+    const char* cs_source = R"glsl(
+        #version 460 core
+
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_QCOM_cooperative_matrix_conversion : enable
+
+        layout(constant_id = 0) const uint SRC_ARRAY_LEN = 64;
+        layout(constant_id = 1) const uint RESULT_TYPE_LEN = 8;
+        layout(constant_id = 2) const uint START_INDEX = 0;
+        layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+        void main() {
+            float16_t src_data[SRC_ARRAY_LEN];
+            float16_t dst_data[RESULT_TYPE_LEN];
+
+            extractSubArrayQCOM(src_data, START_INDEX, dst_data);
+        }
+    )glsl";
+
+    constexpr std::array<VkSpecializationMapEntry, 3> entries{
+        VkSpecializationMapEntry{0, 0, sizeof(uint32_t)},
+        VkSpecializationMapEntry{1, sizeof(uint32_t) * 1, sizeof(uint32_t)},
+        VkSpecializationMapEntry{2, sizeof(uint32_t) * 2, sizeof(uint32_t)}
+    };
+    const std::array<uint32_t, 3> spec_data{
+        max_n_size * 2,
+        cooperative_matrix_props[0].KSize,
+        0
+    };
+    const VkSpecializationInfo spec_info{
+        entries.size(),
+        entries.data(),
+        sizeof(spec_data),
+        spec_data.data()
+    };
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &spec_info};
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-NSize-12352");
+    compute_pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, ResultTypeOperandLengthMismatch) {
+    TEST_DESCRIPTION("Check if OpExtractSubArrayQCOM Result Type operand length matches any "
+                     "supported VkCooperativeMatrixPropertiesKHR::KSize.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_COOPERATIVE_MATRIX_CONVERSION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixConversion);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+
+    uint32_t props_count = 0;
+    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, nullptr);
+    std::vector<VkCooperativeMatrixPropertiesKHR> cooperative_matrix_props{};
+    cooperative_matrix_props.resize(props_count, vku::InitStructHelper());
+    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, cooperative_matrix_props.data());
+
+    uint32_t max_n_size = cooperative_matrix_props[0].NSize;
+    uint32_t max_k_size = cooperative_matrix_props[0].KSize;
+    for (uint32_t index = 1; index < props_count; ++index) {
+        max_n_size = std::max(max_n_size, cooperative_matrix_props[index].NSize);
+        max_k_size = std::max(max_k_size, cooperative_matrix_props[index].KSize);
+    }
+
+    const uint32_t invalid_result_length = max_k_size * 2;
+    if (invalid_result_length > max_n_size) {
+        GTEST_SKIP() << "No unsupported result length fits in the source array, skipping test.";
+    }
+
+    const char* cs_source = R"glsl(
+        #version 460 core
+
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_QCOM_cooperative_matrix_conversion : enable
+
+        layout(constant_id = 0) const uint SRC_ARRAY_LEN = 64;
+        layout(constant_id = 1) const uint RESULT_TYPE_LEN = 8;
+        layout(constant_id = 2) const uint START_INDEX = 0;
+        layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+        void main() {
+            float16_t src_data[SRC_ARRAY_LEN];
+            float16_t dst_data[RESULT_TYPE_LEN];
+
+            extractSubArrayQCOM(src_data, START_INDEX, dst_data);
+        }
+    )glsl";
+
+    constexpr std::array<VkSpecializationMapEntry, 3> entries{
+        VkSpecializationMapEntry{0, 0, sizeof(uint32_t)},
+        VkSpecializationMapEntry{1, sizeof(uint32_t) * 1, sizeof(uint32_t)},
+        VkSpecializationMapEntry{2, sizeof(uint32_t) * 2, sizeof(uint32_t)}
+    };
+    const std::array<uint32_t, 3> spec_data{
+        max_n_size,
+        invalid_result_length,
+        0
+    };
+    const VkSpecializationInfo spec_info{
+        entries.size(),
+        entries.data(),
+        sizeof(spec_data),
+        spec_data.data(),
+    };
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &spec_info};
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-KSize-12353");
+    compute_pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, StartIndexOperandValueMismatch) {
+    TEST_DESCRIPTION("Check if OpExtractSubArrayQCOM start index operand value is a multiple of Result Type operand length.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_COOPERATIVE_MATRIX_CONVERSION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixConversion);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+
+    uint32_t props_count = 0;
+    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, nullptr);
+    std::vector<VkCooperativeMatrixPropertiesKHR> cooperative_matrix_props{};
+    cooperative_matrix_props.resize(props_count, vku::InitStructHelper());
+    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, cooperative_matrix_props.data());
+
+    uint32_t max_n_size = cooperative_matrix_props[0].NSize;
+    for (uint32_t index = 1; index < props_count; ++index) {
+        max_n_size = std::max(max_n_size, cooperative_matrix_props[index].NSize);
+    }
+
+    const uint32_t result_length = cooperative_matrix_props[0].KSize;
+    const uint32_t invalid_start_index = result_length / 2;
+    if (invalid_start_index == 0 || invalid_start_index + result_length > max_n_size) {
+        GTEST_SKIP() << "No supported VkCooperativeMatrixPropertiesKHR can keep the invalid start index in bounds, skipping test.";
+    }
+
+    const char* cs_source = R"glsl(
+        #version 460 core
+
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_QCOM_cooperative_matrix_conversion : enable
+
+        layout(constant_id = 0) const uint SRC_ARRAY_LEN = 64;
+        layout(constant_id = 1) const uint RESULT_TYPE_LEN = 8;
+        layout(constant_id = 2) const uint START_INDEX = 0;
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+        void main() {
+            float16_t src_data[SRC_ARRAY_LEN];
+            float16_t dst_data[RESULT_TYPE_LEN];
+
+            extractSubArrayQCOM(src_data, START_INDEX, dst_data);
+        }
+    )glsl";
+
+    constexpr std::array<VkSpecializationMapEntry, 3> entries{
+        VkSpecializationMapEntry{0, 0, sizeof(uint32_t)},
+        VkSpecializationMapEntry{1, sizeof(uint32_t) * 1, sizeof(uint32_t)},
+        VkSpecializationMapEntry{2, sizeof(uint32_t) * 2, sizeof(uint32_t)}
+    };
+    const std::array<uint32_t, 3> spec_data{
+        max_n_size,
+        result_length,
+        invalid_start_index,
+    };
+    const VkSpecializationInfo spec_info{
+        entries.size(),
+        entries.data(),
+        sizeof(spec_data),
+        spec_data.data(),
+    };
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &spec_info};
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpExtractSubArrayQCOM-12354");
+    compute_pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}

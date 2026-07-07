@@ -1254,6 +1254,9 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
             case spv::OpTypeVector:
                 vector_type_inst.push_back(&insn);
                 break;
+            case spv::OpExtractSubArrayQCOM:
+                extract_sub_array_inst.push_back(&insn);
+                break;
             case spv::OpEmitMeshTasksEXT:
                 emit_mesh_tasks_inst.push_back(&insn);
                 break;

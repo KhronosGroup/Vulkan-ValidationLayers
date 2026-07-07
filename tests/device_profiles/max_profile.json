@@ -156,6 +156,9 @@
                     "cooperativeMatrix": true,
                     "cooperativeMatrixRobustBufferAccess": true
                 },
+                "VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM": {
+                    "cooperativeMatrixConversion": true
+                },
                 "VkPhysicalDeviceCooperativeVectorFeaturesNV": {
                     "cooperativeVector": true,
                     "cooperativeVectorTraining": true
@@ -2829,6 +2832,7 @@
                 "VK_NV_viewport_array2": 1,
                 "VK_NV_viewport_swizzle": 1,
                 "VK_NV_win32_keyed_mutex": 1,
+                "VK_QCOM_cooperative_matrix_conversion": 1,
                 "VK_QCOM_elapsed_timer_query": 1,
                 "VK_QCOM_filter_cubic_clamp": 1,
                 "VK_QCOM_filter_cubic_weights": 1,
