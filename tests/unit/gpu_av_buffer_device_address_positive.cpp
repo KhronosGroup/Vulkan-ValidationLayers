@@ -2604,3 +2604,62 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, LinkingSameStruct) {
     pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, SharingStructWithDifferPSB) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12629");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
+
+    const char* shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+        struct sA
+        {
+            uint mA;
+            vec3 mB;
+            vec2 mC;
+        };
+
+        layout(buffer_reference) buffer BDA
+        {
+            sA a;
+            mat3 b;
+            mat2 c;
+            uint d[]; // [0] is a 116 byte offset
+        };
+
+        layout (push_constant) uniform PC {
+            BDA ptr[3];
+        };
+
+        void main (void)
+        {
+            uint a = ptr[0].a.mA;
+            ptr[2].d[100] = a;
+        }
+    )glsl";
+
+    VkPushConstantRange push_range;
+    push_range.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    push_range.offset = 0u;
+    push_range.size = sizeof(VkDeviceAddress) * 3u;
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer block_b0(*m_device, 128u, 0, vkt::device_address);
+    vkt::Buffer block_b1(*m_device, 128u, 0, vkt::device_address);  // unused
+    vkt::Buffer block_b2(*m_device, 1024u, 0, vkt::device_address);
+
+    VkDeviceAddress push_constants[3] = {block_b0.Address(), block_b1.Address(), block_b2.Address()};
+
+    m_command_buffer.Begin();
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0u, push_range.size, push_constants);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
