@@ -258,8 +258,9 @@ TEST_F(NegativeLegacy, DescriptorHeapAlways) {
 }
 
 TEST_F(NegativeLegacy, DescriptorHeapOnlySupport) {
+    const char* mode = "ONLY_SUPPORTED";
     VkLayerSettingEXT layer_settings[2] = {
-        kLegacySetting, {OBJECT_LAYER_NAME, "legacy_detection_only_supported", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &kVkTrue}};
+        kLegacySetting, {OBJECT_LAYER_NAME, "legacy_detection_mode", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &mode}};
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
     RETURN_IF_SKIP(InitState());
@@ -283,10 +284,11 @@ TEST_F(NegativeLegacy, DescriptorHeapOnlyEnabled) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     const char* ids[] = {"WARNING-legacy-gpdp2"};
+    const char* mode = "ONLY_ENABLED";
     VkLayerSettingEXT layer_settings[3] = {
         kLegacySetting,
         {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids},
-        {OBJECT_LAYER_NAME, "legacy_detection_only_enabled", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &kVkTrue}};
+        {OBJECT_LAYER_NAME, "legacy_detection_mode", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &mode}};
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 3, layer_settings};
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
     RETURN_IF_SKIP(InitState());

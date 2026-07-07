@@ -61,9 +61,11 @@ adb shell setprop debug.vulkan.khronos_validation.legacy_detection=1
 
 By default, if the user is using `VK_EXT_foo` and there is a `VK_KHR_foo` in the current headers VVL was built with, it will warn the user. Some people will not want this warning unless their local device actually supports `VK_KHR_foo`.
 
-For this case, there is an additional `VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED` setting, that when set, will only give a warning if the `VkInstance`/`VkDevice` actually supports `VK_KHR_foo`.
+For this case, there is an additional `VK_LAYER_LEGACY_DETECTION_MODE` setting.
 
-There is even a `VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED` setting, that goes further and will only give a warning you have enabled `VK_KHR_foo`, but still using `VK_EXT_foo`.
+- `VK_LAYER_LEGACY_DETECTION_MODE=ALWAYS` is the default.
+- `VK_LAYER_LEGACY_DETECTION_MODE=ONLY_SUPPORTED` will only give a warning if the `VkInstance`/`VkDevice` actually supports `VK_KHR_foo`.
+- `VK_LAYER_LEGACY_DETECTION_MODE=ONLY_ENABLED` will only give a warning you have enabled `VK_KHR_foo`, but still using `VK_EXT_foo`.
 
 The argument for the default being to still report `VK_KHR_foo` is that an application developer can always opt out of warnings for things they know they want to ignore, but opting in to warnings requires them to already know those things exist, which would mean they didn't need the extension to tell them about them in the first place.
 

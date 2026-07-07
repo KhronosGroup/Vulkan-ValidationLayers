@@ -64,9 +64,8 @@ bool Instance::PreCallValidateGetPhysicalDeviceFeatures(VkPhysicalDevice physica
                    "and libraries (such as VMA) are known to still be using these functions. One may add \"WARNING-legacy-gpdp2\" "
                    "to their VUID Mute Message list to ignore these.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2\nTo limit warnings by only what the "
-                   "VkInstance currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "VkInstance currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -111,8 +110,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceFormatProperties(VkPhysicalDevice
             "layers and libraries (such as VMA) are known to still be using these functions. One may add \"WARNING-legacy-gpdp2\" "
             "to their VUID Mute Message list to ignore these.\nSee more information about this legacy in the specification: "
             "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2\nTo limit warnings by only what the "
-            "VkInstance currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-            "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) "
+            "VkInstance currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) "
             "setting.");
     }
     return false;
@@ -160,9 +158,8 @@ bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPhysicalD
             "be used instead.\nNOTE: Many implicit layers and libraries (such as VMA) are known to still be using these functions. "
             "One may add \"WARNING-legacy-gpdp2\" to their VUID Mute Message list to ignore these.\nSee more information about "
             "this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2\nTo limit "
-            "warnings by only what the VkInstance currently supports/enables, you can turn on the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+            "warnings by only what the VkInstance currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+            "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -205,9 +202,8 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties(VkPhysicalDevice physi
                    "layers and libraries (such as VMA) are known to still be using these functions. One may add "
                    "\"WARNING-legacy-gpdp2\" to their VUID Mute Message list to ignore these.\nSee more information about this "
                    "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2\nTo limit "
-                   "warnings by only what the VkInstance currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkInstance currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -253,9 +249,8 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalD
             "be used instead.\nNOTE: Many implicit layers and libraries (such as VMA) are known to still be using these functions. "
             "One may add \"WARNING-legacy-gpdp2\" to their VUID Mute Message list to ignore these.\nSee more information about "
             "this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2\nTo limit "
-            "warnings by only what the VkInstance currently supports/enables, you can turn on the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+            "warnings by only what the VkInstance currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+            "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -300,8 +295,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceMemoryProperties(VkPhysicalDevice
             "layers and libraries (such as VMA) are known to still be using these functions. One may add \"WARNING-legacy-gpdp2\" "
             "to their VUID Mute Message list to ignore these.\nSee more information about this legacy in the specification: "
             "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2\nTo limit warnings by only what the "
-            "VkInstance currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-            "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) "
+            "VkInstance currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) "
             "setting.");
     }
     return false;
@@ -353,9 +347,8 @@ bool Device::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
                    "vkQueueSubmit is a legacy command and there is now the VK_KHR_synchronization2 extension which contains "
                    "vkQueueSubmit2KHR that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2\nTo limit warnings by only what "
-                   "the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -403,9 +396,8 @@ bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhy
                    "libraries (such as VMA) are known to still be using these functions. One may add \"WARNING-legacy-gpdp2\" to "
                    "their VUID Mute Message list to ignore these.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2\nTo limit warnings by only what the "
-                   "VkInstance currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "VkInstance currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -432,9 +424,8 @@ bool Device::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuf
                    "vkCmdUpdateBuffer is a legacy command and there is now the VK_KHR_device_address_commands extension which "
                    "contains vkCmdUpdateMemoryKHR that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -461,9 +452,8 @@ bool Device::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffe
                    "vkCmdFillBuffer is a legacy command and there is now the VK_KHR_device_address_commands extension which "
                    "contains vkCmdFillMemoryKHR that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -508,9 +498,8 @@ bool Device::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, Vk
                    "vkCmdPipelineBarrier is a legacy command and there is now the VK_KHR_synchronization2 extension which contains "
                    "vkCmdPipelineBarrier2KHR that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2\nTo limit warnings "
-                   "by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "by only what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -550,9 +539,8 @@ bool Device::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkP
                    "vkCmdWriteTimestamp is a legacy command and there is now the VK_KHR_synchronization2 extension which contains "
                    "vkCmdWriteTimestamp2KHR that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2\nTo limit warnings "
-                   "by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "by only what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -584,9 +572,8 @@ bool Device::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffe
             "vkCmdCopyQueryPoolResults is a legacy command and there is now the VK_KHR_device_address_commands extension which "
             "contains vkCmdCopyQueryPoolResultsToMemoryKHR that can be used instead.\nSee more information about this legacy in "
             "the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-            "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+            "warnings by only what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+            "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -614,9 +601,8 @@ bool Device::PreCallValidateCreateBufferView(VkDevice device, const VkBufferView
                    "vkCreateBufferView is a legacy command and there is now the VK_EXT_descriptor_heap extension which contains "
                    "the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-resource-objects\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -644,9 +630,8 @@ bool Device::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipeli
                    "vkCreatePipelineLayout is a legacy command and there is now the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -674,9 +659,8 @@ bool Device::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreate
                    "vkCreateSampler is a legacy command and there is now the VK_EXT_descriptor_heap extension which contains the "
                    "new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-resource-objects\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -704,9 +688,8 @@ bool Device::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkD
                    "vkCreateDescriptorSetLayout is a legacy command and there is now the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -734,9 +717,8 @@ bool Device::PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescri
                    "vkCreateDescriptorPool is a legacy command and there is now the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -763,9 +745,8 @@ bool Device::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPoo
                    "vkResetDescriptorPool is a legacy command and there is now the VK_EXT_descriptor_heap extension which contains "
                    "the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -792,9 +773,8 @@ bool Device::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDesc
                    "vkAllocateDescriptorSets is a legacy command and there is now the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -822,9 +802,8 @@ bool Device::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descr
                    "vkUpdateDescriptorSets is a legacy command and there is now the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -853,9 +832,8 @@ bool Device::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer,
                    "vkCmdBindDescriptorSets is a legacy command and there is now the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -884,9 +862,8 @@ bool Device::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, V
                    "vkCmdDispatchIndirect is a legacy command and there is now the VK_KHR_device_address_commands extension which "
                    "contains vkCmdDispatchIndirect2KHR that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -926,9 +903,8 @@ bool Device::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent e
                    "vkCmdSetEvent is a legacy command and there is now the VK_KHR_synchronization2 extension which contains "
                    "vkCmdSetEvent2KHR that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2\nTo limit warnings by only what "
-                   "the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -968,9 +944,8 @@ bool Device::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent
                    "vkCmdResetEvent is a legacy command and there is now the VK_KHR_synchronization2 extension which contains "
                    "vkCmdResetEvent2KHR that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2\nTo limit warnings by only what "
-                   "the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1014,9 +989,8 @@ bool Device::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_
                    "vkCmdWaitEvents is a legacy command and there is now the VK_KHR_synchronization2 extension which contains "
                    "vkCmdWaitEvents2KHR that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2\nTo limit warnings by only what "
-                   "the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1044,9 +1018,8 @@ bool Device::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPi
                    "vkCmdPushConstants is a legacy command and there is now the VK_EXT_descriptor_heap extension which contains "
                    "the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1087,9 +1060,8 @@ bool Device::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebuff
                    "vkCreateFramebuffer is a legacy command and there is now the VK_KHR_dynamic_rendering_local_read extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1130,9 +1102,8 @@ bool Device::PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPass
                    "vkCreateRenderPass is a legacy command and there is now the VK_KHR_create_renderpass2 extension which contains "
                    "vkCreateRenderPass2KHR that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-renderpass2\nTo limit warnings by only what "
-                   "the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1174,9 +1145,8 @@ bool Device::PreCallValidateGetRenderAreaGranularity(VkDevice device, VkRenderPa
                    "vkGetRenderAreaGranularity is a legacy command and there is now the VK_KHR_dynamic_rendering_local_read "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1203,9 +1173,8 @@ bool Device::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuf
                    "vkCmdDrawIndirect is a legacy command and there is now the VK_KHR_device_address_commands extension which "
                    "contains vkCmdDrawIndirect2KHR that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1234,9 +1203,8 @@ bool Device::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer
                    "vkCmdDrawIndexedIndirect is a legacy command and there is now the VK_KHR_device_address_commands extension "
                    "which contains vkCmdDrawIndexedIndirect2KHR that can be used instead.\nSee more information about this legacy "
                    "in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo "
-                   "limit warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "limit warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1276,9 +1244,8 @@ bool Device::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
                    "vkCmdBeginRenderPass is a legacy command and there is now the VK_KHR_create_renderpass2 extension which "
                    "contains vkCmdBeginRenderPass2KHR that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-renderpass2\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1318,9 +1285,8 @@ bool Device::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubp
                    "vkCmdNextSubpass is a legacy command and there is now the VK_KHR_create_renderpass2 extension which contains "
                    "vkCmdNextSubpass2KHR that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-renderpass2\nTo limit warnings by only what "
-                   "the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1359,9 +1325,8 @@ bool Device::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
                    "vkCmdEndRenderPass is a legacy command and there is now the VK_KHR_create_renderpass2 extension which contains "
                    "vkCmdEndRenderPass2KHR that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-renderpass2\nTo limit warnings by only what "
-                   "the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1391,9 +1356,8 @@ bool Device::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, 
                    "vkCmdDrawIndirectCount is a legacy command and there is now the VK_KHR_device_address_commands extension which "
                    "contains vkCmdDrawIndirectCount2KHR that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1424,9 +1388,8 @@ bool Device::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandB
             "vkCmdDrawIndexedIndirectCount is a legacy command and there is now the VK_KHR_device_address_commands extension which "
             "contains vkCmdDrawIndexedIndirectCount2KHR that can be used instead.\nSee more information about this legacy in the "
             "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit warnings "
-            "by only what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-            "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) "
-            "setting.");
+            "by only what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+            "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1467,9 +1430,8 @@ bool Device::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPas
                    "vkCreateRenderPass2 is a legacy command and there is now the VK_KHR_dynamic_rendering_local_read extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1509,9 +1471,8 @@ bool Device::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, c
                    "vkCmdBeginRenderPass2 is a legacy command and there is now the VK_KHR_dynamic_rendering_local_read extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1551,9 +1512,8 @@ bool Device::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const
                    "vkCmdNextSubpass2 is a legacy command and there is now the VK_KHR_dynamic_rendering_local_read extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1593,9 +1553,8 @@ bool Device::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, con
                    "vkCmdEndRenderPass2 is a legacy command and there is now the VK_KHR_dynamic_rendering_local_read extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1622,9 +1581,8 @@ bool Device::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const 
                    "vkCmdCopyBuffer2 is a legacy command and there is now the VK_KHR_device_address_commands extension which "
                    "contains vkCmdCopyMemoryKHR that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1654,9 +1612,8 @@ bool Device::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
                    "vkCmdCopyBufferToImage2 is a legacy command and there is now the VK_KHR_device_address_commands extension "
                    "which contains vkCmdCopyMemoryToImageKHR that can be used instead.\nSee more information about this legacy in "
                    "the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1686,9 +1643,8 @@ bool Device::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
                    "vkCmdCopyImageToBuffer2 is a legacy command and there is now the VK_KHR_device_address_commands extension "
                    "which contains vkCmdCopyImageToMemoryKHR that can be used instead.\nSee more information about this legacy in "
                    "the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1716,9 +1672,8 @@ bool Device::PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer
                    "vkCmdBindDescriptorSets2 is a legacy command and there is now the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1745,9 +1700,8 @@ bool Device::PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, con
                    "vkCmdPushConstants2 is a legacy command and there is now the VK_EXT_descriptor_heap extension which contains "
                    "the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1776,9 +1730,8 @@ bool Device::PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, V
                    "vkCmdBindIndexBuffer2 is a legacy command and there is now the VK_KHR_device_address_commands extension which "
                    "contains vkCmdBindIndexBuffer3KHR that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1809,9 +1762,8 @@ bool Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysical
             "vkGetPhysicalDeviceSurfaceCapabilitiesKHR is a legacy command and there is now the VK_KHR_get_surface_capabilities2 "
             "extension which contains vkGetPhysicalDeviceSurfaceCapabilities2KHR that can be used instead.\nSee more information "
             "about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdsc2\nTo "
-            "limit warnings by only what the VkInstance currently supports/enables, you can turn on the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+            "limit warnings by only what the VkInstance currently supports/enables, you can adjust the "
+            "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1842,9 +1794,8 @@ bool Instance::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevic
             "vkGetPhysicalDeviceSurfaceFormatsKHR is a legacy command and there is now the VK_KHR_get_surface_capabilities2 "
             "extension which contains vkGetPhysicalDeviceSurfaceFormats2KHR that can be used instead.\nSee more information about "
             "this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdsc2\nTo limit "
-            "warnings by only what the VkInstance currently supports/enables, you can turn on the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+            "warnings by only what the VkInstance currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+            "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1872,9 +1823,8 @@ bool Device::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
                    "vkCmdSetDescriptorBufferOffsets2EXT is a legacy command and there is now the VK_EXT_descriptor_heap extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1904,9 +1854,8 @@ bool Device::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
                    "vkCmdBindDescriptorBufferEmbeddedSamplers2EXT is a legacy command and there is now the VK_EXT_descriptor_heap "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1938,9 +1887,8 @@ bool Device::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer c
                    "extension which contains vkCmdBindTransformFeedbackBuffers2EXT that can be used instead.\nSee more information "
                    "about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -1972,9 +1920,8 @@ bool Device::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer command
             "vkCmdBeginTransformFeedbackEXT is a legacy command and there is now the VK_KHR_device_address_commands extension "
             "which contains vkCmdBeginTransformFeedback2EXT that can be used instead.\nSee more information about this legacy in "
             "the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-            "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+            "warnings by only what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+            "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2005,9 +1952,8 @@ bool Device::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBu
                    "vkCmdEndTransformFeedbackEXT is a legacy command and there is now the VK_KHR_device_address_commands extension "
                    "which contains vkCmdEndTransformFeedback2EXT that can be used instead.\nSee more information about this legacy "
                    "in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo "
-                   "limit warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "limit warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2039,9 +1985,8 @@ bool Device::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandB
             "vkCmdDrawIndirectByteCountEXT is a legacy command and there is now the VK_KHR_device_address_commands extension which "
             "contains vkCmdDrawIndirectByteCount2EXT that can be used instead.\nSee more information about this legacy in the "
             "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit warnings "
-            "by only what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-            "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) "
-            "setting.");
+            "by only what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+            "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2072,9 +2017,8 @@ bool Device::PreCallValidateCmdBeginConditionalRenderingEXT(VkCommandBuffer comm
             "vkCmdBeginConditionalRenderingEXT is a legacy command and there is now the VK_KHR_device_address_commands extension "
             "which contains vkCmdBeginConditionalRendering2EXT that can be used instead.\nSee more information about this legacy "
             "in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-            "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+            "warnings by only what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+            "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2103,9 +2047,8 @@ bool Device::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuff
                    "vkCmdWriteBufferMarker2AMD is a legacy command and there is now the VK_KHR_device_address_commands extension "
                    "which contains vkCmdWriteMarkerToMemoryAMD that can be used instead.\nSee more information about this legacy "
                    "in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo "
-                   "limit warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "limit warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2136,9 +2079,8 @@ bool Device::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuff
                    "vkCmdBindVertexBuffers2EXT is a legacy command and there is now the VK_KHR_device_address_commands extension "
                    "which contains vkCmdBindVertexBuffers3KHR that can be used instead.\nSee more information about this legacy in "
                    "the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2165,9 +2107,8 @@ bool Device::PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDes
                    "vkGetDescriptorSetLayoutSizeEXT is a legacy command and there is now the VK_EXT_descriptor_heap extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2196,9 +2137,8 @@ bool Device::PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(VkDevice devi
                    "vkGetDescriptorSetLayoutBindingOffsetEXT is a legacy command and there is now the VK_EXT_descriptor_heap "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2225,9 +2165,8 @@ bool Device::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptor
                    "vkGetDescriptorEXT is a legacy command and there is now the VK_EXT_descriptor_heap extension which contains "
                    "the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2255,9 +2194,8 @@ bool Device::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandB
                    "vkCmdBindDescriptorBuffersEXT is a legacy command and there is now the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2286,9 +2224,8 @@ bool Device::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer com
                    "vkCmdSetDescriptorBufferOffsetsEXT is a legacy command and there is now the VK_EXT_descriptor_heap extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit warnings by only "
-                   "what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2319,9 +2256,8 @@ bool Device::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommand
                    "vkCmdBindDescriptorBufferEmbeddedSamplersEXT is a legacy command and there is now the VK_EXT_descriptor_heap "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2351,9 +2287,8 @@ bool Device::PreCallValidateGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice dev
                    "vkGetBufferOpaqueCaptureDescriptorDataEXT is a legacy command and there is now the VK_EXT_descriptor_heap "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2383,9 +2318,8 @@ bool Device::PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(VkDevice devi
                    "vkGetImageOpaqueCaptureDescriptorDataEXT is a legacy command and there is now the VK_EXT_descriptor_heap "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2415,9 +2349,8 @@ bool Device::PreCallValidateGetImageViewOpaqueCaptureDescriptorDataEXT(VkDevice 
                    "vkGetImageViewOpaqueCaptureDescriptorDataEXT is a legacy command and there is now the VK_EXT_descriptor_heap "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2447,9 +2380,8 @@ bool Device::PreCallValidateGetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice de
                    "vkGetSamplerOpaqueCaptureDescriptorDataEXT is a legacy command and there is now the VK_EXT_descriptor_heap "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2480,9 +2412,8 @@ bool Device::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorDataE
             "vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT is a legacy command and there is now the "
             "VK_EXT_descriptor_heap extension which contains the new feature to replace it.\nSee more information about this "
             "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets\nTo "
-            "limit warnings by only what the VkDevice currently supports/enables, you can turn on the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+            "limit warnings by only what the VkDevice currently supports/enables, you can adjust the "
+            "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2509,9 +2440,8 @@ bool Device::PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferredOperati
                    "vkBuildMicromapsEXT is a legacy command and there is now the VK_EXT_opacity_micromap extension which contains "
                    "vkCmdBuildMicromapsEXT that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds\nTo limit warnings by only what "
-                   "the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2538,9 +2468,8 @@ bool Device::PreCallValidateCopyMicromapEXT(VkDevice device, VkDeferredOperation
                    "vkCopyMicromapEXT is a legacy command and there is now the VK_EXT_opacity_micromap extension which contains "
                    "vkCmdCopyMicromapEXT that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds\nTo limit warnings by only what "
-                   "the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2568,9 +2497,8 @@ bool Device::PreCallValidateCopyMicromapToMemoryEXT(VkDevice device, VkDeferredO
                    "vkCopyMicromapToMemoryEXT is a legacy command and there is now the VK_EXT_opacity_micromap extension which "
                    "contains vkCmdCopyMicromapToMemoryEXT that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2598,9 +2526,8 @@ bool Device::PreCallValidateCopyMemoryToMicromapEXT(VkDevice device, VkDeferredO
                    "vkCopyMemoryToMicromapEXT is a legacy command and there is now the VK_EXT_opacity_micromap extension which "
                    "contains vkCmdCopyMemoryToMicromapEXT that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2630,9 +2557,8 @@ bool Device::PreCallValidateWriteMicromapsPropertiesEXT(VkDevice device, uint32_
                    "vkWriteMicromapsPropertiesEXT is a legacy command and there is now the VK_EXT_opacity_micromap extension which "
                    "contains vkCmdWriteMicromapsPropertiesEXT that can be used instead.\nSee more information about this legacy in "
                    "the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds\nTo limit "
-                   "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-                   "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                   "warnings by only what the VkDevice currently supports/enables, you can adjust the "
+                   "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2664,9 +2590,8 @@ bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, cons
             "vkCreateAccelerationStructureKHR is a legacy command and there is now the VK_KHR_device_address_commands extension "
             "which contains vkCreateAccelerationStructure2KHR that can be used instead.\nSee more information about this legacy in "
             "the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-            "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+            "warnings by only what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+            "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2699,9 +2624,8 @@ bool Device::PreCallValidateBuildAccelerationStructuresKHR(VkDevice device, VkDe
             "vkBuildAccelerationStructuresKHR is a legacy command and there is now the VK_KHR_acceleration_structure extension "
             "which contains vkCmdBuildAccelerationStructuresKHR that can be used instead.\nSee more information about this legacy "
             "in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds\nTo limit "
-            "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+            "warnings by only what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+            "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2732,9 +2656,8 @@ bool Device::PreCallValidateCopyAccelerationStructureKHR(VkDevice device, VkDefe
             "vkCopyAccelerationStructureKHR is a legacy command and there is now the VK_KHR_acceleration_structure extension which "
             "contains vkCmdCopyAccelerationStructureKHR that can be used instead.\nSee more information about this legacy in the "
             "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds\nTo limit warnings by "
-            "only what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-            "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) "
-            "setting.");
+            "only what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+            "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2765,9 +2688,8 @@ bool Device::PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice device
                    "extension which contains vkCmdCopyAccelerationStructureToMemoryKHR that can be used instead.\nSee more "
                    "information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds\nTo limit warnings by only what "
-                   "the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2798,9 +2720,8 @@ bool Device::PreCallValidateCopyMemoryToAccelerationStructureKHR(VkDevice device
                    "extension which contains vkCmdCopyMemoryToAccelerationStructureKHR that can be used instead.\nSee more "
                    "information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds\nTo limit warnings by only what "
-                   "the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2832,9 +2753,8 @@ bool Device::PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevice de
                    "VK_KHR_acceleration_structure extension which contains vkCmdWriteAccelerationStructuresPropertiesKHR that can "
                    "be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-host-builds\nTo limit warnings by only what "
-                   "the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                   "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                   "(legacy_detection_only_enabled) setting.");
+                   "the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+                   "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2864,9 +2784,8 @@ bool Device::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandB
             "vkCmdDrawMeshTasksIndirectEXT is a legacy command and there is now the VK_KHR_device_address_commands extension which "
             "contains vkCmdDrawMeshTasksIndirect2EXT that can be used instead.\nSee more information about this legacy in the "
             "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit warnings "
-            "by only what the VkDevice currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-            "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) "
-            "setting.");
+            "by only what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+            "(legacy_detection_mode) setting.");
     }
     return false;
 }
@@ -2898,9 +2817,8 @@ bool Device::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer com
             "vkCmdDrawMeshTasksIndirectCountEXT is a legacy command and there is now the VK_KHR_device_address_commands extension "
             "which contains vkCmdDrawMeshTasksIndirectCount2EXT that can be used instead.\nSee more information about this legacy "
             "in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands\nTo limit "
-            "warnings by only what the VkDevice currently supports/enables, you can turn on the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the "
-            "VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+            "warnings by only what the VkDevice currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE "
+            "(legacy_detection_mode) setting.");
     }
     return false;
 }

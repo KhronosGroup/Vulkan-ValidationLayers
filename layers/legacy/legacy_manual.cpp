@@ -71,11 +71,8 @@ bool Instance::ValidateLegacyExtensions(const Location& loc, vvl::Extension exte
                     skip |= LogWarning("WARNING-legacy-extension-new", instance, loc,
                                        "Attempting to enable legacy extension %s, but this extension has been %s the extension "
                                        "%s.\nTo limit warnings "
-                                       "by only what the VkDevice currently supports/enables, you can turn on the "
-                                       "VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED "
-                                       "(legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED "
-                                       "(legacy_detection_only_enabled) "
-                                       "setting.",
+                                       "by only what the VkDevice currently supports/enables, you can adjust the "
+                                       "VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.",
                                        String(extension), reason_to_string(dep_info.reason), String(dep_info.target).c_str());
                 }
             }

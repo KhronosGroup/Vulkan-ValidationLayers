@@ -265,8 +265,7 @@ const char* VK_LAYER_GPU_DUMP_TO_STDOUT = "gpu_dump_to_stdout";
 // Legacy Detection
 // ---
 const char* VK_LAYER_LEGACY_DETECTION = "legacy_detection";
-const char* VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED = "legacy_detection_only_supported";
-const char* VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED = "legacy_detection_only_enabled";
+const char* VK_LAYER_LEGACY_DETECTION_MODE = "legacy_detection_mode";
 
 // Don't need any setting helper when using self vvl and don't want unused function warnings
 #if !defined(BUILD_SELF_VVL)
@@ -1297,17 +1296,14 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
     }
 
     LegacyDetectionSettings& legacy_detection_settings = *settings_data->legacy_detection_settings;
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED,
-                                legacy_detection_settings.only_supported);
-    }
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED, legacy_detection_settings.only_enabled);
-    }
-    if (legacy_detection_settings.only_supported && legacy_detection_settings.only_enabled) {
-        setting_warnings.emplace_back(
-            "Having both VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED and VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED both enable makes "
-            "non-sense because you must first have something supported before it can be enabled.");
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_LEGACY_DETECTION_MODE)) {
+        std::string mode;
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_LEGACY_DETECTION_MODE, mode);
+        if (mode == "ONLY_SUPPORTED") {
+            legacy_detection_settings.only_supported = true;
+        } else if (mode == "ONLY_ENABLED") {
+            legacy_detection_settings.only_enabled = true;
+        }
     }
     legacy_detection_settings.always = !legacy_detection_settings.only_supported && !legacy_detection_settings.only_enabled;
 
