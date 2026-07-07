@@ -18,6 +18,7 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/shader_instruction.h"
 
+#include <algorithm>
 #include <sstream>
 #include <string>
 #include <queue>
@@ -679,22 +680,31 @@ std::vector<StageInterfaceVariable> EntryPoint::GetStageInterfaceVariables(const
 
 std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables(const Module& module_state, EntryPoint& entrypoint,
                                                                                  const ParsedInfo& parsed) {
-    std::vector<ResourceInterfaceVariable> variables;
+    std::vector<ResourceInterfaceVariable> interface_variables;
+
+    // Ensure deterministic iteration order for interface variables. This order is used to compare
+    // syncval error messages, and it is also good UX: the first reported error is the same between runs.
+    // Sort a vector of instruction pointers (8-byte elements) instead of sorting interface_variables,
+    // whose ResourceInterfaceVariable elements are large
+    std::vector<const Instruction*> ordered_variables(entrypoint.accessible.variables.begin(),
+                                                      entrypoint.accessible.variables.end());
+    std::sort(ordered_variables.begin(), ordered_variables.end(),
+              [](const Instruction* a, const Instruction* b) { return a->ResultId() < b->ResultId(); });
 
     // Now that the accessible list is known, fill in any information that can be statically known per EntryPoint
-    for (const Instruction* insn : entrypoint.accessible.variables) {
+    for (const Instruction* insn : ordered_variables) {
         const uint32_t storage_class = insn->StorageClass();
         // These are the only storage classes that interface with a descriptor
         // see vkspec.html#interfaces-resources-descset
         if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
             storage_class == spv::StorageClassStorageBuffer || storage_class == spv::StorageClassTileAttachmentQCOM) {
-            variables.emplace_back(module_state, entrypoint, *insn, parsed);
+            interface_variables.emplace_back(module_state, entrypoint, *insn, parsed);
         } else if (storage_class == spv::StorageClassPushConstant) {
             entrypoint.push_constant_variable =
                 std::make_shared<PushConstantVariable>(module_state, *insn, entrypoint.stage, parsed);
         }
     }
-    return variables;
+    return interface_variables;
 }
 
 StaticImageAccess::StaticImageAccess(const Module& module_state, const Instruction& insn,
