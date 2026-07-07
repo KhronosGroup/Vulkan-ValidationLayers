@@ -80,6 +80,11 @@ khronos_validation.gpuav_buffer_copies = true
 # Validate buffers containing parameters used in indirect Vulkan commands, or used in copy commands
 khronos_validation.gpuav_buffers_validation = true
 
+# CDL dump file
+# =====================
+# Path to a Crash Diagnostic Layer (CDL) dump file. Pipeline names found in this file will be selected for instrumentation.
+khronos_validation.gpuav_cdl_dump_path = []
+
 # VK_KHR_copy_memory_indirect
 # =====================
 # Validate VK_KHR_copy_memory_indirect.
