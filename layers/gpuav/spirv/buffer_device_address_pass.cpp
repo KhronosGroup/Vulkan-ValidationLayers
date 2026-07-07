@@ -179,6 +179,17 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
 }
 
 bool BufferDeviceAddressPass::Instrument() {
+    // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12629
+    // We need to just move BDA over to use AccessPath instead so we can find this information there
+    // Then we can remove this function and burn it
+    //
+    // We need to detect structs with a VERY specific case
+    // If there is an array-of-structs where that struct has a runtime array inside of it
+    vvl::unordered_set<uint32_t> struct_id_temp_workaround;
+    if (!module_.settings_.safe_mode) {
+        type_manager_.FindArrayOfPSBStructWithRuntime(struct_id_temp_workaround);
+    }
+
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (Function& function : module_.functions_) {
         if (!function.called_from_target_) {
@@ -239,6 +250,10 @@ bool BufferDeviceAddressPass::Instrument() {
                             const Instruction* last_access = access_chain_insts.front();
                             if (!last_access->IsNonPtrAccessChain() && last_access->TypeId() == load_type_pointer->Id()) {
                                 root_struct_id = load_type_pointer->Id();
+                            }
+
+                            if (struct_id_temp_workaround.find(root_struct_id) != struct_id_temp_workaround.end()) {
+                                continue;
                             }
 
                             const uint32_t struct_offset = FindOffsetInStruct(root_struct_id, nullptr, false, access_chain_insts);

@@ -1222,6 +1222,29 @@ void TypeManager::AddUndef(std::unique_ptr<Instruction> new_inst) {
 
 bool TypeManager::IsUndef(uint32_t id) const { return undef_ids_.find(id) != undef_ids_.end(); }
 
+// Hopefully can remove this function when BDA is fixed
+void TypeManager::FindArrayOfPSBStructWithRuntime(vvl::unordered_set<uint32_t>& out_struct_ids) {
+    if (runtime_array_types_.empty()) {
+        return;
+    }
+    for (const Type* array_type : array_types_) {
+        const Type* ptr_type = FindTypeById(array_type->inst_.Word(2));
+        if (ptr_type->inst_.StorageClass() != spv::StorageClassPhysicalStorageBuffer) {
+            continue;
+        }
+        const Type* struct_type = FindTypeById(ptr_type->inst_.Word(3));
+        if (!struct_type || struct_type->spv_type_ != SpvType::kStruct) {
+            continue;
+        }
+        for (uint32_t i = 2; i < struct_type->inst_.Length(); i++) {
+            const Type* element_type = FindTypeById(struct_type->inst_.Word(i));
+            if (element_type && element_type->spv_type_ == SpvType::kRuntimeArray) {
+                out_struct_ids.insert(struct_type->Id());
+            }
+        }
+    }
+}
+
 // Not ideal to use, the caller really should already know which type it wants
 const Type* TypeManager::FindChildType(const Type& type, uint32_t idx) const {
     switch (type.spv_type_) {

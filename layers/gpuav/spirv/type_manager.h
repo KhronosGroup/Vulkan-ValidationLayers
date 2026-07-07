@@ -288,6 +288,8 @@ class TypeManager {
     void AddUndef(std::unique_ptr<Instruction> new_inst);
     bool IsUndef(uint32_t id) const;
 
+    void FindArrayOfPSBStructWithRuntime(vvl::unordered_set<uint32_t>& out_struct_ids);
+
   private:
     Module& module_;
 
