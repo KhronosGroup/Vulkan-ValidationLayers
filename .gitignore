@@ -36,6 +36,7 @@ scripts/.vs
 .*.sw[op]
 *~
 *.10x
+*.clangd
 
 # BUILD.gn artifacts
 .cipd/
