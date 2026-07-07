@@ -402,3 +402,64 @@ TEST_F(PositiveDataGraph, OpticalFlowConnectionsImageLayoutsUnifiedImageLayouts)
     vk::CmdDispatchDataGraphARM(m_command_buffer, session, &pipeline_di);
     m_command_buffer.End();
 }
+
+// unit test to verify the fix for bug in descriptor copying
+TEST_F(PositiveDataGraph, CopyUpdateDescriptor) {
+    TEST_DESCRIPTION("Dispatch a datagraph where a descriptor has been copy-updated after creation");
+    RETURN_IF_SKIP(InitBasicDataGraph());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    pipeline.CreateDataGraphPipeline();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = pipeline;
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+
+    auto& bind_point_reqs = session.BindPointReqs();
+    std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
+    session.AllocSessionMem(device_mem);
+    auto session_bind_infos = InitSessionBindInfo(session, device_mem);
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    // create a new tensor and copy it into the input tensor
+
+    VkTensorDescriptionARM desc = pipeline.tensors_[0]->Description();
+    desc.usage |= VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM | VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM;
+    VkTensorCreateInfoARM info = vku::InitStructHelper();
+    info.pDescription = &desc;
+    info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    vkt::Tensor tensor_src(*m_device, info);
+    tensor_src.BindToMem();
+
+    VkTensorViewCreateInfoARM tensor_view_create_info_src = vku::InitStructHelper();
+    tensor_view_create_info_src.tensor = tensor_src;
+    tensor_view_create_info_src.format = tensor_src.Format();
+    vkt::TensorView view_src(*m_device, tensor_view_create_info_src);
+
+    OneOffDescriptorSet descriptor_set_src(m_device, {{0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    descriptor_set_src.WriteDescriptorTensorInfo(0, &view_src.handle());
+    descriptor_set_src.UpdateDescriptorSets();
+
+    VkCopyDescriptorSet copy_set = vku::InitStructHelper();
+    copy_set.srcSet = descriptor_set_src.set_;
+    copy_set.srcBinding = 0;
+    copy_set.dstSet = pipeline.descriptor_set_->set_;
+    copy_set.dstBinding = 0;
+    copy_set.descriptorCount = 1;
+    vk::UpdateDescriptorSets(*m_device, 0, nullptr, 1, &copy_set);
+
+    // continue as normal to dispatch
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
+                              &pipeline.descriptor_set_.get()->set_, 0, nullptr);
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
