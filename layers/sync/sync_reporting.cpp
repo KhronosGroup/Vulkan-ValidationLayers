@@ -331,23 +331,28 @@ static std::pair<bool, bool> GetPartialProtectedInfo(const SyncAccessInfo& acces
     return std::make_pair(is_stage_protected, is_access_protected);
 }
 
-static void ReportLayoutTransitionSynchronizationInsight(std::ostringstream& ss, bool needs_execution_dependency,
-                                                         VkPipelineStageFlags2 read_barriers = 0) {
-    // TODO: analyse exact form of API is used (render pass layout transition, image barrier layout transition) and
-    // print instructions for specific situation. Now we describe all possibilities.
+static void ReportLayoutTransitionSynchronizationHint(std::ostringstream& ss, bool needs_execution_dependency,
+                                                      VkPipelineStageFlags2 read_barriers = 0) {
     const std::string barrier_src_stage = string_VkPipelineStageFlags2(read_barriers);
+    ss << "\n\nHint:\n";
     if (needs_execution_dependency) {
-        ss << "\nHint: If the layout transition is done via an image barrier, consider including " << barrier_src_stage
-           << " in srcStageMask. If the transition occurs as part of the render pass begin operation, consider specifying an "
-              "external subpass dependency (VK_SUBPASS_EXTERNAL) with srcStageMask that includes "
-           << barrier_src_stage << ", or perform the transition in a separate image barrier before the render pass begins.";
+        ss << "a) Image barrier layout transition:\n";
+        ss << "  Include " << barrier_src_stage << " in srcStageMask.\n\n";
+
+        ss << "b) Render pass begin layout transition:\n";
+        ss << "  Either specify an external subpass dependency (VK_SUBPASS_EXTERNAL) with srcStageMask that includes "
+           << barrier_src_stage << ", or move the layout transition before the render pass by using a separate image barrier.\n\n";
     } else {
-        ss << "\nHint: If the layout transition is done via an image barrier, ensure srcStageMask and srcAccessMask "
-              "synchronize with the accesses mentioned above. If the transition occurs as part of the render pass begin operation, "
-              "consider specifying an external subpass dependency (VK_SUBPASS_EXTERNAL) with srcStageMask and srcAccessMask that "
-              "synchronize with those accesses, or perform the transition in a separate image barrier before the render pass "
-              "begins.";
+        ss << "a) Image barrier layout transition:\n";
+        ss << "  Ensure srcStageMask and srcAccessMask synchronize with the accesses mentioned above.\n\n";
+
+        ss << "b) Render pass begin layout transition:\n";
+        ss << "  Either specify an external subpass dependency (VK_SUBPASS_EXTERNAL) with srcStageMask and srcAccessMask that "
+              "synchronize with those accesses, or move the layout transition before the render pass by using a separate image "
+              "barrier.\n\n";
     }
+    ss << "c) Separate synchronization barrier before layout transition:\n";
+    ss << "  Use VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT in dstStageMask to include layout transitions.\n";
 }
 
 static void ReportAcquireImageSynchronizationInsight(std::ostringstream& ss) {
@@ -567,7 +572,7 @@ std::string FormatErrorMessage(const HazardResult& hazard, const CommandExecutio
             ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
         } else {
             ss << ", but layout transition does not synchronize with these accesses.";
-            ReportLayoutTransitionSynchronizationInsight(ss, false);
+            ReportLayoutTransitionSynchronizationHint(ss, false);
         }
     } else {  // WAR hazard
         ss << "The current synchronization defines the destination stage mask as ";
@@ -580,7 +585,7 @@ std::string FormatErrorMessage(const HazardResult& hazard, const CommandExecutio
             if (prior_access.access_index == SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL) {
                 ReportAcquireImageSynchronizationInsight(ss);
             }
-            ReportLayoutTransitionSynchronizationInsight(ss, true, read_barriers);
+            ReportLayoutTransitionSynchronizationHint(ss, true, read_barriers);
         }
     }
 
