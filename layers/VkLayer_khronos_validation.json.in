@@ -213,8 +213,7 @@
                         { "key": "thread_safety", "value": false },
                         { "key": "unique_handles", "value": false },
                         { "key": "legacy_detection", "value": true },
-                            { "key": "legacy_detection_only_supported", "value": false },
-                            { "key": "legacy_detection_only_enabled", "value": false },
+                            { "key": "legacy_detection_mode", "value": "ALWAYS" },
                         { "key": "validate_best_practices", "value": false },
                         { "key": "gpuav_enable", "value": false },
                         { "key": "gpu_dump_descriptors", "value": false },
@@ -530,32 +529,35 @@
                             "default": false,
                             "settings": [
                                 {
-                                    "key": "legacy_detection_only_supported",
-                                    "label": "Only warn if supported",
-                                    "description": "Only give warning if the instance/device supports the superseded functionality.",
-                                    "type": "BOOL",
-                                    "default": false,
+                                    "key": "legacy_detection_mode",
+                                    "label": "When to give warning",
+                                    "description": "Control when legacy detection warnings are emitted",
+                                    "type": "ENUM",
                                     "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
                                             { "key": "legacy_detection", "value": true }
                                         ]
-                                    }
-                                },
-                                {
-                                    "key": "legacy_detection_only_enabled",
-                                    "label": "Only warn if enabled",
-                                    "description": "Only give warning if you enabled the superseded functionality extensions/version.",
-                                    "type": "BOOL",
-                                    "default": false,
-                                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
-                                    "dependence": {
-                                        "mode": "ALL",
-                                        "settings": [
-                                            { "key": "legacy_detection", "value": true }
-                                        ]
-                                    }
+                                    },
+                                    "default": "ALWAYS",
+                                    "flags": [
+                                        {
+                                            "key": "ALWAYS",
+                                            "label": "Always",
+                                            "description": "Give warning any time using the superseded functionality."
+                                        },
+                                        {
+                                            "key": "ONLY_SUPPORTED",
+                                            "label": "Only supported",
+                                            "description": "Only give warning if the instance/device supports the superseded functionality."
+                                        },
+                                        {
+                                            "key": "ONLY_ENABLED",
+                                            "label": "Only enabled",
+                                            "description": "Only give warning if you enabled the superseded functionality extensions/version."
+                                        }
+                                    ]
                                 }
                             ]
                         },

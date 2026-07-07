@@ -193,15 +193,10 @@ khronos_validation.gpuav_vertex_attribute_fetch_oob = true
 # Give warnings when using legacy parts of the API.
 khronos_validation.legacy_detection = false
 
-# Only warn if enabled
+# When to give warning
 # =====================
-# Only give warning if you enabled the superseded functionality extensions/version.
-khronos_validation.legacy_detection_only_enabled = false
-
-# Only warn if supported
-# =====================
-# Only give warning if the instance/device supports the superseded functionality.
-khronos_validation.legacy_detection_only_supported = false
+# Control when legacy detection warnings are emitted
+khronos_validation.legacy_detection_mode = ALWAYS
 
 # Log Filename
 # =====================

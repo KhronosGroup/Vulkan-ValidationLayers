@@ -252,7 +252,7 @@ class LegacyGenerator(BaseGenerator):
                     else if (legacy_detection_settings.always) {{
                         {reportedMember} = true;
                         LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
-                            "{command.name} is a legacy command and there is now the {extension} extension {replacement}.{extra}\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}\\nTo limit warnings by only what the {handleName} currently supports/enables, you can turn on the VK_LAYER_LEGACY_DETECTION_ONLY_SUPPORTED (legacy_detection_only_supported) or the VK_LAYER_LEGACY_DETECTION_ONLY_ENABLED (legacy_detection_only_enabled) setting.");
+                            "{command.name} is a legacy command and there is now the {extension} extension {replacement}.{extra}\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}\\nTo limit warnings by only what the {handleName} currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
                     }}''')
 
 
