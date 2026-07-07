@@ -1335,7 +1335,8 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectAddress(std::ostringstream
 
 void CommandBufferSubState::DumpDescriptorHeapShaderRecordIndex(
     std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn, const VkDescriptorMappingSourceShaderRecordIndexEXT& map_data) const {
-    // TODO - add more info
+    // Reading shader record data is not really possible:
+    // it depends on what ray tracing shader is actually executed
     ss << "heapOffset: 0x" << std::hex << map_data.heapOffset << ", shaderRecordOffset: " << std::dec << map_data.shaderRecordOffset
        << ", heapIndexStride: " << map_data.heapIndexStride << ", heapArrayStride: " << map_data.heapArrayStride;
 
@@ -1349,7 +1350,8 @@ void CommandBufferSubState::DumpDescriptorHeapShaderRecordIndex(
 
 void CommandBufferSubState::DumpDescriptorHeapShaderRecordAddress(std::ostringstream& ss,
                                                                   uint32_t shaderRecordAddressOffset) const {
-    // TODO - add more info
+    // Reading shader record data is not really possible:
+    // it depends on what ray tracing shader is actually executed
     ss << "shaderRecordAddressOffset: " << std::dec << shaderRecordAddressOffset;
 }
 
