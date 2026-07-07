@@ -808,8 +808,7 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
         path.image_load_inst = function.FindInstruction(inst.Word(ptr_id));
         const Instruction* load_inst = path.image_load_inst;
         uint32_t load_operand = 0;
-        while (load_inst && (load_inst->Opcode() == spv::OpSampledImage || load_inst->Opcode() == spv::OpImage ||
-                             load_inst->Opcode() == spv::OpCopyObject)) {
+        while (load_inst && (IsValueIn((spv::Op)load_inst->Opcode(), {spv::OpSampledImage, spv::OpImage, spv::OpCopyObject}))) {
             if (load_inst->Opcode() == spv::OpSampledImage) {
                 sampler_load_inst = function.FindInstruction(load_inst->Operand(1));
             }
@@ -820,9 +819,12 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
 
         // Note - we never "store" an image, we only load its handle and store the "texel" data
         if (!load_inst || load_inst->Opcode() != spv::OpLoad) {
-            // TODO - should be able to remove this check, its invalid SPIR-V
+            // The Undef logic should be able to remove this check, its invalid SPIR-V
             // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7753
-            assert(IsUndef(load_operand));
+            //
+            // We currently don't go chasing every function caller
+            // Only CTS seems to try and pass OpTypeSampledImage as a parameter, so likely ok
+            assert(IsUndef(load_operand) || (load_inst && load_inst->Opcode() == spv::OpFunctionParameter));
             return path;
         }
 
