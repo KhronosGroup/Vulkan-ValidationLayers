@@ -130,11 +130,6 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     void Destroy() override;
     void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
 
-    void Build(const VkAccelerationStructureBuildGeometryInfoKHR *pInfo, const bool is_host,
-               const VkAccelerationStructureBuildRangeInfoKHR *build_range_info);
-
-    void UpdateBuildRangeInfos(const VkAccelerationStructureBuildRangeInfoKHR *p_build_range_infos, uint32_t geometry_count);
-
     bool UsesCreateInfo1() const;
     bool UsesCreateInfo2() const;
     // returns:
@@ -161,11 +156,6 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     void MarkAsDeserialized() { was_deserialized_ = true; }
     VkDeviceAddress GetAccelerationStructureAddress() const { return acceleration_structure_address.load(); }
     void SetAccelerationStructureAddress(VkDeviceAddress addr) { acceleration_structure_address = addr; }
-    const std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> &GetBuildInfo() const { return build_geometry_info; }
-    void SetBuildInfo(const std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> &info) {
-        build_geometry_info = info;
-    }
-    const std::vector<VkAccelerationStructureBuildRangeInfoKHR> &GetBuildRangeInfos() const { return build_range_infos; }
 
     std::string Describe(const Logger& dev_data) const;
 
@@ -182,8 +172,6 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     bool was_deserialized_ = false;
     uint64_t opaque_handle = 0;
     std::atomic<VkDeviceAddress> acceleration_structure_address = 0;
-    std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> build_geometry_info;
-    std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos{};
 };
 
 class AccelerationStructureKHRSubState {

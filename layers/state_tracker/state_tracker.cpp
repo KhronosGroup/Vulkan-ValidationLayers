@@ -3050,30 +3050,10 @@ void DeviceState::PostCallRecordCreateAccelerationStructure2KHR(VkDevice device,
     Add(std::make_shared<AccelerationStructureKHR>(*this, pCreateInfo, *pAccelerationStructure));
 }
 
-void DeviceState::PostCallRecordBuildAccelerationStructuresKHR(
-    VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
-    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const RecordObject& record_obj) {
-    // Discussion what a failed build with multiple AccelerationStructures would mean
-    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4254
-    if (record_obj.result != VK_SUCCESS) {
-        return;
-    }
-
-    for (uint32_t i = 0; i < infoCount; ++i) {
-        if (auto dst_as_state = Get<AccelerationStructureKHR>(pInfos[i].dstAccelerationStructure)) {
-            dst_as_state->Build(&pInfos[i], true, *ppBuildRangeInfos);
-        }
-    }
-}
-
 // helper method for device side acceleration structure builds
 void DeviceState::RecordDeviceAccelerationStructureBuildInfo(CommandBuffer& cb_state,
                                                              const VkAccelerationStructureBuildGeometryInfoKHR& info) {
     auto dst_as_state = Get<AccelerationStructureKHR>(info.dstAccelerationStructure);
-    if (dst_as_state) {
-        dst_as_state->Build(&info, false, nullptr);
-    }
     if (disabled[command_buffer_state]) {
         return;
     }
@@ -3098,9 +3078,6 @@ void DeviceState::PostCallRecordCmdBuildAccelerationStructuresKHR(
     cb_state->RecordCommand(record_obj.location);
     for (const auto [i, info] : enumerate(pInfos, infoCount)) {
         RecordDeviceAccelerationStructureBuildInfo(*cb_state, info);
-        if (auto dst_as_state = Get<AccelerationStructureKHR>(info.dstAccelerationStructure)) {
-            dst_as_state->UpdateBuildRangeInfos(ppBuildRangeInfos[i], info.geometryCount);
-        }
     }
 }
 
@@ -6104,20 +6081,6 @@ void DeviceState::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t creat
     }
 }
 
-void DeviceState::PostCallRecordCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                             const VkCopyAccelerationStructureInfoKHR* pInfo,
-                                                             const RecordObject& record_obj) {
-    // Might be deferred
-    if (record_obj.result < VK_SUCCESS) {
-        return;
-    }
-    auto src_as_state = Get<AccelerationStructureKHR>(pInfo->src);
-    auto dst_as_state = Get<AccelerationStructureKHR>(pInfo->dst);
-    if (dst_as_state && src_as_state) {
-        dst_as_state->SetBuildInfo(src_as_state->GetBuildInfo());
-    }
-}
-
 void DeviceState::PostCallRecordCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                                      const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
                                                                      const RecordObject& record_obj) {
@@ -6144,19 +6107,6 @@ void DeviceState::PostCallRecordCopyMemoryToAccelerationStructureKHR(VkDevice de
     ASSERT_AND_RETURN(dst_as_state);
     if (pInfo->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR) {
         dst_as_state->MarkAsDeserialized();
-        // Look up the original AS from the serialized data address and copy its build info
-        if (pInfo->src.hostAddress != nullptr) {
-            ReadLockGuard guard(serialized_as_map_lock_);
-            auto it = serialized_as_map_.find(pInfo->src.hostAddress);
-            if (it != serialized_as_map_.end()) {
-                auto src_as_state = Get<AccelerationStructureKHR>(it->second);
-                // The source AS may have been destroyed between finding the entry in
-                // serialized_as_map_ and calling Get()
-                if (src_as_state) {
-                    dst_as_state->SetBuildInfo(src_as_state->GetBuildInfo());
-                }
-            }
-        }
     }
 }
 
@@ -6169,7 +6119,6 @@ void DeviceState::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer 
     auto src_as_state = Get<AccelerationStructureKHR>(pInfo->src);
     auto dst_as_state = Get<AccelerationStructureKHR>(pInfo->dst);
     if (dst_as_state && src_as_state) {
-        dst_as_state->SetBuildInfo(src_as_state->GetBuildInfo());
         if (!disabled[command_buffer_state]) {
             cb_state->AddChild(dst_as_state);
             cb_state->AddChild(src_as_state);
