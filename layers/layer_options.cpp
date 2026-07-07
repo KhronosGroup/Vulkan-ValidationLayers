@@ -211,6 +211,7 @@ const char* VK_LAYER_GPUAV_SHARED_MEMORY_DATA_RACE = "gpuav_shared_memory_data_r
 const char* VK_LAYER_GPUAV_MAX_INDICES_COUNT = "gpuav_max_indices_count";
 const char* VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS = "gpuav_select_instrumented_shaders";
 const char* VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT = "gpuav_shaders_to_instrument";
+const char* VK_LAYER_GPUAV_CDL_DUMP_PATH = "gpuav_cdl_dump_path";
 // This was removed right after 1.4.350 SDK
 const char* REMOVED_VK_LAYER_GPUAV_VALIDATE_RAY_QUERY = "gpuav_validate_ray_query";
 
@@ -1119,11 +1120,17 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
                                     gpuav_settings.select_instrumented_shaders);
         }
         if (gpuav_settings.select_instrumented_shaders) {
-            std::vector<std::string> shaders_to_instrument;
-            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT)) {
-                vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT, shaders_to_instrument);
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_CDL_DUMP_PATH)) {
+                std::string cdl_dump_path;
+                vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_CDL_DUMP_PATH, cdl_dump_path);
+                gpuav_settings.LoadCDLDump(std::move(cdl_dump_path), setting_warnings);
             }
-            gpuav_settings.SetShaderSelectionRegexes(std::move(shaders_to_instrument));
+
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT)) {
+                std::vector<std::string> shaders_to_instrument;
+                vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT, shaders_to_instrument);
+                gpuav_settings.SetShaderSelectionRegexes(std::move(shaders_to_instrument));
+            }
         }
 
         // No need to enable shader instrumentation options is no instrumentation is done

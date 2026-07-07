@@ -12,6 +12,8 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include <filesystem>
+#include <fstream>
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "shader_object_helper.h"
@@ -228,6 +230,231 @@ TEST_F(NegativeGpuAV, SelectInstrumentedComputePipelineRegex) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDispatch-storageBuffers-06936", "pipeline_foo");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAV, SelectInstrumentedComputePipelineCDLDump) {
+    TEST_DESCRIPTION("Selectively instrument a compute pipeline for validation, using a CDL dump file as input");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+    const char* cdl_dump_content = R"(
+# ----------------------------------------------------------------
+# -                    CRASH DIAGNOSTIC LAYER                    -
+# ----------------------------------------------------------------
+
+version: 1.4.350
+startTime: 2026-07-06 18:02:38
+timeSinceStart: 00:00:00.265
+Settings:
+  output_path: cdl_test_output\GpuCrash\InfiniteLoopSubmit2
+  trace_on: false
+  dump_queue_submits: running
+  dump_command_buffers: running
+  dump_commands: running
+  dump_shaders: off
+  trigger_watchdog_timeout: true
+  watchdog_timeout_ms: 30000
+  track_semaphores: true
+  trace_all_semaphores: false
+  instrument_all_commands: false
+  sync_after_commands: false
+SystemInfo:
+  osName: Windows 10 Home
+  osVersion: 26200
+  osBitdepth: 64-bit
+  osAdditional:
+    build: ge_release
+  cpuName: x64
+  numCpus: 24
+  totalRam: 63 GB
+  totalDiskSpace: 1 TB
+  availDiskSpace: 91 GB
+Instance:
+  handle: 0x000001C7C89F7E30 []
+  applicationInfo:
+    application: GpuCrash
+    applicationVersion: 1
+    engine: InfiniteLoopSubmit2
+    engineVersion: 1
+    apiVersion: 1.3.0 (0x00403000)
+  extensions:
+    - VK_EXT_debug_utils
+    - VK_EXT_layer_settings
+Device:
+  handle: 0x000001C7CA5B9A30[]
+  deviceName: CDL Mock Device
+  apiVersion: 1.4.350 (0x0040415E)
+  driverVersion: 0x00000001 (1)
+  vendorID: 0xBA5EBA11
+  deviceID: 0x0BADC0DE
+  extensions:
+    []
+  Queues:
+    -  # Queue
+      handle: 0x000001C7CA5B5A40[]
+      queueFamilyIndex: 0
+      index: 0
+      flags:
+        - graphics
+        - compute
+        - transfer
+        - sparse
+        - protected
+      completedSeq: 1
+      submittedSeq: 4
+      IncompleteSubmits:
+        - type: vkQueueSubmit2
+          startSeq: 1
+          endSeq: 4
+          SubmitInfos:
+            - startSeq: 1
+              endSeq: 4
+              state: INCOMPLETE
+              CommandBuffers:
+                - 0x000001C7CA5C7D80[] INCOMPLETE 3
+  CommandBuffers:
+    -  # CommandBuffer
+      state: INCOMPLETE
+      handle: 0x000001C7CA5C7D80[]
+      commandPool: 0x000001C7CA5F7E80[]
+      queue: 0x000001C7CA5B5A40[]
+      fence: 0x0000000000000000[]
+      queueSeq: 3
+      level: Primary
+      simultaneousUse: false
+      beginValue: 0x00000001
+      endValue: 0x0000FFFF
+      topCheckpointValue: 0x00000006
+      bottomCheckpointValue: 0x00000003
+      lastStartedCommand: 5
+      lastCompletedCommand: 2
+      Commands:
+        -  # Command:
+          id: 2
+          checkpointValue: 0x00000003
+          name: vkCmdBindPipeline
+          state: COMPLETED
+          parameters:
+            pipelineBindPoint: VK_PIPELINE_BIND_POINT_COMPUTE
+            pipeline: 0x0000000000000008[my pipeline]
+          message: "'>>>>>>>>>>>>>> LAST COMPLETE COMMAND <<<<<<<<<<<<<<'"
+        -  # Command:
+          id: 3
+          checkpointValue: 0x00000004
+          name: vkCmdBindDescriptorSets
+          state: INCOMPLETE
+          parameters:
+            pipelineBindPoint: VK_PIPELINE_BIND_POINT_COMPUTE
+            layout: 0x0000000000000007[]
+            firstSet: 0
+            descriptorSetCount: 1
+            pDescriptorSets:  # VkDescriptorSet
+              - 0x0000000000000006[]
+            dynamicOffsetCount: 0
+            pDynamicOffsets: nullptr
+        -  # Command:
+          id: 4
+          checkpointValue: 0x00000005
+          name: vkCmdBeginDebugUtilsLabelEXT
+          state: INCOMPLETE
+          labels:
+            - hang-expected
+          parameters:
+            pLabelInfo:
+              sType: VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT
+              pNext:
+                - nullptr
+              pLabelName: hang-expected
+              color:  # float
+                - 0
+                - 0
+                - 0
+                - 0
+        -  # Command:
+          id: 5
+          checkpointValue: 0x00000006
+          name: vkCmdDispatch
+          state: INCOMPLETE
+          labels:
+            - hang-expected
+          parameters:
+            groupCountX: 1
+            groupCountY: 1
+            groupCountZ: 1
+          internalState:
+            pipeline:
+              handle: 0x0000000000000008[my pipeline]
+              bindPoint: compute
+              shaderInfos:
+                - stage: cs
+                  module: 0x0000000000000003[]
+                  entry: main
+            descriptorSets:
+              -  # descriptorSet
+                index: 0
+                set: 0x0000000000000006[]
+          message: "'^^^^^^^^^^^^^^ LAST STARTED COMMAND ^^^^^^^^^^^^^^'"
+        )";
+
+    const std::filesystem::path cdl_dump_path = std::filesystem::temp_directory_path() / "vvl_test_cdl_dump.yml";
+
+    struct FileGuard {
+        std::filesystem::path path;
+        ~FileGuard() { std::filesystem::remove(path); }
+    } cdl_dump_file_guard{cdl_dump_path};
+
+    {
+        std::ofstream cdl_dump_file(cdl_dump_path, std::ios::out | std::ios::trunc);
+        ASSERT_TRUE(cdl_dump_file.is_open());
+        cdl_dump_file << cdl_dump_content;
+    }
+
+    const std::string cdl_dump_path_str = cdl_dump_path.string();
+    const char* cdl_dump_path_cstr = cdl_dump_path_str.c_str();
+
+    std::vector<VkLayerSettingEXT> layer_settings(2);
+    layer_settings[0] = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    layer_settings[1] = {OBJECT_LAYER_NAME, "gpuav_cdl_dump_path", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &cdl_dump_path_cstr};
+
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer write_buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, write_buffer, 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char cs_source[] = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;
+        void main() {
+                Data.data[4] = 0xdeadca71;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main");
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_PIPELINE;
+    name_info.pObjectName = "my pipeline";
+    name_info.objectHandle = uint64_t(pipe.Handle());
+    vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDispatch-storageBuffers-06936", "my pipeline");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

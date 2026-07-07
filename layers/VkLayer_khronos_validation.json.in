@@ -718,6 +718,21 @@
                                                             { "key": "gpuav_select_instrumented_shaders", "value": true }
                                                         ]
                                                     }
+                                                },
+                                                {
+                                                    "key": "gpuav_cdl_dump_path",
+                                                    "label": "CDL dump file",
+                                                    "description": "Path to a Crash Diagnostic Layer (CDL) dump file. Pipeline names found in this file will be selected for instrumentation.",
+                                                    "type": "LOAD_FILE",
+                                                    "default": [],
+                                                    "dependence": {
+                                                        "mode": "ALL",
+                                                        "settings": [
+                                                            { "key": "gpuav_enable", "value": true },
+                                                            { "key": "gpuav_shader_instrumentation", "value": true },
+                                                            { "key": "gpuav_select_instrumented_shaders", "value": true }
+                                                        ]
+                                                    }
                                                 }
                                             ]
                                         },
