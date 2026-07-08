@@ -346,7 +346,7 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSize) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &spec_info);
 
-    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-module-08987", 3);
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-module-08987");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -404,9 +404,8 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSizeWorkgroupScope) 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &spec_info);
 
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10165", 3);
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10166");
-    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-module-10169", 6);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10165");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-module-10169", 2);
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -593,8 +592,6 @@ TEST_F(NegativeShaderCooperativeMatrix, SameScope) {
     // Need to ignore the spirv-val
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
 
-    // The scope will be invalid
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060");
     // Expect gl_ScopeInvocation will not be found in the implementation since it is not allowed in Vulkan
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163");
     pipe.CreateComputePipeline();
@@ -634,7 +631,7 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScope) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL);
 
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixWorkgroupScope-10164", 3);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixWorkgroupScope-10164");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -694,7 +691,7 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeMaxDimensions) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &spec_info);
 
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensionsMaxDimension-10167", 3);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensionsMaxDimension-10167");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -793,10 +790,7 @@ TEST_F(NegativeShaderCooperativeMatrix, MatchSizeWithProperties) {
        }
     )glsl";
 
-    // There is no way to avoid this message
-    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163");
-
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163");
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = VkShaderObj(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
@@ -865,10 +859,10 @@ TEST_F(NegativeShaderCooperativeMatrix, SignedCheck) {
         const char* remove;
         const char* expect;
     } subtests[] = {
-        {"MatrixASignedComponentsKHR|", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060"},
-        {"MatrixBSignedComponentsKHR|", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060"},
-        {"MatrixCSignedComponentsKHR|", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060"},
-        {"|MatrixResultSignedComponentsKHR", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060"},
+        {"MatrixASignedComponentsKHR|", "VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163"},
+        {"MatrixBSignedComponentsKHR|", "VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163"},
+        {"MatrixCSignedComponentsKHR|", "VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163"},
+        {"|MatrixResultSignedComponentsKHR", "VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163"},
     };
 
     for (const auto& x : subtests) {
@@ -887,13 +881,6 @@ TEST_F(NegativeShaderCooperativeMatrix, SignedCheck) {
                 m_errorMonitor->SetAllowedFailureMsg(y.expect);
             }
         }
-
-        // Ignore messages that types and sizes are unsupported by implementation
-        m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060");
-        m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060");
-        m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060");
-        m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060");
-        m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163");
 
         pipe.CreateComputePipeline();
 

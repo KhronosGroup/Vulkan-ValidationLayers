@@ -451,7 +451,13 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
         return ss.str();
     };
 
+    // Only want to report single error, otherwise easy to spam users with 10 messages that are all the same
+    bool found_error = false;
+
     for (const spirv::Instruction* cooperative_matrix_inst : module_state.static_data_.cooperative_matrix_inst) {
+        if (found_error) {
+            break;
+        }
         const spirv::Instruction& insn = *cooperative_matrix_inst;
         switch (insn.Opcode()) {
             case spv::OpTypeCooperativeMatrixKHR: {
@@ -466,6 +472,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                                          "shader %s has a local workgroup size in the X dimension (%" PRIu32
                                          ") is not a multiple of subgroupSize (%" PRIu32 ").",
                                          entrypoint.Describe().c_str(), local_size.x, effective_subgroup_size);
+                        found_error = true;
                     }
                     if (m.scope == VK_SCOPE_WORKGROUP_KHR) {
                         if (workgroup_size >
@@ -476,6 +483,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                                 ") is larger than cooperativeMatrixWorkgroupScopeMaxWorkgroupSize (%" PRIu32 ").",
                                 entrypoint.Describe().c_str(), workgroup_size,
                                 phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixWorkgroupScopeMaxWorkgroupSize);
+                            found_error = true;
                         }
                     }
                 }
@@ -489,6 +497,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                                      entrypoint.Describe().c_str(),
                                      "shader %s has a cooperative matrix that uses workgroup scope but "
                                      "cooperativeMatrixWorkgroupScope is not enabled.");
+                    found_error = true;
                 }
 
                 // Validate that the type parameters are all supported for one of the
@@ -553,6 +562,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                 }
                 if (!valid) {
                     if (!enabled_features.cooperativeMatrixFlexibleDimensions) {
+                        found_error = true;
                         skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163", module_state.handle(), loc,
                                          "shader %s has\n%s (%s)\nbut doesn't match any VkCooperativeMatrixPropertiesKHR\n%s.",
                                          entrypoint.Describe().c_str(), insn.Describe().c_str(), m.Describe().c_str(),
@@ -574,6 +584,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                             "cooperativeMatrixFlexibleDimensionsMaxDimension (%" PRIu32 ").",
                             entrypoint.Describe().c_str(), insn.Describe().c_str(), m.Describe().c_str(),
                             phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixFlexibleDimensionsMaxDimension);
+                        found_error = true;
                     }
                 }
 
@@ -664,6 +675,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                         }
                     }
                     if (!found_matching_prop && !found_matching_flexible_prop) {
+                        found_error = true;
                         if (!enabled_features.cooperativeMatrixFlexibleDimensions) {
                             skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
                                              "shader %s instruction\n%s\ndoesn't match a supported matrix "
@@ -718,6 +730,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                     }
                 }
                 if (!valid) {
+                    found_error = true;
                     skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixNV-06316", module_state.handle(), loc,
                                      "shader %s has an OpTypeCooperativeMatrixNV (result id = %" PRIu32
                                      ") operand that don't match a supported matrix type (%s).",
@@ -758,24 +771,28 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                                          ") operands don't match a supported matrix "
                                          "VkCooperativeMatrixPropertiesNV for A type (%s).",
                                          entrypoint.Describe().c_str(), insn.Word(2), a.Describe().c_str());
+                        found_error = true;
                     } else if (!valid_b) {
                         skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
                                          "shader %s OpCooperativeMatrixMulAddNV (result id = %" PRIu32
                                          ") operands don't match a supported matrix "
                                          "VkCooperativeMatrixPropertiesNV for B type (%s).",
                                          entrypoint.Describe().c_str(), insn.Word(2), b.Describe().c_str());
+                        found_error = true;
                     } else if (!valid_c) {
                         skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
                                          "shader %s OpCooperativeMatrixMulAddNV (result id = %" PRIu32
                                          ") operands don't match a supported matrix "
                                          "VkCooperativeMatrixPropertiesNV for C type (%s).",
                                          entrypoint.Describe().c_str(), insn.Word(2), c.Describe().c_str());
+                        found_error = true;
                     } else if (!valid_d) {
                         skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
                                          "shader %s OpCooperativeMatrixMulAddNV (result id = %" PRIu32
                                          ") operands don't match a supported matrix "
                                          "VkCooperativeMatrixPropertiesNV for D type (%s).",
                                          entrypoint.Describe().c_str(), insn.Word(2), d.Describe().c_str());
+                        found_error = true;
                     }
                 }
                 break;
