@@ -466,6 +466,70 @@ TEST_F(PositiveGpuAVSpirv, UniformWithoutAccessChain) {
     pipe.CreateComputePipeline();
 }
 
+TEST_F(PositiveGpuAVSpirv, TypeSamplerAsParameter) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12647");
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const char* fs_source = R"(
+                        OpCapability Shader
+                        OpMemoryModel Logical GLSL450
+                        OpEntryPoint Fragment %main "main" %frag_color
+                        OpExecutionMode %main OriginUpperLeft
+                        OpDecorate %frag_color Location 0
+                        OpDecorate %image_var DescriptorSet 0
+                        OpDecorate %image_var Binding 0
+                        OpDecorate %sampler_var DescriptorSet 0
+                        OpDecorate %sampler_var Binding 1
+                  %void = OpTypeVoid
+      %void_func_t = OpTypeFunction %void
+            %float = OpTypeFloat 32
+            %v2float = OpTypeVector %float 2
+            %v4float = OpTypeVector %float 4
+            %image_2d = OpTypeImage %float 2D 0 0 0 1 Unknown
+            %sampler_t = OpTypeSampler
+      %sampled_img_t = OpTypeSampledImage %image_2d
+      %sampling_func_t = OpTypeFunction %v4float %sampler_t %v2float
+      %image_ptr_t = OpTypePointer UniformConstant %image_2d
+      %sampler_ptr_t = OpTypePointer UniformConstant %sampler_t
+      %v4float_out_ptr = OpTypePointer Output %v4float
+            %float_0 = OpConstant %float 0
+            %coords = OpConstantComposite %v2float %float_0 %float_0
+      %frag_color = OpVariable %v4float_out_ptr Output
+      %image_var = OpVariable %image_ptr_t UniformConstant
+      %sampler_var = OpVariable %sampler_ptr_t UniformConstant
+                  %main = OpFunction %void None %void_func_t
+            %main_label = OpLabel
+            %smpl_load = OpLoad %sampler_t %sampler_var
+            %color = OpFunctionCall %v4float %sampling_func %smpl_load %coords
+                        OpStore %frag_color %color
+                        OpReturn
+                        OpFunctionEnd
+      %sampling_func = OpFunction %v4float None %sampling_func_t
+            %smpl_param = OpFunctionParameter %sampler_t
+      %tex_coords = OpFunctionParameter %v2float
+%sampling_func_label = OpLabel
+            %img_load = OpLoad %image_2d %image_var
+      %combined_img = OpSampledImage %sampled_img_t %img_load %smpl_param
+            %retval = OpImageSampleImplicitLod %v4float %combined_img %tex_coords
+                        OpReturnValue %retval
+                        OpFunctionEnd
+    )";
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+}
+
 TEST_F(PositiveGpuAVSpirv, TypeSampledImageAsParameter) {
     TEST_DESCRIPTION("dEQP-VK.spirv_assembly.instruction.function_params.sampler_param");
     RETURN_IF_SKIP(InitGpuAvFramework());

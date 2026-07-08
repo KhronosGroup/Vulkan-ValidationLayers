@@ -824,6 +824,8 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
             //
             // We currently don't go chasing every function caller
             // Only CTS seems to try and pass OpTypeSampledImage as a parameter, so likely ok
+            // (likely only CTS because combined image samplers are a GLSL only thing which doesn't allow passing it by parameter,
+            // it is more likley for seperate samplers which Slang can do)
             assert(IsUndef(load_operand) || (load_inst && load_inst->Opcode() == spv::OpFunctionParameter));
             return path;
         }
@@ -954,7 +956,8 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
     }
 
     // When using a SAMPLED_IMAGE and SAMPLER, they are accessed together so we need check for 2 descriptors
-    if (sampler_load_inst) {
+    // We currently don't go chasing every function caller
+    if (sampler_load_inst && sampler_load_inst->Opcode() != spv::OpFunctionParameter) {
         assert(sampler_load_inst->Opcode() == spv::OpLoad);
 
         ptr_id = sampler_load_inst->Operand(0);
