@@ -612,7 +612,7 @@ class OutputDatabase:
         table.append('</table>\n</body>\n</html>\n')
 
         stats = []
-        stats.append(f'<h1>Total Remaing VUs: {total_count}</h1>')
+        stats.append(f'<h1>Total Remaining VUs: {total_count}</h1>')
         stats.append('<ul>')
         stats.append(f'<li><b>Vendor extensions</b>: {vendor_count} ({(vendor_count / total_count):.1%})</li>')
         stats.append(f'<li><b>VK_EXT_opacity_micromap</b>: {micro_map_count} ({(micro_map_count / total_count):.1%})</li>')
