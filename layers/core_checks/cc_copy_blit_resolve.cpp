@@ -3154,11 +3154,15 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         }
     }
 
-    if (vkuFormatIsUINT(src_format) != vkuFormatIsUINT(dst_format)) {
-        vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00230" : "VUID-vkCmdBlitImage-srcImage-00230";
-        skip |= LogError(vuid, all_objlist, loc,
-                         "srcImage format %s is different than dstImage format %s (if one is UINT, both must be UINT).",
-                         string_VkFormat(src_format), string_VkFormat(dst_format));
+    // Prevent VK_FORMAT_D24_UNORM_S8_UINT to VK_FORMAT_S8_UINT from causing an error
+    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8160#note_615752
+    if (vkuFormatIsColor(src_format) && vkuFormatIsColor(dst_format)) {
+        if (vkuFormatIsUINT(src_format) != vkuFormatIsUINT(dst_format)) {
+            vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00230" : "VUID-vkCmdBlitImage-srcImage-00230";
+            skip |= LogError(vuid, all_objlist, loc,
+                             "srcImage format %s is different than dstImage format %s (if one is UINT, both must be UINT).",
+                             string_VkFormat(src_format), string_VkFormat(dst_format));
+        }
     }
 
     if (vkuFormatIsSINT(src_format) != vkuFormatIsSINT(dst_format)) {
