@@ -62,11 +62,6 @@ struct SubpassDependencyInfo {
     VkSubpassDependency2 implicit_barrier_to_external;
 };
 
-struct SubpassLayout {
-    uint32_t index;
-    VkImageLayout layout;
-};
-
 namespace vvl {
 
 // Vulkan 1.0 has a VkRenderPass object, things like dynamic rendering moved the handle to be across various other structs/calls.

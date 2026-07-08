@@ -60,7 +60,6 @@ namespace core {
 class CommandBufferSubState;
 }  // namespace core
 
-struct SubpassLayout;
 struct SemaphoreSubmitState;
 struct LastBound;
 struct ShaderStageState;
