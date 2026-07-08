@@ -273,7 +273,9 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
         for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
             const VkImageLayout final_layout = rp.create_info.pAttachments[attachment].finalLayout;
             const uint32_t last_transition_subpass = get_last_subpass(last[attachment]);
-            if (last_transition_subpass != VK_SUBPASS_EXTERNAL && final_layout != attachment_layout[attachment]) {
+            if (final_layout != attachment_layout[attachment]) {
+                // NOTE: If last_transition_subpass is VK_SUBPASS_EXTERNAL, the attachment is unused.
+                // The spec still requires its initialLayout -> finalLayout transition.
                 auto& final_transitions = subpass_transitions[rp.create_info.subpassCount];
                 final_transitions.emplace_back(vvl::RenderPass::AttachmentTransition{last_transition_subpass, attachment,
                                                                                      attachment_layout[attachment], final_layout});
