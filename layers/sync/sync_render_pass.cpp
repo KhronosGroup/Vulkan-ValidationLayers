@@ -774,24 +774,33 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
     // to apply and only copy then, if this proves a hot spot.
     std::unique_ptr<AccessContext> proxy_for_current;
 
+    const AccessContext* context = nullptr;
+
     // Validate the "finalLayout" transitions to external
     // Get them from where there we're hidding in the extra entry.
     const auto& final_transitions = rp_state_->subpass_transitions.back();
     for (const auto& transition : final_transitions) {
+        SyncBarrier merged_barrier;
         const auto& view_gen = attachment_views_[transition.attachment];
-        const SubpassBarrier& subpass_barrier = subpass_contexts_[transition.src_subpass].GetDstExternalSubpassBarrier();
-        const AccessContext* context = subpass_barrier.src_subpass_context;
-
-        if (transition.src_subpass == current_subpass_) {
-            if (!proxy_for_current) {
-                // We haven't recorded resolve ofor the current_subpass, so we need to copy current and update it *as if*
-                proxy_for_current.reset(CreateStoreResolveProxy());
+        if (transition.src_subpass != VK_SUBPASS_EXTERNAL) {
+            const SubpassBarrier& subpass_barrier = subpass_contexts_[transition.src_subpass].GetDstExternalSubpassBarrier();
+            merged_barrier = SyncBarrier(subpass_barrier.barriers);
+            if (transition.src_subpass != current_subpass_) {
+                context = subpass_barrier.src_subpass_context;
+            } else {
+                if (!proxy_for_current) {
+                    // We haven't recorded resolve ofor the current_subpass, so we need to copy current and update it *as if*
+                    proxy_for_current.reset(CreateStoreResolveProxy());
+                }
+                context = proxy_for_current.get();
             }
-            context = proxy_for_current.get();
+        } else {
+            context = external_context_;
+            // NOTE: Unused attachments still transition from initialLayout to finalLayout, but no
+            // subpass uses them, so there is no external subpass dependency barrier to merge.
         }
 
         // Use the merged barrier for the hazard check (safe since it just considers the src (first) scope.
-        const SyncBarrier merged_barrier(subpass_barrier.barriers);
         auto hazard = context->DetectImageBarrierHazard(view_gen, merged_barrier, AccessContext::DetectOptions::kDetectPrevious);
         if (hazard.IsHazard()) {
             const SyncValidator& sync_state = cb_context.GetSyncState();
@@ -896,6 +905,7 @@ RenderPassAccessContext::RenderPassAccessContext(const vvl::RenderPass& rp_state
                                                  const AccessContext& external_context, uint32_t render_pass_instance_id)
     : rp_state_(&rp_state),
       attachment_views_(CreateAttachmentViewGen(render_area, attachment_views)),
+      external_context_(&external_context),
       subpass_contexts_(InitSubpassContexts(queue_flags, rp_state, external_context)),
       render_pass_instance_id_(render_pass_instance_id),
       current_subpass_(0) {}
@@ -953,9 +963,6 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext* external_contex
     const auto& final_transitions = rp_state_->subpass_transitions.back();
     for (const auto& transition : final_transitions) {
         const AttachmentViewGen& view_gen = attachment_views_[transition.attachment];
-        const SubpassBarrier& dst_external_barrier = subpass_contexts_[transition.src_subpass].GetDstExternalSubpassBarrier();
-        assert(&subpass_contexts_[transition.src_subpass] == dst_external_barrier.src_subpass_context);
-
         ImageRangeGen range_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kViewSubresource);
 
         ImageRangeGen markup_range_gen = range_gen;  // second copy, preserve range_gen to use later
@@ -963,10 +970,21 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext* external_contex
         external_context->UpdateMemoryAccessState(markup_action, markup_range_gen);
 
         PendingBarriers pending_barriers;
-        for (const auto& barrier : dst_external_barrier.barriers) {
-            const BarrierScope barrier_scope(barrier);
-            CollectBarriersFunctor collect_barriers(*external_context, barrier_scope, barrier, true, vvl::kNoIndex32,
-                                                    pending_barriers);
+        if (transition.src_subpass != VK_SUBPASS_EXTERNAL) {
+            const SubpassBarrier& dst_external_barrier = subpass_contexts_[transition.src_subpass].GetDstExternalSubpassBarrier();
+            assert(&subpass_contexts_[transition.src_subpass] == dst_external_barrier.src_subpass_context);
+            for (const auto& barrier : dst_external_barrier.barriers) {
+                const BarrierScope barrier_scope(barrier);
+                CollectBarriersFunctor collect_barriers(*external_context, barrier_scope, barrier, true, vvl::kNoIndex32,
+                                                        pending_barriers);
+                external_context->UpdateMemoryAccessState(collect_barriers, range_gen);
+            }
+        } else {
+            // Unused attachments still transition from initialLayout to finalLayout, but no subpass
+            // uses them, so record the transition without applying a subpass dependency barrier.
+            const SyncBarrier empty_barrier;
+            CollectBarriersFunctor collect_barriers(*external_context, BarrierScope(empty_barrier), empty_barrier, true,
+                                                    vvl::kNoIndex32, pending_barriers);
             external_context->UpdateMemoryAccessState(collect_barriers, range_gen);
         }
         pending_barriers.Apply(transition_tag);
