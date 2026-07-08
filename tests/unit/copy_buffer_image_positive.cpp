@@ -125,7 +125,7 @@ TEST_F(PositiveCopyBufferImage, ImageLayerCount) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, BufferToRemaingImageLayers) {
+TEST_F(PositiveCopyBufferImage, BufferToRemainingImageLayers) {
     TEST_DESCRIPTION("Test vkCmdCopyBufferToImage2 with VK_REMAINING_ARRAY_LAYERS");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
