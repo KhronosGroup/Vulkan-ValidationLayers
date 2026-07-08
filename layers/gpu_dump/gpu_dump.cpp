@@ -152,31 +152,4 @@ bool GpuDump::ListAccelerationStructures(std::ostringstream& ss, VkDeviceAddress
     return as_states.empty();
 }
 
-void GpuDump::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {
-    if (gpu_dump_settings.descriptors && global_settings.descriptor_hashing) {
-        if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-            heap_all_descriptor_sizes = device_state->cached_descriptor_size.GetAllSizes(true);
-            for (VkDeviceSize size : heap_all_descriptor_sizes) {
-                if (size > heap_max_descriptor_size) {
-                    heap_max_descriptor_size = size;
-                }
-            }
-        }
-        if (IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
-            buffer_all_descriptor_sizes = device_state->cached_descriptor_size.GetAllSizes(false);
-            for (VkDeviceSize size : buffer_all_descriptor_sizes) {
-                if (size > buffer_max_descriptor_size) {
-                    buffer_max_descriptor_size = size;
-                }
-            }
-        }
-
-        // |force_on_robustness| marks the "modified" feature so need to check for both
-        if (enabled_features.nullDescriptor || gpuav_settings.force_on_robustness) {
-            null_descriptor_allowed = true;
-        }
-        null_descriptor_dword = GetNullDescriptorDWord(phys_dev_props);
-    }
-}
-
 }  // namespace gpudump

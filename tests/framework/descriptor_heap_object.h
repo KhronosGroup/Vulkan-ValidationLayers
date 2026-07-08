@@ -51,6 +51,7 @@ class DescriptorHeap {
     // so this probably should not be used with the above functions.
     VkDeviceSize WriteBufferDescriptorAtOffset(VkDeviceAddressRangeKHR addr_range, VkDescriptorType desc_type,
                                                VkDeviceSize heap_offset);
+    VkDeviceSize WriteNullDescriptorAtOffset(VkDescriptorType desc_type, VkDeviceSize heap_offset);
 
     VkDeviceSize AlignResource(VkDeviceSize offset);
     VkDeviceSize AlignSampler(VkDeviceSize offset);

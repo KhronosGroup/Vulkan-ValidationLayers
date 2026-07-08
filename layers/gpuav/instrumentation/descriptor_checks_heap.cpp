@@ -16,6 +16,8 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
+#include <cstring>
+#include <vulkan/utility/vk_struct_helper.hpp>
 #include "containers/limits.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "gpuav/core/gpuav.h"
@@ -28,7 +30,9 @@
 #include "gpuav/spirv/instrumentation_status.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "error_message/spirv_logging.h"
+#include "state_tracker/descriptor_hashing.h"
 #include "utils/descriptor_utils.h"
+#include "utils/lock_utils.h"
 
 namespace gpuav {
 
@@ -36,6 +40,14 @@ namespace gpuav {
 struct DescriptorChecksHeapCbState {
     vko::BufferRange last_bound_heap_info_resource;
     vko::BufferRange last_bound_heap_info_sampler;
+};
+
+// We hope people don't ever use Descriptor Buffer and Heap together or we will have double allocation for no reason
+struct DescriptorChecksHeapHashTable {
+    DescriptorChecksHeapHashTable(CommandBufferSubState& cb, VkDeviceSize size) {
+        buffer_range = cb.gpu_resources_manager.GetDeviceLocalBufferRange(size);
+    }
+    vko::BufferRange buffer_range{};
 };
 
 void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubState& cb) {
@@ -70,8 +82,9 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 auto desc_heap_info = static_cast<glsl::BoundHeapInfo*>(dc_cb_state.last_bound_heap_info_sampler.offset_mapped_ptr);
 
                 desc_heap_info->heap_size = (uint32_t)cb_heap.sampler_range.size();
-                desc_heap_info->reserved_begin = (uint32_t)(cb_heap.sampler_reserved.begin - cb_heap.sampler_range.begin);
-                desc_heap_info->reserved_end = (uint32_t)(cb_heap.sampler_reserved.end - cb_heap.sampler_range.begin);
+                desc_heap_info->reserved_begin_offset = (uint32_t)(cb_heap.sampler_reserved.begin - cb_heap.sampler_range.begin);
+                desc_heap_info->reserved_end_offset = (uint32_t)(cb_heap.sampler_reserved.end - cb_heap.sampler_range.begin);
+                desc_heap_info->heap_begin_addr = cb_heap.sampler_range.begin;
             }
             if (update_resource) {
                 dc_cb_state.last_bound_heap_info_resource =
@@ -81,8 +94,9 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     static_cast<glsl::BoundHeapInfo*>(dc_cb_state.last_bound_heap_info_resource.offset_mapped_ptr);
 
                 desc_heap_info->heap_size = (uint32_t)cb_heap.resource_range.size();
-                desc_heap_info->reserved_begin = (uint32_t)(cb_heap.resource_reserved.begin - cb_heap.resource_range.begin);
-                desc_heap_info->reserved_end = (uint32_t)(cb_heap.resource_reserved.end - cb_heap.resource_range.begin);
+                desc_heap_info->reserved_begin_offset = (uint32_t)(cb_heap.resource_reserved.begin - cb_heap.resource_range.begin);
+                desc_heap_info->reserved_end_offset = (uint32_t)(cb_heap.resource_reserved.end - cb_heap.resource_range.begin);
+                desc_heap_info->heap_begin_addr = cb_heap.resource_range.begin;
             }
 
             // Data for the GPU
@@ -133,7 +147,6 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     heap_cb_state = &desc_heap_bindings.bound_heap_snapshots[heap_binding_index].heap_cb_state;
                 }
 
-                const uint32_t index = error_record[kInst_LogError_ParameterOffset_0];
                 const uint32_t offset = error_record[kInst_LogError_ParameterOffset_1];
 
                 const uint32_t desc_encoding = error_record[kInst_LogError_ParameterOffset_2];
@@ -183,8 +196,9 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 const uint32_t error_sub_code = GetSubError(error_record);
                 switch (error_sub_code) {
                     case kErrorSubCode_DescriptorHeap_HeapOOB: {
+                        const uint32_t descriptor_index = error_record[kInst_LogError_ParameterOffset_0];
                         if (!is_source_heap_data) {
-                            ss << "descriptor index " << std::dec << index << " ";
+                            ss << "descriptor index " << std::dec << descriptor_index << " ";
                         }
                         ss << "is accessing the " << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex
                            << offset << " (address 0x" << heap_address << ") which is OOB of the heap memory.\n";
@@ -195,7 +209,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     case kErrorSubCode_DescriptorHeap_ReservedRange: {
                         assert(heap_cb_state);
                         if (!is_source_heap_data) {
-                            ss << "descriptor index " << std::dec << index << " ";
+                            const uint32_t descriptor_index = error_record[kInst_LogError_ParameterOffset_0];
+                            ss << "descriptor index " << std::dec << descriptor_index << " ";
                         }
                         ss << "is accessing the " << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex
                            << offset << " (address 0x" << heap_address
@@ -213,7 +228,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
 
                     case kErrorSubCode_DescriptorHeap_DescriptorAlignment:
                     case kErrorSubCode_DescriptorHeap_DescriptorAlignmentUntyped: {
-                        ss << "descriptor index " << std::dec << index << " is accessing the "
+                        const uint32_t descriptor_index = error_record[kInst_LogError_ParameterOffset_0];
+                        ss << "descriptor index " << std::dec << descriptor_index << " is accessing the "
                            << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex << offset << " (address 0x"
                            << std::hex << heap_address << ") which is not aligned to ";
                         if (is_buffer) {
@@ -241,7 +257,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     case kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment:
                     case kErrorSubCode_DescriptorHeap_IndirectAddressPushAlignment: {
                         if (error_sub_code == kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment) {
-                            ss << "descriptor index " << std::dec << index << " ";
+                            const uint32_t descriptor_index = error_record[kInst_LogError_ParameterOffset_0];
+                            ss << "descriptor index " << std::dec << descriptor_index << " ";
                         }
                         const bool use_sampler_push_offset = is_combined_sampler && !is_combined_index;
                         ss << "has a " << (use_sampler_push_offset ? "samplerPushOffset" : "pushOffset") << " of ";
@@ -330,6 +347,26 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
 
                         ss << "is accessing the indirect buffer, but the indirect address is null.\n";
                         out_vuid_msg = vvl::CreateActionVuid(loc.function, action_vuid);
+                        error_found = true;
+                    } break;
+                    case kErrorSubCode_DescriptorHeap_DescriptorHashing_None: {
+                        const uint32_t descriptor_index = error_record[kInst_LogError_ParameterOffset_0];
+                        ss << "descriptor index " << std::dec << descriptor_index << " is accessing the "
+                           << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex << offset << " (address 0x"
+                           << heap_address << ") but there is no valid descriptor at that location.\n";
+                        out_vuid_msg = "UNASSIGNED-DescriptorHeap-No-Descriptor";
+                        error_found = true;
+                    } break;
+                    case kErrorSubCode_DescriptorHeap_DescriptorHashing_Wrong: {
+                        // We trade the descriptor_index for getting the slot_index to find what descriptor this was
+                        const uint32_t slot_index = error_record[kInst_LogError_ParameterOffset_0];
+                        const auto& entry = gpuav.device_state->descriptor_hashing->table.slots[slot_index].entry;
+
+                        ss << "is accessing the " << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex
+                           << offset << " (address 0x" << heap_address << ") but there is a descriptor there of the wrong type: \n";
+                        entry.Describe(*gpuav.device_state, ss);
+                        ss << '\n';
+                        out_vuid_msg = "UNASSIGNED-DescriptorHeap-Wrong-DescriptorType";
                         error_found = true;
                     } break;
                 }
@@ -473,28 +510,68 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
     cb.on_instrumentation_common_desc_update_functions.emplace_back([&gpuav](CommandBufferSubState& cb, const LastBound& last_bound,
                                                                              const Location&,
                                                                              CommonDescriptorUpdate& out_update) mutable {
-        const uint32_t bound_heap_info_size = sizeof(VkDeviceAddress) * 2;
+        const uint32_t bound_heap_info_size = sizeof(VkDeviceAddress) * 3;
         uint32_t buffer_size = bound_heap_info_size + (uint32_t)gpuav.phys_dev_ext_props.descriptor_heap_props.maxPushDataSize;
-        vko::BufferRange buffer_range = cb.gpu_resources_manager.GetHostCoherentBufferRange(buffer_size);
+        vko::BufferRange output_range = cb.gpu_resources_manager.GetHostCoherentBufferRange(buffer_size);
 
-        VkDeviceAddress* bound_heap_info = (VkDeviceAddress*)buffer_range.offset_mapped_ptr;
+        VkDeviceAddress* bound_heap_info = (VkDeviceAddress*)output_range.offset_mapped_ptr;
 
         // If these are zero that is valid, core validation gives error if heap is not set when needed
         DescriptorChecksHeapCbState* dc_cb_state = cb.shared_resources_cache.TryGet<DescriptorChecksHeapCbState>();
         if (dc_cb_state) {
             bound_heap_info[0] = dc_cb_state->last_bound_heap_info_resource.offset_address;
             bound_heap_info[1] = dc_cb_state->last_bound_heap_info_sampler.offset_address;
+            if (gpuav.global_settings.descriptor_hashing) {
+                // TODO -
+                //  See if this could be maintained at the gpuav level
+                //  using gpuav.shared_resources_cache (it supports concurrent accesses).
+                // It's device global by nature and only the snapshots need to be maintained at CB level
+                DescriptorChecksHeapHashTable& hash_table_state =
+                    cb.shared_resources_cache.GetOrCreate<DescriptorChecksHeapHashTable>(
+                        cb, gpuav.device_state->descriptor_hashing->table.Size());
+                bound_heap_info[2] = hash_table_state.buffer_range.offset_address;
+            }
         }
 
-        uint8_t* gpu_push_data_ptr = ((uint8_t*)buffer_range.offset_mapped_ptr) + bound_heap_info_size;
+        uint8_t* gpu_push_data_ptr = ((uint8_t*)output_range.offset_mapped_ptr) + bound_heap_info_size;
         memcpy(gpu_push_data_ptr, cb.push_data_value.data(), cb.push_data_value.size());
 
-        out_update.buffer = buffer_range.buffer;
-        out_update.offset = buffer_range.offset;
-        out_update.range = buffer_range.size;
-        out_update.address = buffer_range.offset_address;
+        out_update.buffer = output_range.buffer;
+        out_update.offset = output_range.offset;
+        out_update.range = output_range.size;
+        out_update.address = output_range.offset_address;
         out_update.binding = glsl::kBindingInstDescriptorHeap;
     });
+
+    cb.on_pre_cb_submission_functions.emplace_back(
+        [](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb) {
+            if (!gpuav.global_settings.descriptor_hashing) {
+                return;
+            }
+
+            DescriptorChecksHeapHashTable* hash_table_state = cb.shared_resources_cache.TryGet<DescriptorChecksHeapHashTable>();
+            if (!hash_table_state) {
+                return;
+            }
+
+            // Current issue with |descriptor_hashing.table| is it done on the CPU because
+            // - it can be both large (few MB)
+            // - We expect MANY small writes to it on the CPU
+            // - GPU Dump also plans to use it, and it doesn't need GPU memory to do it
+            //
+            // TODO - We are doing a VERY wasteful double buffer allocation per cmd buffer
+            // We need to design a way to at least make only a single staging buffer for the entire
+            // application
+            vvl::DescriptorHashing& descriptor_hashing = *gpuav.device_state->descriptor_hashing;
+            WriteLockGuard guard(descriptor_hashing.map_lock);
+            const VkDeviceSize table_size = descriptor_hashing.table.Size();
+
+            vko::BufferRange staging_buffer = cb.gpu_resources_manager.GetHostCachedBufferRange(table_size);
+            memcpy(staging_buffer.offset_mapped_ptr, descriptor_hashing.table.slots.data(), static_cast<size_t>(table_size));
+            cb.gpu_resources_manager.FlushAllocation(staging_buffer);
+
+            vko::CmdSynchronizedCopyBufferRange(per_submission_cb, hash_table_state->buffer_range, staging_buffer);
+        });
 }
 
 }  // namespace gpuav

@@ -37,6 +37,7 @@
 #include "gpu_dump/gpu_dump_settings.h"
 #include "legacy/legacy_settings.h"
 
+#include "utils/math_utils.h"
 #include "vk_layer_config.h"
 
 // Include new / delete overrides if using mimalloc. This needs to be include exactly once in a file that is
@@ -184,6 +185,7 @@ const char* VK_LAYER_FINE_GRAINED_LOCKING = "fine_grained_locking";
 const char* VK_LAYER_DEBUG_DISABLE_SPIRV_VAL = "debug_disable_spirv_val";
 // Used both with GPU-AV and GPU Dump
 const char* VK_LAYER_DESCRIPTOR_HASHING = "descriptor_hashing";
+const char* VK_LAYER_DESCRIPTOR_HASHING_TOTAL_DESCRIPTORS = "descriptor_hashing_total_descriptors";
 
 // DebugPrintf (which is now part of GPU-AV internally)
 // ---
@@ -1034,6 +1036,20 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DESCRIPTOR_HASHING, global_settings.descriptor_hashing);
     }
 
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DESCRIPTOR_HASHING_TOTAL_DESCRIPTORS)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DESCRIPTOR_HASHING_TOTAL_DESCRIPTORS,
+                                global_settings.descriptor_hashing_total_descriptors);
+        if (!IsPowerOfTwo(global_settings.descriptor_hashing_total_descriptors)) {
+            uint32_t old_value = global_settings.descriptor_hashing_total_descriptors;
+            uint32_t new_value = GetSmallestGreaterOrEquallPowerOfTwo(old_value);
+            global_settings.descriptor_hashing_total_descriptors = new_value;
+
+            setting_warnings.emplace_back(
+                "VK_LAYER_DESCRIPTOR_HASHING_TOTAL_DESCRIPTORS (descriptor_hashing_total_descriptors) was set to " +
+                std::to_string(old_value) + " but being set to " + std::to_string(new_value) + " as it needs to be a power of two");
+        }
+    }
+
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_CUSTOM_STYPE_LIST)) {
         // We use to support this, but feel no one is using this
         // As a transition, we will allow to be used and just skip the 1 VU check if anything is set
@@ -1444,9 +1460,10 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
         }
     }
 
-    if (global_settings.descriptor_hashing && !settings_data->enabled[gpu_validation] && !settings_data->enabled[gpu_dump]) {
+    if (global_settings.descriptor_hashing && !settings_data->enabled[gpu_validation] && !gpu_dump_settings.descriptors) {
         setting_warnings.emplace_back(
-            "Descriptor Hashing was turned on, but neither GPU-AV nor GPU Dump are enabled. Turning off as this setting has no "
+            "Descriptor Hashing was turned on, but neither GPU-AV nor GPU Dump (for descriptors) is enabled. Turning off as this "
+            "setting has no "
             "effect.");
         global_settings.descriptor_hashing = false;
     }

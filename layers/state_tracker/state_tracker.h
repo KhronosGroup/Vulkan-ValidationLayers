@@ -87,6 +87,7 @@ class VideoSession;
 class VideoSessionParameters;
 class DataGraphPipelineSession;
 class SubmitTimeTracker;
+struct DescriptorHashing;
 }  // namespace vvl
 
 namespace chassis {
@@ -2159,59 +2160,9 @@ class DeviceState : public vvl::BaseDevice {
     std::atomic<uint32_t> descriptor_heap_global_embedded_sampler_count_ = {0u};
 
     // When users opt in, we will try to hash all descriptors seen from VK_EXT_descriptor_buffer and VK_EXT_descriptor_heap
-    struct DescriptorHash {
-        struct EntryBuffer {
-            VkDeviceAddressRangeEXT range;
-        };
-        struct EntryTexelBuffer {
-            VkDeviceAddressRangeEXT range;
-            VkFormat format;
-        };
-        struct EntryAS {
-            VkDeviceAddressRangeEXT range;
-        };
-        struct EntryImage {
-            VkImage image;
-            VkFormat format;
-            VkImageViewType type;
-        };
-        struct EntrySampler {};
-        struct Entry {
-            // It is possible two different types are the same descriptor hash, so need a bit mask here
-            // each type is applied here as
-            //    1 << vvlDescriptorType
-            // Will be updated if a second type is found
-            uint32_t types;
-
-            union Data {
-                EntryBuffer buffer;
-                EntryTexelBuffer texel_buffer;
-                EntryAS acceleration_structure;
-                EntryImage image;
-                EntrySampler sampler;
-
-                explicit Data(EntryBuffer b) : buffer(b) {}
-                explicit Data(EntryTexelBuffer t) : texel_buffer(t) {}
-                explicit Data(EntryAS a) : acceleration_structure(a) {}
-                explicit Data(EntryImage i) : image(i) {}
-                explicit Data(EntrySampler s) : sampler(s) {}
-            } data;
-
-            // Pass in vvlDescriptorType
-            Entry(uint8_t t, EntryBuffer b) : types(1 << t), data(b) {}
-            Entry(uint8_t t, EntryTexelBuffer j) : types(1 << t), data(j) {}
-            Entry(uint8_t t, EntryAS a) : types(1 << t), data(a) {}
-            Entry(uint8_t t, EntryImage i) : types(1 << t), data(i) {}
-            Entry(uint8_t t, EntrySampler s) : types(1 << t), data(s) {}
-        };
-        vvl::unordered_map<uint64_t, Entry> map;
-        // Users can pass in VkDebugUtilsObjectNameInfoEXT when getting the descriptor to provide a name
-        // We make a seperate map to prevent adding 32-bytes to every Entry as this might not be used
-        vvl::unordered_map<uint64_t, std::string> debug_names;
-        mutable std::shared_mutex map_lock;
-
-        std::string Describe(const DeviceState& device_state, uint64_t key) const;
-    } descriptor_hash;
+    // This is only here because both GPU-AV and GPU Dump need to share this.
+    // Normally we don't create dynamic objects, but this allows forward declaring and only allocating when people opt into this.
+    std::unique_ptr<DescriptorHashing> descriptor_hashing;
 
     // Keep track of identifier -> state
     vvl::unordered_map<VkShaderModuleIdentifierEXT, std::shared_ptr<vvl::ShaderModule>> shader_identifier_map_;

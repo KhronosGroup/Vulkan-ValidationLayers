@@ -106,6 +106,9 @@ struct GlobalSettings {
 
     // Option to track the hashes of descriptors in VK_EXT_descriptor_buffer/VK_EXT_descriptor_heap
     bool descriptor_hashing = false;
+    // Default seems like a sane value
+    // will be 2MB of memory to allocate and 64k of descriptors should hopefully be good for most to start
+    uint32_t descriptor_hashing_total_descriptors = 65536;
 };
 
 class DebugReport;

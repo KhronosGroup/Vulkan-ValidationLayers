@@ -17,6 +17,7 @@
  */
 
 #include "descriptor_heap_object.h"
+#include <vulkan/vulkan_core.h>
 
 #include "containers/container_utils.h"
 #include "../framework/layer_validation_tests.h"
@@ -24,6 +25,20 @@
 #include "utils/math_utils.h"
 
 namespace vkt {
+
+static bool IsAddressRange(VkDescriptorType type) {
+    return IsValueIn(type, {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV,
+                            VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER});
+}
+static bool IsTexelBuffer(VkDescriptorType type) {
+    return IsValueIn(type, {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER});
+}
+static bool IsImage(VkDescriptorType type) {
+    return IsValueIn(
+        type, {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM,
+               VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT});
+}
 
 void DescriptorHeap::AddDescriptorHeapRequirements(VkLayerTest& test) {
     test.AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
@@ -119,6 +134,29 @@ VkDeviceSize DescriptorHeap::WriteAccelerationStructureDescriptor(VkDeviceAddres
     assert(heap_offset_ <= resource_heap_.CreateInfo().size);
 
     return write_offset;
+}
+
+VkDeviceSize DescriptorHeap::WriteNullDescriptorAtOffset(VkDescriptorType desc_type, VkDeviceSize heap_offset) {
+    assert(resource_heap_.handle() != VK_NULL_HANDLE);
+    VkResourceDescriptorInfoEXT desc_info = vku::InitStructHelper();
+    desc_info.type = desc_type;
+    if (IsAddressRange(desc_type)) {
+        desc_info.data.pAddressRange = nullptr;
+    } else if (IsTexelBuffer(desc_type)) {
+        desc_info.data.pTexelBuffer = nullptr;
+    } else if (IsImage(desc_type)) {
+        desc_info.data.pImage = nullptr;
+    } else {
+        desc_info.data.pTensorARM = nullptr;
+    }
+
+    VkHostAddressRangeEXT desc_host_data{};
+    desc_host_data.address = resource_heap_data_ + heap_offset;
+    desc_host_data.size = vk::GetPhysicalDeviceDescriptorSizeEXT(test_->DeviceObj()->Physical(), desc_type);
+
+    vk::WriteResourceDescriptorsEXT(*test_->DeviceObj(), 1, &desc_info, &desc_host_data);
+
+    return heap_offset;
 }
 
 VkDeviceSize DescriptorHeap::AlignResource(VkDeviceSize offset) {

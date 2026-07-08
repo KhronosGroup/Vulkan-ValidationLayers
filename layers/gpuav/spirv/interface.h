@@ -123,6 +123,9 @@ struct DeviceSettings {
     uint32_t error_buffer_data_length;
     uint32_t debug_printf_buffer_size;
 
+    bool descriptor_hashing;
+    uint32_t descriptor_hashing_total_descriptors;
+
     CachedDescriptorSize* cached_descriptor_size;
 
     const VkPhysicalDeviceProperties* phys_dev_props;

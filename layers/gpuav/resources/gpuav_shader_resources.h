@@ -102,8 +102,11 @@ struct BoundHeapInfo {
     // We should not need to deal with 4GB heaps (have an assert checking)
     uint32_t heap_size;
     // These are offset from the heap start where the being/end are
-    uint32_t reserved_begin;
-    uint32_t reserved_end;
+    uint32_t reserved_begin_offset;
+    uint32_t reserved_end_offset;
+
+    uint32_t padding;
+    uint64_t heap_begin_addr;
 };
 
 struct DescriptorHeapEncoding {

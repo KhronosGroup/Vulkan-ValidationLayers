@@ -56,6 +56,7 @@ extern const uint32_t instrumentation_descriptor_heap_comp_function_5_offset;
 extern const uint32_t instrumentation_descriptor_heap_comp_function_6_offset;
 extern const uint32_t instrumentation_descriptor_heap_comp_function_7_offset;
 extern const uint32_t instrumentation_descriptor_heap_comp_function_8_offset;
+extern const uint32_t instrumentation_descriptor_heap_comp_function_9_offset;
 
 extern const uint32_t instrumentation_descriptor_indexing_oob_comp_size;
 extern const uint32_t instrumentation_descriptor_indexing_oob_comp[];
