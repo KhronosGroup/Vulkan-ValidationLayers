@@ -360,6 +360,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     case kErrorSubCode_DescriptorHeap_DescriptorHashing_Wrong: {
                         // We trade the descriptor_index for getting the slot_index to find what descriptor this was
                         const uint32_t slot_index = error_record[kInst_LogError_ParameterOffset_0];
+                        ReadLockGuard guard(gpuav.device_state->descriptor_hashing->map_lock);
                         const auto& entry = gpuav.device_state->descriptor_hashing->table.slots[slot_index].entry;
 
                         ss << "is accessing the " << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex
@@ -526,6 +527,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 //  See if this could be maintained at the gpuav level
                 //  using gpuav.shared_resources_cache (it supports concurrent accesses).
                 // It's device global by nature and only the snapshots need to be maintained at CB level
+                ReadLockGuard guard(gpuav.device_state->descriptor_hashing->map_lock);
                 DescriptorChecksHeapHashTable& hash_table_state =
                     cb.shared_resources_cache.GetOrCreate<DescriptorChecksHeapHashTable>(
                         cb, gpuav.device_state->descriptor_hashing->table.Size());
@@ -563,7 +565,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
             // We need to design a way to at least make only a single staging buffer for the entire
             // application
             vvl::DescriptorHashing& descriptor_hashing = *gpuav.device_state->descriptor_hashing;
-            WriteLockGuard guard(descriptor_hashing.map_lock);
+            ReadLockGuard guard(descriptor_hashing.map_lock);
             const VkDeviceSize table_size = descriptor_hashing.table.Size();
 
             vko::BufferRange staging_buffer = cb.gpu_resources_manager.GetHostCachedBufferRange(table_size);

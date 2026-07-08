@@ -122,7 +122,7 @@ bool BindingInfo::ValidateDescriptor(std::ostringstream& ss, GpuDump& dev_data) 
         }
     }
 
-    WriteLockGuard guard(descriptor_hashing.map_lock);
+    ReadLockGuard guard(descriptor_hashing.map_lock);
 
     uint64_t key = descriptor_hashing.Hash(descriptor_bytes.data(), size);
     const vvl::DescriptorHashTable::Entry* entry = descriptor_hashing.table.Find(key);

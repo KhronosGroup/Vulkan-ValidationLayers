@@ -449,7 +449,7 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address) {
             check_larger_sizes = false;
         }
     }
-    WriteLockGuard guard(descriptor_hashing.map_lock);
+    ReadLockGuard guard(descriptor_hashing.map_lock);
 
     uint64_t key = descriptor_hashing.Hash(descriptor_bytes.data(), dump.descriptor_size);
     const vvl::DescriptorHashTable::Entry* entry = descriptor_hashing.table.Find(key);
