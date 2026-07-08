@@ -165,8 +165,7 @@ static AccessContext* CreateStoreResolveProxyContext(const AccessContext& contex
 // Layout transitions are handled as if the were occuring in the beginning of the next subpass
 bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAccessContext& cb_context,
                                                         const AccessContext& access_context, const vvl::RenderPass& rp_state,
-                                                        const VkRect2D& render_area, uint32_t render_pass_instance_id,
-                                                        uint32_t subpass, uint32_t view_mask,
+                                                        uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
                                                         const AttachmentViewGenVector& attachment_views, vvl::Func command) {
     bool skip = false;
     // As validation methods are const and precede the record/update phase, for any tranistions from the immediately
@@ -232,9 +231,8 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAcces
 
 bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessContext& cb_context,
                                                     const AccessContext& access_context, const vvl::RenderPass& rp_state,
-                                                    const VkRect2D& render_area, uint32_t render_pass_instance_id, uint32_t subpass,
-                                                    uint32_t view_mask, const AttachmentViewGenVector& attachment_views,
-                                                    vvl::Func command) {
+                                                    uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
+                                                    const AttachmentViewGenVector& attachment_views, vvl::Func command) {
     bool skip = false;
 
     AttachmentAccess attachment_access;
@@ -738,7 +736,7 @@ bool RenderPassAccessContext::ValidateNextSubpass(const CommandBufferAccessConte
     }
     const uint32_t next_subpass_view_mask = rp_state_->create_info.pSubpasses[next_subpass].viewMask;
     const auto& next_context = subpass_contexts_[next_subpass];
-    skip |= ValidateLayoutTransitions(cb_context, next_context, *rp_state_, render_area_, render_pass_instance_id_, next_subpass,
+    skip |= ValidateLayoutTransitions(cb_context, next_context, *rp_state_, render_pass_instance_id_, next_subpass,
                                       next_subpass_view_mask, attachment_views_, command);
     if (!skip) {
         // To avoid complex (and buggy) duplication of the affect of layout transitions on load operations, we'll record them
@@ -747,7 +745,7 @@ bool RenderPassAccessContext::ValidateNextSubpass(const CommandBufferAccessConte
         AccessContext temp_context(cb_context.GetSyncState());
         temp_context.InitFrom(next_context);
         RecordLayoutTransitions(*rp_state_, next_subpass, attachment_views_, kInvalidTag, temp_context);
-        skip |= ValidateLoadOperation(cb_context, temp_context, *rp_state_, render_area_, render_pass_instance_id_, next_subpass,
+        skip |= ValidateLoadOperation(cb_context, temp_context, *rp_state_, render_pass_instance_id_, next_subpass,
                                       next_subpass_view_mask, attachment_views_, command);
     }
     return skip;
@@ -897,7 +895,6 @@ RenderPassAccessContext::RenderPassAccessContext(const vvl::RenderPass& rp_state
                                                  const std::vector<const vvl::ImageView*>& attachment_views,
                                                  const AccessContext& external_context, uint32_t render_pass_instance_id)
     : rp_state_(&rp_state),
-      render_area_(render_area),
       attachment_views_(CreateAttachmentViewGen(render_area, attachment_views)),
       subpass_contexts_(InitSubpassContexts(queue_flags, rp_state, external_context)),
       render_pass_instance_id_(render_pass_instance_id),

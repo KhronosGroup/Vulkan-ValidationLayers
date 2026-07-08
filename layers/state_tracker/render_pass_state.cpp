@@ -198,16 +198,18 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
         for (uint32_t j = 0; j < count; j++) {
             const auto attachment = attach_ref[j].attachment;
             if (attachment != VK_ATTACHMENT_UNUSED) {
-                const auto layout = attach_ref[j].layout;
-                const auto initial_layout = rp.create_info.pAttachments[attachment].initialLayout;
+                const VkImageLayout layout = attach_ref[j].layout;
+                const VkImageLayout initial_layout = rp.create_info.pAttachments[attachment].initialLayout;
                 bool no_external_transition = true;
 
                 // Initial transition
                 bool first_transition = true;
-                for (uint32_t subpass_per_view : first[attachment]) {
+                const vvl::RenderPass::SubpassPerView& first_subpass_per_view = first[attachment];
+                for (uint32_t first_subpass : first_subpass_per_view) {
                     // Check if earlier or this subpass already registered transition
-                    if (subpass_per_view != VK_SUBPASS_EXTERNAL) {
-                        assert(subpass_per_view <= subpass);
+                    // (first state is updated at the end of this iteration)
+                    if (first_subpass != VK_SUBPASS_EXTERNAL) {
+                        assert(first_subpass <= subpass);
                         first_transition = false;
                         break;
                     }
@@ -269,7 +271,7 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
         // Final transitions
         const uint32_t attachment_count = rp.create_info.attachmentCount;
         for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
-            const auto final_layout = rp.create_info.pAttachments[attachment].finalLayout;
+            const VkImageLayout final_layout = rp.create_info.pAttachments[attachment].finalLayout;
             const uint32_t last_transition_subpass = get_last_subpass(last[attachment]);
             if (last_transition_subpass != VK_SUBPASS_EXTERNAL && final_layout != attachment_layout[attachment]) {
                 auto& final_transitions = subpass_transitions[rp.create_info.subpassCount];

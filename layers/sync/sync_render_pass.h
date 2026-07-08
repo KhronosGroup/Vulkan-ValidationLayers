@@ -88,23 +88,20 @@ using AttachmentViewGenVector = std::vector<AttachmentViewGen>;
 
 class RenderPassAccessContext {
   public:
-    static AttachmentViewGenVector CreateAttachmentViewGen(const VkRect2D &render_area,
-                                                           const std::vector<const vvl::ImageView *> &attachment_views);
-    RenderPassAccessContext()
-        : rp_state_(nullptr), render_area_(VkRect2D()), render_pass_instance_id_(vvl::kNoIndex32), current_subpass_(0) {}
-    RenderPassAccessContext(const vvl::RenderPass &rp_state, const VkRect2D &render_area, VkQueueFlags queue_flags,
-                            const std::vector<const vvl::ImageView *> &attachment_views, const AccessContext &external_context,
+    static AttachmentViewGenVector CreateAttachmentViewGen(const VkRect2D& render_area,
+                                                           const std::vector<const vvl::ImageView*>& attachment_views);
+    RenderPassAccessContext() : rp_state_(nullptr), render_pass_instance_id_(vvl::kNoIndex32), current_subpass_(0) {}
+    RenderPassAccessContext(const vvl::RenderPass& rp_state, const VkRect2D& render_area, VkQueueFlags queue_flags,
+                            const std::vector<const vvl::ImageView*>& attachment_views, const AccessContext& external_context,
                             uint32_t render_pass_instance_id);
 
-    static bool ValidateLayoutTransitions(const CommandBufferAccessContext &cb_context, const AccessContext &access_context,
-                                          const vvl::RenderPass &rp_state, const VkRect2D &render_area,
-                                          uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
-                                          const AttachmentViewGenVector &attachment_views, vvl::Func command);
+    static bool ValidateLayoutTransitions(const CommandBufferAccessContext& cb_context, const AccessContext& access_context,
+                                          const vvl::RenderPass& rp_state, uint32_t render_pass_instance_id, uint32_t subpass,
+                                          uint32_t view_mask, const AttachmentViewGenVector& attachment_views, vvl::Func command);
 
-    static bool ValidateLoadOperation(const CommandBufferAccessContext &cb_context, const AccessContext &access_context,
-                                      const vvl::RenderPass &rp_state, const VkRect2D &render_area,
-                                      uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
-                                      const AttachmentViewGenVector &attachment_views, vvl::Func command);
+    static bool ValidateLoadOperation(const CommandBufferAccessContext& cb_context, const AccessContext& access_context,
+                                      const vvl::RenderPass& rp_state, uint32_t render_pass_instance_id, uint32_t subpass,
+                                      uint32_t view_mask, const AttachmentViewGenVector& attachment_views, vvl::Func command);
 
     bool ValidateStoreOperation(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
     bool ValidateResolveOperations(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
@@ -150,7 +147,6 @@ private:
 
   private:
     const vvl::RenderPass *rp_state_;
-    const VkRect2D render_area_;
     const AttachmentViewGenVector attachment_views_;
     const std::unique_ptr<AccessContext[]> subpass_contexts_;
     const uint32_t render_pass_instance_id_;
