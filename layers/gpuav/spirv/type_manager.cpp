@@ -15,6 +15,7 @@
 
 #include "type_manager.h"
 #include <vulkan/vulkan_core.h>
+#include <cassert>
 #include <cstdint>
 #include <spirv/unified1/spirv.hpp>
 #include "containers/container_utils.h"
@@ -891,11 +892,17 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
                 // if no array, will point right to a variable
                 path.variable = FindVariableById(next_access_chain->Operand(0));
             }
+        } else if (next_access_chain->Opcode() == spv::OpFunctionParameter) {
+            // TODO - Need to handle walking all function callers
+            assert(FindTypeById(next_access_chain->TypeId())->spv_type_ == SpvType::kUntypedPointerKHR);
+            return path;
         }
     }
 
     if (!path.variable) {
-        // Two know spots this occur is Function Variables and PhysicalStorageBuffer access
+        // We currently don't care to validate Function Variables are they are never going to be something that interfaces with the
+        // API (like a descriptor of push constant).
+        // PhysicalStorageBuffer access we can ignore, that is handled in BDA pass
         assert((next_access_chain->Opcode() == spv::OpVariable && next_access_chain->StorageClass() == spv::StorageClassFunction) ||
                FindTypeById(next_access_chain->TypeId())->spv_type_ == SpvType::kPointer);
         return path;  // not a valid access path
