@@ -196,7 +196,7 @@
                         { "key": "descriptor_hashing", "value": false },
                         { "key": "printf_enable", "value": false },
                         { "key": "debug_action",  "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
-                        { "key": "report_flags",  "value": [ "warn", "info" ] },
+                        { "key": "report_flags",  "value": [ "warn" ] },
                         { "key": "enable_message_limit", "value": false }
                     ]
                 },
@@ -1169,14 +1169,6 @@
                                     "key": "gpu_dump_to_stdout",
                                     "label": "Redirect all GPU Dump to stdout",
                                     "description": "Instead of using the debug callback with information severity, redirect to stdout instead.",
-                                    "type": "BOOL",
-                                    "default": false
-                                },
-                                {
-                                    "key": "gpu_dump_device_copy",
-                                    "label": "Force Device Copy",
-                                    "view": "DEBUG",
-                                    "description": "[Very experimental] For non-host visible memory, try and do a device copy during command recording to view the data inside a buffer.",
                                     "type": "BOOL",
                                     "default": false
                                 }

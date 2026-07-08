@@ -293,68 +293,6 @@ TEST_F(NegativeGpuDump, CopyMemoryIndirect) {
     m_command_buffer.End();
 }
 
-// TODO - Add and test the feature
-TEST_F(NegativeGpuDump, DISABLED_DeviceCopy) {
-    const VkLayerSettingEXT layer_settings[2] = {
-        {OBJECT_LAYER_NAME, "gpu_dump_copy_memory_indirect", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
-        {OBJECT_LAYER_NAME, "gpu_dump_device_copy", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
-    };
-    VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
-    AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::indirectMemoryCopy);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
-    RETURN_IF_SKIP(InitState());
-
-    vkt::Buffer src_buffer(*m_device, 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, vkt::device_address);
-    vkt::Buffer dst_buffer(*m_device, 64, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
-
-    const VkDeviceAddress src_address = src_buffer.Address();
-    const VkDeviceAddress dst_address = dst_buffer.Address();
-    VkCopyMemoryIndirectCommandKHR cmds = {src_address, dst_address, 16};
-    const VkDeviceSize indirect_buffer_size = sizeof(VkCopyMemoryIndirectCommandKHR);
-
-    vkt::Buffer indirect_buffer_stage(*m_device, 128, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                      vkt::device_address);
-    void* indirect_buffer_data = indirect_buffer_stage.Memory().Map();
-    memcpy(indirect_buffer_data, &cmds, indirect_buffer_size);
-    VkMappedMemoryRange flush_ranges = vku::InitStructHelper();
-    flush_ranges.memory = indirect_buffer_stage.Memory();
-    flush_ranges.offset = 0;
-    flush_ranges.size = VK_WHOLE_SIZE;
-    vk::FlushMappedMemoryRanges(*m_device, 1, &flush_ranges);
-
-    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
-    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer indirect_buffer_device(
-        *m_device, 128,
-        VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocate_flag_info);
-
-    m_command_buffer.Begin();
-    VkBufferCopy copy_region{0, 0, 128};
-    vk::CmdCopyBuffer(m_command_buffer, indirect_buffer_stage, indirect_buffer_device, 1, &copy_region);
-    m_command_buffer.FullMemoryBarrier();
-    m_command_buffer.End();
-    m_default_queue->SubmitAndWait(m_command_buffer);
-
-    VkStridedDeviceAddressRangeKHR address_range = {};
-    address_range.address = indirect_buffer_device.Address();
-    address_range.size = indirect_buffer_size;
-    address_range.stride = sizeof(VkCopyMemoryIndirectCommandKHR);
-
-    VkCopyMemoryIndirectInfoKHR copy_info = vku::InitStructHelper();
-    copy_info.copyCount = 1;
-    copy_info.copyAddressRange = address_range;
-    copy_info.srcCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
-    copy_info.dstCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
-
-    m_command_buffer.Begin();
-    m_command_buffer.FullMemoryBarrier();
-    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, &copy_info);
-    m_command_buffer.End();
-}
-
 TEST_F(NegativeGpuDump, DescriptorHeapDescriptorIndexing) {
     RETURN_IF_SKIP(InitDescriptorHeap());
 
