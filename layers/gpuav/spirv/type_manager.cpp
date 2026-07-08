@@ -894,7 +894,6 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
             }
         } else if (next_access_chain->Opcode() == spv::OpFunctionParameter) {
             // TODO - Need to handle walking all function callers
-            assert(FindTypeById(next_access_chain->TypeId())->spv_type_ == SpvType::kUntypedPointerKHR);
             return path;
         }
     }
