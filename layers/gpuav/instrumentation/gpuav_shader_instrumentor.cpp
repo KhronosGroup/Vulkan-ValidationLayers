@@ -263,9 +263,6 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateI
         return;
     }
 
-    set_null_descriptors_ = gpuav_settings.force_on_robustness && modified_features.nullDescriptor &&
-                            (enabled_features.descriptorBuffer || enabled_features.descriptorHeap);
-
     SetupClassicDescriptor(loc);
     SetupDescriptorBuffers(loc);
     SetupDescriptorHeap(loc);
