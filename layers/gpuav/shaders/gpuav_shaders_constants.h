@@ -44,6 +44,8 @@ const uint kMaxErrorsPerCmd = 6;
 // (Basically our own implementaiton of Specialization Constant)
 const uint kLinkShaderId = 0x0DEAD001;
 const uint kInstErrorBufferLengthId = 0x0DEAD002;
+// Set by VK_LAYER_DESCRIPTOR_HASHING_TOTAL_DESCRIPTORS
+const uint kDescriptorHashingCapacity = 0x0DEAD003;
 
 // This is just a placeholder, honestly could be anything, will be replaced when linking to the runtime descriptor set choosen
 const int kInstDefaultDescriptorSet = 7;

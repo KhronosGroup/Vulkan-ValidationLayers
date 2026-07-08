@@ -155,7 +155,9 @@ class BaseDevice : public Logger {
     const VkPhysicalDeviceVulkan13Properties& phys_dev_props_core13;
     const VkPhysicalDeviceVulkan14Properties& phys_dev_props_core14;
     const DeviceExtensionProperties& phys_dev_ext_props;
-    const GlobalSettings& global_settings;
+    // Settings are not always const because we might need to update them during vkCreateDevice
+    // when we know the extensions enabled
+    GlobalSettings& global_settings;
     GpuAVSettings& gpuav_settings;
     const SyncValSettings& syncval_settings;
     const GpuDumpSettings& gpu_dump_settings;

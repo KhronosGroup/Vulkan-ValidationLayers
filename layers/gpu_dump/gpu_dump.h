@@ -42,18 +42,6 @@ class GpuDump : public vvl::DeviceProxy {
     // Returns true if no object was found
     bool ListBuffers(std::ostringstream& ss, VkDeviceAddress address, uint32_t indents, bool new_line_start = false);
     bool ListAccelerationStructures(std::ostringstream& ss, VkDeviceAddress address, uint32_t indents, bool new_line_start = false);
-
-    void FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
-
-    // TODO - will likely need to share so GPU-AV can use as well
-    // Currnetly only want to gather once for lifetime of device
-    // (When |descriptor_hashing| is turned on)
-    VkDeviceSize heap_max_descriptor_size = 0;
-    std::vector<VkDeviceSize> heap_all_descriptor_sizes;
-    VkDeviceSize buffer_max_descriptor_size = 0;
-    std::vector<VkDeviceSize> buffer_all_descriptor_sizes;
-    uint32_t null_descriptor_dword = 0;
-    bool null_descriptor_allowed = false;
 };
 
 }  // namespace gpudump

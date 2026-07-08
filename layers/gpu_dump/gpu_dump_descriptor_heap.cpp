@@ -36,13 +36,13 @@
 #include "generated/error_location_helper.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/descriptor_hashing.h"
 #include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/shader_module.h"
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/state_tracker.h"
-#include "utils/hash_util.h"
 #include "utils/lock_utils.h"
 #include "utils/math_utils.h"
 #include "utils/descriptor_utils.h"
@@ -429,6 +429,8 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address) {
         return "";  // no point checking if we know something else is wrong
     }
 
+    const auto& descriptor_hashing = *dump.dev_data.device_state->descriptor_hashing;
+
     // For VK_EXT_descriptor_heap where each descriptor type might be a different size.
     //
     // For example, if a UBO is 32 bytes, but an image is 64 bytes:
@@ -437,7 +439,7 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address) {
     //
     // We need a way to re-hash to find the key for a potential different type
     bool check_larger_sizes = true;
-    std::vector<uint8_t> descriptor_bytes = dump.dev_data.CopyDataFromMemory(address, dump.dev_data.heap_max_descriptor_size);
+    std::vector<uint8_t> descriptor_bytes = dump.dev_data.CopyDataFromMemory(address, descriptor_hashing.heap_max_descriptor_size);
     if (descriptor_bytes.empty()) {
         descriptor_bytes = dump.dev_data.CopyDataFromMemory(address, dump.descriptor_size);
         if (descriptor_bytes.empty()) {
@@ -447,51 +449,46 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address) {
             check_larger_sizes = false;
         }
     }
+    WriteLockGuard guard(descriptor_hashing.map_lock);
 
-    const auto& descriptor_hash = dump.dev_data.device_state->descriptor_hash;
-    WriteLockGuard guard(descriptor_hash.map_lock);
-
-    uint64_t key = hash_util::Hash64(descriptor_bytes.data(), (size_t)dump.descriptor_size);
-    auto it = descriptor_hash.map.find(key);
-    if (it == descriptor_hash.map.end()) {
-        // TODO - This is a very hacky (but will work good enough for now) way to detect null descriptors
-        if (memcmp(descriptor_bytes.data(), &dump.dev_data.null_descriptor_dword, sizeof(uint32_t)) == 0) {
-            if (dump.dev_data.null_descriptor_allowed) {
-                return "[Null Descriptor]";
-            }
-            ss << new_bullet_line
-               << "[WARNING] NO DESCRIPTOR - Found descriptor mapped to [Null Descriptor] but the nullDescriptor feature was not "
-                  "enabled";
-            return "";
-        }
-
+    uint64_t key = descriptor_hashing.Hash(descriptor_bytes.data(), dump.descriptor_size);
+    const vvl::DescriptorHashTable::Entry* entry = descriptor_hashing.table.Find(key);
+    if (!entry) {
         // Before saying we can't find it, check the other descriptor sizes if we can spot the wrong descriptor type
-        for (VkDeviceSize size : dump.dev_data.heap_all_descriptor_sizes) {
+        for (VkDeviceSize size : descriptor_hashing.heap_all_descriptor_sizes) {
             if (size == dump.descriptor_size) {
                 continue;
             } else if (!check_larger_sizes && size > dump.descriptor_size) {
                 continue;
             }
-            key = hash_util::Hash64(descriptor_bytes.data(), (size_t)size);
-            it = descriptor_hash.map.find(key);
-            if (it != descriptor_hash.map.end()) {
+            key = descriptor_hashing.Hash(descriptor_bytes.data(), size);
+            entry = descriptor_hashing.table.Find(key);
+            if (entry) {
                 break;
             }
         }
-        if (it == descriptor_hash.map.end()) {
+        if (!entry) {
             ss << new_bullet_line << "[WARNING] NO DESCRIPTOR - No known descriptor found in the heap at 0x" << std::hex << address;
             return "";
         }
     }
 
-    if ((it->second.types & (1 << (uint8_t)GetMaskFromDescriptorType(dump.descriptor_type))) == 0) {
+    if (entry->IsNullDescriptor()) {
+        if (descriptor_hashing.null_descriptor_allowed) {
+            return "[Null Descriptor]";
+        }
+        ss << new_bullet_line
+           << "[WARNING] NO DESCRIPTOR - Found descriptor mapped to [Null Descriptor] but the nullDescriptor feature was not "
+              "enabled";
+        return "";
+    } else if (!entry->HasType(dump.descriptor_type)) {
         ss << new_bullet_line << "[WARNING] WRONG DESCRIPTOR - At 0x" << std::hex << address << " expected a "
            << string_VkDescriptorType(dump.descriptor_type)
-           << " descriptor, but instead found a descriptor for: " << descriptor_hash.Describe(*dump.dev_data.device_state, key);
+           << " descriptor, but instead found a descriptor for: " << descriptor_hashing.Describe(*dump.dev_data.device_state, key);
         return "";
     }
 
-    return descriptor_hash.Describe(*dump.dev_data.device_state, key);
+    return descriptor_hashing.Describe(*dump.dev_data.device_state, key);
 }
 
 VkDeviceSize CommandBufferSubState::GetPushData(std::ostringstream& ss, WarnInfo& warn, uint32_t offset, uint32_t size) const {

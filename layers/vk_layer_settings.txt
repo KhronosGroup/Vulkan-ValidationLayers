@@ -25,6 +25,11 @@ khronos_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG,VK_DBG_LAYER_ACTIO
 # When enabled and using VK_EXT_descriptor_heap/VK_EXT_descriptor_buffer, this will attempt to track all descriptors seen such that GPU-AV and GPU Dump can detect more errors. This will increase the memory footprint.
 khronos_validation.descriptor_hashing = false
 
+# Total expected descriptors used
+# =====================
+# We create a static allocation to hold all potential descriptor hashes we see. The larger it is the more memory and time it may take. The true capacity is always this value rounded up to the next power of two.
+khronos_validation.descriptor_hashing_total_descriptors = 65536
+
 # Max Duplicated Messages
 # =====================
 # Maximum number of times any single validation message should be reported.

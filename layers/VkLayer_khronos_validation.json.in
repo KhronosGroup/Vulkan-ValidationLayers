@@ -1247,7 +1247,26 @@
                             "label": "Descriptor Hashing",
                             "description": "When enabled and using VK_EXT_descriptor_heap/VK_EXT_descriptor_buffer, this will attempt to track all descriptors seen such that GPU-AV and GPU Dump can detect more errors. This will increase the memory footprint.",
                             "type": "BOOL",
-                            "default": false
+                            "default": false,
+                            "settings": [
+                                {
+                                    "key": "descriptor_hashing_total_descriptors",
+                                    "label": "Total expected descriptors used",
+                                    "description": "We create a static allocation to hold all potential descriptor hashes we see. The larger it is the more memory and time it may take. The true capacity is always this value rounded up to the next power of two.",
+                                    "type": "INT",
+                                    "default": 65536,
+                                    "range": {
+                                        "min": 4,
+                                        "max": 1073741824
+                                    },
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "descriptor_hashing", "value": true }
+                                        ]
+                                    }
+                                }
+                            ]
                         },
                                                 {
                             "key": "printf_only_preset",

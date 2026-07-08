@@ -13,6 +13,7 @@
 #include <gtest/gtest.h>
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
+#include "descriptor_heap_object.h"
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "utils/math_utils.h"
@@ -1437,4 +1438,210 @@ TEST_F(PositiveGpuAVDescriptorHeap, SecondaryBind) {
 
     uint32_t* ssbo_data = (uint32_t*)ssbo_buffer.Memory().Map();
     ASSERT_TRUE(ssbo_data[0] == 42);
+}
+
+TEST_F(PositiveGpuAVDescriptorHeap, HashingNullDescriptor) {
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    static const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                                 &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}, false));
+    vkt::DescriptorHeap desc_heap(*this);
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    desc_heap.CreateResourceHeap(resource_stride * 2);
+
+    desc_heap.WriteNullDescriptorAtOffset(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteNullDescriptorAtOffset(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, resource_stride);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)resource_stride;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(set = 0, binding = 1) uniform B { uint b; };
+        void main() {
+            a = b;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVDescriptorHeap, HashingMultiSubmit) {
+    static const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                                 &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
+    vkt::DescriptorHeap desc_heap(*this);
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    desc_heap.CreateResourceHeap(resource_stride * 8);
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        void main() {
+            a = 0;
+        }
+    )glsl";
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    VkDeviceSize offset_0 = desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    VkDeviceSize offset_1 = desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)offset_0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+    vkt::HeapComputePipeline pipe0(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)offset_1;
+    vkt::HeapComputePipeline pipe1(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe0);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    // submit with no changes
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    // submit with no dirty info
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    VkDeviceSize offset_7 = desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)offset_7;
+    vkt::HeapComputePipeline pipe7(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe7);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVDescriptorHeap, HashingDeviceLocal) {
+    const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}, false));
+    vkt::DescriptorHeap desc_heap(*this);
+
+    VkDeviceSize resource_heap_size_app = Align(heap_props.bufferDescriptorSize, heap_props.bufferDescriptorAlignment);
+    resource_heap_size_app = Align(resource_heap_size_app, heap_props.imageDescriptorAlignment);
+    const VkDeviceSize resource_heap_size_driver = resource_heap_size_app + heap_props.minResourceHeapReservedRange;
+
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer descriptor_heap(
+        *m_device, resource_heap_size_driver,
+        VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocate_flag_info);
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout (set = 0, binding = 0) buffer SSBO { uint a; };
+        void main() {
+            a = 0;
+        }
+    )glsl";
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange.address = descriptor_heap.Address();
+    bind_resource_info.heapRange.size = resource_heap_size_driver;
+    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+
+    vkt::Buffer ssbo_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer copy_buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, kHostVisibleMemProps);
+    VkHostAddressRangeEXT descriptor_host{copy_buffer.Memory().Map(), static_cast<size_t>(heap_props.bufferDescriptorSize)};
+    VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_info.data.pAddressRange = &device_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+    VkBufferCopy copy_region{0, 0, heap_props.bufferDescriptorSize};
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    vk::CmdCopyBuffer(m_command_buffer, copy_buffer, descriptor_heap, 1u, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVDescriptorHeap, HashingTombstone) {
+    TEST_DESCRIPTION("Make sure we clear up and use tombstone entries in the hash map correctly");
+    const uint32_t limit = 8;
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+        {OBJECT_LAYER_NAME, "descriptor_hashing_total_descriptors", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &limit}};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap(layer_settings));
+    const uint32_t buffer_size = 131072;
+    vkt::Buffer ssbo_buffer_1(*m_device, buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer ssbo_buffer_2(*m_device, buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    const uint32_t alignment = static_cast<uint32_t>(m_device->Physical().limits_.minStorageBufferOffsetAlignment);
+    VkDeviceAddressRangeKHR addr_range{};
+    addr_range.size = alignment;
+    VkResourceDescriptorInfoEXT desc_info = vku::InitStructHelper();
+    desc_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    desc_info.data.pAddressRange = &addr_range;
+    uint8_t host_data[256];
+    VkHostAddressRangeEXT desc_host_data{host_data, heap_props.bufferDescriptorSize};
+
+    // By moving the address, each descriptor should have a different hash
+    VkDeviceAddress ssbo_address = ssbo_buffer_1.Address();
+    for (uint32_t i = 0; i < 8; i++) {
+        addr_range.address = ssbo_address;
+        vk::WriteResourceDescriptorsEXT(*m_device, 1, &desc_info, &desc_host_data);
+        ssbo_address += alignment;
+    }
+    // All 8 slots should be filled with TOMBSTONE now
+    ssbo_buffer_1.Destroy();
+
+    // So we should be able to refill without hitting the error limit
+    ssbo_address = ssbo_buffer_2.Address();
+    for (uint32_t i = 0; i < 8; i++) {
+        addr_range.address = ssbo_address;
+        vk::WriteResourceDescriptorsEXT(*m_device, 1, &desc_info, &desc_host_data);
+        ssbo_address += alignment;
+    }
 }

@@ -732,6 +732,8 @@ void Module::LinkFunctions(const LinkInfo& info) {
                     new_op_constant[3] = interface_.unique_shader_id;
                 } else if (value == glsl::kInstErrorBufferLengthId) {
                     new_op_constant[3] = settings_.error_buffer_data_length;
+                } else if (value == glsl::kDescriptorHashingCapacity) {
+                    new_op_constant[3] = settings_.descriptor_hashing_total_descriptors;
                 }
                 new_inst.reset(new Instruction(new_op_constant, kLinkedInstruction));
             } else if (opcode == spv::OpSpecConstantOp) {

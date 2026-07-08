@@ -280,6 +280,8 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateI
         IsExtEnabled(extensions.vk_khr_shader_non_semantic_info) && !IsExtEnabled(extensions.vk_khr_portability_subset);
     instrumentation_device_settings_.error_buffer_data_length = glsl::kErrorBufferDataLength;
     instrumentation_device_settings_.debug_printf_buffer_size = gpuav_settings.debug_printf_buffer_size;
+    instrumentation_device_settings_.descriptor_hashing = global_settings.descriptor_hashing;
+    instrumentation_device_settings_.descriptor_hashing_total_descriptors = global_settings.descriptor_hashing_total_descriptors;
     instrumentation_device_settings_.cached_descriptor_size = &device_state->cached_descriptor_size;
     instrumentation_device_settings_.phys_dev_props = &phys_dev_props;
     instrumentation_device_settings_.phys_dev_ext_props = &phys_dev_ext_props;

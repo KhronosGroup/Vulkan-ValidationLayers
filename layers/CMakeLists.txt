@@ -386,6 +386,8 @@ target_sources(vvl PRIVATE
     state_tracker/cmd_buffer_state.h
     state_tracker/data_graph_pipeline_session_state.cpp
     state_tracker/data_graph_pipeline_session_state.h
+    state_tracker/descriptor_hashing.cpp
+    state_tracker/descriptor_hashing.h
     state_tracker/descriptor_mode.h
     state_tracker/descriptor_set_layouts.cpp
     state_tracker/descriptor_set_layouts.h

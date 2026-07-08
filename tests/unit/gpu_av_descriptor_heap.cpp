@@ -12,6 +12,9 @@
 
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
+#include <cstring>
+#include "descriptor_heap_object.h"
+#include "generated/vk_function_pointers.h"
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "shader_object_helper.h"
@@ -3091,6 +3094,360 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceHeapDataOOB) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptor) {
+    const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
+    vkt::DescriptorHeap desc_heap(*this);
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    desc_heap.CreateResourceHeap(resource_stride * 2);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)resource_stride;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        void main() {
+            a = 2;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-No-Descriptor");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, HashingWrongDescriptor) {
+    const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
+
+    if (vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) !=
+        vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)) {
+        GTEST_SKIP() << "Currently the find() on the GPU only checks a single size";
+    }
+
+    vkt::DescriptorHeap desc_heap(*this);
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    desc_heap.CreateResourceHeap(resource_stride * 2);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    VkDeviceSize offset_0 = desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    VkDeviceSize offset_1 = desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)offset_0;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)offset_1;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        layout(set = 0, binding = 1) uniform B { uint b; };
+        void main() {
+            a = b;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-Wrong-DescriptorType");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, HashingWrongDescriptorUntyped) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
+
+    if (vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) !=
+        vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)) {
+        GTEST_SKIP() << "Currently the find() on the GPU only checks a single size";
+    }
+
+    vkt::DescriptorHeap desc_heap(*this);
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    desc_heap.CreateResourceHeap(resource_stride * 2);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_descriptor_heap : require
+        layout(descriptor_heap) buffer SSBO { uint data; } s_heap[];
+        layout(descriptor_heap) uniform UBO { uint data; } u_heap[];
+        void main() {
+            s_heap[0].data = u_heap[1].data;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-Wrong-DescriptorType");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptorCombinedImageSampler) {
+    const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
+    vkt::DescriptorHeap desc_heap(*this);
+    const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
+    const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
+    desc_heap.CreateResourceHeap(resource_stride);
+    desc_heap.CreateSamplerHeap(sampler_stride * 4);
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    VkImageViewCreateInfo view_info = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+    VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
+    image_info.pView = &view_info;
+    image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    VkHostAddressRangeEXT descriptor_host{desc_heap.resource_heap_data_, static_cast<size_t>(heap_props.imageDescriptorSize)};
+    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+    descriptor_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_info.data.pImage = &image_info;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = 0;
+    mapping.sourceData.constantOffset.samplerHeapOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+        void main() {
+            vec4 out_color = texture(tex, vec2(0.5f));
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    desc_heap.BindSamplerHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-No-Descriptor");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, HashingNullDescriptor) {
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}, false));
+
+    if (vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) !=
+        vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)) {
+        GTEST_SKIP() << "Currently the find() on the GPU only checks a single size";
+    }
+
+    vkt::DescriptorHeap desc_heap(*this);
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    desc_heap.CreateResourceHeap(resource_stride);
+
+    // Not a storage, so might be the same, but we never see it to know
+    desc_heap.WriteNullDescriptorAtOffset(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        void main() {
+            a = 0;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-Wrong-DescriptorType");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, HashingToManyDescriptors) {
+    const uint32_t limit = 256;
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+        {OBJECT_LAYER_NAME, "descriptor_hashing_total_descriptors", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &limit}};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap(layer_settings));
+    const uint32_t buffer_size = 131072;
+    vkt::Buffer ssbo_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    const uint32_t alignment = static_cast<uint32_t>(m_device->Physical().limits_.minStorageBufferOffsetAlignment);
+    VkDeviceAddressRangeKHR addr_range{};
+    addr_range.size = alignment;
+    VkResourceDescriptorInfoEXT desc_info = vku::InitStructHelper();
+    desc_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    desc_info.data.pAddressRange = &addr_range;
+    uint8_t host_data[256];
+    VkHostAddressRangeEXT desc_host_data{host_data, heap_props.bufferDescriptorSize};
+
+    m_errorMonitor->SetDesiredError("DESCRIPTOR-HASHING-LIMIT");
+    for (uint32_t i = 0; i < buffer_size; i += alignment) {
+        addr_range.address = ssbo_buffer.Address() + i;
+        vk::WriteResourceDescriptorsEXT(*m_device, 1, &desc_info, &desc_host_data);
+    }
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, HashingDeviceLocal) {
+    const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}, false));
+    vkt::DescriptorHeap desc_heap(*this);
+
+    VkDeviceSize resource_heap_size_app = Align(heap_props.bufferDescriptorSize, heap_props.bufferDescriptorAlignment);
+    resource_heap_size_app = Align(resource_heap_size_app, heap_props.imageDescriptorAlignment);
+    const VkDeviceSize resource_heap_size_driver = resource_heap_size_app + heap_props.minResourceHeapReservedRange;
+
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer descriptor_heap(
+        *m_device, resource_heap_size_driver,
+        VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocate_flag_info);
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout (set = 0, binding = 0) buffer SSBO { uint a; };
+        void main() {
+            a = 0;
+        }
+    )glsl";
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange.address = descriptor_heap.Address();
+    bind_resource_info.heapRange.size = resource_heap_size_driver;
+    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+
+    {
+        m_command_buffer.Begin();
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+        vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+        m_command_buffer.End();
+
+        m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-No-Descriptor");
+        m_default_queue->SubmitAndWait(m_command_buffer);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Update on the GPU with the wrong descriptor
+    if (vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) ==
+        vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)) {
+        vkt::Buffer ubo(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+        vkt::Buffer copy_buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, kHostVisibleMemProps);
+        VkHostAddressRangeEXT descriptor_host{copy_buffer.Memory().Map(), static_cast<size_t>(heap_props.bufferDescriptorSize)};
+        VkDeviceAddressRangeEXT device_range = ubo.AddressRange();
+        VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
+        descriptor_info.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_info.data.pAddressRange = &device_range;
+        vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+
+        VkBufferCopy copy_region{0, 0, heap_props.bufferDescriptorSize};
+
+        m_command_buffer.Begin();
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+        vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+        vk::CmdCopyBuffer(m_command_buffer, copy_buffer, descriptor_heap, 1u, &copy_region);
+        m_command_buffer.FullMemoryBarrier();
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+        m_command_buffer.End();
+
+        m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-Wrong-DescriptorType");
+        m_default_queue->SubmitAndWait(m_command_buffer);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBWithHashingOn) {
+    const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}, false));
+    vkt::DescriptorHeap desc_heap(*this);
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    desc_heap.CreateResourceHeap(resource_stride, true);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)desc_heap.resource_heap_.CreateInfo().size + 4096;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        void main() {
+            a = 2;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();

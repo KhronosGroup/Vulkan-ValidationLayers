@@ -295,6 +295,8 @@ vvl_sources = [
   "layers/state_tracker/cmd_buffer_state.h",
   "layers/state_tracker/data_graph_pipeline_session_state.cpp",
   "layers/state_tracker/data_graph_pipeline_session_state.h",
+  "layers/state_tracker/descriptor_hashing.cpp",
+  "layers/state_tracker/descriptor_hashing.h",
   "layers/state_tracker/descriptor_mode.h",
   "layers/state_tracker/descriptor_set_layouts.cpp",
   "layers/state_tracker/descriptor_set_layouts.h",

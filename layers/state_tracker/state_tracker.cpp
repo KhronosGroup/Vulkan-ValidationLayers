@@ -33,6 +33,7 @@
 #include "generated/vk_extension_helper.h"
 #include "state_tracker/bind_point.h"
 #include "state_tracker/data_graph_pipeline_session_state.h"
+#include "state_tracker/descriptor_hashing.h"
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
@@ -448,10 +449,10 @@ void DeviceState::PreCallRecordDestroyImage(VkDevice device, VkImage image, cons
                                             const RecordObject& record_obj) {
     if (global_settings.descriptor_hashing) {
         if (auto image_state = Get<Image>(image)) {
-            WriteLockGuard guard(descriptor_hash.map_lock);
+            WriteLockGuard guard(descriptor_hashing->map_lock);
             for (uint64_t key : image_state->descriptor_hashes) {
-                descriptor_hash.map.erase(key);
-                descriptor_hash.debug_names.erase(key);
+                descriptor_hashing->table.Erase(key);
+                descriptor_hashing->debug_names.erase(key);
             }
         }
     }
@@ -923,10 +924,10 @@ void DeviceState::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, c
 
         // TODO - mix with the |buffer_address_map_| logic to handle multiple buffers on the same address
         if (global_settings.descriptor_hashing) {
-            WriteLockGuard hash_guard(descriptor_hash.map_lock);
+            WriteLockGuard hash_guard(descriptor_hashing->map_lock);
             for (uint64_t key : buffer_state->descriptor_hashes) {
-                descriptor_hash.map.erase(key);
-                descriptor_hash.debug_names.erase(key);
+                descriptor_hashing->table.Erase(key);
+                descriptor_hashing->debug_names.erase(key);
             }
         }
     }
@@ -1383,6 +1384,35 @@ void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap) || IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
         cached_descriptor_size.Init(*this);
+        descriptor_hashing = std::make_unique<DescriptorHashing>(global_settings.descriptor_hashing_total_descriptors);
+        if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+            descriptor_hashing->heap_all_descriptor_sizes = cached_descriptor_size.GetAllSizes(true);
+            for (VkDeviceSize size : descriptor_hashing->heap_all_descriptor_sizes) {
+                if (size > descriptor_hashing->heap_max_descriptor_size) {
+                    descriptor_hashing->heap_max_descriptor_size = size;
+                }
+            }
+        }
+        if (IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
+            descriptor_hashing->buffer_all_descriptor_sizes = cached_descriptor_size.GetAllSizes(false);
+            for (VkDeviceSize size : descriptor_hashing->buffer_all_descriptor_sizes) {
+                if (size > descriptor_hashing->buffer_max_descriptor_size) {
+                    descriptor_hashing->buffer_max_descriptor_size = size;
+                }
+            }
+        }
+
+        // |force_on_robustness| marks the "modified" feature so need to check for both
+        if (enabled_features.nullDescriptor || gpuav_settings.force_on_robustness) {
+            descriptor_hashing->null_descriptor_allowed = true;
+        }
+    } else if (global_settings.descriptor_hashing) {
+        // In theory this shouldn't need to be turned off, but there are cases where we use
+        // |descriptor_hashing->map_lock| and it can be null
+        global_settings.descriptor_hashing = false;
+        LogWarning("WARNING-Setting-Limit-Adjusted", device, loc,
+                   "|descriptor_hashing| was enabled, but neither VK_EXT_descriptor_heap nor VK_EXT_descriptor_buffer was enabled. "
+                   "[Disabling descriptor_hashing]");
     }
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
@@ -7222,100 +7252,6 @@ void DeviceState::PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, co
     cb_state->SetDescriptorMode(DescriptorModeHeap, record_obj.location.function);
 }
 
-std::string DeviceState::DescriptorHash::Describe(const DeviceState& device_state, uint64_t key) const {
-    std::ostringstream ss;
-    auto it = map.find(key);
-    if (it == map.end()) {
-        assert(false);
-        return "[Bad Key]";
-    }
-
-    vvlDescriptorType vvl_type = vvlDescriptorType::Invalid;
-
-    bool first = true;
-    // Loop all possible vvlDescriptorType (as might be multiple types)
-    for (uint8_t i = 0; i < vvlDescriptorMaxBit; i++) {
-        if (it->second.types & (1 << i)) {
-            // ok to set the second time (if more than one type)
-            // as they should be in the same group below
-            vvl_type = static_cast<vvlDescriptorType>(i);
-            VkDescriptorType vk_type = GetDescriptorTypeFromMask(vvl_type);
-            if (!first) {
-                ss << " | ";
-            }
-            ss << string_VkDescriptorType(vk_type);
-            first = false;
-        }
-    }
-
-    auto list_buffers = [&device_state, &ss](VkDeviceAddress address) {
-        auto buffer_states = device_state.GetBuffersByAddress(address);
-        if (buffer_states.empty()) {
-            ss << "[No VkBuffer found]";
-        }
-        for (uint32_t i = 0; i < buffer_states.size(); i++) {
-            if (i != 0) {
-                ss << " | ";
-            }
-            auto& buffer_state = buffer_states[i];
-            ss << buffer_state->Describe(device_state);
-        }
-        return !buffer_states.empty();
-    };
-
-    switch (vvl_type) {
-        case vvlDescriptorType::UniformBuffer:
-        case vvlDescriptorType::StorageBuffer: {
-            ss << ", ";
-            const VkDeviceAddressRangeEXT& range = it->second.data.buffer.range;
-            // If we find buffers, just print that instead of the address range
-            const bool found = list_buffers(range.address);
-            if (!found) {
-                ss << "address 0x" << std::hex << range.address << ", size " << std::dec << range.size;
-            }
-            break;
-        }
-        case vvlDescriptorType::ImageTexelBufferUniform:
-        case vvlDescriptorType::ImageTexelBufferStorage: {
-            const auto& texel_buffer = it->second.data.texel_buffer;
-            ss << ", " << string_VkFormat(texel_buffer.format) << " ";
-            const VkDeviceAddressRangeEXT& range = texel_buffer.range;
-            const bool found = list_buffers(range.address);
-            if (!found) {
-                ss << "address 0x" << std::hex << range.address << ", size " << std::dec << range.size;
-            }
-            break;
-        }
-        case vvlDescriptorType::Sampler:
-            // currently nothing extra to print
-            break;
-        case vvlDescriptorType::ImageSampled:
-        case vvlDescriptorType::ImageStorage:
-        case vvlDescriptorType::ImageInputAttachment: {
-            const auto& image = it->second.data.image;
-            ss << ", " << string_VkImageViewType(image.type) << ", " << string_VkFormat(image.format) << ", "
-               << device_state.FormatHandle(image.image);
-            break;
-        }
-        case vvlDescriptorType::AccelerationStructure: {
-            const VkDeviceAddressRangeEXT& range = it->second.data.acceleration_structure.range;
-            ss << ", address 0x" << std::hex << range.address << ", size " << std::dec << range.size;
-            break;
-        }
-        case vvlDescriptorType::CombinedSampler:
-        case vvlDescriptorType::Invalid:
-            assert(false);  // this should not be hit
-            break;
-    }
-
-    auto debug_it = debug_names.find(key);
-    if (debug_it != debug_names.end()) {
-        ss << " [" << debug_it->second << "]";
-    }
-
-    return ss.str();
-}
-
 void DeviceState::PostCallRecordWriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount,
                                                             const VkResourceDescriptorInfoEXT* pResources,
                                                             const VkHostAddressRangeEXT* pDescriptors,
@@ -7323,35 +7259,29 @@ void DeviceState::PostCallRecordWriteResourceDescriptorsEXT(VkDevice device, uin
     if (!global_settings.descriptor_hashing) {
         return;
     }
-    WriteLockGuard guard(descriptor_hash.map_lock);
+    WriteLockGuard guard(descriptor_hashing->map_lock);
     for (uint32_t i = 0; i < resourceCount; i++) {
         const VkResourceDescriptorInfoEXT& resource = pResources[i];
         const VkHostAddressRangeEXT& host_range = pDescriptors[i];
         // pDescriptors[i].size might be larger than the real descriptor
         const VkDeviceSize descriptor_size = cached_descriptor_size.GetSize(resource.type);
-        const uint64_t key = hash_util::Hash64(host_range.address, (size_t)descriptor_size);
+        const uint64_t key = descriptor_hashing->Hash(host_range.address, descriptor_size);
         const uint8_t vvl_type = (uint8_t)GetMaskFromDescriptorType(resource.type);
         if (const auto* debug_info = vku::FindStructInPNextChain<VkDebugUtilsObjectNameInfoEXT>(resource.pNext)) {
             if (debug_info->pObjectName) {
-                descriptor_hash.debug_names.emplace(key, debug_info->pObjectName);
+                descriptor_hashing->debug_names.emplace(key, debug_info->pObjectName);
             }
         }
 
-        // It is possible that 2 descriptor of different types create the same descriptor
-        // Since we don't add null descriptors, should just skip those
-        // (Note - should only need to do for same "group" of descriptors
-        auto search_it = descriptor_hash.map.find(key);
-        if (search_it != descriptor_hash.map.end()) {
-            search_it->second.types |= 1 << vvl_type;
-            continue;
-        }
+        bool null_descriptor = false;
 
         switch (resource.type) {
             case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
             case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: {
                 if (resource.data.pAddressRange) {
-                    auto [it, added] = descriptor_hash.map.emplace(
-                        key, DescriptorHash::Entry(vvl_type, DescriptorHash::EntryBuffer{*resource.data.pAddressRange}));
+                    const bool added = descriptor_hashing->table.Insert(
+                        key, DescriptorHashTable::Entry(vvl_type, DescriptorHashTable::EntryBuffer{*resource.data.pAddressRange}),
+                        *this, record_obj.location);
                     if (added) {
                         auto buffer_list = GetBuffersByAddress(resource.data.pAddressRange->address);
                         // This is not a perfect system, and could leak if multiple VkBuffer to a single address
@@ -7360,6 +7290,8 @@ void DeviceState::PostCallRecordWriteResourceDescriptorsEXT(VkDevice device, uin
                             buffer_list[0]->descriptor_hashes.emplace_back(key);
                         }
                     }
+                } else {
+                    null_descriptor = true;
                 }
             } break;
             case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
@@ -7367,40 +7299,56 @@ void DeviceState::PostCallRecordWriteResourceDescriptorsEXT(VkDevice device, uin
             case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: {
                 if (resource.data.pImage) {
                     const VkImageViewCreateInfo& view_ci = *resource.data.pImage->pView;
-                    auto [it, added] = descriptor_hash.map.emplace(
-                        key, DescriptorHash::Entry(vvl_type,
-                                                   DescriptorHash::EntryImage{view_ci.image, view_ci.format, view_ci.viewType}));
+                    const bool added = descriptor_hashing->table.Insert(
+                        key,
+                        DescriptorHashTable::Entry(
+                            vvl_type, DescriptorHashTable::EntryImage{view_ci.image, view_ci.format, view_ci.viewType}),
+                        *this, record_obj.location);
                     if (added) {
                         if (auto image_state = Get<vvl::Image>(view_ci.image)) {
                             image_state->descriptor_hashes.emplace_back(key);
                         }
                     }
+                } else {
+                    null_descriptor = true;
                 }
             } break;
             case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
             case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: {
                 if (pResources[i].data.pTexelBuffer) {
-                    auto [it, added] = descriptor_hash.map.emplace(
+                    const bool added = descriptor_hashing->table.Insert(
                         key,
-                        DescriptorHash::Entry(vvl_type, DescriptorHash::EntryTexelBuffer{resource.data.pTexelBuffer->addressRange,
-                                                                                         resource.data.pTexelBuffer->format}));
+                        DescriptorHashTable::Entry(vvl_type,
+                                                   DescriptorHashTable::EntryBuffer{resource.data.pTexelBuffer->addressRange}),
+                        *this, record_obj.location);
                     if (added) {
                         auto buffer_list = GetBuffersByAddress(resource.data.pTexelBuffer->addressRange.address);
                         if (buffer_list.size() == 1) {
                             buffer_list[0]->descriptor_hashes.emplace_back(key);
                         }
                     }
+                } else {
+                    null_descriptor = true;
                 }
             } break;
             case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
                 if (pResources[i].data.pAddressRange) {
-                    descriptor_hash.map.emplace(
-                        key, DescriptorHash::Entry(vvl_type, DescriptorHash::EntryAS{*resource.data.pAddressRange}));
+                    descriptor_hashing->table.Insert(
+                        key, DescriptorHashTable::Entry(vvl_type, DescriptorHashTable::EntryBuffer{*resource.data.pAddressRange}),
+                        *this, record_obj.location);
                     // TODO - Add somewhere to be removed when AS are deleted
+                } else {
+                    null_descriptor = true;
                 }
             } break;
             default:
                 break;
+        }
+
+        // TODO - might be lots of descriptor, should cache if added already
+        if (null_descriptor) {
+            descriptor_hashing->table.Insert(key, DescriptorHashTable::Entry(vvl_type, DescriptorHashTable::EntryNull{}), *this,
+                                             record_obj.location);
         }
     }
 }
@@ -7412,23 +7360,24 @@ void DeviceState::PostCallRecordWriteSamplerDescriptorsEXT(VkDevice device, uint
     if (!global_settings.descriptor_hashing) {
         return;
     }
-    WriteLockGuard guard(descriptor_hash.map_lock);
+    WriteLockGuard guard(descriptor_hashing->map_lock);
     for (uint32_t i = 0; i < samplerCount; i++) {
         const VkHostAddressRangeEXT& host_range = pDescriptors[i];
 
         const VkDeviceSize descriptor_size = phys_dev_ext_props.descriptor_heap_props.samplerDescriptorSize;
-        const uint64_t key = hash_util::Hash64(host_range.address, (size_t)descriptor_size);
+        const uint64_t key = descriptor_hashing->Hash(host_range.address, descriptor_size);
         const uint8_t vvl_type = (uint8_t)GetMaskFromDescriptorType(VK_DESCRIPTOR_TYPE_SAMPLER);
 
         if (const auto* debug_info = vku::FindStructInPNextChain<VkDebugUtilsObjectNameInfoEXT>(pSamplers->pNext)) {
             if (debug_info->pObjectName) {
-                descriptor_hash.debug_names.emplace(key, debug_info->pObjectName);
+                descriptor_hashing->debug_names.emplace(key, debug_info->pObjectName);
             }
         }
 
         // Because there is no concept of a VkSampler anymore, there is no way to know if the user will be done using this sampler
         // descriptor. This means we will never be able to remove this descriptor from the hash map.
-        descriptor_hash.map.emplace(key, DescriptorHash::Entry(vvl_type, DescriptorHash::EntrySampler{}));
+        descriptor_hashing->table.Insert(key, DescriptorHashTable::Entry(vvl_type, DescriptorHashTable::EntrySampler{}), *this,
+                                         record_obj.location);
     }
 }
 
@@ -7440,26 +7389,20 @@ void DeviceState::PostCallRecordGetDescriptorEXT(VkDevice device, const VkDescri
     if (pDescriptorInfo->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
         return;  // TODO - need to handle
     }
-    WriteLockGuard guard(descriptor_hash.map_lock);
+    WriteLockGuard guard(descriptor_hashing->map_lock);
 
     const VkDescriptorType vk_type = pDescriptorInfo->type;
     const uint8_t vvl_type = (uint8_t)GetMaskFromDescriptorType(vk_type);
     // dataSize might be larger than the real descriptor
     const VkDeviceSize descriptor_size = cached_descriptor_size.GetSize(vk_type, false);
-    const uint64_t key = hash_util::Hash64(pDescriptor, (size_t)descriptor_size);
+    const uint64_t key = descriptor_hashing->Hash(pDescriptor, descriptor_size);
     if (const auto* debug_info = vku::FindStructInPNextChain<VkDebugUtilsObjectNameInfoEXT>(pDescriptorInfo->pNext)) {
         if (debug_info->pObjectName) {
-            descriptor_hash.debug_names.emplace(key, debug_info->pObjectName);
+            descriptor_hashing->debug_names.emplace(key, debug_info->pObjectName);
         }
     }
 
-    // It is possible that 2 descriptor of different types create the same descriptor
-    // Since we don't add null descriptors, should just skip those
-    auto search_it = descriptor_hash.map.find(key);
-    if (search_it != descriptor_hash.map.end()) {
-        search_it->second.types |= 1 << vvl_type;
-        return;
-    }
+    bool null_descriptor = false;
 
     switch (vk_type) {
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
@@ -7469,19 +7412,23 @@ void DeviceState::PostCallRecordGetDescriptorEXT(VkDevice device, const VkDescri
                                                                  : pDescriptorInfo->data.pUniformBuffer;
             if (address_info) {
                 VkDeviceAddressRangeEXT address_range{address_info->address, address_info->range};
-                auto [it, added] =
-                    descriptor_hash.map.emplace(key, DescriptorHash::Entry(vvl_type, DescriptorHash::EntryBuffer{address_range}));
+                const bool added = descriptor_hashing->table.Insert(
+                    key, DescriptorHashTable::Entry(vvl_type, DescriptorHashTable::EntryBuffer{address_range}), *this,
+                    record_obj.location);
                 if (added) {
                     auto buffer_list = GetBuffersByAddress(address_info->address);
                     if (buffer_list.size() == 1) {
                         buffer_list[0]->descriptor_hashes.emplace_back(key);
                     }
                 }
+            } else {
+                null_descriptor = true;
             }
         } break;
         case VK_DESCRIPTOR_TYPE_SAMPLER:
             if (pDescriptorInfo->data.pSampler) {
-                descriptor_hash.map.emplace(key, DescriptorHash::Entry(vvl_type, DescriptorHash::EntrySampler{}));
+                descriptor_hashing->table.Insert(key, DescriptorHashTable::Entry(vvl_type, DescriptorHashTable::EntrySampler{}),
+                                                 *this, record_obj.location);
             }
             break;
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
@@ -7493,14 +7440,18 @@ void DeviceState::PostCallRecordGetDescriptorEXT(VkDevice device, const VkDescri
                                                               : pDescriptorInfo->data.pInputAttachmentImage;
             if (image_info) {
                 if (const auto view_state = Get<vvl::ImageView>(image_info->imageView)) {
-                    auto [it, added] = descriptor_hash.map.emplace(
-                        key, DescriptorHash::Entry(
-                                 vvl_type, DescriptorHash::EntryImage{view_state->create_info.image, view_state->create_info.format,
-                                                                      view_state->create_info.viewType}));
+                    const bool added = descriptor_hashing->table.Insert(
+                        key,
+                        DescriptorHashTable::Entry(
+                            vvl_type, DescriptorHashTable::EntryImage{view_state->create_info.image, view_state->create_info.format,
+                                                                      view_state->create_info.viewType}),
+                        *this, record_obj.location);
                     if (added && view_state->image_state) {
                         view_state->image_state->descriptor_hashes.emplace_back(key);
                     }
                 }
+            } else {
+                null_descriptor = true;
             }
         } break;
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
@@ -7510,25 +7461,38 @@ void DeviceState::PostCallRecordGetDescriptorEXT(VkDevice device, const VkDescri
                                                                  : pDescriptorInfo->data.pUniformTexelBuffer;
             if (address_info) {
                 VkDeviceAddressRangeEXT address_range{address_info->address, address_info->range};
-                auto [it, added] = descriptor_hash.map.emplace(
-                    key, DescriptorHash::Entry(vvl_type, DescriptorHash::EntryTexelBuffer{address_range, address_info->format}));
+                const bool added = descriptor_hashing->table.Insert(
+                    key, DescriptorHashTable::Entry(vvl_type, DescriptorHashTable::EntryBuffer{address_range}), *this,
+                    record_obj.location);
                 if (added) {
                     auto buffer_list = GetBuffersByAddress(address_info->address);
                     if (buffer_list.size() == 1) {
                         buffer_list[0]->descriptor_hashes.emplace_back(key);
                     }
                 }
+            } else {
+                null_descriptor = true;
             }
         } break;
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
             if (pDescriptorInfo->data.accelerationStructure) {
                 VkDeviceAddressRangeEXT address_range{pDescriptorInfo->data.accelerationStructure, 0};
-                descriptor_hash.map.emplace(key, DescriptorHash::Entry(vvl_type, DescriptorHash::EntryAS{address_range}));
+                descriptor_hashing->table.Insert(
+                    key, DescriptorHashTable::Entry(vvl_type, DescriptorHashTable::EntryBuffer{address_range}), *this,
+                    record_obj.location);
                 // TODO - Add somewhere to be removed when AS are deleted
+            } else {
+                null_descriptor = true;
             }
         } break;
         default:
             break;
+    }
+
+    // TODO - might be lots of descriptor, should cache if added already
+    if (null_descriptor) {
+        descriptor_hashing->table.Insert(key, DescriptorHashTable::Entry(vvl_type, DescriptorHashTable::EntryNull{}), *this,
+                                         record_obj.location);
     }
 }
 

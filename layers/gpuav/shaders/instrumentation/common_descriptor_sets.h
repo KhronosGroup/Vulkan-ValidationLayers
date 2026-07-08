@@ -48,3 +48,4 @@ inst_cmd_errors_count_buffer;
 // (The constant_id doesn't matter, it easier to just hot swap the known default constant value)
 layout(constant_id = 0) const uint SpecConstantLinkShaderId = kLinkShaderId;
 layout(constant_id = 1) const uint SpecConstantInstErrorBufferLengthId = kInstErrorBufferLengthId;
+layout(constant_id = 2) const uint SpecConstantDescriptorHashingCapacity = kDescriptorHashingCapacity;

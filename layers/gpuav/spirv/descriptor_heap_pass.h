@@ -68,7 +68,8 @@ class DescriptorHeapPass : public Pass {
         MAPPING_PUSH_ADDRESS = 6,
         MAPPING_INDIRECT_ADDRESS = 7,
         UNTYPED = 8,
-        FUNC_COUNT = 9,
+        DESCRIPTOR_HASHING = 9,
+        FUNC_COUNT = 10,
     };
     uint32_t link_function_id_[FUNC_COUNT]{};
     uint32_t GetLinkFunctionId(const FunctionNames func_name);

@@ -30,6 +30,7 @@
 #include "containers/limits.h"
 #include "generated/dispatch_functions.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/descriptor_hashing.h"
 #include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/shader_module.h"
@@ -100,6 +101,8 @@ bool BindingInfo::ValidateDescriptor(std::ostringstream& ss, GpuDump& dev_data) 
         return false;  // TODO - handle
     }
 
+    const auto& descriptor_hashing = *dev_data.device_state->descriptor_hashing;
+
     // For VK_EXT_descriptor_buffer where each descriptor type might be a different size.
     //
     // For example, if a UBO is 32 bytes, but an image is 64 bytes:
@@ -108,7 +111,7 @@ bool BindingInfo::ValidateDescriptor(std::ostringstream& ss, GpuDump& dev_data) 
     //
     // We need a way to re-hash to find the key for a potential different type
     bool check_larger_sizes = true;
-    std::vector<uint8_t> descriptor_bytes = dev_data.CopyDataFromMemory(range.begin, dev_data.buffer_max_descriptor_size);
+    std::vector<uint8_t> descriptor_bytes = dev_data.CopyDataFromMemory(range.begin, descriptor_hashing.buffer_max_descriptor_size);
     if (descriptor_bytes.empty()) {
         descriptor_bytes = dev_data.CopyDataFromMemory(range.begin, size);
         if (descriptor_bytes.empty()) {
@@ -119,52 +122,49 @@ bool BindingInfo::ValidateDescriptor(std::ostringstream& ss, GpuDump& dev_data) 
         }
     }
 
-    const auto& descriptor_hash = dev_data.device_state->descriptor_hash;
-    WriteLockGuard guard(descriptor_hash.map_lock);
+    WriteLockGuard guard(descriptor_hashing.map_lock);
 
-    uint64_t key = hash_util::Hash64(descriptor_bytes.data(), (size_t)size);
-    auto it = descriptor_hash.map.find(key);
-    if (it == descriptor_hash.map.end()) {
-        // TODO - This is a very hacky (but will work good enough for now) way to detect null descriptors
-        if (memcmp(descriptor_bytes.data(), &dev_data.null_descriptor_dword, sizeof(uint32_t)) == 0) {
-            ss << "      - ";
-            if (!dev_data.null_descriptor_allowed) {
-                ss << "[WARNING] NO DESCRIPTOR - ";
-            }
-            ss << "Found descriptor mapped to [Null Descriptor]";
-            if (!dev_data.null_descriptor_allowed) {
-                ss << " but the nullDescriptor feature was not enabled";
-            }
-            ss << "\n";
-            return !dev_data.null_descriptor_allowed;
-        }
-
+    uint64_t key = descriptor_hashing.Hash(descriptor_bytes.data(), size);
+    const vvl::DescriptorHashTable::Entry* entry = descriptor_hashing.table.Find(key);
+    if (!entry) {
         // Before saying we can't find it, check the other descriptor sizes if we can spot the wrong descriptor type
-        for (VkDeviceSize other_size : dev_data.buffer_all_descriptor_sizes) {
+        for (VkDeviceSize other_size : descriptor_hashing.buffer_all_descriptor_sizes) {
             if (other_size == size) {
                 continue;
             } else if (!check_larger_sizes && other_size > size) {
                 continue;
             }
-            key = hash_util::Hash64(descriptor_bytes.data(), (size_t)other_size);
-            it = descriptor_hash.map.find(key);
-            if (it != descriptor_hash.map.end()) {
+            key = descriptor_hashing.Hash(descriptor_bytes.data(), other_size);
+            entry = descriptor_hashing.table.Find(key);
+            if (entry) {
                 break;
             }
         }
-        if (it == descriptor_hash.map.end()) {
+        if (!entry) {
             ss << "      - [WARNING] NO DESCRIPTOR - No known descriptor found in bound descriptor buffer\n";
             return true;
         }
     }
 
-    if ((it->second.types & (1 << (uint8_t)GetMaskFromDescriptorType(type))) == 0) {
+    if (entry->IsNullDescriptor()) {
+        ss << "      - ";
+        if (!descriptor_hashing.null_descriptor_allowed) {
+            ss << "[WARNING] NO DESCRIPTOR - ";
+        }
+        ss << "Found descriptor mapped to [Null Descriptor]";
+        if (!descriptor_hashing.null_descriptor_allowed) {
+            ss << " but the nullDescriptor feature was not enabled";
+        }
+        ss << "\n";
+        return !descriptor_hashing.null_descriptor_allowed;
+    } else if (!entry->HasType(type)) {
         ss << "      - [WARNING] WRONG DESCRIPTOR - expected a " << string_VkDescriptorType(type)
-           << " descriptor, but instead found a descriptor for: " << descriptor_hash.Describe(*dev_data.device_state, key) << "\n";
+           << " descriptor, but instead found a descriptor for: " << descriptor_hashing.Describe(*dev_data.device_state, key)
+           << "\n";
         return true;
     }
 
-    ss << "      - Found descriptor mapped to: " << descriptor_hash.Describe(*dev_data.device_state, key) << "\n";
+    ss << "      - Found descriptor mapped to: " << descriptor_hashing.Describe(*dev_data.device_state, key) << "\n";
     return true;
 }
 
