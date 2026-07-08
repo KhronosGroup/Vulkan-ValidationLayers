@@ -259,8 +259,6 @@ const char* VK_LAYER_GPU_DUMP_COPY_MEMORY_INDIRECT = "gpu_dump_copy_memory_indir
 const char* VK_LAYER_GPU_DUMP_DEVICE_GENERATED_COMMANDS = "gpu_dump_device_generated_commands";
 // Print to stdout
 const char* VK_LAYER_GPU_DUMP_TO_STDOUT = "gpu_dump_to_stdout";
-// Experimental
-const char* VK_LAYER_GPU_DUMP_DEVICE_COPY = "gpu_dump_device_copy";
 
 // Legacy Detection
 // ---
@@ -1277,10 +1275,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPU_DUMP_TO_STDOUT)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPU_DUMP_TO_STDOUT, gpu_dump_settings.to_stdout);
-    }
-
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPU_DUMP_DEVICE_COPY)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPU_DUMP_DEVICE_COPY, gpu_dump_settings.device_copy);
     }
 
     LegacyDetectionSettings& legacy_detection_settings = *settings_data->legacy_detection_settings;
