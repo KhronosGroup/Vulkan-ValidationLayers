@@ -116,7 +116,7 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT &la
             layer_type = 'VK_LAYER_SETTING_TYPE_BOOL32_EXT'
         elif type == 'INT':
             layer_type = 'VK_LAYER_SETTING_TYPE_UINT32_EXT'
-        elif type in ['SAVE_FILE', 'LIST', 'FLAGS']:
+        elif type in ['SAVE_FILE', 'LIST', 'FLAGS', 'LOAD_FILE']:
             layer_type = 'VK_LAYER_SETTING_TYPE_STRING_EXT'
         else:
             print(f'Warning, not type handled for {type} ({setting["key"]})')
