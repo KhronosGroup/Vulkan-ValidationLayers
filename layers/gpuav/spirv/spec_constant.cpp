@@ -14,6 +14,7 @@
  */
 
 #include "chassis/dispatch_object.h"
+#include "containers/container_utils.h"
 #include "containers/limits.h"
 #include "containers/small_vector.h"
 #include "generated/spirv_grammar_helper.h"
@@ -380,6 +381,12 @@ bool Module::ConstantFold(Instruction* inst, const Type& result_type) {
     }
 
     spv::Op target_opcode = (spv::Op)inst->Word(3);
+    if (IsValueIn(target_opcode,
+                  {spv::OpFConvert, spv::OpConvertFToU, spv::OpConvertFToS, spv::OpConvertUToF, spv::OpConvertSToF})) {
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12641#issuecomment-4917017999
+        // When we get c++ 20, we can use the std::bit_cast to do it for us actually!
+        return false;
+    }
 
     // OpSpecConstantOp has a limited set of instructions it can be, these are not handled the special
     if (target_opcode == spv::OpVectorShuffle) {
@@ -433,7 +440,11 @@ bool Module::ConstantFold(Instruction* inst, const Type& result_type) {
                     args.emplace_back(0ul);
                 }
             } else {
-                bool op_is_signed = lane_constant->type_.inst_.Word(3) != 0;
+                bool op_is_signed = false;
+                // Might be a float, which doesn't care
+                if (lane_constant->type_.spv_type_ == SpvType::kInt) {
+                    op_is_signed = lane_constant->type_.inst_.Word(3) != 0;
+                }
 
                 if (target_opcode == spv::OpSConvert) {
                     // OpSConvert implies the source is treated as signed and must sign-extend

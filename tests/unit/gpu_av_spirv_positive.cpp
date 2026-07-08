@@ -582,3 +582,68 @@ TEST_F(PositiveGpuAVSpirv, TypeSampledImageAsParameter) {
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveGpuAVSpirv, ConstantFoldFConvert) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const char* fs_source = R"(
+               OpCapability Shader
+               OpCapability Float16
+               OpCapability RoundingModeRTE
+               OpExtension "SPV_KHR_float_controls"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %frag_color
+               OpExecutionMode %main OriginUpperLeft
+               OpExecutionMode %main RoundingModeRTE 16
+               OpDecorate %frag_color Location 0
+               OpDecorate %type_u32_arr_1 ArrayStride 4
+               OpMemberDecorate %SSBO_out 0 Offset 0
+               OpDecorate %SSBO_out BufferBlock
+               OpDecorate %ssbo_out DescriptorSet 0
+               OpDecorate %ssbo_out Binding 1
+       %void = OpTypeVoid
+  %void_func = OpTypeFunction %void
+   %type_i32 = OpTypeInt 32 1
+   %type_u32 = OpTypeInt 32 0
+   %type_f16 = OpTypeFloat 16
+   %type_f32 = OpTypeFloat 32
+%type_f16_vec2 = OpTypeVector %type_f16 2
+%type_f32_vec4 = OpTypeVector %type_f32 4
+%type_f32_vec4_optr = OpTypePointer Output %type_f32_vec4
+   %c_i32_0 = OpConstant %type_i32 0
+   %c_i32_1 = OpConstant %type_i32 1
+   %c_f16_0 = OpConstant %type_f16 0.0
+   %c_f32_1 = OpConstant %type_f32 1.0
+     %c_arg = OpConstant %type_f32 !1198739455
+    %result = OpSpecConstantOp %type_f16 FConvert %c_arg
+%type_u32_arr_1 = OpTypeArray %type_u32 %c_i32_1
+%type_u32_uptr = OpTypePointer Uniform %type_u32
+  %SSBO_out = OpTypeStruct %type_u32_arr_1
+%up_SSBO_out = OpTypePointer Uniform %SSBO_out
+ %frag_color = OpVariable %type_f32_vec4_optr Output
+  %ssbo_out = OpVariable %up_SSBO_out Uniform
+      %main = OpFunction %void None %void_func
+     %label = OpLabel
+     %color = OpCompositeConstruct %type_f32_vec4 %c_f32_1 %c_f32_1 %c_f32_1 %c_f32_1
+              OpStore %frag_color %color
+%result_f16_vec2 = OpCompositeConstruct %type_f16_vec2 %result %c_f16_0
+%result_u32 = OpBitcast %type_u32 %result_f16_vec2
+    %outloc = OpAccessChain %type_u32_uptr %ssbo_out %c_i32_0 %c_i32_0
+              OpStore %outloc %result_u32
+              OpReturn
+              OpFunctionEnd
+    )";
+
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dsl_bindings_ = {{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    pipe.CreateGraphicsPipeline();
+}
