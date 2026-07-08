@@ -120,6 +120,8 @@ bool DescriptorHeapPass::ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT 
 
 // TODO - if we find this slow, we could pre-sort all the mappings
 const uint32_t kMappingIndexInvalid = 0xFFFFFFFF;
+// TODO - Handle SHADER_RECORD
+const uint32_t kMappingIndexShaderRecord = 0xFFFFFFFE;
 uint32_t DescriptorHeapPass::GetMapping(const AccessPath& access_path, bool is_sampler) const {
     const Variable& variable = is_sampler ? *access_path.sampler_variable : *access_path.variable;
     const DescriptorInterface& interface = variable.interface_;
@@ -133,6 +135,12 @@ uint32_t DescriptorHeapPass::GetMapping(const AccessPath& access_path, bool is_s
         const uint64_t last_binding = mapping.firstBinding + uint64_t(mapping.bindingCount);
         if (mapping.descriptorSet == interface.set && interface.binding >= mapping.firstBinding &&
             interface.binding < last_binding && ResourceTypeMatchesBinding(mapping.resourceMask, access_path, is_sampler)) {
+            if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT ||
+                mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT ||
+                mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
+                return kMappingIndexShaderRecord;
+            }
+
             const uint32_t encode_index = (uint32_t)module_.out_status.device.heap_mappings.size();
             module_.out_status.device.heap_mappings.emplace_back(HeapMappingStatus{i, interface.binding, variable.Id(), mapping});
 
@@ -527,6 +535,9 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
         meta.mapping_index_sampler = GetMapping(meta.access_path, true);
     }
     if (meta.mapping_index_resource == kMappingIndexInvalid || meta.mapping_index_sampler == kMappingIndexInvalid) {
+        return false;
+    } else if (meta.mapping_index_resource == kMappingIndexShaderRecord ||
+               meta.mapping_index_sampler == kMappingIndexShaderRecord) {
         return false;
     }
 
