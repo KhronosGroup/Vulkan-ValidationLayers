@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2025 Valve Corporation -->
-<!-- Copyright 2015-2025 LunarG, Inc. -->
+<!-- Copyright 2015-2026 Valve Corporation -->
+<!-- Copyright 2015-2026 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -63,7 +63,7 @@ By assuming things "should likely be working", we can make GPU-AV much faster
 
 We realize if we don't stop your Device Lost, no one else will. If you are stuck on a nasty bug and need the extra help, this is for you.
 
-**Please turn off Safe Mode**, this will sacrifice performance, but GPU-AV will try to stop things from crashing. We have a way to [select the bad shader](./gpu_av_selective_shader.md) as this will **greatly** improve performance if we only need to validate a smaller surface area.
+**Please turn off Safe Mode**, this will sacrifice performance, but GPU-AV will try to stop things from crashing. We have a way to [reduce the scope](./gpu_av_scope.md) as this will **greatly** improve performance if we only need to validate a smaller surface area.
 
 #### Force on Robustness
 
@@ -71,6 +71,12 @@ There is also a "Force robustness on" setting we provide in GPU-AV, this has 2 m
 
 1. A way for developers to toggle this on and off
 2. Improve GPU-AV performance by assuming the developer relies on [robust behavior to work](https://docs.vulkan.org/guide/latest/robustness.html)
+
+## Make GPU-AV faster with Scoped GPU-AV
+
+The main reason GPU-AV is slow is we need to validate **everything** in case. Sometimes people already know the part of their program crashing and want to only validate that area. `Scoped GPU-AV` is a way to provide the regions of your program to only validate.
+
+More information in [Scoped GPU-AV](./gpu_av_scoped.md)
 
 ## Internal Details
 

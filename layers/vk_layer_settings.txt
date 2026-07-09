@@ -150,9 +150,12 @@ khronos_validation.gpuav_ray_tracing_buffers_consistency = false
 # Will have GPU-AV try and prevent crashes, but will be much slower to validate. If using Safe Mode, consider using selective shader instrumentation, to only instrument the shaders/pipelines causing issues.
 khronos_validation.gpuav_safe_mode = false
 
-# Enable instrumenting shaders selectively
+# Selective Instrument Shaders
 # =====================
-# Select which shaders to instrument by passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext or using a regex matching a shader/pipeline debug name. Because this only validates the selected shaders/pipelines, it will allow GPU-AV to run much faster.
+# When turned on, shaders are NOT instrumented unless selected. This can be done by:
+- passing a VkValidationFeaturesEXT struct in the pNext of VkShaderModuleCreateInfo/VkPipelineShaderStageCreateInfo/vkCreateShadersEXT pNext
+- using a regex matching a shader/pipeline debug name.
+- Providing a CDL dump file to parse the debug names from it.
 khronos_validation.gpuav_select_instrumented_shaders = false
 
 # Shader instrumentation
