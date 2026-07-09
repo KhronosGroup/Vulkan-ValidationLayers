@@ -1661,3 +1661,163 @@ TEST_F(PositiveGpuAVDescriptorHeap, DeduplicationUntyped) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveGpuAVDescriptorHeap, SamplerStressUnsafe) {
+    TEST_DESCRIPTION("Samplers suck, do as much crazy stuff as possible");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
+
+    VkDescriptorSetAndBindingMappingEXT mappings[3];
+    mappings[0] = MakeSetAndBindingMapping(0, 0, 2);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[0].sourceData.constantOffset.heapArrayStride = 256;  // max aligned
+    mappings[1] = MakeSetAndBindingMapping(1, 0);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = 256;  // max aligned
+    mappings[2] = MakeSetAndBindingMapping(1, 1);
+    mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
+    mappings[2].sourceData.pushIndex.heapOffset = 0;
+    mappings[2].sourceData.pushIndex.heapArrayStride = 256;  // max aligned
+    mappings[2].sourceData.pushIndex.pushOffset = 0;
+    mappings[2].sourceData.pushIndex.heapIndexStride = 1;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 3;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_descriptor_heap : require
+        #extension GL_EXT_nonuniform_qualifier : require
+        layout(set = 0, binding = 0) uniform texture2D t;
+        layout(set = 0, binding = 1) uniform sampler s;
+        layout(set = 1, binding = 0) uniform texture2D t_array[];
+        layout(set = 1, binding = 1) uniform sampler s_array[];
+        layout(descriptor_heap) uniform texture2D t_heap[];
+        layout(descriptor_heap) uniform sampler s_heap[];
+
+        layout(push_constant) uniform PC {
+            uint u_index;
+            int s_index;
+        };
+
+        void main() {
+            vec4 data = vec4(0);
+            vec2 uv = vec2(0.5f);
+            data += texture(sampler2D(t, s), uv);
+
+            // scalar + array
+            data += texture(sampler2D(t, s_array[0]), uv);
+            data += texture(sampler2D(t_array[0], s), uv);
+            data += texture(sampler2D(t, s_array[u_index]), uv);
+            data += texture(sampler2D(t_array[u_index], s), uv);
+            data += texture(sampler2D(t, s_array[s_index]), uv);
+            data += texture(sampler2D(t_array[s_index], s), uv);
+
+            // scalar + heap
+            data += texture(sampler2D(t, s_heap[0]), uv);
+            data += texture(sampler2D(t_heap[0], s), uv);
+            data += texture(sampler2D(t, s_heap[u_index]), uv);
+            data += texture(sampler2D(t_heap[u_index], s), uv);
+            data += texture(sampler2D(t, s_heap[s_index]), uv);
+            data += texture(sampler2D(t_heap[s_index], s), uv);
+
+            // array + heap
+            data += texture(sampler2D(t_heap[0], s_array[0]), uv);
+            data += texture(sampler2D(t_array[0], s_heap[0]), uv);
+            data += texture(sampler2D(t_heap[u_index], s_array[u_index]), uv);
+            data += texture(sampler2D(t_array[u_index], s_heap[u_index]), uv);
+            data += texture(sampler2D(t_heap[s_index], s_array[s_index]), uv);
+            data += texture(sampler2D(t_array[s_index], s_heap[s_index]), uv);
+
+            // Heap
+            data += texture(sampler2D(t_heap[0], s_heap[0]), uv);
+            data += texture(sampler2D(t_heap[u_index], s_heap[u_index]), uv);
+            data += texture(sampler2D(t_heap[s_index], s_heap[s_index]), uv);
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+}
+
+TEST_F(PositiveGpuAVDescriptorHeap, SamplerStressSafe) {
+    TEST_DESCRIPTION("Samplers suck, do as much crazy stuff as possible");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, true));
+
+    VkDescriptorSetAndBindingMappingEXT mappings[3];
+    mappings[0] = MakeSetAndBindingMapping(0, 0, 2);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[0].sourceData.constantOffset.heapArrayStride = 256;  // max aligned
+    mappings[1] = MakeSetAndBindingMapping(1, 0);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = 256;  // max aligned
+    mappings[2] = MakeSetAndBindingMapping(1, 1);
+    mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
+    mappings[2].sourceData.pushIndex.heapOffset = 0;
+    mappings[2].sourceData.pushIndex.heapArrayStride = 256;  // max aligned
+    mappings[2].sourceData.pushIndex.pushOffset = 0;
+    mappings[2].sourceData.pushIndex.heapIndexStride = 1;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 3;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_descriptor_heap : require
+        #extension GL_EXT_nonuniform_qualifier : require
+        layout(set = 0, binding = 0) uniform texture2D t;
+        layout(set = 0, binding = 1) uniform sampler s;
+        layout(set = 1, binding = 0) uniform texture2D t_array[];
+        layout(set = 1, binding = 1) uniform sampler s_array[];
+        layout(descriptor_heap) uniform texture2D t_heap[];
+        layout(descriptor_heap) uniform sampler s_heap[];
+
+        layout(push_constant) uniform PC {
+            uint u_index;
+            int s_index;
+        };
+
+        void main() {
+            vec4 data = vec4(0);
+            vec2 uv = vec2(0.5f);
+            data += texture(sampler2D(t, s), uv);
+
+            // scalar + array
+            data += texture(sampler2D(t, s_array[0]), uv);
+            data += texture(sampler2D(t_array[0], s), uv);
+            data += texture(sampler2D(t, s_array[u_index]), uv);
+            data += texture(sampler2D(t_array[u_index], s), uv);
+            data += texture(sampler2D(t, s_array[s_index]), uv);
+            data += texture(sampler2D(t_array[s_index], s), uv);
+
+            // scalar + heap
+            data += texture(sampler2D(t, s_heap[0]), uv);
+            data += texture(sampler2D(t_heap[0], s), uv);
+            data += texture(sampler2D(t, s_heap[u_index]), uv);
+            data += texture(sampler2D(t_heap[u_index], s), uv);
+            data += texture(sampler2D(t, s_heap[s_index]), uv);
+            data += texture(sampler2D(t_heap[s_index], s), uv);
+
+            // array + heap
+            data += texture(sampler2D(t_heap[0], s_array[0]), uv);
+            data += texture(sampler2D(t_array[0], s_heap[0]), uv);
+            data += texture(sampler2D(t_heap[u_index], s_array[u_index]), uv);
+            data += texture(sampler2D(t_array[u_index], s_heap[u_index]), uv);
+            data += texture(sampler2D(t_heap[s_index], s_array[s_index]), uv);
+            data += texture(sampler2D(t_array[s_index], s_heap[s_index]), uv);
+
+            // Heap
+            data += texture(sampler2D(t_heap[0], s_heap[0]), uv);
+            data += texture(sampler2D(t_heap[u_index], s_heap[u_index]), uv);
+            data += texture(sampler2D(t_heap[s_index], s_heap[s_index]), uv);
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, &mapping_info);
+}

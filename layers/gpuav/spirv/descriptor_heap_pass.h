@@ -15,6 +15,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <vulkan/vulkan_core.h>
 #include "type_manager.h"
 #include "pass.h"
 
@@ -47,15 +48,18 @@ class DescriptorHeapPass : public Pass {
         // Null if untyped pointers
         const VkDescriptorSetAndBindingMappingEXT* mapping_ptr = nullptr;
         const VkDescriptorSetAndBindingMappingEXT* mapping_ptr_sampler = nullptr;
-        bool has_embedded_sampler = false;
         // If zero, means it is implicitly zero
         uint32_t untyped_heap_offset_id = 0;
         uint32_t untyped_array_stride_id = 0;
-        uint32_t Hash(const uint32_t descriptor_index) const;
+        uint32_t Hash(const uint32_t descriptor_index, VkDescriptorType vk_type) const;
+
+        bool instrument_seperate_sampler = false;
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta, bool is_seperate_sampler);
+    uint32_t CreateFunctionCallSampler(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
+                                       uint32_t non_sampler_result);
     uint32_t CreateFunctionCallCombinedSampler(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
                                                const VkDescriptorSetAndBindingMappingEXT& mapping,
                                                const uint32_t descriptor_index_id);
