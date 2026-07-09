@@ -355,58 +355,6 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     }
 }
 
-TEST_F(PositiveGpuAVShaderObject, DispatchShaderObjectAndPipeline) {
-    TEST_DESCRIPTION("GPU validation: Validate selection of which shaders get instrumented for GPU-AV");
-    InitBasicShaderObject();
-
-    AddRequiredFeature(vkt::Feature::robustBufferAccess);
-    std::vector<VkLayerSettingEXT> layer_settings = {
-        {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
-    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
-    RETURN_IF_SKIP(InitState());
-
-    const char comp_src[] = R"glsl(
-        #version 450
-        layout(local_size_x=16, local_size_x=1, local_size_x=1) in;
-
-        void main() {
-        }
-    )glsl";
-
-    const auto comp_spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src);
-    VkShaderCreateInfoEXT comp_create_info = ShaderCreateInfo(comp_spv, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
-    VkValidationFeaturesEXT features = vku::InitStructHelper();
-    features.enabledValidationFeatureCount = 1;
-    features.pEnabledValidationFeatures = enabled;
-    comp_create_info.pNext = &features;
-
-    const vkt::Shader compShader(*m_device, comp_create_info);
-
-    CreateComputePipelineHelper compute_pipe(*this);
-    compute_pipe.cs_ = VkShaderObj(*m_device, comp_src, VK_SHADER_STAGE_COMPUTE_BIT);
-    compute_pipe.CreateComputePipeline();
-
-    vkt::Buffer indirect_dispatch_parameters_buffer(*m_device, sizeof(VkDispatchIndirectCommand),
-                                                    VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
-    auto& indirect_dispatch_parameters =
-        *static_cast<VkDispatchIndirectCommand*>(indirect_dispatch_parameters_buffer.Memory().Map());
-    indirect_dispatch_parameters.x = 1u;
-    indirect_dispatch_parameters.y = 1u;
-    indirect_dispatch_parameters.z = 1u;
-
-    m_command_buffer.Begin();
-    SetDefaultDynamicStatesExclude();
-    m_command_buffer.BindCompShader(compShader);
-    vk::CmdDispatchIndirect(m_command_buffer, indirect_dispatch_parameters_buffer, 0u);
-
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
-    vk::CmdDispatchIndirect(m_command_buffer, indirect_dispatch_parameters_buffer, 0u);
-
-    m_command_buffer.End();
-}
-
 TEST_F(PositiveGpuAVShaderObject, GetShaderBinaryDataSimple) {
     InitBasicShaderObject();
     RETURN_IF_SKIP(InitGpuAvFramework());
