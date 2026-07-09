@@ -178,10 +178,14 @@
 // Checks whether the __int128 compiler extension for a 128-bit
 // integral type is supported.
 // ------------------------------------------------------------
+#if defined(__arm__) && !defined(__aarch64__)
+#define PHMAP_ARM_32
+#endif
+
 #ifdef PHMAP_HAVE_INTRINSIC_INT128
 #error PHMAP_HAVE_INTRINSIC_INT128 cannot be directly set
 #elif defined(__SIZEOF_INT128__)
-#if (defined(__clang__) && !defined(_WIN32) && !defined(__aarch64__)) || (defined(__CUDACC__) && __CUDACC_VER_MAJOR__ >= 9) || \
+#if (defined(__clang__) && !defined(_WIN32) && !(defined(PHMAP_ARM_32))) || (defined(__CUDACC__) && __CUDACC_VER_MAJOR__ >= 9) || \
     (defined(__GNUC__) && !defined(__clang__) && !defined(__CUDACC__))
 #define PHMAP_HAVE_INTRINSIC_INT128 1
 #elif defined(__CUDACC__)
@@ -496,8 +500,8 @@
 #define PHMAP_INIT_ATTRIBUTE_SECTION_VARS(name)
 #define PHMAP_DEFINE_ATTRIBUTE_SECTION_VARS(name)
 #endif
-#define PHMAP_ATTRIBUTE_SECTION_START(name) (reinterpret_cast<void *>(__start_##name))
-#define PHMAP_ATTRIBUTE_SECTION_STOP(name) (reinterpret_cast<void *>(__stop_##name))
+#define PHMAP_ATTRIBUTE_SECTION_START(name) (reinterpret_cast<void*>(__start_##name))
+#define PHMAP_ATTRIBUTE_SECTION_STOP(name) (reinterpret_cast<void*>(__stop_##name))
 #else  // !PHMAP_HAVE_ATTRIBUTE_SECTION
 #define PHMAP_HAVE_ATTRIBUTE_SECTION 0
 #define PHMAP_ATTRIBUTE_SECTION(name)
@@ -505,8 +509,8 @@
 #define PHMAP_INIT_ATTRIBUTE_SECTION_VARS(name)
 #define PHMAP_DEFINE_ATTRIBUTE_SECTION_VARS(name)
 #define PHMAP_DECLARE_ATTRIBUTE_SECTION_VARS(name)
-#define PHMAP_ATTRIBUTE_SECTION_START(name) (reinterpret_cast<void *>(0))
-#define PHMAP_ATTRIBUTE_SECTION_STOP(name) (reinterpret_cast<void *>(0))
+#define PHMAP_ATTRIBUTE_SECTION_START(name) (reinterpret_cast<void*>(0))
+#define PHMAP_ATTRIBUTE_SECTION_STOP(name) (reinterpret_cast<void*>(0))
 #endif  // PHMAP_ATTRIBUTE_SECTION
 
 #if PHMAP_HAVE_ATTRIBUTE(force_align_arg_pointer) || (defined(__GNUC__) && !defined(__clang__))
