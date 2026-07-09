@@ -1135,6 +1135,7 @@ class raw_hash_set {
     ~raw_hash_set() { destroy_slots(); }
 
     iterator begin() {
+        if (empty()) return end();
         auto it = iterator_at(0);
         it.skip_empty_or_deleted();
         return it;
@@ -2859,8 +2860,8 @@ class parallel_hash_set {
         Inner& inner = sets_[subidx(hashval)];
         auto& set = inner.set_;
         UniqueLock m(inner);
-        typename EmbeddedSet::template InsertSlotWithHash<true> f{inner, std::move(*slot), hashval};
-        return make_rv(PolicyTraits::apply(f, elem));
+        typename EmbeddedSet::template InsertSlotWithHash<true> f{inner.set_, std::move(*slot), hashval};
+        return make_rv(&inner, PolicyTraits::apply(std::move(f), elem));
     }
 
     template <class... Args>
@@ -2924,15 +2925,15 @@ class parallel_hash_set {
     std::pair<iterator, bool> emplace(Args&&... args) {
         typename phmap::aligned_storage<sizeof(slot_type), alignof(slot_type)>::type raw;
         slot_type* slot = reinterpret_cast<slot_type*>(&raw);
-        size_t hashval = this->hash(PolicyTraits::key(slot));
-
         PolicyTraits::construct(&alloc_ref(), slot, std::forward<Args>(args)...);
+
         const auto& elem = PolicyTraits::element(slot);
+        size_t hashval = this->hash(PolicyTraits::key(slot));
         Inner& inner = sets_[subidx(hashval)];
         auto& set = inner.set_;
         UniqueLock m(inner);
-        typename EmbeddedSet::template InsertSlotWithHash<true> f{inner, std::move(*slot), hashval};
-        return make_rv(PolicyTraits::apply(f, elem));
+        typename EmbeddedSet::template InsertSlotWithHash<true> f{inner.set_, std::move(*slot), hashval};
+        return make_rv(&inner, PolicyTraits::apply(std::move(f), elem));
     }
 
     template <class... Args>
@@ -3236,7 +3237,8 @@ class parallel_hash_set {
 
     template <class K = key_type, typename std::enable_if<!std::is_same<K, iterator>::value, int>::type = 0>
     node_type extract(const key_arg<K>& key) {
-        auto it = find(key);
+        UniqueLock m;
+        auto it = this->template find<K, UniqueLock>(key, this->hash(key), m);
         return it == end() ? node_type() : extract(const_iterator{it});
     }
 

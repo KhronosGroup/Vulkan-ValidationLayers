@@ -67,28 +67,28 @@
 #include <stdint.h>
 
 extern "C" {
-uint16_t __sanitizer_unaligned_load16(const void *p);
-uint32_t __sanitizer_unaligned_load32(const void *p);
-uint64_t __sanitizer_unaligned_load64(const void *p);
-void __sanitizer_unaligned_store16(void *p, uint16_t v);
-void __sanitizer_unaligned_store32(void *p, uint32_t v);
-void __sanitizer_unaligned_store64(void *p, uint64_t v);
+uint16_t __sanitizer_unaligned_load16(const void* p);
+uint32_t __sanitizer_unaligned_load32(const void* p);
+uint64_t __sanitizer_unaligned_load64(const void* p);
+void __sanitizer_unaligned_store16(void* p, uint16_t v);
+void __sanitizer_unaligned_store32(void* p, uint32_t v);
+void __sanitizer_unaligned_store64(void* p, uint64_t v);
 }  // extern "C"
 
 namespace phmap {
 namespace bits {
 
-inline uint16_t UnalignedLoad16(const void *p) { return __sanitizer_unaligned_load16(p); }
+inline uint16_t UnalignedLoad16(const void* p) { return __sanitizer_unaligned_load16(p); }
 
-inline uint32_t UnalignedLoad32(const void *p) { return __sanitizer_unaligned_load32(p); }
+inline uint32_t UnalignedLoad32(const void* p) { return __sanitizer_unaligned_load32(p); }
 
-inline uint64_t UnalignedLoad64(const void *p) { return __sanitizer_unaligned_load64(p); }
+inline uint64_t UnalignedLoad64(const void* p) { return __sanitizer_unaligned_load64(p); }
 
-inline void UnalignedStore16(void *p, uint16_t v) { __sanitizer_unaligned_store16(p, v); }
+inline void UnalignedStore16(void* p, uint16_t v) { __sanitizer_unaligned_store16(p, v); }
 
-inline void UnalignedStore32(void *p, uint32_t v) { __sanitizer_unaligned_store32(p, v); }
+inline void UnalignedStore32(void* p, uint32_t v) { __sanitizer_unaligned_store32(p, v); }
 
-inline void UnalignedStore64(void *p, uint64_t v) { __sanitizer_unaligned_store64(p, v); }
+inline void UnalignedStore64(void* p, uint64_t v) { __sanitizer_unaligned_store64(p, v); }
 
 }  // namespace bits
 }  // namespace phmap
@@ -170,42 +170,17 @@ inline void UnalignedStore64(void *p, uint64_t v) { memcpy(p, &v, sizeof v); }
 #endif
 
 #if defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#endif
-
-#ifdef PHMAP_HAVE_INTRINSIC_INT128
-__extension__ typedef unsigned __int128 phmap_uint128;
-inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t *high) {
-    auto result = static_cast<phmap_uint128>(a) * static_cast<phmap_uint128>(b);
-    *high = static_cast<uint64_t>(result >> 64);
-    return static_cast<uint64_t>(result);
-}
-#define PHMAP_HAS_UMUL128 1
-#elif (defined(_MSC_VER))
-#if defined(_M_X64)
-#pragma intrinsic(_umul128)
-inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t *high) { return _umul128(a, b, high); }
-#define PHMAP_HAS_UMUL128 1
-#endif
-#endif
-
-#if defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
-
-#if defined(__GNUC__)
-// Cache line alignment
+   // Cache line alignment
 #if defined(__i386__) || defined(__x86_64__)
 #define PHMAP_CACHELINE_SIZE 64
 #elif defined(__powerpc64__)
 #define PHMAP_CACHELINE_SIZE 128
 #elif defined(__aarch64__)
-// We would need to read special register ctr_el0 to find out L1 dcache size.
-// This value is a good estimate based on a real aarch64 machine.
+   // We would need to read special register ctr_el0 to find out L1 dcache size.
+   // This value is a good estimate based on a real aarch64 machine.
 #define PHMAP_CACHELINE_SIZE 64
 #elif defined(__arm__)
-// Cache line sizes for ARM: These values are not strictly correct since
+   // Cache line sizes for ARM: These values are not strictly correct since
 // cache line sizes depend on implementations, not architectures.  There
 // are even implementations with cache line sizes configurable at boot
 // time.
@@ -217,7 +192,7 @@ inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t *high) { return _umul12
 #endif
 
 #ifndef PHMAP_CACHELINE_SIZE
-// A reasonable default guess.  Note that overestimates tend to waste more
+   // A reasonable default guess.  Note that overestimates tend to waste more
 // space, while underestimates tend to waste more time.
 #define PHMAP_CACHELINE_SIZE 64
 #endif
@@ -249,11 +224,37 @@ inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t *high) { return _umul12
 // much less aggressive about inlining, and even with the __forceinline keyword.
 #define PHMAP_BASE_INTERNAL_FORCEINLINE __forceinline
 #else
-// Use default attribute inline.
+   // Use default attribute inline.
 #define PHMAP_BASE_INTERNAL_FORCEINLINE inline PHMAP_ATTRIBUTE_ALWAYS_INLINE
 #endif
 
 namespace phmap {
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+
+#ifdef PHMAP_HAVE_INTRINSIC_INT128
+__extension__ typedef unsigned __int128 phmap_uint128;
+inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) {
+    auto result = static_cast<phmap_uint128>(a) * static_cast<phmap_uint128>(b);
+    *high = static_cast<uint64_t>(result >> 64);
+    return static_cast<uint64_t>(result);
+}
+#define PHMAP_HAS_UMUL128 1
+#elif (defined(_MSC_VER))
+#if defined(_M_X64)
+#pragma intrinsic(_umul128)
+inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) { return _umul128(a, b, high); }
+#define PHMAP_HAS_UMUL128 1
+#endif
+#endif
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+
 namespace base_internal {
 
 PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountLeadingZeros64Slow(uint64_t n) {
@@ -306,7 +307,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountLeadingZeros32Slow(uint64_t n) {
     if (n >> 16) zeroes -= 16, n >>= 16;
     if (n >> 8) zeroes -= 8, n >>= 8;
     if (n >> 4) zeroes -= 4, n >>= 4;
-    return "\4\3\2\2\1\1\1\1\0\0\0\0\0\0\0"[n] + zeroes;
+    return static_cast<uint32_t>("\4\3\2\2\1\1\1\1\0\0\0\0\0\0\0"[n]) + zeroes;
 }
 
 PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountLeadingZeros32(uint32_t n) {
@@ -327,7 +328,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountLeadingZeros32(uint32_t n) {
     if (n == 0) {
         return 32;
     }
-    return __builtin_clz(n);
+    return static_cast<uint32_t>(__builtin_clz(n));
 #else
     return CountLeadingZeros32Slow(n);
 #endif
@@ -361,7 +362,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountTrailingZerosNonZero64(uint64_t n)
 #elif defined(__GNUC__) || defined(__clang__)
     static_assert(sizeof(unsigned long long) == sizeof(n),  // NOLINT(runtime/int)
                   "__builtin_ctzll does not take 64-bit arg");
-    return __builtin_ctzll(n);
+    return static_cast<uint32_t>(__builtin_ctzll(n));
 #else
     return CountTrailingZerosNonZero64Slow(n);
 #endif
@@ -385,7 +386,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE uint32_t CountTrailingZerosNonZero32(uint32_t n)
     return (uint32_t)result;
 #elif defined(__GNUC__) || defined(__clang__)
     static_assert(sizeof(int) == sizeof(n), "__builtin_ctz does not take 32-bit arg");
-    return __builtin_ctz(n);
+    return static_cast<uint32_t>(__builtin_ctz(n));
 #else
     return CountTrailingZerosNonZero32Slow(n);
 #endif
@@ -532,17 +533,17 @@ inline constexpr bool IsLittleEndian() { return false; }
 
 // Functions to do unaligned loads and stores in little-endian order.
 // ------------------------------------------------------------------
-inline uint16_t Load16(const void *p) { return ToHost16(PHMAP_INTERNAL_UNALIGNED_LOAD16(p)); }
+inline uint16_t Load16(const void* p) { return ToHost16(PHMAP_INTERNAL_UNALIGNED_LOAD16(p)); }
 
-inline void Store16(void *p, uint16_t v) { PHMAP_INTERNAL_UNALIGNED_STORE16(p, FromHost16(v)); }
+inline void Store16(void* p, uint16_t v) { PHMAP_INTERNAL_UNALIGNED_STORE16(p, FromHost16(v)); }
 
-inline uint32_t Load32(const void *p) { return ToHost32(PHMAP_INTERNAL_UNALIGNED_LOAD32(p)); }
+inline uint32_t Load32(const void* p) { return ToHost32(PHMAP_INTERNAL_UNALIGNED_LOAD32(p)); }
 
-inline void Store32(void *p, uint32_t v) { PHMAP_INTERNAL_UNALIGNED_STORE32(p, FromHost32(v)); }
+inline void Store32(void* p, uint32_t v) { PHMAP_INTERNAL_UNALIGNED_STORE32(p, FromHost32(v)); }
 
-inline uint64_t Load64(const void *p) { return ToHost64(PHMAP_INTERNAL_UNALIGNED_LOAD64(p)); }
+inline uint64_t Load64(const void* p) { return ToHost64(PHMAP_INTERNAL_UNALIGNED_LOAD64(p)); }
 
-inline void Store64(void *p, uint64_t v) { PHMAP_INTERNAL_UNALIGNED_STORE64(p, FromHost64(v)); }
+inline void Store64(void* p, uint64_t v) { PHMAP_INTERNAL_UNALIGNED_STORE64(p, FromHost64(v)); }
 
 }  // namespace little_endian
 
@@ -580,17 +581,17 @@ inline constexpr bool IsLittleEndian() { return false; }
 #endif /* ENDIAN */
 
 // Functions to do unaligned loads and stores in big-endian order.
-inline uint16_t Load16(const void *p) { return ToHost16(PHMAP_INTERNAL_UNALIGNED_LOAD16(p)); }
+inline uint16_t Load16(const void* p) { return ToHost16(PHMAP_INTERNAL_UNALIGNED_LOAD16(p)); }
 
-inline void Store16(void *p, uint16_t v) { PHMAP_INTERNAL_UNALIGNED_STORE16(p, FromHost16(v)); }
+inline void Store16(void* p, uint16_t v) { PHMAP_INTERNAL_UNALIGNED_STORE16(p, FromHost16(v)); }
 
-inline uint32_t Load32(const void *p) { return ToHost32(PHMAP_INTERNAL_UNALIGNED_LOAD32(p)); }
+inline uint32_t Load32(const void* p) { return ToHost32(PHMAP_INTERNAL_UNALIGNED_LOAD32(p)); }
 
-inline void Store32(void *p, uint32_t v) { PHMAP_INTERNAL_UNALIGNED_STORE32(p, FromHost32(v)); }
+inline void Store32(void* p, uint32_t v) { PHMAP_INTERNAL_UNALIGNED_STORE32(p, FromHost32(v)); }
 
-inline uint64_t Load64(const void *p) { return ToHost64(PHMAP_INTERNAL_UNALIGNED_LOAD64(p)); }
+inline uint64_t Load64(const void* p) { return ToHost64(PHMAP_INTERNAL_UNALIGNED_LOAD64(p)); }
 
-inline void Store64(void *p, uint64_t v) { PHMAP_INTERNAL_UNALIGNED_STORE64(p, FromHost64(v)); }
+inline void Store64(void* p, uint64_t v) { PHMAP_INTERNAL_UNALIGNED_STORE64(p, FromHost64(v)); }
 
 }  // namespace big_endian
 
