@@ -19,6 +19,81 @@
 
 class PositiveGpuAVVertexAttributeFetch : public GpuAVTest {};
 
+TEST_F(PositiveGpuAVVertexAttributeFetch, InstanceRateZeroDivisor) {
+    TEST_DESCRIPTION("A zero vertex attribute divisor always fetches element zero and must not be treated as OOB.");
+    AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateZeroDivisor);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(location = 0) in vec2 pos;
+        layout(location = 1) in float instance_value;
+        void main() {
+            gl_Position = vec4(pos, instance_value, 1.0);
+        }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkVertexInputBindingDescription input_bindings[2];
+    input_bindings[0].binding = 0u;
+    input_bindings[0].stride = 8u;
+    input_bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    input_bindings[1].binding = 1u;
+    input_bindings[1].stride = 4u;
+    input_bindings[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    VkVertexInputAttributeDescription input_attributes[2];
+    input_attributes[0].location = 0u;
+    input_attributes[0].binding = 0u;
+    input_attributes[0].format = VK_FORMAT_R32G32_SFLOAT;
+    input_attributes[0].offset = 0u;
+    input_attributes[1].location = 1u;
+    input_attributes[1].binding = 1u;
+    input_attributes[1].format = VK_FORMAT_R32_SFLOAT;
+    input_attributes[1].offset = 0u;
+
+    VkVertexInputBindingDivisorDescription input_divisor;
+    input_divisor.binding = 1u;
+    input_divisor.divisor = 0u;
+
+    VkPipelineVertexInputDivisorStateCreateInfo input_divisor_state = vku::InitStructHelper();
+    input_divisor_state.vertexBindingDivisorCount = 1u;
+    input_divisor_state.pVertexBindingDivisors = &input_divisor;
+
+    VkPipelineVertexInputStateCreateInfo input_state = vku::InitStructHelper(&input_divisor_state);
+    input_state.vertexBindingDescriptionCount = 2u;
+    input_state.pVertexBindingDescriptions = input_bindings;
+    input_state.vertexAttributeDescriptionCount = 2u;
+    input_state.pVertexAttributeDescriptions = input_attributes;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.vi_ci_ = input_state;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer vertex_buffer = vkt::VertexBuffer<float>(*m_device, {0.0f, 0.0f, 0.5f, 1.0f, 1.0f, 0.5f});
+    vkt::Buffer instance_buffer = vkt::VertexBuffer<float>(*m_device, {0.0f});
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0u, 1u, 2u});
+
+    const VkBuffer vertex_buffers[2] = {vertex_buffer, instance_buffer};
+    const VkDeviceSize vertex_buffer_offsets[2] = {0u, 0u};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0u, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0u, 2u, vertex_buffers, vertex_buffer_offsets);
+    vk::CmdDrawIndexed(m_command_buffer, 3u, 1u, 0u, 0, 0u);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveGpuAVVertexAttributeFetch, IndirectDrawZeroStride) {
     TEST_DESCRIPTION("Validation must take into account a VkVertexInputBindingDescription::stride of 0");
     RETURN_IF_SKIP(InitGpuAvFramework());
