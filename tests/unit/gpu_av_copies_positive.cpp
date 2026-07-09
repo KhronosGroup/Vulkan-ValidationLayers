@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/utility/vk_struct_helper.hpp>
 #include "layer_validation_tests.h"
 
 class PositiveGpuAVCopies : public GpuAVTest {};
@@ -52,6 +53,12 @@ TEST_F(PositiveGpuAVCopies, CopyBufferToImageD32) {
 
     vk::CmdCopyBufferToImage(m_command_buffer, copy_src_buffer, copy_dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &buffer_image_copy_1);
+
+    VkMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    barrier.dstAccessMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &barrier, 0,
+                           nullptr, 0, nullptr);
 
     VkBufferImageCopy buffer_image_copy_2 = buffer_image_copy_1;
     buffer_image_copy_2.imageOffset = {32, 32, 0};
@@ -235,15 +242,26 @@ TEST_F(PositiveGpuAVCopies, BatchSubmit) {
     vkt::CommandBuffer cb_1(*m_device, m_command_pool);
     vkt::CommandBuffer cb_2(*m_device, m_command_pool);
 
+    VkMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    barrier.dstAccessMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
     cb_0.Begin();
+    vk::CmdPipelineBarrier(cb_0, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &barrier, 0, nullptr, 0,
+                           nullptr);
     vk::CmdCopyBufferToImage2KHR(cb_0, &buffer_image_copy);
     cb_0.End();
 
     cb_1.Begin();
+    vk::CmdPipelineBarrier(cb_1, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &barrier, 0, nullptr, 0,
+                           nullptr);
+
     vk::CmdCopyBufferToImage2KHR(cb_1, &buffer_image_copy);
     cb_1.End();
 
     cb_2.Begin();
+    vk::CmdPipelineBarrier(cb_2, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &barrier, 0, nullptr, 0,
+                           nullptr);
     vk::CmdCopyBufferToImage2KHR(cb_2, &buffer_image_copy);
     cb_2.End();
 
