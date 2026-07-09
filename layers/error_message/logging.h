@@ -215,6 +215,7 @@ class DebugReport {
     MessageFormatSettings message_format_settings;
 
     void SetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo);
+    void SetUtilsObjectName(const void* pNext, uint64_t object_handle);
     void SetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT *pNameInfo);
     std::string GetUtilsObjectNameNoLock(const uint64_t object) const;
     std::string GetMarkerObjectNameNoLock(const uint64_t object) const;

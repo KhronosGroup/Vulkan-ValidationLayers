@@ -436,6 +436,17 @@ class LayerChassisOutputGenerator(BaseGenerator):
             elif command.returnType == 'VkDeviceAddress':
                 out.append('record_obj.device_address = result;\n')
 
+            # Add a SetUtilsObjectName call for commands with a CreateInfo parameter
+            # that can have a debug utils info struct in its pNext chain
+            debug_utils_structs = {'VkDebugUtilsObjectNameInfoEXT', 'VkDebugUtilsObjectTagInfoEXT'}
+            last_param = command.params[-1]
+            if 'VkDevice' in [param.type for param in command.params]:
+                for param in command.params:
+                    if (param.pointer and param.type in self.vk.structs and
+                            any(s in self.vk.structs[param.type].extendedBy for s in debug_utils_structs)
+                            and last_param.type in self.vk.handles):
+                        out.append(f'device_dispatch->debug_report->SetUtilsObjectName({param.name}->pNext, HandleToUint64(*{last_param.name}));\n')
+
             # Generate post-call object processing source code
             out.append(f'{{\nVVL_ZoneScopedN("PostCallRecord_{command.name}");\n')
             if "QueueSubmit" in command.name:
