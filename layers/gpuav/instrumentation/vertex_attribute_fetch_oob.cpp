@@ -124,6 +124,10 @@ static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexA
                     vertex_attribute_fetch_limit_vertex_input_rate->attribute.offset = attrib.desc.offset;
                 }
             } else if (vertex_binding_desc.desc.inputRate == VK_VERTEX_INPUT_RATE_INSTANCE) {
+                if (vertex_binding_desc.desc.divisor == 0 && vertex_attributes_count > 0) {
+                    continue;
+                }
+
                 if (!vertex_attribute_fetch_limit_instance_input_rate.has_value()) {
                     vertex_attribute_fetch_limit_instance_input_rate = VertexAttributeFetchLimit{};
                 }
