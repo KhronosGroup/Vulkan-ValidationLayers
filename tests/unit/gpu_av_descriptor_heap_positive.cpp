@@ -1557,3 +1557,107 @@ TEST_F(PositiveGpuAVDescriptorHeap, HashingTombstone) {
         ssbo_address += alignment;
     }
 }
+
+TEST_F(PositiveGpuAVDescriptorHeap, Deduplication) {
+    TEST_DESCRIPTION("Make sure we deduplicate multiple access when safe mode is off");
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
+    vkt::DescriptorHeap desc_heap(*this);
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    desc_heap.CreateResourceHeap(resource_stride * 4);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer ssbo2_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    VkDeviceSize offset_0 = desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    VkDeviceSize offset_1 = desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    VkDeviceSize offset_2 = desc_heap.WriteBufferDescriptor(ssbo2_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    VkDeviceSize offset_3 = desc_heap.WriteBufferDescriptor(ssbo2_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[4];
+    mappings[0] = MakeSetAndBindingMapping(1, 2);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)offset_0;
+    mappings[1] = MakeSetAndBindingMapping(0, 2);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)offset_3;
+    mappings[2] = MakeSetAndBindingMapping(1, 0);
+    mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[2].sourceData.constantOffset.heapOffset = (uint32_t)offset_1;
+    mappings[3] = MakeSetAndBindingMapping(0, 1);
+    mappings[3].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[3].sourceData.constantOffset.heapOffset = (uint32_t)offset_2;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 4;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 1) buffer A { uint a; };
+        layout(set = 0, binding = 2) buffer B { uint b; };
+        layout(set = 1, binding = 0) buffer C { uint c; };
+        layout(set = 1, binding = 2) buffer D { uint d; };
+        void main() {
+            uint x = a;
+            a += 3;
+            b = 2;
+            c = b + a * (a + d);
+            d = b - a;
+            if (d == 0) {
+                c = 0;
+                b = 0;
+            }
+            a = 0;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVDescriptorHeap, DeduplicationUntyped) {
+    TEST_DESCRIPTION("Make sure we deduplicate multiple access when safe mode is off");
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
+    vkt::DescriptorHeap desc_heap(*this);
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    desc_heap.CreateResourceHeap(resource_stride * 4);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_descriptor_heap : require
+        layout(descriptor_heap) buffer A { uint x; } heap[];
+        void main() {
+            uint x = heap[0].x;
+            heap[0].x += 3;
+            heap[1].x = 2;
+            heap[2].x = heap[1].x + heap[0].x * (heap[0].x + heap[3].x);
+            heap[3].x = heap[1].x - heap[0].x;
+            if (heap[3].x == 0) {
+                heap[2].x = 0;
+                heap[1].x = 0;
+            }
+            heap[0].x = 0;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
