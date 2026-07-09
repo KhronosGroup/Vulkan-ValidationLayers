@@ -1215,18 +1215,21 @@ ResourceUsageTag SyncOpEndRenderPass::Record(CommandBufferAccessContext* cb_cont
 }
 
 bool SyncOpEndRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
-    // Any store/resolve operations happen before the EndRenderPass tag so we can ignore them
-    // Only the layout transitions happen at the replay tag
+    // The record_tag is the final layout transition. Any store/resolve operations happen before
+    // the EndRenderPass tag so we can ignore them here.
+    //
+    // The final layout transition is recorded in command buffer context (not render pass context).
+    // Do a render pass cleanup. This also switches replay to command buffer context where we can
+    // validate layout transition.
+    CommandExecutionContext& exec_context = replay.GetExecutionContext();
+    assert(exec_context.Handle().type == kVulkanObjectTypeQueue);  // not allowed in secondary command buffers
+    auto& batch_context = static_cast<QueueBatchContext&>(exec_context);
+    batch_context.EndRenderPassReplayCleanup(replay);
+
+    // Validate final layout transition
     ResourceUsageRange first_use_range = {recorded_tag, recorded_tag + 1};
     bool skip = false;
     skip |= replay.DetectFirstUseHazard(first_use_range);
-
-    // We can cleanup here as the recorded tag represents the final layout transition (which is the last operation or the RP)
-    CommandExecutionContext& exec_context = replay.GetExecutionContext();
-    // this operation is not allowed in secondary command buffers
-    assert(exec_context.Handle().type == kVulkanObjectTypeQueue);
-    auto& batch_context = static_cast<QueueBatchContext&>(exec_context);
-    batch_context.EndRenderPassReplayCleanup(replay);
 
     return skip;
 }

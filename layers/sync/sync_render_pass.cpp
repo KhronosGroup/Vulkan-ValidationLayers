@@ -566,6 +566,11 @@ void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass& rp_
     }
 }
 
+static uint32_t GetSubpassDepthStencilAttachmentIndex(const vku::safe_VkPipelineDepthStencilStateCreateInfo* pipe_ds_ci,
+                                                      const vku::safe_VkAttachmentReference2* depth_stencil_ref) {
+    return (pipe_ds_ci && depth_stencil_ref) ? depth_stencil_ref->attachment : VK_ATTACHMENT_UNUSED;
+}
+
 bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferAccessContext& cb_context, vvl::Func command) const {
     bool skip = false;
     const vvl::CommandBuffer& cmd_buffer = cb_context.GetCBState();
