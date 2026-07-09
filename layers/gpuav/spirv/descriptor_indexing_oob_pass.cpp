@@ -218,7 +218,7 @@ bool DescriptorIndexingOOBPass::Instrument() {
             DescriptroIndexPushConstantAccess pc_access;
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                if (module_.settings_.safe_mode) {
+                if (!module_.settings_.safe_mode) {
                     pc_access.Update(module_, inst_it);
                 }
 

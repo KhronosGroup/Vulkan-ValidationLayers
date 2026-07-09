@@ -208,7 +208,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
     const uint32_t is_sampler_id = type_manager_.GetConstantBool(is_seperate_sampler).Id();
 
-    const VkDescriptorSetAndBindingMappingEXT* mapping = nullptr;
+    const VkDescriptorSetAndBindingMappingEXT* mapping = is_seperate_sampler ? meta.mapping_ptr_sampler : meta.mapping_ptr;
 
     // We try and encode a lot of information in a single uint32_t
     uint32_t desc_encoding_id = 0;
@@ -222,8 +222,6 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         assert(desc_alignment_shift <= glsl::kInst_DescriptorHeap_AlignmentShiftMask);
 
         const uint32_t mapping_index_encoded = is_seperate_sampler ? meta.mapping_index_sampler : meta.mapping_index_resource;
-        const bool is_untyped = mapping_index_encoded == glsl::kInst_DescriptorHeap_MappingIndexUntyped;
-        mapping = is_untyped ? nullptr : &module_.out_status.device.heap_mappings[mapping_index_encoded].mapping_data;
 
         const uint32_t desc_encoding = (desc_type_mask << glsl::kInst_DescriptorHeap_DescriptorTypeShift) |
                                        (desc_size_value << glsl::kInst_DescriptorHeap_DescriptorSizeShift) |
@@ -241,30 +239,16 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
     const uint32_t binding_offset = mapping ? descriptor_variable.interface_.binding - mapping->firstBinding : 0;
     const bool combined_index = meta.access_path.is_combined_image_sampler && mapping && HasCombinedImageSamplerIndex(*mapping);
 
-    bool has_embedded_sampler = false;
     if (!mapping) {
         assert(descriptor_variable.interface_.IsHeap());  // Untyped
-        uint32_t heap_offset_id = 0;
-        const Type* descriptor_array = nullptr;
-        if (meta.access_path.pointer_type->spv_type_ == SpvType::kStruct) {
-            const Instruction* offset_decoration = GetMemberDecoration(
-                meta.access_path.pointer_type->Id(), meta.access_path.heap_offset_member_index, spv::DecorationOffsetIdEXT);
-            assert(offset_decoration);
-            heap_offset_id = offset_decoration->Word(4);
-            heap_offset_id = CastToUint32(heap_offset_id, block, inst_it);
-
-            descriptor_array =
-                type_manager_.FindTypeById(meta.access_path.pointer_type->inst_.Operand(meta.access_path.heap_offset_member_index));
-        } else {
-            descriptor_array = meta.access_path.pointer_type;
-            heap_offset_id = type_manager_.GetConstantZeroUint32().Id();
+        uint32_t heap_offset_id = type_manager_.GetConstantZeroUint32().Id();
+        if (meta.untyped_heap_offset_id != 0) {
+            heap_offset_id = CastToUint32(meta.untyped_heap_offset_id, block, inst_it);  // might be int32
         }
 
         uint32_t array_stride_id = type_manager_.GetConstantZeroUint32().Id();
-        if (descriptor_array->IsArray()) {
-            const uint32_t array_stride_dec = GetDecoration(descriptor_array->Id(), spv::DecorationArrayStrideIdEXT)->Word(3);
-            const Constant* array_stride = type_manager_.FindConstantById(array_stride_dec);
-            array_stride_id = CastToUint32(array_stride->Id(), block, inst_it);  // might be int32
+        if (meta.untyped_array_stride_id != 0) {
+            array_stride_id = CastToUint32(meta.untyped_array_stride_id, block, inst_it);  // might be int32
         }
 
         const uint32_t function_def = GetLinkFunctionId(UNTYPED);
@@ -276,7 +260,6 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         return_uint = true;
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
         const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping->sourceData.constantOffset;
-        has_embedded_sampler = map_data.pEmbeddedSampler != nullptr;
 
         const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.heapArrayStride);
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
@@ -291,7 +274,6 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         return_uint = true;
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
         const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping->sourceData.pushIndex;
-        has_embedded_sampler = map_data.pEmbeddedSampler != nullptr;
 
         const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.heapArrayStride);
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
@@ -312,7 +294,6 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         return_uint = true;
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
         const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping->sourceData.indirectIndex;
-        has_embedded_sampler = map_data.pEmbeddedSampler != nullptr;
 
         const uint32_t heap_offset = map_data.heapOffset + (binding_offset * map_data.heapArrayStride);
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(heap_offset).Id();
@@ -334,7 +315,6 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         return_uint = true;
     } else if (mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
         const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data = mapping->sourceData.indirectIndexArray;
-        has_embedded_sampler = map_data.pEmbeddedSampler != nullptr;
 
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
         // VU enforces pushOffset to multiple of 8, and the GLSL is using a uint array
@@ -422,7 +402,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
     }
 
     // If there is a sampler, we have another descriptor at this spot we need to validate
-    if (!is_seperate_sampler && meta.access_path.HasSampler() && !has_embedded_sampler) {
+    if (!is_seperate_sampler && meta.access_path.HasSampler() && !meta.has_embedded_sampler) {
         const uint32_t valid_image = function_result;
         uint32_t valid_sampler = 0;
         if (meta.access_path.is_combined_image_sampler) {
@@ -583,7 +563,92 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
 
     meta.target_instruction = &inst;
 
+    if (meta.mapping_index_resource != glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
+        meta.mapping_ptr = &module_.out_status.device.heap_mappings[meta.mapping_index_resource].mapping_data;
+    }
+    // Get to do it again... because samplers
+    if (meta.access_path.sampler_variable) {
+        if (meta.mapping_index_sampler != glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
+            meta.mapping_ptr_sampler = &module_.out_status.device.heap_mappings[meta.mapping_index_sampler].mapping_data;
+        }
+    };
+
+    if (meta.mapping_ptr_sampler) {
+        meta.has_embedded_sampler = GetEmbeddedSampler(*meta.mapping_ptr_sampler) != nullptr;
+    } else if (meta.mapping_ptr) {
+        meta.has_embedded_sampler = GetEmbeddedSampler(*meta.mapping_ptr) != nullptr;
+    }
+
+    if (meta.mapping_index_resource == glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
+        const Type* descriptor_array = nullptr;
+        if (meta.access_path.pointer_type->spv_type_ == SpvType::kStruct) {
+            const Instruction* offset_decoration = GetMemberDecoration(
+                meta.access_path.pointer_type->Id(), meta.access_path.heap_offset_member_index, spv::DecorationOffsetIdEXT);
+            assert(offset_decoration);
+            meta.untyped_heap_offset_id = offset_decoration->Word(4);
+
+            descriptor_array =
+                type_manager_.FindTypeById(meta.access_path.pointer_type->inst_.Operand(meta.access_path.heap_offset_member_index));
+        } else {
+            descriptor_array = meta.access_path.pointer_type;
+        }
+
+        if (descriptor_array->IsArray()) {
+            const uint32_t array_stride_dec = GetDecoration(descriptor_array->Id(), spv::DecorationArrayStrideIdEXT)->Word(3);
+            const Constant* array_stride = type_manager_.FindConstantById(array_stride_dec);
+            meta.untyped_array_stride_id = array_stride->Id();
+        }
+    }
+
     return true;
+}
+
+// TODO - hash seperatly for Samplers
+uint32_t DescriptorHeapPass::InstructionMeta::Hash(const uint32_t descriptor_index) const {
+    const uint32_t source_id = mapping_ptr ? (uint32_t)mapping_ptr->source : 0;
+    const uint32_t desc_type = (uint32_t)access_path.descriptor_type;
+    ;
+
+    if (mapping_index_resource == glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
+        uint32_t hash_content[4] = {desc_type, descriptor_index, untyped_heap_offset_id, untyped_array_stride_id};
+        return hash_util::Hash32(hash_content, sizeof(uint32_t) * 4);
+    } else if (mapping_ptr->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
+        const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping_ptr->sourceData.constantOffset;
+        uint32_t hash_content[5] = {source_id, desc_type, descriptor_index, map_data.heapOffset, map_data.heapArrayStride};
+        return hash_util::Hash32(hash_content, sizeof(uint32_t) * 5);
+    } else if (mapping_ptr->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
+        const VkDescriptorMappingSourcePushIndexEXT& map_data = mapping_ptr->sourceData.pushIndex;
+        uint32_t hash_content[7] = {
+            source_id,           desc_type,          descriptor_index, map_data.heapOffset, map_data.heapArrayStride,
+            map_data.heapOffset, map_data.pushOffset};
+        return hash_util::Hash32(hash_content, sizeof(uint32_t) * 7);
+    } else if (mapping_ptr->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
+        const VkDescriptorMappingSourceIndirectIndexEXT& map_data = mapping_ptr->sourceData.indirectIndex;
+        uint32_t hash_content[8] = {
+            source_id,           desc_type,           descriptor_index,      map_data.heapOffset, map_data.heapArrayStride,
+            map_data.heapOffset, map_data.pushOffset, map_data.addressOffset};
+        return hash_util::Hash32(hash_content, sizeof(uint32_t) * 8);
+    } else if (mapping_ptr->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
+        const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data = mapping_ptr->sourceData.indirectIndexArray;
+        uint32_t hash_content[7] = {source_id,           desc_type,           descriptor_index,      map_data.heapOffset,
+                                    map_data.heapOffset, map_data.pushOffset, map_data.addressOffset};
+        return hash_util::Hash32(hash_content, sizeof(uint32_t) * 7);
+    } else if (mapping_ptr->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
+        const VkDescriptorMappingSourceHeapDataEXT& map_data = mapping_ptr->sourceData.heapData;
+        uint32_t hash_content[4] = {source_id, desc_type, map_data.heapOffset, map_data.pushOffset};
+        return hash_util::Hash32(hash_content, sizeof(uint32_t) * 4);
+    } else if (mapping_ptr->source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) {
+        uint32_t hash_content[3] = {source_id, desc_type, mapping_ptr->sourceData.pushDataOffset};
+        return hash_util::Hash32(hash_content, sizeof(uint32_t) * 3);
+    } else if (mapping_ptr->source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT) {
+        uint32_t hash_content[3] = {source_id, desc_type, mapping_ptr->sourceData.pushAddressOffset};
+        return hash_util::Hash32(hash_content, sizeof(uint32_t) * 3);
+    } else if (mapping_ptr->source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
+        const VkDescriptorMappingSourceIndirectAddressEXT& map_data = mapping_ptr->sourceData.indirectAddress;
+        uint32_t hash_content[4] = {source_id, desc_type, map_data.pushOffset, map_data.addressOffset};
+        return hash_util::Hash32(hash_content, sizeof(uint32_t) * 4);
+    }
+    return 0;
 }
 
 bool DescriptorHeapPass::Instrument() {
@@ -591,6 +656,8 @@ bool DescriptorHeapPass::Instrument() {
         if (!function.called_from_target_) {
             continue;
         }
+
+        FunctionDuplicateTracker function_duplicate_tracker;
 
         for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
@@ -605,11 +672,28 @@ bool DescriptorHeapPass::Instrument() {
             }
             auto& block_instructions = current_block.instructions_;
 
+            // We only need to instrument the set/binding/index combo once per block (in unsafe mode)
+            BlockDuplicateTracker& block_duplicate_tracker = function_duplicate_tracker.GetAndUpdate(current_block);
+            DescriptroIndexPushConstantAccess pc_access;
+
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
+                if (!module_.settings_.safe_mode) {
+                    pc_access.Update(module_, inst_it);
+                }
+
                 InstructionMeta meta;
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
                 if (!RequiresInstrumentation(function, *(inst_it->get()), meta)) {
                     continue;
+                }
+                if (!module_.settings_.safe_mode) {
+                    const uint32_t hash_descriptor_index_id = pc_access.next_alias_id == meta.access_path.descriptor_index_id
+                                                                  ? pc_access.descriptor_index_id
+                                                                  : meta.access_path.descriptor_index_id;
+                    const uint32_t hash = meta.Hash(hash_descriptor_index_id);
+                    if (hash != 0 && function_duplicate_tracker.FindAndUpdate(block_duplicate_tracker, hash)) {
+                        continue;  // duplicate detected
+                    }
                 }
 
                 if (MaxInstrumentationsCountReached()) {

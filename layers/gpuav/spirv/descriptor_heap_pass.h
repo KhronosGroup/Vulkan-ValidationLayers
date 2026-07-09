@@ -41,6 +41,17 @@ class DescriptorHeapPass : public Pass {
         // Internal encoded index to map into InstrumentationStatus::Device
         uint32_t mapping_index_resource = 0;
         uint32_t mapping_index_sampler = 0;
+
+        // This is information we "could" find at CreateFunctionCall but want done earlier to so we can hash it
+        // ----
+        // Null if untyped pointers
+        const VkDescriptorSetAndBindingMappingEXT* mapping_ptr = nullptr;
+        const VkDescriptorSetAndBindingMappingEXT* mapping_ptr_sampler = nullptr;
+        bool has_embedded_sampler = false;
+        // If zero, means it is implicitly zero
+        uint32_t untyped_heap_offset_id = 0;
+        uint32_t untyped_array_stride_id = 0;
+        uint32_t Hash(const uint32_t descriptor_index) const;
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
