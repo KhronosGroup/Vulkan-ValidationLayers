@@ -749,6 +749,92 @@ TEST_F(NegativeSyncValRenderPass, UnusedAttachmentFinalLayoutTransitionRecorded)
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeSyncValRenderPass, UnusedAttachmentFinalLayoutTransitionSubmitHazard) {
+    TEST_DESCRIPTION("Submit-time validation detects unused attachment final layout transition hazards");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView image_view = image.CreateView();
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+    rp.CreateRenderPass();
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {32, 32, 1};
+
+    vkt::CommandBuffer write_cb(*m_device, m_command_pool);
+    write_cb.Begin();
+    vk::CmdCopyBufferToImage(write_cb, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    write_cb.End();
+
+    vkt::CommandBuffer render_pass_cb(*m_device, m_command_pool);
+    render_pass_cb.Begin();
+    render_pass_cb.BeginRenderPass(rp, framebuffer, 32, 32);
+    render_pass_cb.EndRenderPass();
+    render_pass_cb.End();
+
+    m_default_queue->Submit(write_cb);
+
+    // The attachment is not referenced by any subpass, so the only access in this command
+    // buffer is the final layout transition from initialLayout to finalLayout
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_default_queue->Submit(render_pass_cb);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncValRenderPass, FinalLayoutTransitionSubmitHazard) {
+    TEST_DESCRIPTION("Submit-time validation detects final layout transition hazards");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView image_view = image.CreateView();
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                VK_ATTACHMENT_LOAD_OP_NONE, VK_ATTACHMENT_STORE_OP_NONE);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.CreateRenderPass();
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {32, 32, 1};
+
+    vkt::CommandBuffer write_cb(*m_device, m_command_pool);
+    write_cb.Begin();
+    vk::CmdCopyBufferToImage(write_cb, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    write_cb.End();
+
+    vkt::CommandBuffer render_pass_cb(*m_device, m_command_pool);
+    render_pass_cb.Begin();
+    render_pass_cb.BeginRenderPass(rp, framebuffer, 32, 32);
+    render_pass_cb.EndRenderPass();
+    render_pass_cb.End();
+
+    m_default_queue->Submit(write_cb);
+
+    // The attachment is referenced by the subpass, but loadOp/storeOp are NONE,
+    // so the only access in this command buffer is the final layout transition.
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_default_queue->Submit(render_pass_cb);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeSyncValRenderPass, MultiviewSameView) {
     TEST_DESCRIPTION("Two async subpasses render to the same view");
     SetTargetApiVersion(VK_API_VERSION_1_1);

@@ -27,15 +27,6 @@ namespace vvl {
 class ImageView;
 }  // namespace vvl
 
-static inline uint32_t GetSubpassDepthStencilAttachmentIndex(const vku::safe_VkPipelineDepthStencilStateCreateInfo *pipe_ds_ci,
-                                                             const vku::safe_VkAttachmentReference2 *depth_stencil_ref) {
-    uint32_t depth_stencil_attachment = VK_ATTACHMENT_UNUSED;
-    if (pipe_ds_ci && depth_stencil_ref) {
-        depth_stencil_attachment = depth_stencil_ref->attachment;
-    }
-    return depth_stencil_attachment;
-}
-
 struct SubpassDependencyInfo {
     // For dependencies between subpasses this is a dstSubpass.
     // For external dependencies this can be either srcSubpass or dstSubpass
@@ -130,7 +121,6 @@ class RenderPass : public StateObject {
     explicit RenderPass(const VkRenderingInfo& rendering_info);
     // vkBeginCommandBuffer (dynamic rendering in secondary commadn buffer)
     explicit RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo);
-
     // vkCreateGraphicsPipelines (dynamic rendering state tied to pipeline state)
     explicit RenderPass(const VkPipelineRenderingCreateInfo& rendering_ci);
 
