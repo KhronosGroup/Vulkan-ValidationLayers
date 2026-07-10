@@ -931,7 +931,8 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDeferredBuild) {
     m_device->Wait();
 }
 
-TEST_F(PositiveGpuAVRayTracing, TraceRaysInCubes) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12680
+TEST_F(PositiveGpuAVRayTracing, DISABLED_TraceRaysInCubes) {
     TEST_DESCRIPTION("Setup a RT pipeline, a TLAS pointing to 2 cubes, and traces rays into it.");
 
     RETURN_IF_SKIP(CheckSlangSupport());
