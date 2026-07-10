@@ -834,6 +834,18 @@ const char* not_going_to_do[] = {
     // for atomic storage images.
     // Instead of wasting effort/memory tracking that, we just combine the VU
     "VUID-RuntimeSpirv-imageDescriptorAlignment-11383",
+
+    // These are kinda of flawed VUs due to design of the API
+    // (Heaps improved on this design)
+    // Even with descriptor hashing, we could scan the buffer, but this
+    // is all happening at vkCmdBindDescriptorBuffersEXT, so the buffer can be update after
+    // GPU-Dump will try and detect this at **draw time**, but that is about all we can do
+    "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08053",
+    "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08054",
+    // No one has ever explained to me what "memory must be resident" actually means
+    // This falls under the failure of the sparse memory spec/testing
+    // so going to skip until someone complains loudly
+    "VUID-vkCmdDraw-None-08119",
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working
