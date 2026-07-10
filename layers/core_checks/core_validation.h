@@ -305,16 +305,16 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateAttachmentCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
                                          const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state,
                                          uint32_t primary_attachment, uint32_t secondary_attachment, const Location& caller_loc,
-                                         const Location& attachment_loc) const;
+                                         const Location& attachment_loc, const char* vuid) const;
     bool ValidateSubpassCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
                                       const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state, const int subpass,
-                                      const Location& loc) const;
+                                      const Location& loc, const char* vuid) const;
     bool ValidateDependencyCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
                                          const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state,
-                                         const uint32_t dependency, const Location& loc) const;
+                                         const uint32_t dependency, const Location& loc, const char* vuid) const;
     bool ValidateRenderPassCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
-                                         const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state,
-                                         const Location& loc) const;
+                                         const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state, const Location& loc,
+                                         const char* vuid = nullptr) const;
     bool ReportInvalidCommandBuffer(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
     bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
                                 const char* vuid, const char* more_message = "") const override;

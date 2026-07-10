@@ -677,7 +677,16 @@ const char* GetSurfaceSupportVUID(const Location& loc) {
     return kVUIDUndefined;
 }
 
-const char* GetRenderPassCompatibilityVUID(const Location& loc) {
+const char* GetRenderPassCompatibilityVUID(const Location& loc, const char* vuid) {
+    // If a VUID is explicitly specified then use that
+    // This is necessary as some entry points may have different VUID to signal depending on other
+    // parameters (such as physical device properties) and are not just a direct function of the
+    // entry point they are triggered from making the current Get*VUID-based approach insufficient
+    // to deal with them (and in general these functions tightly couple the caller with the callee)
+    if (vuid != nullptr) {
+        return vuid;
+    }
+
     if (loc.function == Func::vkCmdBeginRenderPass) {
         return "VUID-VkRenderPassBeginInfo-renderPass-00904";
     } else if (loc.function == Func::vkBeginCommandBuffer) {
