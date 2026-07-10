@@ -3248,3 +3248,48 @@ TEST_F(NegativeShaderSpirv, SpecializationConstantInt8Default) {
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderSpirv, LargerThanMaxShaderWaitQueues) {
+    TEST_DESCRIPTION("Try to use a MultipleWaitQueuesQCOM loop hint larger than maxShaderWaitQueues.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_QCOM_SHADER_MULTIPLE_WAIT_QUEUES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderMultipleWaitQueues);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceShaderMultipleWaitQueuesPropertiesQCOM wait_queues_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(wait_queues_props);
+
+    const uint32_t invalid_wait_queues = wait_queues_props.maxShaderWaitQueues > 0 ?
+                                         wait_queues_props.maxShaderWaitQueues << 1 : 1;
+
+    std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability MultipleWaitQueuesQCOM
+               OpExtension "SPV_QCOM_multiple_wait_queues"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %bool = OpTypeBool
+       %true = OpConstantTrue %bool
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpBranch %loop
+       %loop = OpLabel
+               OpLoopMerge %merge %cont DependencyLength|MultipleWaitQueuesQCOM 1 )" +
+                    std::to_string(invalid_wait_queues) + R"(
+               OpBranchConditional %true %body %merge
+       %body = OpLabel
+               OpBranch %cont
+       %cont = OpLabel
+               OpBranch %loop
+      %merge = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxShaderWaitQueues-12426");
+    VkShaderObj cs{*m_device, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM};
+    m_errorMonitor->VerifyFound();
+}

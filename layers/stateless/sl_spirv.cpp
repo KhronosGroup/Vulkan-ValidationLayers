@@ -24,6 +24,7 @@
 #include "chassis/dispatch_object.h"
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/shader_module.h"
+#include "utils/math_utils.h"
 #include <inttypes.h>
 #include <vulkan/vulkan_core.h>
 #include <set>
@@ -132,6 +133,10 @@ bool SpirvValidator::Validate(const spirv::Module& module_state, const spirv::St
         skip |= ValidateTransformFeedbackEmitStreams(module_state, entry_point, stateless_data, loc);
         skip |= ValidateShaderTensor(module_state, entry_point, stateless_data, loc);
         skip |= ValidateTileShadingCapability(module_state, entry_point, stateless_data, loc);
+    }
+
+    if (enabled_features.shaderMultipleWaitQueues && module_state.HasCapability(spv::CapabilityMultipleWaitQueuesQCOM)) {
+        skip |= ValidateShaderMultipleWaitQueues(module_state, stateless_data, loc);
     }
 
     if (enabled_features.tileShading) {
@@ -1708,6 +1713,64 @@ bool SpirvValidator::ValidateTileShadingAtomicAccess(const spirv::Module& module
                                  opcode == spv::OpImageTexelPointer ? "OpImageTexelPointer" : "OpUntypedImageTexelPointerEXT",
                                  module_state.DescribeInstruction(*instruction).c_str());
             }
+        }
+    }
+
+    return skip;
+}
+
+static uint32_t GetMultipleWaitQueuesLiteralWord(const spirv::Instruction& insn) {
+    constexpr uint32_t kLoopControlWord = 3;
+    constexpr uint32_t kFirstLoopControlLiteralWord = 4;
+
+    // Note: These are the only |Loop Control| that have a lower mask value and carry a literal operand.
+    //       Only these need to be checked when counting preceding literal words.
+    //       |Unroll| and similar controls have no literal operand and are excluded.
+    constexpr uint32_t kLoopControlsWithLiteralOperands =
+        static_cast<uint32_t>(spv::LoopControlDependencyLengthMask) | spv::LoopControlMinIterationsMask |
+        spv::LoopControlMaxIterationsMask | spv::LoopControlIterationMultipleMask | spv::LoopControlPeelCountMask |
+        spv::LoopControlPartialCountMask | spv::LoopControlInitiationIntervalALTERAMask |
+        spv::LoopControlMaxConcurrencyALTERAMask | spv::LoopControlDependencyArrayALTERAMask |
+        spv::LoopControlPipelineEnableALTERAMask | spv::LoopControlLoopCoalesceALTERAMask |
+        spv::LoopControlMaxInterleavingALTERAMask | spv::LoopControlSpeculatedIterationsALTERAMask |
+        spv::LoopControlLoopCountALTERAMask | spv::LoopControlMaxReinvocationDelayALTERAMask |
+        spv::LoopControlMultipleWaitQueuesQCOMMask;
+
+    if (insn.Length() <= kLoopControlWord) {
+        return 0;
+    }
+
+    const uint32_t loop_control = insn.Word(kLoopControlWord);
+    if ((loop_control & spv::LoopControlMultipleWaitQueuesQCOMMask) == 0) {
+        return 0;
+    }
+
+    const uint32_t preceding_literal_controls =
+        loop_control & kLoopControlsWithLiteralOperands & (spv::LoopControlMultipleWaitQueuesQCOMMask - 1);
+    const uint32_t word_index = kFirstLoopControlLiteralWord + CountSetBits(preceding_literal_controls);
+
+    return insn.Length() > word_index ? word_index : 0;
+}
+
+bool SpirvValidator::ValidateShaderMultipleWaitQueues(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
+                                                      const Location& loc) const {
+    bool skip = false;
+
+    for (auto& instruction : stateless_data.loop_merge_inst) {
+        const uint32_t word_index = GetMultipleWaitQueuesLiteralWord(*instruction);
+        if (word_index == 0) {
+            continue;
+        }
+
+        const uint32_t max_wait_queues = instruction->Word(word_index);
+        if (max_wait_queues != 0 &&
+            max_wait_queues > phys_dev_ext_props.shader_multiple_wait_queues_props.maxShaderWaitQueues) {
+            skip |= LogError("VUID-RuntimeSpirv-maxShaderWaitQueues-12426", module_state.handle(), loc,
+                             "SPIR-V uses MultipleWaitQueuesQCOM with literal operand %" PRIu32
+                             ", but exceeds VkPhysicalDeviceShaderMultipleWaitQueuesPropertiesQCOM::maxShaderWaitQueues (%" PRIu32
+                             ").\n%s\n",
+                             max_wait_queues, phys_dev_ext_props.shader_multiple_wait_queues_props.maxShaderWaitQueues,
+                             module_state.DescribeInstruction(*instruction).c_str());
         }
     }
 

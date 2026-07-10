@@ -1067,6 +1067,12 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 }
                 break;
 
+            case spv::OpLoopMerge:
+                if (stateless_data) {
+                    stateless_data->loop_merge_inst.push_back(&insn);
+                }
+                break;
+
             // Execution Mode
             case spv::OpExecutionMode:
             case spv::OpExecutionModeId: {
