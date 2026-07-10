@@ -1452,22 +1452,38 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalTensorPropertiesARM(
     }
 }
 
+// Operations supported by the default ARM engine
+// TODO: add more operations for other engines here
+static constexpr VkPhysicalDeviceDataGraphOperationSupportARM tosa_operation{
+    VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM, "TOSA.001000.1", 0};
+static constexpr VkPhysicalDeviceDataGraphOperationSupportARM optical_flow_operation{
+    VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM, "OpticalFlow", 1};
+
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pQueueFamilyDataGraphPropertyCount,
     VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties) {
     // TODO: Need a way for test to decide to support or not support various engines
 
+    // NOTE: queue 0 supports both properties, q1 only tosa, q2 only opt flow, q > 2 neither
     if (pQueueFamilyDataGraphProperties == nullptr) {
-        *pQueueFamilyDataGraphPropertyCount = 2;
+        *pQueueFamilyDataGraphPropertyCount = (queueFamilyIndex == 0) ? 2 : (queueFamilyIndex > 2) ? 0 : 1;
     } else {
-        pQueueFamilyDataGraphProperties[0].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM;
-        pQueueFamilyDataGraphProperties[0].engine = {VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM, false};
-        pQueueFamilyDataGraphProperties[0].operation = {
-            VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM, "TOSA.001000.1", 0};
-        pQueueFamilyDataGraphProperties[1].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM;
-        pQueueFamilyDataGraphProperties[1].engine = {VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM, false};
-        pQueueFamilyDataGraphProperties[1].operation = {VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM,
-                                                        "OpticalFlow", 1};
+        if (queueFamilyIndex == 0) {
+            pQueueFamilyDataGraphProperties[0].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM;
+            pQueueFamilyDataGraphProperties[0].engine = {VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM, false};
+            pQueueFamilyDataGraphProperties[0].operation = tosa_operation;
+            pQueueFamilyDataGraphProperties[1].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM;
+            pQueueFamilyDataGraphProperties[1].engine = {VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM, false};
+            pQueueFamilyDataGraphProperties[1].operation = optical_flow_operation;
+        } else if (queueFamilyIndex == 1) {
+            pQueueFamilyDataGraphProperties[0].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM;
+            pQueueFamilyDataGraphProperties[0].engine = {VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM, false};
+            pQueueFamilyDataGraphProperties[0].operation = tosa_operation;
+        } else if (queueFamilyIndex == 2) {
+            pQueueFamilyDataGraphProperties[0].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM;
+            pQueueFamilyDataGraphProperties[0].engine = {VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM, false};
+            pQueueFamilyDataGraphProperties[0].operation = optical_flow_operation;
+        }
     }
     return VK_SUCCESS;
 }
@@ -1478,32 +1494,36 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphEngin
 
     if (pQueueFamilyDataGraphProperties->engine.type == VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM &&
         pQueueFamilyDataGraphProperties->engine.isForeign == false) {
-
-        // ARM engine properties per operation type
-        const char *op_flow_operation_name = "OpticalFlow";
-        const char *tosa_operation_name = "TOSA";
-
-        if (pQueueFamilyDataGraphProperties->operation.operationType == VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM &&
-            strncmp(pQueueFamilyDataGraphProperties->operation.name, op_flow_operation_name, strlen(op_flow_operation_name)) == 0 &&
+        if (pQueueFamilyDataGraphProperties->operation.operationType == optical_flow_operation.operationType &&
+            strcmp(pQueueFamilyDataGraphProperties->operation.name, optical_flow_operation.name) == 0 &&
             pProperties->sType == VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_OPTICAL_FLOW_PROPERTIES_ARM) {
-
             auto* pOpticalFlowProperties = reinterpret_cast<VkQueueFamilyDataGraphOpticalFlowPropertiesARM*>(pProperties);
-            pOpticalFlowProperties->supportedOutputGridSizes =
-                VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM |
-                VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM;
-            pOpticalFlowProperties->supportedHintGridSizes =
-                VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM |
-                VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM;
-            pOpticalFlowProperties->hintSupported = VK_TRUE;
-            pOpticalFlowProperties->costSupported = VK_TRUE;
+            if (queueFamilyIndex == 0) {
+                // queue 0 supports everything
+                pOpticalFlowProperties->supportedOutputGridSizes =
+                    VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM |
+                    VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM;
+                pOpticalFlowProperties->supportedHintGridSizes =
+                    VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM |
+                    VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_4X4_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_8X8_BIT_ARM;
+                pOpticalFlowProperties->hintSupported = VK_TRUE;
+                pOpticalFlowProperties->costSupported = VK_TRUE;
+            } else {
+                // leave something out on other queues for negative tests
+                pOpticalFlowProperties->supportedOutputGridSizes =
+                    VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM;
+                pOpticalFlowProperties->supportedHintGridSizes =
+                    VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_1X1_BIT_ARM | VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_2X2_BIT_ARM;
+                pOpticalFlowProperties->hintSupported = VK_FALSE;
+                pOpticalFlowProperties->costSupported = VK_FALSE;
+            }
             pOpticalFlowProperties->minWidth = 10;
             pOpticalFlowProperties->minHeight = 10;
             pOpticalFlowProperties->maxWidth = 10000;
             pOpticalFlowProperties->maxHeight = 10000;
-        } else if (pQueueFamilyDataGraphProperties->operation.operationType == VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM &&
-            strncmp(pQueueFamilyDataGraphProperties->operation.name, tosa_operation_name, strlen(tosa_operation_name)) == 0 &&
-            pProperties->sType == VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_TOSA_PROPERTIES_ARM) {
-
+        } else if (pQueueFamilyDataGraphProperties->operation.operationType == tosa_operation.operationType &&
+                   strcmp(pQueueFamilyDataGraphProperties->operation.name, tosa_operation.name) == 0 &&
+                   pProperties->sType == VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_TOSA_PROPERTIES_ARM) {
             auto *pTOSAProperties = reinterpret_cast<VkQueueFamilyDataGraphTOSAPropertiesARM *>(pProperties);
             static constexpr VkDataGraphTOSANameQualityARM graphTOSANameQualityProfiles[] = {
                 { "PRO-INT", VK_DATA_GRAPH_TOSA_QUALITY_CONFORMANT_ARM },
@@ -1611,7 +1631,7 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhys
         }
         if (*pQueueFamilyPropertyCount >= 2) {
             auto props = &pQueueFamilyProperties[1].queueFamilyProperties;
-            props->queueFlags = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_PROTECTED_BIT | VK_QUEUE_VIDEO_DECODE_BIT_KHR;
+            props->queueFlags = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_PROTECTED_BIT | VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_DATA_GRAPH_BIT_ARM;
             props->queueCount = 1;
             props->timestampValidBits = 16;
             props->minImageTransferGranularity = {1, 1, 1};
@@ -1630,7 +1650,7 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhys
         }
         if (*pQueueFamilyPropertyCount >= 3) {
             auto props = &pQueueFamilyProperties[2].queueFamilyProperties;
-            props->queueFlags = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_PROTECTED_BIT | VK_QUEUE_VIDEO_ENCODE_BIT_KHR;
+            props->queueFlags = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_PROTECTED_BIT | VK_QUEUE_VIDEO_ENCODE_BIT_KHR | VK_QUEUE_DATA_GRAPH_BIT_ARM;
             props->queueCount = 1;
             props->timestampValidBits = 16;
             props->minImageTransferGranularity = {1, 1, 1};

@@ -25,6 +25,7 @@
 #include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "utils/math_utils.h"
+#include "error_message/error_strings.h"
 
 bool CoreChecks::ValidateDataGraphPipelineShaderModuleCreateInfo(VkDevice device,
                                                                  const VkDataGraphPipelineShaderModuleCreateInfoARM& dg_shader_ci,
@@ -286,6 +287,62 @@ bool CoreChecks::ValidateOpticalFlowConnections(const VkDataGraphPipelineSingleN
                 "(type VK_DATA_GRAPH_PIPELINE_NODE_CONNECTION_TYPE_OPTICAL_FLOW_HINT_ARM)%s",
                 static_cast<uint32_t>(hint_connection_idx.size()), print_connections(hint_connection_idx).c_str());
         }
+    }
+
+    return skip;
+}
+
+bool core::Instance::PreCallValidateGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+    const VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties, VkBaseOutStructure* pProperties,
+    const ErrorObject& error_obj) const {
+    bool skip = false;
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
+    ASSERT_AND_RETURN_SKIP(pd_state);
+
+    auto describe_properties = [](const auto& all_properties, uint32_t queue_family_index) {
+        std::string out;
+        const auto it = all_properties.find(queue_family_index);
+        if (it == all_properties.end() || it->second.empty()) {
+            out = "EMPTY";
+        } else {
+            for (const auto& property : it->second) {
+                if (!out.empty()) {
+                    out += "\n";
+                }
+                out += string_VkQueueFamilyDataGraphPropertiesARM(property);
+            }
+        }
+        return out;
+    };
+
+    const auto property_it = pd_state->data_graph.queue_family_properties.find(queueFamilyIndex);
+    bool found = false;
+    if (property_it != pd_state->data_graph.queue_family_properties.end() && !property_it->second.empty()) {
+        for (auto& prop : property_it->second) {
+            if (CompareVkQueueFamilyDataGraphPropertiesARM(prop, *pQueueFamilyDataGraphProperties)) {
+                found = true;
+                break;
+            }
+        }
+    }
+    if (!found) {
+        skip |= LogError(
+            "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM-pQueueFamilyDataGraphProperties-09957",
+            physicalDevice, error_obj.location.dot(Field::pQueueFamilyDataGraphProperties),
+            "(%s) is not a property of the given physical device for queueFamilyIndex %" PRIu32 ".\nSupported properties:\n%s",
+            string_VkQueueFamilyDataGraphPropertiesARM(*pQueueFamilyDataGraphProperties).c_str(), queueFamilyIndex,
+            describe_properties(pd_state->data_graph.queue_family_properties, queueFamilyIndex).c_str());
+    }
+
+    if (pProperties->sType != VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_TOSA_PROPERTIES_ARM &&
+        pProperties->sType != VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_OPTICAL_FLOW_PROPERTIES_ARM) {
+        skip |= LogError(
+            "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM-pProperties-09958", physicalDevice,
+            error_obj.location.dot(Field::pProperties).dot(Field::sType),
+            "(%s) is not one of the allowed structures types:\n  VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_TOSA_PROPERTIES_ARM\n  "
+            "VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_OPTICAL_FLOW_PROPERTIES_ARM",
+            string_VkStructureType(pProperties->sType));
     }
 
     return skip;

@@ -219,7 +219,7 @@ std::string string_VkDependencyInfo(const Logger& logger, VkDependencyInfo set_d
     const VkQueueFamilyDataGraphPropertiesARM& property) {
     std::stringstream ss;
     ss << "{\n  engine: " << string_VkPhysicalDeviceDataGraphProcessingEngineARM(property.engine)
-       << ",\n  operation: " << string_VkPhysicalDeviceDataGraphOperationSupportARM(property.operation) << "\n}\n";
+       << ",\n  operation: " << string_VkPhysicalDeviceDataGraphOperationSupportARM(property.operation) << "\n}";
     return ss.str();
 }
 

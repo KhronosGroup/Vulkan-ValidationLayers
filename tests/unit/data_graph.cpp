@@ -1534,6 +1534,8 @@ TEST_F(NegativeDataGraph, ResourceTensorInvalidUsage) {
 }
 
 TEST_F(NegativeDataGraph, ResourceInfoImageLayoutsNoUnifiedImageLayouts) {
+    TEST_DESCRIPTION(
+        "Try dispatching a datagraph with image resources without image layout info when unifiedImageLayouts is disabled");
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
     // Need to create a data graph with image resources instead of the usual tensors, so use optical flow.
@@ -2311,7 +2313,13 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongQueue) {
     uint32_t queue_without_tosa_1_0_idx = UINT32_MAX;
     uint32_t n_queue_families;
     vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &n_queue_families, nullptr);
+    const auto q_props = m_device->Physical().queue_properties_;
     for (uint32_t qfi = 0; qfi < n_queue_families; qfi++) {
+        // the queue must support datagraph
+        if ((q_props[qfi].queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) == 0) {
+            continue;
+        }
+
         uint32_t n_properties;
         vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), qfi, &n_properties, nullptr);
         std::vector<VkQueueFamilyDataGraphPropertiesARM> properties(n_properties,
@@ -2331,11 +2339,11 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongQueue) {
         }
     }
 
-    if (UINT32_MAX == queue_without_tosa_1_0_idx) {
-        GTEST_SKIP() << "All the queues support TOSA, impossible to create the error condition, skip.";
-    }
+    // TODO: setup the queues so that we don't skip here
 
-    // TODO: use queue with index queue_without_tosa_1_0_idx
+    if (UINT32_MAX == queue_without_tosa_1_0_idx) {
+        GTEST_SKIP() << "All the queues supporting datagraph also support TOSA, impossible to create the error condition, skip.";
+    }
 
     vkt::dg::DataGraphPipelineHelper pipeline(*this);
     pipeline.CreateDataGraphPipeline();
@@ -2353,14 +2361,19 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongQueue) {
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
+    // run the graph on the wrong queue family (command pool, buffer)
+    vkt::CommandPool command_pool;
+    vkt::CommandBuffer command_buffer;
+    command_pool.Init(*m_device, queue_without_tosa_1_0_idx);
+    command_buffer.Init(*m_device, command_pool);
+    command_buffer.Begin();
+    vk::CmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    vk::CmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
                               &pipeline.descriptor_set_.get()->set_, 0, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-commandBuffer-09941");
-    vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
+    vk::CmdDispatchDataGraphARM(command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
-    m_command_buffer.End();
+    command_buffer.End();
 }
 
 TEST_F(NegativeDataGraph, OpticalFlowWrongImageFormat) {
@@ -2451,6 +2464,7 @@ TEST_F(NegativeDataGraph, OpticalFlowWrongHint) {
 }
 
 TEST_F(NegativeDataGraph, OpticalFlowNoCacheSession) {
+    TEST_DESCRIPTION("Dispatch an optical flow pipeline with flags that require cache, but without cache");
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
     vkt::dg::OpticalFlowHelper optical_flow(*this);
@@ -2485,6 +2499,7 @@ TEST_F(NegativeDataGraph, OpticalFlowNoCacheSession) {
 }
 
 TEST_F(NegativeDataGraph, OpticalFlowDispatchWithoutOpticalFlowCreateInfo) {
+    TEST_DESCRIPTION("Dispatch an optical flow pipeline without including an optical flow create info");
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
     vkt::dg::DataGraphPipelineHelper pipeline(*this);
@@ -2523,6 +2538,9 @@ TEST_F(NegativeDataGraph, OpticalFlowDispatchWithoutOpticalFlowCreateInfo) {
 }
 
 TEST_F(NegativeDataGraph, OpticalFlowConnectionsImageLayoutsNoUnifiedImageLayouts) {
+    TEST_DESCRIPTION(
+        "Dispatch an optical flow pipeline with a layout definition that require the unifiedImageLayouts feature, but the feature "
+        "is disabled");
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
     vkt::dg::OpticalFlowHelper optical_flow(*this);
@@ -2559,6 +2577,7 @@ TEST_F(NegativeDataGraph, OpticalFlowConnectionsImageLayoutsNoUnifiedImageLayout
 }
 
 TEST_F(NegativeDataGraph, OpticalFlowConnectionsImageLayoutsUnifiedImageLayouts) {
+    TEST_DESCRIPTION("Dispatch an optical flow pipeline with an incorrect layout definition for the unifiedImageLayouts feature");
     AddRequiredFeature(vkt::Feature::unifiedImageLayouts);
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
@@ -2684,7 +2703,13 @@ TEST_F(NegativeDataGraph, OpticalFlowNoHint) {
     uint32_t n_queue_families;
     vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &n_queue_families, nullptr);
     uint32_t no_hint_index = UINT32_MAX;
+    const auto q_props = m_device->Physical().queue_properties_;
     for (uint32_t qfi = 0; qfi < n_queue_families; qfi++) {
+        // the queue must support datagraph
+        if ((q_props[qfi].queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) == 0) {
+            continue;
+        }
+        // and optical flow
         auto of_support_property = vkt::dg::OpticalFlowHelper::GetOpticalFlowSupportProperty(*this, qfi);
         if (std::nullopt == of_support_property) {
             continue;
@@ -2700,7 +2725,7 @@ TEST_F(NegativeDataGraph, OpticalFlowNoHint) {
         }
     }
     if (UINT32_MAX == no_hint_index) {
-        GTEST_SKIP() << "All the queues support optical flow hint, impossible to create the error condition, skip.";
+        GTEST_SKIP() << "All the queues that support datagraph also support optical flow hint, impossible to create the error condition, skip.";
     }
 
     // TODO: use queue with index no_hint_index
@@ -2721,7 +2746,13 @@ TEST_F(NegativeDataGraph, OpticalFlowNoCost) {
     uint32_t n_queue_families;
     vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &n_queue_families, nullptr);
     uint32_t no_cost_index = UINT32_MAX;
+    const auto q_props = m_device->Physical().queue_properties_;
     for (uint32_t qfi = 0; qfi < n_queue_families; qfi++) {
+        // the queue must support datagraph
+        if ((q_props[qfi].queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) == 0) {
+            continue;
+        }
+        // and optical flow
         auto of_support_property = vkt::dg::OpticalFlowHelper::GetOpticalFlowSupportProperty(*this, qfi);
         if (std::nullopt == of_support_property) {
             continue;
@@ -2737,7 +2768,7 @@ TEST_F(NegativeDataGraph, OpticalFlowNoCost) {
         }
     }
     if (UINT32_MAX == no_cost_index) {
-        GTEST_SKIP() << "All the queues support optical flow cost, impossible to create the error condition, skip.";
+        GTEST_SKIP() << "All the queues that support datagraph also support optical flow cost, impossible to create the error condition, skip.";
     }
 
     // TODO: use queue with index no_cost_index
@@ -2749,5 +2780,154 @@ TEST_F(NegativeDataGraph, OpticalFlowNoCost) {
 
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-flags-09975");
     ASSERT_EQ(VK_ERROR_VALIDATION_FAILED, optical_flow.CreateDataGraphPipeline());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, ProcessingEnginesGetPropertiesWrongQueue) {
+    TEST_DESCRIPTION("Request Processing Engine operation properties on a different queue family that does not support them");
+    RETURN_IF_SKIP(InitBasicDataGraph(true /*optical_flow*/));
+
+    // get the available properties on the default queue
+    uint32_t queue_index = DefaultQueue()->family_index;
+    uint32_t n_properties = 0;
+    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), queue_index, &n_properties, nullptr));
+    std::vector<VkQueueFamilyDataGraphPropertiesARM> data_graph_queue_family_properties(
+        n_properties, vku::InitStruct<VkQueueFamilyDataGraphPropertiesARM>());
+    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), queue_index, &n_properties,
+                                                                                 data_graph_queue_family_properties.data()));
+
+    // same on a different queue
+    if (SecondQueue() == nullptr) {
+        GTEST_SKIP() << "Two queue families needed, skip test.";
+    }
+    uint32_t other_queue_index = SecondQueue()->family_index;
+    n_properties = 0;
+    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), other_queue_index, &n_properties, nullptr));
+    std::vector<VkQueueFamilyDataGraphPropertiesARM> other_queue_family_data_graph_properties(
+        n_properties, vku::InitStruct<VkQueueFamilyDataGraphPropertiesARM>());
+    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), other_queue_index, &n_properties,
+                                                                                 other_queue_family_data_graph_properties.data()));
+
+    // now ask on the second queue for properties that are present only on the first queue
+    bool found_unique_property = false;
+    for (auto& prop : data_graph_queue_family_properties) {
+        // skip prop if also present in the other queue
+        if (std::any_of(other_queue_family_data_graph_properties.begin(), other_queue_family_data_graph_properties.end(),
+                        [prop](const auto& other_prop) { return CompareVkQueueFamilyDataGraphPropertiesARM(prop, other_prop); })) {
+            continue;
+        }
+
+        // The 2 properties that can be supported by the default engine.
+        // TODO: add more properties for other engines
+        static constexpr VkPhysicalDeviceDataGraphOperationSupportARM tosa_operation{
+            VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM, "TOSA.001000.1", 0};
+        static constexpr VkPhysicalDeviceDataGraphOperationSupportARM optical_flow_operation{
+            VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM, "OpticalFlow", 1};
+
+        // get the values for the 2 properties supported in the default processing engine.
+        VkQueueFamilyDataGraphOpticalFlowPropertiesARM op_flow_properties = vku::InitStructHelper();
+        VkQueueFamilyDataGraphTOSAPropertiesARM tosa_properties = vku::InitStructHelper();
+        VkBaseOutStructure* pProperties = nullptr;
+        if (prop.operation.operationType == optical_flow_operation.operationType &&
+            strcmp(prop.operation.name, optical_flow_operation.name) == 0) {
+            pProperties = reinterpret_cast<VkBaseOutStructure*>(&op_flow_properties);
+        } else if (prop.operation.operationType == tosa_operation.operationType &&
+                   strcmp(prop.operation.name, tosa_operation.name) == 0) {
+            pProperties = reinterpret_cast<VkBaseOutStructure*>(&tosa_properties);
+        } else {
+            // some other property that we haven't considered (other engine? Add)
+            continue;
+        }
+
+        m_errorMonitor->SetDesiredError(
+            "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM-pQueueFamilyDataGraphProperties-09957");
+        ASSERT_EQ(VK_ERROR_VALIDATION_FAILED, vk::GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+                                                  Gpu(), other_queue_index, &prop, pProperties));
+        m_errorMonitor->VerifyFound();
+        found_unique_property = true;
+    }
+    if (!found_unique_property) {
+        GTEST_SKIP() << "No queue-family-specific data graph properties available.";
+    }
+}
+
+TEST_F(NegativeDataGraph, ProcessingEnginesGetPropertiesWrongEngine) {
+    TEST_DESCRIPTION("Request Processing Engine operation properties with the wrong engine");
+    RETURN_IF_SKIP(InitBasicDataGraph(true /*optical_flow*/));
+
+    // get the available properties on the default queue
+    uint32_t queue_index = DefaultQueue()->family_index;
+    uint32_t n_properties = 0;
+    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), queue_index, &n_properties, nullptr));
+    std::vector<VkQueueFamilyDataGraphPropertiesARM> data_graph_queue_family_properties(
+        n_properties, vku::InitStruct<VkQueueFamilyDataGraphPropertiesARM>());
+    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), queue_index, &n_properties,
+                                                                                 data_graph_queue_family_properties.data()));
+
+    // ask for properties, but switch the engine
+    bool test_executed = false;
+    for (auto& prop : data_graph_queue_family_properties) {
+        // switch the engine in prop
+        if (prop.engine.type == VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM) {
+            prop.engine = {VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_COMPUTE_QCOM, true};
+        } else {
+            prop.engine = {VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM, false};
+        }
+
+        // The 2 properties that can be supported by the default engine.
+        // TODO: add more properties for other engines
+        static constexpr VkPhysicalDeviceDataGraphOperationSupportARM tosa_operation{
+            VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM, "TOSA.001000.1", 0};
+        static constexpr VkPhysicalDeviceDataGraphOperationSupportARM optical_flow_operation{
+            VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM, "OpticalFlow", 1};
+
+        // get the values for the 2 properties supported in the default processing engine.
+        VkQueueFamilyDataGraphOpticalFlowPropertiesARM op_flow_properties = vku::InitStructHelper();
+        VkQueueFamilyDataGraphTOSAPropertiesARM tosa_properties = vku::InitStructHelper();
+        VkBaseOutStructure* pProperties = nullptr;
+        if (prop.operation.operationType == optical_flow_operation.operationType &&
+            strcmp(prop.operation.name, optical_flow_operation.name) == 0) {
+            pProperties = reinterpret_cast<VkBaseOutStructure*>(&op_flow_properties);
+        } else if (prop.operation.operationType == tosa_operation.operationType &&
+                   strcmp(prop.operation.name, tosa_operation.name) == 0) {
+            pProperties = reinterpret_cast<VkBaseOutStructure*>(&tosa_properties);
+        } else {
+            // some other property that we haven't considered (other engine? Add)
+            continue;
+        }
+
+        m_errorMonitor->SetDesiredError(
+            "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM-pQueueFamilyDataGraphProperties-09957");
+        ASSERT_EQ(VK_ERROR_VALIDATION_FAILED, vk::GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+                                                  Gpu(), queue_index, &prop, pProperties));
+        m_errorMonitor->VerifyFound();
+        test_executed = true;
+    }
+    if (!test_executed) {
+        GTEST_SKIP() << "No queue-family-specific data graph properties available.";
+    }
+}
+
+TEST_F(NegativeDataGraph, ProcessingEnginesGetPropertiesWrongType) {
+    TEST_DESCRIPTION("Request the Processing Engine properties using the wrong structure");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    // get the available properties
+    uint32_t queue_index = DefaultQueue()->family_index;
+    uint32_t n_properties = 0;
+    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), queue_index, &n_properties, nullptr));
+    if (n_properties == 0) {
+        GTEST_SKIP() << "The physical device does not support any datagraph properties, skip.";
+    }
+    std::vector<VkQueueFamilyDataGraphPropertiesARM> data_graph_queue_family_properties(
+        n_properties, vku::InitStruct<VkQueueFamilyDataGraphPropertiesARM>());
+    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), queue_index, &n_properties,
+                                                                                 data_graph_queue_family_properties.data()));
+
+    VkQueueFamilyDataGraphPropertiesARM properties = vku::InitStructHelper();  // WRONG structure!
+    VkBaseOutStructure* pProperties = reinterpret_cast<VkBaseOutStructure*>(&properties);
+    m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM-pProperties-09958");
+    ASSERT_EQ(VK_ERROR_VALIDATION_FAILED, vk::GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+                                              Gpu(), queue_index, &data_graph_queue_family_properties[0], pProperties));
     m_errorMonitor->VerifyFound();
 }
