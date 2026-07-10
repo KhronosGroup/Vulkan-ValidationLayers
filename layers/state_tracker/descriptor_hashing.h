@@ -84,7 +84,7 @@ struct DescriptorHashTable {
     // Represents single "slot" in our linear buffer allocation
     struct Slot {
         uint64_t key;
-        Entry entry;
+        alignas(8) Entry entry;
     };
     // Want to keep 32-byte aligned for better GPU read accessing
     static_assert(sizeof(Slot) == 32, "DescriptorHashTable::Slot exceeds the 32-byte limit!");
