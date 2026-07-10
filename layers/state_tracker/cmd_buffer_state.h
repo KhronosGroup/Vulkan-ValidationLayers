@@ -766,6 +766,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordPushData(const VkPushDataInfoEXT& push_data_info, const Location& loc);
     bool VerifyPushData(uint32_t offset, uint32_t size) const;
 
+    void RecordBindDescriptorBuffer(vvl::DeviceState& device_state, uint32_t buffer_count,
+                                    const VkDescriptorBufferBindingInfoEXT* binding_infos, const Location& loc);
     void RecordBindResourceHeap(vvl::DeviceState& device_state, const VkBindHeapInfoEXT& bind_info, const Location& loc);
     void RecordBindSamplerHeap(vvl::DeviceState& device_state, const VkBindHeapInfoEXT& bind_info, const Location& loc);
 
@@ -948,6 +950,7 @@ class CommandBufferSubState {
     virtual void ClearPushConstants() {}
     virtual void ClearPushData() {}
 
+    // VK_EXT_descriptor_heap
     virtual void RecordBindResourceHeap() {}
     virtual void RecordBindSamplerHeap() {}
 

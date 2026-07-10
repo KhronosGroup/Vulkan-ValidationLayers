@@ -701,6 +701,8 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::INVALID_DESCRIPTOR_08114: suffix = "None-08114"; break;
         // ### VUID-vkCmdDraw-None-10068
         case ActionVUID::DESCRIPTOR_INDEX_OOB_10068: suffix = "None-10068"; break;
+        // ### VUID-vkCmdDraw-None-08116
+        case ActionVUID::DESCRIPTOR_BUFFER_08116: suffix = "None-08116"; break;
         // ### VUID-vkCmdDraw-None-11309
         case ActionVUID::DESCRIPTOR_HEAP_OOB_11309: suffix = "None-11309"; break;
         // ### VUID-vkCmdDraw-None-11297

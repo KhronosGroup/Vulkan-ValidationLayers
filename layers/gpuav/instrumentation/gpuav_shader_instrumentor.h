@@ -234,8 +234,9 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
 
     std::vector<spirv::InternalOnlyDebugPrintf> internal_only_debug_printf_;
 
-    // Size to reserve in front of every resource descriptor buffer
-    VkDeviceSize resource_descriptor_buffer_size_ = 0;
+    // VK_EXT_descriptor_buffer
+    // Each action command advances into the global indirect buffer by this stride
+    VkDeviceSize resource_descriptor_buffer_stride_ = 0;
     // Each vector index maps to the binding number with the offset to map to (with the start offset included)
     std::vector<VkDeviceSize> resource_descriptor_buffer_offsets_;
 

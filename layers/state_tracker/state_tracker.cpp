@@ -3485,22 +3485,12 @@ void DeviceState::PostCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                                                             const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
                                                             const RecordObject& record_obj) {
     auto cb_state = Get<CommandBuffer>(commandBuffer);
-    cb_state->descriptor_buffer.ever_bound = true;
+    cb_state->RecordBindDescriptorBuffer(*this, bufferCount, pBindingInfos, record_obj.location);
 
-    cb_state->descriptor_buffer.binding_info.resize(bufferCount);
-    for (uint32_t i = 0; i < bufferCount; i++) {
-        const VkDescriptorBufferBindingInfoEXT& binding_info = pBindingInfos[i];
-        VkBufferUsageFlags2 buffer_usage = binding_info.usage;
-        if (const auto usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(binding_info.pNext)) {
-            buffer_usage = usage_flags2->usage;
-        }
-
-        cb_state->descriptor_buffer.binding_info[i] = {binding_info.address, buffer_usage};
-    }
-
-    // So really this should be set at vkCmdSetDescriptorBufferOffsetsEXT time where the bindpoint is known.
-    // In practice, setting it here is better as if the app messes up, it might crash things.
-    cb_state->SetDescriptorMode(DescriptorModeBuffer, record_obj.location.function);
+    // We tried to once call SetDescriptorMode(DescriptorModeBuffer) here
+    // but after much discussion
+    // (https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7504#note_546442)
+    // it seems this call alone is not the correct spot to invalidate anything
 }
 
 void DeviceState::PostCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,

@@ -37,7 +37,7 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
     }
 
     cb.on_instrumentation_error_logger_register_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
-                                                                          const LastBound& last_bound) {
+                                                                          const LastBound&) {
         CommandBufferSubState::InstrumentationErrorLogger inst_error_logger =
             [](Validator& gpuav, const Location&, const uint32_t* error_record, const InstrumentedShader* instrumented_shader,
                std::string& out_error_msg, std::string& out_vuid_msg) {

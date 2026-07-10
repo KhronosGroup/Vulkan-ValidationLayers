@@ -219,9 +219,11 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const L
         {glsl::kBindingInstErrorBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Buffer holding output from GPU to do processing on the CPU
         {glsl::kBindingInstPostProcess, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-        // Buffer holding input from CPU into the shader for descriptor indexing
+        // Buffer holding input from CPU into the shader for descriptor indexing (classic)
         {glsl::kBindingInstDescriptorIndexingOOB, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-        // Buffer holding input from CPU into the shader for descriptor heap
+        // Buffer holding input from CPU into the shader for VK_EXT_descriptor_buffer
+        {glsl::kBindingInstDescriptorBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        // Buffer holding input from CPU into the shader for VK_EXT_descriptor_heap
         {glsl::kBindingInstDescriptorHeap, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Buffer holding buffer device addresses
         {glsl::kBindingInstBufferDeviceAddress, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -309,7 +311,8 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const L
 vko::Buffer& Validator::GetGlobalDescriptorBuffer() {
     if (global_resource_descriptor_buffer_.IsDestroyed()) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-        buffer_info.size = phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize * cst::total_internal_descriptors;
+        // TODO - This is about 6MB and need a fraction of this if using DebugPrintf only
+        buffer_info.size = resource_descriptor_buffer_stride_ * gpuav_settings.indices_buffer_count;
         buffer_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;

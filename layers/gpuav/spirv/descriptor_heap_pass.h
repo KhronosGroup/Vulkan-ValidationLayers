@@ -24,8 +24,6 @@ struct VkDescriptorSetAndBindingMappingEXT;
 namespace gpuav {
 namespace spirv {
 
-struct DescriptorInterface;
-
 class DescriptorHeapPass : public Pass {
   public:
     DescriptorHeapPass(Module& module);

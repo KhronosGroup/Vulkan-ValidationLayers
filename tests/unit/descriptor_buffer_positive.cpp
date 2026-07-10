@@ -30,34 +30,6 @@ void DescriptorBufferTest::InitBasicDescriptorBuffer(void* instance_pnext) {
 
 class PositiveDescriptorBuffer : public DescriptorBufferTest {};
 
-TEST_F(PositiveDescriptorBuffer, BasicUsage) {
-    TEST_DESCRIPTION("Create VkBuffer with extension.");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorBuffer);
-    RETURN_IF_SKIP(Init());
-
-    // *descriptorBufferAddressSpaceSize properties are guaranteed to be 2^27
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 4096;
-
-    {
-        buffer_ci.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-        vkt::Buffer buffer(*m_device, buffer_ci);
-    }
-
-    {
-        buffer_ci.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-        vkt::Buffer buffer(*m_device, buffer_ci);
-    }
-
-    {
-        buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
-                          VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-        vkt::Buffer buffer(*m_device, buffer_ci);
-    }
-}
-
 TEST_F(PositiveDescriptorBuffer, BindBufferAndSetOffset) {
     TEST_DESCRIPTION("Bind descriptor buffer and set descriptor offset then draw.");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());

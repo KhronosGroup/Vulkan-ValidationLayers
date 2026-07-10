@@ -191,7 +191,7 @@ bool BindingInfo::ValidateDescriptor(std::ostringstream& ss, GpuDump& dev_data) 
     }
 
     ss << "      - Found descriptor mapped to: " << descriptor_hashing.Describe(*dev_data.device_state, key) << "\n";
-    return true;
+    return false;
 }
 
 // Return true if found warning
@@ -301,21 +301,37 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
 
             if (set_info == nullptr) {
                 const vvl::DescriptorSetLayout* dsl = pipeline_layout.set_layouts.list[var_set].get();
+                if (var_set >= last_bound.ds_slots.size()) {
+                    ss << "  - [WARNING] SPIRV-Set " << std::dec << var_set
+                       << " is not a valid bound set as vkCmdSetDescriptorBufferOffsetsEXT was either not called or invalidated "
+                          "for "
+                       << string_VkPipelineBindPoint(last_bound.bind_point) << '\n';
+                    found_warning = true;
+                    continue;
+                }
                 const auto& descriptor_buffer_binding = last_bound.ds_slots[var_set].descriptor_buffer_binding;
 
                 // Will print the invalid/unknown sets first, no need to sort these
                 if (!dsl || dsl->Destroyed()) {
-                    ss << "  - [WARNING] Set " << std::dec << var_set
+                    ss << "  - [WARNING] SPIR-V Set " << std::dec << var_set
                        << " VkDescriptorSetLayout was destroyed (TODO - Track more info in pipeline layout)\n";
                     found_warning = true;
                     continue;
                 } else if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) == 0) {
-                    ss << "  - [WARNING] Set " << std::dec << var_set
+                    ss << "  - [WARNING] SPIR-V Set " << std::dec << var_set
                        << " was not created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT\n";
                     found_warning = true;
                     continue;
+                } else if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) != 0) {
+                    ss << "  - SPIR-V Set " << std::dec << var_set
+                       << " was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT\n";
+                    continue;
+                } else if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) != 0) {
+                    ss << "  - SPIR-V Set " << std::dec << var_set
+                       << " was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT\n";
+                    continue;
                 } else if (!descriptor_buffer_binding.has_value()) {
-                    ss << "  - [WARNING] Set " << std::dec << var_set
+                    ss << "  - [WARNING] SPIR-V Set " << std::dec << var_set
                        << " was never bound with offset. This is only valid if descriptor is not used in the shader";
                     if (dsl->HasImmutableSamplers()) {
                         ss << " or because all bindings are using Immutable Samplers";

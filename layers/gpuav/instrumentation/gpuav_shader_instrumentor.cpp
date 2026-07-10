@@ -50,6 +50,7 @@
 #include "gpuav/spirv/descriptor_indexing_oob_pass.h"
 #include "gpuav/spirv/descriptor_class_general_buffer_pass.h"
 #include "gpuav/spirv/descriptor_class_texel_buffer_pass.h"
+#include "gpuav/spirv/descriptor_buffer_pass.h"
 #include "gpuav/spirv/descriptor_heap_pass.h"
 #include "gpuav/spirv/trace_ray_pass.h"
 #include "gpuav/spirv/shared_memory_data_race_pass.h"
@@ -181,10 +182,9 @@ void GpuShaderInstrumentor::SetupDescriptorBuffers(const Location& loc) {
         return;
     }
 
-    VkDeviceSize bytes_to_reserve = 0;
-    DispatchGetDescriptorSetLayoutSizeEXT(device, instrumentation_desc_layout_[vvl::DescriptorModeBuffer], &bytes_to_reserve);
+    DispatchGetDescriptorSetLayoutSizeEXT(device, instrumentation_desc_layout_[vvl::DescriptorModeBuffer],
+                                          &resource_descriptor_buffer_stride_);
 
-    resource_descriptor_buffer_size_ = bytes_to_reserve;
     resource_descriptor_buffer_offsets_.resize(glsl::kTotalBindings);
     for (uint32_t i = 0; i < glsl::kTotalBindings; i++) {
         DispatchGetDescriptorSetLayoutBindingOffsetEXT(device, instrumentation_desc_layout_[vvl::DescriptorModeBuffer], i,
@@ -1807,11 +1807,12 @@ void GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
                 spirv::DescriptorClassGeneralBufferPass general_buffer_pass(module);
                 modified |= general_buffer_pass.Run();
             }
-        }
-
-        if (interface.descriptor_mode == vvl::DescriptorModeHeap) {
-            spirv::DescriptorHeapPass oob_pass(module);
-            modified |= oob_pass.Run();
+        } else if (interface.descriptor_mode == vvl::DescriptorModeBuffer) {
+            spirv::DescriptorBufferPass pass(module);
+            modified |= pass.Run();
+        } else if (interface.descriptor_mode == vvl::DescriptorModeHeap) {
+            spirv::DescriptorHeapPass pass(module);
+            modified |= pass.Run();
         }
     }
 

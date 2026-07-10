@@ -263,7 +263,7 @@ TEST_F(NegativeGpuDump, DescriptorBufferWrongBufferType) {
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-        {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},  // unused
     };
     std::vector<VkDescriptorSetLayoutBinding> sampler_binding = {
         {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -306,14 +306,10 @@ TEST_F(NegativeGpuDump, DescriptorBufferWrongBufferType) {
     descriptor_buffer_binding_info[1].usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 2, descriptor_buffer_binding_info);
 
-    uint32_t buffer_index = 1;
-    VkDeviceSize buffer_offset = 0;
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 1, 1, &buffer_index,
-                                         &buffer_offset);
-
-    buffer_index = 0;
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
-                                         &buffer_offset);
+    uint32_t buffer_index[2] = {0, 1};
+    VkDeviceSize buffer_offset[2] = {0, 0};
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 2, buffer_index,
+                                         buffer_offset);
 
     m_errorMonitor->SetDesiredWarning("BUFFER USAGE");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);

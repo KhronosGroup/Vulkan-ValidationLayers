@@ -1,0 +1,156 @@
+// Copyright (c) 2026 The Khronos Group Inc.
+// Copyright (c) 2026 Valve Corporation
+// Copyright (c) 2026 LunarG, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// NOTE: This file doesn't contain any entrypoints and should be compiled with the --no-link option for glslang
+
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#include "common_descriptor_sets.h"
+#include "error_payload.h"
+
+struct DescriptorBufferBindingEncodingData {
+    uint binding;
+    // vkGetDescriptorSetLayoutBindingOffsetEXT
+    uint offset;
+};
+
+layout(buffer_reference, scalar) buffer DescriptorBufferBindingEncoding {
+    DescriptorBufferBindingEncodingData data[];
+};
+
+layout(buffer_reference, scalar) buffer DescriptorBufferSetEncoding {
+    // vkCmdBindDescriptorBuffersEXT::pBindingInfo[i].address + pOffset
+    uint64_t buffer_address;
+    DescriptorBufferBindingEncoding bindings;
+    uint binding_count;
+    uint skip; // skip if non-zero
+};
+
+layout(buffer_reference, scalar) buffer DescriptorBufferSets {
+    DescriptorBufferSetEncoding sets[];
+};
+
+// see descriptor_hashing.h
+struct DescriptorHashTableSlot {
+    uint64_t key;
+// struct Entry {
+    uint types;
+    uint padding;
+    uint64_t unused_entry_0;
+    uint64_t unused_entry_1;
+// }
+};
+
+layout(buffer_reference, scalar) buffer HashTable {
+    DescriptorHashTableSlot slots[];
+};
+
+// This is "the" actual heap we need to look at when to see if the memory inside
+// is the correct descriptor type or not
+// Called "App" because even though this the true "DescriptorBuffer" that name is overloadded in this file
+layout(buffer_reference, scalar) buffer AppBuffer {
+    uint data[];
+};
+
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorBuffer, scalar) buffer DescriptorBufferEncoding {
+    DescriptorBufferSets descriptors;
+    HashTable hash_table;
+} gpuav;
+
+bool inst_buffer_descriptor_hashing(const uint inst_offset, const uint desc_set, const uint desc_binding, const uint desc_index, const uint desc_type, const uint desc_size) {
+    DescriptorBufferSetEncoding set_encoding = gpuav.descriptors.sets[desc_set];
+    if (set_encoding.skip != 0) {
+        return true;
+    }
+
+    // incase the user has something dumb like
+    // layout(binding = 100000)
+    // we don't need to allocate 100000 empty slots
+    // so we painfully loop for it on the GPU for now
+    // TODO - look into making use of BindingLayout that classic descriptors uses
+    uint binding_offset = 0;
+    for (uint i = 0; i < set_encoding.binding_count; i++) {
+        if (desc_binding == set_encoding.bindings.data[i].binding) {
+            binding_offset = set_encoding.bindings.data[i].offset;
+            break;
+        }
+    }
+
+    uint64_t final_address = set_encoding.buffer_address + binding_offset + (desc_index * desc_size);
+    AppBuffer app_buffer = AppBuffer(final_address);
+
+    // GPU version of DescriptorHashing::Hash
+    uint64_t key = 14695981039346656037UL;
+    uint dword_start = 0;
+    uint descriptor_dwords = desc_size / 4;
+    for (uint i = 0; i < descriptor_dwords; i++) {
+        key ^= uint64_t(app_buffer.data[dword_start + i]);
+        key *= 1099511628211UL;
+    }
+    // Avalanche mixer
+    key ^= key >> 33;
+    key *= 0xff51afd7ed558ccdUL;
+    key ^= key >> 33;
+    key *= 0xc4ceb9fe1a85ec53UL;
+    key ^= key >> 33;
+
+    // EMPTY and TOMBSTONE
+    if (key == 0UL || key == 0xFFFFFFFFFFFFFFFFUL) {
+        key = 1UL;
+    }
+
+    // GPU version of DescriptorHashTable::Find
+    uint capacity = SpecConstantDescriptorHashingCapacity;
+    uint64_t raw_index = key & (uint64_t(capacity) - 1UL);
+    uint slot_index = uint(raw_index);
+    uint start_index = slot_index;
+
+    uint error = kErrorSubCode_DescriptorBuffer_DescriptorHashing_None;
+    uint param_0 = 0;
+
+    while (gpuav.hash_table.slots[slot_index].key != 0UL) {
+        if (gpuav.hash_table.slots[slot_index].key == key) {
+            uint slot_type = gpuav.hash_table.slots[slot_index].types;
+            if ((slot_type & (1 << desc_type)) == 0) {
+                error = kErrorSubCode_DescriptorBuffer_DescriptorHashing_Wrong;
+                param_0 = slot_index;
+            } else {
+                error = 0;
+            }
+            break;
+        }
+
+        // Linear Probe
+        // We know capacity is powe-of-two and much faster to use & over a %
+        slot_index = (slot_index + 1) & (capacity - 1);
+
+        if (slot_index == start_index) {
+            break;
+        }
+    }
+
+    if (error != 0) {
+        error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorBuffer << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
+                            param_0,
+                            (desc_set << kInst_DescriptorIndexing_SetShift) | desc_index,
+                            desc_binding
+                        );
+        return false;
+    }
+    return true;
+}

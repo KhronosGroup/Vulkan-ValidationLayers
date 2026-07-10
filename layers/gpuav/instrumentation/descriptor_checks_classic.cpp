@@ -120,7 +120,7 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
     }
 
     cb.on_instrumentation_error_logger_register_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
-                                                                          const LastBound& last_bound) {
+                                                                          const LastBound&) {
         // We want to grab the last (current) element in descriptor_binding_commands, but as a std::vector, the reference might be
         // garbage later, so just hold the index for later. It is possible to have no descriptor sets bound, for example if using
         // push constants.
