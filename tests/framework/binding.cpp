@@ -1073,7 +1073,7 @@ NON_DISPATCHABLE_HANDLE_DTOR(Event, vk::DestroyEvent)
 void Event::Init(const Device& dev, const VkEventCreateInfo& info) { NON_DISPATCHABLE_HANDLE_INIT(vk::CreateEvent, dev, &info); }
 
 VkResult Event::GetStatus() const { return vk::GetEventStatus(device(), handle()); }
-void Event::Set() { ASSERT_EQ(VK_SUCCESS, vk::SetEvent(device(), handle())); }
+void Event::Set() { vk::SetEvent(device(), handle()); }
 void Event::Reset() { vk::ResetEvent(device(), handle()); }
 
 NON_DISPATCHABLE_HANDLE_DTOR(QueryPool, vk::DestroyQueryPool)

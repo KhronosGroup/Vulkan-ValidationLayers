@@ -1801,11 +1801,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBu
 bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const {
     bool skip = false;
     if (auto event_state = Get<vvl::Event>(event)) {
-        if (event_state->InUse()) {
-            skip |= LogError("VUID-vkSetEvent-event-09543", event, error_obj.location.dot(Field::event),
-                             "(%s) that is already in use by a command buffer.%s", FormatHandle(event).c_str(),
-                             is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the event must be destroyed)" : "");
-        }
+        skip |= ValidateObjectNotInUse(event_state.get(), error_obj.location, "VUID-vkSetEvent-event-09543");
         if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT) {
             skip |= LogError("VUID-vkSetEvent-event-03941", event, error_obj.location.dot(Field::event),
                              "(%s) was created with VK_EVENT_CREATE_DEVICE_ONLY_BIT.", FormatHandle(event).c_str());
