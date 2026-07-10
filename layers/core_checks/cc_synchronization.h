@@ -71,6 +71,16 @@ struct SemaphoreSubmitState {
     bool ValidateSignalSemaphore(const Location &semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
 };
 
+// WaitEventSubmitInfo/WaitEvent2SubmitInfo store event waits that need
+// submit-time validation.
+//
+// Event waits can be validated directly during QueueSubmit instead of being
+// deferred through SubmitTimeTracker. SubmitTimeTracker handles submit-time
+// validation that can be affected by timeline semaphore wait-before-signal
+// reordering. Events are used within a single queue, so this reordering is
+// not applicable. A validation error is reported if an event's set and wait
+// are executed on different queues
+//
 struct WaitEventSubmitInfo {
     std::vector<VkEvent> wait_events;
     VkPipelineStageFlags wait_src_stage_mask = VK_PIPELINE_STAGE_NONE;
