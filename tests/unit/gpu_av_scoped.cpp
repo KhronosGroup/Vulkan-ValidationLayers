@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <vulkan/vulkan_core.h>
 #include <filesystem>
 #include <fstream>
 #include "layer_validation_tests.h"
@@ -22,6 +23,12 @@
 #include "descriptor_helper.h"
 #include "ray_tracing_objects.h"
 #include "shader_object_helper.h"
+#include "shader_templates.h"
+
+// stype-check off
+static const VkValidationFeatureEnableEXT kValEnabled = VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT;
+static const VkValidationFeaturesEXT kValFeature = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, NULL, 1, &kValEnabled, 0, nullptr};
+// stype-check on
 
 class NegativeGpuAVScoped : public GpuAVTest {};
 
@@ -50,12 +57,8 @@ TEST_F(NegativeGpuAVScoped, SelectInstrumentedShaders) {
         }
         )glsl";
 
-    VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
-    VkValidationFeaturesEXT features = vku::InitStructHelper();
-    features.enabledValidationFeatureCount = 1;
-    features.pEnabledValidationFeatures = enabled;
     VkShaderObj vs(*m_device, vertshader, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main",
-                   &features);
+                   &kValFeature);
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[0] = vs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout;
@@ -71,6 +74,158 @@ TEST_F(NegativeGpuAVScoped, SelectInstrumentedShaders) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVScoped, SelectInstrumentedShadersComputePipeline) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer write_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, write_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; };
+        void main() {
+            data[64] = 0;
+        }
+    )glsl";
+    VkShaderObj cs(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.stage = cs.GetStageCreateInfo();
+    // On VkPipelineShaderStageCreateInfo
+    pipe.cp_ci_.stage.pNext = &kValFeature;
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline(false);
+
+    CreateComputePipelineHelper pipe2(*this);
+    pipe2.cp_ci_.stage = cs.GetStageCreateInfo();
+    // On VkComputePipelineCreateInfo
+    pipe2.cp_ci_.pNext = &kValFeature;
+    pipe2.cp_ci_.layout = pipeline_layout;
+    pipe2.CreateComputePipeline(false);
+
+    // On Inlined on the VkShaderModuleCreateInfo
+    std::vector<uint32_t> cs_spirv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
+    VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper((void*)&kValFeature);
+    module_create_info.pCode = cs_spirv.data();
+    module_create_info.codeSize = cs_spirv.size() * sizeof(uint32_t);
+    VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&module_create_info);
+    stage_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    stage_ci.module = VK_NULL_HANDLE;
+    stage_ci.pName = "main";
+    CreateComputePipelineHelper pipe3(*this);
+    pipe3.cp_ci_.stage = stage_ci;
+    pipe3.cp_ci_.layout = pipeline_layout;
+    pipe3.CreateComputePipeline(false);
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe2);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe3);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936", 3);  // one for each pipeline
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVScoped, SelectInstrumentedShadersGraphicsPipeline) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    vkt::Buffer write_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, write_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; };
+        void main() {
+            if (gl_VertexIndex == 0) {
+                data[64] = 0;
+            }
+        }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineShaderStageCreateInfo stages_ci[2]{vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.gp_ci_.stageCount = 2;
+    pipe.gp_ci_.pStages = stages_ci;
+    // On VkPipelineShaderStageCreateInfo
+    stages_ci[0].pNext = &kValFeature;
+    pipe.CreateGraphicsPipeline(false);
+    stages_ci[0].pNext = nullptr;
+
+    // On VkGraphicsPipelineCreateInfo
+    CreatePipelineHelper pipe2(*this);
+    pipe2.gp_ci_.layout = pipeline_layout;
+    pipe2.gp_ci_.stageCount = 2;
+    pipe2.gp_ci_.pStages = stages_ci;
+    pipe2.gp_ci_.pNext = &kValFeature;
+    pipe2.CreateGraphicsPipeline(false);
+
+    // On Inlined on the VkShaderModuleCreateInfo
+    std::vector<uint32_t> vs_spirv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
+    VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper((void*)&kValFeature);
+    module_create_info.pCode = vs_spirv.data();
+    module_create_info.codeSize = vs_spirv.size() * sizeof(uint32_t);
+    stages_ci[0] = vku::InitStructHelper(&module_create_info);
+    stages_ci[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stages_ci[0].module = VK_NULL_HANDLE;
+    stages_ci[0].pName = "main";
+    CreatePipelineHelper pipe3(*this);
+    pipe3.gp_ci_.layout = pipeline_layout;
+    pipe3.gp_ci_.stageCount = 2;
+    pipe3.gp_ci_.pStages = stages_ci;
+    pipe3.CreateGraphicsPipeline(false);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe3);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);  // one for each pipeline
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -698,12 +853,8 @@ TEST_F(NegativeGpuAVScoped, SelectInstrumentedShadersShaderObject) {
     VkShaderCreateInfoEXT vert_create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, descriptor_set_layouts);
     VkShaderCreateInfoEXT frag_create_info = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, descriptor_set_layouts);
 
-    VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
-    VkValidationFeaturesEXT features = vku::InitStructHelper();
-    features.enabledValidationFeatureCount = 1;
-    features.pEnabledValidationFeatures = enabled;
-    vert_create_info.pNext = &features;
-    frag_create_info.pNext = &features;
+    vert_create_info.pNext = &kValFeature;
+    frag_create_info.pNext = &kValFeature;
 
     const vkt::Shader vert_shader(*m_device, vert_create_info);
     const vkt::Shader frag_shader(*m_device, frag_create_info);
@@ -768,12 +919,8 @@ TEST_F(NegativeGpuAVScoped, SelectInstrumentedShadersShaderObjectDrawIndexedIndi
     VkShaderCreateInfoEXT vert_create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, descriptor_set_layouts);
     VkShaderCreateInfoEXT frag_create_info = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, descriptor_set_layouts);
 
-    VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
-    VkValidationFeaturesEXT features = vku::InitStructHelper();
-    features.enabledValidationFeatureCount = 1;
-    features.pEnabledValidationFeatures = enabled;
-    vert_create_info.pNext = &features;
-    frag_create_info.pNext = &features;
+    vert_create_info.pNext = &kValFeature;
+    frag_create_info.pNext = &kValFeature;
 
     const vkt::Shader vert_shader(*m_device, vert_create_info);
     const vkt::Shader frag_shader(*m_device, frag_create_info);

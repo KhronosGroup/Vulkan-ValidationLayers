@@ -1269,6 +1269,11 @@ bool GpuShaderInstrumentor::IsPipelineSelectedForInstrumentation(const void* pip
         if (!pipeline_debug_name.empty()) {
             should_instrument_pipeline = gpuav_settings.MatchesAnyShaderSelectionRegex(pipeline_debug_name);
         }
+
+        // Then can pass this in on the Vk*PipelineCreateInfo
+        if (IsSelectiveInstrumentationEnabled(pipeline_ci_pnext)) {
+            should_instrument_pipeline = true;
+        }
     }
     if (should_instrument_pipeline) {
         LogInfo("GPU-AV::Selective shader instrumentation", LogObjectList(), loc, "(%s) will be instrumented for validation.",
@@ -1277,7 +1282,7 @@ bool GpuShaderInstrumentor::IsPipelineSelectedForInstrumentation(const void* pip
     return should_instrument_pipeline;
 }
 
-bool GpuShaderInstrumentor::IsShaderSelectedForInstrumentation(vku::safe_VkShaderModuleCreateInfo* modified_shader_module_ci,
+bool GpuShaderInstrumentor::IsShaderSelectedForInstrumentation(const vku::safe_VkPipelineShaderStageCreateInfo& stage_ci,
                                                                VkShaderModule modified_shader, const Location& loc) {
     if (!gpuav_settings.select_instrumented_shaders) {
         return true;
@@ -1285,7 +1290,8 @@ bool GpuShaderInstrumentor::IsShaderSelectedForInstrumentation(vku::safe_VkShade
 
     bool should_instrument_shader = false;
     {
-        if (modified_shader_module_ci && IsSelectiveInstrumentationEnabled(modified_shader_module_ci->pNext)) {
+        // Might be in either VkPipelineShaderStageCreateInfo or the inlined VkShaderModuleCreateInfo
+        if (IsSelectiveInstrumentationEnabled(stage_ci.pNext)) {
             should_instrument_shader = true;
         } else if (selected_instrumented_shaders.find(modified_shader) != selected_instrumented_shaders.end()) {
             should_instrument_shader = true;
@@ -1403,7 +1409,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
                     vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)));
 
             if (!(is_pipeline_selected_for_instrumentation ||
-                  IsShaderSelectedForInstrumentation(modified_shader_module_ci, modified_module_state->VkHandle(),
+                  IsShaderSelectedForInstrumentation(stage_ci, modified_module_state->VkHandle(),
                                                      loc.dot(vvl::Field::pStages, stage_state_i).dot(vvl::Field::module)))) {
                 continue;
             }
@@ -1613,7 +1619,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
 
                 // TODO - this is in need of testing, when only selecting various library as well as selecting everything
                 if (!(is_pipeline_selected_for_instrumentation ||
-                      IsShaderSelectedForInstrumentation(modified_shader_module_ci, modified_module_state->VkHandle(),
+                      IsShaderSelectedForInstrumentation(*modified_stage_ci, modified_module_state->VkHandle(),
                                                          loc.dot(vvl::Field::pStages, stage_state_i).dot(vvl::Field::module)))) {
                     continue;
                 }
