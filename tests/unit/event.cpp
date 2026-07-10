@@ -739,48 +739,58 @@ TEST_F(NegativeEvent, WaitEventRenderPassHostBit) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, ResetEventThenSet) {
-    TEST_DESCRIPTION("Reset an event then set it after the reset has been submitted.");
+TEST_F(NegativeEvent, ResetEventThenHostSet) {
+    TEST_DESCRIPTION("Submit event reset then set it on the host");
     RETURN_IF_SKIP(Init());
 
     vkt::Event event(*m_device);
 
     m_command_buffer.Begin();
-    vk::CmdResetEvent(m_command_buffer, event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-    m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-
-    m_errorMonitor->SetDesiredError("VUID-vkSetEvent-event-09543");
-    vk::SetEvent(device(), event);
-    m_errorMonitor->VerifyFound();
-
-    m_default_queue->Wait();
-}
-
-// This test should only be used for manual inspection
-// Because a command buffer with vkCmdWaitEvents is submitted with an
-// event that is never signaled, the test results in a VK_ERROR_DEVICE_LOST
-TEST_F(NegativeEvent, DISABLED_WaitEventThenSet) {
-#if defined(VVL_ENABLE_TSAN)
-    // NOTE: This test in particular has failed sporadically on CI when TSAN is enabled.
-    GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
-#endif
-    TEST_DESCRIPTION("Wait on a event then set it after the wait has been submitted.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(Init());
-    vkt::Event event(*m_device);
-
-    m_command_buffer.Begin();
-    vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
-                      nullptr, 0, nullptr, 0, nullptr);
-    vk::CmdResetEvent(m_command_buffer, event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    m_command_buffer.ResetEvent(event);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
 
     m_errorMonitor->SetDesiredError("VUID-vkSetEvent-event-09543");
     event.Set();
     m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeEvent, SetEventThenHostSet) {
+    TEST_DESCRIPTION("Submit event set then set it on the host");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+
+    m_errorMonitor->SetDesiredError("VUID-vkSetEvent-event-09543");
+    event.Set();
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeEvent, WaitEventThenHostSet) {
+    TEST_DESCRIPTION("Submit event wait then set it on the host");
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    m_command_buffer.SetEvent(event);
+    m_command_buffer.WaitEvent(event);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+
+    m_errorMonitor->SetDesiredError("VUID-vkSetEvent-event-09543");
+    event.Set();
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeEvent, OwnershipTransferUseAllStagesNoFeature) {
