@@ -252,8 +252,8 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
 
   private:
     bool IsPipelineSelectedForInstrumentation(const void* pipeline_ci_pnext, VkPipeline pipeline, const Location& loc);
-    bool IsShaderSelectedForInstrumentation(vku::safe_VkShaderModuleCreateInfo *modified_shader_module_ci,
-                                            VkShaderModule modified_shader, const Location &loc);
+    bool IsShaderSelectedForInstrumentation(const vku::safe_VkPipelineShaderStageCreateInfo& stage_ci,
+                                            VkShaderModule modified_shader, const Location& loc);
     void AddDescriptorHeapMappings(VkBaseOutStructure *create_info);
     void Cleanup();
     VkDescriptorSetLayout instrumentation_desc_layout_[vvl::DescriptorModeCount];
