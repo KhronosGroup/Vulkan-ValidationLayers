@@ -1275,29 +1275,40 @@ bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange& first_use_range
     return skip;
 }
 
+// Validate first-use hazards. The following describes how it works.
+//
+// The first access to a memory location can occur anywhere in the command buffer
+// (not necessarily at the beginning), and first accesses to different resources
+// may be interleaved with barriers. To validate each first access against accesses
+// from previous submissions, we need to replay all barriers that occur before that
+// specific first access.
+//
+// This defines the algorithm: replay barriers until we reach the next first access,
+// validate that first access, then continue replaying barriers until the next first
+// access, validate that one, and so on until we reach the end of the command buffer.
 bool ReplayState::ValidateFirstUse() {
     bool skip = false;
     ResourceUsageRange first_use_range = {0, 0};
 
     for (const auto& sync_op : recorded_context_.GetSyncOps()) {
-        // Set the range to cover all accesses until the next sync_op, and validate
+        // Validate all first accesses until the next sync_op
         first_use_range.end = sync_op.tag;
         skip |= DetectFirstUseHazard(first_use_range);
 
-        // Call to replay validate support for syncop with non-trivial replay
+        // Validate and record sync_ops that make memory accesses (for example, image layout transition)
         skip |= sync_op.sync_op->ReplayValidate(*this, sync_op.tag);
-
-        // Record the barrier into the proxy context.
         sync_op.sync_op->ReplayRecord(exec_context_, base_tag_ + sync_op.tag);
+
+        // Advance past sync_op
         first_use_range.begin = sync_op.tag + 1;
     }
 
-    // and anything after the last syncop
+    // Validate first accesses after the last syncop
     first_use_range.end = ResourceUsageRecord::kMaxIndex;
     skip |= DetectFirstUseHazard(first_use_range);
-
     return skip;
 }
+
 AccessContext* ReplayState::RenderPassReplayState::Begin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass& begin_op_,
                                                          const AccessContext& external_context) {
     const RenderPassAccessContext* rp_context = begin_op_.GetRenderPassAccessContext();
