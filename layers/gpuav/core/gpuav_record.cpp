@@ -23,6 +23,7 @@
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/instrumentation/descriptor_checks_classic.h"
 #include "gpuav/instrumentation/descriptor_checks_heap.h"
+#include "gpuav/instrumentation/descriptor_checks_buffer.h"
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
 #include "gpuav/instrumentation/register_validation.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
@@ -161,6 +162,7 @@ void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, c
 
     CommandBufferSubState& gpuav_cb_state = SubState(*cb_state);
     RegisterDescriptorChecksClassicValidation(*this, gpuav_cb_state);
+    RegisterDescriptorChecksBufferValidation(*this, gpuav_cb_state);
     RegisterDescriptorChecksHeapValidation(*this, gpuav_cb_state);
     RegisterPostProcessingValidation(*this, gpuav_cb_state);
     RegisterBufferDeviceAddressValidation(*this, gpuav_cb_state);
@@ -258,7 +260,8 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
             // allocate every possible byte on the GPU and our estimate is too small.
             //
             // storageBufferDescriptorSize is almost always 64 bytes
-            const VkDeviceSize bytes_to_reserve = desc_buffer_props->storageBufferDescriptorSize * cst::total_internal_descriptors;
+            VkDeviceSize buffer_indirect_buffer_stride = desc_buffer_props->storageBufferDescriptorSize * glsl::kTotalBindings;
+            const VkDeviceSize bytes_to_reserve = buffer_indirect_buffer_stride * gpuav_settings.indices_buffer_count;
             desc_buffer_props->resourceDescriptorBufferAddressSpaceSize -= bytes_to_reserve;
             desc_buffer_props->descriptorBufferAddressSpaceSize -= bytes_to_reserve;
 

@@ -2457,6 +2457,22 @@ bool CommandBuffer::VerifyPushData(uint32_t offset_byte, uint32_t size_byte) con
     return true;
 }
 
+void CommandBuffer::RecordBindDescriptorBuffer(vvl::DeviceState& device_state, uint32_t buffer_count,
+                                               const VkDescriptorBufferBindingInfoEXT* binding_infos, const Location& loc) {
+    descriptor_buffer.ever_bound = true;
+
+    descriptor_buffer.binding_info.resize(buffer_count);
+    for (uint32_t i = 0; i < buffer_count; i++) {
+        const VkDescriptorBufferBindingInfoEXT& binding_info = binding_infos[i];
+        VkBufferUsageFlags2 buffer_usage = binding_info.usage;
+        if (const auto usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(binding_info.pNext)) {
+            buffer_usage = usage_flags2->usage;
+        }
+
+        descriptor_buffer.binding_info[i] = {binding_info.address, buffer_usage};
+    }
+}
+
 void CommandBuffer::RecordBindResourceHeap(vvl::DeviceState& device_state, const VkBindHeapInfoEXT& bind_info,
                                            const Location& loc) {
     RecordCommand(loc);

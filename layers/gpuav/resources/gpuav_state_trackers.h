@@ -209,6 +209,7 @@ class DescriptorSetBindings {
 };
 
 // Track descriptor heaps bound in a command buffer
+// VK_EXT_descriptor_heap
 class DescriptorHeapBindings {
   public:
     // Each time vkCmdBindResourceHeap/vkCmdBindSamplerHeap is called, we store the current state of the command buffer in here

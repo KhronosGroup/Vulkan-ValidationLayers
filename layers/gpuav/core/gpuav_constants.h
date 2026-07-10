@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2025 The Khronos Group Inc.
- * Copyright (c) 2018-2025 Valve Corporation
- * Copyright (c) 2018-2025 LunarG, Inc.
+/* Copyright (c) 2018-2026 The Khronos Group Inc.
+ * Copyright (c) 2018-2026 Valve Corporation
+ * Copyright (c) 2018-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,6 @@
 namespace gpuav {
 // constant
 namespace cst {
-
-// TODO - Need to develop a proper way to gather ALL binding between shader instrumentation and command validation
-// For now we get enough for DebugPrintf
-inline constexpr uint32_t total_internal_descriptors = 64;
 
 // Stream Output Buffer Offsets
 //

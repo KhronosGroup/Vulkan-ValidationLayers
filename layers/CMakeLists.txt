@@ -344,6 +344,8 @@ target_sources(vvl PRIVATE
     gpuav/instrumentation/gpuav_instrumentation.h
     gpuav/instrumentation/gpuav_instrumentation.cpp
     gpuav/instrumentation/buffer_device_address.cpp
+    gpuav/instrumentation/descriptor_checks_buffer.h
+    gpuav/instrumentation/descriptor_checks_buffer.cpp
     gpuav/instrumentation/descriptor_checks_classic.h
     gpuav/instrumentation/descriptor_checks_classic.cpp
     gpuav/instrumentation/descriptor_checks_heap.h

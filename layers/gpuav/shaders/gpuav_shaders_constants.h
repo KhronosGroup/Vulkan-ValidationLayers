@@ -59,14 +59,15 @@ const int kBindingInstErrorBuffer = 1;
 const int kBindingInstPostProcess = 2;
 // Each check that requires additional input to be sent must reserve its own binding slot
 const int kBindingInstDescriptorIndexingOOB = 3;
-// TODO - We could just combine kBindingInstDescriptorIndexingOOB and kBindingInstDescriptorHeap
-const int kBindingInstDescriptorHeap = 4;
-const int kBindingInstBufferDeviceAddress = 5;
-const int kBindingInstActionIndex = 6;
-const int kBindingInstCmdResourceIndex = 7;
-const int kBindingInstCmdErrorsCount = 8;
-const int kBindingInstVertexAttributeFetchLimits = 9;
-const int kTotalBindings = 10;
+// TODO - We could just combine kBindingInstDescriptorIndexingOOB and kBindingInstDescriptorHeap and kBindingInstDescriptorBuffer
+const int kBindingInstDescriptorBuffer = 4;
+const int kBindingInstDescriptorHeap = 5;
+const int kBindingInstBufferDeviceAddress = 6;
+const int kBindingInstActionIndex = 7;
+const int kBindingInstCmdResourceIndex = 8;
+const int kBindingInstCmdErrorsCount = 9;
+const int kBindingInstVertexAttributeFetchLimits = 10;
+const int kTotalBindings = 11;
 
 // Validation pipelines
 // ---

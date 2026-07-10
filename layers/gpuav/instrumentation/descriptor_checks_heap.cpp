@@ -508,7 +508,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
         return inst_error_logger;
     });
 
-    cb.on_instrumentation_common_desc_update_functions.emplace_back([&gpuav](CommandBufferSubState& cb, const LastBound& last_bound,
+    cb.on_instrumentation_common_desc_update_functions.emplace_back([&gpuav](CommandBufferSubState& cb, const LastBound&,
                                                                              const Location&,
                                                                              CommonDescriptorUpdate& out_update) mutable {
         const uint32_t bound_heap_info_size = sizeof(VkDeviceAddress) * 3;

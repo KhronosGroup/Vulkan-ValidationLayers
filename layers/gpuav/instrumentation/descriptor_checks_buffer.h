@@ -1,6 +1,4 @@
-/* Copyright (c) 2020-2026 The Khronos Group Inc.
- * Copyright (c) 2020-2026 Valve Corporation
- * Copyright (c) 2020-2026 LunarG, Inc.
+/* Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #pragma once
 
-#include <vulkan/vulkan.h>
-#include <cstdint>
-
-struct Location;
-struct LastBound;
+#include "gpuav/resources/gpuav_vulkan_objects.h"
 
 namespace gpuav {
-class CommandBufferSubState;
 class Validator;
+class CommandBufferSubState;
 
-namespace descriptor {
-// Classic descriptors
-void UpdateBoundDescriptors(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint pipeline_bind_point,
-                            const Location& loc);
-// VK_EXT_descriptor_heap
-void UpdateBoundDescriptorHeap(Validator& gpuav, CommandBufferSubState& cb_state, bool is_sampler);
-}  // namespace descriptor
+// buffer == VK_EXT_descriptor_buffer
+void RegisterDescriptorChecksBufferValidation(Validator& gpuav, CommandBufferSubState& cb);
+
 }  // namespace gpuav

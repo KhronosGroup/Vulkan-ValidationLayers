@@ -187,8 +187,9 @@ static VkPipelineLayout CreateInstrumentationPipelineLayout(Validator& gpuav, co
 }
 
 void UpdateInstrumentationDescBuffer(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
-                                     uint32_t action_command_index_offset, uint32_t resource_index_offset, const Location& loc) {
-    void* descriptor_start = gpuav.GetGlobalDescriptorBuffer().GetMappedPtr();
+                                     uint8_t* gloabl_descriptor_buffer_ptr, uint32_t action_command_index_offset,
+                                     uint32_t resource_index_offset, const Location& loc) {
+    uint8_t* descriptor_start = gloabl_descriptor_buffer_ptr;
 
     VkDescriptorGetInfoEXT get_info = vku::InitStructHelper();
     get_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -200,28 +201,28 @@ void UpdateInstrumentationDescBuffer(Validator& gpuav, CommandBufferSubState& cb
         address_info.address = cb_state.GetErrorOutputBufferRange().offset_address;
         address_info.range = cb_state.GetErrorOutputBufferRange().size;
         binding_offset = gpuav.resource_descriptor_buffer_offsets_[glsl::kBindingInstErrorBuffer];
-        uint8_t* descriptor_offset = (uint8_t*)descriptor_start + binding_offset;
+        uint8_t* descriptor_offset = descriptor_start + binding_offset;
         DispatchGetDescriptorEXT(gpuav.device, &get_info,
                                  gpuav.phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize, descriptor_offset);
 
         address_info.address = gpuav.global_indices_buffer_.Address() + action_command_index_offset;
         address_info.range = 4;
         binding_offset = gpuav.resource_descriptor_buffer_offsets_[glsl::kBindingInstActionIndex];
-        descriptor_offset = (uint8_t*)descriptor_start + binding_offset;
+        descriptor_offset = descriptor_start + binding_offset;
         DispatchGetDescriptorEXT(gpuav.device, &get_info,
                                  gpuav.phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize, descriptor_offset);
 
         address_info.address = gpuav.global_indices_buffer_.Address() + resource_index_offset;
         address_info.range = 4;
         binding_offset = gpuav.resource_descriptor_buffer_offsets_[glsl::kBindingInstCmdResourceIndex];
-        descriptor_offset = (uint8_t*)descriptor_start + binding_offset;
+        descriptor_offset = descriptor_start + binding_offset;
         DispatchGetDescriptorEXT(gpuav.device, &get_info,
                                  gpuav.phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize, descriptor_offset);
 
         address_info.address = cb_state.cmd_errors_counts_buffer_.Address();
         address_info.range = cb_state.cmd_errors_counts_buffer_.Size();
         binding_offset = gpuav.resource_descriptor_buffer_offsets_[glsl::kBindingInstCmdErrorsCount];
-        descriptor_offset = (uint8_t*)descriptor_start + binding_offset;
+        descriptor_offset = descriptor_start + binding_offset;
         DispatchGetDescriptorEXT(gpuav.device, &get_info,
                                  gpuav.phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize, descriptor_offset);
     }
@@ -238,7 +239,7 @@ void UpdateInstrumentationDescBuffer(Validator& gpuav, CommandBufferSubState& cb
         address_info.range = common_update.range;
 
         binding_offset = gpuav.resource_descriptor_buffer_offsets_[common_update.binding];
-        uint8_t* descriptor_offset = (uint8_t*)descriptor_start + binding_offset;
+        uint8_t* descriptor_offset = descriptor_start + binding_offset;
         DispatchGetDescriptorEXT(gpuav.device, &get_info,
                                  gpuav.phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize, descriptor_offset);
     }
@@ -574,21 +575,27 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator& gpuav
         return;
     }
 
+    const auto& gloabl_descriptor_buffer = gpuav.GetGlobalDescriptorBuffer();
+
     // There likely is only Push Constants (and BDA) used, but because the VkDescriptorSetLayout is using VK_EXT_descriptor_buffer,
     // and GPU-AV requires using a previous vkCmdBindDescriptorBuffersEXT to inject our code, so we have to inject it ourselves
     if (cb_state.base.descriptor_buffer.binding_info.empty()) {
         VkDescriptorBufferBindingInfoEXT binding_info = vku::InitStructHelper();
         binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-        binding_info.address = gpuav.GetGlobalDescriptorBuffer().Address();
+        binding_info.address = gloabl_descriptor_buffer.Address();
         DispatchCmdBindDescriptorBuffersEXT(cb_state.VkHandle(), 1, &binding_info);
 
         cb_state.resource_descriptor_buffer_index_ = 0;
     }
 
-    const VkDeviceSize front_offset = 0;
+    const VkDeviceSize gloabl_descriptor_buffer_offset =
+        gpuav.resource_descriptor_buffer_stride_ * common_error_info.action_command_index;
+    uint8_t* gloabl_descriptor_buffer_ptr = static_cast<uint8_t*>(gloabl_descriptor_buffer.GetMappedPtr());
+    gloabl_descriptor_buffer_ptr += gloabl_descriptor_buffer_offset;
+
     DispatchCmdSetDescriptorBufferOffsetsEXT(cb_state.VkHandle(), last_bound.bind_point, bind_pipeline_layout_handle,
                                              gpuav.instrumentation_desc_set_bind_index_, 1,
-                                             &cb_state.resource_descriptor_buffer_index_, &front_offset);
+                                             &cb_state.resource_descriptor_buffer_index_, &gloabl_descriptor_buffer_offset);
 
     const uint32_t error_logger_index = cb_state.GetErrorLoggerIndex();
 
@@ -597,7 +604,8 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator& gpuav
     const uint32_t action_command_index_offset = common_error_info.action_command_index * gpuav.indices_buffer_alignment_;
     const uint32_t resource_index_offset = error_logger_index * gpuav.indices_buffer_alignment_;
 
-    UpdateInstrumentationDescBuffer(gpuav, cb_state, last_bound, action_command_index_offset, resource_index_offset, loc);
+    UpdateInstrumentationDescBuffer(gpuav, cb_state, last_bound, gloabl_descriptor_buffer_ptr, action_command_index_offset,
+                                    resource_index_offset, loc);
 }
 
 void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
