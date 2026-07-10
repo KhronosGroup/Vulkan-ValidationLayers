@@ -503,6 +503,8 @@ StatelessDeviceData::StatelessDeviceData(DispatchInstance* instance, VkPhysicalD
                                              &phys_dev_ext_props.tile_shading_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_qcom_image_processing2,
                                              &phys_dev_ext_props.image_processing2_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_qcom_shader_multiple_wait_queues,
+                                             &phys_dev_ext_props.shader_multiple_wait_queues_props);
 
     // None of these "check if supported" features are possible without first having gpdp2 first
     if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {

@@ -2761,3 +2761,43 @@ TEST_F(PositiveShaderSpirv, SpecializationConstantInt8) {
         VkShaderObj(*m_device, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM, &specialization_info);
     pipe.CreateComputePipeline();
 }
+
+TEST_F(PositiveShaderSpirv, MultipleWaitQueuesAtMaxShaderWaitQueues) {
+    TEST_DESCRIPTION("Use a MultipleWaitQueuesQCOM loop hint equal to maxShaderWaitQueues.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_QCOM_SHADER_MULTIPLE_WAIT_QUEUES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderMultipleWaitQueues);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceShaderMultipleWaitQueuesPropertiesQCOM wait_queues_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(wait_queues_props);
+
+    std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability MultipleWaitQueuesQCOM
+               OpExtension "SPV_QCOM_multiple_wait_queues"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %bool = OpTypeBool
+       %true = OpConstantTrue %bool
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpBranch %loop
+       %loop = OpLabel
+               OpLoopMerge %merge %cont DependencyLength|MultipleWaitQueuesQCOM 1 )" +
+                    std::to_string(wait_queues_props.maxShaderWaitQueues) + R"(
+               OpBranchConditional %true %body %merge
+       %body = OpLabel
+               OpBranch %cont
+       %cont = OpLabel
+               OpBranch %loop
+      %merge = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj cs{*m_device, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM};
+}

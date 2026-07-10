@@ -98,6 +98,7 @@ class SpirvValidator : public Logger {
     bool ValidateTileShadingCapability(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
                                        const spirv::StatelessData &stateless_data, const Location &loc) const;
     bool ValidateTileShadingAtomicAccess(const spirv::Module &module_state, const spirv::StatelessData &stateless_data, const Location &loc) const;
+    bool ValidateShaderMultipleWaitQueues(const spirv::Module &module_state, const spirv::StatelessData &stateless_data, const Location &loc) const;
 
     // Auto-generated helper functions
     bool ValidateShaderCapabilitiesAndExtensions(const spirv::Module& module_state, const spirv::Instruction& insn,
