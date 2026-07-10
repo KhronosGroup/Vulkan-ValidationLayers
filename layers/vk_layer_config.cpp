@@ -99,7 +99,7 @@ void SetEnvironment(const char* variable, const char* value) {
 #endif
 }
 
-#if defined(WIN32)
+#if defined(_WIN32)
 // Check for admin rights
 static inline bool IsHighIntegrity() {
     HANDLE process_token;
