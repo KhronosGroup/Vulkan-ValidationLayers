@@ -575,6 +575,12 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         for struct_name in hack:
             self.vk.structs[struct_name].extendedBy.extend(['VkDebugUtilsObjectNameInfoEXT', 'VkDebugUtilsObjectTagInfoEXT'])
 
+        # Remove when https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8410 lands
+        self.vk.structs['VkPipelineShaderStageCreateInfo'].extendedBy.extend(['VkValidationFeaturesEXT'])
+        self.vk.structs['VkGraphicsPipelineCreateInfo'].extendedBy.extend(['VkValidationFeaturesEXT'])
+        self.vk.structs['VkComputePipelineCreateInfo'].extendedBy.extend(['VkValidationFeaturesEXT'])
+        self.vk.structs['VkRayTracingPipelineCreateInfoKHR'].extendedBy.extend(['VkValidationFeaturesEXT'])
+
         # Generate the struct member checking code from the captured data
         for struct in self.vk.structs.values():
             # The string returned will be nested in an if check for a NULL pointer, so needs its indent incremented

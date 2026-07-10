@@ -7554,7 +7554,7 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                         if (structure->pGroups[groupIndex].pStages != nullptr) {
                             for (uint32_t stageIndex = 0; stageIndex < structure->pGroups[groupIndex].stageCount; ++stageIndex) {
                                 [[maybe_unused]] const Location pStages_loc = pGroups_loc.dot(Field::pStages, stageIndex);
-                                constexpr std::array<VkStructureType, 10> allowed_structs_VkPipelineShaderStageCreateInfo = {
+                                constexpr std::array<VkStructureType, 11> allowed_structs_VkPipelineShaderStageCreateInfo = {
                                     VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
                                     VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO,
                                     VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
@@ -7564,7 +7564,8 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                                     VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                                     VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT,
                                     VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-                                    VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+                                    VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
 
                                 skip |= ValidateStructPnext(pStages_loc, structure->pGroups[groupIndex].pStages[stageIndex].pNext,
                                                             allowed_structs_VkPipelineShaderStageCreateInfo.size(),
@@ -11155,7 +11156,7 @@ bool Device::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCa
     if (pCreateInfos != nullptr) {
         for (uint32_t createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
-            constexpr std::array<VkStructureType, 9> allowed_structs_VkComputePipelineCreateInfo = {
+            constexpr std::array<VkStructureType, 10> allowed_structs_VkComputePipelineCreateInfo = {
                 VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_INDIRECT_BUFFER_INFO_NV,
                 VK_STRUCTURE_TYPE_PIPELINE_BINARY_INFO_KHR,
                 VK_STRUCTURE_TYPE_PIPELINE_COMPILER_CONTROL_CREATE_INFO_AMD,
@@ -11164,7 +11165,8 @@ bool Device::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCa
                 VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO,
                 VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI,
                 VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-                VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+                VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT,
+                VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
 
             skip |= context.ValidateStructPnext(
                 pCreateInfos_loc, pCreateInfos[createInfoIndex].pNext, allowed_structs_VkComputePipelineCreateInfo.size(),
@@ -11176,7 +11178,7 @@ bool Device::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCa
                                                "VUID-VkPipelineShaderStageCreateInfo-sType-sType");
 
             [[maybe_unused]] const Location stage_loc = pCreateInfos_loc.dot(Field::stage);
-            constexpr std::array<VkStructureType, 10> allowed_structs_VkPipelineShaderStageCreateInfo = {
+            constexpr std::array<VkStructureType, 11> allowed_structs_VkPipelineShaderStageCreateInfo = {
                 VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
                 VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO,
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
@@ -11186,7 +11188,8 @@ bool Device::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCa
                 VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                 VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-                VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+                VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT,
+                VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
 
             skip |= context.ValidateStructPnext(
                 stage_loc, pCreateInfos[createInfoIndex].stage.pNext, allowed_structs_VkPipelineShaderStageCreateInfo.size(),
@@ -11850,7 +11853,7 @@ bool Device::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineC
     if (pCreateInfos != nullptr) {
         for (uint32_t createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
-            constexpr std::array<VkStructureType, 23> allowed_structs_VkGraphicsPipelineCreateInfo = {
+            constexpr std::array<VkStructureType, 24> allowed_structs_VkGraphicsPipelineCreateInfo = {
                 VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD,
                 VK_STRUCTURE_TYPE_CUSTOM_RESOLVE_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
@@ -11873,7 +11876,8 @@ bool Device::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineC
                 VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO,
                 VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO,
                 VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-                VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+                VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT,
+                VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
 
             skip |= context.ValidateStructPnext(
                 pCreateInfos_loc, pCreateInfos[createInfoIndex].pNext, allowed_structs_VkGraphicsPipelineCreateInfo.size(),
@@ -22581,7 +22585,7 @@ bool Device::PreCallValidateCreateExecutionGraphPipelinesAMDX(VkDevice device, V
             if (pCreateInfos[createInfoIndex].pStages != nullptr) {
                 for (uint32_t stageIndex = 0; stageIndex < pCreateInfos[createInfoIndex].stageCount; ++stageIndex) {
                     [[maybe_unused]] const Location pStages_loc = pCreateInfos_loc.dot(Field::pStages, stageIndex);
-                    constexpr std::array<VkStructureType, 10> allowed_structs_VkPipelineShaderStageCreateInfo = {
+                    constexpr std::array<VkStructureType, 11> allowed_structs_VkPipelineShaderStageCreateInfo = {
                         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
                         VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO,
                         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
@@ -22591,7 +22595,8 @@ bool Device::PreCallValidateCreateExecutionGraphPipelinesAMDX(VkDevice device, V
                         VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                         VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT,
                         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-                        VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+                        VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT,
+                        VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
 
                     skip |= context.ValidateStructPnext(pStages_loc, pCreateInfos[createInfoIndex].pStages[stageIndex].pNext,
                                                         allowed_structs_VkPipelineShaderStageCreateInfo.size(),
@@ -23719,7 +23724,7 @@ bool Device::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipel
             if (pCreateInfos[createInfoIndex].pStages != nullptr) {
                 for (uint32_t stageIndex = 0; stageIndex < pCreateInfos[createInfoIndex].stageCount; ++stageIndex) {
                     [[maybe_unused]] const Location pStages_loc = pCreateInfos_loc.dot(Field::pStages, stageIndex);
-                    constexpr std::array<VkStructureType, 10> allowed_structs_VkPipelineShaderStageCreateInfo = {
+                    constexpr std::array<VkStructureType, 11> allowed_structs_VkPipelineShaderStageCreateInfo = {
                         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
                         VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO,
                         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
@@ -23729,7 +23734,8 @@ bool Device::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipel
                         VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                         VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT,
                         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-                        VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+                        VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT,
+                        VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
 
                     skip |= context.ValidateStructPnext(pStages_loc, pCreateInfos[createInfoIndex].pStages[stageIndex].pNext,
                                                         allowed_structs_VkPipelineShaderStageCreateInfo.size(),
@@ -26987,7 +26993,7 @@ bool Device::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkDevice dev
                                        "VUID-VkComputePipelineCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 9> allowed_structs_VkComputePipelineCreateInfo = {
+        constexpr std::array<VkStructureType, 10> allowed_structs_VkComputePipelineCreateInfo = {
             VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_INDIRECT_BUFFER_INFO_NV,
             VK_STRUCTURE_TYPE_PIPELINE_BINARY_INFO_KHR,
             VK_STRUCTURE_TYPE_PIPELINE_COMPILER_CONTROL_CREATE_INFO_AMD,
@@ -26996,7 +27002,8 @@ bool Device::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkDevice dev
             VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO,
             VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI,
             VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT,
+            VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
 
         skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkComputePipelineCreateInfo.size(),
                                             allowed_structs_VkComputePipelineCreateInfo.data(), GeneratedVulkanHeaderVersion,
@@ -27008,7 +27015,7 @@ bool Device::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkDevice dev
                                            "VUID-VkPipelineShaderStageCreateInfo-sType-sType");
 
         [[maybe_unused]] const Location stage_loc = pCreateInfo_loc.dot(Field::stage);
-        constexpr std::array<VkStructureType, 10> allowed_structs_VkPipelineShaderStageCreateInfo = {
+        constexpr std::array<VkStructureType, 11> allowed_structs_VkPipelineShaderStageCreateInfo = {
             VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
             VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO,
             VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
@@ -27018,7 +27025,8 @@ bool Device::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkDevice dev
             VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
             VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT,
+            VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
 
         skip |= context.ValidateStructPnext(
             stage_loc, pCreateInfo->stage.pNext, allowed_structs_VkPipelineShaderStageCreateInfo.size(),
@@ -31157,14 +31165,15 @@ bool Device::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDefe
     if (pCreateInfos != nullptr) {
         for (uint32_t createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
-            constexpr std::array<VkStructureType, 7> allowed_structs_VkRayTracingPipelineCreateInfoKHR = {
+            constexpr std::array<VkStructureType, 8> allowed_structs_VkRayTracingPipelineCreateInfoKHR = {
                 VK_STRUCTURE_TYPE_PIPELINE_BINARY_INFO_KHR,
                 VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO,
                 VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO,
                 VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO,
                 VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CLUSTER_ACCELERATION_STRUCTURE_CREATE_INFO_NV,
                 VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-                VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+                VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT,
+                VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
 
             skip |= context.ValidateStructPnext(
                 pCreateInfos_loc, pCreateInfos[createInfoIndex].pNext, allowed_structs_VkRayTracingPipelineCreateInfoKHR.size(),
@@ -31180,7 +31189,7 @@ bool Device::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDefe
             if (pCreateInfos[createInfoIndex].pStages != nullptr) {
                 for (uint32_t stageIndex = 0; stageIndex < pCreateInfos[createInfoIndex].stageCount; ++stageIndex) {
                     [[maybe_unused]] const Location pStages_loc = pCreateInfos_loc.dot(Field::pStages, stageIndex);
-                    constexpr std::array<VkStructureType, 10> allowed_structs_VkPipelineShaderStageCreateInfo = {
+                    constexpr std::array<VkStructureType, 11> allowed_structs_VkPipelineShaderStageCreateInfo = {
                         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
                         VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO,
                         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
@@ -31190,7 +31199,8 @@ bool Device::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDefe
                         VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                         VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT,
                         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-                        VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+                        VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT,
+                        VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
 
                     skip |= context.ValidateStructPnext(pStages_loc, pCreateInfos[createInfoIndex].pStages[stageIndex].pNext,
                                                         allowed_structs_VkPipelineShaderStageCreateInfo.size(),
@@ -31711,7 +31721,7 @@ bool Device::ValidatePipelineRasterizationStateCreateInfo(const Context& context
 bool Device::ValidatePipelineShaderStageCreateInfo(const Context& context, const VkPipelineShaderStageCreateInfo& info,
                                                    const Location& loc) const {
     bool skip = false;
-    constexpr std::array<VkStructureType, 10> allowed_structs_VkPipelineShaderStageCreateInfo = {
+    constexpr std::array<VkStructureType, 11> allowed_structs_VkPipelineShaderStageCreateInfo = {
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
         VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO,
         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
@@ -31721,7 +31731,8 @@ bool Device::ValidatePipelineShaderStageCreateInfo(const Context& context, const
         VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT,
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-        VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+        VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT,
+        VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
 
     skip |= context.ValidateStructPnext(loc, info.pNext, allowed_structs_VkPipelineShaderStageCreateInfo.size(),
                                         allowed_structs_VkPipelineShaderStageCreateInfo.data(), GeneratedVulkanHeaderVersion,
