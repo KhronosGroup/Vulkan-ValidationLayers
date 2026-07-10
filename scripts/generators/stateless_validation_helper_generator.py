@@ -23,7 +23,7 @@
 import os
 import re
 from generators.generator_utils import buildListVUID, PlatformGuardHelper
-from vulkan_object import Member, Struct
+from vulkan_object import Member, Struct, Command
 from base_generator import BaseGenerator
 from dataclasses import dataclass
 from string import Template
@@ -51,7 +51,7 @@ class TemplateData:
 class APISpecific:
     # Generates custom validation for a function parameter or returns None
     @staticmethod
-    def genCustomValidation(targetApiName: str, funcName: str, member) -> list[str]:
+    def genCustomValidation(targetApiName: str, command: Command, member: Member) -> list[str]:
         match targetApiName:
 
             # Vulkan specific custom validation (currently none)
@@ -1031,7 +1031,10 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 # members not tagged as 'noautovalidity' will be validated
                 # We special-case the custom allocator checks, as they are explicit but can be auto-generated.
                 AllocatorFunctions = ['PFN_vkAllocationFunction', 'PFN_vkReallocationFunction', 'PFN_vkFreeFunction', 'PFN_vkInternalAllocationNotification', 'PFN_vkInternalFreeNotification']
-                apiSpecificCustomValidation = APISpecific.genCustomValidation(self.targetApiName, funcName, member)
+                if funcName in self.vk.commands:
+                    apiSpecificCustomValidation = APISpecific.genCustomValidation(self.targetApiName, self.vk.commands[funcName], member)
+                else:
+                    apiSpecificCustomValidation = None
                 if apiSpecificCustomValidation is not None:
                     usedLines.extend(apiSpecificCustomValidation)
                 elif member.noAutoValidity and member.type not in AllocatorFunctions and not countRequiredVuid:
