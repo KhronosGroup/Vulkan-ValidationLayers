@@ -576,7 +576,7 @@ void GpuShaderInstrumentor::PreCallRecordGetShaderBinaryDataEXT(VkDevice device,
             shader, record_obj.location,
             "GPU-AV instruments all shaders at vkCreateShadersEXT time, this means there are embedded descriptors bound "
             "that we can't detect if needed or not later.\nWe will be calling vkCreateShadersEXT again now to create the "
-            "original shader to pass down to the drivere.");
+            "original shader to pass down to the driver.");
     }
 
     // vkGetShaderBinaryDataEXT will be called twice, only need to re-created once

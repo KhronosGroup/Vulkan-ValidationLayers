@@ -256,6 +256,72 @@ TEST_F(NegativeGpuDump, DescriptorBufferNoDescriptor) {
     m_command_buffer.End();
 }
 
+// closet we will get to VU 08053/08054
+TEST_F(NegativeGpuDump, DescriptorBufferWrongBufferType) {
+    RETURN_IF_SKIP(InitDescriptorBuffer());
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+    };
+    std::vector<VkDescriptorSetLayoutBinding> sampler_binding = {
+        {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+    };
+    vkt::DescriptorSetLayout ds_layout(*m_device, bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    vkt::DescriptorSetLayout sampler_ds_layout(*m_device, sampler_binding,
+                                               VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout, &sampler_ds_layout});
+
+    vkt::Buffer sampler_descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+    vkt::Buffer resource_descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
+                                           vkt::device_address);
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set = 1, binding = 2) uniform sampler s;
+        layout(set = 0, binding = 0) uniform texture2D t;
+        layout(set = 0, binding = 1) buffer SSBO { vec4 result; };
+
+        void main() {
+            result = texture(sampler2D(t, s), vec2(0));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+    VkDescriptorBufferBindingInfoEXT descriptor_buffer_binding_info[2];
+    descriptor_buffer_binding_info[0] = vku::InitStructHelper();
+    descriptor_buffer_binding_info[0].address = sampler_descriptor_buffer.Address();
+    descriptor_buffer_binding_info[0].usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+    descriptor_buffer_binding_info[1] = vku::InitStructHelper();
+    descriptor_buffer_binding_info[1].address = resource_descriptor_buffer.Address();
+    descriptor_buffer_binding_info[1].usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 2, descriptor_buffer_binding_info);
+
+    uint32_t buffer_index = 1;
+    VkDeviceSize buffer_offset = 0;
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 1, 1, &buffer_index,
+                                         &buffer_offset);
+
+    buffer_index = 0;
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
+                                         &buffer_offset);
+
+    m_errorMonitor->SetDesiredWarning("BUFFER USAGE");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeGpuDump, CopyMemoryIndirect) {
     AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::indirectMemoryCopy);

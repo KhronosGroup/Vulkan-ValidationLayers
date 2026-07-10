@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "containers/custom_containers.h"
 #include "generated/error_location_helper.h"
 #include "gpu_dump_state.h"
 #include "gpu_dump.h"
@@ -29,6 +30,7 @@
 #include "containers/small_vector.h"
 #include "containers/limits.h"
 #include "generated/dispatch_functions.h"
+#include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/descriptor_hashing.h"
 #include "state_tracker/pipeline_layout_state.h"
@@ -74,6 +76,7 @@ struct SetInfo {
     bool embedded;
     uint32_t index;          // set of the descriptor
     uint32_t binding_index;  // into pBindingInfos[]
+    VkBufferUsageFlagBits2 buffer_usage_flags;
     vvl::range<VkDeviceAddress> range;
     const vvl::DescriptorSetLayout* dsl;
     std::vector<BindingInfo> bindings{};
@@ -94,7 +97,30 @@ struct SetInfo {
         }
         ss << '\n';
     }
+
+    bool ValidateBufferUsage(std::ostringstream& ss, const BindingInfo& binding_info);
 };
+
+bool SetInfo::ValidateBufferUsage(std::ostringstream& ss, const BindingInfo& binding_info) {
+    const bool resource_buffer = (buffer_usage_flags & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
+    const bool sampler_buffer = (buffer_usage_flags & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
+    if (!resource_buffer && !sampler_buffer) {
+        return false;  // caught elsewhere
+    }
+
+    if (binding_info.type == VK_DESCRIPTOR_TYPE_SAMPLER || binding_info.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+        if (!sampler_buffer) {
+            ss << "      - [WARNING] BUFFER USAGE - Using a sampler but buffer not created with "
+                  "VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT\n";
+            return true;
+        }
+    } else if (!resource_buffer) {
+        ss << "      - [WARNING] BUFFER USAGE - Using a resource but buffer not created with "
+              "VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT\n";
+        return true;
+    }
+    return false;
+}
 
 bool BindingInfo::ValidateDescriptor(std::ostringstream& ss, GpuDump& dev_data) {
     if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
@@ -173,9 +199,33 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
     const vvl::CommandBuffer& cb_state = last_bound.cb_state;
     bool found_warning = false;
     ss << "- vkCmdBindDescriptorBuffersEXT last bound the following descriptor buffers:\n";
+
+    vvl::unordered_map<uint32_t, VkBufferUsageFlagBits2> binding_usage_flags;
     for (uint32_t binding_i = 0; binding_i < cb_state.descriptor_buffer.binding_info.size(); binding_i++) {
         const VkDeviceAddress address = cb_state.descriptor_buffer.binding_info[binding_i].address;
-        ss << "  - pBindingInfos[" << std::dec << binding_i << "].address 0x" << std::hex << address << '\n';
+
+        VkBufferUsageFlagBits2 usage_flags = 0;
+        auto buffer_states = dev_data.GetBuffersByAddress(address);
+        for (const auto& buffer_state : buffer_states) {
+            usage_flags |= buffer_state->usage;
+        }
+        binding_usage_flags[binding_i] = usage_flags;
+        const bool resource_buffer = (usage_flags & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
+        const bool sampler_buffer = (usage_flags & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
+
+        ss << "  - pBindingInfos[" << std::dec << binding_i << "].address 0x" << std::hex << address << ' ';
+        if (resource_buffer && sampler_buffer) {
+            ss << "(resource and sampler buffer)";
+        } else if (resource_buffer) {
+            ss << "(resource buffer)";
+        } else if (sampler_buffer) {
+            ss << "(sampler buffer)";
+        } else {
+            ss << "\n  - [WARNING] missing VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT or "
+                  "VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT";
+        }
+        ss << '\n';
+
         found_warning |= dev_data.ListBuffers(ss, address, 1);
     }
 
@@ -292,7 +342,12 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
                     }
                 }
 
-                set_info = &sorted_sets.emplace_back(SetInfo{embedded, var_set, binding_index, set_range, dsl, {}});
+                VkBufferUsageFlagBits2 usage_flags = 0;
+                if (binding_usage_flags.find(binding_index) != binding_usage_flags.end()) {
+                    usage_flags = binding_usage_flags[binding_index];
+                }
+
+                set_info = &sorted_sets.emplace_back(SetInfo{embedded, var_set, binding_index, usage_flags, set_range, dsl, {}});
             }
 
             // To variables might be the same set/binding if doing descriptor indexing aliasing
@@ -347,6 +402,8 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
             std::sort(set_info.bindings.begin(), set_info.bindings.end());
             for (BindingInfo& binding_info : set_info.bindings) {
                 binding_info.Print(ss);
+
+                found_warning |= set_info.ValidateBufferUsage(ss, binding_info);
 
                 if (dev_data.global_settings.descriptor_hashing && !binding_info.embedded) {
                     found_warning |= binding_info.ValidateDescriptor(ss, dev_data);
