@@ -671,10 +671,10 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings* settings_data, VkuL
 
     // Default
     std::vector<std::string> debug_actions_list = {"VK_DBG_LAYER_ACTION_DEFAULT", "VK_DBG_LAYER_ACTION_LOG_MSG"};
-#ifdef WIN32
+#ifdef _WIN32
     // For Windows, enable message logging AND OutputDebugString
     debug_actions_list.push_back("VK_DBG_LAYER_ACTION_DEBUG_OUTPUT");
-#endif  // WIN32
+#endif  // _WIN32
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DEBUG_ACTION)) {
         vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_DEBUG_ACTION, debug_actions_list);
@@ -972,12 +972,12 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
     dbg_create_info.pUserData = (void*)log_output;
     LayerCreateMessengerCallback(settings_data->debug_report, true, &dbg_create_info, &messenger);
 
-#ifdef WIN32
+#ifdef _WIN32
     messenger = VK_NULL_HANDLE;
     dbg_create_info.pfnUserCallback = MessengerWin32DebugOutputMsg;
     dbg_create_info.pUserData = nullptr;
     LayerCreateMessengerCallback(settings_data->debug_report, true, &dbg_create_info, &messenger);
-#endif  // WIN32
+#endif  // _WIN32
 
     return;
 #else

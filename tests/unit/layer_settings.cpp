@@ -452,7 +452,7 @@ TEST_F(NegativeLayerSettings, ReportFlags3) {
     Monitor().VerifyFound();
 }
 
-#ifndef WIN32
+#ifndef _WIN32
 TEST_F(NegativeLayerSettings, LogFilename) {
     const char* path[] = {"/fake/path"};
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "log_filename", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, path};

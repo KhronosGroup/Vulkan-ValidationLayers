@@ -224,7 +224,7 @@ void VKAPI_PTR DummyFree(void*, void* pMemory) {
 // allocated during vkCreateInstance lives in a different 'heap'. Trying to free it from the application with the
 // DummyFree callbacks will crash the application. The goal of this change is to enable Leak Sanitizer to run on
 // CI runs in linux, so leaking memory in the windows tests is okay.
-#if !defined(WIN32)
+#if !defined(_WIN32)
     std::free(pMemory);
 #endif
 }

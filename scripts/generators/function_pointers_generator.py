@@ -163,7 +163,7 @@ namespace vk {
         out.append('''
 void InitCore(const char *api_name) {
 
-#if defined(WIN32)
+#if defined(_WIN32)
     std::string filename = std::string(api_name) + "-1.dll";
     auto lib_handle = open_library(filename.c_str());
 #elif(__APPLE__)
