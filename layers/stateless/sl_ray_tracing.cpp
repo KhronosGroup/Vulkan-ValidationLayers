@@ -894,6 +894,18 @@ bool Device::ValidateAccelerationStructureGeometry(const Context& context, const
                     "pointer, the other must be NULL.",
                     omm_ext->pUsageCounts, omm_ext->ppUsageCounts);
             }
+
+            if (omm_ext->micromap != VK_NULL_HANDLE && (omm_ext->pUsageCounts || omm_ext->ppUsageCounts)) {
+                const Field usage_field = omm_ext->pUsageCounts ? Field::pUsageCounts : Field::ppUsageCounts;
+                for (uint32_t usage_i = 0; usage_i < omm_ext->usageCountsCount; ++usage_i) {
+                    const VkMicromapUsageEXT& usage =
+                        omm_ext->pUsageCounts ? omm_ext->pUsageCounts[usage_i] : *omm_ext->ppUsageCounts[usage_i];
+                    skip |= context.ValidateRangedEnum(omm_ext_loc.dot(usage_field, usage_i).dot(Field::format),
+                                                       vvl::Enum::VkOpacityMicromapFormatKHR,
+                                                       static_cast<VkOpacityMicromapFormatKHR>(usage.format),
+                                                       "VUID-VkAccelerationStructureTrianglesOpacityMicromapEXT-format-11679");
+                }
+            }
         }
     } else if (geom.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
         const Location instances_loc = geometry_loc.dot(Field::instances);

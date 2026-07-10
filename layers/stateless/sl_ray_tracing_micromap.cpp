@@ -27,6 +27,29 @@
 
 namespace stateless {
 
+bool Device::ValidateMicromapBuildInfo(const Context& context, const VkMicromapBuildInfoEXT& build_info,
+                                       const Location& build_info_loc) const {
+    bool skip = false;
+
+    if (build_info.pUsageCounts && build_info.ppUsageCounts) {
+        skip |= LogError("VUID-VkMicromapBuildInfoEXT-pUsageCounts-07516", device, build_info_loc,
+                         "both pUsageCounts and ppUsageCounts are not NULL.");
+    }
+
+    if (build_info.type == VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT && (build_info.pUsageCounts || build_info.ppUsageCounts)) {
+        const Field usage_field = build_info.pUsageCounts ? Field::pUsageCounts : Field::ppUsageCounts;
+        for (uint32_t usage_i = 0; usage_i < build_info.usageCountsCount; ++usage_i) {
+            const VkMicromapUsageEXT& usage =
+                build_info.pUsageCounts ? build_info.pUsageCounts[usage_i] : *build_info.ppUsageCounts[usage_i];
+            skip |= context.ValidateRangedEnum(
+                build_info_loc.dot(usage_field, usage_i).dot(Field::format), vvl::Enum::VkOpacityMicromapFormatKHR,
+                static_cast<VkOpacityMicromapFormatKHR>(usage.format), "VUID-VkMicromapBuildInfoEXT-format-11652");
+        }
+    }
+
+    return skip;
+}
+
 bool Device::manual_PreCallValidateCreateMicromapEXT(VkDevice device, const VkMicromapCreateInfoEXT* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkMicromapEXT* pMicromap,
                                                      const Context& context) const {
@@ -99,10 +122,8 @@ bool Device::manual_PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandB
                              info_loc.dot(Field::data).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be aligned to 256.",
                              info.data.deviceAddress);
         }
-        if (info.pUsageCounts && info.ppUsageCounts) {
-            skip |= LogError("VUID-VkMicromapBuildInfoEXT-pUsageCounts-07516", commandBuffer, info_loc,
-                             "both pUsageCounts and ppUsageCounts are not NULL.");
-        }
+
+        skip |= ValidateMicromapBuildInfo(context, info, info_loc);
     }
 
     return skip;
@@ -128,6 +149,8 @@ bool Device::manual_PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferred
             skip |= LogError("VUID-vkBuildMicromapsEXT-pInfos-07554", device,
                              info_loc.dot(Field::triangleArray).dot(Field::hostAddress), "is zero.");
         }
+
+        skip |= ValidateMicromapBuildInfo(context, info, info_loc);
     }
 
     return skip;
@@ -325,10 +348,7 @@ bool Device::manual_PreCallValidateGetMicromapBuildSizesEXT(VkDevice device, VkA
                          "The VkPhysicalDeviceOpacityMicromapFeaturesEXT::micromap feature was not enabled.");
     }
 
-    if (pBuildInfo->pUsageCounts && pBuildInfo->ppUsageCounts) {
-        skip |= LogError("VUID-VkMicromapBuildInfoEXT-pUsageCounts-07516", device, error_obj.location,
-                         "both pUsageCounts and ppUsageCounts are not NULL.");
-    }
+    skip |= ValidateMicromapBuildInfo(context, *pBuildInfo, error_obj.location.dot(Field::pBuildInfo));
 
     return skip;
 }

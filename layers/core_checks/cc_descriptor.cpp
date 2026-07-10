@@ -3147,6 +3147,12 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorD
                          device_state->physical_device_count);
     }
 
+    if (!enabled_features.accelerationStructure && pInfo->accelerationStructure != VK_NULL_HANDLE) {
+        skip |= LogError("VUID-VkAccelerationStructureCaptureDescriptorDataInfoEXT-None-12430", device,
+                         error_obj.location.dot(Field::pInfo).dot(Field::accelerationStructure),
+                         "is not VK_NULL_HANDLE, but the accelerationStructure feature was not enabled.");
+    }
+
     if (pInfo->accelerationStructure != VK_NULL_HANDLE) {
         if (auto acceleration_structure_state = Get<vvl::AccelerationStructureKHR>(pInfo->accelerationStructure)) {
             if (!(acceleration_structure_state->GetCreateFlags() &

@@ -363,6 +363,29 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledGetSamplerOpaqueCaptureDescriptorData
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptorBuffer, AccelerationStructureCaptureDescriptorDataInfoFeatureDisabled) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::descriptorBufferCaptureReplay);
+    RETURN_IF_SKIP(Init());
+
+    uint8_t data[256];
+
+    // Using a dummy non-null handle - the accelerationStructure feature is not enabled
+    VkAccelerationStructureKHR dummy_as = CastToHandle<VkAccelerationStructureKHR, uintptr_t>(0xbad00000);
+    VkAccelerationStructureCaptureDescriptorDataInfoEXT ascddi = vku::InitStructHelper();
+    ascddi.accelerationStructure = dummy_as;
+
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureCaptureDescriptorDataInfoEXT-None-12430");
+    m_errorMonitor->SetAllowedFailureMsg(
+        "VUID-VkAccelerationStructureCaptureDescriptorDataInfoEXT-accelerationStructure-parameter");
+    vk::GetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device(), &ascddi, &data);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptorBuffer, NotEnabledGetAccelerationStructureOpaqueCaptureDescriptorDataEXT) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
