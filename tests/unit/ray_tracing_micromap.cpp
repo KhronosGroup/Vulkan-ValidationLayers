@@ -2366,6 +2366,124 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_TraceRaysOMMPipelineFlagMissing) {
     vk::DestroyPipeline(device(), rt_pipeline, nullptr);
 }
 
+TEST_F(NegativeRayTracingMicromap, MicromapBuildInfoInvalidFormat) {
+    TEST_DESCRIPTION("Test VkMicromapBuildInfoEXT with invalid format");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    VkPhysicalDeviceOpacityMicromapFeaturesEXT ext_features = vku::InitStructHelper();
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper(&ext_features);
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&accel_features);
+    RETURN_IF_SKIP(InitFramework());
+    vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
+    if (!ext_features.micromap) {
+        GTEST_SKIP() << "micromap feature not supported";
+    }
+    ext_features.micromap = VK_TRUE;
+    accel_features.accelerationStructure = VK_TRUE;
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+
+    VkMicromapUsageEXT usage = {};
+    usage.count = 1;
+    usage.subdivisionLevel = 0;
+    usage.format = 0;  // Invalid
+
+    VkMicromapBuildInfoEXT build_info = vku::InitStructHelper();
+    build_info.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
+    build_info.usageCountsCount = 1;
+    build_info.pUsageCounts = &usage;
+
+    VkMicromapBuildSizesInfoEXT size_info = vku::InitStructHelper();
+
+    m_errorMonitor->SetDesiredError("VUID-VkMicromapBuildInfoEXT-format-11652");
+    vk::GetMicromapBuildSizesEXT(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &build_info, &size_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracingMicromap, TrianglesOpacityMicromapEXTInvalidFormat) {
+    TEST_DESCRIPTION("Test VkAccelerationStructureTrianglesOpacityMicromapEXT with invalid format");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    VkPhysicalDeviceOpacityMicromapFeaturesEXT ext_features = vku::InitStructHelper();
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper(&ext_features);
+    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_features = vku::InitStructHelper(&accel_features);
+    VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR dac_features = vku::InitStructHelper(&buffer_features);
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&dac_features);
+    RETURN_IF_SKIP(InitFramework());
+    vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
+    if (!ext_features.micromap) {
+        GTEST_SKIP() << "micromap feature not supported";
+    }
+    ext_features.micromap = VK_TRUE;
+    accel_features.accelerationStructure = VK_TRUE;
+    buffer_features.bufferDeviceAddress = VK_TRUE;
+    dac_features.deviceAddressCommands = VK_TRUE;
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
+
+    vkt::Buffer micromap_storage_buffer(*m_device, 4096, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT);
+    VkMicromapCreateInfoEXT mm_ci = vku::InitStructHelper();
+    mm_ci.buffer = micromap_storage_buffer;
+    mm_ci.size = 4096;
+    mm_ci.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
+    VkMicromapEXT micromap = VK_NULL_HANDLE;
+    vk::CreateMicromapEXT(device(), &mm_ci, nullptr, &micromap);
+
+    auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
+    blas->Create();
+
+    vkt::Buffer triangle_buffer(
+        *m_device, 4096, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        vkt::device_address);
+    vkt::Buffer scratch_buffer(*m_device, 4096,
+                               VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                                   VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                               vkt::device_address);
+
+    VkMicromapUsageEXT usage = {};
+    usage.count = 1;
+    usage.subdivisionLevel = 0;
+    usage.format = 0;  // Invalid
+
+    VkAccelerationStructureTrianglesOpacityMicromapEXT triangle_mm = vku::InitStructHelper();
+    triangle_mm.indexType = VK_INDEX_TYPE_NONE_KHR;
+    triangle_mm.micromap = micromap;
+    triangle_mm.usageCountsCount = 1;
+    triangle_mm.pUsageCounts = &usage;
+
+    VkAccelerationStructureGeometryKHR geometry = vku::InitStructHelper();
+    geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+    geometry.geometry.triangles = vku::InitStructHelper(&triangle_mm);
+    geometry.geometry.triangles.indexType = VK_INDEX_TYPE_NONE_KHR;
+    geometry.geometry.triangles.maxVertex = 3;
+    geometry.geometry.triangles.vertexData.deviceAddress = triangle_buffer.Address();
+    geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+
+    VkAccelerationStructureBuildGeometryInfoKHR build_info = vku::InitStructHelper();
+    build_info.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    build_info.srcAccelerationStructure = VK_NULL_HANDLE;
+    build_info.dstAccelerationStructure = blas->handle();
+    build_info.geometryCount = 1;
+    build_info.pGeometries = &geometry;
+    build_info.scratchData.deviceAddress = scratch_buffer.Address();
+
+    VkAccelerationStructureBuildRangeInfoKHR range_info = {};
+    range_info.primitiveCount = 1;
+    const VkAccelerationStructureBuildRangeInfoKHR* range_info_ptr = &range_info;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureTrianglesOpacityMicromapEXT-format-11679");
+    vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &build_info, &range_info_ptr);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+
+    vk::DestroyMicromapEXT(device(), micromap, nullptr);
+}
+
 TEST_F(NegativeRayTracingMicromap, BeginQueryQueryPoolType) {
     TEST_DESCRIPTION("Test CmdBeginQuery with invalid micromap queryPool queryType");
 

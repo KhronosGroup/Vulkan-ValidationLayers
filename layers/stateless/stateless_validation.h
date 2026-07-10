@@ -1281,6 +1281,9 @@ class Device : public vvl::BaseDevice {
                                                               const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo,
                                                               const Context &context) const;
 
+    bool ValidateMicromapBuildInfo(const Context &context, const VkMicromapBuildInfoEXT &build_info,
+                                   const Location &build_info_loc) const;
+
     bool manual_PreCallValidateCreateMicromapEXT(VkDevice device, const VkMicromapCreateInfoEXT *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkMicromapEXT *pMicromap,
                                                  const Context &context) const;
