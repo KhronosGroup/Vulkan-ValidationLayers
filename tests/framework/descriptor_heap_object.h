@@ -44,6 +44,7 @@ class DescriptorHeap {
     // Returns write offset.
     VkDeviceSize WriteBufferDescriptor(const vkt::Buffer& buffer, VkDescriptorType desc_type);
     VkDeviceSize WriteBufferDescriptor(VkDeviceAddressRangeKHR addr_range, VkDescriptorType desc_type);
+    VkDeviceSize WriteImageDescriptor(const vkt::Image& image, VkDescriptorType tydesc_typepe = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     VkDeviceSize WriteAccelerationStructureDescriptor(vkt::as::AccelerationStructureKHR& as);
     VkDeviceSize WriteAccelerationStructureDescriptor(VkDeviceAddress as_addr);
     // Write at supplied heap offset
@@ -74,6 +75,8 @@ class DescriptorHeap {
 
   private:
     VkDeviceSize WriteDescriptorAtOffset(VkDeviceAddressRangeKHR addr_range, VkDescriptorType desc_type, VkDeviceSize heap_offset);
+    VkDeviceSize WriteDescriptorAtOffset(const VkImageDescriptorInfoEXT* image_info, VkDescriptorType desc_type,
+                                         VkDeviceSize heap_offset);
 
     VkLayerTest* test_ = nullptr;
     bool resource_reserved_range_in_front_ = false;

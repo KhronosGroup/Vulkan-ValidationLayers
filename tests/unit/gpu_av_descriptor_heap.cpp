@@ -1373,27 +1373,26 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBSecondaryBind) {
 
 TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOB) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+    vkt::DescriptorHeap desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
     const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
-    CreateResourceHeap(resource_stride, true);
-    CreateSamplerHeap(sampler_stride, true);
+    desc_heap.CreateResourceHeap(resource_stride, true);
+    desc_heap.CreateSamplerHeap(sampler_stride, true);
 
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    WriteImageToHeap(image);
+    const VkDeviceSize image_offset = desc_heap.WriteImageDescriptor(image);
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    VkHostAddressRangeEXT sampler_host = {sampler_heap_data_, static_cast<size_t>(sampler_stride)};
+    VkHostAddressRangeEXT sampler_host = {desc_heap.sampler_heap_data_, static_cast<size_t>(sampler_stride)};
     vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-    mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)(heap_props.minResourceHeapReservedRange + resource_stride);
-    mappings[0].sourceData.constantOffset.heapArrayStride = 0;
+    mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)(image_offset + resource_stride);
     mappings[1] = MakeSetAndBindingMapping(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minSamplerHeapReservedRange;
-    mappings[1].sourceData.constantOffset.heapArrayStride = 0;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 2;
@@ -1417,8 +1416,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOB) {
     vkt::HeapComputePipeline pipe_sampler(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
-    BindResourceHeap();
-    BindSamplerHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    desc_heap.BindSamplerHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_image);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
@@ -1534,8 +1533,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBuffer) {
     if ((heap_props.minResourceHeapReservedRange / heap_props.bufferDescriptorSize) >= 10000) {
         GTEST_SKIP() << "reserved range is too large, access will not be OOB";
     }
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride);
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     const char* cs_source = R"glsl(
         #version 450
@@ -1552,7 +1551,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBuffer) {
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     m_command_buffer.Begin();
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -1569,8 +1568,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBufferOldGlsl) {
     if ((heap_props.minResourceHeapReservedRange / heap_props.bufferDescriptorSize) >= 10000) {
         GTEST_SKIP() << "reserved range is too large, access will not be OOB";
     }
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride);
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     // Same shader above in ResourceOOBUntypedPointers, but using the old (still valid) GLSL output
     const char* cs_source = R"asm(
@@ -1613,7 +1612,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBufferOldGlsl) {
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -1630,8 +1629,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBufferAtomics) {
     if ((heap_props.minResourceHeapReservedRange / heap_props.bufferDescriptorSize) >= 10000) {
         GTEST_SKIP() << "reserved range is too large, access will not be OOB";
     }
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride);
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     const char* cs_source = R"glsl(
         #version 450
@@ -1649,7 +1648,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBufferAtomics) {
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     m_command_buffer.Begin();
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -1666,11 +1665,11 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersStorageImage) {
     if ((heap_props.minResourceHeapReservedRange / heap_props.imageDescriptorSize) >= 10000) {
         GTEST_SKIP() << "reserved range is too large, access will not be OOB";
     }
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride);
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     vkt::Buffer ssbo_buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    WriteBufferToHeap(ssbo_buffer);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     // Note - this looks the same in the "old" glslang code as well
     const char* cs_source = R"glsl(
@@ -1694,7 +1693,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersStorageImage) {
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
 
     m_command_buffer.Begin();
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -1711,13 +1710,12 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersSampledImage) {
     if ((heap_props.minResourceHeapReservedRange / heap_props.imageDescriptorSize) >= 10000) {
         GTEST_SKIP() << "reserved range is too large, access will not be OOB";
     }
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
-    CreateResourceHeap(resource_stride);
-    CreateSamplerHeap(sampler_stride);
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
+    desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
 
     vkt::Buffer ssbo_buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    WriteBufferToHeap(ssbo_buffer);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     // Note - this looks the same in the "old" glslang code as well
     const char* cs_source = R"glsl(
@@ -1741,8 +1739,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersSampledImage) {
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
 
     m_command_buffer.Begin();
-    BindResourceHeap();
-    BindSamplerHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    desc_heap.BindSamplerHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -1759,9 +1757,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBUntypedPointers) {
     if ((heap_props.minSamplerHeapReservedRange / heap_props.samplerDescriptorSize) >= 10000) {
         GTEST_SKIP() << "reserved range is too large, access will not be OOB";
     }
-    const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
-    CreateResourceHeap(resource_stride);
-    CreateSamplerHeap(heap_props.samplerDescriptorSize);
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.imageDescriptorSize);
+    desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
 
     // Note - this looks the same in the "old" glslang code as well
     const char* cs_source = R"glsl(
@@ -1776,8 +1774,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBUntypedPointers) {
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     m_command_buffer.Begin();
-    BindResourceHeap();
-    BindSamplerHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    desc_heap.BindSamplerHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -1792,11 +1790,11 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersOffsetId) {
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
 
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride * 2);
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
 
     vkt::Buffer buffer_0(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    WriteBufferToHeap(buffer_0, 0);
+    desc_heap.WriteBufferDescriptor(buffer_0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     // layout(storage_buffer) SSBO {
     //     uint a;
@@ -1854,7 +1852,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersOffsetId) {
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
