@@ -37,11 +37,12 @@ TEST_F(PositiveGpuAVDescriptorHeap, BufferPointerOffset) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     InitRenderTarget();
 
+    vkt::DescriptorHeap desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride);
+    desc_heap.CreateResourceHeap(resource_stride);
 
     vkt::Buffer buffer(*m_device, sizeof(float) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    WriteBufferToHeap(buffer);
+    desc_heap.WriteBufferDescriptor(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     char const *cs_source = R"glsl(
         #version 450
@@ -56,7 +57,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, BufferPointerOffset) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -153,15 +154,15 @@ TEST_F(PositiveGpuAVDescriptorHeap, HeapBoundInMultimpleCmdBuffers) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
     InitRenderTarget();
 
-    const VkDeviceSize heap_size = 256;
-    CreateResourceHeap(heap_size);
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(256);
 
     vkt::CommandBuffer cmd_buffer(*m_device, m_command_pool);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange.address = resource_heap_.Address();
-    bind_resource_info.heapRange.size = resource_heap_.CreateInfo().size;
-    bind_resource_info.reservedRangeOffset = resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
+    bind_resource_info.heapRange.address = desc_heap.resource_heap_.Address();
+    bind_resource_info.heapRange.size = desc_heap.resource_heap_.CreateInfo().size;
+    bind_resource_info.reservedRangeOffset = desc_heap.resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     m_command_buffer.Begin();
@@ -405,11 +406,12 @@ TEST_F(PositiveGpuAVDescriptorHeap, CombinedAndSeparateImageSampler) {
 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4874
 TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitPushIndex) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
+    vkt::DescriptorHeap desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride * 4);
+    desc_heap.CreateResourceHeap(resource_stride * 4);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    WriteBufferToHeap(ssbo_buffer, 3);
+    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 3);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
@@ -431,7 +433,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitPushIndex) {
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     uint32_t index = 3;
     m_command_buffer.PushData(248, sizeof(uint32_t), &index);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -446,11 +448,12 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitPushIndex) {
 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4874
 TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitIndirectIndex) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
+    vkt::DescriptorHeap desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride * 4);
+    desc_heap.CreateResourceHeap(resource_stride * 4);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    WriteBufferToHeap(ssbo_buffer, 3);
+    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 3);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
@@ -478,7 +481,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitIndirectIndex) {
     VkDeviceAddress indirect_address = indirect_buffer.Address();
 
     m_command_buffer.Begin();
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     m_command_buffer.PushData(248, sizeof(VkDeviceAddress), &indirect_address);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -492,11 +495,12 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitIndirectIndex) {
 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4874
 TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitHeapData) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
+    vkt::DescriptorHeap desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride * 4);
+    desc_heap.CreateResourceHeap(resource_stride * 4);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    WriteBufferToHeap(ssbo_buffer, 3);
+    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 3);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 0);
@@ -526,7 +530,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitHeapData) {
     heap_data[min_alignment / 4] = 42;
 
     m_command_buffer.Begin();
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     uint32_t index = min_alignment;
     m_command_buffer.PushData(248, sizeof(uint32_t), &index);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -543,11 +547,12 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitPushData) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::scalarBlockLayout);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride);
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    WriteBufferToHeap(ssbo_buffer);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 0);
@@ -573,7 +578,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitPushData) {
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
 
     m_command_buffer.Begin();
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     uint32_t index = 42;
     m_command_buffer.PushData(248, sizeof(uint32_t), &index);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -661,11 +666,11 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitIndirectAddress) {
 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4874
 TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitShader) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride);
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    WriteBufferToHeap(ssbo_buffer);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
@@ -688,7 +693,7 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitShader) {
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     uint32_t value[32];
     value[30] = 42;
     m_command_buffer.PushData(128, sizeof(value), value);
@@ -749,18 +754,19 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitMulitipleDispatch) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::scalarBlockLayout);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride * 2);
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
 
     vkt::Buffer ssbo1_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Buffer ssbo2_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    WriteBufferToHeap(ssbo1_buffer);
-    WriteBufferToHeap(ssbo2_buffer, 1);
+    VkDeviceAddress offset_1 = desc_heap.WriteBufferDescriptor(ssbo1_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    VkDeviceAddress offset_2 = desc_heap.WriteBufferDescriptor(ssbo2_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)offset_1;
     mappings[1] = MakeSetAndBindingMapping(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT;
     mappings[1].sourceData.pushDataOffset = 0;
@@ -780,11 +786,11 @@ TEST_F(PositiveGpuAVDescriptorHeap, DISABLED_PushDataLimitMulitipleDispatch) {
     )glsl";
     vkt::HeapComputePipeline pipe1(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
 
-    mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)resource_stride;
+    mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)offset_2;
     vkt::HeapComputePipeline pipe2(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
 
     m_command_buffer.Begin();
-    BindResourceHeap();
+    desc_heap.BindResourceHeap(m_command_buffer);
     uint32_t index = 42;
     m_command_buffer.PushData(248, sizeof(uint32_t), &index);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe1);
@@ -1215,11 +1221,11 @@ TEST_F(PositiveGpuAVDescriptorHeap, UntypedPointersOffsetIdNonArray) {
 
 TEST_F(PositiveGpuAVDescriptorHeap, SecondaryInheritance) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    CreateResourceHeap(resource_stride);
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    WriteBufferToHeap(ssbo_buffer);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
@@ -1238,8 +1244,8 @@ TEST_F(PositiveGpuAVDescriptorHeap, SecondaryInheritance) {
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
-    resource_bind_info.heapRange = resource_heap_.AddressRange();
-    resource_bind_info.reservedRangeOffset = resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
+    resource_bind_info.heapRange = desc_heap.resource_heap_.AddressRange();
+    resource_bind_info.reservedRangeOffset = desc_heap.resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
     resource_bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
     VkCommandBufferInheritanceDescriptorHeapInfoEXT inh_desc_heap_info = vku::InitStructHelper();
     inh_desc_heap_info.pResourceHeapBindInfo = &resource_bind_info;

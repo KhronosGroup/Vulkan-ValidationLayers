@@ -103,8 +103,7 @@ VkDeviceSize DescriptorHeap::WriteBufferDescriptor(VkDeviceAddressRangeKHR addr_
     heap_offset_ = Align(heap_offset_, heap_props.bufferDescriptorAlignment);
     const VkDeviceSize write_offset = WriteBufferDescriptorAtOffset(addr_range, desc_type, heap_offset_);
 
-    const VkDeviceSize buffer_desc_size = vk::GetPhysicalDeviceDescriptorSizeEXT(test_->DeviceObj()->Physical(), desc_type);
-    heap_offset_ += buffer_desc_size;
+    heap_offset_ += heap_props.bufferDescriptorSize;
     assert(heap_offset_ <= resource_heap_.CreateInfo().size);
 
     return write_offset;
@@ -115,6 +114,22 @@ VkDeviceSize DescriptorHeap::WriteBufferDescriptorAtOffset(VkDeviceAddressRangeK
     assert(IsValueIn(desc_type, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER}));
     return WriteDescriptorAtOffset(addr_range, desc_type, heap_offset);
+}
+
+VkDeviceSize DescriptorHeap::WriteImageDescriptor(const vkt::Image& image, VkDescriptorType desc_type) {
+    heap_offset_ = Align(heap_offset_, heap_props.imageDescriptorAlignment);
+
+    VkImageViewCreateInfo view_info = image.BasicViewCreatInfo();
+    VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
+    image_info.pView = &view_info;
+    image_info.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    const VkDeviceSize write_offset = WriteDescriptorAtOffset(&image_info, desc_type, heap_offset_);
+
+    heap_offset_ += heap_props.imageDescriptorSize;
+    assert(heap_offset_ <= resource_heap_.CreateInfo().size);
+
+    return write_offset;
 }
 
 VkDeviceSize DescriptorHeap::WriteAccelerationStructureDescriptor(vkt::as::AccelerationStructureKHR& as) {
@@ -129,8 +144,7 @@ VkDeviceSize DescriptorHeap::WriteAccelerationStructureDescriptor(VkDeviceAddres
     const VkDeviceAddressRangeEXT as_addr_range = {as_addr, 0};
     const VkDeviceSize write_offset = WriteDescriptorAtOffset(as_addr_range, as_desc_type, heap_offset_);
 
-    const VkDeviceSize buffer_desc_size = vk::GetPhysicalDeviceDescriptorSizeEXT(test_->DeviceObj()->Physical(), as_desc_type);
-    heap_offset_ += buffer_desc_size;
+    heap_offset_ += heap_props.bufferDescriptorSize;
     assert(heap_offset_ <= resource_heap_.CreateInfo().size);
 
     return write_offset;
@@ -203,6 +217,7 @@ void DescriptorHeap::BindSamplerHeap(vkt::CommandBuffer &cmd_buffer) {
     vk::CmdBindSamplerHeapEXT(cmd_buffer, &bind_resource_info);
 }
 
+// Buffer variation
 VkDeviceSize DescriptorHeap::WriteDescriptorAtOffset(VkDeviceAddressRangeKHR addr_range, VkDescriptorType desc_type,
                                                      VkDeviceSize heap_offset) {
     assert(resource_heap_.handle() != VK_NULL_HANDLE);
@@ -210,7 +225,25 @@ VkDeviceSize DescriptorHeap::WriteDescriptorAtOffset(VkDeviceAddressRangeKHR add
     desc_info.type = desc_type;
     desc_info.data.pAddressRange = &addr_range;
 
-    const VkDeviceSize desc_size = vk::GetPhysicalDeviceDescriptorSizeEXT(test_->DeviceObj()->Physical(), desc_type);
+    const VkDeviceSize desc_size = heap_props.bufferDescriptorSize;
+
+    VkHostAddressRangeEXT desc_host_data{};
+    desc_host_data.address = resource_heap_data_ + heap_offset;
+    desc_host_data.size = desc_size;
+
+    vk::WriteResourceDescriptorsEXT(*test_->DeviceObj(), 1, &desc_info, &desc_host_data);
+
+    return heap_offset;
+}
+
+VkDeviceSize DescriptorHeap::WriteDescriptorAtOffset(const VkImageDescriptorInfoEXT* image_info, VkDescriptorType desc_type,
+                                                     VkDeviceSize heap_offset) {
+    assert(resource_heap_.handle() != VK_NULL_HANDLE);
+    VkResourceDescriptorInfoEXT desc_info = vku::InitStructHelper();
+    desc_info.type = desc_type;
+    desc_info.data.pImage = image_info;
+
+    const VkDeviceSize desc_size = heap_props.imageDescriptorSize;
 
     VkHostAddressRangeEXT desc_host_data{};
     desc_host_data.address = resource_heap_data_ + heap_offset;
