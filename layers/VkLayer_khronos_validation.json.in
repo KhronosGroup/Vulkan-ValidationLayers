@@ -1535,7 +1535,7 @@
                 {
                     "key": "message_id_filter",
                     "label": "Mute Message VUIDs",
-                    "description": "List of VUIDs which are to be IGNORED by the validation layer. The list is comma seperated and can be either the entire VUID string, the hashed value, or the last 5 digit number of a VUID",
+                    "description": "List of VUIDs which are to be IGNORED by the validation layer. The list is comma separated and can be either the entire VUID string, the hashed value, or the last 5 digit number of a VUID",
                     "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                     "type": "LIST",
                     "env": "VK_LAYER_MESSAGE_ID_FILTER",

@@ -220,7 +220,7 @@ khronos_validation.message_format_json = false
 
 # Mute Message VUIDs
 # =====================
-# List of VUIDs which are to be IGNORED by the validation layer. The list is comma seperated and can be either the entire VUID string, the hashed value, or the last 5 digit number of a VUID
+# List of VUIDs which are to be IGNORED by the validation layer. The list is comma separated and can be either the entire VUID string, the hashed value, or the last 5 digit number of a VUID
 khronos_validation.message_id_filter =
 
 # Object Lifetime
