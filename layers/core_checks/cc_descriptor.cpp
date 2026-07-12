@@ -660,7 +660,6 @@ bool CoreChecks::ValidateDescriptorSetLayoutBindingFlags(const VkDescriptorSetLa
 bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCreateInfo& create_info,
                                                        const Location& create_info_loc) const {
     bool skip = false;
-    vvl::unordered_set<uint32_t> bindings;
     uint64_t total_descriptors = 0;
 
     const bool push_descriptor_set = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) != 0;
@@ -677,14 +676,21 @@ bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayo
     uint32_t uniform_buffer_dynamic = create_info.bindingCount;
     uint32_t storage_buffer_dynamic = create_info.bindingCount;
 
+    // < binding, pBindings[index] >
+    vvl::unordered_map<uint32_t, uint32_t> binding_map;
+
     for (uint32_t i = 0; i < create_info.bindingCount; ++i) {
         const Location binding_loc = create_info_loc.dot(Field::pBindings, i);
         const auto& binding_info = create_info.pBindings[i];
         max_binding = std::max(max_binding, binding_info.binding);
 
-        if (!bindings.insert(binding_info.binding).second) {
+        auto binding_it = binding_map.find(binding_info.binding);
+        if (binding_it == binding_map.end()) {
+            binding_map[binding_info.binding] = i;
+        } else {
             skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-binding-00279", device, binding_loc.dot(Field::binding),
-                             "is duplicated at pBindings[%" PRIu32 "].binding.", binding_info.binding);
+                             "and pBindings[%" PRIu32 "].binding are both %" PRIu32 "", binding_map[binding_info.binding],
+                             binding_info.binding);
         }
 
         if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
