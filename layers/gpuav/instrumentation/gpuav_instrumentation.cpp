@@ -632,7 +632,7 @@ void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferS
         if (last_bound.pipeline_state) {
             const PipelineSubState& pipeline_sub_state = SubState(*last_bound.pipeline_state);
 
-            inst_binding_pipe_layout.handle = pipeline_sub_state.GetPipelineLayoutUnion(loc, mode);
+            inst_binding_pipe_layout.handle = pipeline_sub_state.GetPipelineLayoutUnion(last_bound, loc, mode);
             assert(inst_binding_pipe_layout.handle != VK_NULL_HANDLE);
             if (gpuav.aborted_) {
                 return;

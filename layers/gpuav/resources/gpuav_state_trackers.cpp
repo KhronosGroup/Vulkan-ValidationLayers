@@ -28,6 +28,7 @@
 
 #include "profiling/profiling.h"
 #include "state_tracker/last_bound_state.h"
+#include "state_tracker/pipeline_layout_state.h"
 
 namespace gpuav {
 
@@ -684,7 +685,8 @@ ShaderObjectSubState::ShaderObjectSubState(vvl::ShaderObject& obj) : vvl::Shader
 
 PipelineSubState::PipelineSubState(Validator& gpuav, vvl::Pipeline& pipeline) : vvl::PipelineSubState(pipeline), gpuav_(gpuav) {}
 
-VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location& loc, vvl::DescriptorMode mode) const {
+VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const LastBound& last_bound, const Location& loc,
+                                                          vvl::DescriptorMode mode) const {
     std::unique_lock<std::mutex> recreated_layout_lock(mutex_);
     if (recreated_layout_ != VK_NULL_HANDLE) {
         return recreated_layout_;
@@ -709,8 +711,26 @@ VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location& loc, v
         } else {
             VkDescriptorSetLayout recreated_desc_set_layout = VK_NULL_HANDLE;
 
-            const VkResult result = DispatchCreateDescriptorSetLayout(gpuav_.device, set_layout->GetCreateInfo().ptr(), nullptr,
-                                                                      &recreated_desc_set_layout);
+            // So ya, this is a fun
+            // Someone can call vkCmdBindPipeline whose pipeline layout was created with an immutable sampler and the VkSampler was
+            // destroyed, so we need to use the one from vkCmdBindDescriptorSets which must still be valid... I tried to use
+            // |desc_set_pipeline_layout| instead of |PipelineLayoutState| but you can have draw/dispatch that use no descriptor
+            // such that there is no vkCmdBindDescriptorSets call.
+            //
+            // This feels like there is some way to unwind all of this into a more elegant solution,
+            // but if you are reading this (unhinged comment), you likely are already confused why we have this function as well
+            // and rather just bandaid until someone complains
+            vku::safe_VkDescriptorSetLayoutCreateInfo dsl_create_info = set_layout->GetCreateInfo();
+            if (pipeline_layout_state->has_immutable_samplers) {
+                if (last_bound.desc_set_pipeline_layout && last_bound.desc_set_pipeline_layout->set_layouts.list[set_layout_i]) {
+                    dsl_create_info = last_bound.desc_set_pipeline_layout->set_layouts.list[set_layout_i]->GetCreateInfo();
+                } else {
+                    assert(false);  // Should not be possible, but at this point, not even the LLM knows
+                }
+            }
+
+            const VkResult result =
+                DispatchCreateDescriptorSetLayout(gpuav_.device, dsl_create_info.ptr(), nullptr, &recreated_desc_set_layout);
             (void)result;
             assert(result == VK_SUCCESS);
 
