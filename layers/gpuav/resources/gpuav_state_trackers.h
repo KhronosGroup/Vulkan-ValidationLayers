@@ -435,7 +435,7 @@ class PipelineSubState : public vvl::PipelineSubState {
     // The old pipeline could be in use at time of instrumentation,
     // so defer old pipeline destroy to Destroy() call.
     void AddHandleToDestroy(VkPipeline pipeline);
-    VkPipelineLayout GetPipelineLayoutUnion(const Location &loc, vvl::DescriptorMode mode) const;
+    VkPipelineLayout GetPipelineLayoutUnion(const LastBound& last_bound, const Location& loc, vvl::DescriptorMode mode) const;
 
     // We create a VkShaderModule that is instrumented and it needs to be destroyed before leaving the pipeline call
     std::vector<VkShaderModule> shader_modules;

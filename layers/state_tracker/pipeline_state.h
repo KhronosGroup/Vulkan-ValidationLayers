@@ -266,6 +266,11 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
     // There could be an invalid RenderPass which will not come as null, need to check RenderPassState() if it is valid
     bool IsRenderPassNull() const { return GraphicsCreateInfo().renderPass == VK_NULL_HANDLE; }
 
+    // WARNING - This function is dangerous to use the |set_layouts| if you are inside a command buffer recording
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10560
+    // While we keep a shared pointer of the vvl::PipelineLayout (in case it is destroyed) we don't save any immutable samplers
+    // If this pipeline layout has |has_immutable_samplers| true, then using this at draw time can lead to undesired effects
+    // (At draw time, you need to use the pipeline found in vkCmdBindDescriptorSets)
     const std::shared_ptr<const vvl::PipelineLayout> PipelineLayoutState() const {
         // TODO A render pass object is required for all of these library states. Which one should be used for an "executable
         // pipeline"?
