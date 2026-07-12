@@ -3273,7 +3273,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNullDescriptor) {
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
     const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}, false));
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
 
     if (vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) !=
         vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)) {
@@ -3341,7 +3341,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingToManyDescriptors) {
 
 TEST_F(NegativeGpuAVDescriptorHeap, HashingDeviceLocal) {
     const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}, false));
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
     vkt::DescriptorHeap desc_heap(*this);
 
     VkDeviceSize resource_heap_size_app = Align(heap_props.bufferDescriptorSize, heap_props.bufferDescriptorAlignment);
@@ -3420,7 +3420,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingDeviceLocal) {
 
 TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBWithHashingOn) {
     const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
-    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}, false));
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
     vkt::DescriptorHeap desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);

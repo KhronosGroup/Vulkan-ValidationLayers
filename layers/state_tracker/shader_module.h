@@ -748,6 +748,11 @@ struct Module {
         bool has_specialization_constants{false};
         bool uses_interpolate_at_sample{false};
 
+        // GPU Dump will want the |FuncParameterMap| if someone is trying to pass an untyped descriptor
+        // into a function. Instead of tracking the memory for everyone, GPU Dump will just rebuild the info,
+        // but only if it is actually needed
+        bool has_untyped_pointer_function_params{false};
+
         // Will check if there is source debug information
         // Won't save any other info and will retrieve the debug info if requested in a VU error message
         bool using_legacy_debug_info{false};

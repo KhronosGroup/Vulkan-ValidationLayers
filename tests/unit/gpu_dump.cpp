@@ -2544,3 +2544,89 @@ TEST_F(NegativeGpuDump, DescriptorHeapNullDescriptor) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeGpuDump, DescriptorHeapUntypedPointersImageFunctionParam) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitDescriptorHeap());
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(4096);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 2);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability SampledBuffer
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %2 "main" %3 %4 %5
+               OpExecutionMode %2 LocalSize 1 1 1
+               OpDecorate %3 BuiltIn ResourceHeapEXT
+               OpDecorateId %6 ArrayStrideIdEXT %7
+               OpDecorate %4 Binding 0
+               OpDecorate %4 DescriptorSet 0
+               OpDecorate %8 Block
+               OpMemberDecorate %8 0 Offset 0
+               OpDecorate %5 Binding 1
+               OpDecorate %5 DescriptorSet 0
+          %9 = OpTypeVoid
+         %10 = OpTypeFunction %9
+         %11 = OpTypeInt 32 0
+         %12 = OpTypeImage %11 Buffer 0 0 0 1 Unknown
+         %13 = OpTypePointer UniformConstant %12
+         %14 = OpTypeUntypedPointerKHR UniformConstant
+         %15 = OpTypeFunction %11 %14
+         %16 = OpConstant %11 0
+         %17 = OpTypeVector %11 4
+         %18 = OpTypeVector %11 2
+          %3 = OpUntypedVariableKHR %14 UniformConstant
+          %7 = OpConstantSizeOfEXT %11 %12
+          %6 = OpTypeRuntimeArray %12
+         %19 = OpTypePointer Function %11
+          %4 = OpVariable %13 UniformConstant
+         %20 = OpConstant %11 1
+          %8 = OpTypeStruct %18
+         %21 = OpTypePointer StorageBuffer %8
+          %5 = OpVariable %21 StorageBuffer
+         %22 = OpTypePointer StorageBuffer %18
+         %23 = OpTypeVector %11 3
+         %24 = OpConstantComposite %23 %20 %20 %20
+         %25 = OpFunction %11 None %15
+         %26 = OpFunctionParameter %14
+         %27 = OpLabel
+         %28 = OpLoad %12 %26
+         %29 = OpImageFetch %17 %28 %16 ZeroExtend
+         %30 = OpCompositeExtract %11 %29 0
+               OpReturnValue %30
+               OpFunctionEnd
+          %2 = OpFunction %9 None %10
+         %31 = OpLabel
+         %32 = OpUntypedAccessChainKHR %14 %6 %3 %16
+         %33 = OpUntypedAccessChainKHR %14 %12 %4
+         %34 = OpFunctionCall %11 %25 %32
+         %35 = OpFunctionCall %11 %25 %33
+         %36 = OpCompositeConstruct %18 %34 %35
+         %37 = OpAccessChain %22 %5 %16
+               OpStore %37 %36
+               OpReturn
+               OpFunctionEnd
+    )";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_ASM);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    m_errorMonitor->SetDesiredInfo("(is a function argument)");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}

@@ -1224,3 +1224,188 @@ TEST_F(PositiveDescriptorHeapUntyped, MultidimensionalArray) {
         ASSERT_EQ(data[0], 42);
     }
 }
+
+TEST_F(PositiveDescriptorHeapUntyped, BufferAsFunctionParameter) {
+    AddRequiredFeature(vkt::Feature::variablePointers);
+    AddRequiredFeature(vkt::Feature::variablePointersStorageBuffer);
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 4);
+
+    vkt::Buffer buffer_0(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer buffer_1(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer buffer_2(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    desc_heap.WriteBufferDescriptor(buffer_0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_heap.WriteBufferDescriptor(buffer_1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_heap.WriteBufferDescriptor(buffer_2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    uint32_t* data = static_cast<uint32_t*>(buffer_1.Memory().Map());
+    data[0] = 11;
+    data = static_cast<uint32_t*>(buffer_2.Memory().Map());
+    data[0] = 22;
+
+    // layout(descriptor_heap) buffer SSBO {
+    //     uint data;
+    // } buf[];
+    //
+    // layout(push_constant) uniform PC {
+    //     uint pc_index;
+    // };
+    //
+    // uint foo(uint index, uint* data_a, uint* data_b) {
+    //     if (index == 1) {
+    //         return *data_a;
+    //     } else if (index < 10) {
+    //         return *data_b;
+    //     }
+    //     return 42;
+    // }
+    //
+    // void main() {
+    //     uint x = foo(pc_index, &buf[1], &buf[pc_index]);
+    //     buf[0].data = x;
+    // }
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpCapability VariablePointers
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap %pc_var
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %PC Block
+               OpMemberDecorate %PC 0 Offset 0
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpDecorateId %buffer_stride ArrayStrideIdEXT %buffer_size
+
+       %void = OpTypeVoid
+       %bool = OpTypeBool
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+     %uint_0 = OpConstant %uint 0
+     %uint_1 = OpConstant %uint 1
+    %uint_10 = OpConstant %uint 10
+    %uint_42 = OpConstant %uint 42
+         %PC = OpTypeStruct %uint
+     %ptr_pc = OpTypePointer PushConstant %PC
+     %pc_var = OpVariable %ptr_pc PushConstant
+       %SSBO = OpTypeStruct %uint
+%_ptr_Function_uint = OpTypePointer Function %uint
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+%_ptr_PushConstant_uint = OpTypePointer PushConstant %uint
+%_ptr_StorageBuffer = OpTypeUntypedPointerKHR StorageBuffer
+%type_buffer = OpTypeBufferEXT StorageBuffer
+%buffer_size = OpConstantSizeOfEXT %int %type_buffer
+%buffer_stride = OpTypeRuntimeArray %type_buffer
+
+  %main_type = OpTypeFunction %void
+   %foo_type = OpTypeFunction %uint %_ptr_StorageBuffer %_ptr_StorageBuffer
+
+        %foo = OpFunction %uint None %foo_type
+    %param_a = OpFunctionParameter %_ptr_StorageBuffer
+    %param_b = OpFunctionParameter %_ptr_StorageBuffer
+      %foo_l = OpLabel
+         %44 = OpAccessChain %_ptr_PushConstant_uint %pc_var %int_0
+   %pc_index = OpLoad %uint %44
+         %17 = OpIEqual %bool %pc_index %uint_1
+               OpSelectionMerge %19 None
+               OpBranchConditional %17 %18 %22
+         %18 = OpLabel
+         %20 = OpLoad %uint %param_a
+               OpReturnValue %20
+         %22 = OpLabel
+         %25 = OpULessThan %bool %pc_index %uint_10
+               OpSelectionMerge %27 None
+               OpBranchConditional %25 %26 %27
+         %26 = OpLabel
+         %28 = OpLoad %uint %param_b
+               OpReturnValue %28
+         %27 = OpLabel
+               OpBranch %19
+         %19 = OpLabel
+               OpReturnValue %uint_42
+               OpFunctionEnd
+
+       %main = OpFunction %void None %main_type
+     %main_l = OpLabel
+          %x = OpVariable %_ptr_Function_uint Function
+         %50 = OpAccessChain %_ptr_PushConstant_uint %pc_var %int_0
+  %pc_index_ = OpLoad %uint %50
+
+   %ptr_buf_1 = OpUntypedAccessChainKHR %_ptr_UniformConstant %buffer_stride %resource_heap %int_1
+       %buf_a = OpBufferPointerEXT %_ptr_StorageBuffer %ptr_buf_1
+  %buf_a_data = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_a %int_0
+  %ptr_buf_pc = OpUntypedAccessChainKHR %_ptr_UniformConstant %buffer_stride %resource_heap %pc_index_
+       %buf_b = OpBufferPointerEXT %_ptr_StorageBuffer %ptr_buf_pc
+  %buf_b_data = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_b %int_0
+
+         %66 = OpFunctionCall %uint %foo %buf_a_data %buf_b_data
+               OpStore %x %66
+         %68 = OpLoad %uint %x
+         %69 = OpUntypedAccessChainKHR %_ptr_UniformConstant %buffer_stride %resource_heap %int_0
+         %72 = OpBufferPointerEXT %_ptr_StorageBuffer %69
+         %73 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %72 %int_0
+               OpStore %73 %68
+               OpReturn
+               OpFunctionEnd
+    )";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+
+    data = static_cast<uint32_t*>(buffer_0.Memory().Map());
+
+    // skips loading both
+    uint32_t pc_index = 100;
+    {
+        m_command_buffer.Begin();
+        m_command_buffer.PushData(0, sizeof(uint32_t), &pc_index);
+        desc_heap.BindResourceHeap(m_command_buffer);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+        m_command_buffer.End();
+        m_default_queue->SubmitAndWait(m_command_buffer);
+
+        if (!IsPlatformMockICD()) {
+            ASSERT_EQ(data[0], 42);
+        }
+    }
+
+    // load buffer_1
+    pc_index = 1;
+    {
+        m_command_buffer.Begin();
+        m_command_buffer.PushData(0, sizeof(uint32_t), &pc_index);
+        desc_heap.BindResourceHeap(m_command_buffer);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+        m_command_buffer.End();
+        m_default_queue->SubmitAndWait(m_command_buffer);
+
+        if (!IsPlatformMockICD()) {
+            ASSERT_EQ(data[0], 11);
+        }
+    }
+
+    // load buffer_2
+    pc_index = 2;
+    {
+        m_command_buffer.Begin();
+        m_command_buffer.PushData(0, sizeof(uint32_t), &pc_index);
+        desc_heap.BindResourceHeap(m_command_buffer);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+        m_command_buffer.End();
+        m_default_queue->SubmitAndWait(m_command_buffer);
+
+        if (!IsPlatformMockICD()) {
+            ASSERT_EQ(data[0], 22);
+        }
+    }
+}
