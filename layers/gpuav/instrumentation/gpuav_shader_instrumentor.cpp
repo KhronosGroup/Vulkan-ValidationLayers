@@ -364,11 +364,13 @@ vvl::DescriptorMode GpuShaderInstrumentor::SelectDescriptorModeFromDSL(uint32_t 
                     }
                 }
             }
-        } else if (enabled_features.descriptorBuffer) {
+        } else if (enabled_features.descriptorBuffer && hint_descriptor_buffer_) {
             // At this point, we have actually zero way to know how this VkPipelineLayout/VkShaderEXT is going to be used because
             // the extension never added a flag for creation time here.... so assume that if the descriptorBuffer feature is
-            // enabled, app is using it. This is such a rare case it likely is good enough of a solution for now, otherwise we will
-            // have to create 2 versions a modified handle and swap it out later.
+            // enabled and we have a "hint" it is used, that the app is using it.
+            // This is such a rare case (really just for over simple tests) it likely is good enough of a solution for now.
+            //
+            // The alternative is having to  2 versions a modified handle and swap it out later (while crying).
             mode = vvl::DescriptorModeBuffer;
         }
     }

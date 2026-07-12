@@ -94,6 +94,7 @@ void Validator::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreate
 
     if (in_usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
         descriptor_buffer.resource_handles_.emplace(*pBuffer);
+        hint_descriptor_buffer_ = true;
     }
 }
 
@@ -153,6 +154,11 @@ void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer command
 
     // Set the pointer the chassis will use
     chassis_state.pBindInfos = reinterpret_cast<VkDescriptorBufferBindingInfoEXT*>(chassis_state.modified_binding_infos.data());
+}
+
+void Validator::PostCallRecordGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize,
+                                               void* pDescriptor, const RecordObject& record_obj) {
+    hint_descriptor_buffer_ = true;
 }
 
 void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
