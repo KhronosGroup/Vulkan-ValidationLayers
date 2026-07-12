@@ -239,6 +239,9 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     VkDeviceSize resource_descriptor_buffer_stride_ = 0;
     // Each vector index maps to the binding number with the offset to map to (with the start offset included)
     std::vector<VkDeviceSize> resource_descriptor_buffer_offsets_;
+    // our way to know if VK_EXT_descriptor_buffer is likely being used
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12676
+    bool hint_descriptor_buffer_ = false;
 
     // VK_EXT_descriptor_heap
     // Each action command advances into the global indirect buffer by this stride
