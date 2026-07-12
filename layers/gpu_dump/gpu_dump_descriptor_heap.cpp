@@ -1442,6 +1442,9 @@ struct HeapAccess {
     };
     std::vector<Index> descriptor_indexes;
 
+    // Lets us know this access is done inside a function
+    bool function_call = false;
+
     struct compare {
         bool operator()(HeapAccess const& lhs, HeapAccess const& rhs) const {
             return lhs.descriptor_type == rhs.descriptor_type && lhs.heap_offset == rhs.heap_offset &&
@@ -1463,8 +1466,65 @@ struct HeapAccess {
 };
 using HeapAccesses = vvl::unordered_set<HeapAccess, HeapAccess::hash, HeapAccess::compare>;
 
-static uint32_t GetUntypedHeapOffset(const spirv::Module& module, const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
-                                     const uint32_t struct_id, uint32_t struct_member_index) {
+// Tracks all the OpFunction/OpFunctionCall/OpFunctionParameter info we need
+struct FunctionInfo {
+    struct ParamInfo {
+        uint32_t function_id;  // OpFunction
+        uint32_t index;        // of the parameters
+    };
+    // < OpFunctionParameter ID, ParamInfo >
+    vvl::unordered_map<uint32_t, ParamInfo> param_map;
+    // < OpFunction ID, vector<OpFunctionCall ID>>
+    vvl::unordered_map<uint32_t, std::vector<uint32_t>> call_map;
+};
+
+struct UntypedContext {
+    const vvl::DeviceState& device_state;
+    const spirv::Module& module;
+    const spirv::EntryPoint& entrypoint;
+    const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props;
+
+    // The idea is to go through and find all the access and afterwards sort/group them to make sense to the user
+    // < variable id, [accesses]>
+    vvl::unordered_map<uint32_t, HeapAccesses> accesses;
+
+    FunctionInfo function_info;
+
+    UntypedContext(GpuDump& dev_data, const spirv::Module& module, const spirv::EntryPoint& entrypoint)
+        : device_state(*dev_data.device_state),
+          module(module),
+          entrypoint(entrypoint),
+          props(dev_data.phys_dev_ext_props.descriptor_heap_props) {
+        if (module.static_data_.has_untyped_pointer_function_params) {
+            uint32_t current_function = 0;
+            uint32_t param_index = 0;
+            for (const spirv::Instruction& inst : module.static_data_.instructions) {
+                if (inst.Opcode() == spv::OpFunction) {
+                    current_function = inst.ResultId();
+                    param_index = 0;
+                } else if (inst.Opcode() == spv::OpFunctionParameter) {
+                    function_info.param_map[inst.ResultId()] = FunctionInfo::ParamInfo{current_function, param_index};
+                    param_index++;
+                } else if (inst.Opcode() == spv::OpFunctionCall) {
+                    function_info.call_map[inst.Word(3)].emplace_back(inst.ResultId());
+                }
+            }
+        }
+    }
+
+    void GetUntypedDescriptorIndexes(std::vector<HeapAccess::Index>& out_descriptor_indexes,
+                                     std::vector<const spirv::Instruction*>& ac_indexes, const spirv::Instruction& type_array_inst);
+    uint32_t GetUntypedArrayStride(uint32_t type_array_id);
+    uint32_t GetUntypedHeapOffset(const uint32_t struct_id, uint32_t struct_member_index);
+
+    std::vector<const spirv::Instruction*> FindFunctionCallers(const spirv::Instruction& func_param_inst);
+    void AddAccess(const VkDescriptorType descriptor_type, const spirv::Instruction* ac_inst, bool function_call);
+    void FindAccess(const spirv::Instruction* next_inst, bool image_access, bool from_function_call);
+
+    bool Print(std::ostringstream& ss, vvl::CommandBuffer& cb_state);
+};
+
+uint32_t UntypedContext::GetUntypedHeapOffset(const uint32_t struct_id, uint32_t struct_member_index) {
     for (const auto& type_struct : module.static_data_.type_structs) {
         if (type_struct->id == struct_id) {
             const auto& member = type_struct->members[struct_member_index];
@@ -1479,8 +1539,7 @@ static uint32_t GetUntypedHeapOffset(const spirv::Module& module, const VkPhysic
     return 0;
 }
 
-static uint32_t GetUntypedArrayStride(const spirv::Module& module, const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
-                                      uint32_t type_array_id) {
+uint32_t UntypedContext::GetUntypedArrayStride(uint32_t type_array_id) {
     const auto decoration_set = module.GetDecorationSet(type_array_id);
     if (decoration_set.array_stride_id == spirv::kInvalidValue) {
         return 0;  // struct with no array in it
@@ -1490,14 +1549,13 @@ static uint32_t GetUntypedArrayStride(const spirv::Module& module, const VkPhysi
     return module.GetHeapUntypedSize(props, *array_stride_inst);
 }
 
-static void GetUntypedDescriptorIndexes(const spirv::Module& module, std::vector<HeapAccess::Index>& out_descriptor_indexes,
-                                        const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
-                                        std::vector<const spirv::Instruction*>& ac_indexes,
-                                        const spirv::Instruction& type_array_inst) {
+void UntypedContext::GetUntypedDescriptorIndexes(std::vector<HeapAccess::Index>& out_descriptor_indexes,
+                                                 std::vector<const spirv::Instruction*>& ac_indexes,
+                                                 const spirv::Instruction& type_array_inst) {
     assert(type_array_inst.IsArray());
     const uint32_t type_array_id = type_array_inst.ResultId();
 
-    const uint32_t array_stride_value = GetUntypedArrayStride(module, props, type_array_id);
+    const uint32_t array_stride_value = GetUntypedArrayStride(type_array_id);
 
     uint32_t element = vvl::kNoIndex32;  // dynamic index
     if (ac_indexes.empty()) {
@@ -1513,152 +1571,276 @@ static void GetUntypedDescriptorIndexes(const spirv::Module& module, std::vector
     // Keep checking for multidimensional arrays
     const spirv::Instruction* element_type_inst = module.FindDef(type_array_inst.Word(2));
     if (element_type_inst->IsArray()) {
-        GetUntypedDescriptorIndexes(module, out_descriptor_indexes, props, ac_indexes, *element_type_inst);
+        GetUntypedDescriptorIndexes(out_descriptor_indexes, ac_indexes, *element_type_inst);
     }
+}
+
+void UntypedContext::AddAccess(const VkDescriptorType descriptor_type, const spirv::Instruction* ac_inst, bool function_call) {
+    if (ac_inst->Opcode() != spv::OpUntypedAccessChainKHR) {
+        // will happen when mixing typed (set/binding) and untyped
+        // just a dirty way to detect it is not going to be from the heap
+        //
+        // Also will occur from OpFunctionCall someone passing something else
+        return;
+    }
+
+    const spirv::Instruction* base_type_inst = module.FindDef(ac_inst->Word(3));
+    if (base_type_inst->Opcode() != spv::OpTypeBufferEXT && base_type_inst->Opcode() != spv::OpTypeStruct &&
+        !base_type_inst->IsArray()) {
+        // Can hit this if using OpUntypedAccessChainKHR on Set/Binding descriptors
+        return;
+    }
+
+    // walk the Access chains, build up the indexes
+    // [0] == farest from heap
+    // [size] == closest to the heap
+    std::vector<const spirv::Instruction*> ac_indexes;
+    const uint32_t untyped_ac_index_start = 5;
+    const spirv::Instruction* base_inst = ac_inst;
+    while (base_inst->Opcode() == spv::OpUntypedAccessChainKHR) {
+        // there is a chance there are no indexes, that is an implicit 0
+        for (uint32_t i = base_inst->Length() - 1; i >= untyped_ac_index_start; i--) {
+            ac_indexes.emplace_back(module.FindDef(base_inst->Word(i)));
+        }
+        base_type_inst = module.FindDef(base_inst->Word(3));
+        base_inst = module.FindDef(base_inst->Word(4));
+    }
+    if (base_inst->Opcode() != spv::OpUntypedVariableKHR) {
+        assert(false);
+        return;
+    }
+    const uint32_t variable_id = base_inst->ResultId();
+
+    uint32_t heap_offset = 0;
+    std::vector<HeapAccess::Index> descriptor_indexes;
+
+    if (base_type_inst->Opcode() == spv::OpTypeBufferEXT) {
+        // single element
+    } else if (base_type_inst->Opcode() == spv::OpTypeStruct) {
+        const uint32_t struct_id = base_type_inst->ResultId();
+        uint32_t struct_member_index = 0;
+        if (!ac_indexes.empty()) {
+            struct_member_index = ac_indexes.back()->GetConstantValue();
+            ac_indexes.pop_back();
+        }
+        heap_offset = GetUntypedHeapOffset(struct_id, struct_member_index);
+
+        const uint32_t struct_member_id = base_type_inst->Word(2 + struct_member_index);
+        const spirv::Instruction* struct_member_insn = module.FindDef(struct_member_id);
+        if (struct_member_insn->IsArray()) {
+            GetUntypedDescriptorIndexes(descriptor_indexes, ac_indexes, *struct_member_insn);
+        }
+    } else if (base_type_inst->IsArray()) {
+        GetUntypedDescriptorIndexes(descriptor_indexes, ac_indexes, *base_type_inst);
+    }
+
+    accesses[variable_id].insert(HeapAccess{descriptor_type, heap_offset, descriptor_indexes, function_call});
+}
+
+std::vector<const spirv::Instruction*> UntypedContext::FindFunctionCallers(const spirv::Instruction& func_param_inst) {
+    std::vector<const spirv::Instruction*> callers;
+    const spirv::Instruction* param_type = module.FindDef(func_param_inst.TypeId());
+    if (param_type->Opcode() == spv::OpTypeUntypedPointerKHR) {
+        assert(function_info.param_map.find(func_param_inst.ResultId()) != function_info.param_map.end());
+        FunctionInfo::ParamInfo param_info = function_info.param_map[func_param_inst.ResultId()];
+
+        auto func_it = function_info.call_map.find(param_info.function_id);
+        // There is a chance no one calls this functions, will be dead code eliminated
+        if (func_it != function_info.call_map.end()) {
+            for (uint32_t function_call_id : func_it->second) {
+                const spirv::Instruction* function_call = module.FindDef(function_call_id);
+                assert(function_call->Opcode() == spv::OpFunctionCall);
+                const uint32_t param_index_operand = function_call->Word(4 + param_info.index);
+                const spirv::Instruction* called_param = module.FindDef(param_index_operand);
+                callers.emplace_back(called_param);
+            }
+        }
+    }
+    return callers;
 }
 
 // "Friends to let friends become compiler engineers" ~Spencer
-static vvl::unordered_map<uint32_t, HeapAccesses> DumpDescriptorHeapUntypedFindAccess(
-    const spirv::Module& module, const spirv::EntryPoint& entrypoint, const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props) {
-    vvl::unordered_map<uint32_t, HeapAccesses> accesses;
+void UntypedContext::FindAccess(const spirv::Instruction* next_inst, bool image_access, bool from_function_call) {
+    if (image_access) {
+        const spirv::Instruction* sampler_load_inst = nullptr;
 
-    auto add_access = [&](const VkDescriptorType descriptor_type, const spirv::Instruction* ac_inst) {
-        if (ac_inst->Opcode() != spv::OpUntypedAccessChainKHR) {
-            // will happen when mixing typed (set/binding) and untyped
-            // just a dirty way to detect it is not going to be from the heap
-            return;
+        while (next_inst && (next_inst->Opcode() == spv::OpSampledImage || next_inst->Opcode() == spv::OpImage ||
+                             next_inst->Opcode() == spv::OpCopyObject)) {
+            if (next_inst->Opcode() == spv::OpSampledImage) {
+                sampler_load_inst = module.FindDef(next_inst->Operand(1));
+            }
+            next_inst = module.FindDef(next_inst->Operand(0));
         }
-
-        const spirv::Instruction* base_type_inst = module.FindDef(ac_inst->Word(3));
-        if (base_type_inst->Opcode() != spv::OpTypeBufferEXT && base_type_inst->Opcode() != spv::OpTypeStruct &&
-            !base_type_inst->IsArray()) {
+        const spirv::Instruction* image_load_inst = next_inst;
+        if (!image_load_inst || image_load_inst->Opcode() != spv::OpLoad) {
             assert(false);
             return;
         }
 
-        // walk the Access chains, build up the indexes
-        // [0] == farest from heap
-        // [size] == closest to the heap
-        std::vector<const spirv::Instruction*> ac_indexes;
-        const uint32_t untyped_ac_index_start = 5;
-        const spirv::Instruction* base_inst = ac_inst;
-        while (base_inst->Opcode() == spv::OpUntypedAccessChainKHR) {
-            // there is a chance there are no indexes, that is an implicit 0
-            for (uint32_t i = base_inst->Length() - 1; i >= untyped_ac_index_start; i--) {
-                ac_indexes.emplace_back(module.FindDef(base_inst->Word(i)));
-            }
-            base_type_inst = module.FindDef(base_inst->Word(3));
-            base_inst = module.FindDef(base_inst->Word(4));
-        }
-        if (base_inst->Opcode() != spv::OpUntypedVariableKHR) {
-            assert(false);
-            return;
-        }
-        const uint32_t variable_id = base_inst->ResultId();
+        // From here two types of images, sampled and non-sampled images
+        if (sampler_load_inst) {
+            // TODO - Assertion sampled images are 1D
+            const spirv::Instruction* ac_inst = module.FindDef(image_load_inst->Word(3));
+            AddAccess(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, ac_inst, from_function_call);
 
-        uint32_t heap_offset = 0;
-        std::vector<HeapAccess::Index> descriptor_indexes;
-
-        if (base_type_inst->Opcode() == spv::OpTypeBufferEXT) {
-            // single element
-        } else if (base_type_inst->Opcode() == spv::OpTypeStruct) {
-            const uint32_t struct_id = base_type_inst->ResultId();
-            uint32_t struct_member_index = 0;
-            if (!ac_indexes.empty()) {
-                struct_member_index = ac_indexes.back()->GetConstantValue();
-                ac_indexes.pop_back();
-            }
-            heap_offset = GetUntypedHeapOffset(module, props, struct_id, struct_member_index);
-
-            const uint32_t struct_member_id = base_type_inst->Word(2 + struct_member_index);
-            const spirv::Instruction* struct_member_insn = module.FindDef(struct_member_id);
-            if (struct_member_insn->IsArray()) {
-                GetUntypedDescriptorIndexes(module, descriptor_indexes, props, ac_indexes, *struct_member_insn);
-            }
-        } else if (base_type_inst->IsArray()) {
-            GetUntypedDescriptorIndexes(module, descriptor_indexes, props, ac_indexes, *base_type_inst);
-        }
-
-        accesses[variable_id].insert(HeapAccess{descriptor_type, heap_offset, descriptor_indexes});
-    };
-
-    for (const spirv::Instruction* memory_access_inst : entrypoint.accessible.memory_accesses) {
-        // Basically there are 2 flows, images and non-images
-        uint32_t ptr_id = OpcodeImageAccessPosition(memory_access_inst->Opcode());
-        const bool image_access = ptr_id != 0;
-
-        if (image_access) {
-            const spirv::Instruction* sampler_load_inst = nullptr;
-
-            const spirv::Instruction* next_inst = module.FindDef(memory_access_inst->Word(ptr_id));
-            while (next_inst && (next_inst->Opcode() == spv::OpSampledImage || next_inst->Opcode() == spv::OpImage ||
-                                 next_inst->Opcode() == spv::OpCopyObject)) {
-                if (next_inst->Opcode() == spv::OpSampledImage) {
-                    sampler_load_inst = module.FindDef(next_inst->Operand(1));
+            ac_inst = module.FindDef(sampler_load_inst->Word(3));
+            if (ac_inst->Opcode() == spv::OpFunctionParameter) {
+                auto callers = FindFunctionCallers(*ac_inst);
+                for (const spirv::Instruction* caller : callers) {
+                    AddAccess(VK_DESCRIPTOR_TYPE_SAMPLER, caller, true);
                 }
-                next_inst = module.FindDef(next_inst->Operand(0));
-            }
-            const spirv::Instruction* image_load_inst = next_inst;
-            if (!image_load_inst || image_load_inst->Opcode() != spv::OpLoad) {
-                assert(false);
-                continue;
-            }
-
-            // From here two types of images, sampled and non-sampled images
-            if (sampler_load_inst) {
-                // TODO - Assertion sampled images are 1D
-                const spirv::Instruction* ac_inst = module.FindDef(image_load_inst->Word(3));
-                add_access(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, ac_inst);
-
-                ac_inst = module.FindDef(sampler_load_inst->Word(3));
-                add_access(VK_DESCRIPTOR_TYPE_SAMPLER, ac_inst);
             } else {
-                const spirv::Instruction* image_type = module.FindDef(image_load_inst->TypeId());
-                assert(image_type->Opcode() == spv::OpTypeImage);
-                const VkDescriptorType image_descriptor_type = image_type->GetImageType();
-
-                const spirv::Instruction* ac_inst = module.FindDef(image_load_inst->Word(3));
-                add_access(image_descriptor_type, ac_inst);
+                AddAccess(VK_DESCRIPTOR_TYPE_SAMPLER, ac_inst, from_function_call);
             }
         } else {
-            // |Operand 0| works for both Store/Load
-            ptr_id = memory_access_inst->Operand(0);
+            const spirv::Instruction* image_type = module.FindDef(image_load_inst->TypeId());
+            assert(image_type->Opcode() == spv::OpTypeImage);
+            const VkDescriptorType image_descriptor_type = image_type->GetImageType();
 
-            // We need to walk down possibly multiple chained OpAccessChains
-            const spirv::Instruction* next_access_chain = module.FindDef(ptr_id);
-            while (next_access_chain && next_access_chain->IsNonPtrAccessChain()) {
-                const uint32_t base_operand = next_access_chain->IsUntypedAccessChain() ? 1 : 0;
-                const uint32_t access_chain_base_id = next_access_chain->Operand(base_operand);
-                next_access_chain = module.FindDef(access_chain_base_id);
+            const spirv::Instruction* ac_inst = module.FindDef(image_load_inst->Word(3));
+            if (ac_inst->Opcode() == spv::OpFunctionParameter) {
+                // Not sure this is 100% correct, but only way I could find passing a image
+                // descriptor heap as a parameter.
+                // If worse case, and this is wrong, we will just not detect accesses.
+                auto callers = FindFunctionCallers(*ac_inst);
+                for (const spirv::Instruction* caller : callers) {
+                    AddAccess(image_descriptor_type, caller, true);
+                }
+            } else {
+                AddAccess(image_descriptor_type, ac_inst, from_function_call);
             }
-            const spirv::Instruction* base_type = next_access_chain;
-            if (!base_type) {
-                continue;
-            }
+        }
+    } else {
+        // We need to walk down possibly multiple chained OpAccessChains
+        const spirv::Instruction* next_access_chain = next_inst;
+        while (next_access_chain && next_access_chain->IsNonPtrAccessChain()) {
+            const uint32_t base_operand = next_access_chain->IsUntypedAccessChain() ? 1 : 0;
+            const uint32_t access_chain_base_id = next_access_chain->Operand(base_operand);
+            next_access_chain = module.FindDef(access_chain_base_id);
+        }
+        const spirv::Instruction* base_type = next_access_chain;
+        if (!base_type) {
+            return;
+        }
 
-            if (base_type->Opcode() == spv::OpBufferPointerEXT) {
-                // Ignore old BufferBlock + Uniform
-                const VkDescriptorType descriptor_type =
-                    module.FindDef(base_type->TypeId())->StorageClass() == spv::StorageClassUniform
-                        ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-                        : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        if (base_type->Opcode() == spv::OpBufferPointerEXT) {
+            // Ignore old BufferBlock + Uniform
+            const VkDescriptorType descriptor_type = module.FindDef(base_type->TypeId())->StorageClass() == spv::StorageClassUniform
+                                                         ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+                                                         : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
-                const spirv::Instruction* ac_inst = module.FindDef(base_type->Word(3));
-                add_access(descriptor_type, ac_inst);
-            } else if (base_type->Opcode() == spv::OpUntypedImageTexelPointerEXT) {
-                // Atomic storage image
-                const VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-                const spirv::Instruction* ac_inst = module.FindDef(base_type->Word(4));
-                add_access(descriptor_type, ac_inst);
+            const spirv::Instruction* ac_inst = module.FindDef(base_type->Word(3));
+            AddAccess(descriptor_type, ac_inst, from_function_call);
+        } else if (base_type->Opcode() == spv::OpUntypedImageTexelPointerEXT) {
+            // Atomic storage image
+            const VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+            const spirv::Instruction* ac_inst = module.FindDef(base_type->Word(4));
+            AddAccess(descriptor_type, ac_inst, from_function_call);
+        } else if (base_type->Opcode() == spv::OpFunctionParameter) {
+            auto callers = FindFunctionCallers(*base_type);
+            for (const spirv::Instruction* caller : callers) {
+                FindAccess(caller, image_access, true);
             }
         }
     }
-    return accesses;
+}
+
+bool UntypedContext::Print(std::ostringstream& ss, vvl::CommandBuffer& cb_state) {
+    bool found_warning = false;
+
+    // We print out the variables, but the real "value" comes from scaning the accesses
+    // (due to how untyped pointers work)
+    for (const spirv::ResourceInterfaceVariable& resource_variable : entrypoint.resource_interface_variables) {
+        if (!resource_variable.IsHeap()) {
+            continue;
+        }
+        ss << "  - " << resource_variable.DescribeDescriptor() << " accesses detected:\n";
+        auto it = accesses.find(resource_variable.id);
+        if (it == accesses.end()) {
+            ss << "    - No accesses found to this heap variable\n";
+            continue;
+        }
+
+        const bool is_sampler = resource_variable.is_sampler_heap;
+        auto heap_range = is_sampler ? cb_state.descriptor_heap.sampler_range : cb_state.descriptor_heap.resource_range;
+        auto reserve_range = is_sampler ? cb_state.descriptor_heap.sampler_reserved : cb_state.descriptor_heap.resource_reserved;
+
+        for (const HeapAccess& access : it->second) {
+            ss << "    - heap offset: 0x" << std::hex << access.heap_offset;
+            VkDeviceSize final_address = 0;
+
+            const bool is_array = !access.descriptor_indexes.empty();
+            if (!is_array) {
+                ss << ", single element\n";
+                final_address = heap_range.begin + access.heap_offset;
+            } else {
+                ss << ", array stride: ";
+                for (const auto& descriptor_index : access.descriptor_indexes) {
+                    ss << "[" << std::dec << descriptor_index.array_stride << "]";
+                }
+
+                VkDeviceSize final_offset = access.heap_offset;
+                bool dynamic_index = false;
+                ss << ", array index: ";
+                for (const auto& descriptor_index : access.descriptor_indexes) {
+                    if (descriptor_index.element == vvl::kNoIndex32) {
+                        dynamic_index = true;
+                        ss << "[dynamic]";
+                    } else {
+                        ss << "[" << std::dec << descriptor_index.element << "]";
+                        final_offset += descriptor_index.array_stride * descriptor_index.element;
+                    }
+                }
+
+                if (access.function_call) {
+                    // TODO - print the functions passed in
+                    ss << " (is a function argument)";
+                }
+
+                ss << '\n';
+                if (!dynamic_index) {
+                    final_address = heap_range.begin + final_offset;
+                }
+            }
+
+            if (final_address != 0) {
+                ss << "      - " << (is_sampler ? "Sampler" : "Resource") << " heap address: 0x" << std::hex << final_address
+                   << '\n';
+            }
+
+            const VkDeviceSize descriptor_size = device_state.cached_descriptor_size.GetSize(access.descriptor_type);
+            ss << "      - descriptor size: " << std::dec << descriptor_size << " ("
+               << string_VkDescriptorType(access.descriptor_type) << ")\n";
+
+            // if we know the real address, see if invalid
+            if (final_address != vvl::kNoIndex32) {
+                if (final_address > heap_range.end) {
+                    ss << "      - [WARNING] OUT OF BOUNDS - the descriptor is not in the " << (is_sampler ? "sampler" : "resource")
+                       << " heap\n";
+                    found_warning = true;
+                }
+                if (!reserve_range.empty()) {
+                    vvl::range<VkDeviceAddress> final_range{final_address, final_address + descriptor_size};
+                    if (final_range.intersects(reserve_range)) {
+                        ss << "      - [WARNING] RESERVED RANGE - this descriptor overlaps with the reserved range\n";
+                        found_warning = true;
+                    }
+                }
+
+                VkDeviceSize required_alignment = GetDescriptorHeapAlignment(props, access.descriptor_type);
+                if (!IsPointerAligned(final_address, required_alignment)) {
+                    vvl::Field alignment_name = GetDescriptorHeapAlignmentField(access.descriptor_type);
+                    ss << "      - [WARNING] MISALIGNED - the descriptor is not aligned to " << String(alignment_name);
+                    ss << " (" << std::dec << required_alignment << ")\n";
+                    found_warning = true;
+                }
+            }
+        }
+    }
+    return found_warning;
 }
 
 bool CommandBufferSubState::DumpDescriptorHeapUntyped(std::ostringstream& ss, const ShaderStageState& stage) const {
-    bool found_warning = false;
-
     std::shared_ptr<const spirv::Module> module_state_ptr = stage.spirv_state;
     std::shared_ptr<const spirv::EntryPoint> entrypoint_ptr = stage.entrypoint;
 
@@ -1710,98 +1892,23 @@ bool CommandBufferSubState::DumpDescriptorHeapUntyped(std::ostringstream& ss, co
         }
     }
 
-    const spirv::Module& module = *module_state_ptr;
-    const spirv::EntryPoint& entrypoint = *entrypoint_ptr;
+    UntypedContext context(dev_data, *module_state_ptr, *entrypoint_ptr);
 
-    // The idea is to go through and find all the access and afterwards sort/group them to make sense to the user
-    // < variable id, [accesses]>
-    vvl::unordered_map<uint32_t, HeapAccesses> accesses =
-        DumpDescriptorHeapUntypedFindAccess(module, entrypoint, dev_data.phys_dev_ext_props.descriptor_heap_props);
-
-    // We print out the variables, but the real "value" comes from scaning the accesses
-    // (due to how untyped pointers work)
-    for (const spirv::ResourceInterfaceVariable& resource_variable : entrypoint.resource_interface_variables) {
-        if (!resource_variable.IsHeap()) {
-            continue;
+    for (const spirv::Instruction* memory_access_inst : context.entrypoint.accessible.memory_accesses) {
+        // Basically there are 2 flows, images and non-images
+        uint32_t ptr_id = OpcodeImageAccessPosition(memory_access_inst->Opcode());
+        const bool image_access = ptr_id != 0;
+        if (image_access) {
+            ptr_id = memory_access_inst->Word(ptr_id);
+        } else {
+            // |Operand 0| works for both Store/Load
+            ptr_id = memory_access_inst->Operand(0);
         }
-        ss << "  - " << resource_variable.DescribeDescriptor() << " accesses detected:\n";
-        auto it = accesses.find(resource_variable.id);
-        if (it == accesses.end()) {
-            ss << "    - No accesses found to this heap variable\n";
-            continue;
-        }
-
-        const bool is_sampler = resource_variable.is_sampler_heap;
-        auto heap_range = is_sampler ? base.descriptor_heap.sampler_range : base.descriptor_heap.resource_range;
-        auto reserve_range = is_sampler ? base.descriptor_heap.sampler_reserved : base.descriptor_heap.resource_reserved;
-
-        for (const HeapAccess& access : it->second) {
-            ss << "    - heap offset: 0x" << std::hex << access.heap_offset;
-            VkDeviceSize final_address = 0;
-
-            const bool is_array = !access.descriptor_indexes.empty();
-            if (!is_array) {
-                ss << ", single element\n";
-                final_address = heap_range.begin + access.heap_offset;
-            } else {
-                ss << ", array stride: ";
-                for (const auto& descriptor_index : access.descriptor_indexes) {
-                    ss << "[" << std::dec << descriptor_index.array_stride << "]";
-                }
-
-                VkDeviceSize final_offset = access.heap_offset;
-                bool dynamic_index = false;
-                ss << ", array index: ";
-                for (const auto& descriptor_index : access.descriptor_indexes) {
-                    if (descriptor_index.element == vvl::kNoIndex32) {
-                        dynamic_index = true;
-                        ss << "[dynamic]";
-                    } else {
-                        ss << "[" << std::dec << descriptor_index.element << "]";
-                        final_offset += descriptor_index.array_stride * descriptor_index.element;
-                    }
-                }
-                ss << '\n';
-                if (!dynamic_index) {
-                    final_address = heap_range.begin + final_offset;
-                }
-            }
-
-            if (final_address != 0) {
-                ss << "      - " << (is_sampler ? "Sampler" : "Resource") << " heap address: 0x" << std::hex << final_address
-                   << '\n';
-            }
-
-            const VkDeviceSize descriptor_size = dev_data.device_state->cached_descriptor_size.GetSize(access.descriptor_type);
-            ss << "      - descriptor size: " << std::dec << descriptor_size << " ("
-               << string_VkDescriptorType(access.descriptor_type) << ")\n";
-
-            // if we know the real address, see if invalid
-            if (final_address != vvl::kNoIndex32) {
-                if (final_address > heap_range.end) {
-                    ss << "      - [WARNING] OUT OF BOUNDS - the descriptor is not in the " << (is_sampler ? "sampler" : "resource")
-                       << " heap\n";
-                    found_warning = true;
-                }
-                if (!reserve_range.empty()) {
-                    vvl::range<VkDeviceAddress> final_range{final_address, final_address + descriptor_size};
-                    if (final_range.intersects(reserve_range)) {
-                        ss << "      - [WARNING] RESERVED RANGE - this descriptor overlaps with the reserved range\n";
-                        found_warning = true;
-                    }
-                }
-
-                VkDeviceSize required_alignment =
-                    GetDescriptorHeapAlignment(dev_data.phys_dev_ext_props.descriptor_heap_props, access.descriptor_type);
-                if (!IsPointerAligned(final_address, required_alignment)) {
-                    vvl::Field alignment_name = GetDescriptorHeapAlignmentField(access.descriptor_type);
-                    ss << "      - [WARNING] MISALIGNED - the descriptor is not aligned to " << String(alignment_name);
-                    ss << " (" << std::dec << required_alignment << ")\n";
-                    found_warning = true;
-                }
-            }
-        }
+        const spirv::Instruction* next_inst = context.module.FindDef(ptr_id);
+        context.FindAccess(next_inst, image_access, false);
     }
+
+    bool found_warning = context.Print(ss, base);
 
     return found_warning;
 }

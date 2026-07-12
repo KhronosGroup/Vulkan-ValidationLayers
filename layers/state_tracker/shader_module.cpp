@@ -16,9 +16,11 @@
  */
 
 #include "state_tracker/shader_module.h"
+#include "containers/custom_containers.h"
 #include "state_tracker/shader_instruction.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <sstream>
 #include <string>
 #include <queue>
@@ -972,6 +974,7 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
     uint32_t last_func_id = 0;
     // < Function ID, OpFunctionParameter Ids >
     vvl::unordered_map<uint32_t, std::vector<uint32_t>> func_parameter_list;
+    vvl::unordered_set<uint32_t> func_parameter_types;
 
     // Loop through once and build up the static data
     // Also process the entry points
@@ -1282,6 +1285,7 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 break;
             case spv::OpFunctionParameter:
                 func_parameter_list[last_func_id].push_back(insn.ResultId());
+                func_parameter_types.insert(insn.TypeId());
                 break;
             case spv::OpFunctionCall:
                 func_call_instructions.push_back(&insn);
@@ -1340,6 +1344,15 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 const uint32_t arg = func_call->Word(first_arg_word + i);
                 const uint32_t param = func_def.second[i];
                 func_parameter_map[param].push_back(arg);
+            }
+        }
+    }
+
+    if (module_state.HasCapability(spv::CapabilityUntypedPointersKHR)) {
+        for (uint32_t param_type : func_parameter_types) {
+            if (module_state.FindDef(param_type)->Opcode() == spv::OpTypeUntypedPointerKHR) {
+                has_untyped_pointer_function_params = true;
+                break;
             }
         }
     }
