@@ -3226,6 +3226,8 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
     bool skip = false;
     const uint32_t base_opcode = resource_variable.base_type.Opcode();
 
+    const bool has_embedded_sampler = GetEmbeddedSampler(mapping) != nullptr;
+
     struct MappingSourceInfo {
         uint32_t offset = 0;
         uint32_t array_stride = 0;
@@ -3247,6 +3249,9 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
         r_info.align = phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment;
         r_info.align_field = Field::bufferDescriptorAlignment;
     } else if (base_opcode == spv::OpTypeSampler) {
+        if (has_embedded_sampler) {
+            return skip;
+        }
         r_info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-11253";
         r_info.align = phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment;
         r_info.align_field = Field::samplerDescriptorAlignment;
@@ -3309,7 +3314,6 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
     // Combined Image Sampler is only spot we need to check twice
     if (base_opcode == spv::OpTypeSampledImage) {
         struct SamplerMappingSourceInfo {
-            bool has_embedded_sampler = false;
             uint32_t offset = 0;
             uint32_t array_stride = 0;
             uint32_t push_offset = 0;
@@ -3320,7 +3324,6 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
             const auto& source_data = mapping.sourceData.constantOffset;
             s_info.offset = source_data.samplerHeapOffset;
             s_info.array_stride = source_data.samplerHeapArrayStride;
-            s_info.has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
         } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
             const auto& source_data = mapping.sourceData.pushIndex;
             s_info.offset = source_data.samplerHeapOffset;
@@ -3328,7 +3331,6 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
             // We don't use the pushOffset here as that is already validated in 11258 (and related VUs)
             // and we don't want to spam the user with a duplicate error message
             s_info.push_offset = source_data.useCombinedImageSamplerIndex ? 0 : source_data.samplerPushOffset;
-            s_info.has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
         } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
             const auto& source_data = mapping.sourceData.indirectIndex;
             s_info.offset = source_data.samplerHeapOffset;
@@ -3337,7 +3339,6 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
                 s_info.push_offset = source_data.samplerPushOffset;
                 s_info.address_offset = source_data.samplerAddressOffset;
             }
-            s_info.has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
         } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
             const auto& source_data = mapping.sourceData.indirectIndexArray;
             s_info.offset = source_data.samplerHeapOffset;
@@ -3345,15 +3346,13 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
                 s_info.push_offset = source_data.samplerPushOffset;
                 s_info.address_offset = source_data.samplerAddressOffset;
             }
-            s_info.has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
         } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
             const auto& source_data = mapping.sourceData.shaderRecordIndex;
             s_info.offset = source_data.samplerHeapOffset;
             s_info.array_stride = source_data.samplerHeapArrayStride;
-            s_info.has_embedded_sampler = source_data.pEmbeddedSampler != nullptr;
         }
 
-        if (!s_info.has_embedded_sampler) {
+        if (!has_embedded_sampler) {
             const VkDeviceSize sampler_align = phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment;
             if (!IsIntegerMultipleOf(s_info.offset, sampler_align) || !IsIntegerMultipleOf(s_info.array_stride, sampler_align)) {
                 const Field source_field = vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source);
