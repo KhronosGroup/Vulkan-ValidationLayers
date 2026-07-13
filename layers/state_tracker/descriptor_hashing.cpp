@@ -18,6 +18,7 @@
 #include "descriptor_hashing.h"
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_core.h>
+#include <cstdint>
 #include "containers/limits.h"
 #include "error_message/error_location.h"
 #include "state_tracker/buffer_state.h"
@@ -217,6 +218,15 @@ std::string DescriptorHashing::Describe(const DeviceState& device_state, uint64_
     return ss.str();
 }
 
+// Samplers aare nasty because it can be both seperate or combined.
+// We have |vvlDescriptorType::CombinedSampler| purely to pass in |desc_encoding| to let the error message know it was a combined
+// image sampler. I don't have 1 bit to spare in |desc_encoding|
+// We could find this information in some lookup, but that would add overhead.
+//
+// The "simple fix" is we will just mark |types| with both such that the find() check will work as expected
+DescriptorHashTable::Entry::Entry(EntrySampler s)
+    : types(1 << (uint8_t)vvlDescriptorType::Sampler | 1 << (uint8_t)vvlDescriptorType::CombinedSampler), data(s) {}
+
 void DescriptorHashTable::Entry::Describe(const DeviceState& device_state, std::ostringstream& ss) const {
     vvlDescriptorType vvl_type = vvlDescriptorType::Invalid;
 
@@ -227,6 +237,9 @@ void DescriptorHashTable::Entry::Describe(const DeviceState& device_state, std::
             // ok to set the second time (if more than one type)
             // as they should be in the same group below
             vvl_type = static_cast<vvlDescriptorType>(i);
+            if (vvl_type == vvlDescriptorType::CombinedSampler) {
+                continue;
+            }
             VkDescriptorType vk_type = GetDescriptorTypeFromMask(vvl_type);
             if (!first) {
                 ss << " | ";
@@ -266,6 +279,7 @@ void DescriptorHashTable::Entry::Describe(const DeviceState& device_state, std::
             break;
         }
         case vvlDescriptorType::Sampler:
+        case vvlDescriptorType::CombinedSampler:
             // currently nothing extra to print
             break;
         case vvlDescriptorType::ImageSampled:
@@ -281,7 +295,6 @@ void DescriptorHashTable::Entry::Describe(const DeviceState& device_state, std::
             ss << ", address 0x" << std::hex << range.address << ", size " << std::dec << range.size;
             break;
         }
-        case vvlDescriptorType::CombinedSampler:
         case vvlDescriptorType::Invalid:
             assert(false);  // this should not be hit
             break;
