@@ -19,11 +19,11 @@
 #pragma once
 #include "state_tracker/state_object.h"
 #include "state_tracker/submission_reference.h"
+#include "error_message/error_location.h"
 #include <future>
 #include <optional>
 #include <map>
 #include <shared_mutex>
-#include "error_message/error_location.h"
 
 namespace vvl {
 
@@ -52,24 +52,6 @@ class Semaphore : public RefcountedStateObject {
         kExternalPermanent,
     };
 
-    // Swapchain information associated with QueuePresent wait semaphore
-    struct SwapchainWaitInfo {
-        std::shared_ptr<vvl::Swapchain> swapchain;
-        uint32_t image_index = vvl::kNoIndex32;  // image being presented
-        uint32_t acquire_counter_value = 0;      // value of vvl::Swapchain::acquire_request_count when the image was acquired
-    };
-
-    struct SemOp {
-        OpType op_type;
-        uint64_t payload;
-        const Queue *queue;
-        std::optional<Func> acquire_command;
-
-        SemOp(OpType op_type, const Queue *queue, uint64_t payload) : op_type(op_type), payload(payload), queue(queue) {}
-        SemOp(Func acquire_command, uint64_t payload)
-            : op_type(kBinaryAcquire), payload(payload), queue(nullptr), acquire_command(acquire_command) {}
-    };
-
     struct TimePoint {
         std::optional<SubmissionReference> signal_submit;
         small_vector<SubmissionReference, 1, uint32_t> wait_submits;
@@ -81,6 +63,13 @@ class Semaphore : public RefcountedStateObject {
         bool HasSignaler() const { return signal_submit.has_value() || acquire_command.has_value(); }
         bool HasWaiters() const { return !wait_submits.empty(); }
         void Notify() const;
+    };
+
+    // Swapchain information associated with QueuePresent wait semaphore
+    struct SwapchainWaitInfo {
+        std::shared_ptr<vvl::Swapchain> swapchain;
+        uint32_t image_index = vvl::kNoIndex32;  // image being presented
+        uint32_t acquire_counter_value = 0;      // value of vvl::Swapchain::acquire_request_count when the image was acquired
     };
 
     Semaphore(DeviceState &dev, VkSemaphore handle, const VkSemaphoreCreateInfo *pCreateInfo)
@@ -154,10 +143,8 @@ class Semaphore : public RefcountedStateObject {
     const VkSemaphoreType type;
     const VkSemaphoreCreateFlags flags;
     const VkExternalSemaphoreHandleTypeFlags export_handle_types;
-    const uint64_t initial_value;  // for timelines
-
+    const uint64_t initial_value;
 #ifdef VK_USE_PLATFORM_METAL_EXT
-    static bool GetMetalExport(const VkSemaphoreCreateInfo *info);
     const bool metal_semaphore_export;
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
@@ -181,28 +168,31 @@ class Semaphore : public RefcountedStateObject {
     void WaitTimePoint(std::shared_future<void> &&waiter, uint64_t payload, bool unblock_validation_object, const Location &loc);
 
   private:
-    DeviceState &device_;
-
+    mutable std::shared_mutex lock_;
+    DeviceState& device_;
     enum Scope scope_ { kInternal };
-    std::optional<VkExternalSemaphoreHandleTypeFlagBits> imported_handle_type_;  // has value when scope is not kInternal
+
+    // Stores handle type when scope is not kInternal
+    std::optional<VkExternalSemaphoreHandleTypeFlagBits> imported_handle_type_;
 
     uint64_t current_payload_ = 0;
 
-    // Empty if there are no pending signals. Used only for timeline semaphores
-    std::optional<uint64_t> smallest_pending_signal_value_;
-
-    // the most recently completed operation
-    SemOp completed_;
-
-    // next payload value for binary semaphore operations
-    uint64_t next_payload_;
+    // Next payload value for binary semaphore operations
+    uint64_t next_binary_payload_;
 
     // Set of pending operations ordered by payload.
     // Timeline operations can be added in any order and multiple wait operations
     // can use the same payload value.
     std::map<uint64_t, TimePoint> timeline_;
 
-    mutable std::shared_mutex lock_;
+    // The recently completed semaphore operation
+    OpType completed_op_ = kNone;
+    uint64_t completed_payload_ = 0;
+    const Queue* completed_queue_ = nullptr;
+    std::optional<Func> completed_acquire_command_;
+
+    // Empty if there are no pending signals. Used only for timeline semaphores
+    std::optional<uint64_t> smallest_pending_signal_value_;
 
     // Reference to the swapchain image if the semaphore was used by the acquire operation.
     // The semaphore wait operation uses this to mark the image as acquired and safe to use.
