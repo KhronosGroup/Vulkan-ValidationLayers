@@ -92,6 +92,9 @@ bool IsDepthSliceView(VkImageType imageType, VkImageCreateFlags2KHR imageCreateF
 // Return true if layout transitions of separate slices of a 3d image are supported for the image with the given create info
 bool CanTransitionDepthSlices(const DeviceExtensions &extensions, VkImageType imageType, VkImageCreateFlags2KHR imageCreateFlags);
 
+bool IsImageViewTypeCompatibleWithImageType(const DeviceExtensions& extensions, VkImageViewType view_type, VkImageType image_type,
+                                            VkImageCreateFlags2KHR image_flags);
+
 static inline bool IsIdentitySwizzle(VkComponentMapping components) {
     // clang-format off
     return (

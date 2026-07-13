@@ -1202,4 +1202,21 @@ bool Device::manual_PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
 
     return skip;
 }
+
+bool Device::manual_PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
+                                                 const Context& context) const {
+    bool skip = false;
+
+    if (!enabled_features.selectableCubicWeights && pBlitImageInfo->filter == VK_FILTER_CUBIC_EXT) {
+        const auto* cubic_weights_info = vku::FindStructInPNextChain<VkBlitImageCubicWeightsInfoQCOM>(pBlitImageInfo->pNext);
+        if (cubic_weights_info && cubic_weights_info->cubicWeights != VK_CUBIC_FILTER_WEIGHTS_CATMULL_ROM_QCOM) {
+            skip |= LogError("VUID-VkBlitImageInfo2-filter-09204", commandBuffer,
+                             context.error_obj.location.dot(Field::pBlitImageInfo).pNext(Struct::VkBlitImageCubicWeightsInfoQCOM, Field::cubicWeights),
+                             "is %s, but filter is VK_FILTER_CUBIC_EXT and the selectableCubicWeights feature is not enabled.",
+                             string_VkCubicFilterWeightsQCOM(cubic_weights_info->cubicWeights));
+        }
+    }
+
+    return skip;
+}
 }  // namespace stateless
