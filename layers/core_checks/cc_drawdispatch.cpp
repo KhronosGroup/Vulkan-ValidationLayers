@@ -2004,7 +2004,7 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
 
     // TODO - Currently at this level we don't know if the sampler is embedded or not
     // If there is only embedded samplers, the sampler heap isn't required to be bound
-    if (stage_state.uses_sampler_heap && !has_embedded_samplers && !cb_state.descriptor_heap.sampler_bound) {
+    if (stage_state.heap.uses_sampler_heap && !has_embedded_samplers && !cb_state.descriptor_heap.sampler_bound) {
         if (cb_state.descriptor_heap.is_sampler_invalidated) {
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
                              cb_state.GetObjectList(last_bound_state.bind_point), loc,
@@ -2030,7 +2030,7 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
                              entry_point.Describe().c_str(), print_used_variables(true).c_str());
         }
     }
-    if (stage_state.uses_resource_heap && !cb_state.descriptor_heap.resource_bound) {
+    if (stage_state.heap.uses_resource_heap && !cb_state.descriptor_heap.resource_bound) {
         if (cb_state.descriptor_heap.is_resource_invalidated) {
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
                              cb_state.GetObjectList(last_bound_state.bind_point), loc,

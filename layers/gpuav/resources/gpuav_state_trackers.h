@@ -172,6 +172,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     // Track which index we have bound our Descriptor Buffer in CmdBindDescriptorBuffersEXT
     uint32_t resource_descriptor_buffer_index_;
 
+    // At draw time if there was a vkCmdPushData called since last draw
+    bool push_data_updated = false;
+
     Validator& gpuav_;
 
   private:
@@ -229,6 +232,13 @@ class DescriptorHeapBindings {
     using OnDescriptorHeapBindingFunc =
         stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb, BindingCommand&, bool)>;
     OnDescriptorHeapBindingFunc on_update_bound_descriptor_heap;
+
+    // We capture the PushData each action command so the error message can reference it correctly
+    struct PushDataSnapshot {
+        std::vector<bool> dword_mask;
+        std::vector<uint8_t> value;
+    };
+    std::vector<PushDataSnapshot> push_data_snapshots;
 };
 
 class QueueSubState : public vvl::QueueSubState {

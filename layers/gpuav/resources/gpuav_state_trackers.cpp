@@ -94,6 +94,8 @@ void CommandBufferSubState::AllocateResources(const Location& loc) {
 void CommandBufferSubState::RecordActionCommand(LastBound& last_bound, const Location&) {
     PostCallSetupShaderInstrumentationResources(gpuav_, *this, last_bound);
     IncrementActionCommandCount(last_bound.bind_point);
+
+    push_data_updated = false;
 }
 
 void CommandBufferSubState::UpdateLastBoundDescriptorSets(VkPipelineBindPoint bind_point, const Location& loc) {
@@ -150,6 +152,7 @@ void CommandBufferSubState::RecordPushData(const VkPushDataInfoEXT& push_data_in
     }
 
     memcpy(push_data_value.data() + push_data_info.offset, push_data_info.data.address, push_data_info.data.size);
+    push_data_updated = true;
 }
 
 void CommandBufferSubState::ClearPushData() { push_data_value.clear(); }
@@ -210,6 +213,8 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     trace_rays_index = 0;
 
     resource_descriptor_buffer_index_ = 0;
+
+    push_data_updated = false;
 
     ClearPushConstants();
 }
