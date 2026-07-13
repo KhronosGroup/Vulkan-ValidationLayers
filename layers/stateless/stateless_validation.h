@@ -1388,6 +1388,10 @@ class Device : public vvl::BaseDevice {
     bool manual_PreCallValidateQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM *pPerfHintInfo,
                                                     const Context &context) const;
 
+    bool manual_PreCallValidateCmdSetDispatchParametersARM(VkCommandBuffer commandBuffer,
+                                                           const VkDispatchParametersARM* pDispatchParameters,
+                                                           const Context& context) const;
+
 #include "generated/stateless_device_methods.h"
 };
 

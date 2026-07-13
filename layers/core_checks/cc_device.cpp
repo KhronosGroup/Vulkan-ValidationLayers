@@ -183,6 +183,73 @@ bool core::Instance::ValidateQueueFamilyIndex(const vvl::PhysicalDevice& pd_stat
     return skip;
 }
 
+bool core::Instance::ValidateDeviceQueueShaderCoreControlARM(
+    const vvl::PhysicalDevice& pd_state, const VkDeviceQueueShaderCoreControlCreateInfoARM* device_shader_core_control,
+    const std::vector<std::pair<uint32_t, const VkDeviceQueueShaderCoreControlCreateInfoARM*>>& queue_shader_core_controls,
+    const Location& loc) const {
+    if (!device_shader_core_control && queue_shader_core_controls.empty()) {
+        return false;
+    }
+
+    bool skip = false;
+    VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM shader_core_builtins_props = vku::InitStructHelper();
+    VkPhysicalDeviceSchedulingControlsPropertiesARM scheduling_controls_props = vku::InitStructHelper(&shader_core_builtins_props);
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&scheduling_controls_props);
+    DispatchGetPhysicalDeviceProperties2Helper(api_version, pd_state.VkHandle(), &props2);
+
+    if (device_shader_core_control) {
+        const Location shader_core_control_loc = loc.dot(Field::pNext);
+        if (!queue_shader_core_controls.empty()) {
+            skip |= LogError("VUID-VkDeviceCreateInfo-pNext-09396", pd_state.Handle(), shader_core_control_loc,
+                             "includes a VkDeviceQueueShaderCoreControlCreateInfoARM structure in pCreateInfo->pNext, but at "
+                             "least one VkDeviceQueueCreateInfo also includes VkDeviceQueueShaderCoreControlCreateInfoARM.");
+        }
+        if ((scheduling_controls_props.schedulingControlsFlags &
+             VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM) == 0) {
+            skip |= LogError(
+                "VUID-VkDeviceCreateInfo-pNext-09397", pd_state.Handle(), shader_core_control_loc,
+                "includes VkDeviceQueueShaderCoreControlCreateInfoARM, but "
+                "VkPhysicalDeviceSchedulingControlsPropertiesARM::schedulingControlsFlags (%s) does not contain "
+                "VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM.",
+                string_VkPhysicalDeviceSchedulingControlsFlagsARM(scheduling_controls_props.schedulingControlsFlags).c_str());
+        }
+        if (device_shader_core_control->shaderCoreCount == 0 ||
+            device_shader_core_control->shaderCoreCount > shader_core_builtins_props.shaderCoreCount) {
+            skip |= LogError(
+                "VUID-VkDeviceQueueShaderCoreControlCreateInfoARM-shaderCoreCount-09399", pd_state.Handle(),
+                shader_core_control_loc.dot(Field::shaderCoreCount),
+                "(%" PRIu32 ") must be greater than 0 and less than or equal to "
+                "VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::shaderCoreCount (%" PRIu32 ").",
+                device_shader_core_control->shaderCoreCount, shader_core_builtins_props.shaderCoreCount);
+        }
+    }
+
+    for (const auto& [i, queue_shader_core_control] : queue_shader_core_controls) {
+        const Location queue_create_info_loc = loc.dot(Field::pQueueCreateInfos, i);
+        const Location shader_core_control_loc = queue_create_info_loc.dot(Field::pNext);
+        if ((scheduling_controls_props.schedulingControlsFlags &
+             VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM) == 0) {
+            skip |= LogError(
+                "VUID-VkDeviceQueueCreateInfo-pNext-09398", pd_state.Handle(), shader_core_control_loc,
+                "includes VkDeviceQueueShaderCoreControlCreateInfoARM, but "
+                "VkPhysicalDeviceSchedulingControlsPropertiesARM::schedulingControlsFlags (%s) does not contain "
+                "VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM.",
+                string_VkPhysicalDeviceSchedulingControlsFlagsARM(scheduling_controls_props.schedulingControlsFlags).c_str());
+        }
+        if (queue_shader_core_control->shaderCoreCount == 0 ||
+            queue_shader_core_control->shaderCoreCount > shader_core_builtins_props.shaderCoreCount) {
+            skip |= LogError(
+                "VUID-VkDeviceQueueShaderCoreControlCreateInfoARM-shaderCoreCount-09399", pd_state.Handle(),
+                shader_core_control_loc.dot(Field::shaderCoreCount),
+                "(%" PRIu32 ") must be greater than 0 and less than or equal to "
+                "VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::shaderCoreCount (%" PRIu32 ").",
+                queue_shader_core_control->shaderCoreCount, shader_core_builtins_props.shaderCoreCount);
+        }
+    }
+
+    return skip;
+}
+
 bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice& pd_state, const VkDeviceCreateInfo& device_ci,
                                                     const Location& device_ci_loc) const {
     bool skip = false;
@@ -191,11 +258,17 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice& p
     vvl::unordered_map<uint32_t, VkQueueGlobalPriority> global_priorities;
 
     std::vector<uint32_t> queue_counts;
+    std::vector<std::pair<uint32_t, const VkDeviceQueueShaderCoreControlCreateInfoARM*>> queue_shader_core_controls;
     for (uint32_t i = 0; i < device_ci.queueCreateInfoCount; ++i) {
         const Location info_loc = device_ci_loc.dot(Field::pQueueCreateInfos, i);
         const VkDeviceQueueCreateInfo& queue_ci = device_ci.pQueueCreateInfos[i];
         const uint32_t requested_queue_family = queue_ci.queueFamilyIndex;
         const VkDeviceQueueCreateFlags flags = queue_ci.flags;
+
+        if (const auto* shader_core_control =
+                vku::FindStructInPNextChain<VkDeviceQueueShaderCoreControlCreateInfoARM>(queue_ci.pNext)) {
+            queue_shader_core_controls.emplace_back(i, shader_core_control);
+        }
 
         skip |= ValidateQueueFamilyIndex(pd_state, requested_queue_family, "VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381",
                                          info_loc.dot(Field::queueFamilyIndex));
@@ -296,6 +369,11 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice& p
                              i, queue_counts[i], pd_state.queue_family_properties[i].queueCount);
         }
     }
+
+    const auto* device_shader_core_control =
+        vku::FindStructInPNextChain<VkDeviceQueueShaderCoreControlCreateInfoARM>(device_ci.pNext);
+    skip |=
+        ValidateDeviceQueueShaderCoreControlARM(pd_state, device_shader_core_control, queue_shader_core_controls, device_ci_loc);
 
     return skip;
 }

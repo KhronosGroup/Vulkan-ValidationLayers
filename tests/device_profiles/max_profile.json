@@ -2402,6 +2402,12 @@
                     "rgba4OpaqueBlackSwizzled": true,
                     "resolveSrgbFormatAppliesTransferFunction": true,
                     "resolveSrgbFormatSupportsTransferFunctionControl": false
+                },
+                "VkPhysicalDeviceSchedulingControlsPropertiesARM": {
+                    "schedulingControlsFlags": [
+                        "VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM",
+                        "VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_DISPATCH_PARAMETERS_ARM"
+                    ]
                 }
             },
             "extensions": {

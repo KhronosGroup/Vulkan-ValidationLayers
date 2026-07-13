@@ -1512,4 +1512,58 @@ bool Device::manual_PreCallValidateCmdBeginPerTileExecutionQCOM(VkCommandBuffer 
     return skip;
 }
 
+bool Device::manual_PreCallValidateCmdSetDispatchParametersARM(VkCommandBuffer commandBuffer,
+                                                               const VkDispatchParametersARM* pDispatchParameters,
+                                                               const Context& context) const {
+    bool skip = false;
+
+    const auto& error_obj = context.error_obj;
+    if ((phys_dev_ext_props.scheduling_controls_props.schedulingControlsFlags &
+         VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_DISPATCH_PARAMETERS_ARM) == 0) {
+        skip |= LogError(
+            "VUID-vkCmdSetDispatchParametersARM-schedulingControlsFlags-12391", commandBuffer, error_obj.location,
+            "VkPhysicalDeviceSchedulingControlsPropertiesARM::schedulingControlsFlags (%s) does not contain "
+            "VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_DISPATCH_PARAMETERS_ARM.",
+            string_VkPhysicalDeviceSchedulingControlsFlagsARM(phys_dev_ext_props.scheduling_controls_props.schedulingControlsFlags)
+                .c_str());
+    }
+
+    if (pDispatchParameters->maxWarpsPerShaderCore >
+        phys_dev_ext_props.scheduling_controls_dispatch_props.schedulingControlsMaxWarpsCount) {
+        skip |= LogError(
+            "VUID-VkDispatchParametersARM-maxWarpsPerShaderCore-12392", commandBuffer,
+            error_obj.location.dot(Field::pDispatchParameters).dot(Field::maxWarpsPerShaderCore),
+            "(%" PRIu32 ") is greater than "
+            "VkPhysicalDeviceSchedulingControlsDispatchParametersPropertiesARM::schedulingControlsMaxWarpsCount (%" PRIu32 ").",
+            pDispatchParameters->maxWarpsPerShaderCore,
+            phys_dev_ext_props.scheduling_controls_dispatch_props.schedulingControlsMaxWarpsCount);
+    }
+
+    if (pDispatchParameters->maxQueuedWorkGroupBatches >
+        phys_dev_ext_props.scheduling_controls_dispatch_props.schedulingControlsMaxQueuedBatchesCount) {
+        skip |= LogError(
+            "VUID-VkDispatchParametersARM-maxQueuedWorkGroupBatches-12393", commandBuffer,
+            error_obj.location.dot(Field::pDispatchParameters).dot(Field::maxQueuedWorkGroupBatches),
+            "(%" PRIu32 ") is greater than "
+            "VkPhysicalDeviceSchedulingControlsDispatchParametersPropertiesARM::schedulingControlsMaxQueuedBatchesCount (%" PRIu32
+            ").",
+            pDispatchParameters->maxQueuedWorkGroupBatches,
+            phys_dev_ext_props.scheduling_controls_dispatch_props.schedulingControlsMaxQueuedBatchesCount);
+    }
+
+    if (pDispatchParameters->workGroupBatchSize >
+        phys_dev_ext_props.scheduling_controls_dispatch_props.schedulingControlsMaxWorkGroupBatchSize) {
+        skip |= LogError(
+            "VUID-VkDispatchParametersARM-workGroupBatchSize-12394", commandBuffer,
+            error_obj.location.dot(Field::pDispatchParameters).dot(Field::workGroupBatchSize),
+            "(%" PRIu32 ") is greater than "
+            "VkPhysicalDeviceSchedulingControlsDispatchParametersPropertiesARM::schedulingControlsMaxWorkGroupBatchSize (%" PRIu32
+            ").",
+            pDispatchParameters->workGroupBatchSize,
+            phys_dev_ext_props.scheduling_controls_dispatch_props.schedulingControlsMaxWorkGroupBatchSize);
+    }
+
+    return skip;
+}
+
 }  // namespace stateless
