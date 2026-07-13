@@ -1491,7 +1491,7 @@ std::string CommandBufferAccessContext::GetDebugRegionName(const ResourceUsageRe
 }
 
 void CommandBufferAccessContext::RecordSyncOp(SyncOpPointer&& sync_op) {
-    auto tag = sync_op->Record(this);
+    const ResourceUsageTag tag = sync_op->Record(*this);
     // As renderpass operations can have side effects on the command buffer access context,
     // update the sync operation to record these if any.
     sync_ops_.emplace_back(tag, std::move(sync_op));
@@ -1997,7 +1997,7 @@ void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& r
     if (!base.IsPrimary()) {
         return;  // [core validation check]: only primary command buffer can begin render pass
     }
-    access_context.RecordSyncOp<SyncOpBeginRenderPass>(loc.function, access_context.GetSyncState(), &render_pass_begin,
+    access_context.RecordSyncOp<SyncOpBeginRenderPass>(loc.function, access_context.GetSyncState(), render_pass_begin,
                                                        &subpass_begin_info);
 }
 

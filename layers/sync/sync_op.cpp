@@ -393,18 +393,18 @@ bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext& cb_contex
     return skip;
 }
 
-ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext* cb_context) {
-    const auto tag = cb_context->NextCommandTag(command_);
+ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext& cb_context) {
+    const auto tag = cb_context.NextCommandTag(command_);
     for (const auto& buffer_barrier : barrier_set_.buffer_barriers) {
-        cb_context->AddCommandHandle(tag, buffer_barrier.buffer->Handle());
+        cb_context.AddCommandHandle(tag, buffer_barrier.buffer->Handle());
     }
     for (auto& image_barrier : barrier_set_.image_barriers) {
         if (image_barrier.layout_transition) {
-            const auto tag_ex = cb_context->AddCommandHandle(tag, image_barrier.image->Handle());
+            const auto tag_ex = cb_context.AddCommandHandle(tag, image_barrier.image->Handle());
             image_barrier.handle_index = tag_ex.handle_index;
         }
     }
-    ReplayRecord(*cb_context, tag);
+    ReplayRecord(cb_context, tag);
     return tag;
 }
 
@@ -714,10 +714,9 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext& exec_context, c
     return skip;
 }
 
-ResourceUsageTag SyncOpWaitEvents::Record(CommandBufferAccessContext* cb_context) {
-    const auto tag = cb_context->NextCommandTag(command_);
-
-    ReplayRecord(*cb_context, tag);
+ResourceUsageTag SyncOpWaitEvents::Record(CommandBufferAccessContext& cb_context) {
+    const ResourceUsageTag tag = cb_context.NextCommandTag(command_);
+    ReplayRecord(cb_context, tag);
     return tag;
 }
 
@@ -905,9 +904,9 @@ bool SyncOpResetEvent::DoValidate(const CommandExecutionContext& exec_context, c
     return skip;
 }
 
-ResourceUsageTag SyncOpResetEvent::Record(CommandBufferAccessContext* cb_context) {
-    const auto tag = cb_context->NextCommandTag(command_);
-    ReplayRecord(*cb_context, tag);
+ResourceUsageTag SyncOpResetEvent::Record(CommandBufferAccessContext& cb_context) {
+    const ResourceUsageTag tag = cb_context.NextCommandTag(command_);
+    ReplayRecord(cb_context, tag);
     return tag;
 }
 
@@ -1003,10 +1002,10 @@ bool SyncOpSetEvent::DoValidate(const CommandExecutionContext& exec_context, con
     return skip;
 }
 
-ResourceUsageTag SyncOpSetEvent::Record(CommandBufferAccessContext* cb_context) {
-    const auto tag = cb_context->NextCommandTag(command_);
-    SyncEventsContext& events_context = cb_context->GetEventsContext();
-    const QueueId queue_id = cb_context->GetQueueId();
+ResourceUsageTag SyncOpSetEvent::Record(CommandBufferAccessContext& cb_context) {
+    const ResourceUsageTag tag = cb_context.NextCommandTag(command_);
+    SyncEventsContext& events_context = cb_context.GetEventsContext();
+    const QueueId queue_id = cb_context.GetQueueId();
     assert(recorded_context_);
     if (recorded_context_) {
         DoRecord(queue_id, tag, recorded_context_, events_context);
@@ -1061,25 +1060,23 @@ void SyncOpSetEvent::DoRecord(QueueId queue_id, ResourceUsageTag tag, const std:
 }
 
 SyncOpBeginRenderPass::SyncOpBeginRenderPass(vvl::Func command, const SyncValidator& sync_state,
-                                             const VkRenderPassBeginInfo* pRenderPassBegin,
-                                             const VkSubpassBeginInfo* pSubpassBeginInfo)
+                                             const VkRenderPassBeginInfo& render_pass_begin_info,
+                                             const VkSubpassBeginInfo* p_subpass_begin_info)
     : SyncOpBase(command), rp_context_(nullptr) {
-    if (pRenderPassBegin) {
-        rp_state_ = sync_state.Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
-        renderpass_begin_info_ = vku::safe_VkRenderPassBeginInfo(pRenderPassBegin);
-        auto fb_state = sync_state.Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
-        if (fb_state) {
-            shared_attachments_ = sync_state.device_state->GetAttachmentViews(*renderpass_begin_info_.ptr(), *fb_state);
-            // TODO: Revisit this when all attachment validation is through SyncOps to see if we can discard the plain pointer copy
-            // Note that this a safe to presist as long as shared_attachments is not cleared
-            attachments_.reserve(shared_attachments_.size());
-            for (const auto& attachment : shared_attachments_) {
-                attachments_.emplace_back(attachment.get());
-            }
+    rp_state_ = sync_state.Get<vvl::RenderPass>(render_pass_begin_info.renderPass);
+    renderpass_begin_info_ = vku::safe_VkRenderPassBeginInfo(&render_pass_begin_info);
+    auto fb_state = sync_state.Get<vvl::Framebuffer>(render_pass_begin_info.framebuffer);
+    if (fb_state) {
+        shared_attachments_ = sync_state.device_state->GetAttachmentViews(*renderpass_begin_info_.ptr(), *fb_state);
+        // TODO: Revisit this when all attachment validation is through SyncOps to see if we can discard the plain pointer copy
+        // Note that this a safe to presist as long as shared_attachments is not cleared
+        attachments_.reserve(shared_attachments_.size());
+        for (const auto& attachment : shared_attachments_) {
+            attachments_.emplace_back(attachment.get());
         }
-        if (pSubpassBeginInfo) {
-            subpass_begin_info_ = vku::safe_VkSubpassBeginInfo(pSubpassBeginInfo);
-        }
+    }
+    if (p_subpass_begin_info) {
+        subpass_begin_info_ = vku::safe_VkSubpassBeginInfo(p_subpass_begin_info);
     }
 }
 
@@ -1087,9 +1084,10 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext& cb_contex
     // Check if any of the layout transitions are hazardous.... but we don't have the renderpass context to work with, so we
     bool skip = false;
 
-    assert(rp_state_.get());
-    if (nullptr == rp_state_.get()) return skip;
-    auto& rp_state = *rp_state_.get();
+    if (!rp_state_) {
+        return skip;
+    }
+    const vvl::RenderPass& rp_state = *rp_state_.get();
 
     const uint32_t subpass = 0;
     const uint32_t view_mask = rp_state_->create_info.pSubpasses[0].viewMask;
@@ -1125,14 +1123,15 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext& cb_contex
     return skip;
 }
 
-ResourceUsageTag SyncOpBeginRenderPass::Record(CommandBufferAccessContext* cb_context) {
-    assert(rp_state_.get());
-    if (nullptr == rp_state_.get()) return cb_context->NextCommandTag(command_);
+ResourceUsageTag SyncOpBeginRenderPass::Record(CommandBufferAccessContext& cb_context) {
+    if (!rp_state_) {
+        return cb_context.NextCommandTag(command_);
+    }
     const ResourceUsageTag begin_tag =
-        cb_context->RecordBeginRenderPass(command_, *rp_state_.get(), renderpass_begin_info_.renderArea, attachments_);
+        cb_context.RecordBeginRenderPass(command_, *rp_state_.get(), renderpass_begin_info_.renderArea, attachments_);
 
     // Note: this state update must be after RecordBeginRenderPass as there is no current render pass until that function runs
-    rp_context_ = cb_context->GetCurrentRenderPassContext();
+    rp_context_ = cb_context.GetCurrentRenderPassContext();
 
     return begin_tag;
 }
@@ -1173,8 +1172,8 @@ bool SyncOpNextSubpass::Validate(const CommandBufferAccessContext& cb_context) c
     return skip;
 }
 
-ResourceUsageTag SyncOpNextSubpass::Record(CommandBufferAccessContext* cb_context) {
-    return cb_context->RecordNextSubpass(command_);
+ResourceUsageTag SyncOpNextSubpass::Record(CommandBufferAccessContext& cb_context) {
+    return cb_context.RecordNextSubpass(command_);
 }
 
 bool SyncOpNextSubpass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
@@ -1210,8 +1209,8 @@ bool SyncOpEndRenderPass::Validate(const CommandBufferAccessContext& cb_context)
     return skip;
 }
 
-ResourceUsageTag SyncOpEndRenderPass::Record(CommandBufferAccessContext* cb_context) {
-    return cb_context->RecordEndRenderPass(command_);
+ResourceUsageTag SyncOpEndRenderPass::Record(CommandBufferAccessContext& cb_context) {
+    return cb_context.RecordEndRenderPass(command_);
 }
 
 bool SyncOpEndRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
