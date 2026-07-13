@@ -144,3 +144,28 @@ TEST_F(StressSyncVal, CopyPagesInSmallChunksNoQueueSync) {
     }
     m_default_queue->Wait();
 }
+
+// Stress resolved signal and QueueBatchContext lifetime. Leaking these objects would cause
+// gigabytes of memory growth at this scale.
+// NOTE: vvl::Semaphore timepoints also accumulate until the final device wait, but their
+// memory use is much lower than that of QueueBatchContext objects. This growth is expected.
+TEST_F(StressSyncVal, TimelineSemaphoreMemoryStress) {
+    TEST_DESCRIPTION("Stress resolved signal and QueueBatchContext lifetime");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    constexpr uint64_t kSubmitCount = 100'000;
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_command_buffer.End();
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    for (uint64_t i = 1; i <= kSubmitCount; i++) {
+        m_default_queue->Submit(m_command_buffer, vkt::TimelineWait(semaphore, i - 1), vkt::TimelineSignal(semaphore, i));
+    }
+    m_device->Wait();
+}
