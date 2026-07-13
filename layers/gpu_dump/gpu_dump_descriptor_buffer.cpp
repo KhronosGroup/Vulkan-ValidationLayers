@@ -201,7 +201,15 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
     ss << "- vkCmdBindDescriptorBuffersEXT last bound the following descriptor buffers:\n";
 
     vvl::unordered_map<uint32_t, VkBufferUsageFlagBits2> binding_usage_flags;
-    for (uint32_t binding_i = 0; binding_i < cb_state.descriptor_buffer.binding_info.size(); binding_i++) {
+    uint32_t binding_info_count = (uint32_t)cb_state.descriptor_buffer.binding_info.size();
+    if (dev_data.enabled[gpu_validation] && dev_data.gpuav_settings.IsShaderInstrumentationEnabled()) {
+        // We warn the users to not have both enabled, but if this occurs GPU-AV currently adds a buffer
+        // but it is not tracked in any state tracking. (nor are the instrumented variables)
+        // We just ignore the last binding
+        binding_info_count--;
+    }
+
+    for (uint32_t binding_i = 0; binding_i < binding_info_count; binding_i++) {
         const VkDeviceAddress address = cb_state.descriptor_buffer.binding_info[binding_i].address;
 
         VkBufferUsageFlagBits2 usage_flags = 0;
