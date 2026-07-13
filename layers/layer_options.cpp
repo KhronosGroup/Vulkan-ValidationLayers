@@ -766,6 +766,8 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings* settings_data, VkuL
     }
 
     if (settings_data->enabled[gpu_dump]) {
+        const bool has_info_bit = (report_flags & kInformationBit) != 0;
+        const bool has_warn_bit = (report_flags & kWarningBit) != 0;
         if (settings_data->gpu_dump_settings->to_stdout) {
             if ((debug_action & VK_DBG_LAYER_ACTION_LOG_MSG)) {
                 if (is_stdout) {
@@ -779,8 +781,6 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings* settings_data, VkuL
                 }
             }
         } else if (!settings_data->gpu_dump_settings->to_stdout) {
-            const bool has_info_bit = (report_flags & kInformationBit) != 0;
-            const bool has_warn_bit = (report_flags & kWarningBit) != 0;
             // If the user ONLY wants warning, don't turn on info
             // If they forgot both, turn both on
             if (!has_info_bit && !has_warn_bit) {
@@ -791,6 +791,13 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings* settings_data, VkuL
                 report_flags |= kInformationBit;
                 report_flags |= kWarningBit;
             }
+        }
+
+        // If the user has only info on to get information, that could be seen as a legit usecase
+        if (has_warn_bit && settings_data->enabled[gpu_validation]) {
+            setting_warnings.emplace_back(
+                "GPU Dump and GPU-AV are both enabled and this is NOT desired. GPU Dump warnings are designed to find everything "
+                "GPU-AV does but in a 'CPU best attempt' fashion. Only use GPU Dump or GPU-AV, not both together.");
         }
     }
 
