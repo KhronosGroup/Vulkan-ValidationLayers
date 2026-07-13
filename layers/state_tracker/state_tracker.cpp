@@ -7364,7 +7364,6 @@ void DeviceState::PostCallRecordWriteSamplerDescriptorsEXT(VkDevice device, uint
 
         const VkDeviceSize descriptor_size = phys_dev_ext_props.descriptor_heap_props.samplerDescriptorSize;
         const uint64_t key = descriptor_hashing->Hash(host_range.address, descriptor_size);
-        const uint8_t vvl_type = (uint8_t)GetMaskFromDescriptorType(VK_DESCRIPTOR_TYPE_SAMPLER);
 
         if (const auto* debug_info = vku::FindStructInPNextChain<VkDebugUtilsObjectNameInfoEXT>(pSamplers->pNext)) {
             if (debug_info->pObjectName) {
@@ -7374,7 +7373,7 @@ void DeviceState::PostCallRecordWriteSamplerDescriptorsEXT(VkDevice device, uint
 
         // Because there is no concept of a VkSampler anymore, there is no way to know if the user will be done using this sampler
         // descriptor. This means we will never be able to remove this descriptor from the hash map.
-        descriptor_hashing->table.Insert(key, DescriptorHashTable::Entry(vvl_type, DescriptorHashTable::EntrySampler{}), *this,
+        descriptor_hashing->table.Insert(key, DescriptorHashTable::Entry(DescriptorHashTable::EntrySampler{}), *this,
                                          record_obj.location);
     }
 }
@@ -7425,8 +7424,8 @@ void DeviceState::PostCallRecordGetDescriptorEXT(VkDevice device, const VkDescri
         } break;
         case VK_DESCRIPTOR_TYPE_SAMPLER:
             if (pDescriptorInfo->data.pSampler) {
-                descriptor_hashing->table.Insert(key, DescriptorHashTable::Entry(vvl_type, DescriptorHashTable::EntrySampler{}),
-                                                 *this, record_obj.location);
+                descriptor_hashing->table.Insert(key, DescriptorHashTable::Entry(DescriptorHashTable::EntrySampler{}), *this,
+                                                 record_obj.location);
             }
             break;
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:

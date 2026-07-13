@@ -597,8 +597,16 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
         if (meta.access_path.pointer_type->spv_type_ == SpvType::kStruct) {
             const Instruction* offset_decoration = GetMemberDecoration(
                 meta.access_path.pointer_type->Id(), meta.access_path.heap_offset_member_index, spv::DecorationOffsetIdEXT);
-            assert(offset_decoration);
-            meta.untyped_heap_offset_id = offset_decoration->Word(4);
+            if (offset_decoration) {
+                meta.untyped_heap_offset_id = offset_decoration->Word(4);
+            } else {
+                // user has hardcoded offsets, if still can't find, then we can assume an implicit zero value
+                offset_decoration = GetMemberDecoration(meta.access_path.pointer_type->Id(),
+                                                        meta.access_path.heap_offset_member_index, spv::DecorationOffset);
+                if (offset_decoration) {
+                    meta.untyped_heap_offset_id = type_manager_.CreateConstantUInt32(offset_decoration->Word(4)).Id();
+                }
+            }
 
             descriptor_array =
                 type_manager_.FindTypeById(meta.access_path.pointer_type->inst_.Operand(meta.access_path.heap_offset_member_index));
@@ -607,6 +615,11 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
         }
 
         if (descriptor_array->IsArray()) {
+            const Type* element_type = type_manager_.FindTypeById(descriptor_array->inst_.Word(2));
+            if (element_type->IsArray()) {
+                // TODO - Handle MultidimensionalArray (GPU Dump has support for reference)
+                return false;
+            }
             const uint32_t array_stride_dec = GetDecoration(descriptor_array->Id(), spv::DecorationArrayStrideIdEXT)->Word(3);
             const Constant* array_stride = type_manager_.FindConstantById(array_stride_dec);
             meta.untyped_array_stride_id = array_stride->Id();

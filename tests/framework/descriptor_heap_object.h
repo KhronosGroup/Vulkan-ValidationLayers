@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <vulkan/vulkan_core.h>
 #include "binding.h"
 
 class VkLayerTest;
@@ -44,14 +45,19 @@ class DescriptorHeap {
     // Returns write offset.
     VkDeviceSize WriteBufferDescriptor(const vkt::Buffer& buffer, VkDescriptorType desc_type);
     VkDeviceSize WriteBufferDescriptor(VkDeviceAddressRangeKHR addr_range, VkDescriptorType desc_type);
-    VkDeviceSize WriteImageDescriptor(const vkt::Image& image, VkDescriptorType tydesc_typepe = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    VkDeviceSize WriteImageDescriptor(const vkt::Image& image, VkDescriptorType desc_type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                      VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     VkDeviceSize WriteAccelerationStructureDescriptor(vkt::as::AccelerationStructureKHR& as);
     VkDeviceSize WriteAccelerationStructureDescriptor(VkDeviceAddress as_addr);
+    VkDeviceSize WriteSamplerDescriptor(VkSamplerCreateInfo* sampler_create_info = nullptr);
     // Write at supplied heap offset
     // *Warning* Internally maintained heap write offset will not be touched at all,
     // so this probably should not be used with the above functions.
     VkDeviceSize WriteBufferDescriptorAtOffset(VkDeviceAddressRangeKHR addr_range, VkDescriptorType desc_type,
                                                VkDeviceSize heap_offset);
+    VkDeviceSize WriteImageDescriptorAtOffset(const vkt::Image& image, VkDeviceSize heap_offset,
+                                              VkDescriptorType desc_type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                              VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     VkDeviceSize WriteNullDescriptorAtOffset(VkDescriptorType desc_type, VkDeviceSize heap_offset);
 
     VkDeviceSize AlignResource(VkDeviceSize offset);
@@ -83,6 +89,7 @@ class DescriptorHeap {
     bool sampler_reserved_range_in_front_ = false;
     bool embedded_samplers = false;
     VkDeviceSize heap_offset_ = 0;
+    VkDeviceSize sampler_heap_offset_ = 0;
 };
 
 }  // namespace vkt

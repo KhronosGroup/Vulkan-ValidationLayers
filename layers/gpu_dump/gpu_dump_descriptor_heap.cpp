@@ -70,6 +70,7 @@ struct DumpInfo {
     const VkPhysicalDeviceDescriptorHeapPropertiesEXT& heap_props;
     const spirv::ResourceInterfaceVariable& resource_variable;
     const bool is_sampler;
+    const bool is_embedded_sampler;
     const vvl::range<VkDeviceAddress>& heap_range;
     const vvl::range<VkDeviceAddress>& heap_reserved;
 
@@ -100,6 +101,7 @@ struct DumpInfo {
           heap_props(dev_data.phys_dev_ext_props.descriptor_heap_props),
           resource_variable(*mapping_info.resource_variable),
           is_sampler(resource_variable.is_sampler),
+          is_embedded_sampler(GetEmbeddedSampler(*mapping_info.mapping) != nullptr),
           heap_range(is_sampler ? heap.sampler_range : heap.resource_range),
           heap_reserved(is_sampler ? heap.sampler_reserved : heap.resource_reserved),
           sampler_range(heap.sampler_range),
@@ -126,22 +128,7 @@ struct DumpInfo {
         required_alignment = GetDescriptorHeapAlignment(heap_props, descriptor_type);
         alignment_name = GetDescriptorHeapAlignmentField(descriptor_type);
 
-        if (mapping_info.mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
-            inspect_sampler = resource_variable.is_combined_image_sampler &&
-                              mapping_info.mapping->sourceData.constantOffset.pEmbeddedSampler == nullptr;
-        } else if (mapping_info.mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
-            inspect_sampler = resource_variable.is_combined_image_sampler &&
-                              mapping_info.mapping->sourceData.pushIndex.pEmbeddedSampler == nullptr;
-        } else if (mapping_info.mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
-            inspect_sampler = resource_variable.is_combined_image_sampler &&
-                              mapping_info.mapping->sourceData.indirectIndex.pEmbeddedSampler == nullptr;
-        } else if (mapping_info.mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
-            inspect_sampler = resource_variable.is_combined_image_sampler &&
-                              mapping_info.mapping->sourceData.indirectIndexArray.pEmbeddedSampler == nullptr;
-        } else if (mapping_info.mapping->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
-            inspect_sampler = resource_variable.is_combined_image_sampler &&
-                              mapping_info.mapping->sourceData.shaderRecordIndex.pEmbeddedSampler == nullptr;
-        }
+        inspect_sampler = resource_variable.is_combined_image_sampler && !is_embedded_sampler;
     }
 };
 
@@ -190,7 +177,7 @@ struct WarnInfo {
     void AlignmentIndexArraySampler(std::vector<uint32_t>& bad_indexes);
     void ReservedRangeIndexArray(std::vector<uint32_t>& bad_indexes);
     void ReservedRangeFinal();
-    std::string ValidateDescriptor(VkDeviceAddress address);
+    std::string ValidateDescriptor(VkDeviceAddress address, bool from_resource);
 };
 
 void WarnInfo::HeapOOB(VkDeviceSize offset, bool from_sampler) {
@@ -421,14 +408,14 @@ void WarnInfo::ReservedRangeFinal() {
     }
 };
 
-std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address) {
+std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address, bool from_resource) {
     if (!dump.dev_data.global_settings.descriptor_hashing) {
         return "";
     }
     if (FoundWarning()) {
         return "";  // no point checking if we know something else is wrong
     }
-
+    const VkDeviceSize descriptor_size = from_resource ? dump.descriptor_size : dump.sampler_descriptor_size;
     const auto& descriptor_hashing = *dump.dev_data.device_state->descriptor_hashing;
 
     // For VK_EXT_descriptor_heap where each descriptor type might be a different size.
@@ -441,7 +428,9 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address) {
     bool check_larger_sizes = true;
     std::vector<uint8_t> descriptor_bytes = dump.dev_data.CopyDataFromMemory(address, descriptor_hashing.heap_max_descriptor_size);
     if (descriptor_bytes.empty()) {
-        descriptor_bytes = dump.dev_data.CopyDataFromMemory(address, dump.descriptor_size);
+        if (descriptor_size < descriptor_hashing.heap_max_descriptor_size) {
+            descriptor_bytes = dump.dev_data.CopyDataFromMemory(address, descriptor_size);
+        }
         if (descriptor_bytes.empty()) {
             return "";  // heap buffer might not be visible
         } else {
@@ -451,14 +440,14 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address) {
     }
     ReadLockGuard guard(descriptor_hashing.map_lock);
 
-    uint64_t key = descriptor_hashing.Hash(descriptor_bytes.data(), dump.descriptor_size);
+    uint64_t key = descriptor_hashing.Hash(descriptor_bytes.data(), descriptor_size);
     const vvl::DescriptorHashTable::Entry* entry = descriptor_hashing.table.Find(key);
     if (!entry) {
         // Before saying we can't find it, check the other descriptor sizes if we can spot the wrong descriptor type
         for (VkDeviceSize size : descriptor_hashing.heap_all_descriptor_sizes) {
-            if (size == dump.descriptor_size) {
+            if (size == descriptor_size) {
                 continue;
-            } else if (!check_larger_sizes && size > dump.descriptor_size) {
+            } else if (!check_larger_sizes && size > descriptor_size) {
                 continue;
             }
             key = descriptor_hashing.Hash(descriptor_bytes.data(), size);
@@ -473,6 +462,7 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address) {
         }
     }
 
+    const VkDescriptorType descriptor_type = from_resource ? dump.descriptor_type : VK_DESCRIPTOR_TYPE_SAMPLER;
     if (entry->IsNullDescriptor()) {
         if (descriptor_hashing.null_descriptor_allowed) {
             return "[Null Descriptor]";
@@ -481,9 +471,9 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address) {
            << "[WARNING] NO DESCRIPTOR - Found descriptor mapped to [Null Descriptor] but the nullDescriptor feature was not "
               "enabled";
         return "";
-    } else if (!entry->HasType(dump.descriptor_type)) {
+    } else if (!entry->HasType(descriptor_type)) {
         ss << new_bullet_line << "[WARNING] WRONG DESCRIPTOR - At 0x" << std::hex << address << " expected a "
-           << string_VkDescriptorType(dump.descriptor_type)
+           << string_VkDescriptorType(descriptor_type)
            << " descriptor, but instead found a descriptor for: " << descriptor_hashing.Describe(*dump.dev_data.device_state, key);
         return "";
     }
@@ -581,7 +571,7 @@ void CommandBufferSubState::DumpDescriptorHeapConstantOffset(std::ostringstream&
     // accessed will have a valid descriptor ready.
     // Also want at the end after everything has been checked so we don't try and access invalid memory
     if (!dump.is_array) {
-        std::string descriptor_entry = warn.ValidateDescriptor(index_zero_address);
+        std::string descriptor_entry = warn.ValidateDescriptor(index_zero_address, true);
         if (!descriptor_entry.empty()) {
             ss << new_bullet_line << "Found descriptor mapped to: " << descriptor_entry;
         }
@@ -649,7 +639,7 @@ void CommandBufferSubState::DumpDescriptorHeapConstantOffset(std::ostringstream&
         warn.HeapOOB(index_zero_offset + dump.sampler_descriptor_size, true);
 
         if (!dump.is_array) {
-            std::string descriptor_entry = warn.ValidateDescriptor(index_zero_address);
+            std::string descriptor_entry = warn.ValidateDescriptor(index_zero_address, false);
             if (!descriptor_entry.empty()) {
                 ss << new_bullet_line << "Found descriptor mapped to: " << descriptor_entry;
             }
@@ -730,7 +720,7 @@ void CommandBufferSubState::DumpDescriptorHeapPushIndex(std::ostringstream& ss, 
     warn.HeapOOB(index_zero_offset + dump.descriptor_size, false);
 
     if (!dump.is_array) {
-        std::string descriptor_entry = warn.ValidateDescriptor(index_zero_address);
+        std::string descriptor_entry = warn.ValidateDescriptor(index_zero_address, true);
         if (!descriptor_entry.empty()) {
             ss << new_bullet_line << "Found descriptor mapped to: " << descriptor_entry;
         }
@@ -814,7 +804,7 @@ void CommandBufferSubState::DumpDescriptorHeapPushIndex(std::ostringstream& ss, 
         warn.HeapOOB(index_zero_offset + dump.sampler_descriptor_size, true);
 
         if (!dump.is_array) {
-            std::string descriptor_entry = warn.ValidateDescriptor(index_zero_address);
+            std::string descriptor_entry = warn.ValidateDescriptor(index_zero_address, false);
             if (!descriptor_entry.empty()) {
                 ss << new_bullet_line << "Found descriptor mapped to: " << descriptor_entry;
             }
@@ -914,7 +904,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
             }
         }
 
-        std::string descriptor_entry = warn.ValidateDescriptor(index_zero_address);
+        std::string descriptor_entry = warn.ValidateDescriptor(index_zero_address, true);
         if (!descriptor_entry.empty()) {
             ss << new_bullet_line << "Found descriptor mapped to: " << descriptor_entry;
         }
@@ -1029,7 +1019,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
                 }
             }
 
-            std::string descriptor_entry = warn.ValidateDescriptor(index_zero_address);
+            std::string descriptor_entry = warn.ValidateDescriptor(index_zero_address, false);
             if (!descriptor_entry.empty()) {
                 ss << new_bullet_line << "Found descriptor mapped to: " << descriptor_entry;
             }
@@ -1372,6 +1362,11 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
         }
     }
 
+    if (dump.is_embedded_sampler) {
+        ss << new_bullet_line << "Embedded Sampler\n";
+        return false;
+    }
+
     ss << new_bullet_line;
     if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
         const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping.sourceData.constantOffset;
@@ -1407,7 +1402,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     if (dump.descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM) {
         if (dump.inspect_sampler) {
             ss << new_bullet_line << "Descriptor size: " << std::dec << dump.descriptor_size << " (imageDescriptorSize) and "
-               << dump.sampler_descriptor_size << " (samplerDescriptorAlignment)";
+               << dump.sampler_descriptor_size << " (samplerDescriptorSize)";
         } else {
             ss << new_bullet_line << "Descriptor size: " << std::dec << dump.descriptor_size << " ("
                << string_VkDescriptorType(dump.descriptor_type) << ")";

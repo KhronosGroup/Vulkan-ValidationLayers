@@ -73,7 +73,8 @@ struct DescriptorHashTable {
         // Pass in vvlDescriptorType
         Entry(uint8_t t, EntryBuffer b) : types(1 << t), data(b) {}
         Entry(uint8_t t, EntryImage i) : types(1 << t), data(i) {}
-        Entry(uint8_t t, EntrySampler s) : types(1 << t), data(s) {}
+        // Handle in .cpp file to not include descriptor_utils.h to everyone
+        Entry(EntrySampler s);
         Entry(uint8_t t, EntryNull n) : types((1 << t) | NULL_DESCRIPTOR_MASK), data(n) {}
         // allow us to resize the vector
         Entry() : types(0), data() {}
