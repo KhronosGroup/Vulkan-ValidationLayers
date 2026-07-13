@@ -808,7 +808,7 @@ bool DescriptorValidator::ValidateImageSamplerDescriptor(const spirv::ResourceIn
     const VkFilter sampler_mag_filter = sampler_ci.magFilter;
     const VkFilter sampler_min_filter = sampler_ci.minFilter;
     const bool sampler_compare_enable = sampler_ci.compareEnable == VK_TRUE;
-    const auto sampler_reduction = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(sampler_ci.pNext);
+    const auto* sampler_reduction = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(sampler_ci.pNext);
     // The VU is wording is a bit misleading, if there is no VkSamplerReductionModeCreateInfo we still need to check for linear
     // tiling feature
     const bool is_weighted_average =
@@ -838,6 +838,7 @@ bool DescriptorValidator::ValidateImageSamplerDescriptor(const spirv::ResourceIn
 
     const bool is_minmax = sampler_reduction && (sampler_reduction->reductionMode == VK_SAMPLER_REDUCTION_MODE_MIN ||
                                                  sampler_reduction->reductionMode == VK_SAMPLER_REDUCTION_MODE_MAX);
+    const bool has_cubic_reduction = sampler_mag_filter == VK_FILTER_CUBIC_EXT || sampler_min_filter == VK_FILTER_CUBIC_EXT;
     if (is_minmax && !(image_view_state.format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT)) {
         if (sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) {
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state.Handle(), image_view_state.Handle());
@@ -862,7 +863,7 @@ bool DescriptorValidator::ValidateImageSamplerDescriptor(const spirv::ResourceIn
         }
     }
 
-    if (sampler_mag_filter == VK_FILTER_CUBIC_EXT || sampler_min_filter == VK_FILTER_CUBIC_EXT) {
+    if (has_cubic_reduction) {
         if (!(image_view_state.format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state.Handle(), image_view_state.Handle());
             skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::SAMPLER_CUBIC_02692), objlist, loc.Get(),
@@ -1045,6 +1046,45 @@ bool DescriptorValidator::ValidateImageSamplerDescriptor(const spirv::ResourceIn
                              FormatHandle(image_view_state.Handle()).c_str(), FormatHandle(sampler_state.Handle()).c_str(),
                              string_VkSamplerAddressMode(sampler_ci.addressModeU),
                              string_VkSamplerAddressMode(sampler_ci.addressModeV), DescribeInstruction().c_str());
+        }
+    }
+
+    if (sampler_reduction && sampler_reduction->reductionMode == VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE_RANGECLAMP_QCOM) {
+        if (!dev_proxy.enabled_features.cubicRangeClamp) {
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view_state.Handle(), sampler_state.Handle());
+            skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::CUBIC_RANGE_CLAMP_09212),
+                             objlist, loc.Get(),
+                             "the %s has %s paired with sampler %s which has reductionMode set to "
+                             "VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE_RANGECLAMP_QCOM, "
+                             "but the cubicRangeClamp feature is not enabled.%s",
+                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                             FormatHandle(image_view_state.Handle()).c_str(), FormatHandle(sampler_state.Handle()).c_str(),
+                             DescribeInstruction().c_str());
+        } else if (!has_cubic_reduction) {
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view_state.Handle(), sampler_state.Handle());
+            skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::REDUCTION_MODE_09213),
+                             objlist, loc.Get(),
+                             "the %s has %s paired with sampler %s which has reductionMode set to "
+                             "VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE_RANGECLAMP_QCOM, "
+                             "but mag filter (%s) and min filter (%s) are not VK_FILTER_CUBIC_EXT.%s",
+                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                             FormatHandle(image_view_state.Handle()).c_str(), FormatHandle(sampler_state.Handle()).c_str(),
+                             string_VkFilter(sampler_mag_filter), string_VkFilter(sampler_min_filter),
+                             DescribeInstruction().c_str());
+        }
+    }
+
+    if (!dev_proxy.enabled_features.selectableCubicWeights && has_cubic_reduction) {
+        const auto* sampler_cubic_weights = vku::FindStructInPNextChain<VkSamplerCubicWeightsCreateInfoQCOM>(sampler_ci.pNext);
+        if (sampler_cubic_weights && sampler_cubic_weights->cubicWeights != VK_CUBIC_FILTER_WEIGHTS_CATMULL_ROM_QCOM) {
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view_state.Handle(), sampler_state.Handle());
+            skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::SELECTABLE_CUBIC_WEIGHTS_09214),
+                             objlist, loc.Get(),
+                             "the %s has %s paired with sampler %s which is set to use VK_FILTER_CUBIC_EXT with cubicWeights "
+                             "set to %s, but the selectableCubicWeights feature is not enabled.%s",
+                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                             FormatHandle(image_view_state.Handle()).c_str(), FormatHandle(sampler_state.Handle()).c_str(),
+                             string_VkCubicFilterWeightsQCOM(sampler_cubic_weights->cubicWeights), DescribeInstruction().c_str());
         }
     }
 

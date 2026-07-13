@@ -1657,6 +1657,45 @@ GetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice, const V
         external_image_prop->externalMemoryProperties.compatibleHandleTypes = external_image_format->handleType;
     }
 
+    auto* filter_cubic_prop =
+        vku::FindStructInPNextChain<VkFilterCubicImageViewImageFormatPropertiesEXT>(pImageFormatProperties->pNext);
+    if (filter_cubic_prop) {
+        bool view_type_supported = false;
+        if (const auto* image_view_info =
+                vku::FindStructInPNextChain<VkPhysicalDeviceImageViewImageFormatInfoEXT>(pImageFormatInfo->pNext)) {
+            switch (image_view_info->imageViewType) {
+                case VK_IMAGE_VIEW_TYPE_2D:
+                case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
+                case VK_IMAGE_VIEW_TYPE_CUBE:
+                case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
+                    view_type_supported = true;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        bool format_supported = false;
+        switch (pImageFormatInfo->format) {
+            case VK_FORMAT_R32G32B32A32_SFLOAT:
+            case VK_FORMAT_R32G32_SFLOAT:
+            case VK_FORMAT_R32_SFLOAT:
+            case VK_FORMAT_R16G16B16A16_UNORM:
+            case VK_FORMAT_R16G16B16A16_SNORM:
+            case VK_FORMAT_R16G16_UNORM:
+            case VK_FORMAT_R16G16_SNORM:
+            case VK_FORMAT_R16_UNORM:
+            case VK_FORMAT_R16_SNORM:
+                format_supported = false;
+                break;
+            default:
+                format_supported = true;
+                break;
+        }
+        filter_cubic_prop->filterCubic = (format_supported && view_type_supported) ? VK_TRUE : VK_FALSE;
+        filter_cubic_prop->filterCubicMinmax = filter_cubic_prop->filterCubic;
+    }
+
     GetPhysicalDeviceImageFormatProperties(physicalDevice, pImageFormatInfo->format, pImageFormatInfo->type,
                                            pImageFormatInfo->tiling, pImageFormatInfo->usage, pImageFormatInfo->flags,
                                            &pImageFormatProperties->imageFormatProperties);

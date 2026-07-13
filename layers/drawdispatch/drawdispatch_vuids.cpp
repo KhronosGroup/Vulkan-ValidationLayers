@@ -603,6 +603,12 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::IMAGE_PROCESSING_SAMPLE_QCOM_06977: suffix = "OpImageSampleWeightedQCOM-06977"; break;
         // ### VUID-vkCmdDraw-OpImageSampleWeightedQCOM-06978
         case ActionVUID::IMAGE_PROCESSING_SAMPLE_QCOM_06978: suffix = "OpImageSampleWeightedQCOM-06978"; break;
+        // ### VUID-vkCmdDraw-cubicRangeClamp-09212
+        case ActionVUID::CUBIC_RANGE_CLAMP_09212: suffix = "cubicRangeClamp-09212"; break;
+        // ### VUID-vkCmdDraw-reductionMode-09213
+        case ActionVUID::REDUCTION_MODE_09213: suffix = "reductionMode-09213"; break;
+        // ### VUID-vkCmdDraw-selectableCubicWeights-09214
+        case ActionVUID::SELECTABLE_CUBIC_WEIGHTS_09214: suffix = "selectableCubicWeights-09214"; break;
         // ### VUID-vkCmdDraw-OpImageBlockMatchWindow-09215
         case ActionVUID::IMAGE_BLOCK_MATCH_WINDOW_QCOM_09215: suffix = "OpImageBlockMatchWindow-09215"; break;
         // ### VUID-vkCmdDraw-OpImageBlockMatchWindow-09216

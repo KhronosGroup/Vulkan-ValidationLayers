@@ -15358,6 +15358,7 @@ bool Device::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const V
         skip |= context.ValidateRangedEnum(pBlitImageInfo_loc.dot(Field::filter), vvl::Enum::VkFilter, pBlitImageInfo->filter,
                                            "VUID-VkBlitImageInfo2-filter-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBlitImage2(commandBuffer, pBlitImageInfo, context);
     return skip;
 }
 

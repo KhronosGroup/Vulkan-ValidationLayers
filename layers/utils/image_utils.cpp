@@ -26,6 +26,7 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
+#include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 uint32_t GetEffectiveLevelCount(const VkImageSubresourceRange& subresource_range, uint32_t total_level_count) {
@@ -315,4 +316,41 @@ bool IsDepthSliceView(VkImageType imageType, VkImageCreateFlags2KHR imageCreateF
 bool CanTransitionDepthSlices(const DeviceExtensions& extensions, VkImageType imageType, VkImageCreateFlags2KHR imageCreateFlags) {
     return IsExtEnabled(extensions.vk_khr_maintenance9) && imageType == VK_IMAGE_TYPE_3D &&
            (imageCreateFlags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0;
+}
+
+// Compatibility is defined in Vulkan spec Table 2 "Image Type and Image View Type Compatibility
+// Requirements" (VkImageViewType), as enforced by VUID-VkImageViewCreateInfo-image 01003/01004/06723/06728.
+// See https://docs.vulkan.org/spec/latest/chapters/resources.html#VkImageViewType for more details.
+bool IsImageViewTypeCompatibleWithImageType(const DeviceExtensions& extensions, VkImageViewType view_type, VkImageType image_type,
+                                            VkImageCreateFlags2KHR image_flags) {
+    switch (image_type) {
+        case VK_IMAGE_TYPE_1D:
+            return (view_type == VK_IMAGE_VIEW_TYPE_1D || view_type == VK_IMAGE_VIEW_TYPE_1D_ARRAY);
+
+        case VK_IMAGE_TYPE_2D:
+            if (view_type == VK_IMAGE_VIEW_TYPE_2D || view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+                return true;
+            }
+            if (view_type == VK_IMAGE_VIEW_TYPE_CUBE || view_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+                return (image_flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) != 0;
+            }
+            return false;
+
+        case VK_IMAGE_TYPE_3D:
+            if (view_type == VK_IMAGE_VIEW_TYPE_3D) {
+                return true;
+            }
+            if (IsExtEnabled(extensions.vk_khr_maintenance1) && view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+                return (image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0;
+            }
+            if (IsExtEnabled(extensions.vk_khr_maintenance1) && IsExtEnabled(extensions.vk_ext_image_2d_view_of_3d) &&
+                view_type == VK_IMAGE_VIEW_TYPE_2D) {
+                return ((image_flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT) != 0 ||
+                        (image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0);
+            }
+            return false;
+
+        default:
+            return false;
+    }
 }

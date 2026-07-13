@@ -246,6 +246,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetClusterAccelerationStructureBuildSizesNV',
             'vkCmdResolveImage',
             'vkCmdResolveImage2',
+            'vkCmdBlitImage2',
             'vkGetCalibratedTimestampsEXT',
             'vkGetCalibratedTimestampsKHR',
             'vkGetDynamicRenderingTilePropertiesQCOM',
