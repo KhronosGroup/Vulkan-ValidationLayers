@@ -147,7 +147,7 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module& module_state, co
         return skip;
     }
 
-    if (stage_state.descriptor_heap_mode) {
+    if (stage_state.heap.descriptor_heap_mode) {
         // In DescriptorModeClassic, this is normally caught binding pipeline layouts (with ranges in them)
         const VkDeviceSize max_size = phys_dev_ext_props.descriptor_heap_props.maxPushDataSize;
         if (push_constant_variable->size > max_size) {
@@ -1610,7 +1610,7 @@ bool CoreChecks::ValidateShaderInterfaceVariableDSL(const spirv::Module& module_
     bool skip = false;
     if (!stage_state.descriptor_set_layouts) {
         return skip;
-    } else if (stage_state.descriptor_heap_mode) {
+    } else if (stage_state.heap.descriptor_heap_mode) {
         return skip;
     }
 
@@ -3513,7 +3513,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
     // resource variables are untyped (not using set/binding)
     if (!mapping_info) {
         // If not flag, this is just a "normal" vulkan 1.0 situtation
-        if (stage_state.descriptor_heap_mode) {
+        if (stage_state.heap.descriptor_heap_mode) {
             for (const spirv::ResourceInterfaceVariable& resource_variable : entrypoint.resource_interface_variables) {
                 if (!resource_variable.IsHeap()) {
                     skip |= LogError(
@@ -3533,7 +3533,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
             }
         }
         return skip;  // rest of checks require actual mapping
-    } else if (!stage_state.descriptor_heap_mode && mapping_info->mappingCount > 0) {
+    } else if (!stage_state.heap.descriptor_heap_mode && mapping_info->mappingCount > 0) {
         // If they are here, the pipeline layout would also have to be non-null
         // Provide a warning here incase people are trying to go from normal descriptor to heap and don't realize their mappings are
         // ignored

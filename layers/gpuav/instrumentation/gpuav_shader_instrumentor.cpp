@@ -1473,7 +1473,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
             }
         }
 
-        if (stage_state.descriptor_heap_mode) {
+        if (stage_state.heap.descriptor_heap_mode) {
             const VkShaderStageFlagBits stage = stage_state.GetStage();
             auto& stage_ci =
                 GetShaderStageCI<SafeCreateInfo, vku::safe_VkPipelineShaderStageCreateInfo>(modified_pipeline_ci, stage);
@@ -1704,7 +1704,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
 
                 // We only need to apply the mappings for the pipeline creation, not shader module creation
                 // Also doing here prevents adding extra (but still valid) mappings for no reason if they will never be used
-                if (modified_stage_state.descriptor_heap_mode) {
+                if (modified_stage_state.heap.descriptor_heap_mode) {
                     const VkShaderStageFlagBits stage = modified_stage_state.GetStage();
                     for (uint32_t i = 0; i < new_lib_ci.stageCount; ++i) {
                         if (new_lib_ci.pStages[i].stage == stage) {

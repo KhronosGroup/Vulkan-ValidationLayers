@@ -59,11 +59,16 @@ struct ShaderStageState {
     VkPipelineLayout pipeline_layout;
     // If null, means it is an empty object, no SPIR-V backing it
     std::shared_ptr<const spirv::EntryPoint> entrypoint;
-    // Because this can come from a different struct depending on the Pipeline type, have it passed on creation
-    const bool descriptor_heap_mode;
-    // If the heap is used by any variable (mapping or untyped)
-    const bool uses_resource_heap;
-    const bool uses_sampler_heap;
+    // VK_EXT_descriptor_heap
+    const struct Heap {
+        // Because this can come from a different struct depending on the Pipeline type, have it passed on creation
+        bool descriptor_heap_mode = false;
+        // If the heap is used by any variable (mapping or untyped)
+        bool uses_resource_heap = false;
+        bool uses_sampler_heap = false;
+
+        bool uses_push_data = false;
+    } heap;
 
     ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo* pipeline_create_info,
                      const vku::safe_VkShaderCreateInfoEXT* shader_object_create_info,
@@ -81,8 +86,7 @@ struct ShaderStageState {
     bool HasSpirv() const { return spirv_state.get() != nullptr && entrypoint.get() != nullptr; }
 
   private:
-    bool ResourceHeapIsUsed();
-    bool SamplerHeapIsUsed();
+    Heap GetHeapInfo(bool descriptor_heap_mode);
 };
 
 namespace spirv {

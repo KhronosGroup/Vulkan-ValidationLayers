@@ -79,65 +79,60 @@ const void* ShaderStageState::GetPNext() const {
     return (pipeline_create_info) ? pipeline_create_info->pNext : shader_object_create_info->pNext;
 }
 
-bool ShaderStageState::ResourceHeapIsUsed() {
-    if (!entrypoint || !spirv_state) {
-        return false;
+ShaderStageState::Heap ShaderStageState::GetHeapInfo(bool descriptor_heap_mode) {
+    Heap result;
+    if (!descriptor_heap_mode || !entrypoint || !spirv_state) {
+        return result;
     }
+    result.descriptor_heap_mode = true;
+
     const auto mapping_info = vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(GetPNext());
     if (!mapping_info && !spirv_state->static_data_.has_descriptor_heap) {
-        return false;  // if not using heaps at all
+        return result;  // if not using heaps at all
     }
 
     for (const spirv::ResourceInterfaceVariable& resource_variable : entrypoint->resource_interface_variables) {
-        if (!resource_variable.IsHeap() && !resource_variable.is_sampler && mapping_info) {
-            for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
-                const auto& mapping = mapping_info->pMappings[i];
-                if (IsResourceVaribleInMapping(mapping, resource_variable) &&
-                    IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT})) {
-                    return true;
-                }
-            }
-        } else if (resource_variable.is_resource_heap) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool ShaderStageState::SamplerHeapIsUsed() {
-    if (!entrypoint || !spirv_state) {
-        return false;
-    }
-    const auto mapping_info = vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(GetPNext());
-    if (!mapping_info && !spirv_state->static_data_.has_descriptor_heap) {
-        return false;  // if not using heaps at all
-    }
-
-    for (const spirv::ResourceInterfaceVariable& resource_variable : entrypoint->resource_interface_variables) {
-        if (!resource_variable.IsHeap() && (resource_variable.is_sampler || resource_variable.is_combined_image_sampler) &&
-            mapping_info) {
-            for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
-                const auto& mapping = mapping_info->pMappings[i];
-                if (IsResourceVaribleInMapping(mapping, resource_variable) &&
-                    IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT})) {
-                    return true;
-                }
-            }
+        if (resource_variable.is_resource_heap) {
+            result.uses_resource_heap = true;
+            continue;
         } else if (resource_variable.is_sampler_heap) {
-            return true;
+            result.uses_sampler_heap = true;
+            continue;
+        } else if (!mapping_info || resource_variable.IsHeap()) {
+            continue;
+        }
+
+        const bool potential_resource = (!resource_variable.is_sampler);
+        const bool potential_sampler = (resource_variable.is_sampler || resource_variable.is_combined_image_sampler);
+
+        for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
+            const auto& mapping = mapping_info->pMappings[i];
+            if (!IsResourceVaribleInMapping(mapping, resource_variable)) {
+                continue;
+            }
+
+            if (mapping.source != VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
+                result.uses_push_data = true;
+            }
+
+            if (IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT,
+                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
+                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
+                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT,
+                                           VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT,
+                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT})) {
+                // might be both with combined image sampler
+                if (potential_resource) {
+                    result.uses_resource_heap = true;
+                }
+                if (potential_sampler) {
+                    result.uses_sampler_heap = true;
+                }
+            }
         }
     }
-    return false;
+
+    return result;
 }
 
 ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo* pipeline_create_info,
@@ -153,6 +148,4 @@ ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateIn
       descriptor_set_layouts(descriptor_set_layouts),
       pipeline_layout(pipeline_layout),
       entrypoint(spirv_state ? spirv_state->FindEntrypoint(GetPName(), GetStage()) : nullptr),
-      descriptor_heap_mode(descriptor_heap_mode),
-      uses_resource_heap(ResourceHeapIsUsed()),
-      uses_sampler_heap(SamplerHeapIsUsed()) {}
+      heap(GetHeapInfo(descriptor_heap_mode)) {}

@@ -120,15 +120,19 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                                                                           const LastBound& last_bound) {
         // Capture the last index into the snapshot on record time
         uint32_t heap_binding_index = vvl::kNoIndex32;  // if no heap was ever bound
+        uint32_t push_data_index = vvl::kNoIndex32;     // if no push data was ever captured
         const DescriptorHeapBindings& desc_heap_bindings = cb.shared_resources_cache.Get<DescriptorHeapBindings>();
         if (!desc_heap_bindings.bound_heap_snapshots.empty()) {
             heap_binding_index = uint32_t(desc_heap_bindings.bound_heap_snapshots.size() - 1);
         }
+        if (!desc_heap_bindings.push_data_snapshots.empty()) {
+            push_data_index = uint32_t(desc_heap_bindings.push_data_snapshots.size() - 1);
+        }
 
         CommandBufferSubState::InstrumentationErrorLogger inst_error_logger =
-            [&cb, heap_binding_index](Validator& gpuav, const Location& loc, const uint32_t* error_record,
-                                      const InstrumentedShader* instrumented_shader, std::string& out_error_msg,
-                                      std::string& out_vuid_msg) {
+            [&cb, heap_binding_index, push_data_index](Validator& gpuav, const Location& loc, const uint32_t* error_record,
+                                                       const InstrumentedShader* instrumented_shader, std::string& out_error_msg,
+                                                       std::string& out_vuid_msg) {
                 using namespace glsl;
 
                 bool error_found = false;
@@ -192,6 +196,52 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 const bool is_source_heap_data =
                     mapping_info && mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT;
                 const bool is_combined_index = mapping_info && HasCombinedImageSamplerIndex(*mapping_info);
+
+                // If mapping uses push data, provide the value to the user (or show they just forgot to set it!)
+                uint32_t push_offset = 0;
+                const bool use_sampler_push_offset = is_combined_sampler && !is_combined_index;
+                const gpuav::DescriptorHeapBindings::PushDataSnapshot* push_data_snapshot = nullptr;
+                bool push_data_set = true;
+                bool has_two_push_dwords = false;
+                if (mapping_info) {
+                    if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
+                        push_offset = use_sampler_push_offset ? mapping_info->sourceData.pushIndex.samplerPushOffset
+                                                              : mapping_info->sourceData.pushIndex.pushOffset;
+                    } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
+                        push_offset = use_sampler_push_offset ? mapping_info->sourceData.indirectIndex.samplerPushOffset
+                                                              : mapping_info->sourceData.indirectIndex.pushOffset;
+                        has_two_push_dwords = true;
+                    } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
+                        push_offset = use_sampler_push_offset ? mapping_info->sourceData.indirectIndexArray.samplerPushOffset
+                                                              : mapping_info->sourceData.indirectIndexArray.pushOffset;
+                        has_two_push_dwords = true;
+                    } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
+                        push_offset = mapping_info->sourceData.heapData.pushOffset;
+                    } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT) {
+                        push_offset = mapping_info->sourceData.pushAddressOffset;
+                        has_two_push_dwords = true;
+                    } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
+                        push_offset = mapping_info->sourceData.indirectAddress.pushOffset;
+                        has_two_push_dwords = true;
+                    }
+
+                    if (push_data_index != vvl::kNoIndex32) {
+                        const DescriptorHeapBindings& desc_heap_bindings = cb.shared_resources_cache.Get<DescriptorHeapBindings>();
+                        push_data_snapshot = &desc_heap_bindings.push_data_snapshots[push_data_index];
+
+                        const uint32_t push_offset_dword = push_offset / 4;
+                        const bool dword_0_set = (push_offset_dword < push_data_snapshot->dword_mask.size() &&
+                                                  push_data_snapshot->dword_mask[push_offset_dword]);
+                        const bool dword_1_set =
+                            !has_two_push_dwords || (push_offset_dword + 1 < push_data_snapshot->dword_mask.size() &&
+                                                     push_data_snapshot->dword_mask[push_offset_dword + 1]);
+                        push_data_set = dword_0_set && dword_1_set;
+                    } else if (mapping_info->source != VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
+                        // This means they just never called it once
+                        // CONSTANT_DATA is the only mapping that doesn't use push data
+                        push_data_set = false;
+                    }
+                }
 
                 const uint32_t error_sub_code = GetSubError(error_record);
                 switch (error_sub_code) {
@@ -260,34 +310,31 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                             const uint32_t descriptor_index = error_record[kInst_LogError_ParameterOffset_0];
                             ss << "descriptor index " << std::dec << descriptor_index << " ";
                         }
-                        const bool use_sampler_push_offset = is_combined_sampler && !is_combined_index;
                         ss << "has a " << (use_sampler_push_offset ? "samplerPushOffset" : "pushOffset") << " of ";
 
-                        uint32_t push_offset = 0;
                         if (mapping_info) {
-                            if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
-                                push_offset = mapping_info->sourceData.indirectAddress.pushOffset;
-                            } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
-                                push_offset = use_sampler_push_offset ? mapping_info->sourceData.indirectIndex.samplerPushOffset
-                                                                      : mapping_info->sourceData.indirectIndex.pushOffset;
-                            } else if (mapping_info->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
-                                push_offset = use_sampler_push_offset
-                                                  ? mapping_info->sourceData.indirectIndexArray.samplerPushOffset
-                                                  : mapping_info->sourceData.indirectIndexArray.pushOffset;
-                            }
                             ss << std::dec << push_offset;
                         } else {
                             ss << "(unknown offset)";
                         }
 
-                        // TODO - this will report the wrong pushData, see above about capturing the cb state
-                        const VkDeviceAddress push_data = *((VkDeviceAddress*)&cb.push_data_value[push_offset]);
-
-                        ss << " which holds the VkDeviceAddress 0x" << std::hex << push_data << " which is not a multiple of ";
-                        if (error_sub_code == kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment) {
-                            ss << "4 needed to access the uint32_t in the indirect buffer\n";
+                        ss << " that value at this time is ";
+                        if (!push_data_snapshot) {
+                            ss << "[unknown] which";
                         } else {
+                            if (push_data_set) {
+                                const VkDeviceAddress push_data = *((VkDeviceAddress*)&push_data_snapshot->value[push_offset]);
+                                ss << "the VkDeviceAddress 0x" << std::hex << push_data << " which";
+                            } else {
+                                ss << "[unknown] because vkCmdPushDataEXT was not called and the undefined value";
+                            }
+                        }
+
+                        ss << " is not a multiple of ";
+                        if (has_two_push_dwords) {
                             ss << "8 needed to access the VkDeviceAddress in the indirect buffer\n";
+                        } else {
+                            ss << "4 needed to access the uint32_t in the indirect buffer\n";
                         }
 
                         vvl::ActionVUID action_vuid = (error_sub_code == kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment)
@@ -373,7 +420,14 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 }
 
                 if (mapping_info) {
-                    ss << "Mapped with pMapping[" << std::dec << heap_status->mapping_index << "] with "
+                    // only can occur if have mappings
+                    if (!push_data_set) {
+                        ss << "- vkCmdPushDataEXT[" << std::dec << push_offset << ":"
+                           << (has_two_push_dwords ? push_offset + 7 : push_offset + 3)
+                           << "] was not called and the values are undefined\n";
+                    }
+
+                    ss << "- Mapped with pMapping[" << std::dec << heap_status->mapping_index << "] with "
                        << string_VkDescriptorMappingSourceEXT(mapping_info->source) << std::hex;
                     const uint32_t bind_offset = heap_status->binding - mapping_info->firstBinding;
                     if (bind_offset != 0) {
@@ -468,8 +522,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     ss << '\n';
                 }
 
-                ss << "Descriptor type: " << string_VkDescriptorType(GetDescriptorTypeFromMask(desc_type)) << ", size " << std::dec
-                   << desc_size;
+                ss << "- Descriptor type: " << string_VkDescriptorType(GetDescriptorTypeFromMask(desc_type)) << ", size "
+                   << std::dec << desc_size;
                 if (is_untyped) {
                     if (is_buffer) {
                         ss << " (bufferDescriptorSize)";
@@ -484,7 +538,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 ss << '\n';
 
                 // Unless find otherwise, this information is useful for all errors
-                ss << "The " << (is_sampler ? "sampler" : "resource") << " heap was ";
+                ss << "- The " << (is_sampler ? "sampler" : "resource") << " heap was ";
                 if (is_sampler) {
                     if (!heap_cb_state || !heap_cb_state->sampler_bound) {
                         ss << "not bound with vkCmdBindSamplerHeapEXT";
@@ -508,9 +562,10 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
         return inst_error_logger;
     });
 
-    cb.on_instrumentation_common_desc_update_functions.emplace_back([&gpuav](CommandBufferSubState& cb, const LastBound&,
+    cb.on_instrumentation_common_desc_update_functions.emplace_back([&gpuav](CommandBufferSubState& cb, const LastBound& last_bound,
                                                                              const Location&,
                                                                              CommonDescriptorUpdate& out_update) mutable {
+        // struct DescriptorHeapEncoding
         const uint32_t bound_heap_info_size = sizeof(VkDeviceAddress) * 3;
         uint32_t buffer_size = bound_heap_info_size + (uint32_t)gpuav.phys_dev_ext_props.descriptor_heap_props.maxPushDataSize;
         vko::BufferRange output_range = cb.gpu_resources_manager.GetHostCoherentBufferRange(buffer_size);
@@ -537,6 +592,21 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
 
         uint8_t* gpu_push_data_ptr = ((uint8_t*)output_range.offset_mapped_ptr) + bound_heap_info_size;
         memcpy(gpu_push_data_ptr, cb.push_data_value.data(), cb.push_data_value.size());
+
+        // If using the same vkCmdPushData, can use last snapshot
+        if (cb.push_data_updated) {
+            // If people are using only CONSTANT_DATA mapping or untyped, no reason to waste memory copying this
+            small_vector<const ShaderStageState*, 3> stages = last_bound.GetStages();
+            bool update_push_data = false;
+            for (const ShaderStageState* stage : stages) {
+                update_push_data |= stage->heap.uses_push_data;
+            }
+            if (update_push_data) {
+                DescriptorHeapBindings& desc_heap_bindings = cb.shared_resources_cache.Get<DescriptorHeapBindings>();
+                DescriptorHeapBindings::PushDataSnapshot push_data_snapshot{cb.base.push_data_dword_mask, cb.push_data_value};
+                desc_heap_bindings.push_data_snapshots.emplace_back(std::move(push_data_snapshot));
+            }
+        }
 
         out_update.buffer = output_range.buffer;
         out_update.offset = output_range.offset;
