@@ -1666,6 +1666,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                            const ErrorObject& error_obj) const override;
     bool PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
                                          const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdSetDispatchParametersARM(VkCommandBuffer commandBuffer,
+                                                    const VkDispatchParametersARM* pDispatchParameters,
+                                                    const ErrorObject& error_obj) const override;
     bool PreCallValidateResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences,
                                     const ErrorObject& error_obj) const override;
     bool PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator,

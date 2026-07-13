@@ -5253,3 +5253,69 @@ TEST_F(NegativeCommand, DeviceLostInUse) {
     vk::ResetCommandPool(*m_device, m_command_pool, 0);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeCommand, ArmSchedulingControlsDispatchParameters) {
+    TEST_DESCRIPTION("Validate VK_ARM_scheduling_controls dispatch parameter limits.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_ARM_SHADER_CORE_BUILTINS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_ARM_SCHEDULING_CONTROLS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::schedulingControls);
+    RETURN_IF_SKIP(InitFramework());
+
+    uint32_t extension_count = 0;
+    vk::EnumerateDeviceExtensionProperties(gpu_, nullptr, &extension_count, nullptr);
+    std::vector<VkExtensionProperties> extensions(extension_count);
+    vk::EnumerateDeviceExtensionProperties(gpu_, nullptr, &extension_count, extensions.data());
+
+    bool scheduling_controls_v2 = false;
+    for (const auto& extension : extensions) {
+        if (strcmp(extension.extensionName, VK_ARM_SCHEDULING_CONTROLS_EXTENSION_NAME) == 0) {
+            scheduling_controls_v2 = (extension.specVersion == 2);
+            break;
+        }
+    }
+    if (!scheduling_controls_v2) {
+        GTEST_SKIP() << VK_ARM_SCHEDULING_CONTROLS_EXTENSION_NAME << " spec version 2 not supported";
+    }
+
+    InitState();
+
+    auto vkCmdSetDispatchParametersARM = GetDeviceProcAddr<PFN_vkCmdSetDispatchParametersARM>("vkCmdSetDispatchParametersARM");
+    if (!vkCmdSetDispatchParametersARM) {
+        GTEST_SKIP() << "Required features not supported";
+    }
+
+    VkPhysicalDeviceSchedulingControlsDispatchParametersPropertiesARM dispatch_props = vku::InitStructHelper();
+    VkPhysicalDeviceSchedulingControlsPropertiesARM scheduling_props = vku::InitStructHelper(&dispatch_props);
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&scheduling_props);
+    vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
+
+    VkDispatchParametersARM dispatch_parameters = vku::InitStructHelper();
+
+    if ((scheduling_props.schedulingControlsFlags & VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_DISPATCH_PARAMETERS_ARM) == 0) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetDispatchParametersARM-schedulingControlsFlags-12391");
+    }
+
+    dispatch_parameters.maxWarpsPerShaderCore = dispatch_props.schedulingControlsMaxWarpsCount;
+    if (dispatch_parameters.maxWarpsPerShaderCore != 0xffffffffu) {
+        dispatch_parameters.maxWarpsPerShaderCore++;
+        m_errorMonitor->SetDesiredError("VUID-VkDispatchParametersARM-maxWarpsPerShaderCore-12392");
+    }
+
+    dispatch_parameters.maxQueuedWorkGroupBatches = dispatch_props.schedulingControlsMaxQueuedBatchesCount;
+    if (dispatch_parameters.maxQueuedWorkGroupBatches != 0xffffffffu) {
+        dispatch_parameters.maxQueuedWorkGroupBatches++;
+        m_errorMonitor->SetDesiredError("VUID-VkDispatchParametersARM-maxQueuedWorkGroupBatches-12393");
+    }
+
+    dispatch_parameters.workGroupBatchSize = dispatch_props.schedulingControlsMaxWorkGroupBatchSize;
+    if (dispatch_parameters.workGroupBatchSize != 0xffffffffu) {
+        dispatch_parameters.workGroupBatchSize++;
+        m_errorMonitor->SetDesiredError("VUID-VkDispatchParametersARM-workGroupBatchSize-12394");
+    }
+
+    m_command_buffer.Begin();
+    vkCmdSetDispatchParametersARM(m_command_buffer.handle(), &dispatch_parameters);
+    m_errorMonitor->VerifyFound();
+}

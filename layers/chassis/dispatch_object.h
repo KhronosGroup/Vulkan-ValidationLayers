@@ -106,6 +106,9 @@ struct DeviceExtensionProperties {
     VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR compute_shader_derivatives_props;
     VkPhysicalDeviceCooperativeVectorPropertiesNV cooperative_vector_props_nv;
     VkPhysicalDeviceRenderPassStripedPropertiesARM renderpass_striped_props;
+    VkPhysicalDeviceSchedulingControlsPropertiesARM scheduling_controls_props;
+    VkPhysicalDeviceSchedulingControlsDispatchParametersPropertiesARM scheduling_controls_dispatch_props;
+    VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM shader_core_builtins_props;
     VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_props;
     VkPhysicalDeviceMaintenance9PropertiesKHR maintenance9_props;
     VkPhysicalDeviceMaintenance10PropertiesKHR maintenance10_props;

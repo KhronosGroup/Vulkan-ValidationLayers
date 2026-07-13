@@ -320,6 +320,80 @@ bool core::Instance::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkD
 
     skip |= ValidateDeviceQueueCreateInfos(*pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos,
                                            pCreateInfo->pNext, error_obj.location.dot(Field::pCreateInfo));
+
+    const auto* device_shader_core_control =
+        vku::FindStructInPNextChain<VkDeviceQueueShaderCoreControlCreateInfoARM>(pCreateInfo->pNext);
+    bool has_queue_shader_core_control = false;
+    for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
+        if (vku::FindStructInPNextChain<VkDeviceQueueShaderCoreControlCreateInfoARM>(pCreateInfo->pQueueCreateInfos[i].pNext)) {
+            has_queue_shader_core_control = true;
+            break;
+        }
+    }
+
+    if (device_shader_core_control || has_queue_shader_core_control) {
+        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+        VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM shader_core_builtins_props = vku::InitStructHelper();
+        VkPhysicalDeviceSchedulingControlsPropertiesARM scheduling_controls_props = vku::InitStructHelper(&shader_core_builtins_props);
+        VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&scheduling_controls_props);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, gpu, &props2);
+
+        if (device_shader_core_control) {
+            const Location shader_core_control_loc = create_info_loc.dot(Field::pNext);
+            if (has_queue_shader_core_control) {
+                skip |= LogError("VUID-VkDeviceCreateInfo-pNext-09396", gpu, shader_core_control_loc,
+                                 "includes a VkDeviceQueueShaderCoreControlCreateInfoARM structure in pCreateInfo->pNext, but at "
+                                 "least one VkDeviceQueueCreateInfo also includes VkDeviceQueueShaderCoreControlCreateInfoARM.");
+            }
+            if ((scheduling_controls_props.schedulingControlsFlags &
+                 VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM) == 0) {
+                skip |= LogError(
+                    "VUID-VkDeviceCreateInfo-pNext-09397", gpu, shader_core_control_loc,
+                    "includes VkDeviceQueueShaderCoreControlCreateInfoARM, but "
+                    "VkPhysicalDeviceSchedulingControlsPropertiesARM::schedulingControlsFlags (%s) does not contain "
+                    "VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM.",
+                    string_VkPhysicalDeviceSchedulingControlsFlagsARM(scheduling_controls_props.schedulingControlsFlags).c_str());
+            }
+            if (device_shader_core_control->shaderCoreCount == 0 ||
+                device_shader_core_control->shaderCoreCount > shader_core_builtins_props.shaderCoreCount) {
+                skip |= LogError(
+                    "VUID-VkDeviceQueueShaderCoreControlCreateInfoARM-shaderCoreCount-09399", gpu,
+                    shader_core_control_loc.dot(Field::shaderCoreCount),
+                    "(%" PRIu32 ") must be greater than 0 and less than or equal to "
+                    "VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::shaderCoreCount (%" PRIu32 ").",
+                    device_shader_core_control->shaderCoreCount, shader_core_builtins_props.shaderCoreCount);
+            }
+        }
+
+        for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
+            const auto* queue_shader_core_control =
+                vku::FindStructInPNextChain<VkDeviceQueueShaderCoreControlCreateInfoARM>(pCreateInfo->pQueueCreateInfos[i].pNext);
+            if (!queue_shader_core_control) {
+                continue;
+            }
+
+            const Location queue_create_info_loc = create_info_loc.dot(Field::pQueueCreateInfos, i);
+            const Location shader_core_control_loc = queue_create_info_loc.dot(Field::pNext);
+            if ((scheduling_controls_props.schedulingControlsFlags &
+                 VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM) == 0) {
+                skip |= LogError(
+                    "VUID-VkDeviceQueueCreateInfo-pNext-09398", gpu, shader_core_control_loc,
+                    "includes VkDeviceQueueShaderCoreControlCreateInfoARM, but "
+                    "VkPhysicalDeviceSchedulingControlsPropertiesARM::schedulingControlsFlags (%s) does not contain "
+                    "VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM.",
+                    string_VkPhysicalDeviceSchedulingControlsFlagsARM(scheduling_controls_props.schedulingControlsFlags).c_str());
+            }
+            if (queue_shader_core_control->shaderCoreCount == 0 ||
+                queue_shader_core_control->shaderCoreCount > shader_core_builtins_props.shaderCoreCount) {
+                skip |= LogError(
+                    "VUID-VkDeviceQueueShaderCoreControlCreateInfoARM-shaderCoreCount-09399", gpu,
+                    shader_core_control_loc.dot(Field::shaderCoreCount),
+                    "(%" PRIu32 ") must be greater than 0 and less than or equal to "
+                    "VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::shaderCoreCount (%" PRIu32 ").",
+                    queue_shader_core_control->shaderCoreCount, shader_core_builtins_props.shaderCoreCount);
+            }
+        }
+    }
     return skip;
 }
 
