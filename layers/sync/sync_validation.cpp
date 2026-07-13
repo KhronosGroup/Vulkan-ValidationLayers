@@ -672,9 +672,11 @@ void SyncValidator::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore s
 bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                             const VkSubpassBeginInfo* pSubpassBeginInfo, const ErrorObject& error_obj) const {
     bool skip = false;
-    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    SyncOpBeginRenderPass sync_op(error_obj.location.function, *this, pRenderPassBegin, pSubpassBeginInfo);
-    skip |= sync_op.Validate(*GetAccessContext(*cb_state));
+    if (pRenderPassBegin) {
+        const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+        SyncOpBeginRenderPass sync_op(error_obj.location.function, *this, *pRenderPassBegin, pSubpassBeginInfo);
+        skip |= sync_op.Validate(*GetAccessContext(*cb_state));
+    }
     return skip;
 }
 
