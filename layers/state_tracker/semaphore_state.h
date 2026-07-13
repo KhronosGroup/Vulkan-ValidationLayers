@@ -40,12 +40,7 @@ struct SemaphoreInfo {
 
 class Semaphore : public RefcountedStateObject {
   public:
-    enum OpType {
-        kNone,
-        kWait,
-        kSignal,
-        kBinaryAcquire,
-    };
+    enum OpType { kNone, kWait, kSignal };
     enum Scope {
         kInternal,
         kExternalTemporary,
@@ -189,7 +184,6 @@ class Semaphore : public RefcountedStateObject {
     OpType completed_op_ = kNone;
     uint64_t completed_payload_ = 0;
     const Queue* completed_queue_ = nullptr;
-    std::optional<Func> completed_acquire_command_;
 
     // Empty if there are no pending signals. Used only for timeline semaphores
     std::optional<uint64_t> smallest_pending_signal_value_;

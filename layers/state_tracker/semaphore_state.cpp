@@ -40,9 +40,7 @@ static bool CanSignalBinarySemaphoreAfterOperation(vvl::Semaphore::OpType op_typ
     return op_type == vvl::Semaphore::kNone || op_type == vvl::Semaphore::kWait;
 }
 
-static bool CanWaitBinarySemaphoreAfterOperation(vvl::Semaphore::OpType op_type) {
-    return op_type == vvl::Semaphore::kSignal || op_type == vvl::Semaphore::kBinaryAcquire;
-}
+static bool CanWaitBinarySemaphoreAfterOperation(vvl::Semaphore::OpType op_type) { return op_type == vvl::Semaphore::kSignal; }
 
 static VkExternalSemaphoreHandleTypeFlags GetExportHandleTypes(const VkSemaphoreCreateInfo* pCreateInfo) {
     auto export_info = vku::FindStructInPNextChain<VkExportSemaphoreCreateInfo>(pCreateInfo->pNext);
@@ -352,8 +350,6 @@ void vvl::Semaphore::GetLastBinarySignalSource(VkQueue& queue, vvl::Func& acquir
     if (timeline_.empty()) {
         if (completed_op_ == kSignal && completed_queue_) {
             queue = completed_queue_->VkHandle();
-        } else if (completed_op_ == kBinaryAcquire) {
-            acquire_command = *completed_acquire_command_;
         }
     } else {
         const TimePoint& timepoint = timeline_.rbegin()->second;
