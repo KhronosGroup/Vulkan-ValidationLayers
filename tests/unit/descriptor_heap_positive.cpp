@@ -1158,8 +1158,12 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSampler) {
     mappings[0].sourceData.constantOffset = {};
     mappings[1] = MakeSetAndBindingMapping(0, 1, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-    mappings[1].sourceData.constantOffset = {};
     mappings[1].sourceData.constantOffset.pEmbeddedSampler = &sampler_info;
+    // ignored
+    mappings[1].sourceData.constantOffset.heapOffset = 999;
+    mappings[1].sourceData.constantOffset.heapArrayStride = 999;
+    mappings[1].sourceData.constantOffset.samplerHeapOffset = 999;
+    mappings[1].sourceData.constantOffset.samplerHeapArrayStride = 999;
     mappings[2] = MakeSetAndBindingMapping(1, 0);
     mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[2].sourceData.constantOffset = {};
