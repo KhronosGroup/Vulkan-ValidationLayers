@@ -860,3 +860,46 @@ TEST_F(PositiveCommand, SetPrimitiveRestartIndexLimits) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveCommand, ArmSchedulingControls) {
+    TEST_DESCRIPTION("Use shader-core and dispatch-parameter scheduling controls.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_ARM_SHADER_CORE_BUILTINS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_ARM_SCHEDULING_CONTROLS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::schedulingControls);
+    RETURN_IF_SKIP(InitFramework());
+
+    if (!DeviceExtensionSupported(VK_ARM_SCHEDULING_CONTROLS_EXTENSION_NAME, 2)) {
+        GTEST_SKIP() << VK_ARM_SCHEDULING_CONTROLS_EXTENSION_NAME << " spec version 2 not supported";
+    }
+
+    VkPhysicalDeviceSchedulingControlsDispatchParametersPropertiesARM dispatch_props = vku::InitStructHelper();
+    VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM shader_core_props = vku::InitStructHelper(&dispatch_props);
+    VkPhysicalDeviceSchedulingControlsPropertiesARM scheduling_props = vku::InitStructHelper(&shader_core_props);
+    GetPhysicalDeviceProperties2(scheduling_props);
+
+    constexpr VkPhysicalDeviceSchedulingControlsFlagsARM required_controls =
+        VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM |
+        VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_DISPATCH_PARAMETERS_ARM;
+    if ((scheduling_props.schedulingControlsFlags & required_controls) != required_controls) {
+        GTEST_SKIP() << "Required features not supported";
+    }
+
+    VkDeviceQueueShaderCoreControlCreateInfoARM shader_core_control = vku::InitStructHelper();
+    shader_core_control.shaderCoreCount = 1;
+    RETURN_IF_SKIP(InitState(nullptr, &shader_core_control));
+
+    if ((m_default_queue_caps & VK_QUEUE_COMPUTE_BIT) == 0) {
+        GTEST_SKIP() << "Default queue does not support compute commands";
+    }
+
+    VkDispatchParametersARM dispatch_parameters = vku::InitStructHelper();
+    dispatch_parameters.maxWarpsPerShaderCore = dispatch_props.schedulingControlsMaxWarpsCount;
+    dispatch_parameters.maxQueuedWorkGroupBatches = dispatch_props.schedulingControlsMaxQueuedBatchesCount;
+    dispatch_parameters.workGroupBatchSize = dispatch_props.schedulingControlsMaxWorkGroupBatchSize;
+
+    m_command_buffer.Begin();
+    vk::CmdSetDispatchParametersARM(m_command_buffer, &dispatch_parameters);
+    m_command_buffer.End();
+}

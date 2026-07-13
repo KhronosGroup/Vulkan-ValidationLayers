@@ -26908,6 +26908,7 @@ bool Device::PreCallValidateCmdSetDispatchParametersARM(VkCommandBuffer commandB
                                             GeneratedVulkanHeaderVersion, "VUID-VkDispatchParametersARM-pNext-pNext",
                                             kVUIDUndefined, true);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdSetDispatchParametersARM(commandBuffer, pDispatchParameters, context);
     return skip;
 }
 
