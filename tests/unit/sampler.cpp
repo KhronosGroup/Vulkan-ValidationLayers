@@ -1838,3 +1838,260 @@ TEST_F(NegativeSampler, MissingSamplerConversion) {
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSampler, FilterCubicFormatProperties) {
+    TEST_DESCRIPTION("Try to query FilterCubicFormatProperties without providing "
+                     "VkPhysicalDeviceImageViewImageFormatInfoEXT in the pNext chain of VkPhysicalDeviceImageFormatInfo2, "
+                     "or provide an imageViewType that is not compatible with imageType.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_FILTER_CUBIC_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    {
+        VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
+        image_format_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+        image_format_info.type = VK_IMAGE_TYPE_2D;
+        image_format_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        image_format_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+        VkFilterCubicImageViewImageFormatPropertiesEXT cubic_props = vku::InitStructHelper();
+        VkImageFormatProperties2 image_format_props2 = vku::InitStructHelper(&cubic_props);
+
+        m_errorMonitor->SetDesiredError("VUID-VkFilterCubicImageViewImageFormatPropertiesEXT-pNext-02627");
+        vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_format_info, &image_format_props2);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkPhysicalDeviceImageViewImageFormatInfoEXT image_view_info = vku::InitStructHelper();
+        image_view_info.imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+        VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper(&image_view_info);
+        image_format_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+        image_format_info.type = VK_IMAGE_TYPE_2D;
+        image_format_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        image_format_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+        VkFilterCubicImageViewImageFormatPropertiesEXT cubic_props = vku::InitStructHelper();
+        VkImageFormatProperties2 image_format_props2 = vku::InitStructHelper(&cubic_props);
+
+        m_errorMonitor->SetDesiredError("VUID-VkFilterCubicImageViewImageFormatPropertiesEXT-pNext-02627");
+        vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_format_info, &image_format_props2);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeSampler, BlitImageButUseIncorrectCubicFilterWeights) {
+    TEST_DESCRIPTION("Try to blit an image with VK_FILTER_CUBIC_EXT filter while the selectableCubicWeights feature is not enabled, "
+                     "but cubicFilterWeights is not VK_CUBIC_FILTER_WEIGHTS_CATMULL_ROM_QCOM.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_FILTER_CUBIC_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_FILTER_CUBIC_WEIGHTS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::samplerFilterMinmax);
+    RETURN_IF_SKIP(Init());
+
+    constexpr VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT |
+                                    VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
+        GTEST_SKIP() << "VK_FORMAT_R8G8B8A8_UNORM doesn't support blit or filterCubic feature, skipping test.";
+    }
+
+    vkt::Image src_image{*m_device, 64, 64, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT};
+    vkt::Image dst_image{*m_device, 64, 64, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT};
+    VkImageBlit2 image_blit2 = vku::InitStructHelper();
+    image_blit2.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    image_blit2.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    image_blit2.srcOffsets[1] = {63, 63, 1};
+    image_blit2.dstOffsets[1] = {63, 63, 1};
+    VkBlitImageCubicWeightsInfoQCOM weights_info = vku::InitStructHelper();
+    weights_info.cubicWeights = VK_CUBIC_FILTER_WEIGHTS_MITCHELL_NETRAVALI_QCOM;
+    VkBlitImageInfo2 blit_image_info2 = vku::InitStructHelper(&weights_info);
+    blit_image_info2.srcImage = src_image;
+    blit_image_info2.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    blit_image_info2.dstImage = dst_image;
+    blit_image_info2.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    blit_image_info2.regionCount = 1;
+    blit_image_info2.pRegions = &image_blit2;
+    blit_image_info2.filter = VK_FILTER_CUBIC_EXT;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkBlitImageInfo2-filter-09204");
+    vk::CmdBlitImage2(m_command_buffer, &blit_image_info2);
+    m_command_buffer.End();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSampler, FilterCubicRangeClampWithIncorrectReducionMode) {
+    TEST_DESCRIPTION("Try to sample an image view with VK_FILTER_CUBIC_EXT filter and sampler reductionMode "
+                     "VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE_RANGECLAMP_QCOM while the cubicRangeClamp feature is not enabled.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_FILTER_CUBIC_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_FILTER_CUBIC_CLAMP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::samplerFilterMinmax);
+    RETURN_IF_SKIP(Init());
+
+    constexpr VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkPhysicalDeviceImageViewImageFormatInfoEXT phy_image_view_info = vku::InitStructHelper();
+    phy_image_view_info.imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+    VkPhysicalDeviceImageFormatInfo2 phy_image_format_info2 = vku::InitStructHelper(&phy_image_view_info);
+    phy_image_format_info2.format = format;
+    phy_image_format_info2.type = VK_IMAGE_TYPE_2D;
+    phy_image_format_info2.tiling = VK_IMAGE_TILING_OPTIMAL;
+    phy_image_format_info2.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkFilterCubicImageViewImageFormatPropertiesEXT cubic_props = vku::InitStructHelper();
+    VkImageFormatProperties2 image_format_props2 = vku::InitStructHelper(&cubic_props);
+    vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &phy_image_format_info2, &image_format_props2);
+
+    if (!cubic_props.filterCubic) {
+        GTEST_SKIP() << "VK_FORMAT_R8G8B8A8_UNORM doesn't support filterCubic feature, skipping test.";
+    }
+
+    vkt::Image sampled_image{*m_device, 64, 64, format, VK_IMAGE_USAGE_SAMPLED_BIT};
+    vkt::ImageView image_view = sampled_image.CreateView();
+
+    VkSamplerReductionModeCreateInfo reduction_mode_ci = vku::InitStructHelper();
+    reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE_RANGECLAMP_QCOM;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo(&reduction_mode_ci);
+    sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
+    sampler_ci.minFilter = VK_FILTER_CUBIC_EXT;
+    vkt::Sampler sampler{*m_device, sampler_ci};
+
+    const char* cs_source = R"glsl(
+        #version 450
+
+        layout(set = 0, binding = 0) uniform sampler2D sampled_tex;
+        layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+        void main() {
+            vec4 color = texture(sampled_tex, vec2(0.5, 0.5));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2};
+    compute_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    compute_pipe.CreateComputePipeline();
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    compute_pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe.pipeline_layout_, 0, 1,
+                              &compute_pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-cubicRangeClamp-09212");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSampler, AverageRangeClampReductionModeWithIncorrectFilter) {
+    TEST_DESCRIPTION("Try to sample an image view with sampler reductionMode VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE_RANGECLAMP_QCOM "
+                     "while the sampler filter is not VK_FILTER_CUBIC_EXT.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_FILTER_CUBIC_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_FILTER_CUBIC_CLAMP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cubicRangeClamp);
+    AddRequiredFeature(vkt::Feature::samplerFilterMinmax);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Image sampled_image{*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT};
+    vkt::ImageView image_view = sampled_image.CreateView();
+
+    VkSamplerReductionModeCreateInfo reduction_mode_ci = vku::InitStructHelper();
+    reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE_RANGECLAMP_QCOM;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo(&reduction_mode_ci);
+    vkt::Sampler sampler{*m_device, sampler_ci};
+
+    const char* cs_source = R"glsl(
+        #version 450
+
+        layout(set = 0, binding = 0) uniform sampler2D sampled_tex;
+        layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+        void main() {
+            vec4 color = texture(sampled_tex, vec2(0.5, 0.5));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2};
+    compute_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    compute_pipe.CreateComputePipeline();
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    compute_pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe.pipeline_layout_, 0, 1,
+                              &compute_pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-reductionMode-09213");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSampler, ImageSampledWithIncorrectCubicFilterWeights) {
+    TEST_DESCRIPTION("Try to sample an image view with VK_FILTER_CUBIC_EXT filter while the selectableCubicWeights feature is not "
+                     "enabled, but cubicFilterWeights is not VK_CUBIC_FILTER_WEIGHTS_CATMULL_ROM_QCOM.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_FILTER_CUBIC_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_FILTER_CUBIC_WEIGHTS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::samplerFilterMinmax);
+    RETURN_IF_SKIP(Init());
+
+    constexpr VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkPhysicalDeviceImageViewImageFormatInfoEXT phy_image_view_info = vku::InitStructHelper();
+    phy_image_view_info.imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+    VkPhysicalDeviceImageFormatInfo2 phy_image_format_info2 = vku::InitStructHelper(&phy_image_view_info);
+    phy_image_format_info2.format = format;
+    phy_image_format_info2.type = VK_IMAGE_TYPE_2D;
+    phy_image_format_info2.tiling = VK_IMAGE_TILING_OPTIMAL;
+    phy_image_format_info2.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkFilterCubicImageViewImageFormatPropertiesEXT cubic_props = vku::InitStructHelper();
+    VkImageFormatProperties2 image_format_props2 = vku::InitStructHelper(&cubic_props);
+    vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &phy_image_format_info2, &image_format_props2);
+
+    if (!cubic_props.filterCubic) {
+        GTEST_SKIP() << "VK_FORMAT_R8G8B8A8_UNORM doesn't support filterCubic feature, skipping test.";
+    }
+
+    vkt::Image sampled_image{*m_device, 64, 64, format, VK_IMAGE_USAGE_SAMPLED_BIT};
+    vkt::ImageView image_view = sampled_image.CreateView();
+
+    VkSamplerCubicWeightsCreateInfoQCOM weights_ci = vku::InitStructHelper();
+    weights_ci.cubicWeights = VK_CUBIC_FILTER_WEIGHTS_MITCHELL_NETRAVALI_QCOM;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo(&weights_ci);
+    sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
+    sampler_ci.minFilter = VK_FILTER_CUBIC_EXT;
+    vkt::Sampler sampler{*m_device, sampler_ci};
+
+    const char* cs_source = R"glsl(
+        #version 450
+
+        layout(set = 0, binding = 0) uniform sampler2D sampled_tex;
+        layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+        void main() {
+            vec4 color = texture(sampled_tex, vec2(0.5, 0.5));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2};
+    compute_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    compute_pipe.CreateComputePipeline();
+    compute_pipe.descriptor_set_.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    compute_pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe.pipeline_layout_, 0, 1,
+                              &compute_pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-selectableCubicWeights-09214");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
