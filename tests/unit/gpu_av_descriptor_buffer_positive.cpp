@@ -556,3 +556,91 @@ TEST_F(PositiveGpuAVDescriptorBuffer, DescriptorHashingBasic) {
     ASSERT_TRUE(data[1] == 12);
     ASSERT_TRUE(data[2] == 20);
 }
+
+TEST_F(PositiveGpuAVDescriptorBuffer, ComputeAndGraphics) {
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    static const VkLayerSettingEXT layer_settings = {OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                                     &kVkTrue};
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer({layer_settings}, false));
+    InitRenderTarget();
+
+    vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
+                                                  VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    const vkt::DescriptorSetLayout set_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout, &set_layout});
+
+    vkt::Buffer ssbo_buffer(*m_device, sizeof(float) * 8u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, ssbo_buffer, 32u);
+
+    uint8_t* mapped_descriptor_data = (uint8_t*)descriptor_buffer.Memory().Map();
+    vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
+
+    const char* vs_source = R"glsl(
+            #version 450
+            layout (set = 0, binding = 0) buffer Buf {
+                vec4 data[2];
+            } buf;
+            void main() {
+                vec2 pos = vec2(float(gl_VertexIndex & 1), float((gl_VertexIndex >> 1) & 1));
+                gl_Position = vec4(pos, 0.0f, 1.0f);
+                buf.data[0][gl_VertexIndex] = 1.0f;
+            }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper graphics_pipe(*this);
+    graphics_pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    graphics_pipe.shader_stages_[0] = vs.GetStageCreateInfo();
+    graphics_pipe.gp_ci_.layout = pipeline_layout;
+    graphics_pipe.CreateGraphicsPipeline();
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout (set = 1, binding = 0) buffer Buf {
+            vec4 data[2];
+        } buf;
+
+        void main() {
+            buf.data[1].x = gl_LocalInvocationIndex + 1.0f;
+            buf.data[1].y = gl_LocalInvocationIndex + 2.0f;
+            buf.data[1].z = gl_LocalInvocationIndex + 3.0f;
+            buf.data[1].w = gl_LocalInvocationIndex + 4.0f;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper compute_pipe(*this);
+    compute_pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    compute_pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    compute_pipe.cp_ci_.layout = pipeline_layout;
+    compute_pipe.CreateComputePipeline();
+
+    const uint32_t index = 0;
+    const VkDeviceSize offset = 0;
+    VkDescriptorBufferBindingInfoEXT buffer_binding_info = vku::InitStructHelper();
+    buffer_binding_info.address = descriptor_buffer.Address();
+    buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipe);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
+
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 1, 1, &index, &offset);
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    float* data = (float*)ssbo_buffer.Memory().Map();
+    for (uint32_t i = 0; i < 4; i++) {
+        ASSERT_EQ(data[i], 1.0f);
+        ASSERT_EQ(data[i + 4], float(i + 1));
+    }
+}
