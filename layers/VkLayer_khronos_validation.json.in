@@ -1004,7 +1004,7 @@
                                                     "label": "CDL dump file",
                                                     "description": "Path to a Crash Diagnostic Layer (CDL) dump file. Pipeline names found in this file will be selected for instrumentation.",
                                                     "type": "LOAD_FILE",
-                                                    "default": [],
+                                                    "default": "",
                                                     "dependence": {
                                                         "mode": "ALL",
                                                         "settings": [
