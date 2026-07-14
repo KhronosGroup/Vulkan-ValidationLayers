@@ -3955,9 +3955,9 @@ TEST_F(NegativeDebugPrintf, DrawIndexedIndirect) {
     auto indirect_command = static_cast<VkDrawIndexedIndirectCommand*>(indirect_buffer.Memory().Map());
     indirect_command->indexCount = 3;
     indirect_command->instanceCount = 1;
-    indirect_command->firstIndex = 1;
-    indirect_command->vertexOffset = 1;
-    indirect_command->firstInstance = 1;
+    indirect_command->firstIndex = 0;
+    indirect_command->vertexOffset = 0;
+    indirect_command->firstInstance = 0;
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -4002,9 +4002,9 @@ TEST_F(NegativeDebugPrintf, DrawIndirectCount) {
     auto indirect_command = static_cast<VkDrawIndexedIndirectCommand*>(indirect_buffer.Memory().Map());
     indirect_command->indexCount = 3;
     indirect_command->instanceCount = 1;
-    indirect_command->firstIndex = 1;
-    indirect_command->vertexOffset = 1;
-    indirect_command->firstInstance = 1;
+    indirect_command->firstIndex = 0;
+    indirect_command->vertexOffset = 0;
+    indirect_command->firstInstance = 0;
 
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t* count_ptr = static_cast<uint32_t*>(count_buffer.Memory().Map());
@@ -4054,9 +4054,9 @@ TEST_F(NegativeDebugPrintf, DrawIndexedIndirectCount) {
     auto indirect_command = static_cast<VkDrawIndexedIndirectCommand*>(indirect_buffer.Memory().Map());
     indirect_command->indexCount = 3;
     indirect_command->instanceCount = 1;
-    indirect_command->firstIndex = 1;
-    indirect_command->vertexOffset = 1;
-    indirect_command->firstInstance = 1;
+    indirect_command->firstIndex = 0;
+    indirect_command->vertexOffset = 0;
+    indirect_command->firstInstance = 0;
 
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t* count_ptr = static_cast<uint32_t*>(count_buffer.Memory().Map());

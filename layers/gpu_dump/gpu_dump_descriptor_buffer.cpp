@@ -202,7 +202,8 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
 
     vvl::unordered_map<uint32_t, VkBufferUsageFlagBits2> binding_usage_flags;
     uint32_t binding_info_count = (uint32_t)cb_state.descriptor_buffer.binding_info.size();
-    if (dev_data.enabled[gpu_validation] && dev_data.gpuav_settings.IsShaderInstrumentationEnabled()) {
+    // Can be zero if using only push constants
+    if (dev_data.enabled[gpu_validation] && dev_data.gpuav_settings.IsShaderInstrumentationEnabled() && binding_info_count != 0) {
         // We warn the users to not have both enabled, but if this occurs GPU-AV currently adds a buffer
         // but it is not tracked in any state tracking. (nor are the instrumented variables)
         // We just ignore the last binding
