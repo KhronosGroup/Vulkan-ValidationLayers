@@ -42,6 +42,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordCopyMemoryIndirect(const VkCopyMemoryIndirectInfoKHR& info, const Location& loc) final;
     void RecordCopyMemoryToImageIndirect(const VkCopyMemoryToImageIndirectInfoKHR& info, const Location& loc) final;
 
+    std::vector<uint8_t> push_data_value;
+
   private:
     void DumpDescriptors(const LastBound& last_bound, const Location& loc) const;
     bool DumpDescriptorBuffer(std::ostringstream& ss, const LastBound& last_bound) const;
@@ -76,8 +78,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     void DumpDeviceGeneratedCommands(const VkGeneratedCommandsInfoEXT& info, VkPipelineBindPoint bind_point,
                                      const Location& loc) const;
-
-    std::vector<uint8_t> push_data_value;
 };
 
 static inline CommandBufferSubState& SubState(vvl::CommandBuffer& cb) {

@@ -1721,12 +1721,14 @@ TEST_F(PositiveDescriptorHeapUntyped, SlangBasicBuffer) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
     vkt::DescriptorHeap desc_heap(*this);
-    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
+    // Because of -spirv-unified-descriptor-heap-stride
+    const VkDeviceSize resource_stride = std::max(heap_props.imageDescriptorSize, heap_props.bufferDescriptorSize);
+    desc_heap.CreateResourceHeap(resource_stride * 2);
 
     vkt::Buffer buffer_0(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     vkt::Buffer buffer_1(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptor(buffer_0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    desc_heap.WriteBufferDescriptor(buffer_1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer_0.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer_1.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride);
 
     // Heap support not yet in any release build
     //   will need -capability spvDescriptorHeapEXT -spirv-unified-descriptor-heap-stride

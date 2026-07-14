@@ -1587,8 +1587,59 @@ TEST_F(NegativeGpuDump, DescriptorHeapBindingCount) {
     m_command_buffer.End();
 }
 
-// TODO - Handle proper support
-TEST_F(NegativeGpuDump, DISABLED_UntypedPointersMultiDimensional) {
+TEST_F(NegativeGpuDump, DescriptorHeapUntypedPointersPushDataIndex) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitDescriptorHeap());
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(8192);
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Alignment not reliable on MockICD";
+    }
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_descriptor_heap : require
+        #extension GL_EXT_nonuniform_qualifier : require
+        layout(descriptor_heap) buffer Heap { uint x; } heap[];
+        layout(push_constant) uniform PushConstant {
+            uint pc_0;
+            layout(offset = 32) uint pc_1;
+            uint pc_2; // offset 36
+        };
+        void main() {
+            heap[0].x = 0;
+            heap[pc_0].x = 1;
+            heap[pc_1].x = 2;
+            heap[pc_0 + pc_2].x = 3;
+            heap[pc_0 * pc_2 + pc_1].x = 4;
+            heap[pc_0 + 1].x = 5;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+    uint8_t unused[40];
+    m_command_buffer.PushData(0, 40, unused);  // avoid 11376
+    uint32_t pc_0 = 2;
+    uint32_t pc_1 = 1;
+    uint32_t pc_2 = 3;
+    m_command_buffer.PushData(0, sizeof(uint32_t), &pc_0);
+    m_command_buffer.PushData(32, sizeof(uint32_t), &pc_1);
+    m_command_buffer.PushData(36, sizeof(uint32_t), &pc_2);
+    m_errorMonitor->SetDesiredInfo("array index: [1] (from vkCmdPushDataEXT[32:35])");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeGpuDump, UntypedPointersMultiDimensional) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/spirv/SPIR-V/-/issues/942");
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
@@ -1655,7 +1706,9 @@ TEST_F(NegativeGpuDump, DISABLED_UntypedPointersMultiDimensional) {
 
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    m_errorMonitor->SetDesiredInfo("array index: [1][2]");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
 
