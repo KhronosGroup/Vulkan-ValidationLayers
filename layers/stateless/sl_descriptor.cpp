@@ -1213,6 +1213,32 @@ bool Device::manual_PreCallValidateCreateSamplerYcbcrConversion(VkDevice device,
         }
     }
 
+    if (const auto* ycbcr_degamma_ci =
+            vku::FindStructInPNextChain<VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM>(pCreateInfo->pNext)) {
+        if (!enabled_features.ycbcrDegamma) {
+            if (ycbcr_degamma_ci->enableYDegamma) {
+                skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-pNext-09207", device,
+                                 create_info_loc.pNext(Struct::VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM, Field::enableYDegamma),
+                                 "is VK_TRUE, but VkPhysicalDeviceYcbcrDegammaFeaturesQCOM::ycbcrDegamma is not enabled.");
+            }
+            if (ycbcr_degamma_ci->enableCbCrDegamma) {
+                skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-pNext-09208", device,
+                                 create_info_loc.pNext(Struct::VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM, Field::enableCbCrDegamma),
+                                 "is VK_TRUE, but VkPhysicalDeviceYcbcrDegammaFeaturesQCOM::ycbcrDegamma is not enabled.");
+            }
+        }
+
+        const bool has_rgb = vkuFormatHasRed(format) && vkuFormatHasGreen(format) && vkuFormatHasBlue(format);
+        const bool is_8bit_format = vkuFormatIs8bit(format);
+        if (!has_rgb || !is_8bit_format) {
+            skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-pNext-09209", device, create_info_loc.dot(Field::format),
+                             "(%s) is %s, but VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM requires a format with 8-bit "
+                             "R, G, and B components.",
+                             string_VkFormat(format),
+                             !is_8bit_format ? "not an 8-bit format" : "missing an R, G, or B component");
+        }
+    }
+
     return skip;
 }
 

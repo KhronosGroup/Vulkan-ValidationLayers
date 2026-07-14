@@ -2279,3 +2279,73 @@ TEST_F(NegativeYcbcr, MutableFullImageView) {
     vkt::ImageView view(*m_device, ivci);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeYcbcr, YcbcrDegammaFeatureNotEnabled) {
+    TEST_DESCRIPTION("Try to use Ycbcr degamma in Ycbcr conversion sampler, but the ycbcrDegamma feature isn't enabled.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_YCBCR_DEGAMMA_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    constexpr VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM doesn't support sampled-image and chroma-samples, skipping test.";
+    }
+
+    VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM ycbcr_degamma_ci = vku::InitStructHelper();
+    ycbcr_degamma_ci.enableYDegamma = VK_TRUE;
+    VkSamplerYcbcrConversionCreateInfo ycbcr_conversion_ci = vkt::SamplerYcbcrConversion::DefaultConversionInfo(format);
+    ycbcr_conversion_ci.pNext = &ycbcr_degamma_ci;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-pNext-09207");
+    vkt::SamplerYcbcrConversion sampler_ycbcr_conversion1{*m_device, ycbcr_conversion_ci};
+    m_errorMonitor->VerifyFound();
+
+    ycbcr_degamma_ci.enableYDegamma = VK_FALSE;
+    ycbcr_degamma_ci.enableCbCrDegamma = VK_TRUE;
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-pNext-09208");
+    vkt::SamplerYcbcrConversion sampler_ycbcr_conversion2{*m_device, ycbcr_conversion_ci};
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeYcbcr, Non8BitFormatYcbcrDegamma) {
+    TEST_DESCRIPTION("Try to use Ycbcr degamma in Ycbcr conversion sampler, but the ycbcr format isn't 8-bit.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_YCBCR_DEGAMMA_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    AddRequiredFeature(vkt::Feature::ycbcrDegamma);
+    RETURN_IF_SKIP(Init());
+
+    constexpr std::array<VkFormat, 6> ycbcr_format_candidates{
+        VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16,
+        VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16,
+        VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16,
+        VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_420_UNORM_3PACK16,
+        VK_FORMAT_G16_B16R16_2PLANE_420_UNORM,
+        VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM,
+    };
+    VkFormat supported_ycbcr_format = VK_FORMAT_UNDEFINED;
+    for (const VkFormat format : ycbcr_format_candidates) {
+        if (FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                       VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+            supported_ycbcr_format = format;
+            break;
+        }
+    }
+    if (supported_ycbcr_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Failed to find non-8-bit format that supports sampled-image and chroma-samples from candidates, skipping test.";
+    }
+
+    VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM ycbcr_degamma_ci = vku::InitStructHelper();
+    ycbcr_degamma_ci.enableYDegamma = VK_TRUE;
+    ycbcr_degamma_ci.enableCbCrDegamma = VK_TRUE;
+    VkSamplerYcbcrConversionCreateInfo ycbcr_conversion_ci = vkt::SamplerYcbcrConversion::DefaultConversionInfo(supported_ycbcr_format);
+    ycbcr_conversion_ci.pNext = &ycbcr_degamma_ci;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-pNext-09209");
+    vkt::SamplerYcbcrConversion sampler_ycbcr_conversion{*m_device, ycbcr_conversion_ci};
+    m_errorMonitor->VerifyFound();
+}

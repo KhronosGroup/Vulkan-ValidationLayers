@@ -966,3 +966,86 @@ TEST_F(PositiveYcbcr, DescriptorIndexNotYCbcr) {
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 }
+
+TEST_F(PositiveYcbcr, YcbcrDegammaCombinedSampledImage) {
+    TEST_DESCRIPTION("Use Ycbcr degamma in Ycbcr conversion sampler.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_YCBCR_DEGAMMA_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    AddRequiredFeature(vkt::Feature::ycbcrDegamma);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    constexpr VkFormat format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    if (!IsImageFormatSupported(Gpu(), image_ci,
+                                VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "VK_FORMAT_G8_B8R8_2PLANE_420_UNORM format doesn't support sampled-image and chroma-samples, skipping test.";
+    }
+
+    vkt::Image image{*m_device, image_ci, vkt::set_layout};
+
+    VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM ycbcr_degamma_ci = vku::InitStructHelper();
+    ycbcr_degamma_ci.enableYDegamma = VK_TRUE;
+    ycbcr_degamma_ci.enableCbCrDegamma = VK_TRUE;
+    VkSamplerYcbcrConversionCreateInfo ycbcr_conversion_ci = vkt::SamplerYcbcrConversion::DefaultConversionInfo(format);
+    ycbcr_conversion_ci.pNext = &ycbcr_degamma_ci;
+    vkt::SamplerYcbcrConversion conversion{*m_device, ycbcr_conversion_ci};
+    auto conversion_info = conversion.ConversionInfo();
+    vkt::Sampler sampler{*m_device, SafeSaneSamplerCreateInfo(&conversion_info)};
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT, &conversion_info);
+
+    const char* fs_source = R"glsl(
+        #version 450
+
+        layout (set = 0, binding = 0) uniform sampler2D ycbcr;
+        layout(location = 0) out vec4 out_color;
+
+        void main() {
+            out_color = texture(ycbcr, vec2(0.0, 0.0));
+        }
+    )glsl";
+
+    VkShaderObj fs{*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_1};
+
+    CreatePipelineHelper graphics_pipe{*this};
+    graphics_pipe.shader_stages_ = {graphics_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    graphics_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()}};
+    graphics_pipe.CreateGraphicsPipeline();
+    graphics_pipe.descriptor_set_->WriteDescriptorImageInfo(0, image_view, nullptr, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    graphics_pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipe.pipeline_layout_,
+                              0, 1, &graphics_pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveYcbcr, YcbcrDegammaSinglePlanePackedFormat) {
+    TEST_DESCRIPTION("Use Ycbcr degamma with a single-plane packed 8-bit YCbCr format.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_YCBCR_DEGAMMA_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    AddRequiredFeature(vkt::Feature::ycbcrDegamma);
+    RETURN_IF_SKIP(Init());
+
+    constexpr VkFormat format = VK_FORMAT_G8B8G8R8_422_UNORM;
+    if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "VK_FORMAT_G8B8G8R8_422_UNORM doesn't support sampled-image and chroma-samples, skipping test.";
+    }
+
+    VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM ycbcr_degamma_ci = vku::InitStructHelper();
+    ycbcr_degamma_ci.enableYDegamma = VK_TRUE;
+    ycbcr_degamma_ci.enableCbCrDegamma = VK_TRUE;
+    VkSamplerYcbcrConversionCreateInfo ycbcr_conversion_ci = vkt::SamplerYcbcrConversion::DefaultConversionInfo(format);
+    ycbcr_conversion_ci.pNext = &ycbcr_degamma_ci;
+    vkt::SamplerYcbcrConversion conversion{*m_device, ycbcr_conversion_ci};
+}
