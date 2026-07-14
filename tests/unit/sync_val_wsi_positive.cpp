@@ -1106,9 +1106,14 @@ TEST_F(PositiveSyncValWsi, ConcurrentPresentAndSubmit) {
     });
     {
         vkt::Semaphore acquire_semaphore(*m_device);
+        std::vector<vkt::Semaphore> present_wait_semaphores;
+        for (size_t k = 0; k < swapchain_images.size(); k++) {
+            present_wait_semaphores.emplace_back(*m_device);
+        }
         for (int i = 0; i < N; i++) {
             const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
-            m_default_queue->Present(m_swapchain, image_index, acquire_semaphore);
+            m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(present_wait_semaphores[image_index]));
+            m_default_queue->Present(m_swapchain, image_index, present_wait_semaphores[image_index]);
             m_default_queue->Wait();
             if (bailout.load()) {
                 break;
