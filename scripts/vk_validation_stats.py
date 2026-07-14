@@ -93,7 +93,8 @@ class ValidationSource:
                 for line in f:
                     line_num = line_num + 1
                     if True in [line.strip().startswith(comment) for comment in ['//', '/*']]:
-                        if 'VUID-' not in line or 'TODO:' in line or 'Note:' in line:
+                        vuid_pattern = r"VUID-\w+-\w+"
+                        if 'TODO:' in line or 'Note:' in line or not re.search(vuid_pattern, line):
                             continue
                     # Find vuid strings
                     if prepend is not None:
