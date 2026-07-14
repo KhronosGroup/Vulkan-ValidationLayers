@@ -3344,6 +3344,88 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingWrongDescriptorUntyped) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptorUntypedSlang) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 4);
+
+    // Same shader as PositiveDescriptorHeapUntyped.SlangBasicBuffer
+    char const* cs_source = R"(
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpCapability Shader
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %slang_resourceHeap %g_Push
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %PushConstants_std430 Block
+               OpMemberDecorate %PushConstants_std430 0 Offset 0
+               OpDecorateId %_runtimearr_18 ArrayStrideIdEXT %26
+               OpDecorate %slang_resourceHeap BuiltIn ResourceHeapEXT
+               OpDecorate %_runtimearr_uint ArrayStride 4
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %_ptr_StorageBuffer_uint ArrayStride 4
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%PushConstants_std430 = OpTypeStruct %uint
+%_ptr_PushConstant_PushConstants_std430 = OpTypePointer PushConstant %PushConstants_std430
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_PushConstant_uint = OpTypePointer PushConstant %uint
+         %18 = OpTypeBufferEXT StorageBuffer
+      %float = OpTypeFloat 32
+         %20 = OpTypeImage %float 2D 2 0 0 1 Unknown
+         %21 = OpTypeBufferEXT Uniform
+         %22 = OpConstantSizeOfEXT %uint %20
+         %23 = OpConstantSizeOfEXT %uint %21
+       %bool = OpTypeBool
+         %25 = OpSpecConstantOp %bool UGreaterThan %22 %23
+         %26 = OpSpecConstantOp %uint Select %25 %22 %23
+%_runtimearr_18 = OpTypeRuntimeArray %18
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%_runtimearr_uint = OpTypeRuntimeArray %uint
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_uint
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+    %uint_42 = OpConstant %uint 42
+     %g_Push = OpVariable %_ptr_PushConstant_PushConstants_std430 PushConstant
+%slang_resourceHeap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+       %main = OpFunction %void None %3
+          %4 = OpLabel
+         %12 = OpAccessChain %_ptr_PushConstant_uint %g_Push %int_0
+         %13 = OpLoad %uint %12
+         %29 = OpUntypedAccessChainKHR %_ptr_UniformConstant %_runtimearr_18 %slang_resourceHeap %13
+         %34 = OpBufferPointerEXT %_ptr_StorageBuffer_RWStructuredBuffer %29
+         %36 = OpAccessChain %_ptr_StorageBuffer_uint %34 %int_0 %int_0
+         %37 = OpLoad %uint %12
+         %38 = OpIAdd %uint %uint_42 %37
+               OpStore %36 %38
+               OpReturn
+               OpFunctionEnd
+    )";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+
+    m_command_buffer.Begin();
+    uint32_t index = 2;
+    m_command_buffer.PushData(0, sizeof(uint32_t), &index);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-No-Descriptor");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptorCombinedImageSampler) {
     const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));

@@ -275,6 +275,312 @@ TEST_F(PositiveDescriptorHeapUntyped, ImageAndSampler) {
     }
 }
 
+TEST_F(PositiveDescriptorHeapUntyped, ImageAndSamplerSlang) {
+    TEST_DESCRIPTION("called without -spirv-unified-descriptor-heap-stride");
+    AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::computeDerivativeGroupQuads);
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+    InitRenderTarget();
+
+    const VkDeviceSize resource_stride = std::max(heap_props.imageDescriptorSize, heap_props.bufferDescriptorSize);
+    const uint32_t image_index = 8;
+    const uint32_t buffer_index = 1;
+
+    const VkDeviceSize image_offset = heap_props.imageDescriptorSize * image_index;
+    const VkDeviceSize buffer_offset = heap_props.bufferDescriptorSize * buffer_index;
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(resource_stride * 10);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
+    desc_heap.WriteImageDescriptorAtOffset(image, image_offset);
+
+    desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
+    desc_heap.WriteSamplerDescriptor();
+
+    // struct SSBO { float4 data; };
+    // struct PushConstants {
+    //     uint buffer_index;
+    //     uint image_index;
+    // };
+    // [[vk::push_constant]] PushConstants g_Push;
+    // [shader("compute")]
+    // [numthreads(2, 2, 1)]
+    // void main() {
+    //     Texture2D<float4> heapTexture = ResourceDescriptorHeap[g_Push.image_index];
+    //     SamplerState heapSampler = SamplerDescriptorHeap[0];
+    //     float4 sampleColor = heapTexture.Sample(heapSampler, float2(0.5f, 0.5f));
+    //     RWStructuredBuffer<SSBO> heapBuffer = ResourceDescriptorHeap[g_Push.buffer_index];
+    //     heapBuffer[0].data = sampleColor;
+    // }
+    char const* cs_source = R"(
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpCapability ComputeDerivativeGroupQuadsKHR
+               OpCapability Shader
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_compute_shader_derivatives"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %slang_resourceHeap %slang_samplerHeap %g_Push
+               OpExecutionMode %main DerivativeGroupQuadsKHR
+               OpExecutionMode %main LocalSize 2 2 1
+               OpDecorate %PushConstants_std430 Block
+               OpMemberDecorate %PushConstants_std430 0 Offset 0
+               OpMemberDecorate %PushConstants_std430 1 Offset 4
+               OpDecorateId %_runtimearr_19 ArrayStrideIdEXT %20
+               OpDecorate %slang_resourceHeap BuiltIn ResourceHeapEXT
+               OpDecorateId %_runtimearr_28 ArrayStrideIdEXT %29
+               OpDecorate %slang_samplerHeap BuiltIn SamplerHeapEXT
+               OpDecorateId %_runtimearr_47 ArrayStrideIdEXT %48
+               OpMemberDecorate %SSBO_std430 0 Offset 0
+               OpDecorate %_runtimearr_SSBO_std430 ArrayStride 16
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %_ptr_StorageBuffer_SSBO_std430 ArrayStride 16
+               OpDecorate %_ptr_StorageBuffer_v4float ArrayStride 16
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%PushConstants_std430 = OpTypeStruct %uint %uint
+%_ptr_PushConstant_PushConstants_std430 = OpTypePointer PushConstant %PushConstants_std430
+        %int = OpTypeInt 32 1
+      %int_1 = OpConstant %int 1
+%_ptr_PushConstant_uint = OpTypePointer PushConstant %uint
+     %uint_0 = OpConstant %uint 0
+      %float = OpTypeFloat 32
+         %19 = OpTypeImage %float 2D 2 0 0 1 Unknown
+         %20 = OpConstantSizeOfEXT %uint %19
+%_runtimearr_19 = OpTypeRuntimeArray %19
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+         %28 = OpTypeSampler
+         %29 = OpConstantSizeOfEXT %uint %28
+%_runtimearr_28 = OpTypeRuntimeArray %28
+         %34 = OpTypeSampledImage %19
+    %v4float = OpTypeVector %float 4
+    %v2float = OpTypeVector %float 2
+  %float_0_5 = OpConstant %float 0.5
+         %39 = OpConstantComposite %v2float %float_0_5 %float_0_5
+      %int_0 = OpConstant %int 0
+         %47 = OpTypeBufferEXT StorageBuffer
+         %48 = OpConstantSizeOfEXT %uint %47
+%_runtimearr_47 = OpTypeRuntimeArray %47
+%SSBO_std430 = OpTypeStruct %v4float
+%_runtimearr_SSBO_std430 = OpTypeRuntimeArray %SSBO_std430
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_SSBO_std430
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+%_ptr_StorageBuffer_SSBO_std430 = OpTypePointer StorageBuffer %SSBO_std430
+%_ptr_StorageBuffer_v4float = OpTypePointer StorageBuffer %v4float
+     %g_Push = OpVariable %_ptr_PushConstant_PushConstants_std430 PushConstant
+%slang_resourceHeap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+%slang_samplerHeap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+       %main = OpFunction %void None %3
+          %4 = OpLabel
+         %12 = OpAccessChain %_ptr_PushConstant_uint %g_Push %int_1
+         %13 = OpLoad %uint %12
+         %23 = OpUntypedAccessChainKHR %_ptr_UniformConstant %_runtimearr_19 %slang_resourceHeap %13
+         %25 = OpLoad %19 %23
+         %31 = OpUntypedAccessChainKHR %_ptr_UniformConstant %_runtimearr_28 %slang_samplerHeap %uint_0
+         %33 = OpLoad %28 %31
+         %35 = OpSampledImage %34 %25 %33
+  %__sampled = OpImageSampleImplicitLod %v4float %35 %39 None
+         %43 = OpAccessChain %_ptr_PushConstant_uint %g_Push %int_0
+         %44 = OpLoad %uint %43
+         %50 = OpUntypedAccessChainKHR %_ptr_UniformConstant %_runtimearr_47 %slang_resourceHeap %44
+         %55 = OpBufferPointerEXT %_ptr_StorageBuffer_RWStructuredBuffer %50
+         %57 = OpAccessChain %_ptr_StorageBuffer_SSBO_std430 %55 %int_0 %int_0
+         %59 = OpAccessChain %_ptr_StorageBuffer_v4float %57 %int_0
+               OpStore %59 %__sampled
+               OpReturn
+               OpFunctionEnd
+    )";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+
+    m_command_buffer.Begin();
+    m_command_buffer.PushData(0, 4, &buffer_index);
+    m_command_buffer.PushData(4, 4, &image_index);
+
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkClearColorValue color = {{0.2f, 0.4f, 0.6f, 0.8f}};
+    VkImageSubresourceRange sub_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1u, &sub_range);
+
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    desc_heap.BindSamplerHeap(m_command_buffer);
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        float* data = static_cast<float*>(buffer.Memory().Map());
+        for (uint32_t i = 0; i < 4; ++i) {
+            ASSERT_EQ(data[i], color.float32[i]);
+        }
+    }
+}
+
+TEST_F(PositiveDescriptorHeapUntyped, ImageAndSamplerSlangUnified) {
+    TEST_DESCRIPTION("called with -spirv-unified-descriptor-heap-stride");
+    AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::computeDerivativeGroupQuads);
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+    InitRenderTarget();
+
+    const VkDeviceSize resource_stride = std::max(heap_props.imageDescriptorSize, heap_props.bufferDescriptorSize);
+    const uint32_t image_index = 1;
+    const uint32_t buffer_index = 2;
+
+    const VkDeviceSize image_offset = resource_stride * image_index;
+    const VkDeviceSize buffer_offset = resource_stride * buffer_index;
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(resource_stride * 4);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
+    desc_heap.WriteImageDescriptorAtOffset(image, image_offset);
+
+    desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
+    desc_heap.WriteSamplerDescriptor();
+
+    // struct SSBO { float4 data; };
+    // struct PushConstants {
+    //     uint buffer_index;
+    //     uint image_index;
+    // };
+    // [[vk::push_constant]] PushConstants g_Push;
+    // [shader("compute")]
+    // [numthreads(2, 2, 1)]
+    // void main() {
+    //     Texture2D<float4> heapTexture = ResourceDescriptorHeap[g_Push.image_index];
+    //     SamplerState heapSampler = SamplerDescriptorHeap[0];
+    //     float4 sampleColor = heapTexture.Sample(heapSampler, float2(0.5f, 0.5f));
+    //     RWStructuredBuffer<SSBO> heapBuffer = ResourceDescriptorHeap[g_Push.buffer_index];
+    //     heapBuffer[0].data = sampleColor;
+    // }
+    char const* cs_source = R"(
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpCapability ComputeDerivativeGroupQuadsKHR
+               OpCapability Shader
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_compute_shader_derivatives"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %slang_resourceHeap %slang_samplerHeap %g_Push
+               OpExecutionMode %main DerivativeGroupQuadsKHR
+               OpExecutionMode %main LocalSize 2 2 1
+               OpDecorate %PushConstants_std430 Block
+               OpMemberDecorate %PushConstants_std430 0 Offset 0
+               OpMemberDecorate %PushConstants_std430 1 Offset 4
+               OpDecorateId %_runtimearr_19 ArrayStrideIdEXT %25
+               OpDecorate %slang_resourceHeap BuiltIn ResourceHeapEXT
+               OpDecorateId %_runtimearr_33 ArrayStrideIdEXT %34
+               OpDecorate %slang_samplerHeap BuiltIn SamplerHeapEXT
+               OpDecorateId %_runtimearr_52 ArrayStrideIdEXT %25
+               OpMemberDecorate %SSBO_std430 0 Offset 0
+               OpDecorate %_runtimearr_SSBO_std430 ArrayStride 16
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %_ptr_StorageBuffer_SSBO_std430 ArrayStride 16
+               OpDecorate %_ptr_StorageBuffer_v4float ArrayStride 16
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%PushConstants_std430 = OpTypeStruct %uint %uint
+%_ptr_PushConstant_PushConstants_std430 = OpTypePointer PushConstant %PushConstants_std430
+        %int = OpTypeInt 32 1
+      %int_1 = OpConstant %int 1
+%_ptr_PushConstant_uint = OpTypePointer PushConstant %uint
+     %uint_0 = OpConstant %uint 0
+      %float = OpTypeFloat 32
+         %19 = OpTypeImage %float 2D 2 0 0 1 Unknown
+         %20 = OpTypeBufferEXT Uniform
+         %21 = OpConstantSizeOfEXT %uint %19
+         %22 = OpConstantSizeOfEXT %uint %20
+       %bool = OpTypeBool
+         %24 = OpSpecConstantOp %bool UGreaterThan %21 %22
+         %25 = OpSpecConstantOp %uint Select %24 %21 %22
+%_runtimearr_19 = OpTypeRuntimeArray %19
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+         %33 = OpTypeSampler
+         %34 = OpConstantSizeOfEXT %uint %33
+%_runtimearr_33 = OpTypeRuntimeArray %33
+         %39 = OpTypeSampledImage %19
+    %v4float = OpTypeVector %float 4
+    %v2float = OpTypeVector %float 2
+  %float_0_5 = OpConstant %float 0.5
+         %44 = OpConstantComposite %v2float %float_0_5 %float_0_5
+      %int_0 = OpConstant %int 0
+         %52 = OpTypeBufferEXT StorageBuffer
+%_runtimearr_52 = OpTypeRuntimeArray %52
+%SSBO_std430 = OpTypeStruct %v4float
+%_runtimearr_SSBO_std430 = OpTypeRuntimeArray %SSBO_std430
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_SSBO_std430
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+%_ptr_StorageBuffer_SSBO_std430 = OpTypePointer StorageBuffer %SSBO_std430
+%_ptr_StorageBuffer_v4float = OpTypePointer StorageBuffer %v4float
+     %g_Push = OpVariable %_ptr_PushConstant_PushConstants_std430 PushConstant
+%slang_resourceHeap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+%slang_samplerHeap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+       %main = OpFunction %void None %3
+          %4 = OpLabel
+         %12 = OpAccessChain %_ptr_PushConstant_uint %g_Push %int_1
+         %13 = OpLoad %uint %12
+         %28 = OpUntypedAccessChainKHR %_ptr_UniformConstant %_runtimearr_19 %slang_resourceHeap %13
+         %30 = OpLoad %19 %28
+         %36 = OpUntypedAccessChainKHR %_ptr_UniformConstant %_runtimearr_33 %slang_samplerHeap %uint_0
+         %38 = OpLoad %33 %36
+         %40 = OpSampledImage %39 %30 %38
+  %__sampled = OpImageSampleImplicitLod %v4float %40 %44 None
+         %48 = OpAccessChain %_ptr_PushConstant_uint %g_Push %int_0
+         %49 = OpLoad %uint %48
+         %54 = OpUntypedAccessChainKHR %_ptr_UniformConstant %_runtimearr_52 %slang_resourceHeap %49
+         %59 = OpBufferPointerEXT %_ptr_StorageBuffer_RWStructuredBuffer %54
+         %61 = OpAccessChain %_ptr_StorageBuffer_SSBO_std430 %59 %int_0 %int_0
+         %63 = OpAccessChain %_ptr_StorageBuffer_v4float %61 %int_0
+               OpStore %63 %__sampled
+               OpReturn
+               OpFunctionEnd
+    )";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+
+    m_command_buffer.Begin();
+    m_command_buffer.PushData(0, 4, &buffer_index);
+    m_command_buffer.PushData(4, 4, &image_index);
+
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkClearColorValue color = {{0.2f, 0.4f, 0.6f, 0.8f}};
+    VkImageSubresourceRange sub_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1u, &sub_range);
+
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    desc_heap.BindSamplerHeap(m_command_buffer);
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        float* data = static_cast<float*>(buffer.Memory().Map());
+        for (uint32_t i = 0; i < 4; ++i) {
+            ASSERT_EQ(data[i], color.float32[i]);
+        }
+    }
+}
+
 TEST_F(PositiveDescriptorHeapUntyped, StorageImage) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
     InitRenderTarget();
@@ -1408,5 +1714,109 @@ TEST_F(PositiveDescriptorHeapUntyped, BufferAsFunctionParameter) {
         if (!IsPlatformMockICD()) {
             ASSERT_EQ(data[0], 22);
         }
+    }
+}
+
+TEST_F(PositiveDescriptorHeapUntyped, SlangBasicBuffer) {
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
+
+    vkt::Buffer buffer_0(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Buffer buffer_1(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    desc_heap.WriteBufferDescriptor(buffer_0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_heap.WriteBufferDescriptor(buffer_1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    // Heap support not yet in any release build
+    //   will need -capability spvDescriptorHeapEXT -spirv-unified-descriptor-heap-stride
+    // struct PushConstants {
+    //     uint index;
+    // };
+    // [[vk::push_constant]] PushConstants g_Push;
+    //
+    // [shader("compute")]
+    // [numthreads(1, 1, 1)]
+    // void main(uint3 dispatchThreadID : SV_DispatchThreadID) {
+    //     RWStructuredBuffer<uint> outBuffer = ResourceDescriptorHeap[g_Push.index];
+    //     outBuffer[0] = 42 + g_Push.index;
+    // }
+    char const* cs_source = R"(
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpCapability Shader
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %slang_resourceHeap %g_Push
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %PushConstants_std430 Block
+               OpMemberDecorate %PushConstants_std430 0 Offset 0
+               OpDecorateId %_runtimearr_18 ArrayStrideIdEXT %26
+               OpDecorate %slang_resourceHeap BuiltIn ResourceHeapEXT
+               OpDecorate %_runtimearr_uint ArrayStride 4
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %_ptr_StorageBuffer_uint ArrayStride 4
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%PushConstants_std430 = OpTypeStruct %uint
+%_ptr_PushConstant_PushConstants_std430 = OpTypePointer PushConstant %PushConstants_std430
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_PushConstant_uint = OpTypePointer PushConstant %uint
+         %18 = OpTypeBufferEXT StorageBuffer
+      %float = OpTypeFloat 32
+         %20 = OpTypeImage %float 2D 2 0 0 1 Unknown
+         %21 = OpTypeBufferEXT Uniform
+         %22 = OpConstantSizeOfEXT %uint %20
+         %23 = OpConstantSizeOfEXT %uint %21
+       %bool = OpTypeBool
+         %25 = OpSpecConstantOp %bool UGreaterThan %22 %23
+         %26 = OpSpecConstantOp %uint Select %25 %22 %23
+%_runtimearr_18 = OpTypeRuntimeArray %18
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%_runtimearr_uint = OpTypeRuntimeArray %uint
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_uint
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+    %uint_42 = OpConstant %uint 42
+     %g_Push = OpVariable %_ptr_PushConstant_PushConstants_std430 PushConstant
+%slang_resourceHeap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+       %main = OpFunction %void None %3
+          %4 = OpLabel
+         %12 = OpAccessChain %_ptr_PushConstant_uint %g_Push %int_0
+         %13 = OpLoad %uint %12
+         %29 = OpUntypedAccessChainKHR %_ptr_UniformConstant %_runtimearr_18 %slang_resourceHeap %13
+         %34 = OpBufferPointerEXT %_ptr_StorageBuffer_RWStructuredBuffer %29
+         %36 = OpAccessChain %_ptr_StorageBuffer_uint %34 %int_0 %int_0
+         %37 = OpLoad %uint %12
+         %38 = OpIAdd %uint %uint_42 %37
+               OpStore %36 %38
+               OpReturn
+               OpFunctionEnd
+    )";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+
+    m_command_buffer.Begin();
+    uint32_t index = 0;
+    m_command_buffer.PushData(0, sizeof(uint32_t), &index);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    index = 1;
+    m_command_buffer.PushData(0, sizeof(uint32_t), &index);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        uint32_t* data = static_cast<uint32_t*>(buffer_0.Memory().Map());
+        ASSERT_EQ(data[0], 42);
+        data = static_cast<uint32_t*>(buffer_1.Memory().Map());
+        ASSERT_EQ(data[0], 43);
     }
 }
