@@ -88,6 +88,8 @@ struct DescriptorHashTable {
         alignas(8) Entry entry;
     };
     // Want to keep 32-byte aligned for better GPU read accessing
+    // Currently Entry is only 24 bytes and need the alignas for 32-bit chrome builds
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/12683#discussion_r3561477790
     static_assert(sizeof(Slot) == 32, "DescriptorHashTable::Slot exceeds the 32-byte limit!");
 
     // So we don't need to update the GPU everytime if nothing changed
