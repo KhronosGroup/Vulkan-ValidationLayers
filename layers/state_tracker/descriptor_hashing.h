@@ -46,7 +46,11 @@ struct DescriptorHashTable {
         VkImageViewType type;
     };
     struct EntrySampler {};
-    struct EntryNull {};
+    struct EntryNull {
+        // explicitly 16 bytes as VkImage and size_t above change on 32-bit systems
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/12683#discussion_r3561477790
+        uint32_t padding[4];
+    };
     constexpr static uint32_t NULL_DESCRIPTOR_MASK = 0x80000000;
     struct Entry {
         // It is possible two different types are the same descriptor hash, so need a bit mask here
@@ -56,6 +60,9 @@ struct DescriptorHashTable {
         uint32_t types;
         bool HasType(VkDescriptorType vk_type) const;
         bool IsNullDescriptor() const;
+
+        // to ensure Entry is 24 bytes
+        uint32_t padding;
 
         union Data {
             EntryBuffer buffer;
@@ -85,9 +92,10 @@ struct DescriptorHashTable {
     // Represents single "slot" in our linear buffer allocation
     struct Slot {
         uint64_t key;
-        alignas(8) Entry entry;
+        Entry entry;
     };
-    // Want to keep 32-byte aligned for better GPU read accessing
+    // Want to keep 32-byte to match how the GPU is reading (which doesn't support unions)
+    // Want 32 (over 24 or 28) to keep things as power of two for hopefully better accessing of memory on the GPU
     static_assert(sizeof(Slot) == 32, "DescriptorHashTable::Slot exceeds the 32-byte limit!");
 
     // So we don't need to update the GPU everytime if nothing changed
