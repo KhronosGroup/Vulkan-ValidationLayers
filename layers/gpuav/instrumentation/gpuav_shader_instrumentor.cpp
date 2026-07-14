@@ -638,6 +638,15 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
         new_create_info.initialize(&pCreateInfos[i]);
 
         if (new_create_info.codeType != VK_SHADER_CODE_TYPE_SPIRV_EXT) {
+            if (!reported_code_type_binary_ && new_create_info.codeType == VK_SHADER_CODE_TYPE_BINARY_EXT) {
+                reported_code_type_binary_ = true;
+                InternalWarning(
+                    device, record_obj.location,
+                    "VK_SHADER_CODE_TYPE_BINARY_EXT is being used, but GPU-AV and DebugPrintf have no way of knowing what is "
+                    "inside this binary shader and will skip this and ALL other shaders with VK_SHADER_CODE_TYPE_SPIRV_EXT\n"
+                    "To support this would require a very complex level of versioning of our instrumented shaders and a simpler "
+                    "solution is use the SPIR-V if you want to use debugging tools.");
+            }
             continue;
         } else if (!chassis_state.module_states[i]) {
             continue;

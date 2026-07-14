@@ -223,6 +223,9 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     // sense too)
     mutable bool aborted_ = false;
 
+    // Some errors/warnings only want to report once for the lifetime of the app
+    bool reported_code_type_binary_ = false;
+
     std::atomic<uint32_t> unique_shader_module_id_ = 1;  // zero represents no shader module found
     // The descriptor slot we will be injecting our error buffer into
     uint32_t instrumentation_desc_set_bind_index_ = 0;
