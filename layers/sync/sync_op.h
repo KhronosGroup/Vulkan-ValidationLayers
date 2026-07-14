@@ -234,17 +234,12 @@ class SyncOpWaitEvents : public SyncOpBase {
 
     SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t eventCount,
                      const VkEvent *pEvents, const VkDependencyInfo *pDependencyInfo);
-    ~SyncOpWaitEvents() override = default;
-
-    bool Validate(const CommandBufferAccessContext& cb_context) const;
 
     ResourceUsageTag Record(CommandBufferAccessContext& cb_context) override;
     bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 
   private:
-    static const char *const kIgnored;
-    bool DoValidate(const CommandExecutionContext &ex_context, const ResourceUsageTag base_tag) const;
     void DoRecord(CommandExecutionContext &ex_context, const ResourceUsageTag base_tag) const;
     void MakeEventsList(const SyncValidator &sync_state, uint32_t event_count, const VkEvent *events);
 
@@ -259,16 +254,12 @@ class SyncOpResetEvent : public SyncOpBase {
   public:
     SyncOpResetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                      VkPipelineStageFlags2 stageMask);
-    ~SyncOpResetEvent() override = default;
-
-    bool Validate(const CommandBufferAccessContext& cb_context) const;
 
     ResourceUsageTag Record(CommandBufferAccessContext& cb_context) override;
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
 
   private:
-    bool DoValidate(const CommandExecutionContext &ex_context, const ResourceUsageTag base_tag) const;
     std::shared_ptr<const vvl::Event> event_;
     SyncExecScope exec_scope_;
 };
@@ -279,24 +270,18 @@ class SyncOpSetEvent : public SyncOpBase {
                    VkPipelineStageFlags2 stageMask, const AccessContext *access_context);
     SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                    const VkDependencyInfo &dep_info, const AccessContext *access_context);
-    ~SyncOpSetEvent() override = default;
-
-    bool Validate(const CommandBufferAccessContext& cb_context) const;
 
     ResourceUsageTag Record(CommandBufferAccessContext& cb_context) override;
     bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 
   private:
-    bool DoValidate(const CommandExecutionContext &ex_context, const ResourceUsageTag base_tag) const;
     void DoRecord(QueueId queue_id, ResourceUsageTag recorded_tag, const std::shared_ptr<const AccessContext>& access_context,
                   SyncEventsContext& events_context) const;
     std::shared_ptr<const vvl::Event> event_;
     // The Access context of the command buffer at record set event time.
     std::shared_ptr<const AccessContext> recorded_context_;
     SyncExecScope src_exec_scope_;
-    // Note that the dep info is *not* dehandled, but retained for comparison with a future WaitEvents2
-    std::shared_ptr<vku::safe_VkDependencyInfo> dep_info_;
 };
 
 class SyncOpBeginRenderPass : public SyncOpBase {
@@ -308,9 +293,9 @@ class SyncOpBeginRenderPass : public SyncOpBase {
     bool Validate(const CommandBufferAccessContext& cb_context) const;
 
     ResourceUsageTag Record(CommandBufferAccessContext& cb_context) override;
-    bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
-    const RenderPassAccessContext *GetRenderPassAccessContext() const { return rp_context_; }
+    bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
+    void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
+    const RenderPassAccessContext* GetRenderPassAccessContext() const { return rp_context_; }
 
   protected:
     vku::safe_VkRenderPassBeginInfo renderpass_begin_info_;

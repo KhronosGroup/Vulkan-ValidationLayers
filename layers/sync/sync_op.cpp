@@ -568,109 +568,6 @@ SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator& sync_
     MakeEventsList(sync_state, eventCount, pEvents);
 }
 
-const char* const SyncOpWaitEvents::kIgnored = "Wait operation is ignored for this event.";
-
-bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext& cb_context) const {
-    bool skip = false;
-    const auto& sync_state = cb_context.GetSyncState();
-    const VkCommandBuffer command_buffer_handle = cb_context.GetCBState().VkHandle();
-
-    // This is only interesting at record and not replay (Execute/Submit) time.
-    for (size_t barrier_set_index = 0; barrier_set_index < barrier_sets_.size(); barrier_set_index++) {
-        const auto& barrier_set = barrier_sets_[barrier_set_index];
-        if (barrier_set.single_exec_scope) {
-            const Location loc(command_);
-            if (barrier_set.src_exec_scope.stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
-                const std::string vuid = std::string("SYNC-") + std::string(CmdName()) + std::string("-hostevent-unsupported");
-                sync_state.LogInfo(vuid, command_buffer_handle, loc,
-                                   "srcStageMask includes %s, unsupported by synchronization validation.",
-                                   string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT));
-            } else {
-                const auto& barriers = barrier_set.memory_barriers;
-                for (size_t barrier_index = 0; barrier_index < barriers.size(); barrier_index++) {
-                    const auto& barrier = barriers[barrier_index];
-                    if (barrier.src_exec_scope.stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
-                        const std::string vuid =
-                            std::string("SYNC-") + std::string(CmdName()) + std::string("-hostevent-unsupported");
-
-                        sync_state.LogInfo(vuid, command_buffer_handle, loc,
-                                           "srcStageMask %s of %s %zu, %s %zu, unsupported by synchronization validation.",
-                                           string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT), "pDependencyInfo",
-                                           barrier_set_index, "pMemoryBarriers", barrier_index);
-                    }
-                }
-            }
-        }
-    }
-
-    // The rest is common to record time and replay time.
-    skip |= DoValidate(cb_context, ResourceUsageRecord::kMaxIndex);
-    return skip;
-}
-
-bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext& exec_context, const ResourceUsageTag base_tag) const {
-    bool skip = false;
-    const auto& sync_state = exec_context.GetSyncState();
-    const QueueId queue_id = exec_context.GetQueueId();
-
-    const SyncEventsContext& events_context = exec_context.GetEventsContext();
-    size_t barrier_set_index = 0;
-    size_t barrier_set_incr = (barrier_sets_.size() == 1) ? 0 : 1;
-    const Location loc(command_);
-    for (const auto& event : events_) {
-        const auto* sync_event = events_context.Get(event);
-        const auto& barrier_set = barrier_sets_[barrier_set_index];
-        if (!sync_event || !sync_event->first_scope) {
-            barrier_set_index += barrier_set_incr;
-            continue;  // Core, Lifetimes, or Param check needs to catch invalid events.
-        }
-
-        // For replay calls, don't revalidate "same command buffer" events
-        if (sync_event->last_command_tag >= base_tag) {
-            continue;
-        }
-
-        const VkEvent event_handle = sync_event->event->VkHandle();
-
-        // TODO: Cleanup this error message
-        if (sync_event->unsynchronized_set != vvl::Func::Empty) {
-            // Issue error message that Wait is waiting on an signal subject to race condition, and is thus ignored for
-            // this event
-            const char* const vuid = "SYNC-vkCmdWaitEvents-unsynchronized-setops";
-            const char* const message = "%s Unsychronized %s calls result in race conditions w.r.t. event signalling, %s %s";
-            const char* const reason = "First synchronization scope is undefined.";
-            skip |= sync_state.LogError(vuid, event_handle, loc, message, sync_state.FormatHandle(event_handle).c_str(),
-                                        vvl::String(sync_event->last_command), reason, kIgnored);
-        }
-        if (barrier_set.image_barriers.size()) {
-            const auto& image_memory_barriers = barrier_set.image_barriers;
-            const AccessContext& context = exec_context.GetCurrentAccessContext();
-            for (const auto& image_memory_barrier : image_memory_barriers) {
-                if (!image_memory_barrier.layout_transition) continue;
-                const auto* image_state = image_memory_barrier.image.get();
-                if (!image_state) continue;
-                const auto& subresource_range = image_memory_barrier.subresource_range;
-                const auto& src_access_scope = image_memory_barrier.barrier.src_access_scope;
-                const auto hazard = context.DetectImageBarrierHazard(
-                    *image_state, subresource_range, sync_event->scope.exec_scope, src_access_scope, queue_id,
-                    sync_event->FirstScope(), sync_event->first_scope_tag, AccessContext::DetectOptions::kDetectAll);
-                if (hazard.IsHazard()) {
-                    LogObjectList objlist(exec_context.Handle(), image_state->Handle());
-                    const std::string resource_description = sync_state.FormatHandle(image_state->Handle());
-                    const std::string error = sync_state.error_messages_.ImageBarrierError(
-                        hazard, exec_context, command_, resource_description, image_memory_barrier);
-                    skip |= sync_state.SyncError(hazard.Hazard(), image_state->Handle(), loc, error);
-                    break;
-                }
-            }
-        }
-        // TODO:  Add infrastructure for checking pDependencyInfo's vs. CmdSetEvent2 VUID - vkCmdWaitEvents2KHR - pEvents -
-        // 03839
-        barrier_set_index += barrier_set_incr;
-    }
-    return skip;
-}
-
 ResourceUsageTag SyncOpWaitEvents::Record(CommandBufferAccessContext& cb_context) {
     const ResourceUsageTag tag = cb_context.NextCommandTag(command_);
     ReplayRecord(cb_context, tag);
@@ -821,7 +718,8 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext& exec_context, Resou
 }
 
 bool SyncOpWaitEvents::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
-    return DoValidate(replay.GetExecutionContext(), replay.GetBaseTag() + recorded_tag);
+    return replay.GetExecutionContext().GetSyncState().ValidateCmdWaitEvents(
+        replay.GetExecutionContext(), events_, barrier_sets_, replay.GetBaseTag() + recorded_tag, Location(command_));
 }
 
 void SyncOpWaitEvents::MakeEventsList(const SyncValidator& sync_state, uint32_t event_count, const VkEvent* events) {
@@ -835,31 +733,6 @@ SyncOpResetEvent::SyncOpResetEvent(vvl::Func command, const SyncValidator& sync_
                                    VkPipelineStageFlags2 stageMask)
     : SyncOpBase(command), event_(sync_state.Get<vvl::Event>(event)), exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)) {}
 
-bool SyncOpResetEvent::Validate(const CommandBufferAccessContext& cb_context) const {
-    return DoValidate(cb_context, ResourceUsageRecord::kMaxIndex);
-}
-
-bool SyncOpResetEvent::DoValidate(const CommandExecutionContext& exec_context, const ResourceUsageTag base_tag) const {
-    bool skip = false;
-
-    const SyncValidator& sync_state = exec_context.GetSyncState();
-    const SyncEventsContext& events_context = exec_context.GetEventsContext();
-    const auto* sync_event = events_context.Get(event_);
-    if (!sync_event) {
-        return skip;
-    }
-    if (sync_event->last_command_tag > base_tag) {
-        return skip;  // if we validated this in recording of the secondary, don't repeat
-    }
-    if (IsValueIn(sync_event->last_command, {Func::vkCmdSetEvent, Func::vkCmdSetEvent2, Func::vkCmdSetEvent2KHR}) &&
-        !sync_event->HasBarrier(exec_scope_.stage_mask, exec_scope_.exec_scope)) {
-        skip |= sync_state.LogError("SYNC-vkCmdResetEvent-set-race", event_->Handle(), command_,
-                                    "%s is reset after %s without an intervening execution dependency. This is a race condition "
-                                    "and may result in data hazards.",
-                                    sync_state.FormatHandle(event_->Handle()).c_str(), vvl::String(sync_event->last_command));
-    }
-    return skip;
-}
 
 ResourceUsageTag SyncOpResetEvent::Record(CommandBufferAccessContext& cb_context) {
     const ResourceUsageTag tag = cb_context.NextCommandTag(command_);
@@ -868,7 +741,8 @@ ResourceUsageTag SyncOpResetEvent::Record(CommandBufferAccessContext& cb_context
 }
 
 bool SyncOpResetEvent::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
-    return DoValidate(replay.GetExecutionContext(), replay.GetBaseTag() + recorded_tag);
+    return replay.GetExecutionContext().GetSyncState().ValidateCmdResetEvent(
+        replay.GetExecutionContext(), event_, exec_scope_, replay.GetBaseTag() + recorded_tag, Location(command_));
 }
 
 void SyncOpResetEvent::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
@@ -891,8 +765,7 @@ SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator& sync_stat
                                VkPipelineStageFlags2 stageMask, const AccessContext* access_context)
     : SyncOpBase(command),
       event_(sync_state.Get<vvl::Event>(event)),
-      src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)),
-      dep_info_() {
+      src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)) {
     // Snapshot the current access_context for later inspection at wait time.
     // NOTE: This appears brute force, but given that we only save a "first-last" model of access history, the current
     //       access context (include barrier state for chaining) won't necessarily contain the needed information at Wait
@@ -908,8 +781,7 @@ SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator& sync_stat
                                const VkDependencyInfo& dep_info, const AccessContext* access_context)
     : SyncOpBase(command),
       event_(sync_state.Get<vvl::Event>(event)),
-      src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, sync_utils::GetExecScopes(dep_info).src)),
-      dep_info_(new vku::safe_VkDependencyInfo(&dep_info)) {
+      src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, sync_utils::GetExecScopes(dep_info).src)) {
     if (access_context) {
         auto new_context = std::make_shared<AccessContext>(sync_state);
         new_context->InitFrom(*access_context);
@@ -917,46 +789,9 @@ SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator& sync_stat
     }
 }
 
-bool SyncOpSetEvent::Validate(const CommandBufferAccessContext& cb_context) const {
-    return DoValidate(cb_context, ResourceUsageRecord::kMaxIndex);
-}
 bool SyncOpSetEvent::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
-    return DoValidate(replay.GetExecutionContext(), replay.GetBaseTag() + recorded_tag);
-}
-
-bool SyncOpSetEvent::DoValidate(const CommandExecutionContext& exec_context, const ResourceUsageTag base_tag) const {
-    bool skip = false;
-
-    const SyncValidator& sync_state = exec_context.GetSyncState();
-    const SyncEventsContext& events_context = exec_context.GetEventsContext();
-
-    const auto* sync_event = events_context.Get(event_);
-    if (!sync_event) {
-        return skip;
-    }
-    if (sync_event->last_command_tag >= base_tag) {
-        return skip;  // for replay we don't want to revalidate internal "last commmand"
-    }
-    if (!sync_event->HasBarrier(src_exec_scope_.stage_mask, src_exec_scope_.exec_scope)) {
-        const std::string vuid_prefix = std::string("SYNC-") + CmdName();
-        if (IsValueIn(sync_event->last_command, {Func::vkCmdResetEvent, Func::vkCmdResetEvent2, Func::vkCmdResetEvent2KHR})) {
-            skip |= sync_state.LogError(vuid_prefix + "-reset-race", event_->Handle(), command_,
-                                        "%s is set after %s without an intervening execution dependency. This is a race condition "
-                                        "and may result in data hazards.",
-                                        sync_state.FormatHandle(event_->Handle()).c_str(), vvl::String(sync_event->last_command));
-        } else if (IsValueIn(sync_event->last_command, {Func::vkCmdSetEvent, Func::vkCmdSetEvent2, Func::vkCmdSetEvent2KHR})) {
-            skip |= sync_state.LogError(vuid_prefix + "-set-race", event_->Handle(), command_,
-                                        "%s is set after a previous %s without an intervening execution dependency. This is a race "
-                                        "condition and may result in data hazards.",
-                                        sync_state.FormatHandle(event_->Handle()).c_str(), vvl::String(sync_event->last_command));
-        } else if (IsValueIn(sync_event->last_command,
-                             {Func::vkCmdWaitEvents, Func::vkCmdWaitEvents2, Func::vkCmdWaitEvents2KHR})) {
-            skip |= sync_state.LogError(vuid_prefix + "-wait", event_->Handle(), command_,
-                                        "%s is set after %s without intervening vkCmdResetEvent, may result in data hazard.",
-                                        sync_state.FormatHandle(event_->Handle()).c_str(), vvl::String(sync_event->last_command));
-        }
-    }
-    return skip;
+    return replay.GetExecutionContext().GetSyncState().ValidateCmdSetEvent(replay.GetExecutionContext(), event_, src_exec_scope_,
+                                                                           replay.GetBaseTag() + recorded_tag, Location(command_));
 }
 
 ResourceUsageTag SyncOpSetEvent::Record(CommandBufferAccessContext& cb_context) {
@@ -1010,7 +845,6 @@ void SyncOpSetEvent::DoRecord(QueueId queue_id, ResourceUsageTag tag, const std:
         sync_event->unsynchronized_set = vvl::Func::Empty;
         sync_event->first_scope_tag = tag;
     }
-    // TODO: Store dep_info_ shared ptr in sync_state for WaitEvents2 validation
     sync_event->last_command = command_;
     sync_event->last_command_tag = tag;
     sync_event->barriers = 0U;

@@ -2003,13 +2003,49 @@ void SyncValidator::PostCallRecordResetEvent(VkDevice device, VkEvent event, con
     }
 }
 
+bool SyncValidator::ValidateCmdSetEvent(const CommandExecutionContext& exec_context, const std::shared_ptr<const vvl::Event>& event,
+                                        const SyncExecScope& src_exec_scope, ResourceUsageTag base_tag, const Location& loc) const {
+    bool skip = false;
+
+    const SyncValidator& sync_state = exec_context.GetSyncState();
+    const SyncEventsContext& events_context = exec_context.GetEventsContext();
+
+    const auto* sync_event = events_context.Get(event);
+    if (!sync_event) {
+        return skip;
+    }
+    if (sync_event->last_command_tag >= base_tag) {
+        return skip;  // for replay we don't want to revalidate internal "last commmand"
+    }
+    if (!sync_event->HasBarrier(src_exec_scope.stage_mask, src_exec_scope.exec_scope)) {
+        const std::string vuid_prefix = std::string("SYNC-") + vvl::String(loc.function);
+        if (IsValueIn(sync_event->last_command, {Func::vkCmdResetEvent, Func::vkCmdResetEvent2, Func::vkCmdResetEvent2KHR})) {
+            skip |= sync_state.LogError(vuid_prefix + "-reset-race", event->Handle(), loc,
+                                        "%s is set after %s without an intervening execution dependency. This is a race condition "
+                                        "and may result in data hazards.",
+                                        sync_state.FormatHandle(event->Handle()).c_str(), vvl::String(sync_event->last_command));
+        } else if (IsValueIn(sync_event->last_command, {Func::vkCmdSetEvent, Func::vkCmdSetEvent2, Func::vkCmdSetEvent2KHR})) {
+            skip |= sync_state.LogError(vuid_prefix + "-set-race", event->Handle(), loc,
+                                        "%s is set after a previous %s without an intervening execution dependency. This is a race "
+                                        "condition and may result in data hazards.",
+                                        sync_state.FormatHandle(event->Handle()).c_str(), vvl::String(sync_event->last_command));
+        } else if (IsValueIn(sync_event->last_command,
+                             {Func::vkCmdWaitEvents, Func::vkCmdWaitEvents2, Func::vkCmdWaitEvents2KHR})) {
+            skip |= sync_state.LogError(vuid_prefix + "-wait", event->Handle(), loc,
+                                        "%s is set after %s without intervening vkCmdResetEvent, may result in data hazard.",
+                                        sync_state.FormatHandle(event->Handle()).c_str(), vvl::String(sync_event->last_command));
+        }
+    }
+    return skip;
+}
+
 bool SyncValidator::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                const ErrorObject& error_obj) const {
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-
-    SyncOpSetEvent set_event_op(error_obj.location.function, *this, cb_context.GetQueueFlags(), event, stageMask, nullptr);
-    return set_event_op.Validate(cb_context);
+    auto event_state = Get<vvl::Event>(event);
+    const SyncExecScope src_exec_scope = SyncExecScope::MakeSrc(cb_context.GetQueueFlags(), stageMask);
+    return ValidateCmdSetEvent(cb_context, event_state, src_exec_scope, ResourceUsageRecord::kMaxIndex, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
@@ -2034,9 +2070,10 @@ bool SyncValidator::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, V
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-
-    SyncOpSetEvent set_event_op(error_obj.location.function, *this, cb_context.GetQueueFlags(), event, *pDependencyInfo, nullptr);
-    return set_event_op.Validate(cb_context);
+    auto event_state = Get<vvl::Event>(event);
+    const SyncExecScope src_exec_scope =
+        SyncExecScope::MakeSrc(cb_context.GetQueueFlags(), sync_utils::GetExecScopes(*pDependencyInfo).src);
+    return ValidateCmdSetEvent(cb_context, event_state, src_exec_scope, ResourceUsageRecord::kMaxIndex, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -2056,20 +2093,40 @@ void SyncValidator::PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, Vk
                                             *pDependencyInfo, &cb_context.GetCurrentAccessContext());
 }
 
+bool SyncValidator::ValidateCmdResetEvent(const CommandExecutionContext& exec_context,
+                                          const std::shared_ptr<const vvl::Event>& event, const SyncExecScope& exec_scope,
+                                          const ResourceUsageTag base_tag, const Location& loc) const {
+    bool skip = false;
+    const auto* sync_event = exec_context.GetEventsContext().Get(event);
+    if (!sync_event) {
+        return skip;
+    }
+    if (sync_event->last_command_tag > base_tag) {
+        return skip;  // if we validated this in recording of the secondary, don't repeat
+    }
+    if (IsValueIn(sync_event->last_command, {Func::vkCmdSetEvent, Func::vkCmdSetEvent2, Func::vkCmdSetEvent2KHR}) &&
+        !sync_event->HasBarrier(exec_scope.stage_mask, exec_scope.exec_scope)) {
+        skip |= LogError("SYNC-vkCmdResetEvent-set-race", event->Handle(), loc,
+                         "%s is reset after %s without an intervening execution dependency. This is a race condition "
+                         "and may result in data hazards.",
+                         FormatHandle(event->Handle()).c_str(), vvl::String(sync_event->last_command));
+    }
+    return skip;
+}
+
 bool SyncValidator::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                  const ErrorObject& error_obj) const {
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-
-    SyncOpResetEvent reset_event_op(error_obj.location.function, *this, cb_context.GetQueueFlags(), event, stageMask);
-    return reset_event_op.Validate(cb_context);
+    auto event_state = Get<vvl::Event>(event);
+    const SyncExecScope exec_scope = SyncExecScope::MakeSrc(cb_context.GetQueueFlags(), stageMask);
+    return ValidateCmdResetEvent(cb_context, event_state, exec_scope, ResourceUsageRecord::kMaxIndex, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                 const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-
     cb_context.RecordSyncOp<SyncOpResetEvent>(record_obj.location.function, *this, cb_context.GetQueueFlags(), event, stageMask);
 }
 
@@ -2077,9 +2134,9 @@ bool SyncValidator::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer,
                                                   const ErrorObject& error_obj) const {
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-
-    SyncOpResetEvent reset_event_op(error_obj.location.function, *this, cb_context.GetQueueFlags(), event, stageMask);
-    return reset_event_op.Validate(cb_context);
+    auto event_state = Get<vvl::Event>(event);
+    const SyncExecScope exec_scope = SyncExecScope::MakeSrc(cb_context.GetQueueFlags(), stageMask);
+    return ValidateCmdResetEvent(cb_context, event_state, exec_scope, ResourceUsageRecord::kMaxIndex, error_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -2100,6 +2157,100 @@ void SyncValidator::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, 
     cb_context.RecordSyncOp<SyncOpResetEvent>(record_obj.location.function, *this, cb_context.GetQueueFlags(), event, stageMask);
 }
 
+bool SyncValidator::ValidateCmdWaitEvents(const CommandExecutionContext& exec_context,
+                                          const std::vector<std::shared_ptr<const vvl::Event>>& events,
+                                          const vvl::span<const BarrierSet>& barrier_sets, const ResourceUsageTag base_tag,
+                                          const Location& loc) const {
+    bool skip = false;
+    const auto& sync_state = exec_context.GetSyncState();
+    const QueueId queue_id = exec_context.GetQueueId();
+
+    // This is only interesting at record and not replay (Execute/Submit) time
+    if (base_tag == ResourceUsageRecord::kMaxIndex) {
+        for (size_t barrier_set_index = 0; barrier_set_index < barrier_sets.size(); barrier_set_index++) {
+            const auto& barrier_set = barrier_sets[barrier_set_index];
+            if (barrier_set.single_exec_scope) {
+                if (barrier_set.src_exec_scope.stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
+                    const std::string vuid =
+                        std::string("SYNC-") + vvl::String(loc.function) + std::string("-hostevent-unsupported");
+                    sync_state.LogInfo(vuid, exec_context.Handle(), loc,
+                                       "srcStageMask includes %s, unsupported by synchronization validation.",
+                                       string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT));
+                } else {
+                    const auto& barriers = barrier_set.memory_barriers;
+                    for (size_t barrier_index = 0; barrier_index < barriers.size(); barrier_index++) {
+                        const auto& barrier = barriers[barrier_index];
+                        if (barrier.src_exec_scope.stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
+                            const std::string vuid =
+                                std::string("SYNC-") + vvl::String(loc.function) + std::string("-hostevent-unsupported");
+
+                            sync_state.LogInfo(vuid, exec_context.Handle(), loc,
+                                               "srcStageMask %s of %s %zu, %s %zu, unsupported by synchronization validation.",
+                                               string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT), "pDependencyInfo",
+                                               barrier_set_index, "pMemoryBarriers", barrier_index);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // The rest is common to record time and replay time
+    const SyncEventsContext& events_context = exec_context.GetEventsContext();
+    size_t barrier_set_index = 0;
+    size_t barrier_set_incr = (barrier_sets.size() == 1) ? 0 : 1;
+    for (const auto& event : events) {
+        const auto* sync_event = events_context.Get(event);
+        const auto& barrier_set = barrier_sets[barrier_set_index];
+        if (!sync_event || !sync_event->first_scope) {
+            barrier_set_index += barrier_set_incr;
+            continue;  // Core, Lifetimes, or Param check needs to catch invalid events.
+        }
+
+        // For replay calls, don't revalidate "same command buffer" events
+        if (sync_event->last_command_tag >= base_tag) {
+            continue;
+        }
+
+        const VkEvent event_handle = sync_event->event->VkHandle();
+
+        // TODO: Cleanup this error message
+        if (sync_event->unsynchronized_set != vvl::Func::Empty) {
+            // Issue error message that Wait is waiting on an signal subject to race condition, and is thus ignored for
+            // this event
+            const char* const vuid = "SYNC-vkCmdWaitEvents-unsynchronized-setops";
+            const char* const message = "%s Unsychronized %s calls result in race conditions w.r.t. event signalling, %s %s";
+            const char* const reason = "First synchronization scope is undefined.";
+            skip |= sync_state.LogError(vuid, event_handle, loc, message, sync_state.FormatHandle(event_handle).c_str(),
+                                        vvl::String(sync_event->last_command), reason, "Wait operation is ignored for this event.");
+        }
+        if (barrier_set.image_barriers.size()) {
+            const auto& image_memory_barriers = barrier_set.image_barriers;
+            const AccessContext& context = exec_context.GetCurrentAccessContext();
+            for (const auto& image_memory_barrier : image_memory_barriers) {
+                if (!image_memory_barrier.layout_transition) continue;
+                const auto* image_state = image_memory_barrier.image.get();
+                if (!image_state) continue;
+                const auto& subresource_range = image_memory_barrier.subresource_range;
+                const auto& src_access_scope = image_memory_barrier.barrier.src_access_scope;
+                const auto hazard = context.DetectImageBarrierHazard(
+                    *image_state, subresource_range, sync_event->scope.exec_scope, src_access_scope, queue_id,
+                    sync_event->FirstScope(), sync_event->first_scope_tag, AccessContext::DetectOptions::kDetectAll);
+                if (hazard.IsHazard()) {
+                    LogObjectList objlist(exec_context.Handle(), image_state->Handle());
+                    const std::string resource_description = sync_state.FormatHandle(image_state->Handle());
+                    const std::string error = sync_state.error_messages_.ImageBarrierError(
+                        hazard, exec_context, loc.function, resource_description, image_memory_barrier);
+                    skip |= sync_state.SyncError(hazard.Hazard(), image_state->Handle(), loc, error);
+                    break;
+                }
+            }
+        }
+        barrier_set_index += barrier_set_incr;
+    }
+    return skip;
+}
+
 bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                                  VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                                  uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
@@ -2111,10 +2262,19 @@ bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
     const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    SyncOpWaitEvents wait_events_op(error_obj.location.function, *this, queue_flags, eventCount, pEvents, srcStageMask,
-                                    dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
-                                    pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-    return wait_events_op.Validate(cb_context);
+    const SyncExecScope src_exec_scope = SyncExecScope::MakeSrc(queue_flags, srcStageMask);
+    const SyncExecScope dst_exec_scope = SyncExecScope::MakeDst(queue_flags, dstStageMask);
+    const BarrierSet barrier_set =
+        BarrierSet(*this, src_exec_scope, dst_exec_scope, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
+                   pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+
+    std::vector<std::shared_ptr<const vvl::Event>> events(eventCount);
+    for (uint32_t i = 0; i < eventCount; i++) {
+        events[i] = Get<vvl::Event>(pEvents[i]);
+    }
+
+    return ValidateCmdWaitEvents(cb_context, events, vvl::make_span(&barrier_set, 1), ResourceUsageRecord::kMaxIndex,
+                                 error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
@@ -2147,13 +2307,24 @@ void SyncValidator::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffe
 bool SyncValidator::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                                   const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const {
     bool skip = false;
+    if (!pDependencyInfos) {
+        return skip;
+    }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
     const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    SyncOpWaitEvents wait_events_op(error_obj.location.function, *this, queue_flags, eventCount, pEvents, pDependencyInfos);
-    skip |= wait_events_op.Validate(cb_context);
-    return skip;
+    std::vector<BarrierSet> barrier_sets(eventCount);
+    for (uint32_t i = 0; i < eventCount; i++) {
+        barrier_sets[i] = BarrierSet(*this, queue_flags, pDependencyInfos[i]);
+    }
+
+    std::vector<std::shared_ptr<const vvl::Event>> events(eventCount);
+    for (uint32_t i = 0; i < eventCount; i++) {
+        events[i] = Get<vvl::Event>(pEvents[i]);
+    }
+
+    return ValidateCmdWaitEvents(cb_context, events, barrier_sets, ResourceUsageRecord::kMaxIndex, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
