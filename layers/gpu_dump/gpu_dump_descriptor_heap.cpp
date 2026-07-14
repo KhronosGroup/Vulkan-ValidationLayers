@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "containers/container_utils.h"
 #include "generated/spirv_grammar_helper.h"
 #include "gpu_dump_state.h"
 #include "gpu_dump.h"
@@ -1423,6 +1424,10 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
 //
 // You have hit Untyped Pointer territory, brace yourselves!
 //
+static const uint32_t kDynamicIndex = vvl::kNoIndex32;
+static const uint32_t kNoPushData = vvl::kNoIndex32;
+// If there is some math logic to calculate this
+static const uint32_t kPushDataRange = vvl::kNoIndex32 - 1;
 struct HeapAccess {
     VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
     // These are zero because if not found, it means it is implicitly zero
@@ -1431,35 +1436,78 @@ struct HeapAccess {
     // Might have multidimensional array and need an index for each
     struct Index {
         uint32_t array_stride = 0;
-        uint32_t element = vvl::kNoIndex32;
+        uint32_t element = kDynamicIndex;
+        uint32_t push_data_index = kNoPushData;
 
-        bool operator==(const Index& other) const { return array_stride == other.array_stride && element == other.element; }
+        bool operator==(const Index& other) const {
+            return array_stride == other.array_stride && element == other.element && push_data_index == other.push_data_index;
+        }
+
+        // Required so we can compare std::vector<Index> in tie-breakers
+        bool operator<(const Index& other) const { return element < other.element; }
     };
     std::vector<Index> descriptor_indexes;
 
     // Lets us know this access is done inside a function
     bool function_call = false;
 
+    // Values that are calculated from the above values
+    // (So no reason to apply to the hashing)
+    bool is_array = false;
+    bool is_sampler = false;
+    bool dynamic_index = false;
+    // Zero so dynamic values are first in the sorting
+    VkDeviceSize final_address = 0;
+
+    HeapAccess(const CommandBufferSubState& cb_sub_state, VkDescriptorType descriptor_type, uint32_t heap_offset,
+               std::vector<Index> descriptor_indexes, bool function_call)
+        : descriptor_type(descriptor_type),
+          heap_offset(heap_offset),
+          descriptor_indexes(descriptor_indexes),
+          function_call(function_call),
+          is_array(!descriptor_indexes.empty()),
+          is_sampler(descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLER) {
+        auto heap_range =
+            is_sampler ? cb_sub_state.base.descriptor_heap.sampler_range : cb_sub_state.base.descriptor_heap.resource_range;
+        VkDeviceSize final_offset = heap_offset;
+        for (const auto& descriptor_index : descriptor_indexes) {
+            if (descriptor_index.element == kDynamicIndex) {
+                dynamic_index = true;
+            } else {
+                final_offset += descriptor_index.array_stride * descriptor_index.element;
+            }
+        }
+
+        if (!is_array) {
+            final_address = heap_range.begin + heap_offset;
+        } else if (!dynamic_index) {
+            final_address = heap_range.begin + final_offset;
+        }
+    }
+
     struct compare {
         bool operator()(HeapAccess const& lhs, HeapAccess const& rhs) const {
-            return lhs.descriptor_type == rhs.descriptor_type && lhs.heap_offset == rhs.heap_offset &&
-                   lhs.descriptor_indexes == rhs.descriptor_indexes;
-        }
-    };
-
-    // We don't want duplicate accesses being spammed
-    struct hash {
-        std::size_t operator()(HeapAccess const& access) const {
-            hash_util::HashCombiner hc;
-            hc << access.descriptor_type << access.heap_offset;
-            for (const auto& di : access.descriptor_indexes) {
-                hc << di.array_stride << di.element;
+            // Main thing want to sort by
+            // May change sorting logic here if we find a better way to sort
+            if (lhs.final_address != rhs.final_address) {
+                return lhs.final_address < rhs.final_address;
             }
-            return hc.Value();
+
+            if (lhs.descriptor_type != rhs.descriptor_type) {
+                return lhs.descriptor_type < rhs.descriptor_type;
+            }
+            if (lhs.heap_offset != rhs.heap_offset) {
+                return lhs.heap_offset < rhs.heap_offset;
+            }
+            if (lhs.function_call != rhs.function_call) {
+                return lhs.function_call < rhs.function_call;  // false < true
+            }
+            return lhs.descriptor_indexes < rhs.descriptor_indexes;
         }
     };
 };
-using HeapAccesses = vvl::unordered_set<HeapAccess, HeapAccess::hash, HeapAccess::compare>;
+// <set> because we want
+using HeapAccesses = std::set<HeapAccess, HeapAccess::compare>;
 
 // Tracks all the OpFunction/OpFunctionCall/OpFunctionParameter info we need
 struct FunctionInfo {
@@ -1474,6 +1522,7 @@ struct FunctionInfo {
 };
 
 struct UntypedContext {
+    const CommandBufferSubState& cb_sub_state;
     const vvl::DeviceState& device_state;
     const spirv::Module& module;
     const spirv::EntryPoint& entrypoint;
@@ -1485,8 +1534,10 @@ struct UntypedContext {
 
     FunctionInfo function_info;
 
-    UntypedContext(GpuDump& dev_data, const spirv::Module& module, const spirv::EntryPoint& entrypoint)
-        : device_state(*dev_data.device_state),
+    UntypedContext(const CommandBufferSubState& cb_sub_state, GpuDump& dev_data, const spirv::Module& module,
+                   const spirv::EntryPoint& entrypoint)
+        : cb_sub_state(cb_sub_state),
+          device_state(*dev_data.device_state),
           module(module),
           entrypoint(entrypoint),
           props(dev_data.phys_dev_ext_props.descriptor_heap_props) {
@@ -1507,6 +1558,7 @@ struct UntypedContext {
         }
     }
 
+    uint32_t FindPushDataIndex(const spirv::Instruction& access_inst, uint32_t* out_result);
     void GetUntypedDescriptorIndexes(std::vector<HeapAccess::Index>& out_descriptor_indexes,
                                      std::vector<const spirv::Instruction*>& ac_indexes, const spirv::Instruction& type_array_inst);
     uint32_t GetUntypedArrayStride(uint32_t type_array_id);
@@ -1544,6 +1596,75 @@ uint32_t UntypedContext::GetUntypedArrayStride(uint32_t type_array_id) {
     return module.GetHeapUntypedSize(props, *array_stride_inst);
 }
 
+// This is a quick, low effort attempt to see if we can detect the index into the descriptor is a push data value
+// Anything more than this would require a "proper" solution for static analysis
+uint32_t UntypedContext::FindPushDataIndex(const spirv::Instruction& access_inst, uint32_t* out_result) {
+    uint32_t push_data_index = kNoPushData;
+    if (!entrypoint.push_constant_variable || !entrypoint.push_constant_variable->type_struct_info) {
+        return push_data_index;
+    }
+
+    // support some basic math int operations
+    if (IsValueIn((spv::Op)access_inst.Opcode(), {spv::OpIMul, spv::OpIAdd, spv::OpISub, spv::OpUDiv})) {
+        const spirv::Instruction* operand_0_inst = module.FindDef(access_inst.Word(3));
+        const spirv::Instruction* operand_1_inst = module.FindDef(access_inst.Word(4));
+        uint32_t operand_0_value = 0;
+        uint32_t operand_1_value = 0;
+        const uint32_t operand_0_index = FindPushDataIndex(*operand_0_inst, &operand_0_value);
+        const uint32_t operand_1_index = FindPushDataIndex(*operand_1_inst, &operand_1_value);
+        if (operand_0_index == kNoPushData || operand_1_index == kNoPushData) {
+            return kNoPushData;
+        }
+        if (access_inst.Opcode() == spv::OpIMul) {
+            *out_result = operand_0_value * operand_1_value;
+        } else if (access_inst.Opcode() == spv::OpIAdd) {
+            *out_result = operand_0_value + operand_1_value;
+        } else if (access_inst.Opcode() == spv::OpISub) {
+            *out_result = operand_0_value - operand_1_value;
+        } else if (access_inst.Opcode() == spv::OpUDiv) {
+            *out_result = operand_0_value / operand_1_value;
+        }
+        return (operand_0_index == operand_1_index) ? operand_0_index : kPushDataRange;
+    } else if (access_inst.Opcode() == spv::OpConstant) {
+        // if here, part of a calculation above
+        *out_result = access_inst.GetConstantValue();
+        return kPushDataRange;
+    } else if (access_inst.Opcode() != spv::OpLoad) {
+        return push_data_index;
+    }
+
+    if (module.FindDef(access_inst.TypeId())->Opcode() != spv::OpTypeInt) {
+        return push_data_index;
+    }
+    const spirv::Instruction* access_chain_inst = module.FindDef(access_inst.Word(3));
+    if (access_chain_inst->Opcode() != spv::OpAccessChain) {
+        return push_data_index;
+    }
+    const spirv::Instruction* pc_var = module.FindDef(access_chain_inst->Word(3));
+    if (pc_var->ResultId() != entrypoint.push_constant_variable->id) {
+        return push_data_index;
+    }
+    const spirv::Instruction* pc_member_offset_inst = module.FindDef(access_chain_inst->Word(4));
+    if (pc_member_offset_inst->Opcode() != spv::OpConstant) {
+        return push_data_index;
+    }
+    const uint32_t pc_member_offset = pc_member_offset_inst->GetConstantValue();
+    if (pc_member_offset >= entrypoint.push_constant_variable->type_struct_info->members.size()) {
+        return push_data_index;
+    }
+    const uint32_t pc_offset = entrypoint.push_constant_variable->type_struct_info->members[pc_member_offset].decorations->offset;
+    if (pc_offset == spirv::kInvalidValue) {
+        return push_data_index;
+    }
+    if (pc_offset >= cb_sub_state.push_data_value.size()) {
+        return push_data_index;
+    }
+
+    assert(out_result);
+    *out_result = *((uint32_t*)&cb_sub_state.push_data_value[pc_offset]);
+    return pc_offset;
+}
+
 void UntypedContext::GetUntypedDescriptorIndexes(std::vector<HeapAccess::Index>& out_descriptor_indexes,
                                                  std::vector<const spirv::Instruction*>& ac_indexes,
                                                  const spirv::Instruction& type_array_inst) {
@@ -1552,16 +1673,20 @@ void UntypedContext::GetUntypedDescriptorIndexes(std::vector<HeapAccess::Index>&
 
     const uint32_t array_stride_value = GetUntypedArrayStride(type_array_id);
 
-    uint32_t element = vvl::kNoIndex32;  // dynamic index
+    uint32_t element = kDynamicIndex;
+    uint32_t push_data_index = kNoPushData;
     if (ac_indexes.empty()) {
         element = 0;  // implicit zero if no AC index is found
     } else {
         const spirv::Instruction* element_inst = ac_indexes.back();
         ac_indexes.pop_back();
-        module.GetInt32IfConstant(*element_inst, &element);
+        const bool found = module.GetInt32IfConstant(*element_inst, &element);
+        if (!found) {
+            push_data_index = FindPushDataIndex(*element_inst, &element);
+        }
     }
 
-    out_descriptor_indexes.emplace_back(HeapAccess::Index{array_stride_value, element});
+    out_descriptor_indexes.emplace_back(HeapAccess::Index{array_stride_value, element, push_data_index});
 
     // Keep checking for multidimensional arrays
     const spirv::Instruction* element_type_inst = module.FindDef(type_array_inst.Word(2));
@@ -1629,7 +1754,7 @@ void UntypedContext::AddAccess(const VkDescriptorType descriptor_type, const spi
         GetUntypedDescriptorIndexes(descriptor_indexes, ac_indexes, *base_type_inst);
     }
 
-    accesses[variable_id].insert(HeapAccess{descriptor_type, heap_offset, descriptor_indexes, function_call});
+    accesses[variable_id].insert({cb_sub_state, descriptor_type, heap_offset, descriptor_indexes, function_call});
 }
 
 std::vector<const spirv::Instruction*> UntypedContext::FindFunctionCallers(const spirv::Instruction& func_param_inst) {
@@ -1761,29 +1886,37 @@ bool UntypedContext::Print(std::ostringstream& ss, vvl::CommandBuffer& cb_state)
         auto reserve_range = is_sampler ? cb_state.descriptor_heap.sampler_reserved : cb_state.descriptor_heap.resource_reserved;
 
         for (const HeapAccess& access : it->second) {
-            ss << "    - heap offset: 0x" << std::hex << access.heap_offset;
-            VkDeviceSize final_address = 0;
+            assert(is_sampler == (access.descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLER));
 
-            const bool is_array = !access.descriptor_indexes.empty();
-            if (!is_array) {
+            ss << "    - heap offset: 0x" << std::hex << access.heap_offset;
+
+            if (!access.is_array) {
                 ss << ", single element\n";
-                final_address = heap_range.begin + access.heap_offset;
             } else {
                 ss << ", array stride: ";
                 for (const auto& descriptor_index : access.descriptor_indexes) {
                     ss << "[" << std::dec << descriptor_index.array_stride << "]";
                 }
 
-                VkDeviceSize final_offset = access.heap_offset;
-                bool dynamic_index = false;
                 ss << ", array index: ";
+                // To print multidimensional arrays
                 for (const auto& descriptor_index : access.descriptor_indexes) {
-                    if (descriptor_index.element == vvl::kNoIndex32) {
-                        dynamic_index = true;
+                    if (descriptor_index.element == kDynamicIndex) {
                         ss << "[dynamic]";
                     } else {
                         ss << "[" << std::dec << descriptor_index.element << "]";
-                        final_offset += descriptor_index.array_stride * descriptor_index.element;
+                    }
+                }
+
+                for (const auto& descriptor_index : access.descriptor_indexes) {
+                    if (descriptor_index.element != kDynamicIndex) {
+                        if (descriptor_index.push_data_index == kPushDataRange) {
+                            ss << " (from vkCmdPushDataEXT values)";
+                            break;  // only need once
+                        } else if (descriptor_index.push_data_index != vvl::kNoIndex32) {
+                            ss << " (from vkCmdPushDataEXT[" << descriptor_index.push_data_index << ":"
+                               << descriptor_index.push_data_index + 3 << "])";
+                        }
                     }
                 }
 
@@ -1793,13 +1926,10 @@ bool UntypedContext::Print(std::ostringstream& ss, vvl::CommandBuffer& cb_state)
                 }
 
                 ss << '\n';
-                if (!dynamic_index) {
-                    final_address = heap_range.begin + final_offset;
-                }
             }
 
-            if (final_address != 0) {
-                ss << "      - " << (is_sampler ? "Sampler" : "Resource") << " heap address: 0x" << std::hex << final_address
+            if (access.final_address != 0) {
+                ss << "      - " << (is_sampler ? "Sampler" : "Resource") << " heap address: 0x" << std::hex << access.final_address
                    << '\n';
             }
 
@@ -1808,14 +1938,14 @@ bool UntypedContext::Print(std::ostringstream& ss, vvl::CommandBuffer& cb_state)
                << string_VkDescriptorType(access.descriptor_type) << ")\n";
 
             // if we know the real address, see if invalid
-            if (final_address != vvl::kNoIndex32) {
-                if (final_address > heap_range.end) {
+            if (access.final_address != 0) {
+                if (access.final_address > heap_range.end) {
                     ss << "      - [WARNING] OUT OF BOUNDS - the descriptor is not in the " << (is_sampler ? "sampler" : "resource")
                        << " heap\n";
                     found_warning = true;
                 }
                 if (!reserve_range.empty()) {
-                    vvl::range<VkDeviceAddress> final_range{final_address, final_address + descriptor_size};
+                    vvl::range<VkDeviceAddress> final_range{access.final_address, access.final_address + descriptor_size};
                     if (final_range.intersects(reserve_range)) {
                         ss << "      - [WARNING] RESERVED RANGE - this descriptor overlaps with the reserved range\n";
                         found_warning = true;
@@ -1823,7 +1953,7 @@ bool UntypedContext::Print(std::ostringstream& ss, vvl::CommandBuffer& cb_state)
                 }
 
                 VkDeviceSize required_alignment = GetDescriptorHeapAlignment(props, access.descriptor_type);
-                if (!IsPointerAligned(final_address, required_alignment)) {
+                if (!IsPointerAligned(access.final_address, required_alignment)) {
                     vvl::Field alignment_name = GetDescriptorHeapAlignmentField(access.descriptor_type);
                     ss << "      - [WARNING] MISALIGNED - the descriptor is not aligned to " << String(alignment_name);
                     ss << " (" << std::dec << required_alignment << ")\n";
@@ -1887,7 +2017,7 @@ bool CommandBufferSubState::DumpDescriptorHeapUntyped(std::ostringstream& ss, co
         }
     }
 
-    UntypedContext context(dev_data, *module_state_ptr, *entrypoint_ptr);
+    UntypedContext context(*this, dev_data, *module_state_ptr, *entrypoint_ptr);
 
     for (const spirv::Instruction* memory_access_inst : context.entrypoint.accessible.memory_accesses) {
         // Basically there are 2 flows, images and non-images

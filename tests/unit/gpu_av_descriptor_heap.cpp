@@ -3351,7 +3351,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptorUntypedSlang) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
 
     vkt::DescriptorHeap desc_heap(*this);
-    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 4);
+    // Because of -spirv-unified-descriptor-heap-stride
+    const VkDeviceSize resource_stride = std::max(heap_props.imageDescriptorSize, heap_props.bufferDescriptorSize);
+    desc_heap.CreateResourceHeap(resource_stride * 4);
 
     // Same shader as PositiveDescriptorHeapUntyped.SlangBasicBuffer
     char const* cs_source = R"(
