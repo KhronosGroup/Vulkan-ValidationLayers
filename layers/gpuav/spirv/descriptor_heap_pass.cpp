@@ -155,7 +155,7 @@ uint32_t DescriptorHeapPass::GetMapping(const AccessPath& access_path, bool is_s
         }
     }
 
-    assert(false);
+    assert(false);  // caught by things like VU 11292
     return kMappingIndexInvalid;
 }
 
