@@ -6678,8 +6678,10 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapRebindHeap) {
     data[1] = 9;
     data[2] = 1;
 
+    const VkDeviceSize descriptor_stride = std::max(heap_props.bufferDescriptorSize, heap_props.resourceHeapAlignment);
+
     // 1st heap hold 2 SSBO
-    VkDeviceSize resource_heap_size_app = Align(heap_props.bufferDescriptorSize * 2, heap_props.bufferDescriptorAlignment);
+    VkDeviceSize resource_heap_size_app = Align(2 * descriptor_stride, heap_props.bufferDescriptorAlignment);
     const VkDeviceSize resource_heap_size_driver = resource_heap_size_app + heap_props.minResourceHeapReservedRange;
 
     vkt::Buffer descriptor_heap(*m_device, resource_heap_size_driver, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT,
@@ -6691,14 +6693,14 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapRebindHeap) {
                                  vkt::device_address);
     const auto descriptor_heap2_ptr = static_cast<uint8_t*>(descriptor_heap2.Memory().Map());
 
-    VkHostAddressRangeEXT descriptor_host{descriptor_heap_ptr, static_cast<size_t>(heap_props.bufferDescriptorSize)};
+    VkHostAddressRangeEXT descriptor_host{descriptor_heap_ptr, static_cast<size_t>(descriptor_stride)};
     VkDeviceAddressRangeEXT device_range = ssbo1_buffer.AddressRange();
     VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
     descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_info.data.pAddressRange = &device_range;
     vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
 
-    descriptor_host.address = descriptor_heap_ptr + heap_props.bufferDescriptorSize;
+    descriptor_host.address = descriptor_heap_ptr + descriptor_stride;
     device_range = ssbo2_buffer.AddressRange();
     vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
 
@@ -6742,9 +6744,9 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapRebindHeap) {
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
-    bind_resource_info.heapRange.address += heap_props.bufferDescriptorSize;
-    bind_resource_info.heapRange.size -= heap_props.bufferDescriptorSize;
-    bind_resource_info.reservedRangeOffset -= heap_props.bufferDescriptorSize;
+    bind_resource_info.heapRange.address += descriptor_stride;
+    bind_resource_info.heapRange.size -= descriptor_stride;
+    bind_resource_info.reservedRangeOffset -= descriptor_stride;
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
