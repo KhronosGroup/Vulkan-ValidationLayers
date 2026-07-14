@@ -245,6 +245,8 @@ uint32_t CommandBufferSubState::GetActionCommandIndex(VkPipelineBindPoint bind_p
                                                                     : 0;
 }
 
+uint32_t CommandBufferSubState::GetTotalActionCommandCount() const { return draw_index + compute_index + trace_rays_index; }
+
 std::string CommandBufferSubState::GetDebugLabelRegion(uint32_t label_command_i,
                                                        const std::vector<std::string>& initial_label_stack) const {
     std::string debug_region_name;

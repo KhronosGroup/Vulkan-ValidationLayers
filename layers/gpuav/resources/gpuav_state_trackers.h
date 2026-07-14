@@ -95,6 +95,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     uint32_t compute_index = 0;
     uint32_t trace_rays_index = 0;
     uint32_t GetActionCommandIndex(VkPipelineBindPoint bind_point) const;
+    uint32_t GetTotalActionCommandCount() const;
     void IncrementActionCommandCount(VkPipelineBindPoint bind_point);
 
     std::vector<PushConstantData> push_constant_data_chunks;

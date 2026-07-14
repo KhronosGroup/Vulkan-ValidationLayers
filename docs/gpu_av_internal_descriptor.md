@@ -47,6 +47,18 @@ If you do a single address (option 2) you could speed up the first lookup by inj
 
 Option 2 should be faster, but will likely consume a lot more memory.
 
+### Tracking the Action Command Index
+
+Using option 1 above, something to be considered is you actually have two different "action command index" values
+
+```c
+vkCmdDraw() // draw index 0, gloabl index 0
+vkCmdDraw() // draw index 1, gloabl index 1
+vkCmdDispatch() // dispatch index 0, gloabl index 2
+```
+
+We will want the local `draw index` value to do a lookup later which command buffer region was used.
+
 ## Classic Descriptors
 
 With Vulkan 1.0 style descriptors, this is done by stealing the last descriptor set slot from the user. So if the driver exposed `maxBoundDescriptorSets == 8`, then GPU-AV will tell the app the real `maxBoundDescriptorSets` is actually `7` and use that final slot to inject the descriptor.

@@ -19,6 +19,7 @@
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include <spirv/unified1/spirv.hpp>
+#include <string>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 #include "chassis/chassis_modification_state.h"
@@ -51,7 +52,14 @@ struct InstBindingPipeLayout {
 };
 
 struct CommonInstrumentationErrorInfo {
+    // example:
+    //   vkCmdDraw (index 0)
+    //   vkCmdDraw (index 1)
+    //   vkCmdDispatch (index 0)
     uint32_t action_command_index = 0;
+    // For Classic descriptors we didn't need this as your pipeline layout were tied to a bind point
+    // With Heaps/Buffer this was removed and draws and dispatches look the same from a descriptor point of view
+    uint32_t total_action_commands = 0;
     // Used to know if from draw, dispatch, or traceRays
     VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
 };
@@ -533,7 +541,17 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator& gpuav, 
                                                               const LastBound& last_bound,
                                                               const CommonInstrumentationErrorInfo& common_error_info,
                                                               const Location& loc) {
-    const VkDeviceSize indirect_buffer_offset = gpuav.heap_indirect_buffer_stride_ * common_error_info.action_command_index;
+    // Only print once when we hit the limit
+    if (common_error_info.total_action_commands == gpuav.gpuav_settings.indices_buffer_count) {
+        std::string message = "The total number of draws/dispatch/traceRays has hint the limit of " +
+                              std::to_string(gpuav.gpuav_settings.invalid_index_command) +
+                              " and no more action commands will be validated. This limit can be adjusted with "
+                              "VK_LAYER_GPUAV_MAX_INDICES_COUNT (gpuav_max_indices_count)";
+        gpuav.InternalWarning(cb_state.Handle(), loc, message.c_str());
+        return;
+    }
+
+    const VkDeviceSize indirect_buffer_offset = gpuav.heap_indirect_buffer_stride_ * common_error_info.total_action_commands;
 
     const auto& indirect_buffer = gpuav.GetGlobalDescriptorHeap();
     uint8_t* indirect_buffer_ptr = static_cast<uint8_t*>(indirect_buffer.GetMappedPtr());
@@ -574,6 +592,15 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator& gpuav
                               "Unable to bind instrumentation descriptor set, it would override application's bound set");
         return;
     }
+    // Only print once when we hit the limit
+    if (common_error_info.total_action_commands == gpuav.gpuav_settings.indices_buffer_count) {
+        std::string message = "The total number of draws/dispatch/traceRays has hint the limit of " +
+                              std::to_string(gpuav.gpuav_settings.invalid_index_command) +
+                              " and no more action commands will be validated. This limit can be adjusted with "
+                              "VK_LAYER_GPUAV_MAX_INDICES_COUNT (gpuav_max_indices_count)";
+        gpuav.InternalWarning(cb_state.Handle(), loc, message.c_str());
+        return;
+    }
 
     const auto& gloabl_descriptor_buffer = gpuav.GetGlobalDescriptorBuffer();
 
@@ -589,7 +616,7 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator& gpuav
     }
 
     const VkDeviceSize gloabl_descriptor_buffer_offset =
-        gpuav.resource_descriptor_buffer_stride_ * common_error_info.action_command_index;
+        gpuav.resource_descriptor_buffer_stride_ * common_error_info.total_action_commands;
     uint8_t* gloabl_descriptor_buffer_ptr = static_cast<uint8_t*>(gloabl_descriptor_buffer.GetMappedPtr());
     gloabl_descriptor_buffer_ptr += gloabl_descriptor_buffer_offset;
 
@@ -656,6 +683,7 @@ void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferS
 
     CommonInstrumentationErrorInfo common_error_info;
     common_error_info.action_command_index = cb_state.GetActionCommandIndex(last_bound.bind_point);
+    common_error_info.total_action_commands = cb_state.GetTotalActionCommandCount();
     common_error_info.pipeline_bind_point = last_bound.bind_point;
 
     if (mode == vvl::DescriptorModeHeap) {

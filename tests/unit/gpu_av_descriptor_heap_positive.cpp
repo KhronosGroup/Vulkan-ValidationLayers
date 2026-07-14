@@ -1836,3 +1836,100 @@ TEST_F(PositiveGpuAVDescriptorHeap, CombinedSampler) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveGpuAVDescriptorHeap, ComputeAndGraphicsShareDescriptor) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}, false));
+    InitRenderTarget();
+
+    VkDeviceSize resource_stride = std::max(heap_props.bufferDescriptorSize, heap_props.resourceHeapAlignment);
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(resource_stride * 2);
+
+    vkt::Buffer c_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer g_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    desc_heap.WriteBufferDescriptorAtOffset(c_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(g_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0;
+    mappings[1] = MakeSetAndBindingMapping(1, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO {
+            uint compute_data;
+        };
+        void main() {
+            compute_data = 42;
+        }
+    )glsl";
+
+    char const* vs_source = R"glsl(
+        #version 450
+        layout(set = 1, binding = 1) buffer SSBO {
+            uint graphics_data;
+        };
+        void main() {
+            if (gl_VertexIndex == 0) {
+                graphics_data = 88;
+            }
+            gl_Position = vec4(1.0f);
+            gl_PointSize = 1.0f;
+        }
+    )glsl";
+
+    VkShaderObj vert_module = VkShaderObj(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj frag_module = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineShaderStageCreateInfo stages[2] = {vert_module.GetStageCreateInfo(&mapping_info), frag_module.GetStageCreateInfo()};
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreatePipelineHelper graphics_pipe(*this, &pipeline_create_flags_2_create_info);
+    graphics_pipe.gp_ci_.layout = VK_NULL_HANDLE;
+    graphics_pipe.gp_ci_.stageCount = 2u;
+    graphics_pipe.gp_ci_.pStages = stages;
+    graphics_pipe.CreateGraphicsPipeline(false);
+
+    vkt::HeapComputePipeline compute_pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = desc_heap.resource_heap_.AddressRange();
+    bind_resource_info.reservedRangeOffset = desc_heap.GetResourceHeapReservedRangeOffset();
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipe);
+
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+
+    bind_resource_info.heapRange.address += resource_stride;
+    bind_resource_info.heapRange.size -= resource_stride;
+    bind_resource_info.reservedRangeOffset -= resource_stride;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    m_command_buffer.EndRenderPass();
+
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    uint32_t* data = (uint32_t*)g_buffer.Memory().Map();
+    ASSERT_TRUE(data[0] == 88u);
+    data = (uint32_t*)c_buffer.Memory().Map();
+    ASSERT_TRUE(data[0] == 42u);
+}
