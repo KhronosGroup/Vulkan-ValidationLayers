@@ -2027,7 +2027,7 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_c
         ResourceUsageTag cb_tag = access_context.NextSubCommandTag(loc.function, SubCommandType::kIndex);
         access_context.AddSubcommandHandleIndexed(cb_tag, secondary_command_buffer.Handle(), cmd_index);
     }
-    access_context.RecordExecutedCommandBuffer(*GetAccessContext(secondary_command_buffer));
+    access_context.RecordExecutedCommandBuffer(GetAccessContext(secondary_command_buffer));
 }
 
 }  // namespace syncval

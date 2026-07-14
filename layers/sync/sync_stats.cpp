@@ -122,8 +122,8 @@ void AccessStats::Update(SyncValidator& validator) {
     subpass_access_stats = {};
 
     validator.device_state->ForEachShared<vvl::CommandBuffer>([this](std::shared_ptr<vvl::CommandBuffer> cb) {
-        const CommandBufferAccessContext* cb_access_context = GetAccessContext(*cb);
-        cb_access_context->UpdateStats(*this);
+        const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb);
+        cb_access_context.UpdateStats(*this);
     });
     for (const auto& batch : validator.GetAllQueueBatchContexts()) {
         const AccessContext& access_context = batch->GetAccessContext();

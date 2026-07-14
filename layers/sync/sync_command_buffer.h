@@ -432,11 +432,11 @@ static inline const CommandBufferSubState &SubState(const vvl::CommandBuffer &cb
     return *static_cast<const CommandBufferSubState *>(cb.SubState(LayerObjectTypeSyncValidation));
 }
 
-static inline CommandBufferAccessContext *GetAccessContext(vvl::CommandBuffer &cb) {
-    return &static_cast<CommandBufferSubState *>(cb.SubState(LayerObjectTypeSyncValidation))->access_context;
+static inline CommandBufferAccessContext& GetAccessContext(vvl::CommandBuffer& cb) {
+    return static_cast<CommandBufferSubState*>(cb.SubState(LayerObjectTypeSyncValidation))->access_context;
 }
-static inline const CommandBufferAccessContext *GetAccessContext(const vvl::CommandBuffer &cb) {
-    return &static_cast<const CommandBufferSubState *>(cb.SubState(LayerObjectTypeSyncValidation))->access_context;
+static inline const CommandBufferAccessContext& GetAccessContext(const vvl::CommandBuffer& cb) {
+    return static_cast<const CommandBufferSubState*>(cb.SubState(LayerObjectTypeSyncValidation))->access_context;
 }
 
 }  // namespace syncval
