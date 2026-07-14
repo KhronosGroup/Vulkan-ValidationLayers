@@ -1733,38 +1733,36 @@ uint32_t Module::ResolveConstantSizeOf(const VkPhysicalDeviceDescriptorHeapPrope
     return 0;
 }
 
+static uint32_t ResolveConstantFoldOperand(const Module& module, const Instruction& operand_inst, const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props) {
+    if (operand_inst.Opcode() == spv::OpConstantSizeOfEXT) {
+        return module.ResolveConstantSizeOf(props, operand_inst);
+    } else if (operand_inst.Opcode() == spv::OpSpecConstantOp) {
+        return module.ResolveConstantFoldHeaps(props, operand_inst);
+    }
+    return operand_inst.GetConstantValue();
+}
+
 // if we hit this, its because of OpConstantSizeOfEXT can't be folded (https://godbolt.org/z/3z6Pao4sf)
 // TODO - We will need some sort of internal constant folding here... fun!
 // ... for now lets make assumption only thing people will use here is IMul/IAdd/Isub and just do some folding
+//
+// Slang with -spirv-unified-descriptor-heap-stride will do a OpSelect/OpUGreaterThan to get a max(buffer, image)
 uint32_t Module::ResolveConstantFoldHeaps(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
                                           const spirv::Instruction& spec_constant_op) const {
     assert(spec_constant_op.Opcode() == spv::OpSpecConstantOp);
     const uint32_t spec_op = spec_constant_op.Word(3);
-    if (spec_op != spv::OpIMul && spec_op != spv::OpIAdd && spec_op != spv::OpISub) {
+    if (!IsValueIn((spv::Op)spec_op, {spv::OpIMul, spv::OpIAdd, spv::OpISub, spv::OpUGreaterThan, spv::OpUGreaterThanEqual, spv::OpULessThan, spv::OpULessThanEqual, spv::OpSelect})) {
         assert(false);  // hit another case
         return 0;
     }
 
-    const spirv::Instruction& operand_0_inst = *FindDef(spec_constant_op.Word(4));
-    const spirv::Instruction& operand_1_inst = *FindDef(spec_constant_op.Word(5));
+    const spirv::Instruction* operand_0_inst = FindDef(spec_constant_op.Word(4));
+    const spirv::Instruction* operand_1_inst = FindDef(spec_constant_op.Word(5));
+    const spirv::Instruction* operand_2_inst = spec_constant_op.Length() > 6 ? FindDef(spec_constant_op.Word(6)) : nullptr;
 
-    uint32_t operand_0 = 0;
-    if (operand_0_inst.Opcode() == spv::OpConstantSizeOfEXT) {
-        operand_0 = ResolveConstantSizeOf(props, operand_0_inst);
-    } else if (operand_0_inst.Opcode() == spv::OpSpecConstantOp) {
-        operand_0 = ResolveConstantFoldHeaps(props, operand_0_inst);
-    } else {
-        operand_0 = operand_0_inst.GetConstantValue();
-    }
-
-    uint32_t operand_1 = 0;
-    if (operand_1_inst.Opcode() == spv::OpConstantSizeOfEXT) {
-        operand_1 = ResolveConstantSizeOf(props, operand_1_inst);
-    } else if (operand_1_inst.Opcode() == spv::OpSpecConstantOp) {
-        operand_1 = ResolveConstantFoldHeaps(props, operand_1_inst);
-    } else {
-        operand_1 = operand_1_inst.GetConstantValue();
-    }
+    const uint32_t operand_0 = ResolveConstantFoldOperand(*this, *operand_0_inst, props);
+    const uint32_t operand_1 = ResolveConstantFoldOperand(*this, *operand_1_inst, props);
+    const uint32_t operand_2 = operand_2_inst ? ResolveConstantFoldOperand(*this, *operand_2_inst, props) : 0;
 
     if (spec_op == spv::OpIMul) {
         return operand_0 * operand_1;
@@ -1772,6 +1770,16 @@ uint32_t Module::ResolveConstantFoldHeaps(const VkPhysicalDeviceDescriptorHeapPr
         return operand_0 + operand_1;
     } else if (spec_op == spv::OpISub) {
         return operand_0 - operand_1;
+    } else if (spec_op == spv::OpUGreaterThan) {
+        return operand_0 > operand_1;
+    } else if (spec_op == spv::OpUGreaterThanEqual) {
+        return operand_0 >= operand_1;
+    } else if (spec_op == spv::OpULessThan) {
+        return operand_0 < operand_1;
+    } else if (spec_op == spv::OpULessThanEqual) {
+        return operand_0 <= operand_1;
+    } else if (spec_op == spv::OpSelect) {
+        return operand_0 != 0 ? operand_1 : operand_2;
     }
     assert(false);
     return 0;
