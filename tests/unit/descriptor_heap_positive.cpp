@@ -26,8 +26,10 @@ class PositiveDescriptorHeap : public DescriptorHeapTest {};
 void DescriptorHeapTest::InitBasicDescriptorHeap() {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
     heap_props.pNext = &tensor_heap_props;
     GetPhysicalDeviceProperties2(heap_props);
