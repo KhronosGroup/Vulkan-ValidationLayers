@@ -221,8 +221,8 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     RenderPassAccessContext *GetCurrentRenderPassContext() { return current_renderpass_context_; }
     const RenderPassAccessContext *GetCurrentRenderPassContext() const { return current_renderpass_context_; }
     uint32_t GetCurrentRenderPassInstanceId() const { return current_render_pass_instance_id_; }
-    ResourceUsageTag RecordBeginRenderPass(vvl::Func command, const vvl::RenderPass &rp_state, const VkRect2D &render_area,
-                                           const std::vector<const vvl::ImageView *> &attachment_views);
+    ResourceUsageTag RecordBeginRenderPass(vvl::Func command, const vvl::RenderPass& rp_state, const VkRect2D& render_area,
+                                           const std::vector<std::shared_ptr<const vvl::ImageView>>& attachment_views);
 
     bool ValidateBeginRendering(const ErrorObject &error_obj, BeginRenderingCmdState &cmd_state) const;
     void RecordBeginRendering(BeginRenderingCmdState &cmd_state, const Location &loc);

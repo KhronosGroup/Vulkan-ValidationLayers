@@ -1313,9 +1313,9 @@ void CommandBufferAccessContext::RecordClearAttachment(ResourceUsageTag tag, con
 
 QueueId CommandBufferAccessContext::GetQueueId() const { return kQueueIdInvalid; }
 
-ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(vvl::Func command, const vvl::RenderPass& rp_state,
-                                                                   const VkRect2D& render_area,
-                                                                   const std::vector<const vvl::ImageView*>& attachment_views) {
+ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(
+    vvl::Func command, const vvl::RenderPass& rp_state, const VkRect2D& render_area,
+    const std::vector<std::shared_ptr<const vvl::ImageView>>& attachment_views) {
     // Create an access context the current renderpass.
     const auto barrier_tag = NextCommandTag(command, SubCommandType::kSubpassTransition, 0);
     AddCommandHandle(barrier_tag, rp_state.Handle());

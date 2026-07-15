@@ -858,60 +858,11 @@ SyncOpBeginRenderPass::SyncOpBeginRenderPass(vvl::Func command, const SyncValida
     renderpass_begin_info_ = vku::safe_VkRenderPassBeginInfo(&render_pass_begin_info);
     auto fb_state = sync_state.Get<vvl::Framebuffer>(render_pass_begin_info.framebuffer);
     if (fb_state) {
-        shared_attachments_ = sync_state.device_state->GetAttachmentViews(*renderpass_begin_info_.ptr(), *fb_state);
-        // TODO: Revisit this when all attachment validation is through SyncOps to see if we can discard the plain pointer copy
-        // Note that this a safe to presist as long as shared_attachments is not cleared
-        attachments_.reserve(shared_attachments_.size());
-        for (const auto& attachment : shared_attachments_) {
-            attachments_.emplace_back(attachment.get());
-        }
+        attachments_ = sync_state.device_state->GetAttachmentViews(*renderpass_begin_info_.ptr(), *fb_state);
     }
     if (p_subpass_begin_info) {
         subpass_begin_info_ = vku::safe_VkSubpassBeginInfo(p_subpass_begin_info);
     }
-}
-
-bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext& cb_context) const {
-    // Check if any of the layout transitions are hazardous.... but we don't have the renderpass context to work with, so we
-    bool skip = false;
-
-    if (!rp_state_) {
-        return skip;
-    }
-    const vvl::RenderPass& rp_state = *rp_state_.get();
-
-    const uint32_t subpass = 0;
-    const uint32_t view_mask = rp_state_->create_info.pSubpasses[0].viewMask;
-
-    // Construct the state to validate against (since validation is const and RecordCmdBeginRenderPass hasn't happened yet).
-    // TODO: investigate if using nullptr in InitFrom is safe (this just follows the initial implementation - it assumes
-    // that array of subpass dependencies won't be indexed, but it's not obvious).
-    AccessContext temp_context(cb_context.GetSyncState());
-
-    temp_context.InitFrom(subpass, cb_context.GetQueueFlags(), rp_state.subpass_dependency_infos, nullptr,
-                          cb_context.GetCurrentAccessContext());
-
-    // Validate attachment operations
-    if (attachments_.empty()) return skip;
-    const auto& render_area = renderpass_begin_info_.renderArea;
-    const uint32_t render_pass_instance_id = cb_context.GetCurrentRenderPassInstanceId();
-
-    // Since the isn't a valid RenderPassAccessContext until Record, needs to create the view/generator list... we could limit this
-    // by predicating on whether subpass 0 uses the attachment if it is too expensive to create the full list redundantly here.
-    // More broadly we could look at thread specific state shared between Validate and Record as is done for other heavyweight
-    // operations (though it's currently a messy approach)
-    const AttachmentViewGenVector view_gens = RenderPassAccessContext::CreateAttachmentViewGen(render_area, attachments_);
-    skip |= RenderPassAccessContext::ValidateLayoutTransitions(cb_context, temp_context, rp_state, render_pass_instance_id, subpass,
-                                                               view_mask, view_gens, command_);
-
-    // Validate load operations if there were no layout transition hazards
-    if (!skip) {
-        RenderPassAccessContext::RecordLayoutTransitions(rp_state, subpass, view_gens, kInvalidTag, temp_context);
-        skip |= RenderPassAccessContext::ValidateLoadOperation(cb_context, temp_context, rp_state, render_pass_instance_id, subpass,
-                                                               view_mask, view_gens, command_);
-    }
-
-    return skip;
 }
 
 ResourceUsageTag SyncOpBeginRenderPass::Record(CommandBufferAccessContext& cb_context) {
@@ -945,23 +896,7 @@ void SyncOpBeginRenderPass::ReplayRecord(CommandExecutionContext& exec_context, 
 
 SyncOpNextSubpass::SyncOpNextSubpass(vvl::Func command, const SyncValidator& sync_state,
                                      const VkSubpassBeginInfo* pSubpassBeginInfo, const VkSubpassEndInfo* pSubpassEndInfo)
-    : SyncOpBase(command) {
-    if (pSubpassBeginInfo) {
-        subpass_begin_info_.initialize(pSubpassBeginInfo);
-    }
-    if (pSubpassEndInfo) {
-        subpass_end_info_.initialize(pSubpassEndInfo);
-    }
-}
-
-bool SyncOpNextSubpass::Validate(const CommandBufferAccessContext& cb_context) const {
-    bool skip = false;
-    const auto* renderpass_context = cb_context.GetCurrentRenderPassContext();
-    if (!renderpass_context) return skip;
-
-    skip |= renderpass_context->ValidateNextSubpass(cb_context, command_);
-    return skip;
-}
+    : SyncOpBase(command) {}
 
 ResourceUsageTag SyncOpNextSubpass::Record(CommandBufferAccessContext& cb_context) {
     return cb_context.RecordNextSubpass(command_);
@@ -983,22 +918,10 @@ bool SyncOpNextSubpass::ReplayValidate(ReplayState& replay, ResourceUsageTag rec
 void SyncOpNextSubpass::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
     // All the needed replay state changes (for the layout transition, and context update) have to happen in ReplayValidate
 }
+
 SyncOpEndRenderPass::SyncOpEndRenderPass(vvl::Func command, const SyncValidator& sync_state,
                                          const VkSubpassEndInfo* pSubpassEndInfo)
-    : SyncOpBase(command) {
-    if (pSubpassEndInfo) {
-        subpass_end_info_.initialize(pSubpassEndInfo);
-    }
-}
-
-bool SyncOpEndRenderPass::Validate(const CommandBufferAccessContext& cb_context) const {
-    bool skip = false;
-    const auto* renderpass_context = cb_context.GetCurrentRenderPassContext();
-
-    if (!renderpass_context) return skip;
-    skip |= renderpass_context->ValidateEndRenderPass(cb_context, command_);
-    return skip;
-}
+    : SyncOpBase(command) {}
 
 ResourceUsageTag SyncOpEndRenderPass::Record(CommandBufferAccessContext& cb_context) {
     return cb_context.RecordEndRenderPass(command_);

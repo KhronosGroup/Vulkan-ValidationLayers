@@ -893,20 +893,20 @@ void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag tag) {
 }
 
 AttachmentViewGenVector RenderPassAccessContext::CreateAttachmentViewGen(
-    const VkRect2D& render_area, const std::vector<const vvl::ImageView*>& attachment_views) {
+    const VkRect2D& render_area, const std::vector<std::shared_ptr<const vvl::ImageView>>& attachment_views) {
     AttachmentViewGenVector view_gens;
     VkExtent3D extent = CastTo3D(render_area.extent);
     VkOffset3D offset = CastTo3D(render_area.offset);
     view_gens.reserve(attachment_views.size());
-    for (const auto* view : attachment_views) {
-        view_gens.emplace_back(view, offset, extent);
+    for (const auto& view : attachment_views) {
+        view_gens.emplace_back(view.get(), offset, extent);
     }
     return view_gens;
 }
 
 RenderPassAccessContext::RenderPassAccessContext(const vvl::RenderPass& rp_state, const VkRect2D& render_area,
                                                  VkQueueFlags queue_flags,
-                                                 const std::vector<const vvl::ImageView*>& attachment_views,
+                                                 const std::vector<std::shared_ptr<const vvl::ImageView>>& attachment_views,
                                                  const AccessContext& external_context, uint32_t render_pass_instance_id)
     : rp_state_(&rp_state),
       attachment_views_(CreateAttachmentViewGen(render_area, attachment_views)),
