@@ -1104,6 +1104,7 @@ TEST_F(PositiveDescriptorHeapUntyped, OffsetIdStaticArraySize) {
                OpDecorate %SSBO Block
                OpMemberDecorate %SSBO 0 Offset 0
                OpMemberDecorate %SSBO 1 Offset 4
+               OpMemberDecorate %SSBO 2 Offset 8
                OpDecorate %heap_layout Block
                OpMemberDecorateIdEXT %heap_layout 0 OffsetIdEXT %buf_size
                OpDecorateId %buffer_array ArrayStrideIdEXT %buf_size
