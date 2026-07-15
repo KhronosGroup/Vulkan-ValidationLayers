@@ -183,7 +183,6 @@ class SyncOpBase {
 
     const char *CmdName() const { return vvl::String(command_); }
 
-    virtual ResourceUsageTag Record(CommandBufferAccessContext& cb_context) = 0;
     virtual bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const = 0;
     virtual void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const = 0;
 
@@ -202,7 +201,7 @@ class SyncOpPipelineBarrier : public SyncOpBase {
                           const VkDependencyInfo& pDependencyInfo);
     ~SyncOpPipelineBarrier() override = default;
 
-    ResourceUsageTag Record(CommandBufferAccessContext& cb_context) override;
+    ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
 
@@ -235,7 +234,7 @@ class SyncOpWaitEvents : public SyncOpBase {
     SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t eventCount,
                      const VkEvent *pEvents, const VkDependencyInfo *pDependencyInfo);
 
-    ResourceUsageTag Record(CommandBufferAccessContext& cb_context) override;
+    ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
     bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 
@@ -255,7 +254,7 @@ class SyncOpResetEvent : public SyncOpBase {
     SyncOpResetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                      VkPipelineStageFlags2 stageMask);
 
-    ResourceUsageTag Record(CommandBufferAccessContext& cb_context) override;
+    ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
 
@@ -271,7 +270,7 @@ class SyncOpSetEvent : public SyncOpBase {
     SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                    const VkDependencyInfo &dep_info, const AccessContext *access_context);
 
-    ResourceUsageTag Record(CommandBufferAccessContext& cb_context) override;
+    ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
     bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 
@@ -289,7 +288,7 @@ class SyncOpBeginRenderPass : public SyncOpBase {
     SyncOpBeginRenderPass(vvl::Func command, const SyncValidator& sync_state, const VkRenderPassBeginInfo& render_pass_begin_info,
                           const VkSubpassBeginInfo* p_subpass_begin_info);
 
-    ResourceUsageTag Record(CommandBufferAccessContext& cb_context) override;
+    ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
     const RenderPassAccessContext* GetRenderPassAccessContext() const { return rp_context_; }
@@ -307,7 +306,7 @@ class SyncOpNextSubpass : public SyncOpBase {
     SyncOpNextSubpass(vvl::Func command, const SyncValidator &sync_state, const VkSubpassBeginInfo *pSubpassBeginInfo,
                       const VkSubpassEndInfo *pSubpassEndInfo);
 
-    ResourceUsageTag Record(CommandBufferAccessContext& cb_context) override;
+    ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
     bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 };
@@ -316,7 +315,7 @@ class SyncOpEndRenderPass : public SyncOpBase {
   public:
     SyncOpEndRenderPass(vvl::Func command, const SyncValidator &sync_state, const VkSubpassEndInfo *pSubpassEndInfo);
 
-    ResourceUsageTag Record(CommandBufferAccessContext& cb_context) override;
+    ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
     bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 };

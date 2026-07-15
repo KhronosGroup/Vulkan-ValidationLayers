@@ -601,11 +601,15 @@ void SyncValidator::PostCallRecordCmdPipelineBarrier(
     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
     const VkImageMemoryBarrier* pImageMemoryBarriers, const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
+    CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    cb_access_context.RecordSyncOp<SyncOpPipelineBarrier>(
-        record_obj.location.function, *this, cb_access_context.GetQueueFlags(), srcStageMask, dstStageMask, memoryBarrierCount,
-        pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    auto sync_op = std::make_shared<SyncOpPipelineBarrier>(
+        record_obj.location.function, *this, queue_flags, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
+        bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+
+    const ResourceUsageTag tag = sync_op->Record(cb_context);
+    cb_context.AddSyncOp(tag, std::move(sync_op));
 }
 
 bool SyncValidator::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR* pDependencyInfo,
@@ -643,10 +647,12 @@ void SyncValidator::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuf
         return;
     }
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
-    const VkQueueFlags queue_flags = cb_access_context.GetQueueFlags();
+    CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    cb_access_context.RecordSyncOp<SyncOpPipelineBarrier>(record_obj.location.function, *this, queue_flags, *pDependencyInfo);
+    auto sync_op = std::make_shared<SyncOpPipelineBarrier>(record_obj.location.function, *this, queue_flags, *pDependencyInfo);
+    const ResourceUsageTag tag = sync_op->Record(cb_context);
+    cb_context.AddSyncOp(tag, std::move(sync_op));
 }
 
 void SyncValidator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {
@@ -2105,9 +2111,12 @@ void SyncValidator::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkE
                                               const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    cb_context.RecordSyncOp<SyncOpSetEvent>(record_obj.location.function, *this, cb_context.GetQueueFlags(), event, stageMask,
-                                            &cb_context.GetCurrentAccessContext());
+    auto sync_op = std::make_shared<SyncOpSetEvent>(record_obj.location.function, *this, queue_flags, event, stageMask,
+                                                    &cb_context.GetCurrentAccessContext());
+    const ResourceUsageTag tag = sync_op->Record(cb_context);
+    cb_context.AddSyncOp(tag, std::move(sync_op));
 }
 
 bool SyncValidator::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -2141,9 +2150,12 @@ void SyncValidator::PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, Vk
     }
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    cb_context.RecordSyncOp<SyncOpSetEvent>(record_obj.location.function, *this, cb_context.GetQueueFlags(), event,
-                                            *pDependencyInfo, &cb_context.GetCurrentAccessContext());
+    auto sync_op = std::make_shared<SyncOpSetEvent>(record_obj.location.function, *this, queue_flags, event, *pDependencyInfo,
+                                                    &cb_context.GetCurrentAccessContext());
+    const ResourceUsageTag tag = sync_op->Record(cb_context);
+    cb_context.AddSyncOp(tag, std::move(sync_op));
 }
 
 bool SyncValidator::ValidateCmdResetEvent(const CommandExecutionContext& exec_context,
@@ -2180,7 +2192,11 @@ void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, V
                                                 const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    cb_context.RecordSyncOp<SyncOpResetEvent>(record_obj.location.function, *this, cb_context.GetQueueFlags(), event, stageMask);
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
+
+    auto sync_op = std::make_shared<SyncOpResetEvent>(record_obj.location.function, *this, queue_flags, event, stageMask);
+    const ResourceUsageTag tag = sync_op->Record(cb_context);
+    cb_context.AddSyncOp(tag, std::move(sync_op));
 }
 
 bool SyncValidator::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
@@ -2206,8 +2222,11 @@ void SyncValidator::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, 
                                                  const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    cb_context.RecordSyncOp<SyncOpResetEvent>(record_obj.location.function, *this, cb_context.GetQueueFlags(), event, stageMask);
+    auto sync_op = std::make_shared<SyncOpResetEvent>(record_obj.location.function, *this, queue_flags, event, stageMask);
+    const ResourceUsageTag tag = sync_op->Record(cb_context);
+    cb_context.AddSyncOp(tag, std::move(sync_op));
 }
 
 bool SyncValidator::ValidateCmdWaitEvents(const CommandExecutionContext& exec_context,
@@ -2341,9 +2360,11 @@ void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, u
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
     const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    cb_context.RecordSyncOp<SyncOpWaitEvents>(record_obj.location.function, *this, queue_flags, eventCount, pEvents, srcStageMask,
-                                              dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
-                                              pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    auto sync_op = std::make_shared<SyncOpWaitEvents>(
+        record_obj.location.function, *this, queue_flags, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount,
+        pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    const ResourceUsageTag tag = sync_op->Record(cb_context);
+    cb_context.AddSyncOp(tag, std::move(sync_op));
 }
 
 bool SyncValidator::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
@@ -2389,8 +2410,10 @@ void SyncValidator::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, 
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
     const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    cb_context.RecordSyncOp<SyncOpWaitEvents>(record_obj.location.function, *this, queue_flags, eventCount, pEvents,
-                                              pDependencyInfos);
+    auto sync_op =
+        std::make_shared<SyncOpWaitEvents>(record_obj.location.function, *this, queue_flags, eventCount, pEvents, pDependencyInfos);
+    const ResourceUsageTag tag = sync_op->Record(cb_context);
+    cb_context.AddSyncOp(tag, std::move(sync_op));
 }
 
 bool SyncValidator::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,

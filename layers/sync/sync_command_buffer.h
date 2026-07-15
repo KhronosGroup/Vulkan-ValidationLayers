@@ -179,12 +179,10 @@ class CommandExecutionContext {
 
 class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProvider {
   public:
-    using SyncOpPointer = std::shared_ptr<SyncOpBase>;
-
     struct SyncOpEntry {
         ResourceUsageTag tag;
-        SyncOpPointer sync_op;
-        SyncOpEntry(ResourceUsageTag tag_, SyncOpPointer &&sync_op_) : tag(tag_), sync_op(std::move(sync_op_)) {}
+        std::shared_ptr<SyncOpBase> sync_op;
+        SyncOpEntry(ResourceUsageTag tag_, std::shared_ptr<SyncOpBase>&& sync_op_) : tag(tag_), sync_op(std::move(sync_op_)) {}
         SyncOpEntry() = default;
         SyncOpEntry(const SyncOpEntry &other) = default;
     };
@@ -268,6 +266,8 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     // The following method allows to set subcommand handles independently of the main command.
     void AddSubcommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index);
 
+    void AddSyncOp(ResourceUsageTag tag, std::shared_ptr<SyncOpBase>&& sync_op);
+
     const std::vector<HandleRecord> &GetHandleRecords() const { return handles_; }
 
     std::shared_ptr<const vvl::CommandBuffer> GetCBStateShared() const { return cb_state_->shared_from_this(); }
@@ -277,12 +277,6 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
         return *cb_state_;
     }
 
-    template <class T, class... Args>
-    void RecordSyncOp(Args &&...args) {
-        // T must be as derived from SyncOpBase or the compiler will flag the next line as an error.
-        SyncOpPointer sync_op(std::make_shared<T>(std::forward<Args>(args)...));
-        RecordSyncOp(std::move(sync_op));  // Call the non-template version
-    }
     std::shared_ptr<AccessLog> GetAccessLogShared() const { return access_log_; }
     std::shared_ptr<CommandBufferSet> GetCBReferencesShared() const { return cbs_referenced_; }
     void ImportRecordedAccessLog(const CommandBufferAccessContext &cb_context);
@@ -299,7 +293,6 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     CommandBufferAccessContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags);
 
     uint32_t AddHandle(const VulkanTypedHandle &typed_handle, uint32_t index);
-    void RecordSyncOp(SyncOpPointer &&sync_op);
     AttachmentAccess GetAttachmentAccess(SyncOrdering ordering, AttachmentAccessType type = AttachmentAccessType::Access) const;
 
     // Should be called only during render pass instance
