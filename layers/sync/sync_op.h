@@ -177,47 +177,21 @@ struct BarrierSet {
 
 class SyncOpBase {
   public:
-    SyncOpBase() : command_(vvl::Func::Empty) {}
+    SyncOpBase() = default;
     SyncOpBase(vvl::Func command) : command_(command) {}
     virtual ~SyncOpBase() = default;
-
-    const char *CmdName() const { return vvl::String(command_); }
-
-    virtual bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const = 0;
-    virtual void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const = 0;
+    virtual bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const = 0;
+    virtual void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const = 0;
 
   protected:
-    vvl::Func command_;
+    vvl::Func command_ = vvl::Func::Empty;
 };
 
 class SyncOpPipelineBarrier : public SyncOpBase {
   public:
-    SyncOpPipelineBarrier(vvl::Func command, const SyncValidator& sync_state, VkQueueFlags queue_flags,
-                          VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount,
-                          const VkMemoryBarrier* pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                          const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                          const VkImageMemoryBarrier* pImageMemoryBarriers);
-    SyncOpPipelineBarrier(vvl::Func command, const SyncValidator& sync_state, VkQueueFlags queue_flags,
-                          const VkDependencyInfo& pDependencyInfo);
-    ~SyncOpPipelineBarrier() override = default;
-
-    ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
+    SyncOpPipelineBarrier(BarrierSet&& barrier_set);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
-
-  private:
-    // A single barrier can be applied more efficently (immidiately) compared to multiple barrier.
-    // The latter are applied in two steps (collect and then apply)
-    void ApplySingleBufferBarrier(CommandExecutionContext &exec_context, const SyncBufferBarrier &buffer_barrier,
-                                  const SyncBarrier &exec_dep_barrier) const;
-    void ApplySingleImageBarrier(CommandExecutionContext &exec_context, const SyncImageBarrier &image_barrier,
-                                 const SyncBarrier &exec_dep_barrier, ResourceUsageTag exec_tag) const;
-    void ApplySingleMemoryBarrier(CommandExecutionContext &exec_context, const SyncBarrier &memory_barrier) const;
-
-    // This handles all configurations where barriers cannot be applied immidiately and need to use
-    // the PendingBarriers helper to ensure independent barrier application. All such configurations
-    // use more than one barrier.
-    void ApplyMultipleBarriers(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const;
 
   private:
     BarrierSet barrier_set_;
