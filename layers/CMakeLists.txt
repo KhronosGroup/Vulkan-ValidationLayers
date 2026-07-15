@@ -549,6 +549,14 @@ if (BUILD_SELF_VVL)
     target_compile_definitions(vvl PUBLIC BUILD_SELF_VVL)
 endif()
 
+# Various spots we want to only keep for debug workflows
+target_compile_definitions(vvl PRIVATE
+    $<$<CONFIG:Debug>:
+        VVL_DEBUG_SPIRV;
+        VVL_DEBUG_SUBRESOURCE
+    >
+)
+
 set_target_properties(vvl PROPERTIES OUTPUT_NAME ${LAYER_NAME})
 
 if(MSVC)
