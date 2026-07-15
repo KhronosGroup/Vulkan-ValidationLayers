@@ -91,6 +91,9 @@ void DecorationBase::Add(uint32_t decoration, uint32_t value) {
         case spv::DecorationOffset:
             offset = value;
             break;
+        case spv::DecorationArrayStride:
+            array_stride = value;
+            break;
         default:
             break;
     }
@@ -99,14 +102,35 @@ void DecorationBase::Add(uint32_t decoration, uint32_t value) {
 void DecorationBase::AddId(uint32_t decoration, uint32_t id) {
     switch (decoration) {
         case spv::DecorationOffsetIdEXT:
-            offset_id = id;
+            offset = id;
+            is_offset_id = true;
             break;
         case spv::DecorationArrayStrideIdEXT:
-            array_stride_id = id;
+            array_stride = id;
+            is_array_stride_id = true;
             break;
         default:
             break;
     }
+}
+
+uint32_t DecorationBase::GetOffset(const Module& module_state, const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props) const {
+    if (!is_offset_id) {
+        return offset;  // Offset
+    }
+    // Using OffsetIdEXT
+    const spirv::Instruction* inst = module_state.FindDef(offset);
+    return module_state.GetHeapUntypedSize(props, *inst);
+}
+
+uint32_t DecorationBase::GetArrayStride(const Module& module_state,
+                                        const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props) const {
+    if (!is_array_stride_id) {
+        return array_stride;  // ArrayStride
+    }
+    // Using ArrayStrideIdEXT
+    const spirv::Instruction* inst = module_state.FindDef(array_stride);
+    return module_state.GetHeapUntypedSize(props, *inst);
 }
 
 // Some decorations are only avaiable for variables, so can't be in OpMemberDecorate
