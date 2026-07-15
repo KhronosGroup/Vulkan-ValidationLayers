@@ -16,6 +16,7 @@
 #include "descriptor_heap_object.h"
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
+#include "shader_helper.h"
 #include "utils/math_utils.h"
 #include "test_framework.h"
 
@@ -1932,4 +1933,81 @@ TEST_F(PositiveGpuAVDescriptorHeap, ComputeAndGraphicsShareDescriptor) {
     ASSERT_TRUE(data[0] == 88u);
     data = (uint32_t*)c_buffer.Memory().Map();
     ASSERT_TRUE(data[0] == 42u);
+}
+
+TEST_F(PositiveGpuAVDescriptorHeap, UntypedHardcodedArrayStride) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    static const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                                 &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}, false));
+    vkt::DescriptorHeap desc_heap(*this);
+
+    const VkDeviceSize resource_stride = 256;  // the max any descriptor can be
+    desc_heap.CreateResourceHeap(resource_stride * 4);
+
+    vkt::Buffer ssbo1_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer ssbo3_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    desc_heap.WriteBufferDescriptorAtOffset(ssbo1_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 1);
+    desc_heap.WriteBufferDescriptorAtOffset(ssbo3_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 3);
+
+    // layout(descriptor_heap, array_stride = 256) buffer SSBO { uint data; } heap[];
+    // void main() {
+    //     heap[1].data = 11;
+    //     heap[3].data = 33;
+    // }
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpDecorate %runtime_array ArrayStride 256
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+    %uint_11 = OpConstant %uint 11
+      %int_3 = OpConstant %int 3
+    %uint_33 = OpConstant %uint 33
+       %SSBO = OpTypeStruct %uint
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+%_ptr_StorageBuffer = OpTypeUntypedPointerKHR StorageBuffer
+         %16 = OpTypeBufferEXT StorageBuffer
+%runtime_array = OpTypeRuntimeArray %16
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %15 = OpUntypedAccessChainKHR %_ptr_UniformConstant %runtime_array %resource_heap %int_1
+         %19 = OpBufferPointerEXT %_ptr_StorageBuffer %15
+         %20 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %19 %int_0
+               OpStore %20 %uint_11
+         %24 = OpUntypedAccessChainKHR %_ptr_UniformConstant %runtime_array %resource_heap %int_3
+         %27 = OpBufferPointerEXT %_ptr_StorageBuffer %24
+         %28 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %27 %int_0
+               OpStore %28 %uint_33
+               OpReturn
+               OpFunctionEnd
+    )";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    uint32_t* data = (uint32_t*)ssbo1_buffer.Memory().Map();
+    ASSERT_TRUE(data[0] == 11u);
+    data = (uint32_t*)ssbo3_buffer.Memory().Map();
+    ASSERT_TRUE(data[0] == 33u);
 }

@@ -3863,12 +3863,7 @@ bool CoreChecks::ValidateDescriptorHeapStructs(const spirv::Module& module_state
             }
 
             // If using the old, hardcoded Offset
-            uint32_t offset_value = member.decorations->offset;
-            if (offset_value == spirv::kInvalidValue) {
-                // Using OffsetIdEXT
-                const spirv::Instruction& offset_inst = *module_state.FindDef(member.decorations->offset_id);
-                offset_value = module_state.GetHeapUntypedSize(props, offset_inst);
-            }
+            uint32_t offset_value = member.decorations->GetOffset(module_state, props);
             ASSERT_AND_CONTINUE(offset_value != spirv::kInvalidValue);
 
             const spv::Op opcode = (spv::Op)member.insn->Opcode();

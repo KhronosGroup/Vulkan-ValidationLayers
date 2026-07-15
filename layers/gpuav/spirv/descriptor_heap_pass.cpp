@@ -620,9 +620,17 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
                 // TODO - Handle MultidimensionalArray (GPU Dump has support for reference)
                 return false;
             }
-            const uint32_t array_stride_dec = GetDecoration(descriptor_array->Id(), spv::DecorationArrayStrideIdEXT)->Word(3);
-            const Constant* array_stride = type_manager_.FindConstantById(array_stride_dec);
-            meta.untyped_array_stride_id = array_stride->Id();
+            const Instruction* array_stride_decoration = GetDecoration(descriptor_array->Id(), spv::DecorationArrayStrideIdEXT);
+            if (array_stride_decoration) {
+                const Constant* array_stride = type_manager_.FindConstantById(array_stride_decoration->Word(3));
+                meta.untyped_array_stride_id = array_stride->Id();
+            } else {
+                // user has hardcoded array stride
+                array_stride_decoration = GetDecoration(descriptor_array->Id(), spv::DecorationArrayStride);
+                if (array_stride_decoration) {
+                    meta.untyped_array_stride_id = type_manager_.CreateConstantUInt32(array_stride_decoration->Word(3)).Id();
+                }
+            }
         }
     }
 

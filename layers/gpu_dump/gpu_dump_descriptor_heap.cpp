@@ -1575,11 +1575,7 @@ uint32_t UntypedContext::GetUntypedHeapOffset(const uint32_t struct_id, uint32_t
     for (const auto& type_struct : module.static_data_.type_structs) {
         if (type_struct->id == struct_id) {
             const auto& member = type_struct->members[struct_member_index];
-            if (member.decorations->offset != vvl::kNoIndex32) {
-                return member.decorations->offset;
-            }
-            const spirv::Instruction* offset_id_inst = module.FindDef(member.decorations->offset_id);
-            return module.GetHeapUntypedSize(props, *offset_id_inst);
+            return member.decorations->GetOffset(module, props);
         }
     }
     assert(false);
@@ -1588,12 +1584,7 @@ uint32_t UntypedContext::GetUntypedHeapOffset(const uint32_t struct_id, uint32_t
 
 uint32_t UntypedContext::GetUntypedArrayStride(uint32_t type_array_id) {
     const auto decoration_set = module.GetDecorationSet(type_array_id);
-    if (decoration_set.array_stride_id == spirv::kInvalidValue) {
-        return 0;  // struct with no array in it
-    }
-
-    const spirv::Instruction* array_stride_inst = module.FindDef(decoration_set.array_stride_id);
-    return module.GetHeapUntypedSize(props, *array_stride_inst);
+    return decoration_set.GetArrayStride(module, props);
 }
 
 // This is a quick, low effort attempt to see if we can detect the index into the descriptor is a push data value
