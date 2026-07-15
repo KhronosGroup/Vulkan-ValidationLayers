@@ -25,6 +25,7 @@
 #include "sync/sync_image.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/ray_tracing_state.h"
+#include "state_tracker/render_pass_state.h"
 #include "utils/convert_utils.h"
 #include "utils/image_utils.h"
 #include "utils/ray_tracing_utils.h"
@@ -712,10 +713,57 @@ void SyncValidator::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore s
 bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                             const VkSubpassBeginInfo* pSubpassBeginInfo, const ErrorObject& error_obj) const {
     bool skip = false;
-    if (pRenderPassBegin) {
-        const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-        SyncOpBeginRenderPass sync_op(error_obj.location.function, *this, *pRenderPassBegin, pSubpassBeginInfo);
-        skip |= sync_op.Validate(GetAccessContext(*cb_state));
+    if (!pRenderPassBegin) {
+        return skip;
+    }
+    auto rp_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
+    if (!rp_state) {
+        return skip;
+    }
+    auto fb_state = Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
+    if (!fb_state) {
+        return skip;
+    }
+
+    const std::vector<std::shared_ptr<const vvl::ImageView>> attachments =
+        device_state->GetAttachmentViews(*pRenderPassBegin, *fb_state);
+    if (attachments.empty()) {
+        return skip;
+    }
+
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
+
+    const uint32_t subpass_zero = 0;
+    const uint32_t view_mask = rp_state->create_info.pSubpasses[0].viewMask;
+
+    // Construct the state to validate against (since validation is const and RecordCmdBeginRenderPass hasn't happened yet).
+    AccessContext temp_context(cb_context.GetSyncState());
+
+    // TODO: investigate if using nullptr in InitFrom is safe (this just follows the initial implementation - it assumes
+    // that array of subpass dependencies won't be indexed, but it's not obvious).
+    temp_context.InitFrom(subpass_zero, cb_context.GetQueueFlags(), rp_state->subpass_dependency_infos, nullptr,
+                          cb_context.GetCurrentAccessContext());
+
+    // Validate attachment operations
+    const uint32_t render_pass_instance_id = cb_context.GetCurrentRenderPassInstanceId();
+
+    // Since the isn't a valid RenderPassAccessContext until Record, needs to create the view/generator list.
+    // We could limit this by predicating on whether subpass 0 uses the attachment if it is too expensive
+    // to create the full list redundantly here. More broadly we could look at thread specific state shared
+    // between Validate and Record as is done for other heavyweight operations.
+    const AttachmentViewGenVector view_gens =
+        RenderPassAccessContext::CreateAttachmentViewGen(pRenderPassBegin->renderArea, attachments);
+
+    // Check if any of the layout transitions are hazardous
+    skip |= RenderPassAccessContext::ValidateLayoutTransitions(cb_context, temp_context, *rp_state, render_pass_instance_id,
+                                                               subpass_zero, view_mask, view_gens, error_obj.location.function);
+
+    // Validate load operations if there were no layout transition hazards
+    if (!skip) {
+        RenderPassAccessContext::RecordLayoutTransitions(*rp_state, subpass_zero, view_gens, kInvalidTag, temp_context);
+        skip |= RenderPassAccessContext::ValidateLoadOperation(cb_context, temp_context, *rp_state, render_pass_instance_id,
+                                                               subpass_zero, view_mask, view_gens, error_obj.location.function);
     }
     return skip;
 }
@@ -742,10 +790,15 @@ bool SyncValidator::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer comman
 
 bool SyncValidator::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
                                            const VkSubpassEndInfo* pSubpassEndInfo, const ErrorObject& error_obj) const {
+    bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    SyncOpNextSubpass sync_op(error_obj.location.function, *this, pSubpassBeginInfo, pSubpassEndInfo);
-    return sync_op.Validate(cb_context);
+    const RenderPassAccessContext* renderpass_context = cb_context.GetCurrentRenderPassContext();
+    if (!renderpass_context) {
+        return skip;
+    }
+    skip |= renderpass_context->ValidateNextSubpass(cb_context, error_obj.location.function);
+    return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
@@ -767,25 +820,25 @@ bool SyncValidator::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer
     return ValidateCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, error_obj);
 }
 
-bool SyncValidator::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
-                                             const ErrorObject& error_obj) const {
+bool SyncValidator::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
     bool skip = false;
-
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-
-    SyncOpEndRenderPass sync_op(error_obj.location.function, *this, pSubpassEndInfo);
-    skip |= sync_op.Validate(cb_context);
+    const RenderPassAccessContext* renderpass_context = cb_context.GetCurrentRenderPassContext();
+    if (!renderpass_context) {
+        return skip;
+    }
+    skip |= renderpass_context->ValidateEndRenderPass(cb_context, error_obj.location.function);
     return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
-    return ValidateCmdEndRenderPass(commandBuffer, nullptr, error_obj);
+    return ValidateCmdEndRenderPass(commandBuffer, error_obj);
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
                                                      const ErrorObject& error_obj) const {
-    return ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, error_obj);
+    return ValidateCmdEndRenderPass(commandBuffer, error_obj);
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,

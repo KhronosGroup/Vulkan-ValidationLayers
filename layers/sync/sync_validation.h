@@ -204,8 +204,7 @@ class SyncValidator : public vvl::DeviceProxy {
     bool PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                            const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &error_obj) const override;
 
-    bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                  const ErrorObject &error_obj) const;
+    bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const override;
     bool PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                              const ErrorObject &error_obj) const override;

@@ -288,9 +288,6 @@ class SyncOpBeginRenderPass : public SyncOpBase {
   public:
     SyncOpBeginRenderPass(vvl::Func command, const SyncValidator& sync_state, const VkRenderPassBeginInfo& render_pass_begin_info,
                           const VkSubpassBeginInfo* p_subpass_begin_info);
-    ~SyncOpBeginRenderPass() override = default;
-
-    bool Validate(const CommandBufferAccessContext& cb_context) const;
 
     ResourceUsageTag Record(CommandBufferAccessContext& cb_context) override;
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
@@ -300,8 +297,7 @@ class SyncOpBeginRenderPass : public SyncOpBase {
   protected:
     vku::safe_VkRenderPassBeginInfo renderpass_begin_info_;
     vku::safe_VkSubpassBeginInfo subpass_begin_info_;
-    std::vector<std::shared_ptr<const vvl::ImageView>> shared_attachments_;
-    std::vector<const vvl::ImageView *> attachments_;
+    std::vector<std::shared_ptr<const vvl::ImageView>> attachments_;
     std::shared_ptr<const vvl::RenderPass> rp_state_;
     const RenderPassAccessContext *rp_context_;
 };
@@ -310,32 +306,19 @@ class SyncOpNextSubpass : public SyncOpBase {
   public:
     SyncOpNextSubpass(vvl::Func command, const SyncValidator &sync_state, const VkSubpassBeginInfo *pSubpassBeginInfo,
                       const VkSubpassEndInfo *pSubpassEndInfo);
-    ~SyncOpNextSubpass() override = default;
-
-    bool Validate(const CommandBufferAccessContext& cb_context) const;
 
     ResourceUsageTag Record(CommandBufferAccessContext& cb_context) override;
     bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
-
-  protected:
-    vku::safe_VkSubpassBeginInfo subpass_begin_info_;
-    vku::safe_VkSubpassEndInfo subpass_end_info_;
 };
 
 class SyncOpEndRenderPass : public SyncOpBase {
   public:
     SyncOpEndRenderPass(vvl::Func command, const SyncValidator &sync_state, const VkSubpassEndInfo *pSubpassEndInfo);
-    ~SyncOpEndRenderPass() override = default;
-
-    bool Validate(const CommandBufferAccessContext& cb_context) const;
 
     ResourceUsageTag Record(CommandBufferAccessContext& cb_context) override;
     bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
-
-  protected:
-    vku::safe_VkSubpassEndInfo subpass_end_info_;
 };
 
 // Allow keep track of the exec contexts replay state

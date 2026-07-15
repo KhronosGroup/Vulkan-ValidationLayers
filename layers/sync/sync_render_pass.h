@@ -88,13 +88,13 @@ using AttachmentViewGenVector = std::vector<AttachmentViewGen>;
 
 class RenderPassAccessContext {
   public:
-    static AttachmentViewGenVector CreateAttachmentViewGen(const VkRect2D& render_area,
-                                                           const std::vector<const vvl::ImageView*>& attachment_views);
+    static AttachmentViewGenVector CreateAttachmentViewGen(
+        const VkRect2D& render_area, const std::vector<std::shared_ptr<const vvl::ImageView>>& attachment_views);
     RenderPassAccessContext()
         : rp_state_(nullptr), external_context_(nullptr), render_pass_instance_id_(vvl::kNoIndex32), current_subpass_(0) {}
     RenderPassAccessContext(const vvl::RenderPass& rp_state, const VkRect2D& render_area, VkQueueFlags queue_flags,
-                            const std::vector<const vvl::ImageView*>& attachment_views, const AccessContext& external_context,
-                            uint32_t render_pass_instance_id);
+                            const std::vector<std::shared_ptr<const vvl::ImageView>>& attachment_views,
+                            const AccessContext& external_context, uint32_t render_pass_instance_id);
 
     static bool ValidateLayoutTransitions(const CommandBufferAccessContext& cb_context, const AccessContext& access_context,
                                           const vvl::RenderPass& rp_state, uint32_t render_pass_instance_id, uint32_t subpass,
