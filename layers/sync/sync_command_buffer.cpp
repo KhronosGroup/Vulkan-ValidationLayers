@@ -1490,8 +1490,7 @@ std::string CommandBufferAccessContext::GetDebugRegionName(const ResourceUsageRe
     return vvl::CommandBuffer::GetDebugRegionName(label_commands, record.label_command_index);
 }
 
-void CommandBufferAccessContext::RecordSyncOp(SyncOpPointer&& sync_op) {
-    const ResourceUsageTag tag = sync_op->Record(*this);
+void CommandBufferAccessContext::AddSyncOp(ResourceUsageTag tag, std::shared_ptr<SyncOpBase>&& sync_op) {
     // As renderpass operations can have side effects on the command buffer access context,
     // update the sync operation to record these if any.
     sync_ops_.emplace_back(tag, std::move(sync_op));
@@ -1997,8 +1996,10 @@ void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& r
     if (!base.IsPrimary()) {
         return;  // [core validation check]: only primary command buffer can begin render pass
     }
-    access_context.RecordSyncOp<SyncOpBeginRenderPass>(loc.function, access_context.GetSyncState(), render_pass_begin,
-                                                       &subpass_begin_info);
+    auto sync_op = std::make_shared<SyncOpBeginRenderPass>(loc.function, access_context.GetSyncState(), render_pass_begin,
+                                                           &subpass_begin_info);
+    const ResourceUsageTag tag = sync_op->Record(access_context);
+    access_context.AddSyncOp(tag, std::move(sync_op));
 }
 
 void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo& subpass_begin_info,
@@ -2006,8 +2007,10 @@ void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo& subpass_
     if (!base.IsPrimary()) {
         return;  // [core validation check]: only primary command buffer can start next subpass
     }
-    access_context.RecordSyncOp<SyncOpNextSubpass>(loc.function, access_context.GetSyncState(), &subpass_begin_info,
-                                                   subpass_end_info);
+    auto sync_op =
+        std::make_shared<SyncOpNextSubpass>(loc.function, access_context.GetSyncState(), &subpass_begin_info, subpass_end_info);
+    const ResourceUsageTag tag = sync_op->Record(access_context);
+    access_context.AddSyncOp(tag, std::move(sync_op));
 }
 
 void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo* subpass_end_info, const Location& loc) {
@@ -2015,7 +2018,9 @@ void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo* subpass_
         return;  // [core validation check]: only primary command buffer can end render pass
     }
     // Resolve the all subpass contexts to the command buffer contexts
-    access_context.RecordSyncOp<SyncOpEndRenderPass>(loc.function, access_context.GetSyncState(), subpass_end_info);
+    auto sync_op = std::make_shared<SyncOpEndRenderPass>(loc.function, access_context.GetSyncState(), subpass_end_info);
+    const ResourceUsageTag tag = sync_op->Record(access_context);
+    access_context.AddSyncOp(tag, std::move(sync_op));
 }
 
 void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_command_buffer, uint32_t cmd_index,
