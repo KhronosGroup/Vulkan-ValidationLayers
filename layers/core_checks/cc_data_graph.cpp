@@ -162,7 +162,7 @@ bool CoreChecks::ValidateOpticalFlowFormats(const VkDataGraphPipelineOpticalFlow
         return ss.str();
     };
 
-    auto all_values = [](const vvl::PhysicalDevice::QueueAndEngineMap<vvl::unordered_set<VkFormat>>& map) {
+    auto all_values = [](const vvl::PhysicalDevice::DataGraph::QueueAndEngineMap<vvl::unordered_set<VkFormat>>& map) {
         vvl::unordered_set<VkFormat> formats;
         for (const auto& entry : map) {
             formats.insert(entry.second.begin(), entry.second.end());
@@ -170,14 +170,15 @@ bool CoreChecks::ValidateOpticalFlowFormats(const VkDataGraphPipelineOpticalFlow
         return formats;
     };
 
-    vvl::unordered_set<VkFormat> formats = all_values(physical_device_state->optical_flow_formats.input);
+    const vvl::PhysicalDevice::DataGraph::OpticalFlowFormats& of_formats = physical_device_state->data_graph.optical_flow_formats;
+    vvl::unordered_set<VkFormat> formats = all_values(of_formats.input);
     if (std::find(formats.begin(), formats.end(), optical_flow_ci.imageFormat) == formats.end()) {
         skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-imageFormat-09968", device,
                          optical_flow_ci_loc.dot(Field::imageFormat), "(%s) is not supported for input images.\nSupported formats: %s.",
                          string_VkFormat(optical_flow_ci.imageFormat), list_formats(formats).c_str());
     }
 
-    formats = all_values(physical_device_state->optical_flow_formats.output);
+    formats = all_values(of_formats.output);
     if (std::find(formats.begin(), formats.end(), optical_flow_ci.flowVectorFormat) == formats.end()) {
         skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-flowVectorFormat-09969", device,
                          optical_flow_ci_loc.dot(Field::flowVectorFormat), "(%s) is not supported for output images.\nSupported formats: %s.",
@@ -185,7 +186,7 @@ bool CoreChecks::ValidateOpticalFlowFormats(const VkDataGraphPipelineOpticalFlow
     }
 
     if (optical_flow_ci.flags & VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM) {
-        formats = all_values(physical_device_state->optical_flow_formats.cost);
+        formats = all_values(of_formats.cost);
         if (std::find(formats.begin(), formats.end(), optical_flow_ci.costFormat) == formats.end()) {
             skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-costFormat-09970", device,
                              optical_flow_ci_loc.dot(Field::costFormat), "(%s) is not supported for cost images.\nSupported formats: %s.",
@@ -202,7 +203,7 @@ bool CoreChecks::ValidateOpticalFlowFlags(const VkDataGraphPipelineOpticalFlowCr
 
     bool any_queue_supports_hint = false;
     bool any_queue_supports_cost = false;
-    for (const auto& entry : physical_device_state->data_graph_optical_flow_properties) {
+    for (const auto& entry : physical_device_state->data_graph.optical_flow_properties) {
         any_queue_supports_hint |= static_cast<bool>(entry.second.hintSupported);
         any_queue_supports_cost |= static_cast<bool>(entry.second.costSupported);
     }

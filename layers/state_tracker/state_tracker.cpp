@@ -1202,12 +1202,12 @@ vvl::unordered_set<VkFormat> DeviceState::GetOpticalFlowFormats(const uint32_t q
                                                                 const VkPhysicalDeviceDataGraphProcessingEngineARM engine,
                                                                 const VkDataGraphOpticalFlowImageUsageFlagsARM usage) {
     // make sure we have filled this in
-    assert(!physical_device_state->queue_family_data_graph_properties.empty());
+    assert(!physical_device_state->data_graph.queue_family_properties.empty());
 
     VkDataGraphOpticalFlowImageFormatInfoARM format_info = vku::InitStructHelper();
     format_info.usage = usage;
     vvl::unordered_set<VkFormat> formats;  // set because we might have duplications between queue families
-    for (const auto& prop : physical_device_state->queue_family_data_graph_properties[queue_index]) {
+    for (const auto& prop : physical_device_state->data_graph.queue_family_properties[queue_index]) {
         if (prop.operation.operationType != VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM ||
             prop.engine.type != engine.type || prop.engine.isForeign != engine.isForeign) {
             continue;
@@ -1370,7 +1370,7 @@ void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const
             DispatchGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(physical_device, i, &n_properties, nullptr);
             family_properties.resize(n_properties, vku::InitStruct<VkQueueFamilyDataGraphPropertiesARM>());
             DispatchGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(physical_device, i, &n_properties, family_properties.data());
-            physical_device_state->queue_family_data_graph_properties.try_emplace(i, std::move(family_properties));
+            physical_device_state->data_graph.queue_family_properties.try_emplace(i, std::move(family_properties));
         }
     }
 
@@ -1379,10 +1379,10 @@ void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const
         assert(IsExtEnabled(extensions.vk_arm_data_graph));
 
         // make sure we have filled this in
-        assert(!physical_device_state->queue_family_data_graph_properties.empty());
+        assert(!physical_device_state->data_graph.queue_family_properties.empty());
 
         for (uint32_t i = 0; i < num_queue_families; i++) {
-            for (const auto& prop : physical_device_state->queue_family_data_graph_properties[i]) {
+            for (const auto& prop : physical_device_state->data_graph.queue_family_properties[i]) {
                 if (prop.operation.operationType != VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM) {
                     continue;
                 }
@@ -1391,14 +1391,16 @@ void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const
                 DispatchGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(physical_device, i, &prop,
                                                                                           base_properties);
 
-                vvl::PhysicalDevice::QueueAndEngine queue_and_engine{i, prop.engine};
-                physical_device_state->data_graph_optical_flow_properties.try_emplace(queue_and_engine, op_flow_properties);
+                vvl::PhysicalDevice::DataGraph::QueueAndEngine queue_and_engine{i, prop.engine};
+                physical_device_state->data_graph.optical_flow_properties.try_emplace(queue_and_engine, op_flow_properties);
 
-                physical_device_state->optical_flow_formats.input.try_emplace(
+                vvl::PhysicalDevice::DataGraph::OpticalFlowFormats& of_formats =
+                    physical_device_state->data_graph.optical_flow_formats;
+                of_formats.input.try_emplace(
                     queue_and_engine, GetOpticalFlowFormats(i, prop.engine, VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM));
-                physical_device_state->optical_flow_formats.output.try_emplace(
+                of_formats.output.try_emplace(
                     queue_and_engine, GetOpticalFlowFormats(i, prop.engine, VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM));
-                physical_device_state->optical_flow_formats.cost.try_emplace(
+                of_formats.cost.try_emplace(
                     queue_and_engine, GetOpticalFlowFormats(i, prop.engine, VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_COST_BIT_ARM));
             }
         }
@@ -1409,11 +1411,11 @@ void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const
         assert(IsExtEnabled(extensions.vk_arm_data_graph));
 
         // make sure we have filled this in
-        assert(!physical_device_state->queue_family_data_graph_properties.empty());
+        assert(!physical_device_state->data_graph.queue_family_properties.empty());
 
         for (uint32_t i = 0; i < num_queue_families; i++) {
             VkQueueFamilyDataGraphTOSAPropertiesARM tosa_properties = vku::InitStructHelper();
-            for (const auto& prop : physical_device_state->queue_family_data_graph_properties[i]) {
+            for (const auto& prop : physical_device_state->data_graph.queue_family_properties[i]) {
                 if (prop.operation.operationType !=
                     VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM) {
                     continue;
@@ -1421,7 +1423,7 @@ void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const
                 auto* base_properties = reinterpret_cast<VkBaseOutStructure*>(&tosa_properties);
                 DispatchGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(physical_device, i, &prop,
                                                                                           base_properties);
-                physical_device_state->data_graph_tosa_properties.try_emplace({i, prop.engine}, tosa_properties);
+                physical_device_state->data_graph.tosa_properties.try_emplace({i, prop.engine}, tosa_properties);
             }
         }
     }
