@@ -396,25 +396,32 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         out_vuid_msg = vvl::CreateActionVuid(loc.function, action_vuid);
                         error_found = true;
                     } break;
-                    case kErrorSubCode_DescriptorHeap_DescriptorHashing_None: {
-                        const uint32_t descriptor_index = error_record[kInst_LogError_ParameterOffset_0];
-                        ss << "descriptor index " << std::dec << descriptor_index << " is accessing the "
-                           << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex << offset << " (address 0x"
-                           << heap_address << ") but there is no valid descriptor at that location.\n";
-                        out_vuid_msg = "UNASSIGNED-DescriptorHeap-No-Descriptor";
-                        error_found = true;
-                    } break;
+                    case kErrorSubCode_DescriptorHeap_DescriptorHashing_None:
                     case kErrorSubCode_DescriptorHeap_DescriptorHashing_Wrong: {
-                        // We trade the descriptor_index for getting the slot_index to find what descriptor this was
-                        const uint32_t slot_index = error_record[kInst_LogError_ParameterOffset_0];
                         ReadLockGuard guard(gpuav.device_state->descriptor_hashing->map_lock);
-                        const auto& entry = gpuav.device_state->descriptor_hashing->table.slots[slot_index].entry;
+                        if (gpuav.device_state->descriptor_hashing->table.limit_reported) {
+                            // If we have hit the limit, we are likely going to spam errors and want them to see
+                            // the DESCRIPTOR-HASHING-LIMIT only instead
+                            return error_found;
+                        }
 
-                        ss << "is accessing the " << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex
-                           << offset << " (address 0x" << heap_address << ") but there is a descriptor there of the wrong type: \n";
-                        entry.Describe(*gpuav.device_state, ss);
-                        ss << '\n';
-                        out_vuid_msg = "UNASSIGNED-DescriptorHeap-Wrong-DescriptorType";
+                        if (error_sub_code == kErrorSubCode_DescriptorHeap_DescriptorHashing_None) {
+                            const uint32_t descriptor_index = error_record[kInst_LogError_ParameterOffset_0];
+                            ss << "descriptor index " << std::dec << descriptor_index << " is accessing the "
+                               << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex << offset
+                               << " (address 0x" << heap_address << ") but there is no valid descriptor at that location.\n";
+                            out_vuid_msg = "UNASSIGNED-DescriptorHeap-No-Descriptor";
+                        } else {
+                            // We trade the descriptor_index for getting the slot_index to find what descriptor this was
+                            const uint32_t slot_index = error_record[kInst_LogError_ParameterOffset_0];
+                            const auto& entry = gpuav.device_state->descriptor_hashing->table.slots[slot_index].entry;
+                            ss << "is accessing the " << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex
+                               << offset << " (address 0x" << heap_address
+                               << ") but there is a descriptor there of the wrong type: \n";
+                            entry.Describe(*gpuav.device_state, ss);
+                            ss << '\n';
+                            out_vuid_msg = "UNASSIGNED-DescriptorHeap-Wrong-DescriptorType";
+                        }
                         error_found = true;
                     } break;
                 }
