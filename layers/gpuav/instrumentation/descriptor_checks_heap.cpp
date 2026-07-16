@@ -139,7 +139,6 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 if (GetErrorGroup(error_record) != kErrorGroup_InstDescriptorHeap) {
                     return error_found;
                 }
-                error_found = true;
 
                 std::ostringstream ss;
 

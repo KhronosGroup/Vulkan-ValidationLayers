@@ -197,7 +197,6 @@ void RegisterDescriptorChecksBufferValidation(Validator& gpuav, CommandBufferSub
                         // the DESCRIPTOR-HASHING-LIMIT only instead
                         return error_found;
                     }
-                    error_found = true;
 
                     std::ostringstream ss;
 
