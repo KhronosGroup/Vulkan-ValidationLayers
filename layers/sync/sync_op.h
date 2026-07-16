@@ -56,29 +56,29 @@ struct SyncEventState {
           scope(),
           first_scope_tag() {}
 
-    SyncEventState(const SyncEventState &) = default;
-    SyncEventState(SyncEventState &&) = default;
+    SyncEventState(const SyncEventState&) = default;
+    SyncEventState(SyncEventState&&) = default;
 
-    SyncEventState(const SyncEventState::EventPointer &event_state);
+    SyncEventState(const SyncEventState::EventPointer& event_state);
 
     void ResetFirstScope();
-    const AccessContext::ScopeMap &FirstScope() const { return first_scope->GetAccessMap(); }
+    const AccessContext::ScopeMap& FirstScope() const { return first_scope->GetAccessMap(); }
     bool HasBarrier(VkPipelineStageFlags2 stageMask, VkPipelineStageFlags2 exec_scope) const;
-    void AddReferencedTags(ResourceUsageTagSet &referenced) const;
+    void AddReferencedTags(ResourceUsageTagSet& referenced) const;
 };
 
 class SyncEventsContext {
   public:
-    using Map = vvl::unordered_map<const vvl::Event *, std::shared_ptr<SyncEventState>>;
+    using Map = vvl::unordered_map<const vvl::Event*, std::shared_ptr<SyncEventState>>;
     using iterator = Map::iterator;
     using const_iterator = Map::const_iterator;
 
-    SyncEventState *GetFromShared(const SyncEventState::EventPointer &event_state) {
+    SyncEventState* GetFromShared(const SyncEventState::EventPointer& event_state) {
         const auto find_it = map_.find(event_state.get());
         if (find_it == map_.end()) {
             if (!event_state.get()) return nullptr;
 
-            const auto *event_plain_ptr = event_state.get();
+            const auto* event_plain_ptr = event_state.get();
             auto sync_state = std::make_shared<SyncEventState>(event_state);
             auto insert_pair = map_.emplace(event_plain_ptr, sync_state);
             return insert_pair.first->second.get();
@@ -94,10 +94,10 @@ class SyncEventsContext {
         return find_it->second.get();
     }
 
-    void ApplyBarrier(const SyncExecScope &src, const SyncExecScope &dst, ResourceUsageTag tag);
+    void ApplyBarrier(const SyncExecScope& src, const SyncExecScope& dst, ResourceUsageTag tag);
     void ApplyTaggedWait(VkQueueFlags queue_flags, ResourceUsageTag tag);
 
-    void Destroy(const vvl::Event *event_state) {
+    void Destroy(const vvl::Event* event_state) {
         auto sync_it = map_.find(event_state);
         if (sync_it != map_.end()) {
             map_.erase(sync_it);
@@ -105,74 +105,11 @@ class SyncEventsContext {
     }
     void Clear() { map_.clear(); }
 
-    SyncEventsContext &DeepCopy(const SyncEventsContext &from);
-    void AddReferencedTags(ResourceUsageTagSet &referenced) const;
+    SyncEventsContext& DeepCopy(const SyncEventsContext& from);
+    void AddReferencedTags(ResourceUsageTagSet& referenced) const;
 
   private:
     Map map_;
-};
-
-struct SyncBufferBarrier {
-    std::shared_ptr<const vvl::Buffer> buffer;
-    SyncBarrier barrier;
-    AccessRange range;
-
-    SyncBufferBarrier(const std::shared_ptr<const vvl::Buffer> &buffer, const SyncBarrier &barrier, const AccessRange &range)
-        : buffer(buffer), barrier(barrier), range(range) {}
-};
-
-struct SyncImageBarrier {
-    std::shared_ptr<const vvl::Image> image;
-    SyncBarrier barrier;
-    VkImageSubresourceRange subresource_range;
-    bool layout_transition;
-    uint32_t barrier_index;
-    uint32_t handle_index = vvl::kNoIndex32;
-
-    SyncImageBarrier(const std::shared_ptr<const vvl::Image> &image, const SyncBarrier &barrier,
-                           const VkImageSubresourceRange &subresource_range, bool layout_transition, uint32_t barrier_index)
-        : image(image),
-          barrier(barrier),
-          subresource_range(subresource_range),
-          layout_transition(layout_transition),
-          barrier_index(barrier_index) {}
-};
-
-struct BarrierSet {
-    SyncExecScope src_exec_scope;
-    SyncExecScope dst_exec_scope;
-    std::vector<SyncBarrier> memory_barriers;
-    std::vector<SyncBufferBarrier> buffer_barriers;
-    std::vector<SyncImageBarrier> image_barriers;
-
-    bool single_exec_scope = false;
-
-    // The numbers of additional global barriers introduced to track execution dependencies
-    // defined by image and buffer barriers, or a single execution dependencies when a sync1
-    // barrier command specifies no barriers (only exec scopes). Used for statistics tracking.
-    uint32_t execution_dependency_barrier_count = 0;
-
-    BarrierSet() = default;
-    BarrierSet(const SyncValidator& sync_state, VkQueueFlags queue_flags, const VkDependencyInfo& dep_info);
-    BarrierSet(const SyncValidator& sync_state, const SyncExecScope& src_exec_scope, const SyncExecScope& dst_exec_scope,
-               uint32_t memory_barrier_count, const VkMemoryBarrier* memory_barriers, uint32_t buffer_barrier_count,
-               const VkBufferMemoryBarrier* buffer_barriers, uint32_t image_barrier_count,
-               const VkImageMemoryBarrier* image_barriers);
-
-  private:
-    void MakeMemoryBarriers(const SyncExecScope& src, const SyncExecScope& dst, uint32_t barrier_count,
-                            const VkMemoryBarrier* barriers);
-    void MakeMemoryBarriers(VkQueueFlags queue_flags, const VkDependencyInfo& dep_info);
-
-    void MakeBufferMemoryBarriers(const SyncValidator& sync_state, const SyncExecScope& src, const SyncExecScope& dst,
-                                  uint32_t barrier_count, const VkBufferMemoryBarrier* barriers);
-    void MakeBufferMemoryBarriers(const SyncValidator& sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
-                                  const VkBufferMemoryBarrier2* barriers);
-
-    void MakeImageMemoryBarriers(const SyncValidator& sync_state, const SyncExecScope& src, const SyncExecScope& dst,
-                                 uint32_t barrier_count, const VkImageMemoryBarrier* barriers, const DeviceExtensions& extensions);
-    void MakeImageMemoryBarriers(const SyncValidator& sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
-                                 const VkImageMemoryBarrier2* barriers, const DeviceExtensions& extensions);
 };
 
 class SyncOpBase {
@@ -197,38 +134,23 @@ class SyncOpPipelineBarrier : public SyncOpBase {
     BarrierSet barrier_set_;
 };
 
-class SyncOpWaitEvents : public SyncOpBase {
+class SyncOpSetEvent : public SyncOpBase {
   public:
-    SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t eventCount,
-                     const VkEvent *pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                     uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                     const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                     const VkImageMemoryBarrier *pImageMemoryBarriers);
-
-    SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t eventCount,
-                     const VkEvent *pEvents, const VkDependencyInfo *pDependencyInfo);
-
-    ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
-    bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
+    SyncOpSetEvent(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& src_exec_scope,
+                   std::shared_ptr<const AccessContext>&& src_access_context, const Location& loc);
+    bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
+    void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
 
   private:
-    void DoRecord(CommandExecutionContext &ex_context, const ResourceUsageTag base_tag) const;
-    void MakeEventsList(const SyncValidator &sync_state, uint32_t event_count, const VkEvent *events);
-
-    // TODO PHASE2 This is the wrong thing to use for "replay".. as the event state will have moved on since the record
-    // TODO PHASE2 May need to capture by value w.r.t. "first use" or build up in calling/enqueue context through replay.
-    std::vector<std::shared_ptr<const vvl::Event>> events_;
-
-    std::vector<BarrierSet> barrier_sets_;
+    std::shared_ptr<const vvl::Event> event_;
+    // Snapshot of the command buffer's access context at set event time
+    std::shared_ptr<const AccessContext> recorded_context_;
+    SyncExecScope src_exec_scope_;
 };
 
 class SyncOpResetEvent : public SyncOpBase {
   public:
-    SyncOpResetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
-                     VkPipelineStageFlags2 stageMask);
-
-    ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
+    SyncOpResetEvent(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& exec_scope, const Location& loc);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
 
@@ -237,24 +159,19 @@ class SyncOpResetEvent : public SyncOpBase {
     SyncExecScope exec_scope_;
 };
 
-class SyncOpSetEvent : public SyncOpBase {
+class SyncOpWaitEvents : public SyncOpBase {
   public:
-    SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
-                   VkPipelineStageFlags2 stageMask, const AccessContext *access_context);
-    SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
-                   const VkDependencyInfo &dep_info, const AccessContext *access_context);
-
-    ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
-    bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
+    SyncOpWaitEvents(std::vector<std::shared_ptr<const vvl::Event>>&& events, std::vector<BarrierSet>&& barrier_sets,
+                     const Location& loc);
+    bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
+    void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
 
   private:
-    void DoRecord(QueueId queue_id, ResourceUsageTag recorded_tag, const std::shared_ptr<const AccessContext>& access_context,
-                  SyncEventsContext& events_context) const;
-    std::shared_ptr<const vvl::Event> event_;
-    // The Access context of the command buffer at record set event time.
-    std::shared_ptr<const AccessContext> recorded_context_;
-    SyncExecScope src_exec_scope_;
+    // TODO PHASE2 This is the wrong thing to use for "replay".. as the event state will have moved on since the record
+    // TODO PHASE2 May need to capture by value w.r.t. "first use" or build up in calling/enqueue context through replay.
+    std::vector<std::shared_ptr<const vvl::Event>> events_;
+
+    std::vector<BarrierSet> barrier_sets_;
 };
 
 class SyncOpBeginRenderPass : public SyncOpBase {
@@ -272,26 +189,26 @@ class SyncOpBeginRenderPass : public SyncOpBase {
     vku::safe_VkSubpassBeginInfo subpass_begin_info_;
     std::vector<std::shared_ptr<const vvl::ImageView>> attachments_;
     std::shared_ptr<const vvl::RenderPass> rp_state_;
-    const RenderPassAccessContext *rp_context_;
+    const RenderPassAccessContext* rp_context_;
 };
 
 class SyncOpNextSubpass : public SyncOpBase {
   public:
-    SyncOpNextSubpass(vvl::Func command, const SyncValidator &sync_state, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                      const VkSubpassEndInfo *pSubpassEndInfo);
+    SyncOpNextSubpass(vvl::Func command, const SyncValidator& sync_state, const VkSubpassBeginInfo* pSubpassBeginInfo,
+                      const VkSubpassEndInfo* pSubpassEndInfo);
 
     ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
-    bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
+    bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
+    void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
 };
 
 class SyncOpEndRenderPass : public SyncOpBase {
   public:
-    SyncOpEndRenderPass(vvl::Func command, const SyncValidator &sync_state, const VkSubpassEndInfo *pSubpassEndInfo);
+    SyncOpEndRenderPass(vvl::Func command, const SyncValidator& sync_state, const VkSubpassEndInfo* pSubpassEndInfo);
 
     ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
-    bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
+    bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
+    void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
 };
 
 // Allow keep track of the exec contexts replay state
@@ -300,38 +217,38 @@ class ReplayState {
     // A minimal subset of the functionality present in the RenderPassAccessContext. Since the accesses are recorded in the
     // first_use information of the recorded access contexts, s.t. all we need to support is the barrier/resolve operations
     struct RenderPassReplayState {
-        AccessContext *Begin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op_,
-                             const AccessContext &external_context);
-        AccessContext *Next();
-        void End(AccessContext &external_context);
+        AccessContext* Begin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass& begin_op_,
+                             const AccessContext& external_context);
+        AccessContext* Next();
+        void End(AccessContext& external_context);
         vvl::span<AccessContext> GetSubpassContexts();
 
-        const SyncOpBeginRenderPass *begin_op = nullptr;
-        const AccessContext *replay_context = nullptr;
+        const SyncOpBeginRenderPass* begin_op = nullptr;
+        const AccessContext* replay_context = nullptr;
         uint32_t subpass = VK_SUBPASS_EXTERNAL;
         std::unique_ptr<AccessContext[]> subpass_contexts;
     };
 
     bool ValidateFirstUse();
-    bool DetectFirstUseHazard(const ResourceUsageRange &first_use_range) const;
+    bool DetectFirstUseHazard(const ResourceUsageRange& first_use_range) const;
 
-    ReplayState(CommandExecutionContext &exec_context, const CommandBufferAccessContext &recorded_context,
-                const ErrorObject &error_object, uint32_t index, ResourceUsageTag base_tag);
+    ReplayState(CommandExecutionContext& exec_context, const CommandBufferAccessContext& recorded_context,
+                const ErrorObject& error_object, uint32_t index, ResourceUsageTag base_tag);
 
-    CommandExecutionContext &GetExecutionContext() const { return exec_context_; }
+    CommandExecutionContext& GetExecutionContext() const { return exec_context_; }
     ResourceUsageTag GetBaseTag() const { return base_tag_; }
 
-    AccessContext *ReplayStateRenderPassBegin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op,
-                                              const AccessContext &external_context);
-    AccessContext *ReplayStateRenderPassNext();
-    void ReplayStateRenderPassEnd(AccessContext &external_context);
+    AccessContext* ReplayStateRenderPassBegin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass& begin_op,
+                                              const AccessContext& external_context);
+    AccessContext* ReplayStateRenderPassNext();
+    void ReplayStateRenderPassEnd(AccessContext& external_context);
 
   protected:
-    const AccessContext *GetRecordedAccessContext() const;
+    const AccessContext* GetRecordedAccessContext() const;
 
-    CommandExecutionContext &exec_context_;
-    const CommandBufferAccessContext &recorded_context_;
-    const ErrorObject &error_obj_;
+    CommandExecutionContext& exec_context_;
+    const CommandBufferAccessContext& recorded_context_;
+    const ErrorObject& error_obj_;
     const uint32_t index_;
     const ResourceUsageTag base_tag_;
     RenderPassReplayState rp_replay_;

@@ -22,6 +22,7 @@
 
 #include "sync/sync_error_messages.h"
 #include "sync/sync_validation.h"
+#include "sync/sync_event.h"
 #include "sync/sync_image.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/ray_tracing_state.h"
@@ -2284,16 +2285,64 @@ bool SyncValidator::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, Vk
     return ValidateCmdSetEvent(cb_context, event_state, src_exec_scope, ResourceUsageRecord::kMaxIndex, error_obj.location);
 }
 
+void SyncValidator::ApplySetEvent(CommandExecutionContext& exec_context, const std::shared_ptr<const vvl::Event>& event,
+                                  const SyncExecScope& src_exec_scope,
+                                  const std::shared_ptr<const AccessContext>& src_access_context, ResourceUsageTag tag,
+                                  vvl::Func command) const {
+    SyncEventsContext& events_context = exec_context.GetEventsContext();
+    SyncEventState* sync_event = events_context.GetFromShared(event);
+    if (!sync_event) {
+        return;
+    }
+
+    // What happens with two SetEvent is that one cannot know what group of operations will be waited for.
+    // Given:
+    //     Stuff1; SetEvent; Stuff2; SetEvent; WaitEvents;
+    // WaitEvents cannot know which of Stuff1, Stuff2, or both has completed execution.
+
+    if (!sync_event->HasBarrier(src_exec_scope.stage_mask, src_exec_scope.exec_scope)) {
+        sync_event->unsynchronized_set = sync_event->last_command;
+        sync_event->ResetFirstScope();
+    } else if (!sync_event->first_scope) {
+        // We only set the scope if there isn't one
+        sync_event->scope = src_exec_scope;
+
+        // Save the shared_ptr to copy of the access_context present at set time (sent us by the caller)
+        sync_event->first_scope = src_access_context;
+        sync_event->unsynchronized_set = vvl::Func::Empty;
+        sync_event->first_scope_tag = tag;
+    }
+    sync_event->last_command = command;
+    sync_event->last_command_tag = tag;
+    sync_event->barriers = 0;
+}
+
+void SyncValidator::RecordCmdSetEvent(CommandBufferAccessContext& cb_context, std::shared_ptr<const vvl::Event>&& event,
+                                      const SyncExecScope& src_exec_scope, const Location& loc) const {
+    const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
+
+    // Snapshot the current access_context for later inspection at wait time.
+    // NOTE: This appears brute force, but given that we only save a "first-last" model
+    // of access history, the current access context (include barrier state for chaining)
+    // won't necessarily contain the needed information at Wait or Submit time reference.
+    auto src_access_context = std::make_shared<AccessContext>(*this);
+    src_access_context->InitFrom(cb_context.GetCurrentAccessContext());
+
+    ApplySetEvent(cb_context, event, src_exec_scope, src_access_context, tag, loc.function);
+
+    auto sync_op = std::make_shared<SyncOpSetEvent>(std::move(event), src_exec_scope, std::move(src_access_context), loc);
+    cb_context.AddSyncOp(tag, std::move(sync_op));
+}
+
 void SyncValidator::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                               const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    auto sync_op = std::make_shared<SyncOpSetEvent>(record_obj.location.function, *this, queue_flags, event, stageMask,
-                                                    &cb_context.GetCurrentAccessContext());
-    const ResourceUsageTag tag = sync_op->Record(cb_context);
-    cb_context.AddSyncOp(tag, std::move(sync_op));
+    auto event_state = Get<vvl::Event>(event);
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
+    const SyncExecScope src_exec_scope = SyncExecScope::MakeSrc(queue_flags, stageMask);
+    RecordCmdSetEvent(cb_context, std::move(event_state), src_exec_scope, record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -2309,9 +2358,10 @@ bool SyncValidator::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, V
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
+
     auto event_state = Get<vvl::Event>(event);
-    const SyncExecScope src_exec_scope =
-        SyncExecScope::MakeSrc(cb_context.GetQueueFlags(), sync_utils::GetExecScopes(*pDependencyInfo).src);
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
+    const SyncExecScope src_exec_scope = SyncExecScope::MakeSrc(queue_flags, sync_utils::GetExecScopes(*pDependencyInfo).src);
     return ValidateCmdSetEvent(cb_context, event_state, src_exec_scope, ResourceUsageRecord::kMaxIndex, error_obj.location);
 }
 
@@ -2327,12 +2377,11 @@ void SyncValidator::PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, Vk
     }
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    auto sync_op = std::make_shared<SyncOpSetEvent>(record_obj.location.function, *this, queue_flags, event, *pDependencyInfo,
-                                                    &cb_context.GetCurrentAccessContext());
-    const ResourceUsageTag tag = sync_op->Record(cb_context);
-    cb_context.AddSyncOp(tag, std::move(sync_op));
+    auto event_state = Get<vvl::Event>(event);
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
+    const SyncExecScope src_exec_scope = SyncExecScope::MakeSrc(queue_flags, sync_utils::GetExecScopes(*pDependencyInfo).src);
+    RecordCmdSetEvent(cb_context, std::move(event_state), src_exec_scope, record_obj.location);
 }
 
 bool SyncValidator::ValidateCmdResetEvent(const CommandExecutionContext& exec_context,
@@ -2365,15 +2414,37 @@ bool SyncValidator::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, 
     return ValidateCmdResetEvent(cb_context, event_state, exec_scope, ResourceUsageRecord::kMaxIndex, error_obj.location);
 }
 
+void SyncValidator::ApplyResetEvent(CommandExecutionContext& exec_context, const std::shared_ptr<const vvl::Event>& event,
+                                    ResourceUsageTag tag, vvl::Func command) const {
+    SyncEventsContext& events_context = exec_context.GetEventsContext();
+    SyncEventState* sync_event = events_context.GetFromShared(event);
+    if (!sync_event) {
+        return;
+    }
+    sync_event->last_command = command;
+    sync_event->last_command_tag = tag;
+    sync_event->unsynchronized_set = vvl::Func::Empty;
+    sync_event->ResetFirstScope();
+    sync_event->barriers = 0;
+}
+
+void SyncValidator::RecordCmdResetEvent(CommandBufferAccessContext& cb_context, std::shared_ptr<const vvl::Event>&& event,
+                                        const SyncExecScope& exec_scope, const Location& loc) const {
+    const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
+    ApplyResetEvent(cb_context, event, tag, loc.function);
+    auto sync_op = std::make_shared<SyncOpResetEvent>(std::move(event), exec_scope, loc);
+    cb_context.AddSyncOp(tag, std::move(sync_op));
+}
+
 void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                 const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    auto sync_op = std::make_shared<SyncOpResetEvent>(record_obj.location.function, *this, queue_flags, event, stageMask);
-    const ResourceUsageTag tag = sync_op->Record(cb_context);
-    cb_context.AddSyncOp(tag, std::move(sync_op));
+    auto event_state = Get<vvl::Event>(event);
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
+    const SyncExecScope exec_scope = SyncExecScope::MakeSrc(queue_flags, stageMask);
+    RecordCmdResetEvent(cb_context, std::move(event_state), exec_scope, record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
@@ -2399,11 +2470,11 @@ void SyncValidator::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, 
                                                  const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    auto sync_op = std::make_shared<SyncOpResetEvent>(record_obj.location.function, *this, queue_flags, event, stageMask);
-    const ResourceUsageTag tag = sync_op->Record(cb_context);
-    cb_context.AddSyncOp(tag, std::move(sync_op));
+    auto event_state = Get<vvl::Event>(event);
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
+    const SyncExecScope exec_scope = SyncExecScope::MakeSrc(queue_flags, stageMask);
+    RecordCmdResetEvent(cb_context, std::move(event_state), exec_scope, record_obj.location);
 }
 
 bool SyncValidator::ValidateCmdWaitEvents(const CommandExecutionContext& exec_context,
@@ -2509,8 +2580,8 @@ bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
                                                  const ErrorObject& error_obj) const {
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
     const SyncExecScope src_exec_scope = SyncExecScope::MakeSrc(queue_flags, srcStageMask);
     const SyncExecScope dst_exec_scope = SyncExecScope::MakeDst(queue_flags, dstStageMask);
     const BarrierSet barrier_set =
@@ -2526,6 +2597,15 @@ bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
                                  error_obj.location);
 }
 
+void SyncValidator::RecordCmdWaitEvents(CommandBufferAccessContext& cb_context,
+                                        std::vector<std::shared_ptr<const vvl::Event>>&& events,
+                                        std::vector<BarrierSet>&& barrier_sets, const Location& loc) const {
+    const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
+    ApplyWaitEvents(cb_context, events, barrier_sets, tag, loc.function);
+    auto sync_op = std::make_shared<SyncOpWaitEvents>(std::move(events), std::move(barrier_sets), loc);
+    cb_context.AddSyncOp(tag, std::move(sync_op));
+}
+
 void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                                 VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                                 uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
@@ -2535,13 +2615,20 @@ void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, u
                                                 const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    auto sync_op = std::make_shared<SyncOpWaitEvents>(
-        record_obj.location.function, *this, queue_flags, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount,
-        pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-    const ResourceUsageTag tag = sync_op->Record(cb_context);
-    cb_context.AddSyncOp(tag, std::move(sync_op));
+    std::vector<std::shared_ptr<const vvl::Event>> events(eventCount);
+    for (uint32_t i = 0; i < eventCount; i++) {
+        events[i] = Get<vvl::Event>(pEvents[i]);
+    }
+
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
+    const SyncExecScope src_exec_scope = SyncExecScope::MakeSrc(queue_flags, srcStageMask);
+    const SyncExecScope dst_exec_scope = SyncExecScope::MakeDst(queue_flags, dstStageMask);
+    std::vector<BarrierSet> barrier_sets;
+    barrier_sets.emplace_back(*this, src_exec_scope, dst_exec_scope, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
+                              pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+
+    RecordCmdWaitEvents(cb_context, std::move(events), std::move(barrier_sets), record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
@@ -2563,18 +2650,16 @@ bool SyncValidator::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer,
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
-
-    std::vector<BarrierSet> barrier_sets(eventCount);
-    for (uint32_t i = 0; i < eventCount; i++) {
-        barrier_sets[i] = BarrierSet(*this, queue_flags, pDependencyInfos[i]);
-    }
 
     std::vector<std::shared_ptr<const vvl::Event>> events(eventCount);
     for (uint32_t i = 0; i < eventCount; i++) {
         events[i] = Get<vvl::Event>(pEvents[i]);
     }
-
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
+    std::vector<BarrierSet> barrier_sets(eventCount);
+    for (uint32_t i = 0; i < eventCount; i++) {
+        barrier_sets[i] = BarrierSet(*this, queue_flags, pDependencyInfos[i]);
+    }
     return ValidateCmdWaitEvents(cb_context, events, barrier_sets, ResourceUsageRecord::kMaxIndex, error_obj.location);
 }
 
@@ -2585,12 +2670,17 @@ void SyncValidator::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, 
     }
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
 
-    auto sync_op =
-        std::make_shared<SyncOpWaitEvents>(record_obj.location.function, *this, queue_flags, eventCount, pEvents, pDependencyInfos);
-    const ResourceUsageTag tag = sync_op->Record(cb_context);
-    cb_context.AddSyncOp(tag, std::move(sync_op));
+    std::vector<std::shared_ptr<const vvl::Event>> events(eventCount);
+    for (uint32_t i = 0; i < eventCount; i++) {
+        events[i] = Get<vvl::Event>(pEvents[i]);
+    }
+    const VkQueueFlags queue_flags = cb_context.GetQueueFlags();
+    std::vector<BarrierSet> barrier_sets(eventCount);
+    for (uint32_t i = 0; i < eventCount; i++) {
+        barrier_sets[i] = BarrierSet(*this, queue_flags, pDependencyInfos[i]);
+    }
+    RecordCmdWaitEvents(cb_context, std::move(events), std::move(barrier_sets), record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
