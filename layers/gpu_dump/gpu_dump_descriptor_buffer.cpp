@@ -76,6 +76,7 @@ struct SetInfo {
     bool embedded;
     uint32_t index;          // set of the descriptor
     uint32_t binding_index;  // into pBindingInfos[]
+    VkDeviceSize binding_offset;  // pBindingInfos[binding_index].offset
     VkBufferUsageFlagBits2 buffer_usage_flags;
     vvl::range<VkDeviceAddress> range;
     const vvl::DescriptorSetLayout* dsl;
@@ -89,7 +90,8 @@ struct SetInfo {
         if (embedded) {
             ss << "    - Embedded Sampler";
         } else {
-            ss << "    - size: " << range.size() << " bytes, range: " << string_range_hex(range);
+            ss << "    - offset: " << std::dec << binding_offset << ", size: " << range.size()
+               << " bytes, range: " << string_range_hex(range);
         }
         if (binding_index != vvl::kNoIndex32) {
             // Only print if there are multiple bindings
@@ -355,13 +357,13 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
                 }
 
                 uint32_t binding_index = vvl::kNoIndex32;
+                VkDeviceSize binding_offset = descriptor_buffer_binding->offset;
                 vvl::range<VkDeviceAddress> set_range;
 
                 const bool embedded = descriptor_buffer_binding->embedded != vvl::kNoIndex32;
                 if (!embedded) {
                     const VkDeviceAddress start_address =
-                        cb_state.descriptor_buffer.binding_info[descriptor_buffer_binding->index].address +
-                        descriptor_buffer_binding->offset;
+                        cb_state.descriptor_buffer.binding_info[descriptor_buffer_binding->index].address + binding_offset;
                     const VkDeviceSize dsl_size = dsl->GetLayoutSizeInBytes();
                     set_range = {start_address, start_address + dsl_size};
 
@@ -376,7 +378,8 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
                     usage_flags = binding_usage_flags[binding_index];
                 }
 
-                set_info = &sorted_sets.emplace_back(SetInfo{embedded, var_set, binding_index, usage_flags, set_range, dsl, {}});
+                set_info = &sorted_sets.emplace_back(
+                    SetInfo{embedded, var_set, binding_index, binding_offset, usage_flags, set_range, dsl, {}});
             }
 
             // To variables might be the same set/binding if doing descriptor indexing aliasing
