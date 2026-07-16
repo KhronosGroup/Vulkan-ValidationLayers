@@ -117,11 +117,6 @@ void OutputLayerStatusInfo(vvl::DispatchInstance* context) {
     context->LogPerformanceWarning("WARNING-CreateInstance-debug-warning", context->instance, loc,
                                    "Using debug builds of the validation layers *will* adversely affect performance.");
 #endif
-    if (!context->settings.global_settings.fine_grained_locking) {
-        context->LogPerformanceWarning(
-            "WARNING-CreateInstance-locking-warning", context->instance, loc,
-            "Fine-grained locking is disabled, this will adversely affect performance of multithreaded applications.");
-    }
 }
 const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap();
 

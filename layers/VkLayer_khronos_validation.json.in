@@ -266,16 +266,6 @@
                     "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                     "settings": [
                         {
-                            "key": "fine_grained_locking",
-                            "env": "VK_LAYER_FINE_GRAINED_LOCKING",
-                            "label": "Fine Grained Locking",
-                            "description": "Enable fine grained locking for Core Validation, which should improve performance in multithreaded applications. This setting allows the optimization to be disabled for debugging.",
-                            "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/fine_grained_locking_usage.md",
-                            "type": "BOOL",
-                            "view": "HIDDEN",
-                            "default": true
-                        },
-                        {
                             "key": "validate_core",
                             "label": "Core",
                             "description": "The main, heavy-duty validation checks. This may be valuable early in the development cycle to reduce validation output while correcting parameter/object usage errors.",

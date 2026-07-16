@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2021-2025 LunarG, Inc. -->
+<!-- Copyright 2021-2026 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -17,12 +17,7 @@ Thread Safety, Object Lifetime, Handle Wrapping and Stateless validation have al
 
 ### Configuring Fine Grained Locking
 
-For an overview of how to configure layers, refer to the [Layers Overview and Configuration](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html) document.
-
-Fine Grained Locking settings are managed by configuring the Validation Layer. These settings are described in the
-[VK_LAYER_KHRONOS_validation](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details) document.
-
-Fine grained locking can also be enabled and configured using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK.
+Since the 1.4.357 SDK the `VK_LAYER_FINE_GRAINED_LOCKING` setting was removed, it is now only ever on and no reason to leave an option to disable it.
 
 ### Known Limitations
 
