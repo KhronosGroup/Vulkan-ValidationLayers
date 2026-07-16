@@ -3188,8 +3188,8 @@ bool CoreChecks::ValidateDataGraphOperations(const vvl::Pipeline& pipeline, uint
     bool queue_uses_tosa_1_0 = false;
     // no properties for the specified family index means NO support for TOSA 1.0, i.e. VUID 9941
     // this also covers completely empty properties, meaning VK_ARM_data_graph extension not supported
-    const auto properties_it = physical_device_state->queue_family_data_graph_properties.find(queueFamilyIndex);
-    if (properties_it != physical_device_state->queue_family_data_graph_properties.end()) {
+    const auto properties_it = physical_device_state->data_graph.queue_family_properties.find(queueFamilyIndex);
+    if (properties_it != physical_device_state->data_graph.queue_family_properties.end()) {
         for (const auto& p : properties_it->second) {
             if (CompareVkQueueFamilyDataGraphPropertiesARM(tosa_1_0_property, p)) {
                 queue_uses_tosa_1_0 = true;
@@ -3205,7 +3205,7 @@ bool CoreChecks::ValidateDataGraphOperations(const vvl::Pipeline& pipeline, uint
               "required property:\n"
            << string_VkQueueFamilyDataGraphPropertiesARM(tosa_1_0_property)
            << "vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM for queueFamilyIndex " << queueFamilyIndex << "returned:\n";
-        if (properties_it != physical_device_state->queue_family_data_graph_properties.end() && !properties_it->second.empty()) {
+        if (properties_it != physical_device_state->data_graph.queue_family_properties.end() && !properties_it->second.empty()) {
             for (const auto& p : properties_it->second) {
                 ss << string_VkQueueFamilyDataGraphPropertiesARM(p) << '\n';
             }
