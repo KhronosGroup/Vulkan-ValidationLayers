@@ -66,6 +66,38 @@
         ],
         "features": {
             "presets": [
+                 {
+                    "label": "Core Validation",
+                    "description": "The same as Default settings but some fields are not reset when switching between presets (Debug Action, Duplicated Message).",
+                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
+                    "status": "STABLE",
+                    "settings": [
+                        { "key": "validate_core", "value": true },
+                            { "key": "check_image_layout", "value": true },
+                            { "key": "check_command_buffer", "value": true },
+                            { "key": "check_object_in_use", "value": true },
+                            { "key": "check_query", "value": true },
+                            { "key": "check_shaders", "value": true },
+                            { "key": "check_shaders_caching", "value": true },
+                            { "key": "debug_disable_spirv_val", "value": false },
+                        { "key": "validate_sync", "value": false },
+                        { "key": "stateless_param", "value": true },
+                        { "key": "object_lifetime", "value": true },
+                        { "key": "thread_safety", "value": true },
+                        { "key": "unique_handles", "value": true },
+                        { "key": "legacy_detection", "value": false },
+                        { "key": "validate_best_practices", "value": false },
+                        { "key": "gpuav_enable", "value": false },
+                        { "key": "gpu_dump_descriptors", "value": false },
+                        { "key": "gpu_dump_copy_memory_indirect", "value": false },
+                        { "key": "gpu_dump_device_generated_commands", "value": false },
+                        { "key": "descriptor_hashing", "value": false },
+                        { "key": "printf_enable", "value": false },
+                        { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
+                        { "key": "report_flags", "value": [ "error", "warn" ] },
+                        { "key": "enable_message_limit", "value": true }
+                    ]
+                },
                 {
                     "label": "Synchronization Only",
                     "description": "Identify resource access conflicts due to missing or incorrect synchronization operations between actions reading or writing the same regions of memory.",
@@ -272,6 +304,7 @@
                             "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/core_checks.md",
                             "type": "BOOL",
                             "default": true,
+                            "expanded": false,
                             "settings": [
                                 {
                                     "key": "check_image_layout",
@@ -335,7 +368,7 @@
                                     "description": "This will validate the contents of the SPIR-V which can be CPU intensive during application start up. This does internal checks as well as calling spirv-val. (Same effect using VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT)",
                                     "type": "BOOL",
                                     "default": true,
-                                    "expanded": true,
+                                    "expanded": false,
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
@@ -413,7 +446,7 @@
                             "url": "${LUNARG_SDK}/synchronization_usage.html",
                             "type": "BOOL",
                             "default": false,
-                            "expanded": true,
+                            "expanded": false,
                             "settings": [
                                 {
                                     "key": "syncval_submit_time_validation",
@@ -517,6 +550,7 @@
                             "description": "Give warnings when using legacy parts of the API.",
                             "type": "BOOL",
                             "default": false,
+                            "expanded": false,
                             "settings": [
                                 {
                                     "key": "legacy_detection_mode",
@@ -558,7 +592,7 @@
                             "url": "${LUNARG_SDK}/best_practices.html",
                             "type": "BOOL",
                             "default": false,
-                            "expanded": true,
+                            "expanded": false,
                             "status": "STABLE",
                             "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                             "settings": [
@@ -688,7 +722,6 @@
                                             "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/gpu_av_descriptor_indexing.md",
                                             "type": "BOOL",
                                             "view": "DEBUG",
-                                            "expanded": true,
                                             "default": true,
                                             "dependence": {
                                                 "mode": "ALL",
@@ -720,7 +753,6 @@
                                             "type": "BOOL",
                                             "view": "DEBUG",
                                             "default": true,
-                                            "expanded": true,
                                             "description": "Check for invalid access using buffer device address",
                                             "dependence": {
                                                 "mode": "ALL",
@@ -1247,6 +1279,7 @@
                             "description": "When enabled and using VK_EXT_descriptor_heap/VK_EXT_descriptor_buffer, this will attempt to track all descriptors seen such that GPU-AV and GPU Dump can detect more errors. This will increase the memory footprint.",
                             "type": "BOOL",
                             "default": false,
+                            "expanded": false,
                             "settings": [
                                 {
                                     "key": "descriptor_hashing_total_descriptors",
@@ -1283,6 +1316,7 @@
                             "type": "BOOL",
                             "url": "${LUNARG_SDK}/debug_printf.html",
                             "default": false,
+                            "expanded": false,
                             "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
                             "settings": [
                                 {
@@ -1387,6 +1421,7 @@
                     "description": "Specifies what action is to be taken when a layer reports information",
                     "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                     "type": "FLAGS",
+                    "expanded": true,
                     "flags": [
                         {
                             "key": "VK_DBG_LAYER_ACTION_LOG_MSG",
@@ -1441,6 +1476,7 @@
                     "description": "Comma-delineated list of options specifying the types of messages to be reported",
                     "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                     "type": "FLAGS",
+                    "expanded": true,
                     "flags": [
                         {
                             "key": "info",
@@ -1504,6 +1540,7 @@
                     "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                     "type": "BOOL",
                     "default": true,
+                    "expanded": true,
                     "settings": [
                         {
                             "key": "duplicate_message_limit",
