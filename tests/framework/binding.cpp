@@ -1312,7 +1312,10 @@ void DataGraphPipelineSession::GetMemoryReqs() {
     vk::GetDataGraphPipelineSessionBindPointRequirementsARM(*device_, &bind_info, &count, bind_point_reqs_.data());
 
     mem_reqs_.resize(count);
+    num_bind_objects_ = 0;
     for (uint32_t i = 0; i < count; i++) {
+        num_bind_objects_ += bind_point_reqs_[i].numObjects;
+
         if (bind_point_reqs_[i].bindPointType != VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TYPE_MEMORY_ARM) {
             continue;
         }

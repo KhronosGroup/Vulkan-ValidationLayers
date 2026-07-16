@@ -27,6 +27,8 @@ class TestIcdGenerator(BaseGenerator):
             'vkGetClusterAccelerationStructureBuildSizesNV',
             'vkGetTensorMemoryRequirementsARM',
             'vkGetPhysicalDeviceExternalTensorPropertiesARM',
+            'vkCreateDataGraphPipelineSessionARM',
+            'vkDestroyDataGraphPipelineSessionARM',
             'vkGetDataGraphPipelineSessionBindPointRequirementsARM',
             'vkGetDataGraphPipelineSessionMemoryRequirementsARM',
             'vkCreateInstance',

@@ -6263,22 +6263,10 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelinesARM(VkDevice devic
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelineSessionARM(VkDevice device,
-                                                                        const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
-                                                                        const VkAllocationCallbacks* pAllocator,
-                                                                        VkDataGraphPipelineSessionARM* pSession) {
-    unique_lock_t lock(global_lock);
-    *pSession = (VkDataGraphPipelineSessionARM)global_unique_handle++;
-    return VK_SUCCESS;
-}
-
 static VKAPI_ATTR VkResult VKAPI_CALL BindDataGraphPipelineSessionMemoryARM(
     VkDevice device, uint32_t bindInfoCount, const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos) {
     return VK_SUCCESS;
 }
-
-static VKAPI_ATTR void VKAPI_CALL DestroyDataGraphPipelineSessionARM(VkDevice device, VkDataGraphPipelineSessionARM session,
-                                                                     const VkAllocationCallbacks* pAllocator) {}
 
 static VKAPI_ATTR void VKAPI_CALL CmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphPipelineSessionARM session,
                                                           const VkDataGraphPipelineDispatchInfoARM* pInfo) {}
