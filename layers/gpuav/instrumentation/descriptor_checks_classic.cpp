@@ -142,7 +142,6 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
             if (GetErrorGroup(error_record) != kErrorGroup_InstDescriptorIndexingOOB) {
                 return error_found;
             }
-            error_found = true;
 
             std::ostringstream strm;
 
