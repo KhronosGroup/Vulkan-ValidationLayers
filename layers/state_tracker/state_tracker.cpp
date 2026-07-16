@@ -7356,7 +7356,7 @@ void DeviceState::PostCallRecordGetDescriptorEXT(VkDevice device, const VkDescri
             const VkDescriptorAddressInfoEXT* address_info = vk_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
                                                                  ? pDescriptorInfo->data.pStorageBuffer
                                                                  : pDescriptorInfo->data.pUniformBuffer;
-            if (address_info) {
+            if (address_info && address_info->address != 0) {
                 VkDeviceAddressRangeEXT address_range{address_info->address, address_info->range};
                 const bool added = descriptor_hashing->table.Insert(
                     key, DescriptorHashTable::Entry(vvl_type, DescriptorHashTable::EntryBuffer{address_range}), *this,
@@ -7384,7 +7384,7 @@ void DeviceState::PostCallRecordGetDescriptorEXT(VkDevice device, const VkDescri
                 vk_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE   ? pDescriptorInfo->data.pSampledImage
                 : vk_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ? pDescriptorInfo->data.pStorageImage
                                                               : pDescriptorInfo->data.pInputAttachmentImage;
-            if (image_info) {
+            if (image_info && image_info->imageView != VK_NULL_HANDLE) {
                 if (const auto view_state = Get<vvl::ImageView>(image_info->imageView)) {
                     const bool added = descriptor_hashing->table.Insert(
                         key,
@@ -7405,7 +7405,7 @@ void DeviceState::PostCallRecordGetDescriptorEXT(VkDevice device, const VkDescri
             const VkDescriptorAddressInfoEXT* address_info = vk_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
                                                                  ? pDescriptorInfo->data.pStorageTexelBuffer
                                                                  : pDescriptorInfo->data.pUniformTexelBuffer;
-            if (address_info) {
+            if (address_info && address_info->address != 0) {
                 VkDeviceAddressRangeEXT address_range{address_info->address, address_info->range};
                 const bool added = descriptor_hashing->table.Insert(
                     key, DescriptorHashTable::Entry(vvl_type, DescriptorHashTable::EntryBuffer{address_range}), *this,
