@@ -16,6 +16,9 @@
  */
 
 #include "sync_barrier.h"
+#include "sync_validation.h"
+#include "state_tracker/image_state.h"
+#include "utils/image_utils.h"
 #include "utils/sync_utils.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
 
@@ -213,6 +216,160 @@ size_t SyncBarrier::Hash() const {
     hc << dst_exec_scope.Hash();
     dst_access_scope.HashCombine(hc);
     return hc.Value();
+}
+
+BarrierSet::BarrierSet(const SyncValidator& sync_state, VkQueueFlags queue_flags, const VkDependencyInfo& dep_info) {
+    const ExecScopes stage_masks = sync_utils::GetExecScopes(dep_info);
+    src_exec_scope = SyncExecScope::MakeSrc(queue_flags, stage_masks.src);
+    dst_exec_scope = SyncExecScope::MakeDst(queue_flags, stage_masks.dst);
+
+    MakeMemoryBarriers(queue_flags, dep_info);
+    MakeBufferMemoryBarriers(sync_state, queue_flags, dep_info.bufferMemoryBarrierCount, dep_info.pBufferMemoryBarriers);
+    MakeImageMemoryBarriers(sync_state, queue_flags, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers,
+                            sync_state.device_state->extensions);
+}
+
+BarrierSet::BarrierSet(const SyncValidator& sync_state, const SyncExecScope& src_exec_scope, const SyncExecScope& dst_exec_scope,
+                       uint32_t memory_barrier_count, const VkMemoryBarrier* memory_barriers, uint32_t buffer_barrier_count,
+                       const VkBufferMemoryBarrier* buffer_barriers, uint32_t image_barrier_count,
+                       const VkImageMemoryBarrier* image_barriers)
+    : src_exec_scope(src_exec_scope), dst_exec_scope(dst_exec_scope) {
+    MakeMemoryBarriers(src_exec_scope, dst_exec_scope, memory_barrier_count, memory_barriers);
+    MakeBufferMemoryBarriers(sync_state, src_exec_scope, dst_exec_scope, buffer_barrier_count, buffer_barriers);
+    MakeImageMemoryBarriers(sync_state, src_exec_scope, dst_exec_scope, image_barrier_count, image_barriers,
+                            sync_state.device_state->extensions);
+}
+
+void BarrierSet::MakeMemoryBarriers(const SyncExecScope& src, const SyncExecScope& dst, uint32_t barrier_count,
+                                    const VkMemoryBarrier* barriers) {
+    memory_barriers.reserve(std::max<uint32_t>(1, barrier_count));
+    for (const VkMemoryBarrier& barrier : vvl::make_span(barriers, barrier_count)) {
+        SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
+        memory_barriers.emplace_back(sync_barrier);
+    }
+
+    // Ensure we have a barrier that handles execution dependencies.
+    // NOTE: the reason to have execution barrier is explained in details in the comment for Sync2
+    // MakeMemoryBarriers overload. The Sync1 implementation is much simpler since execution scopes
+    // are the same for all barriers.
+    if (barrier_count == 0) {
+        memory_barriers.emplace_back(SyncBarrier(src, dst));
+    }
+    single_exec_scope = true;
+    execution_dependency_barrier_count = (barrier_count == 0) ? 1 : 0;
+}
+
+void BarrierSet::MakeMemoryBarriers(VkQueueFlags queue_flags, const VkDependencyInfo& dep_info) {
+    // Collect unique execution dependencies from buffer and image barriers.
+    //
+    // NOTE: the reason to collect execution dependencies in addition to original buffer/image
+    // barriers is because syncval applies buffer/image barriers to the memory ranges defined
+    // by the resource. But execution dependency can affect any resource/memory range, not
+    // only the one specified by the barrier. For example, execution dependency synchronizes
+    // all READ accesses that are in scope. To emulate this behavior we collect unique
+    // execution dependencies and apply them to all memory accesses (don't specify access mask).
+    small_vector<std::pair<VkPipelineStageFlags2, VkPipelineStageFlags2>, 4> buffer_image_barrier_exec_deps;
+    for (const VkBufferMemoryBarrier2& buffer_barrier :
+         vvl::make_span(dep_info.pBufferMemoryBarriers, dep_info.bufferMemoryBarrierCount)) {
+        const auto src_dst = std::make_pair(buffer_barrier.srcStageMask, buffer_barrier.dstStageMask);
+        if (!buffer_image_barrier_exec_deps.Contains(src_dst)) {
+            buffer_image_barrier_exec_deps.emplace_back(src_dst);
+        }
+    }
+    for (const VkImageMemoryBarrier2& image_barrier :
+         vvl::make_span(dep_info.pImageMemoryBarriers, dep_info.imageMemoryBarrierCount)) {
+        const auto src_dst = std::make_pair(image_barrier.srcStageMask, image_barrier.dstStageMask);
+        if (!buffer_image_barrier_exec_deps.Contains(src_dst)) {
+            buffer_image_barrier_exec_deps.emplace_back(src_dst);
+        }
+    }
+
+    memory_barriers.reserve(dep_info.memoryBarrierCount + buffer_image_barrier_exec_deps.size());
+
+    // Add global memory barriers specified in VkDependencyInfo
+    for (const VkMemoryBarrier2& barrier : vvl::make_span(dep_info.pMemoryBarriers, dep_info.memoryBarrierCount)) {
+        auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
+        auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
+        memory_barriers.emplace_back(SyncBarrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask));
+    }
+    // Add execution dependencies from buffer and image barriers
+    for (const auto& src_dst : buffer_image_barrier_exec_deps) {
+        auto src = SyncExecScope::MakeSrc(queue_flags, src_dst.first);
+        auto dst = SyncExecScope::MakeDst(queue_flags, src_dst.second);
+        memory_barriers.emplace_back(SyncBarrier(src, dst));
+    }
+    single_exec_scope = false;
+    execution_dependency_barrier_count = (uint32_t)buffer_image_barrier_exec_deps.size();
+}
+
+void BarrierSet::MakeBufferMemoryBarriers(const SyncValidator& sync_state, const SyncExecScope& src, const SyncExecScope& dst,
+                                          uint32_t barrier_count, const VkBufferMemoryBarrier* barriers) {
+    buffer_barriers.reserve(barrier_count);
+    for (const VkBufferMemoryBarrier& barrier : vvl::make_span(barriers, barrier_count)) {
+        if (auto buffer = sync_state.Get<vvl::Buffer>(barrier.buffer)) {
+            const auto range = MakeRange(*buffer, barrier.offset, barrier.size);
+            const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
+            buffer_barriers.emplace_back(buffer, sync_barrier, range);
+        }
+    }
+}
+
+void BarrierSet::MakeBufferMemoryBarriers(const SyncValidator& sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
+                                          const VkBufferMemoryBarrier2* barriers) {
+    buffer_barriers.reserve(barrier_count);
+    for (const VkBufferMemoryBarrier2& barrier : vvl::make_span(barriers, barrier_count)) {
+        auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
+        auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
+        if (auto buffer = sync_state.Get<vvl::Buffer>(barrier.buffer)) {
+            const auto range = MakeRange(*buffer, barrier.offset, barrier.size);
+            const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
+            buffer_barriers.emplace_back(buffer, sync_barrier, range);
+        }
+    }
+}
+
+void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, const SyncExecScope& src, const SyncExecScope& dst,
+                                         uint32_t barrier_count, const VkImageMemoryBarrier* barriers,
+                                         const DeviceExtensions& extensions) {
+    image_barriers.reserve(barrier_count);
+    for (const auto [index, barrier] : vvl::enumerate(barriers, barrier_count)) {
+        if (auto image = sync_state.Get<vvl::Image>(barrier.image)) {
+            auto subresource_range = image->NormalizeSubresourceRange(barrier.subresourceRange);
+
+            // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
+            if (barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
+                CanTransitionDepthSlices(extensions, image->GetImageType(), image->create_flags)) {
+                subresource_range.layerCount = image->GetExtent().depth - subresource_range.baseArrayLayer;
+            }
+
+            const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
+            const bool layout_transition = barrier.oldLayout != barrier.newLayout;
+            image_barriers.emplace_back(image, sync_barrier, subresource_range, layout_transition, index);
+        }
+    }
+}
+
+void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
+                                         const VkImageMemoryBarrier2* barriers, const DeviceExtensions& extensions) {
+    image_barriers.reserve(barrier_count);
+    for (const auto [index, barrier] : vvl::enumerate(barriers, barrier_count)) {
+        auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
+        auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
+        auto image = sync_state.Get<vvl::Image>(barrier.image);
+        if (image) {
+            auto subresource_range = image->NormalizeSubresourceRange(barrier.subresourceRange);
+
+            // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
+            if (barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
+                CanTransitionDepthSlices(extensions, image->GetImageType(), image->create_flags)) {
+                subresource_range.layerCount = image->GetExtent().depth - subresource_range.baseArrayLayer;
+            }
+
+            const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
+            const bool layout_transition = barrier.oldLayout != barrier.newLayout;
+            image_barriers.emplace_back(image, sync_barrier, subresource_range, layout_transition, index);
+        }
+    }
 }
 
 }  // namespace syncval

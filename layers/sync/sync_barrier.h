@@ -19,7 +19,11 @@
 
 #include "sync/sync_common.h"
 
+struct DeviceExtensions;
+
 namespace syncval {
+
+class SyncValidator;
 
 struct SyncExecScope {
     // The xxxStageMask parameter passed by the caller
@@ -60,11 +64,74 @@ struct SyncBarrier {
     SyncBarrier(const SyncExecScope& src_exec, const SyncExecScope& dst_exec, const AllAccess&);
     SyncBarrier(const SyncExecScope& src_exec, VkAccessFlags2 src_access_mask, const SyncExecScope& dst_exec,
                 VkAccessFlags2 dst_access_mask);
-    SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &barrier);
-    SyncBarrier(const std::vector<SyncBarrier> &barriers);
+    SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2& barrier);
+    SyncBarrier(const std::vector<SyncBarrier>& barriers);
 
-    bool operator==(const SyncBarrier &other) const;
+    bool operator==(const SyncBarrier& other) const;
     size_t Hash() const;
+};
+
+struct SyncBufferBarrier {
+    std::shared_ptr<const vvl::Buffer> buffer;
+    SyncBarrier barrier;
+    AccessRange range;
+
+    SyncBufferBarrier(const std::shared_ptr<const vvl::Buffer>& buffer, const SyncBarrier& barrier, const AccessRange& range)
+        : buffer(buffer), barrier(barrier), range(range) {}
+};
+
+struct SyncImageBarrier {
+    std::shared_ptr<const vvl::Image> image;
+    SyncBarrier barrier;
+    VkImageSubresourceRange subresource_range;
+    bool layout_transition;
+    uint32_t barrier_index;
+    uint32_t handle_index = vvl::kNoIndex32;
+
+    SyncImageBarrier(const std::shared_ptr<const vvl::Image>& image, const SyncBarrier& barrier,
+                     const VkImageSubresourceRange& subresource_range, bool layout_transition, uint32_t barrier_index)
+        : image(image),
+          barrier(barrier),
+          subresource_range(subresource_range),
+          layout_transition(layout_transition),
+          barrier_index(barrier_index) {}
+};
+
+struct BarrierSet {
+    SyncExecScope src_exec_scope;
+    SyncExecScope dst_exec_scope;
+    std::vector<SyncBarrier> memory_barriers;
+    std::vector<SyncBufferBarrier> buffer_barriers;
+    std::vector<SyncImageBarrier> image_barriers;
+
+    bool single_exec_scope = false;
+
+    // The numbers of additional global barriers introduced to track execution dependencies
+    // defined by image and buffer barriers, or a single execution dependencies when a sync1
+    // barrier command specifies no barriers (only exec scopes). Used for statistics tracking.
+    uint32_t execution_dependency_barrier_count = 0;
+
+    BarrierSet() = default;
+    BarrierSet(const SyncValidator& sync_state, VkQueueFlags queue_flags, const VkDependencyInfo& dep_info);
+    BarrierSet(const SyncValidator& sync_state, const SyncExecScope& src_exec_scope, const SyncExecScope& dst_exec_scope,
+               uint32_t memory_barrier_count, const VkMemoryBarrier* memory_barriers, uint32_t buffer_barrier_count,
+               const VkBufferMemoryBarrier* buffer_barriers, uint32_t image_barrier_count,
+               const VkImageMemoryBarrier* image_barriers);
+
+  private:
+    void MakeMemoryBarriers(const SyncExecScope& src, const SyncExecScope& dst, uint32_t barrier_count,
+                            const VkMemoryBarrier* barriers);
+    void MakeMemoryBarriers(VkQueueFlags queue_flags, const VkDependencyInfo& dep_info);
+
+    void MakeBufferMemoryBarriers(const SyncValidator& sync_state, const SyncExecScope& src, const SyncExecScope& dst,
+                                  uint32_t barrier_count, const VkBufferMemoryBarrier* barriers);
+    void MakeBufferMemoryBarriers(const SyncValidator& sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
+                                  const VkBufferMemoryBarrier2* barriers);
+
+    void MakeImageMemoryBarriers(const SyncValidator& sync_state, const SyncExecScope& src, const SyncExecScope& dst,
+                                 uint32_t barrier_count, const VkImageMemoryBarrier* barriers, const DeviceExtensions& extensions);
+    void MakeImageMemoryBarriers(const SyncValidator& sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
+                                 const VkImageMemoryBarrier2* barriers, const DeviceExtensions& extensions);
 };
 
 // Defines the source scope of the barrier.
@@ -84,11 +151,11 @@ struct BarrierScope {
     // value, so (access_tag < scope_tag) evaluates to true for non event code.
     ResourceUsageTag scope_tag = kInvalidTag;
 
-    BarrierScope(const SyncBarrier &barrier, QueueId scope_queue = kQueueIdInvalid, ResourceUsageTag scope_tag = kInvalidTag);
+    BarrierScope(const SyncBarrier& barrier, QueueId scope_queue = kQueueIdInvalid, ResourceUsageTag scope_tag = kInvalidTag);
 };
 
 struct SemaphoreScope : SyncExecScope {
-    SemaphoreScope(QueueId qid, const SyncExecScope &exec_scope) : SyncExecScope(exec_scope), queue(qid) {}
+    SemaphoreScope(QueueId qid, const SyncExecScope& exec_scope) : SyncExecScope(exec_scope), queue(qid) {}
     SemaphoreScope() = default;
     QueueId queue;
 };
