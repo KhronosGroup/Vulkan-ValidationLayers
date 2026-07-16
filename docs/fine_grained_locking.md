@@ -72,8 +72,6 @@ The current focus for optimization is core validation, implemented in the `CoreC
 
 The `ValidationObject` methods `ReadLock()` and `WriteLock()` create lock guard objects that keep this mutex locked until they are destroyed. By overriding these methods to create the guards using the[ std::defer_lock](https://en.cppreference.com/w/cpp/thread/lock_tag) policy, the returned lock guard will not actually lock the lock. This technique is also used by the Thread Safety and Object Tracking validation objects.
 
-The `CoreCheck's` `ValidationObject` overrides these methods to **optionally** lock `validation_object_mutex`, depending on a runtime setting.  If the environment variable `VK_LAYER_FINE_GRAINED_LOCKING` or the settings file value `khronos_validation.fine_grained_locking` is true, this lock will not be locked.
-
 ###### PRs:
 
 [corechecks: Add setting to enable fine-grained locking](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3646)

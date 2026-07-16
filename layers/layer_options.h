@@ -82,8 +82,6 @@ using ValidationEnabled = std::array<bool, kMaxEnableFlags>;
 
 // General settings to be used by all parts of the Validation Layers
 struct GlobalSettings {
-    bool fine_grained_locking = true;
-
     bool debug_disable_spirv_val = false;
 
     // Have quick way to know if user only has requsted errors as we can skip larger, expensive parts of the code if the user will
