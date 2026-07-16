@@ -66,6 +66,9 @@ static std::unordered_map<VkDevice, std::unordered_map<VkImage, VkDeviceSize>> i
 static std::unordered_map<VkDevice, std::unordered_set<VkCommandPool>> command_pool_map;
 static std::unordered_map<VkCommandPool, std::vector<VkCommandBuffer>> command_pool_buffer_map;
 
+// Sessions that have been created with neural statistics create info
+static std::unordered_set<VkDataGraphPipelineSessionARM> ne_stats_sessions;
+
 static constexpr uint32_t icd_swapchain_image_count = 1;
 static std::unordered_map<VkSwapchainKHR, VkImage[icd_swapchain_image_count]> swapchain_image_map;
 

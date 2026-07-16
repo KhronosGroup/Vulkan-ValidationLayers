@@ -877,16 +877,62 @@ static VKAPI_ATTR void VKAPI_CALL GetTensorMemoryRequirementsARM(VkDevice device
     memReq.memoryTypeBits = 0xFFFF & ~(0x1 << 3);
 }
 
+static VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelineSessionARM(VkDevice device,
+                                                                        const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
+                                                                        const VkAllocationCallbacks* pAllocator,
+                                                                        VkDataGraphPipelineSessionARM* pSession) {
+    unique_lock_t lock(global_lock);
+
+    *pSession = (VkDataGraphPipelineSessionARM)global_unique_handle++;
+
+    if (nullptr != pCreateInfo) {
+        if (vku::FindStructInPNextChain<VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM>(pCreateInfo->pNext)) {
+            ne_stats_sessions.emplace(*pSession);
+        }
+    }
+
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR void VKAPI_CALL DestroyDataGraphPipelineSessionARM(VkDevice device, VkDataGraphPipelineSessionARM session,
+                                                                     const VkAllocationCallbacks* pAllocator) {
+    unique_lock_t lock(global_lock);
+    ne_stats_sessions.erase(session);
+}
+
 static VKAPI_ATTR VkResult VKAPI_CALL GetDataGraphPipelineSessionBindPointRequirementsARM(
     VkDevice device, const VkDataGraphPipelineSessionBindPointRequirementsInfoARM* pInfo, uint32_t* pBindPointRequirementCount,
     VkDataGraphPipelineSessionBindPointRequirementARM* pBindPointRequirements) {
-    if (nullptr == pBindPointRequirements) {
-        *pBindPointRequirementCount = 1;
-    } else {
-        pBindPointRequirements->bindPoint = VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TRANSIENT_ARM;
-        pBindPointRequirements->bindPointType = VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TYPE_MEMORY_ARM;
-        pBindPointRequirements->numObjects = 1;
+    unique_lock_t lock(global_lock);
+
+    const bool uses_ne_stats = ne_stats_sessions.find(pInfo->session) != ne_stats_sessions.end();
+
+    const uint32_t num_bind_points = 1 + (uses_ne_stats ? 1 : 0);
+
+    if (!pBindPointRequirements) {
+        *pBindPointRequirementCount = num_bind_points;
+
+        return VK_SUCCESS;
     }
+
+    if (0 == *pBindPointRequirementCount) {
+        return VK_INCOMPLETE;
+    }
+    pBindPointRequirements[0].bindPoint = VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TRANSIENT_ARM;
+    pBindPointRequirements[0].bindPointType = VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TYPE_MEMORY_ARM;
+    pBindPointRequirements[0].numObjects = 1;
+
+    if (uses_ne_stats) {
+        if (1 == *pBindPointRequirementCount) {
+            return VK_INCOMPLETE;
+        }
+        pBindPointRequirements[1].bindPoint = VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_NEURAL_ACCELERATOR_STATISTICS_ARM;
+        pBindPointRequirements[1].bindPointType = VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TYPE_MEMORY_ARM;
+        pBindPointRequirements[1].numObjects = 1;
+    }
+
+    *pBindPointRequirementCount = num_bind_points;
+
     return VK_SUCCESS;
 }
 

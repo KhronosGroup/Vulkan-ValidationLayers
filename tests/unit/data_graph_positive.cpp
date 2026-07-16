@@ -11,6 +11,7 @@
 
 #include "layer_validation_tests.h"
 #include "data_graph_objects.h"
+#include "generated/pnext_chain_extraction.h"
 
 class PositiveDataGraph : public DataGraphTest {};
 
@@ -37,7 +38,7 @@ const VkTensorDescriptionARM DataGraphTest::defaultConstantTensorDesc{DefaultCon
 std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> DataGraphTest::InitSessionBindInfo(
     const vkt::DataGraphPipelineSession& session, const std::vector<vkt::DeviceMemory>& device_mem) {
     const auto& bind_point_reqs = session.BindPointReqs();
-    std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos(session.MemReqs().size());
+    std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos(session.NumBindObjects());
     uint32_t req_i = 0;
     for (uint32_t i = 0; i < bind_point_reqs.size(); i++) {
         if (bind_point_reqs[i].bindPointType != VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TYPE_MEMORY_ARM) {
@@ -47,8 +48,8 @@ std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> DataGraphTest::InitSess
         for (uint32_t j = 0; j < bind_point_reqs[i].numObjects; j++) {
             session_bind_infos[req_i] = vku::InitStructHelper();
             session_bind_infos[req_i].session = session;
-            session_bind_infos[req_i].memory = device_mem[req_i];
-            session_bind_infos[req_i].bindPoint = bind_point_reqs[req_i].bindPoint;
+            session_bind_infos[req_i].memory = device_mem[i];
+            session_bind_infos[req_i].bindPoint = bind_point_reqs[i].bindPoint;
             session_bind_infos[req_i].objectIndex = j;
             req_i++;
         }
@@ -82,7 +83,7 @@ VkTensorDescriptionARM DataGraphTest::DefaultConstantTensorDesc() {
 }
 
 // Assumes description defines a packed tensor with linear tiling.
-inline VkDeviceSize GetLinearTensorBufferSizeBytes(const VkTensorDescriptionARM &description) {
+inline VkDeviceSize GetLinearTensorBufferSizeBytes(const VkTensorDescriptionARM& description) {
     assert(description.dimensionCount > 0);
     assert(description.pDimensions);
     // NOTE: no assert for linear tiling: used for different tilings in negative tests
@@ -286,7 +287,7 @@ TEST_F(PositiveDataGraph, CmdDispatchDescriptorBuffer) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
     auto& bind_point_reqs = session.BindPointReqs();
@@ -300,7 +301,7 @@ TEST_F(PositiveDataGraph, CmdDispatchDescriptorBuffer) {
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
 
     vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
     VkDescriptorBufferBindingInfoEXT dbbi = vku::InitStructHelper();
@@ -516,4 +517,48 @@ TEST_F(PositiveDataGraph, ProcessingEnginesGetProperties) {
         ASSERT_EQ(VK_SUCCESS,
                   vk::GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(Gpu(), queue_index, &prop, pProperties));
     }
+}
+
+TEST_F(PositiveDataGraph, NeuralStatistics) {
+    TEST_DESCRIPTION("Dispatch a graph using neural statistics");
+
+    // create a pipeline with NX statistics enabled
+    AddRequiredExtensions(VK_ARM_DATA_GRAPH_NEURAL_ACCELERATOR_STATISTICS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dataGraphNeuralAcceleratorStatistics);
+    RETURN_IF_SKIP(InitBasicDataGraph());
+
+    VkDataGraphPipelineNeuralStatisticsCreateInfoARM ne_stats_info = vku::InitStructHelper();
+    ne_stats_info.allowNeuralStatistics = VK_TRUE;
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    vvl::PnextChainAdd(&pipeline.pipeline_ci_, &ne_stats_info);
+
+    pipeline.CreateDataGraphPipeline();
+
+    // include a SessionNeuralStatisticsCreateInfo to collect the neural stats
+    VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM session_ne_stats_info = vku::InitStructHelper();
+    session_ne_stats_info.mode = VkNeuralAcceleratorStatisticsModeARM::VK_NEURAL_ACCELERATOR_STATISTICS_MODE_STATISTICS0_ARM;
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = pipeline;
+    vvl::PnextChainAdd(&session_ci, &session_ne_stats_info);
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+
+    auto& bind_point_reqs = session.BindPointReqs();
+    std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
+    session.AllocSessionMem(device_mem);
+    auto session_bind_infos = InitSessionBindInfo(session, device_mem);
+
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, static_cast<uint32_t>(session_bind_infos.size()),
+                                              session_bind_infos.data());
+
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
+                              &pipeline.descriptor_set_.get()->set_, 0, nullptr);
+    VkDataGraphPipelineDispatchInfoARM disp_info = vku::InitStructHelper();
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, &disp_info);
+    m_command_buffer.End();
 }

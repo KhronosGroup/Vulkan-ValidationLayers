@@ -1309,6 +1309,7 @@ class DataGraphPipelineSession : public internal::NonDispHandle<VkDataGraphPipel
     void AllocSessionMem(std::vector<vkt::DeviceMemory> &device_mem, bool is_protected = false, size_t scale_factor = 1,
                          int32_t size_modifier = 0);
     size_t BindPointsCount() const { return bind_point_reqs_.size(); }
+    uint32_t NumBindObjects() const { return num_bind_objects_; }
 
     const std::vector<VkDataGraphPipelineSessionBindPointRequirementARM> &BindPointReqs() const { return bind_point_reqs_; }
     const std::vector<VkMemoryRequirements2> &MemReqs() const { return mem_reqs_; }
@@ -1317,6 +1318,7 @@ class DataGraphPipelineSession : public internal::NonDispHandle<VkDataGraphPipel
     const Device *device_ = nullptr;
     VkDataGraphPipelineSessionCreateInfoARM create_info_;
     std::vector<VkDataGraphPipelineSessionBindPointRequirementARM> bind_point_reqs_;
+    uint32_t num_bind_objects_ = 0;
     std::vector<VkMemoryRequirements2> mem_reqs_;
 };
 

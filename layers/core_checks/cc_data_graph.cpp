@@ -567,6 +567,16 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
         }
         // common checks
         skip |= ValidateDataGraphPipelineCreateInfo(device, create_info, create_info_loc, *pipeline);
+
+        if ((create_info.flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT_EXT) &&
+            vku::FindStructInPNextChain<VkDataGraphPipelineNeuralStatisticsCreateInfoARM>(create_info.pNext)) {
+                skip |= LogError("VUID-VkDataGraphPipelineCreateInfoARM-flags-09848", device, create_info_loc.dot(Field::flags),
+                                 "(%s) contains VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT_EXT, and a "
+                                 "VkDataGraphPipelineNeuralStatisticsCreateInfoARM structure is "
+                                 "present in the pNext chain.\n%s",
+                                 string_VkPipelineCreateFlags2(create_info.flags).c_str(),
+                                 PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
+        }
     }
 
     return skip;
@@ -597,6 +607,24 @@ bool CoreChecks::PreCallValidateGetDataGraphPipelinePropertiesARM(VkDevice devic
                                  string_VkDataGraphPipelinePropertyARM(prop1.property));
             }
         }
+
+        if (prop1.property == VK_DATA_GRAPH_PIPELINE_PROPERTY_NEURAL_ACCELERATOR_STATISTICS_INFO_ARM) {
+            auto ne_stats_info = vku::FindStructInPNextChain<VkDataGraphPipelineNeuralStatisticsCreateInfoARM>(
+                pipeline_ptr->DataGraphCreateInfo().pNext);
+            if (!ne_stats_info) {
+                skip |= LogError(
+                    "VUID-vkGetDataGraphPipelinePropertiesARM-pProperties-09856", device,
+                    error_obj.location.dot(Field::pPipelineInfo).dot(Field::dataGraphPipeline),
+                    "was not created with VkDataGraphPipelineNeuralStatisticsCreateInfoARM in the pNext chain of the pipeline "
+                    "create info.\n%s",
+                    PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, pipeline_ptr->DataGraphCreateInfo().pNext).c_str());
+            } else if (ne_stats_info->allowNeuralStatistics == VK_FALSE) {
+                skip |= LogError(
+                    "VUID-vkGetDataGraphPipelinePropertiesARM-pProperties-09856", device,
+                    error_obj.location.dot(Field::pPipelineInfo).dot(Field::dataGraphPipeline),
+                    "was created with VkDataGraphPipelineNeuralStatisticsCreateInfoARM::allowNeuralStatistics set to VK_FALSE.");
+            }
+        }
     }
 
     return skip;
@@ -613,19 +641,48 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelineSessionARM(VkDevice devic
 
     if (VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CREATE_INFO_ARM != pipeline_ptr->GetCreateInfoSType()) {
         skip |= LogError("VUID-VkDataGraphPipelineSessionCreateInfoARM-dataGraphPipeline-09781", device,
-                         error_obj.location.dot(Field::dataGraphPipeline),
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::dataGraphPipeline),
                          "was not created with vkCreateDataGraphPipelinesARM. The create info structure type was %s",
                          string_VkStructureType(pipeline_ptr->GetCreateInfoSType()));
         return skip;  // no point continuing if the pipeline isn't valid
     }
 
-    if ((pCreateInfo->flags & VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM) != 0) {
+    auto ne_stats_create_info =
+        vku::FindStructInPNextChain<VkDataGraphPipelineNeuralStatisticsCreateInfoARM>(pipeline_ptr->DataGraphCreateInfo().pNext);
+
+    if (vku::FindStructInPNextChain<VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM>(pCreateInfo->pNext)) {
+        if (!ne_stats_create_info) {
+            skip |= LogError(
+                "VUID-VkDataGraphPipelineSessionCreateInfoARM-pNext-09852", device,
+                error_obj.location.dot(Field::pCreateInfo).dot(Field::dataGraphPipeline),
+                "was not created with VkDataGraphPipelineNeuralStatisticsCreateInfoARM in the pNext chain of the pipeline create "
+                "info.\n%s",
+                PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, pipeline_ptr->DataGraphCreateInfo().pNext).c_str());
+        } else if (ne_stats_create_info->allowNeuralStatistics == VK_FALSE) {
+            skip |= LogError(
+                "VUID-VkDataGraphPipelineSessionCreateInfoARM-pNext-09852", device,
+                error_obj.location.dot(Field::pCreateInfo).dot(Field::dataGraphPipeline),
+                "was created with VkDataGraphPipelineNeuralStatisticsCreateInfoARM::allowNeuralStatistics set to VK_FALSE.");
+        }
+    }
+
+    if (pCreateInfo->flags & VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM) {
         if (!enabled_features.protectedMemory) {
             skip |= LogError("VUID-VkDataGraphPipelineSessionCreateInfoARM-protectedMemory-09782", device,
                              error_obj.location.dot(Field::dataGraphPipeline).dot(Field::flags),
                              "(%s) contains VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM but the protectedMemory "
                              "feature is not enabled",
                              string_VkDataGraphPipelineSessionCreateFlagsARM(pCreateInfo->flags).c_str());
+        }
+
+        if (ne_stats_create_info) {
+            skip |= LogError(
+                "VUID-VkDataGraphPipelineSessionCreateInfoARM-flags-09853", device, error_obj.location.dot(Field::flags),
+                "(%s) contains VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM, and a "
+                "VkDataGraphPipelineNeuralStatisticsCreateInfoARM structure is "
+                "present in the pNext chain of the pipeline create info.\n%s",
+                string_VkDataGraphPipelineSessionCreateFlagBitsARM(pCreateInfo->flags),
+                PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, pipeline_ptr->DataGraphCreateInfo().pNext).c_str());
         }
     }
 
