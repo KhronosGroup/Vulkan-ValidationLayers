@@ -418,6 +418,11 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address, bool from_reso
     }
     const VkDeviceSize descriptor_size = from_resource ? dump.descriptor_size : dump.sampler_descriptor_size;
     const auto& descriptor_hashing = *dump.dev_data.device_state->descriptor_hashing;
+    ReadLockGuard guard(descriptor_hashing.map_lock);
+    if (descriptor_hashing.table.limit_reported) {
+        // If hit limit, likely to detect false positives
+        return "";
+    }
 
     // For VK_EXT_descriptor_heap where each descriptor type might be a different size.
     //
@@ -439,7 +444,6 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address, bool from_reso
             check_larger_sizes = false;
         }
     }
-    ReadLockGuard guard(descriptor_hashing.map_lock);
 
     uint64_t key = descriptor_hashing.Hash(descriptor_bytes.data(), descriptor_size);
     const vvl::DescriptorHashTable::Entry* entry = descriptor_hashing.table.Find(key);

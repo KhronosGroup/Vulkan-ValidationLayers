@@ -191,6 +191,12 @@ void RegisterDescriptorChecksBufferValidation(Validator& gpuav, CommandBufferSub
                     if (GetErrorGroup(error_record) != kErrorGroup_InstDescriptorBuffer) {
                         return error_found;
                     }
+                    ReadLockGuard guard(gpuav.device_state->descriptor_hashing->map_lock);
+                    if (gpuav.device_state->descriptor_hashing->table.limit_reported) {
+                        // If we have hit the limit, we are likely going to spam errors and want them to see
+                        // the DESCRIPTOR-HASHING-LIMIT only instead
+                        return error_found;
+                    }
                     error_found = true;
 
                     std::ostringstream ss;
@@ -213,7 +219,6 @@ void RegisterDescriptorChecksBufferValidation(Validator& gpuav, CommandBufferSub
                         } break;
                         case kErrorSubCode_DescriptorBuffer_DescriptorHashing_Wrong: {
                             const uint32_t slot_index = error_record[kInst_LogError_ParameterOffset_0];
-                            ReadLockGuard guard(gpuav.device_state->descriptor_hashing->map_lock);
                             const auto& entry = gpuav.device_state->descriptor_hashing->table.slots[slot_index].entry;
                             ss << "is accessing the  descriptor buffer but there is a descriptor there of the wrong type: \n";
                             entry.Describe(*gpuav.device_state, ss);

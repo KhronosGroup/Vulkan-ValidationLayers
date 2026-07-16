@@ -129,6 +129,12 @@ bool BindingInfo::ValidateDescriptor(std::ostringstream& ss, GpuDump& dev_data) 
 
     const auto& descriptor_hashing = *dev_data.device_state->descriptor_hashing;
 
+    ReadLockGuard guard(descriptor_hashing.map_lock);
+    if (descriptor_hashing.table.limit_reported) {
+        // If hit limit, likely to detect false positives
+        return false;
+    }
+
     // For VK_EXT_descriptor_buffer where each descriptor type might be a different size.
     //
     // For example, if a UBO is 32 bytes, but an image is 64 bytes:
@@ -147,8 +153,6 @@ bool BindingInfo::ValidateDescriptor(std::ostringstream& ss, GpuDump& dev_data) 
             check_larger_sizes = false;
         }
     }
-
-    ReadLockGuard guard(descriptor_hashing.map_lock);
 
     uint64_t key = descriptor_hashing.Hash(descriptor_bytes.data(), size);
     const vvl::DescriptorHashTable::Entry* entry = descriptor_hashing.table.Find(key);
