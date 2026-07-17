@@ -58,6 +58,7 @@ enum DisableFlags {
     shader_validation,
     shader_validation_caching,
     // Insert new disables above this line
+    // Make sure to add to OutputLayerStatusInfo function
     kMaxDisableFlags,
 };
 
@@ -74,6 +75,7 @@ enum EnableFlags {
     legacy_detection,
     gpu_dump,
     // Insert new enables above this line
+    // Make sure to add to OutputLayerStatusInfo function
     kMaxEnableFlags,
 };
 
@@ -137,8 +139,6 @@ struct ConfigAndEnvSettings {
     GpuDumpSettings* gpu_dump_settings;
     LegacyDetectionSettings* legacy_detection_settings;
 };
-const std::vector<std::string> &GetDisableFlagNameHelper();
-const std::vector<std::string> &GetEnableFlagNameHelper();
 
 // Process validation features, flags and settings specified through extensions, a layer settings file, or environment variables
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data);

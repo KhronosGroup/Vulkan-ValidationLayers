@@ -94,43 +94,6 @@ const auto& ValidationEnableLookup() {
     return validation_enable_lookup;
 }
 
-// This should mirror the 'DisableFlags' enumerated type
-const std::vector<std::string>& GetDisableFlagNameHelper() {
-    static const std::vector<std::string> disable_flag_name_helper = {
-        "VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE",                // command_buffer_state,
-        "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",                       // object_in_use,
-        "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION",                    // query_validation,
-        "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",             // image_layout_validation,
-        "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",           // object_tracking,
-        "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT",                // core_checks,
-        "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",              // thread_safety,
-        "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",             // stateless_checks,
-        "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",             // handle_wrapping,
-        "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT",                    // shader_validation,
-        "VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHING_EXT",  // shader_validation_caching
-    };
-    return disable_flag_name_helper;
-}
-
-const std::vector<std::string>& GetEnableFlagNameHelper() {
-    // This should mirror the 'EnableFlags' enumerated type
-    static const std::vector<std::string> enable_flag_name_helper = {
-        "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT",                       // gpu_validation,
-        "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT",  // gpu_validation_reserve_binding_slot,
-        "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT",                     // best_practices,
-        "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM",                         // vendor_specific_arm,
-        "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD",                         // vendor_specific_amd,
-        "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG",                         // vendor_specific_img,
-        "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA",                      // vendor_specific_nvidia,
-        "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",                       // debug_printf,
-        "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT",         // sync_validation,
-        // These were added after we got rid of VkValidationFeatureDisableEXT
-        "VK_LAYER_LEGACY_DETECTION",      // legacy_detection,
-        "VK_LAYER_GPU_DUMP_DESCRIPTORS",  // gpu_dump,
-    };
-    return enable_flag_name_helper;
-}
-
 // To enable "my_setting",
 // Set env var VK_LAYER_MY_SETTING to 1
 //

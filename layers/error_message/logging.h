@@ -252,6 +252,8 @@ class DebugReport {
     void ResetCmdDebugUtilsLabel(VkCommandBuffer command_buffer);
     void EraseCmdDebugUtilsLabel(VkCommandBuffer command_buffer);
 
+    bool HasSeverityLevel(VkDebugUtilsMessageSeverityFlagBitsEXT level) const { return (active_msg_severities & level) != 0; }
+
   private:
     std::string CreateMessageText(const Location &loc, std::string_view vuid_text, const std::string &main_message,
                                   bool at_message_limit);
