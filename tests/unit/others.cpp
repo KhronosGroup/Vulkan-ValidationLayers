@@ -94,6 +94,7 @@ TEST_F(NegativeOther, VuidHashStability) {
     ASSERT_TRUE(hash_util::VuidHash("GPU-DUMP") == 0xe5c5edc1);
     ASSERT_TRUE(hash_util::VuidHash("WARNING-Setting-Limit-Adjusted") == 0x86fe6721);
     ASSERT_TRUE(hash_util::VuidHash("VALIDATION-SETTINGS") == 0x7f1922d7);
+    ASSERT_TRUE(hash_util::VuidHash("CURRENT-VALIDATION-ENABLED") == 0xfd7b2292);
 }
 
 TEST_F(NegativeOther, RequiredParameter) {

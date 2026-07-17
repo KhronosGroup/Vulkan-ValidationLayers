@@ -738,7 +738,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback([[maybe_unused]] VkDebugUt
     // It is annoying to break on some of our internal device creation warnings
     const uint32_t vuid_hash = callback_data ? (uint32_t)callback_data->messageIdNumber : 0;
     if (vuid_hash == 0x86fe6721 ||  // "WARNING-Setting-Limit-Adjusted"
-        vuid_hash == 0x7f1922d7     // "VALIDATION-SETTINGS"
+        vuid_hash == 0x7f1922d7 ||  // "VALIDATION-SETTINGS"
+        vuid_hash == 0xfd7b2292     // "CURRENT-VALIDATION-ENABLED"
     ) {
         return false;
     }
