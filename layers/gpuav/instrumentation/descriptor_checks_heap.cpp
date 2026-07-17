@@ -409,7 +409,6 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                             ss << "descriptor index " << std::dec << descriptor_index << " is accessing the "
                                << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex << offset
                                << " (address 0x" << heap_address << ") but there is no valid descriptor at that location.\n";
-                            out_vuid_msg = "UNASSIGNED-DescriptorHeap-No-Descriptor";
                         } else {
                             // We trade the descriptor_index for getting the slot_index to find what descriptor this was
                             const uint32_t slot_index = error_record[kInst_LogError_ParameterOffset_0];
@@ -419,8 +418,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                                << ") but there is a descriptor there of the wrong type: \n";
                             entry.Describe(*gpuav.device_state, ss);
                             ss << '\n';
-                            out_vuid_msg = "UNASSIGNED-DescriptorHeap-Wrong-DescriptorType";
                         }
+                        out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_HASHING_12472);
                         error_found = true;
                     } break;
                 }
