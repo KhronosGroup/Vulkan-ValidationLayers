@@ -1248,7 +1248,7 @@ TEST_F(NegativeDataGraph, GraphConstantTensorWrongRank) {
     VkTensorDescriptionARM desc = vku::InitStructHelper();
     const std::vector<int64_t> dimensions{1, 2, 4};
     desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
-    desc.format = VK_FORMAT_R8_UINT;
+    desc.format = VK_FORMAT_R32_SINT;
     desc.dimensionCount = dimensions.size();
     desc.pDimensions = dimensions.data();
     desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
@@ -1277,7 +1277,7 @@ TEST_F(NegativeDataGraph, GraphConstantTensorWrongDimensions) {
     VkTensorDescriptionARM desc = vku::InitStructHelper();
     const std::vector<int64_t> dimensions{1, 2, 4, 1};  // dim[3] is 4 in the spirv
     desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
-    desc.format = VK_FORMAT_R8_UINT;
+    desc.format = VK_FORMAT_R32_SINT;
     desc.dimensionCount = dimensions.size();
     desc.pDimensions = dimensions.data();
     desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
@@ -1302,10 +1302,9 @@ TEST_F(NegativeDataGraph, GraphConstantTensorWrongFormat) {
     params.spirv_source = spirv_string.c_str();
 
     // try a few different formats, different for bit width, float encoding and type
-    // NOTE: VK_FORMAT_R8_SINT included as a sanity check: it is different only by sign from the actual format,
-    // meaning it is compatible, and it must NOT trigger the VU
+    // compatible VK_FORMAT_R32_SINT and VK_FORMAT_R32_UINT also included
     for (auto format :
-         {VK_FORMAT_R8_SINT, VK_FORMAT_R8_BOOL_ARM, VK_FORMAT_R32_SINT, VK_FORMAT_R32_SFLOAT, VK_FORMAT_R8_SFLOAT_FPENCODING_FLOAT8E4M3_ARM}) {
+         {VK_FORMAT_R32_UINT, VK_FORMAT_R32_SINT, VK_FORMAT_R8_SINT, VK_FORMAT_R8_BOOL_ARM, VK_FORMAT_R32_SFLOAT, VK_FORMAT_R8_SFLOAT_FPENCODING_FLOAT8E4M3_ARM}) {
         vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
 
         VkTensorDescriptionARM desc = DefaultConstantTensorDesc();
@@ -1314,8 +1313,8 @@ TEST_F(NegativeDataGraph, GraphConstantTensorWrongFormat) {
         pipeline.shader_module_ci_.constantCount = 1;
         pipeline.shader_module_ci_.pConstants = &constant;
 
-        if (format == VK_FORMAT_R8_SINT) {
-            // INT check must not consider the sign, as required by TOSA function specifications
+        // SPIRV is signless, so both VK_FORMAT_R32_SINT and VK_FORMAT_R32_UINT must not trigger the error
+        if (format == VK_FORMAT_R32_SINT || format == VK_FORMAT_R32_UINT) {
             pipeline.CreateDataGraphPipeline();
         } else {
             m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
@@ -2051,9 +2050,14 @@ TEST_F(NegativeDataGraph, DataGraphOpGraphConstantARMNoShape) {
 
     // inject in the spirv a constant based on a shapeless tensor
     vkt::dg::ModifiableShaderParameters spirv_params;
-    spirv_params.types = R"(%tensor_r4 = OpTypeTensorARM %uchar %uint_4
-            %constant_no_shape = OpGraphConstantARM %tensor_r4 0)";
-    spirv_params.instructions = "%dummy = OpExtInst %uchar_1_2_4_4_tensor %tosa ADD %op_1 %constant_no_shape";
+    spirv_params.types = R"(
+    %i32_1_2_4_4_tensor = OpTypeTensorARM %uint %uint_4 %uint_arr_4_1_2_4_4
+    %tensor_r4 = OpTypeTensorARM %uint %uint_4
+    %constant_no_shape = OpGraphConstantARM %tensor_r4 0)";
+    spirv_params.instructions = R"(
+    %i32_op_1 = OpExtInst %i32_1_2_4_4_tensor %tosa CAST %op_1
+    %dummy = OpExtInst %i32_1_2_4_4_tensor %tosa ADD %i32_op_1 %constant_no_shape)";
+
     const std::string& spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifyableDataGraph(spirv_params);
 
     vkt::dg::HelperParameters params;
@@ -2073,12 +2077,11 @@ TEST_F(NegativeDataGraph, DataGraphNoConstant) {
     TEST_DESCRIPTION("Try to create a datagraph without a required constant.");
     RETURN_IF_SKIP(InitBasicDataGraph());
 
-    // get spirv with 2 entrypoints; has a constant in entrypoint 2
-    const std::string two_entrypoint_spirv = vkt::dg::DataGraphPipelineHelper::GetSpirvMultiEntryTwoDataGraph();
+    // spirv has a constant, but we don't define it in Vulkan
+    const std::string spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvConstantDataGraph();
 
     vkt::dg::HelperParameters params;
-    params.spirv_source = two_entrypoint_spirv.c_str();
-    params.entrypoint = "entrypoint_2";
+    params.spirv_source = spirv_string.c_str();
     // helper constructor does NOT initialize the constant
     vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
