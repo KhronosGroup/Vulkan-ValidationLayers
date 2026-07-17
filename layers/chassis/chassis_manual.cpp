@@ -21,6 +21,7 @@
 #include "chassis.h"
 
 #include <cstring>
+#include <sstream>
 
 #include "chassis/dispatch_object.h"
 #include "generated/dispatch_vector.h"
@@ -40,8 +41,7 @@ namespace vulkan_layer_chassis {
 
 // Check enabled instance extensions against supported instance extension whitelist
 static void InstanceExtensionWhitelist(vvl::DispatchInstance* layer_data, const VkInstanceCreateInfo* pCreateInfo,
-                                       VkInstance instance) {
-    Location loc(vvl::Func::vkCreateInstance);
+                                       VkInstance instance, const Location& loc) {
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
         if (extension == vvl::Extension::Empty) {
@@ -83,40 +83,58 @@ static void DeviceExtensionWhitelist(vvl::DispatchDevice* layer_data, const VkDe
     }
 }
 
-void OutputLayerStatusInfo(vvl::DispatchInstance* context) {
-    std::string list_of_enables;
-    std::string list_of_disables;
-    for (uint32_t i = 0; i < kMaxEnableFlags; i++) {
-        if (context->settings.enabled[i]) {
-            if (list_of_enables.size()) list_of_enables.append(", ");
-            list_of_enables.append(GetEnableFlagNameHelper()[i]);
-        }
-    }
-    if (list_of_enables.empty()) {
-        list_of_enables.append("None");
-    }
-    for (uint32_t i = 0; i < kMaxDisableFlags; i++) {
-        if (context->settings.disabled[i]) {
-            if (list_of_disables.size()) list_of_disables.append(", ");
-            list_of_disables.append(GetDisableFlagNameHelper()[i]);
-        }
-    }
-    if (list_of_disables.empty()) {
-        list_of_disables.append("None");
+// Output layer status information message
+// TODO - We should just dump all settings to a file (see https://github.com/KhronosGroup/Vulkan-Utility-Libraries/issues/188)
+void OutputLayerStatusInfo(vvl::DispatchInstance* context, const Location& loc) {
+    // Will save a lot of time if every test doesn't have to build this string up to not be printed
+    if (!context->debug_report->HasSeverityLevel(VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)) {
+        return;
     }
 
-    Location loc(vvl::Func::vkCreateInstance);
-    // Output layer status information message
-    // TODO - We should just dump all settings to a file (see https://github.com/KhronosGroup/Vulkan-Utility-Libraries/issues/188)
-    context->LogInfo("WARNING-CreateInstance-status-message", context->instance, loc,
-                     "Khronos Validation Layer Active:\n    Current Enables: %s.\n    Current Disables: %s.\n",
-                     list_of_enables.c_str(), list_of_disables.c_str());
+    std::ostringstream ss;
+    const auto& settings = context->settings;
+    ss << "Current Validaiton Enabled:\n";
 
-    // Create warning message if user is running debug layers.
-#ifndef NDEBUG
-    context->LogPerformanceWarning("WARNING-CreateInstance-debug-warning", context->instance, loc,
-                                   "Using debug builds of the validation layers *will* adversely affect performance.");
-#endif
+    // Match the order in vkconfig
+    // The goal here is to not print ALL the settings, just which parts of validation are turned on
+    if (!settings.disabled[core_checks]) {
+        ss << " - Core Checks\n";
+        if (!settings.disabled[shader_validation]) {
+            ss << "    - Shaders\n";
+        }
+    }
+    if (settings.enabled[sync_validation]) {
+        ss << "  - Synchronization\n";
+    }
+    if (!settings.disabled[stateless_checks]) {
+        ss << "  - Stateless Parameter\n";
+    }
+    if (!settings.disabled[object_tracking]) {
+        ss << "  - Object lifetime\n";
+    }
+    if (!settings.disabled[thread_safety]) {
+        ss << "  - Thread Safety\n";
+    }
+    if (!settings.disabled[handle_wrapping]) {
+        ss << "  - Handle Wrapping\n";
+    }
+    if (settings.enabled[legacy_detection]) {
+        ss << "  - Legacy Detection\n";
+    }
+    if (settings.enabled[best_practices]) {
+        ss << "  - Best Practices\n";
+    }
+    if (settings.enabled[gpu_validation]) {
+        ss << "  - GPU-AV\n";
+    }
+    if (settings.enabled[gpu_dump]) {
+        ss << "  - GPU Dump\n";
+    }
+    if (settings.enabled[debug_printf_validation]) {
+        ss << "  - Debug Printf\n";
+    }
+
+    context->LogInfo("CURRENT-VALIDATION-ENABLED", context->instance, loc, "%s", ss.str().c_str());
 }
 const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap();
 
@@ -235,8 +253,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
 
     layer_init_instance_dispatch_table(*pInstance, &instance_dispatch->instance_dispatch_table, fpGetInstanceProcAddr);
 
-    OutputLayerStatusInfo(instance_dispatch.get());
-    InstanceExtensionWhitelist(instance_dispatch.get(), pCreateInfo, *pInstance);
+    Location loc(vvl::Func::vkCreateInstance);
+    // Create warning message if user is running debug layers.
+#ifndef NDEBUG
+    instance_dispatch->LogPerformanceWarning("WARNING-CreateInstance-debug-warning", instance_dispatch->instance, loc,
+                                             "Using debug builds of the validation layers *will* adversely affect performance.");
+#endif
+
+    OutputLayerStatusInfo(instance_dispatch.get(), loc);
+    InstanceExtensionWhitelist(instance_dispatch.get(), pCreateInfo, *pInstance, loc);
     instance_dispatch->FindSupportedExtensions();
 
     // save a raw pointer since the unique_ptr will be invalidate by the move() below
