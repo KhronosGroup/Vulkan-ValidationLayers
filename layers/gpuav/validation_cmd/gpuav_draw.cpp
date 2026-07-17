@@ -120,6 +120,10 @@ void FirstInstance(Validator& gpuav, CommandBufferSubState& cb_state, const Loca
     if (!gpuav.gpuav_settings.validate_indirect_draws_buffers) {
         return;
     }
+    // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
+    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer || last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
+        return;
+    }
 
     const char* vuid = vuid_selector(gpuav, last_bound);
     if (!vuid) {
@@ -360,6 +364,10 @@ void CountBuffer(Validator& gpuav, CommandBufferSubState& cb_state, const Locati
     if (!gpuav.gpuav_settings.validate_indirect_draws_buffers) {
         return;
     }
+    // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
+    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer || last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
+        return;
+    }
 
     auto draw_buffer_state = gpuav.Get<vvl::Buffer>(api_buffer);
     if (!draw_buffer_state) {
@@ -512,6 +520,10 @@ void DrawMeshIndirect(Validator& gpuav, CommandBufferSubState& cb_state, const L
                       VkBuffer api_buffer, VkDeviceSize api_offset, uint32_t api_stride, VkBuffer api_count_buffer,
                       VkDeviceSize api_count_buffer_offset, uint32_t api_draw_count) {
     if (!gpuav.gpuav_settings.validate_indirect_draws_buffers) {
+        return;
+    }
+    // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
+    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer || last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
         return;
     }
 
@@ -800,6 +812,10 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
         if (robustness_ci && robustness_ci->vertexInputs) {
             return;
         }
+    }
+    // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
+    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer || last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
+        return;
     }
 
     if (!cb_state.base.IsPrimary()) {

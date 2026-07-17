@@ -1928,17 +1928,19 @@ TEST_F(PositiveRayTracing, CmdBuildClusterAccelerationStructureIndirect) {
 
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
-    void* mapped_memory = build_buffer.Memory().Map();
-    unsigned char* memory_data = (unsigned char*)mapped_memory;
-    bool has_data = false;
-    for (size_t i = 0; i < clas_size_info.accelerationStructureSize; i++) {
-        if (memory_data[i] != 0) {
-            has_data = true;
-            break;
+    if (!IsPlatformMockICD()) {
+        void* mapped_memory = build_buffer.Memory().Map();
+        unsigned char* memory_data = (unsigned char*)mapped_memory;
+        bool has_data = false;
+        for (size_t i = 0; i < clas_size_info.accelerationStructureSize; i++) {
+            if (memory_data[i] != 0) {
+                has_data = true;
+                break;
+            }
         }
+        // validate CmdBuildClusterAccelerationStructureIndirectNV has the valid output
+        ASSERT_TRUE(has_data);
     }
-    // validate CmdBuildClusterAccelerationStructureIndirectNV has the valid output
-    ASSERT_TRUE(has_data);
 }
 
 TEST_F(PositiveRayTracing, CmdBuildClusterAccelerationStructureIndirectSameBufferNonOverlapping) {
