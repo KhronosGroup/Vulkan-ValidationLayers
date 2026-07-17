@@ -3251,7 +3251,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptor) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-No-Descriptor");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-12472");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -3299,7 +3299,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingWrongDescriptor) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-Wrong-DescriptorType");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-12472");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -3339,7 +3339,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingWrongDescriptorUntyped) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-Wrong-DescriptorType");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-12472");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -3423,7 +3423,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptorUntypedSlang) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-No-Descriptor");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-12472");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -3471,7 +3471,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptorCombinedImageSampler) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-No-Descriptor");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-12472");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -3515,7 +3515,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNullDescriptor) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-Wrong-DescriptorType");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-12472");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -3592,7 +3592,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingDeviceLocal) {
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
-        m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-No-Descriptor");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-12472");
         m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
@@ -3619,7 +3619,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingDeviceLocal) {
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
-        m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-Wrong-DescriptorType");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-12472");
         m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
@@ -3848,7 +3848,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingCombinedSampler) {
     vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-DescriptorHeap-No-Descriptor");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-12472");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

@@ -727,6 +727,8 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::DESCRIPTOR_HEAP_INVALID_ADDRESS_11305: suffix = "None-11305"; break;
         // ### VUID-vkCmdDraw-None-11306
         case ActionVUID::DESCRIPTOR_HEAP_INVALID_ADDRESS_11306: suffix = "None-11306"; break;
+        // ### VUID-vkCmdDraw-None-12472
+        case ActionVUID::DESCRIPTOR_HEAP_HASHING_12472: suffix = "None-12472"; break;
         // ### VUID-vkCmdDrawIndirectCount-countBuffer-02717
         case ActionVUID::INDIRECT_COUNT_LIMIT: suffix = "countBuffer-02717"; break;
     }

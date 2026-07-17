@@ -293,6 +293,10 @@ class Consistency:
     def vuids_tested_not_checked(self):
         undef_set = self.tests - self.checks
         [undef_set.discard(item) for item in self.discard]
+        # Things we left in tests on purpose
+        # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
+        undef_set.discard("VUID-VkAccelerationStructureTrianglesOpacityMicromapKHR-geometry-11576")
+        undef_set.discard("VUID-vkWriteAccelerationStructuresPropertiesKHR-accelerationStructures-03431")
         if (len(undef_set) > 0):
             print(f'\nFollowing VUIDs found in tests but are not checked in layer code ({len(undef_set)}):')
             undef = list(undef_set)
@@ -354,7 +358,7 @@ class OutputDatabase:
             "11423" : ["07890"],
             "11425" : ["09578"],
             "11426" : ["03592"],
-            "11431" : ["08053", "08054", "08116", "08119", "08604", "08605"],
+            "11431" : ["08053", "08054", "08116", "08119", "08605"],
             "11436" : ["01094", "01095", "08744", "08745"],
             "11443" : ["02741", "02742"],
             "11444" : ["02808", "03855", "10910", "10911"],
@@ -382,7 +386,7 @@ class OutputDatabase:
             "12274" : ['02713', '09645', '04745', '10134', '10135', '10136', '10137', '10138', '10139', '10140', '10141', '10142', '10143', '10144', '10145', '10146', '10147', '10148', '10149', '07288', '08731', '09003', '09190', '10934', '09565'],
             '12581' : ['13558', '13559', '13560', '13561', '13562'],
             '12584' : ['08972', '12417', '11543', '03708', '03736', '12425', '11652', '11679', '12430', '11636'],
-            '12585' : ['11632', '11701', '11670', '11586', '11684', '11591', '11662', '11671', '11624', '11625', '11626', '11627', '11628', '11629', '11575', '11553', '11578', '11640', '11634', '11587', '11582', '11583', '11584', '11585', '12419', '12418', '11649', '11650', '11651', '11667', '11668', '11669', '11657', '11659', '11660', '11713', '11567', '11566', '11556', '11555', '11542', '11637', '11638', '11639'],
+            "12635" : ['11576', '03431', '03411', '11581'],
         }
 
         # < Github Issue number : [VUIDs]>
@@ -432,7 +436,7 @@ class OutputDatabase:
             '11447' : 'wsi',
             '12046' : 'wsi',
             '12584'  : 'rtx',
-            '12585' : 'gpuav',
+            '12635'  : 'rtx',
         }
 
         # < Vendor : [VUIDs]>
@@ -451,8 +455,9 @@ class OutputDatabase:
         }
 
         self.topic_vuid_map = {
-        'VK_EXT_graphics_pipeline_library' : ['06611', '06616', '06617', '06618', '06619', '06623', '06624', '06628', '06684'],
+            'VK_EXT_graphics_pipeline_library' : ['06611', '06616', '06617', '06618', '06619', '06623', '06624', '06628', '06684'],
             'VK_EXT_opacity_micromap' : ['07334', '07335', '07432', '07433', '07434', '07435', '07436', '07437', '07438', '07440', '07441', '07461', '07462', '07463', '07464', '07465', '07466', '07467', '07501', '07502', '07508', '07509', '07510', '07511', '07512', '07517', '07518', '07519', '07520', '07521', '07522', '07523', '07524', '07525', '07526', '07527', '07528', '07529', '07530', '07532', '07533', '07534', '07535', '07538', '07539', '07540', '07541', '07545', '07546', '07547', '07549', '07550', '07552', '07556', '07557', '07558', '07559', '07561', '07562', '07565', '07567', '07568', '07572', '07576', '07577', '07578', '07579', '08704', '08705', '08706', '08707', '08708', '08709', '09180', '10071', '10072', '10719', '10722', '10723', '10904', '11821',  '11654', '11655', '11680', '11681', '11617'],
+            'VK_KHR_opacity_micromap' : ['11632', '11701', '11670', '11586', '11684', '11591', '11662', '11671', '11624', '11625', '11626', '11627', '11628', '11629', '11575', '11553', '11578', '11640', '11634', '11587', '11582', '11583', '11584', '11585', '12419', '12418', '11649', '11650', '11651', '11667', '11668', '11669', '11657', '11659', '11660', '11713', '11567', '11566', '11556', '11555', '11542', '11637', '11638', '11639'],
             'devicegroup' : ['00085', '00376', '00377', '00691', '00692', '00693', '00694', '01118', '01119', '01152', '01157', '01167', '01297', '01298', '01299', '01300', '01301', '01302', '01303', '01605', '01626', '01628', '01629', '01635', '01637', '01638', '01639', '01640', '01641', '03826', '03833', '03846', '03888', '03889'],
             'external' : ['08922'],
             'gpuav' : [], # put in issue 12274 if possible
@@ -580,9 +585,9 @@ class OutputDatabase:
                     topic = key
                     break
             if topic:
-                if topic == 'VK_EXT_opacity_micromap':
+                if topic == 'VK_EXT_opacity_micromap' or topic == 'VK_KHR_opacity_micromap':
                     micro_map_count += 1
-                    table.append(f'<th>VK_EXT_opacity_micromap</th></tr>')
+                    table.append(f'<th><a href=https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12585> VK_EXT_opacity_micromap/VK_KHR_opacity_micromap</th></tr>')
                 elif topic == 'VK_EXT_graphics_pipeline_library':
                     gpl_count += 1
                     table.append(f'<th>VK_EXT_graphics_pipeline_library</th></tr>')
@@ -616,7 +621,7 @@ class OutputDatabase:
         stats.append(f'<h1>Total Remaining VUs: {total_count}</h1>')
         stats.append('<ul>')
         stats.append(f'<li><b>Vendor extensions</b>: {vendor_count} ({(vendor_count / total_count):.1%})</li>')
-        stats.append(f'<li><b>VK_EXT_opacity_micromap</b>: {micro_map_count} ({(micro_map_count / total_count):.1%})</li>')
+        stats.append(f'<li><b>VK_EXT_opacity_micromap/VK_KHR_opacity_micromap</b>: {micro_map_count} ({(micro_map_count / total_count):.1%})</li>')
         stats.append(f'<li><b>VK_EXT_graphics_pipeline_library</b>: {gpl_count} ({(gpl_count / total_count):.1%})</li>')
         stats.append(f'<li><b>External Memory/Sync</b>: {external_count} ({(external_count / total_count):.1%})</li>')
         stats.append(f'<li><b>WSI</b>: {wsi_count} ({(wsi_count / total_count):.1%})</li>')
