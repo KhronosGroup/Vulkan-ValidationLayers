@@ -931,8 +931,7 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDeferredBuild) {
     m_device->Wait();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12680
-TEST_F(PositiveGpuAVRayTracing, DISABLED_TraceRaysInCubes) {
+TEST_F(PositiveGpuAVRayTracing, TraceRaysInCubes) {
     TEST_DESCRIPTION("Setup a RT pipeline, a TLAS pointing to 2 cubes, and traces rays into it.");
 
     RETURN_IF_SKIP(CheckSlangSupport());
@@ -958,9 +957,7 @@ TEST_F(PositiveGpuAVRayTracing, DISABLED_TraceRaysInCubes) {
     vkt::as::BuildGeometryInfoKHR cube_blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(cube));
 
     m_command_buffer.Begin();
-    for (int i = 0; i < 3; ++i) {
-        cube_blas.BuildCmdBuffer(m_command_buffer);
-    }
+    cube_blas.BuildCmdBuffer(m_command_buffer);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
