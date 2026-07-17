@@ -409,8 +409,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                                     uint32_t query_count, VkDeviceSize dst_offset, VkDeviceSize stride, VkQueryResultFlags flags,
                                     const Location &loc) override;
 
-    void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin, const VkSubpassBeginInfo &subpass_begin_info,
-                               const Location &loc) override;
+    void RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pass_begin, const VkSubpassBeginInfo& subpass_begin_info,
+                               const Location& loc) override;
     void RecordNextSubpass(const VkSubpassBeginInfo &subpass_begin_info, const VkSubpassEndInfo *subpass_end_info,
                            const Location &loc) override;
     void RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc) override;

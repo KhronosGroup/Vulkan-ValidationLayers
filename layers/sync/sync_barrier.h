@@ -24,6 +24,7 @@ struct DeviceExtensions;
 namespace syncval {
 
 class SyncValidator;
+class CommandExecutionContext;
 
 struct SyncExecScope {
     // The xxxStageMask parameter passed by the caller
@@ -159,5 +160,7 @@ struct SemaphoreScope : SyncExecScope {
     SemaphoreScope() = default;
     QueueId queue;
 };
+
+void ApplyBarrier(CommandExecutionContext& exec_context, const BarrierSet& barrier_set, ResourceUsageTag tag);
 
 }  // namespace syncval
