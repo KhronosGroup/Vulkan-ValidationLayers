@@ -196,11 +196,31 @@ class SwapchainSubState {
     Swapchain &base;
 };
 
+enum class SurfaceType {
+    Unknown,
+
+    Android,
+    DisplayPlane,
+    Headless,
+    ImagePipe_FUSCHIA,
+    IOS_MVK,
+    MacOS_MVK,
+    Metal,
+    Screen_QNX,
+    Wayland,
+    Win32,
+    Xcb,
+    Xlib,
+};
+
+
 // Parent -> child relationships in the object usage tree:
 //    vvl::Surface -> nothing
 class Surface : public StateObject {
   public:
-    Surface(VkSurfaceKHR handle) : StateObject(handle, kVulkanObjectTypeSurfaceKHR) {}
+    Surface(VkSurfaceKHR handle, SurfaceType type) : StateObject(handle, kVulkanObjectTypeSurfaceKHR) {
+        type_ = type;
+    }
 
     ~Surface() {
         if (!Destroyed()) {
@@ -236,6 +256,8 @@ class Surface : public StateObject {
     VkSurfacePresentScalingCapabilitiesKHR GetPresentModeScalingCapabilities(VkPhysicalDevice phys_dev,
                                                                              VkPresentModeKHR present_mode) const;
     std::vector<VkPresentModeKHR> GetCompatibleModes(VkPhysicalDevice phys_dev, VkPresentModeKHR present_mode) const;
+
+    SurfaceType GetSurfaceType() { return type_; }
 
     vvl::Swapchain *swapchain{nullptr};
 
@@ -277,6 +299,7 @@ class Surface : public StateObject {
     mutable vvl::unordered_map<VkPhysicalDevice, std::vector<vku::safe_VkSurfaceFormat2KHR>> formats_;
 
     vvl::unordered_map<VkPhysicalDevice, PhysDevCache> cache_;
+    SurfaceType type_;
 };
 
 }  // namespace vvl

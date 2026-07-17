@@ -61,6 +61,7 @@ class SamplerYcbcrConversion;
 class Framebuffer;
 class RenderPass;
 class PipelineCache;
+enum class SurfaceType;
 class Surface;
 class PhysicalDevice;
 class DisplayMode;
@@ -267,7 +268,7 @@ class InstanceState : public vvl::BaseInstance {
 
     VkFormatFeatureFlags2 GetImageFormatFeatures(VkPhysicalDevice physical_device, bool has_format_feature2, bool has_drm_modifiers,
                                                  VkDevice device, VkImage image, VkFormat format, VkImageTiling tiling);
-    void RecordVulkanSurface(VkSurfaceKHR* pSurface);
+    void RecordVulkanSurface(VkSurfaceKHR* pSurface, SurfaceType type);
     void PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                     const RecordObject& record_obj) override;

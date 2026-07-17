@@ -85,6 +85,8 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
     }
 
     if (pCreateInfo->presentMode != VK_PRESENT_MODE_FIFO_KHR &&
+        !( instance_state->Get<vvl::Surface>(pCreateInfo->surface)->GetSurfaceType() == vvl::SurfaceType::Wayland
+            && pCreateInfo->presentMode == VK_PRESENT_MODE_MAILBOX_KHR) &&
         physical_device_state->GetCallState(vvl::Func::vkGetPhysicalDeviceSurfacePresentModesKHR) != vvl::CallState::QueryDetails) {
         skip |= LogWarning("BestPractices-vkCreateSwapchainKHR-present-mode-no-surface", device, error_obj.location,
                            "called before getting surface present mode(s) from "
