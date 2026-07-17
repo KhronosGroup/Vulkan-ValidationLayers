@@ -2122,9 +2122,11 @@ void Pipeline::AddSpirvRayGenShader(const char* spirv, const char* entry_point) 
                                                                 SPV_SOURCE_ASM, nullptr, entry_point));
 }
 
-void Pipeline::AddSlangRayGenShader(const char* slang, const char* entry_point) {
-    ray_gen_shaders_.emplace_back(std::make_unique<VkShaderObj>(*device_, slang, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2,
-                                                                SPV_SOURCE_SLANG, nullptr, entry_point));
+void Pipeline::AddSlangRayGenShader(const char* slang, const char* entry_point, const void* shader_module_create_info_pnext,
+                                    const void* pipeline_shader_stage_create_info_pNext) {
+    ray_gen_shaders_.emplace_back(std::make_unique<VkShaderObj>(
+        *device_, slang, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG, nullptr, entry_point,
+        shader_module_create_info_pnext, pipeline_shader_stage_create_info_pNext));
 }
 
 void Pipeline::AddGlslMissShader(const char* glsl, const void* shader_module_create_info_pnext,
@@ -2139,9 +2141,11 @@ void Pipeline::AddSpirvMissShader(const char* spirv, const char* entry_point) {
                                                              SPV_SOURCE_ASM, nullptr, entry_point));
 }
 
-void Pipeline::AddSlangMissShader(const char* slang, const char* entry_point) {
-    miss_shaders_.emplace_back(std::make_unique<VkShaderObj>(*device_, slang, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2,
-                                                             SPV_SOURCE_SLANG, nullptr, entry_point));
+void Pipeline::AddSlangMissShader(const char* slang, const char* entry_point, const void* shader_module_create_info_pnext,
+                                  const void* pipeline_shader_stage_create_info_pNext) {
+    miss_shaders_.emplace_back(
+        std::make_unique<VkShaderObj>(*device_, slang, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG, nullptr,
+                                      entry_point, shader_module_create_info_pnext, pipeline_shader_stage_create_info_pNext));
 }
 
 void Pipeline::AddGlslClosestHitShader(const char* glsl, const void* shader_module_create_info_pnext,
@@ -2165,10 +2169,13 @@ void Pipeline::AddSpirvClosestHitShader(const char* spirv, const char* entry_poi
                                         nullptr});
 }
 
-void Pipeline::AddSlangClosestHitShader(const char* slang, const char* entry_point) {
-    hit_shaders_.emplace_back(HitShader{std::make_unique<VkShaderObj>(*device_, slang, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
-                                                                      SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG, nullptr, entry_point),
-                                        nullptr});
+void Pipeline::AddSlangClosestHitShader(const char* slang, const char* entry_point, const void* shader_module_create_info_pnext,
+                                        const void* pipeline_shader_stage_create_info_pNext) {
+    hit_shaders_.emplace_back(
+        HitShader{std::make_unique<VkShaderObj>(*device_, slang, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2,
+                                                SPV_SOURCE_SLANG, nullptr, entry_point, shader_module_create_info_pnext,
+                                                pipeline_shader_stage_create_info_pNext),
+                  nullptr});
 }
 
 void Pipeline::AddLibrary(const Pipeline& library) {

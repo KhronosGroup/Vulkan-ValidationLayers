@@ -27,6 +27,7 @@
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/validation_cmd/push_data.h"
 #include "generated/gpuav_offline_spirv.h"
+#include "state_tracker/last_bound_state.h"
 
 namespace gpuav {
 namespace valcmd {
@@ -68,6 +69,13 @@ void CopyMemoryIndirect(Validator& gpuav, const Location& loc, CommandBufferSubS
                         const CopyMemoryIndirectCommon& api_copy_info) {
     if (!gpuav.gpuav_settings.validate_copy_memory_indirect) {
         return;
+    }
+
+    for (LastBound& last_bound : cb_state.base.lastBound) {
+        if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer ||
+            last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
+            return;
+        }
     }
 
     if (api_copy_info.count == 0) {

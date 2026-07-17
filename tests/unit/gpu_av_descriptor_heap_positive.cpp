@@ -2011,3 +2011,53 @@ TEST_F(PositiveGpuAVDescriptorHeap, UntypedHardcodedArrayStride) {
     data = (uint32_t*)ssbo3_buffer.Memory().Map();
     ASSERT_TRUE(data[0] == 33u);
 }
+
+TEST_F(PositiveGpuAVDescriptorHeap, DispatchIndirect) {
+    const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}, false));
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
+
+    vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+          #version 450
+          layout(local_size_x = 1) in;
+          layout(set = 0, binding = 0) buffer A { uint a; };
+          layout(push_constant) uniform B { uint b; };
+          void main() {
+              a = b;
+          }
+      )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    vkt::Buffer dispatch_params_buffer(*m_device, sizeof(VkDrawIndirectCommand) * 2, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                       kHostVisibleMemProps);
+    auto indirect_dispatch_parameters = static_cast<VkDispatchIndirectCommand*>(dispatch_params_buffer.Memory().Map());
+    indirect_dispatch_parameters[0].x = 2u;
+    indirect_dispatch_parameters[0].y = 1u;
+    indirect_dispatch_parameters[0].z = 1u;
+    indirect_dispatch_parameters[1].x = 1u;
+    indirect_dispatch_parameters[1].y = 2u;
+    indirect_dispatch_parameters[1].z = 1u;
+
+    uint8_t pc_data[64];
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    m_command_buffer.PushData(0, 64, pc_data);
+    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
+    m_command_buffer.PushData(0, 64, pc_data);
+    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, sizeof(VkDrawIndirectCommand));
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
