@@ -645,6 +645,7 @@ const char* String(Func func) {
     {"vkGetImageViewHandleNVX", 24},
     {"vkGetImageViewOpaqueCaptureDescriptorDataEXT", 45},
     {"vkGetInstanceProcAddr", 22},
+    {"vkGetLatencyTimingsLegacyNV", 28},
     {"vkGetLatencyTimingsNV", 22},
     {"vkGetMemoryAndroidHardwareBufferANDROID", 40},
     {"vkGetMemoryFdKHR", 17},
@@ -770,6 +771,7 @@ const char* String(Func func) {
     {"vkGetShaderInstrumentationValuesARM", 36},
     {"vkGetShaderModuleCreateInfoIdentifierEXT", 41},
     {"vkGetShaderModuleIdentifierEXT", 31},
+    {"vkGetSleepStatusLegacyNV", 25},
     {"vkGetSwapchainCounterEXT", 25},
     {"vkGetSwapchainImagesKHR", 24},
     {"vkGetSwapchainStatusKHR", 24},
@@ -789,6 +791,7 @@ const char* String(Func func) {
     {"vkImportSemaphoreZirconHandleFUCHSIA", 37},
     {"vkInitializePerformanceApiINTEL", 32},
     {"vkInvalidateMappedMemoryRanges", 31},
+    {"vkLatencySleepLegacyNV", 23},
     {"vkLatencySleepNV", 17},
     {"vkMapMemory", 12},
     {"vkMapMemory2", 13},
@@ -799,6 +802,7 @@ const char* String(Func func) {
     {"vkQueueBindSparse", 18},
     {"vkQueueEndDebugUtilsLabelEXT", 29},
     {"vkQueueInsertDebugUtilsLabelEXT", 32},
+    {"vkQueueNotifyOutOfBandLegacyNV", 31},
     {"vkQueueNotifyOutOfBandNV", 25},
     {"vkQueuePresentKHR", 18},
     {"vkQueueSetPerfHintQCOM", 23},
@@ -833,12 +837,15 @@ const char* String(Func func) {
     {"vkSetEvent", 11},
     {"vkSetGpaDeviceClockModeAMD", 27},
     {"vkSetHdrMetadataEXT", 20},
+    {"vkSetLatencyMarkerLegacyNV", 27},
     {"vkSetLatencyMarkerNV", 21},
+    {"vkSetLatencySleepModeLegacyNV", 30},
     {"vkSetLatencySleepModeNV", 24},
     {"vkSetLocalDimmingAMD", 21},
     {"vkSetPrivateData", 17},
     {"vkSetPrivateDataEXT", 20},
     {"vkSetSwapchainPresentTimingQueueSizeEXT", 40},
+    {"vkShutdownLatencyDeviceLegacyNV", 32},
     {"vkSignalSemaphore", 18},
     {"vkSignalSemaphoreKHR", 21},
     {"vkSubmitDebugUtilsMessageEXT", 29},
@@ -4261,6 +4268,7 @@ const char* String(Field field) {
     {"pLibraryInfo", 13},
     {"pLibraryInterface", 18},
     {"pLocationInfo", 14},
+    {"pLowLatencyMode", 16},
     {"pMapEntries", 12},
     {"pMappings", 10},
     {"pMarkerInfo", 12},
@@ -6853,6 +6861,7 @@ bool IsFieldPointer(Field field) {
     case Field::pLibraryInfo:
     case Field::pLibraryInterface:
     case Field::pLocationInfo:
+    case Field::pLowLatencyMode:
     case Field::pMapEntries:
     case Field::pMappings:
     case Field::pMarkerInfo:

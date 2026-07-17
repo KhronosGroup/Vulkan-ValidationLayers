@@ -2944,6 +2944,7 @@ ExtensionData GetExtensionData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_robustness2, {Reason::Promoted, {vvl::Extension::_VK_KHR_robustness2}}},
         {vvl::Extension::_VK_EXT_private_data, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_pipeline_creation_cache_control, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
+        {vvl::Extension::_VK_NV_low_latency, {Reason::Superseded, {vvl::Extension::_VK_NV_low_latency2}}},
         {vvl::Extension::_VK_EXT_descriptor_buffer, {Reason::Superseded, {vvl::Extension::_VK_EXT_descriptor_heap}}},
         {vvl::Extension::_VK_EXT_ycbcr_2plane_444_formats, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_image_robustness, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},

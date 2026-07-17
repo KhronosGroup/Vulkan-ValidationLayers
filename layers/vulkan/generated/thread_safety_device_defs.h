@@ -3634,6 +3634,40 @@ void PreCallRecordCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, cons
 void PostCallRecordCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo,
                                               const RecordObject& record_obj) override;
 
+void PreCallRecordSetLatencySleepModeLegacyNV(VkDevice device, VkBool32 lowLatencyMode, VkBool32 lowLatencyBoost,
+                                              uint32_t minimumIntervalUs, const RecordObject& record_obj) override;
+
+void PostCallRecordSetLatencySleepModeLegacyNV(VkDevice device, VkBool32 lowLatencyMode, VkBool32 lowLatencyBoost,
+                                               uint32_t minimumIntervalUs, const RecordObject& record_obj) override;
+
+void PreCallRecordLatencySleepLegacyNV(VkDevice device, VkSemaphore signalSemaphore, uint64_t value,
+                                       const RecordObject& record_obj) override;
+
+void PostCallRecordLatencySleepLegacyNV(VkDevice device, VkSemaphore signalSemaphore, uint64_t value,
+                                        const RecordObject& record_obj) override;
+
+void PreCallRecordSetLatencyMarkerLegacyNV(VkDevice device, uint64_t frameID, uint32_t marker,
+                                           const RecordObject& record_obj) override;
+
+void PostCallRecordSetLatencyMarkerLegacyNV(VkDevice device, uint64_t frameID, uint32_t marker,
+                                            const RecordObject& record_obj) override;
+
+void PreCallRecordGetLatencyTimingsLegacyNV(VkDevice device, void* pTimings, const RecordObject& record_obj) override;
+
+void PostCallRecordGetLatencyTimingsLegacyNV(VkDevice device, void* pTimings, const RecordObject& record_obj) override;
+
+void PreCallRecordQueueNotifyOutOfBandLegacyNV(VkQueue queue, uint32_t queueType, const RecordObject& record_obj) override;
+
+void PostCallRecordQueueNotifyOutOfBandLegacyNV(VkQueue queue, uint32_t queueType, const RecordObject& record_obj) override;
+
+void PreCallRecordGetSleepStatusLegacyNV(VkDevice device, VkBool32* pLowLatencyMode, const RecordObject& record_obj) override;
+
+void PostCallRecordGetSleepStatusLegacyNV(VkDevice device, VkBool32* pLowLatencyMode, const RecordObject& record_obj) override;
+
+void PreCallRecordShutdownLatencyDeviceLegacyNV(VkDevice device, const RecordObject& record_obj) override;
+
+void PostCallRecordShutdownLatencyDeviceLegacyNV(VkDevice device, const RecordObject& record_obj) override;
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 void PreCallRecordExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
                                         const RecordObject& record_obj) override;

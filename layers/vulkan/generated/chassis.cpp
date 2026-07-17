@@ -28110,6 +28110,316 @@ VKAPI_ATTR void VKAPI_CALL CmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuf
     }
 }
 
+VKAPI_ATTR void VKAPI_CALL SetLatencySleepModeLegacyNV(VkDevice device, VkBool32 lowLatencyMode, VkBool32 lowLatencyBoost,
+                                                       uint32_t minimumIntervalUs) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkSetLatencySleepModeLegacyNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkSetLatencySleepModeLegacyNV");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateSetLatencySleepModeLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateSetLatencySleepModeLegacyNV(device, lowLatencyMode, lowLatencyBoost, minimumIntervalUs,
+                                                                   error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkSetLatencySleepModeLegacyNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkSetLatencySleepModeLegacyNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordSetLatencySleepModeLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordSetLatencySleepModeLegacyNV(device, lowLatencyMode, lowLatencyBoost, minimumIntervalUs, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkSetLatencySleepModeLegacyNV");
+        device_dispatch->SetLatencySleepModeLegacyNV(device, lowLatencyMode, lowLatencyBoost, minimumIntervalUs);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkSetLatencySleepModeLegacyNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordSetLatencySleepModeLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordSetLatencySleepModeLegacyNV(device, lowLatencyMode, lowLatencyBoost, minimumIntervalUs, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL LatencySleepLegacyNV(VkDevice device, VkSemaphore signalSemaphore, uint64_t value) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkLatencySleepLegacyNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkLatencySleepLegacyNV");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateLatencySleepLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateLatencySleepLegacyNV(device, signalSemaphore, value, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkLatencySleepLegacyNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkLatencySleepLegacyNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordLatencySleepLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordLatencySleepLegacyNV(device, signalSemaphore, value, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkLatencySleepLegacyNV");
+        device_dispatch->LatencySleepLegacyNV(device, signalSemaphore, value);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkLatencySleepLegacyNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordLatencySleepLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordLatencySleepLegacyNV(device, signalSemaphore, value, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerLegacyNV(VkDevice device, uint64_t frameID, uint32_t marker) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkSetLatencyMarkerLegacyNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkSetLatencyMarkerLegacyNV");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateSetLatencyMarkerLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateSetLatencyMarkerLegacyNV(device, frameID, marker, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkSetLatencyMarkerLegacyNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkSetLatencyMarkerLegacyNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordSetLatencyMarkerLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordSetLatencyMarkerLegacyNV(device, frameID, marker, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkSetLatencyMarkerLegacyNV");
+        device_dispatch->SetLatencyMarkerLegacyNV(device, frameID, marker);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkSetLatencyMarkerLegacyNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordSetLatencyMarkerLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordSetLatencyMarkerLegacyNV(device, frameID, marker, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsLegacyNV(VkDevice device, void* pTimings) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetLatencyTimingsLegacyNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetLatencyTimingsLegacyNV");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetLatencyTimingsLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetLatencyTimingsLegacyNV(device, pTimings, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetLatencyTimingsLegacyNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetLatencyTimingsLegacyNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetLatencyTimingsLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetLatencyTimingsLegacyNV(device, pTimings, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetLatencyTimingsLegacyNV");
+        device_dispatch->GetLatencyTimingsLegacyNV(device, pTimings);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetLatencyTimingsLegacyNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetLatencyTimingsLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetLatencyTimingsLegacyNV(device, pTimings, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandLegacyNV(VkQueue queue, uint32_t queueType) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(queue);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkQueueNotifyOutOfBandLegacyNV, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkQueueNotifyOutOfBandLegacyNV");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateQueueNotifyOutOfBandLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateQueueNotifyOutOfBandLegacyNV(queue, queueType, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkQueueNotifyOutOfBandLegacyNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkQueueNotifyOutOfBandLegacyNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordQueueNotifyOutOfBandLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordQueueNotifyOutOfBandLegacyNV(queue, queueType, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkQueueNotifyOutOfBandLegacyNV");
+        device_dispatch->QueueNotifyOutOfBandLegacyNV(queue, queueType);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkQueueNotifyOutOfBandLegacyNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordQueueNotifyOutOfBandLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordQueueNotifyOutOfBandLegacyNV(queue, queueType, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetSleepStatusLegacyNV(VkDevice device, VkBool32* pLowLatencyMode) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetSleepStatusLegacyNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetSleepStatusLegacyNV");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetSleepStatusLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetSleepStatusLegacyNV(device, pLowLatencyMode, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetSleepStatusLegacyNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetSleepStatusLegacyNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetSleepStatusLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetSleepStatusLegacyNV(device, pLowLatencyMode, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetSleepStatusLegacyNV");
+        device_dispatch->GetSleepStatusLegacyNV(device, pLowLatencyMode);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetSleepStatusLegacyNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetSleepStatusLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetSleepStatusLegacyNV(device, pLowLatencyMode, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL ShutdownLatencyDeviceLegacyNV(VkDevice device) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkShutdownLatencyDeviceLegacyNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkShutdownLatencyDeviceLegacyNV");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateShutdownLatencyDeviceLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateShutdownLatencyDeviceLegacyNV(device, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkShutdownLatencyDeviceLegacyNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkShutdownLatencyDeviceLegacyNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordShutdownLatencyDeviceLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordShutdownLatencyDeviceLegacyNV(device, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkShutdownLatencyDeviceLegacyNV");
+        device_dispatch->ShutdownLatencyDeviceLegacyNV(device);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkShutdownLatencyDeviceLegacyNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordShutdownLatencyDeviceLegacyNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordShutdownLatencyDeviceLegacyNV(device, record_obj);
+        }
+    }
+}
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {
     VVL_ZoneScoped;
@@ -38761,6 +39071,13 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkCmdDispatchTileQCOM", {kFuncTypeDev, (void*)CmdDispatchTileQCOM}},
         {"vkCmdBeginPerTileExecutionQCOM", {kFuncTypeDev, (void*)CmdBeginPerTileExecutionQCOM}},
         {"vkCmdEndPerTileExecutionQCOM", {kFuncTypeDev, (void*)CmdEndPerTileExecutionQCOM}},
+        {"vkSetLatencySleepModeLegacyNV", {kFuncTypeDev, (void*)SetLatencySleepModeLegacyNV}},
+        {"vkLatencySleepLegacyNV", {kFuncTypeDev, (void*)LatencySleepLegacyNV}},
+        {"vkSetLatencyMarkerLegacyNV", {kFuncTypeDev, (void*)SetLatencyMarkerLegacyNV}},
+        {"vkGetLatencyTimingsLegacyNV", {kFuncTypeDev, (void*)GetLatencyTimingsLegacyNV}},
+        {"vkQueueNotifyOutOfBandLegacyNV", {kFuncTypeDev, (void*)QueueNotifyOutOfBandLegacyNV}},
+        {"vkGetSleepStatusLegacyNV", {kFuncTypeDev, (void*)GetSleepStatusLegacyNV}},
+        {"vkShutdownLatencyDeviceLegacyNV", {kFuncTypeDev, (void*)ShutdownLatencyDeviceLegacyNV}},
 #ifdef VK_USE_PLATFORM_METAL_EXT
         {"vkExportMetalObjectsEXT", {kFuncTypeDev, (void*)ExportMetalObjectsEXT}},
 #endif  // VK_USE_PLATFORM_METAL_EXT

@@ -7145,6 +7145,74 @@ void Device::PostCallRecordCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuf
     FinishReadObject(commandBuffer, record_obj.location);
 }
 
+void Device::PreCallRecordSetLatencySleepModeLegacyNV(VkDevice device, VkBool32 lowLatencyMode, VkBool32 lowLatencyBoost,
+                                                      uint32_t minimumIntervalUs, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordSetLatencySleepModeLegacyNV(VkDevice device, VkBool32 lowLatencyMode, VkBool32 lowLatencyBoost,
+                                                       uint32_t minimumIntervalUs, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordLatencySleepLegacyNV(VkDevice device, VkSemaphore signalSemaphore, uint64_t value,
+                                               const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartReadObject(signalSemaphore, record_obj.location);
+}
+
+void Device::PostCallRecordLatencySleepLegacyNV(VkDevice device, VkSemaphore signalSemaphore, uint64_t value,
+                                                const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishReadObject(signalSemaphore, record_obj.location);
+}
+
+void Device::PreCallRecordSetLatencyMarkerLegacyNV(VkDevice device, uint64_t frameID, uint32_t marker,
+                                                   const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordSetLatencyMarkerLegacyNV(VkDevice device, uint64_t frameID, uint32_t marker,
+                                                    const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordGetLatencyTimingsLegacyNV(VkDevice device, void* pTimings, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetLatencyTimingsLegacyNV(VkDevice device, void* pTimings, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordQueueNotifyOutOfBandLegacyNV(VkQueue queue, uint32_t queueType, const RecordObject& record_obj) {
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        StartWriteObject(queue, record_obj.location);
+    }
+}
+
+void Device::PostCallRecordQueueNotifyOutOfBandLegacyNV(VkQueue queue, uint32_t queueType, const RecordObject& record_obj) {
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        FinishWriteObject(queue, record_obj.location);
+    }
+}
+
+void Device::PreCallRecordGetSleepStatusLegacyNV(VkDevice device, VkBool32* pLowLatencyMode, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetSleepStatusLegacyNV(VkDevice device, VkBool32* pLowLatencyMode, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordShutdownLatencyDeviceLegacyNV(VkDevice device, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordShutdownLatencyDeviceLegacyNV(VkDevice device, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 void Device::PreCallRecordExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
                                                 const RecordObject& record_obj) {

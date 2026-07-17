@@ -736,6 +736,13 @@ PFN_vkCmdCudaLaunchKernelNV CmdCudaLaunchKernelNV;
 PFN_vkCmdDispatchTileQCOM CmdDispatchTileQCOM;
 PFN_vkCmdBeginPerTileExecutionQCOM CmdBeginPerTileExecutionQCOM;
 PFN_vkCmdEndPerTileExecutionQCOM CmdEndPerTileExecutionQCOM;
+PFN_vkSetLatencySleepModeLegacyNV SetLatencySleepModeLegacyNV;
+PFN_vkLatencySleepLegacyNV LatencySleepLegacyNV;
+PFN_vkSetLatencyMarkerLegacyNV SetLatencyMarkerLegacyNV;
+PFN_vkGetLatencyTimingsLegacyNV GetLatencyTimingsLegacyNV;
+PFN_vkQueueNotifyOutOfBandLegacyNV QueueNotifyOutOfBandLegacyNV;
+PFN_vkGetSleepStatusLegacyNV GetSleepStatusLegacyNV;
+PFN_vkShutdownLatencyDeviceLegacyNV ShutdownLatencyDeviceLegacyNV;
 #ifdef VK_USE_PLATFORM_METAL_EXT
 PFN_vkExportMetalObjectsEXT ExportMetalObjectsEXT;
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -2465,6 +2472,17 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 CmdEndPerTileExecutionQCOM = reinterpret_cast<PFN_vkCmdEndPerTileExecutionQCOM>(GetDeviceProcAddr(device, "vkCmdEndPerTileExecutionQCOM"));
             }
         },
+        {
+            "VK_NV_low_latency", [](VkInstance , VkDevice device) {
+                SetLatencySleepModeLegacyNV = reinterpret_cast<PFN_vkSetLatencySleepModeLegacyNV>(GetDeviceProcAddr(device, "vkSetLatencySleepModeLegacyNV"));
+                LatencySleepLegacyNV = reinterpret_cast<PFN_vkLatencySleepLegacyNV>(GetDeviceProcAddr(device, "vkLatencySleepLegacyNV"));
+                SetLatencyMarkerLegacyNV = reinterpret_cast<PFN_vkSetLatencyMarkerLegacyNV>(GetDeviceProcAddr(device, "vkSetLatencyMarkerLegacyNV"));
+                GetLatencyTimingsLegacyNV = reinterpret_cast<PFN_vkGetLatencyTimingsLegacyNV>(GetDeviceProcAddr(device, "vkGetLatencyTimingsLegacyNV"));
+                QueueNotifyOutOfBandLegacyNV = reinterpret_cast<PFN_vkQueueNotifyOutOfBandLegacyNV>(GetDeviceProcAddr(device, "vkQueueNotifyOutOfBandLegacyNV"));
+                GetSleepStatusLegacyNV = reinterpret_cast<PFN_vkGetSleepStatusLegacyNV>(GetDeviceProcAddr(device, "vkGetSleepStatusLegacyNV"));
+                ShutdownLatencyDeviceLegacyNV = reinterpret_cast<PFN_vkShutdownLatencyDeviceLegacyNV>(GetDeviceProcAddr(device, "vkShutdownLatencyDeviceLegacyNV"));
+            }
+        },
 #ifdef VK_USE_PLATFORM_METAL_EXT
         {
             "VK_EXT_metal_objects", [](VkInstance , VkDevice device) {
@@ -3402,6 +3420,13 @@ void ResetAllExtensions() {
     CmdDispatchTileQCOM = nullptr;
     CmdBeginPerTileExecutionQCOM = nullptr;
     CmdEndPerTileExecutionQCOM = nullptr;
+    SetLatencySleepModeLegacyNV = nullptr;
+    LatencySleepLegacyNV = nullptr;
+    SetLatencyMarkerLegacyNV = nullptr;
+    GetLatencyTimingsLegacyNV = nullptr;
+    QueueNotifyOutOfBandLegacyNV = nullptr;
+    GetSleepStatusLegacyNV = nullptr;
+    ShutdownLatencyDeviceLegacyNV = nullptr;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     ExportMetalObjectsEXT = nullptr;
 #endif  // VK_USE_PLATFORM_METAL_EXT

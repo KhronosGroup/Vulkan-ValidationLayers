@@ -7815,6 +7815,37 @@ void DispatchDevice::CmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, c
     device_dispatch_table.CmdEndPerTileExecutionQCOM(commandBuffer, pPerTileEndInfo);
 }
 
+void DispatchDevice::SetLatencySleepModeLegacyNV(VkDevice device, VkBool32 lowLatencyMode, VkBool32 lowLatencyBoost,
+                                                 uint32_t minimumIntervalUs) {
+    device_dispatch_table.SetLatencySleepModeLegacyNV(device, lowLatencyMode, lowLatencyBoost, minimumIntervalUs);
+}
+
+void DispatchDevice::LatencySleepLegacyNV(VkDevice device, VkSemaphore signalSemaphore, uint64_t value) {
+    if (!wrap_handles) return device_dispatch_table.LatencySleepLegacyNV(device, signalSemaphore, value);
+    {
+        signalSemaphore = Unwrap(signalSemaphore);
+    }
+    device_dispatch_table.LatencySleepLegacyNV(device, signalSemaphore, value);
+}
+
+void DispatchDevice::SetLatencyMarkerLegacyNV(VkDevice device, uint64_t frameID, uint32_t marker) {
+    device_dispatch_table.SetLatencyMarkerLegacyNV(device, frameID, marker);
+}
+
+void DispatchDevice::GetLatencyTimingsLegacyNV(VkDevice device, void* pTimings) {
+    device_dispatch_table.GetLatencyTimingsLegacyNV(device, pTimings);
+}
+
+void DispatchDevice::QueueNotifyOutOfBandLegacyNV(VkQueue queue, uint32_t queueType) {
+    device_dispatch_table.QueueNotifyOutOfBandLegacyNV(queue, queueType);
+}
+
+void DispatchDevice::GetSleepStatusLegacyNV(VkDevice device, VkBool32* pLowLatencyMode) {
+    device_dispatch_table.GetSleepStatusLegacyNV(device, pLowLatencyMode);
+}
+
+void DispatchDevice::ShutdownLatencyDeviceLegacyNV(VkDevice device) { device_dispatch_table.ShutdownLatencyDeviceLegacyNV(device); }
+
 void DispatchDevice::GetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
                                                    VkDeviceSize* pLayoutSizeInBytes) {
     if (!wrap_handles) return device_dispatch_table.GetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes);
