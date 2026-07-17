@@ -3748,6 +3748,42 @@ static inline void DispatchCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuf
     auto dispatch = vvl::GetDispatchDevice(commandBuffer);
     dispatch->CmdEndPerTileExecutionQCOM(commandBuffer, pPerTileEndInfo);
 }
+
+static inline void DispatchSetLatencySleepModeLegacyNV(VkDevice device, VkBool32 lowLatencyMode, VkBool32 lowLatencyBoost,
+                                                       uint32_t minimumIntervalUs) {
+    auto dispatch = vvl::GetDispatchDevice(device);
+    dispatch->SetLatencySleepModeLegacyNV(device, lowLatencyMode, lowLatencyBoost, minimumIntervalUs);
+}
+
+static inline void DispatchLatencySleepLegacyNV(VkDevice device, VkSemaphore signalSemaphore, uint64_t value) {
+    auto dispatch = vvl::GetDispatchDevice(device);
+    dispatch->LatencySleepLegacyNV(device, signalSemaphore, value);
+}
+
+static inline void DispatchSetLatencyMarkerLegacyNV(VkDevice device, uint64_t frameID, uint32_t marker) {
+    auto dispatch = vvl::GetDispatchDevice(device);
+    dispatch->SetLatencyMarkerLegacyNV(device, frameID, marker);
+}
+
+static inline void DispatchGetLatencyTimingsLegacyNV(VkDevice device, void* pTimings) {
+    auto dispatch = vvl::GetDispatchDevice(device);
+    dispatch->GetLatencyTimingsLegacyNV(device, pTimings);
+}
+
+static inline void DispatchQueueNotifyOutOfBandLegacyNV(VkQueue queue, uint32_t queueType) {
+    auto dispatch = vvl::GetDispatchDevice(queue);
+    dispatch->QueueNotifyOutOfBandLegacyNV(queue, queueType);
+}
+
+static inline void DispatchGetSleepStatusLegacyNV(VkDevice device, VkBool32* pLowLatencyMode) {
+    auto dispatch = vvl::GetDispatchDevice(device);
+    dispatch->GetSleepStatusLegacyNV(device, pLowLatencyMode);
+}
+
+static inline void DispatchShutdownLatencyDeviceLegacyNV(VkDevice device) {
+    auto dispatch = vvl::GetDispatchDevice(device);
+    dispatch->ShutdownLatencyDeviceLegacyNV(device);
+}
 #ifdef VK_USE_PLATFORM_METAL_EXT
 
 static inline void DispatchExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {

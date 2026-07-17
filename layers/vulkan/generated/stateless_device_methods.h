@@ -1285,6 +1285,16 @@ bool PreCallValidateCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer, 
                                                  const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo,
                                                const ErrorObject& error_obj) const override;
+bool PreCallValidateSetLatencySleepModeLegacyNV(VkDevice device, VkBool32 lowLatencyMode, VkBool32 lowLatencyBoost,
+                                                uint32_t minimumIntervalUs, const ErrorObject& error_obj) const override;
+bool PreCallValidateLatencySleepLegacyNV(VkDevice device, VkSemaphore signalSemaphore, uint64_t value,
+                                         const ErrorObject& error_obj) const override;
+bool PreCallValidateSetLatencyMarkerLegacyNV(VkDevice device, uint64_t frameID, uint32_t marker,
+                                             const ErrorObject& error_obj) const override;
+bool PreCallValidateGetLatencyTimingsLegacyNV(VkDevice device, void* pTimings, const ErrorObject& error_obj) const override;
+bool PreCallValidateQueueNotifyOutOfBandLegacyNV(VkQueue queue, uint32_t queueType, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetSleepStatusLegacyNV(VkDevice device, VkBool32* pLowLatencyMode, const ErrorObject& error_obj) const override;
+bool PreCallValidateShutdownLatencyDeviceLegacyNV(VkDevice device, const ErrorObject& error_obj) const override;
 #ifdef VK_USE_PLATFORM_METAL_EXT
 bool PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
                                           const ErrorObject& error_obj) const override;

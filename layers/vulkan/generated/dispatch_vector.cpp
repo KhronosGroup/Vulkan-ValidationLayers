@@ -1668,6 +1668,27 @@ void DispatchDevice::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdEndPerTileExecutionQCOM);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdEndPerTileExecutionQCOM);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdEndPerTileExecutionQCOM);
+    BUILD_DISPATCH_VECTOR(PreCallValidateSetLatencySleepModeLegacyNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordSetLatencySleepModeLegacyNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordSetLatencySleepModeLegacyNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateLatencySleepLegacyNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordLatencySleepLegacyNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordLatencySleepLegacyNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateSetLatencyMarkerLegacyNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordSetLatencyMarkerLegacyNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordSetLatencyMarkerLegacyNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetLatencyTimingsLegacyNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetLatencyTimingsLegacyNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetLatencyTimingsLegacyNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateQueueNotifyOutOfBandLegacyNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordQueueNotifyOutOfBandLegacyNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordQueueNotifyOutOfBandLegacyNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetSleepStatusLegacyNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetSleepStatusLegacyNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetSleepStatusLegacyNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateShutdownLatencyDeviceLegacyNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordShutdownLatencyDeviceLegacyNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordShutdownLatencyDeviceLegacyNV);
 #ifdef VK_USE_PLATFORM_METAL_EXT
     BUILD_DISPATCH_VECTOR(PreCallValidateExportMetalObjectsEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordExportMetalObjectsEXT);

@@ -242,8 +242,7 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityImageGatherLinearQCOM, {0, &DeviceFeatures::imageGatherLinear, nullptr, ""}},
         {spv::CapabilityImageGatherExtendedModesQCOM, {0, &DeviceFeatures::imageGatherExtendedModes, nullptr, ""}},
         {spv::CapabilityMeshShadingEXT, {0, nullptr, &DeviceExtensions::vk_ext_mesh_shader, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityRayTracingOpacityMicromapEXT, {0, nullptr, &DeviceExtensions::vk_ext_opacity_micromap, ""}},
+        {spv::CapabilityRayTracingOpacityMicromapKHR, {0, nullptr, &DeviceExtensions::vk_ext_opacity_micromap, ""}},
         {spv::CapabilityRayTracingOpacityMicromapKHR, {0, &DeviceFeatures::micromap, nullptr, ""}},
         {spv::CapabilityRayTracingOpacityMicromapExecutionModeKHR, {0, &DeviceFeatures::micromap, nullptr, ""}},
         {spv::CapabilityCoreBuiltinsARM, {0, &DeviceFeatures::shaderCoreBuiltins, nullptr, ""}},
@@ -1282,7 +1281,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityImageGatherLinearQCOM, "VkPhysicalDeviceImageProcessing3FeaturesQCOM::imageGatherLinear"},
     {spv::CapabilityImageGatherExtendedModesQCOM, "VkPhysicalDeviceImageProcessing3FeaturesQCOM::imageGatherExtendedModes"},
     {spv::CapabilityMeshShadingEXT, "VK_EXT_mesh_shader"},
-    {spv::CapabilityRayTracingOpacityMicromapKHR, "VkPhysicalDeviceOpacityMicromapFeaturesKHR::micromap"},
+    {spv::CapabilityRayTracingOpacityMicromapKHR, "VK_EXT_opacity_micromap OR VkPhysicalDeviceOpacityMicromapFeaturesKHR::micromap"},
     {spv::CapabilityRayTracingOpacityMicromapExecutionModeKHR, "VkPhysicalDeviceOpacityMicromapFeaturesKHR::micromap"},
     {spv::CapabilityCoreBuiltinsARM, "VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::shaderCoreBuiltins"},
     {spv::CapabilityShaderInvocationReorderNV, "VK_NV_ray_tracing_invocation_reorder"},

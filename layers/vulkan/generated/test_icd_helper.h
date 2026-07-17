@@ -1910,6 +1910,14 @@ static VKAPI_ATTR void VKAPI_CALL CmdBeginPerTileExecutionQCOM(VkCommandBuffer c
                                                                const VkPerTileBeginInfoQCOM* pPerTileBeginInfo);
 static VKAPI_ATTR void VKAPI_CALL CmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
                                                              const VkPerTileEndInfoQCOM* pPerTileEndInfo);
+static VKAPI_ATTR void VKAPI_CALL SetLatencySleepModeLegacyNV(VkDevice device, VkBool32 lowLatencyMode, VkBool32 lowLatencyBoost,
+                                                              uint32_t minimumIntervalUs);
+static VKAPI_ATTR void VKAPI_CALL LatencySleepLegacyNV(VkDevice device, VkSemaphore signalSemaphore, uint64_t value);
+static VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerLegacyNV(VkDevice device, uint64_t frameID, uint32_t marker);
+static VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsLegacyNV(VkDevice device, void* pTimings);
+static VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandLegacyNV(VkQueue queue, uint32_t queueType);
+static VKAPI_ATTR void VKAPI_CALL GetSleepStatusLegacyNV(VkDevice device, VkBool32* pLowLatencyMode);
+static VKAPI_ATTR void VKAPI_CALL ShutdownLatencyDeviceLegacyNV(VkDevice device);
 #ifdef VK_USE_PLATFORM_METAL_EXT
 static VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo);
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -3089,6 +3097,13 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkCmdDispatchTileQCOM", (void*)CmdDispatchTileQCOM},
     {"vkCmdBeginPerTileExecutionQCOM", (void*)CmdBeginPerTileExecutionQCOM},
     {"vkCmdEndPerTileExecutionQCOM", (void*)CmdEndPerTileExecutionQCOM},
+    {"vkSetLatencySleepModeLegacyNV", (void*)SetLatencySleepModeLegacyNV},
+    {"vkLatencySleepLegacyNV", (void*)LatencySleepLegacyNV},
+    {"vkSetLatencyMarkerLegacyNV", (void*)SetLatencyMarkerLegacyNV},
+    {"vkGetLatencyTimingsLegacyNV", (void*)GetLatencyTimingsLegacyNV},
+    {"vkQueueNotifyOutOfBandLegacyNV", (void*)QueueNotifyOutOfBandLegacyNV},
+    {"vkGetSleepStatusLegacyNV", (void*)GetSleepStatusLegacyNV},
+    {"vkShutdownLatencyDeviceLegacyNV", (void*)ShutdownLatencyDeviceLegacyNV},
 #ifdef VK_USE_PLATFORM_METAL_EXT
     {"vkExportMetalObjectsEXT", (void*)ExportMetalObjectsEXT},
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -5684,6 +5699,21 @@ static VKAPI_ATTR void VKAPI_CALL CmdBeginPerTileExecutionQCOM(VkCommandBuffer c
 
 static VKAPI_ATTR void VKAPI_CALL CmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
                                                              const VkPerTileEndInfoQCOM* pPerTileEndInfo) {}
+
+static VKAPI_ATTR void VKAPI_CALL SetLatencySleepModeLegacyNV(VkDevice device, VkBool32 lowLatencyMode, VkBool32 lowLatencyBoost,
+                                                              uint32_t minimumIntervalUs) {}
+
+static VKAPI_ATTR void VKAPI_CALL LatencySleepLegacyNV(VkDevice device, VkSemaphore signalSemaphore, uint64_t value) {}
+
+static VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerLegacyNV(VkDevice device, uint64_t frameID, uint32_t marker) {}
+
+static VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsLegacyNV(VkDevice device, void* pTimings) {}
+
+static VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandLegacyNV(VkQueue queue, uint32_t queueType) {}
+
+static VKAPI_ATTR void VKAPI_CALL GetSleepStatusLegacyNV(VkDevice device, VkBool32* pLowLatencyMode) {}
+
+static VKAPI_ATTR void VKAPI_CALL ShutdownLatencyDeviceLegacyNV(VkDevice device) {}
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
 static VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {}

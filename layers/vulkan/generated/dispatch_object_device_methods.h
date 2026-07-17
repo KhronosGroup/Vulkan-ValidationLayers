@@ -816,6 +816,13 @@ void CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfo
 void CmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo);
 void CmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileBeginInfoQCOM* pPerTileBeginInfo);
 void CmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo);
+void SetLatencySleepModeLegacyNV(VkDevice device, VkBool32 lowLatencyMode, VkBool32 lowLatencyBoost, uint32_t minimumIntervalUs);
+void LatencySleepLegacyNV(VkDevice device, VkSemaphore signalSemaphore, uint64_t value);
+void SetLatencyMarkerLegacyNV(VkDevice device, uint64_t frameID, uint32_t marker);
+void GetLatencyTimingsLegacyNV(VkDevice device, void* pTimings);
+void QueueNotifyOutOfBandLegacyNV(VkQueue queue, uint32_t queueType);
+void GetSleepStatusLegacyNV(VkDevice device, VkBool32* pLowLatencyMode);
+void ShutdownLatencyDeviceLegacyNV(VkDevice device);
 #ifdef VK_USE_PLATFORM_METAL_EXT
 void ExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo);
 #endif  // VK_USE_PLATFORM_METAL_EXT

@@ -1137,6 +1137,13 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdCudaLaunchKernelNV(VkCommandBuffer, con
 static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchTileQCOM(VkCommandBuffer, const VkDispatchTileInfoQCOM*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdBeginPerTileExecutionQCOM(VkCommandBuffer, const VkPerTileBeginInfoQCOM*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdEndPerTileExecutionQCOM(VkCommandBuffer, const VkPerTileEndInfoQCOM*) {}
+static VKAPI_ATTR void VKAPI_CALL StubSetLatencySleepModeLegacyNV(VkDevice, VkBool32, VkBool32, uint32_t) {}
+static VKAPI_ATTR void VKAPI_CALL StubLatencySleepLegacyNV(VkDevice, VkSemaphore, uint64_t) {}
+static VKAPI_ATTR void VKAPI_CALL StubSetLatencyMarkerLegacyNV(VkDevice, uint64_t, uint32_t) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetLatencyTimingsLegacyNV(VkDevice, void*) {}
+static VKAPI_ATTR void VKAPI_CALL StubQueueNotifyOutOfBandLegacyNV(VkQueue, uint32_t) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetSleepStatusLegacyNV(VkDevice, VkBool32*) {}
+static VKAPI_ATTR void VKAPI_CALL StubShutdownLatencyDeviceLegacyNV(VkDevice) {}
 #ifdef VK_USE_PLATFORM_METAL_EXT
 static VKAPI_ATTR void VKAPI_CALL StubExportMetalObjectsEXT(VkDevice, VkExportMetalObjectsInfoEXT*) {}
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -2095,6 +2102,13 @@ const auto& GetApiExtensionMap() {
         {"vkCmdDispatchTileQCOM", {vvl::Extension::_VK_QCOM_tile_shading}},
         {"vkCmdBeginPerTileExecutionQCOM", {vvl::Extension::_VK_QCOM_tile_shading}},
         {"vkCmdEndPerTileExecutionQCOM", {vvl::Extension::_VK_QCOM_tile_shading}},
+        {"vkSetLatencySleepModeLegacyNV", {vvl::Extension::_VK_NV_low_latency}},
+        {"vkLatencySleepLegacyNV", {vvl::Extension::_VK_NV_low_latency}},
+        {"vkSetLatencyMarkerLegacyNV", {vvl::Extension::_VK_NV_low_latency}},
+        {"vkGetLatencyTimingsLegacyNV", {vvl::Extension::_VK_NV_low_latency}},
+        {"vkQueueNotifyOutOfBandLegacyNV", {vvl::Extension::_VK_NV_low_latency}},
+        {"vkGetSleepStatusLegacyNV", {vvl::Extension::_VK_NV_low_latency}},
+        {"vkShutdownLatencyDeviceLegacyNV", {vvl::Extension::_VK_NV_low_latency}},
         {"vkExportMetalObjectsEXT", {vvl::Extension::_VK_EXT_metal_objects}},
         {"vkGetDescriptorSetLayoutSizeEXT", {vvl::Extension::_VK_EXT_descriptor_buffer}},
         {"vkGetDescriptorSetLayoutBindingOffsetEXT", {vvl::Extension::_VK_EXT_descriptor_buffer}},
@@ -4219,6 +4233,34 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     table->CmdEndPerTileExecutionQCOM = (PFN_vkCmdEndPerTileExecutionQCOM)gpa(device, "vkCmdEndPerTileExecutionQCOM");
     if (table->CmdEndPerTileExecutionQCOM == nullptr) {
         table->CmdEndPerTileExecutionQCOM = (PFN_vkCmdEndPerTileExecutionQCOM)StubCmdEndPerTileExecutionQCOM;
+    }
+    table->SetLatencySleepModeLegacyNV = (PFN_vkSetLatencySleepModeLegacyNV)gpa(device, "vkSetLatencySleepModeLegacyNV");
+    if (table->SetLatencySleepModeLegacyNV == nullptr) {
+        table->SetLatencySleepModeLegacyNV = (PFN_vkSetLatencySleepModeLegacyNV)StubSetLatencySleepModeLegacyNV;
+    }
+    table->LatencySleepLegacyNV = (PFN_vkLatencySleepLegacyNV)gpa(device, "vkLatencySleepLegacyNV");
+    if (table->LatencySleepLegacyNV == nullptr) {
+        table->LatencySleepLegacyNV = (PFN_vkLatencySleepLegacyNV)StubLatencySleepLegacyNV;
+    }
+    table->SetLatencyMarkerLegacyNV = (PFN_vkSetLatencyMarkerLegacyNV)gpa(device, "vkSetLatencyMarkerLegacyNV");
+    if (table->SetLatencyMarkerLegacyNV == nullptr) {
+        table->SetLatencyMarkerLegacyNV = (PFN_vkSetLatencyMarkerLegacyNV)StubSetLatencyMarkerLegacyNV;
+    }
+    table->GetLatencyTimingsLegacyNV = (PFN_vkGetLatencyTimingsLegacyNV)gpa(device, "vkGetLatencyTimingsLegacyNV");
+    if (table->GetLatencyTimingsLegacyNV == nullptr) {
+        table->GetLatencyTimingsLegacyNV = (PFN_vkGetLatencyTimingsLegacyNV)StubGetLatencyTimingsLegacyNV;
+    }
+    table->QueueNotifyOutOfBandLegacyNV = (PFN_vkQueueNotifyOutOfBandLegacyNV)gpa(device, "vkQueueNotifyOutOfBandLegacyNV");
+    if (table->QueueNotifyOutOfBandLegacyNV == nullptr) {
+        table->QueueNotifyOutOfBandLegacyNV = (PFN_vkQueueNotifyOutOfBandLegacyNV)StubQueueNotifyOutOfBandLegacyNV;
+    }
+    table->GetSleepStatusLegacyNV = (PFN_vkGetSleepStatusLegacyNV)gpa(device, "vkGetSleepStatusLegacyNV");
+    if (table->GetSleepStatusLegacyNV == nullptr) {
+        table->GetSleepStatusLegacyNV = (PFN_vkGetSleepStatusLegacyNV)StubGetSleepStatusLegacyNV;
+    }
+    table->ShutdownLatencyDeviceLegacyNV = (PFN_vkShutdownLatencyDeviceLegacyNV)gpa(device, "vkShutdownLatencyDeviceLegacyNV");
+    if (table->ShutdownLatencyDeviceLegacyNV == nullptr) {
+        table->ShutdownLatencyDeviceLegacyNV = (PFN_vkShutdownLatencyDeviceLegacyNV)StubShutdownLatencyDeviceLegacyNV;
     }
 #ifdef VK_USE_PLATFORM_METAL_EXT
     table->ExportMetalObjectsEXT = (PFN_vkExportMetalObjectsEXT)gpa(device, "vkExportMetalObjectsEXT");
