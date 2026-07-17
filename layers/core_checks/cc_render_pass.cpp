@@ -3024,6 +3024,11 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
     skip |= ValidateRenderingAttachmentInfoFeedbackLoop(commandBuffer, attachment_info, *image_view_state, attachment_loc);
     skip |= ValidateRenderingAttachmentFlagsInfo(commandBuffer, attachment_info, *image_view_state, attachment_loc);
 
+    if (image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_3D) {
+        const LogObjectList objlist(commandBuffer, attachment_info.imageView);
+        skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-12470", objlist, attachment_loc.dot(Field::imageView),
+                         "was created with VK_IMAGE_VIEW_TYPE_3D");
+    }
     return skip;
 }
 
@@ -3064,6 +3069,11 @@ bool CoreChecks::ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer comm
                              attachment_loc.dot(Field::resolveMode), "%s but resolveImageView has a sample count of %s",
                              string_VkResolveModeFlagBits(attachment_info.resolveMode),
                              string_VkSampleCountFlagBits(resolve_view_state->samples));
+        }
+        if (resolve_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_3D) {
+            const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView);
+            skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveImageView-12471", objlist,
+                             attachment_loc.dot(Field::resolveImageView), "was created with VK_IMAGE_VIEW_TYPE_3D");
         }
 
         if (attachment_info.resolveMode != VK_RESOLVE_MODE_CUSTOM_BIT_EXT &&
