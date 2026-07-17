@@ -952,6 +952,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "DotProductBFloat16AccVALVE";
         case spv::CapabilityDotProductFloat8AccFloat32VALVE:
             return "DotProductFloat8AccFloat32VALVE";
+        case spv::CapabilityIntrinsicSAMSUNG:
+            return "IntrinsicSAMSUNG";
         default:
             return "Unhandled OpCapability";
     };
