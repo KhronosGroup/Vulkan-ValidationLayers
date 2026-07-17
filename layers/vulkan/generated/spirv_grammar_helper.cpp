@@ -1843,6 +1843,8 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "CacheControlLoadINTEL";
         case spv::DecorationCacheControlStoreINTEL:
             return "CacheControlStoreINTEL";
+        case spv::DecorationIntrinsicSAMSUNG:
+            return "IntrinsicSAMSUNG";
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case spv::DecorationNodeSharesPayloadLimitsWithAMDX:
