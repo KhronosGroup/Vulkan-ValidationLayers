@@ -590,6 +590,12 @@ class SyncValidator : public vvl::DeviceProxy {
     void PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                                const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
                                                                const RecordObject &record_obj) override;
+
+    bool ValidateSbtBuffer(const CommandBufferAccessContext& cb_context,
+                           const VkStridedDeviceAddressRegionKHR* p_sbt_address_region, const Location& loc,
+                           const char* sbt_buffer_label) const;
+    void RecordSbtBuffer(CommandBufferAccessContext& cb_context, const VkStridedDeviceAddressRegionKHR* p_sbt_address_region,
+                         ResourceUsageTag tag);
     bool PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                         const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
                                         const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
