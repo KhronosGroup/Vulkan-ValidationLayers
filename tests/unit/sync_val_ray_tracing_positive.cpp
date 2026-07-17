@@ -906,3 +906,88 @@ TEST_F(PositiveSyncValRayTracing, BuildAfterBuildWithBufferBarrier) {
     blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncValRayTracing, ShaderBindingTable) {
+    TEST_DESCRIPTION("Copy to SBT then trace rays after synchronizing the copy write");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitRayTracing());
+
+    std::unique_ptr<vkt::as::BuildGeometryInfoKHR> blas = BuildBLAS();
+    std::unique_ptr<vkt::as::BuildGeometryInfoKHR> tlas = BuildTLAS(*blas->GetDstAS());
+
+    std::unique_ptr<vkt::rt::Pipeline> pipeline = GetTraceRaysPipeline(tlas->GetDstAS()->handle());
+    vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline->GetTraceRaysSbt();
+    const vkt::Buffer& source_sbt = pipeline->GetTraceRaysSbtBuffer();
+
+    vkt::Buffer destination_sbt(*m_device, source_sbt.CreateInfo().size,
+                                VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                vkt::device_address);
+    trace_rays_sbt.ray_gen_sbt.deviceAddress = destination_sbt.Address();
+
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
+    barrier.buffer = destination_sbt;
+    barrier.size = destination_sbt.CreateInfo().size;
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline->GetPipelineLayout(), 0, 1,
+                              &pipeline->GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *pipeline);
+
+    m_command_buffer.Copy(source_sbt, destination_sbt);
+    m_command_buffer.Barrier(barrier);
+
+    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRayTracing, ShaderBindingTableIndirect) {
+    TEST_DESCRIPTION("Copy to SBT then trace rays indirectly after synchronizing the copy write");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipelineTraceRaysIndirect);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitRayTracing());
+
+    std::unique_ptr<vkt::as::BuildGeometryInfoKHR> blas = BuildBLAS();
+    std::unique_ptr<vkt::as::BuildGeometryInfoKHR> tlas = BuildTLAS(*blas->GetDstAS());
+
+    std::unique_ptr<vkt::rt::Pipeline> pipeline = GetTraceRaysPipeline(tlas->GetDstAS()->handle());
+    vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline->GetTraceRaysSbt();
+    const vkt::Buffer& source_sbt = pipeline->GetTraceRaysSbtBuffer();
+
+    vkt::Buffer destination_sbt(*m_device, source_sbt.CreateInfo().size,
+                                VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                vkt::device_address);
+    trace_rays_sbt.ray_gen_sbt.deviceAddress = destination_sbt.Address();
+
+    vkt::Buffer indirect_buffer(*m_device, sizeof(VkTraceRaysIndirectCommandKHR), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                vkt::device_address);
+
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
+    barrier.buffer = destination_sbt;
+    barrier.size = destination_sbt.CreateInfo().size;
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline->GetPipelineLayout(), 0, 1,
+                              &pipeline->GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *pipeline);
+
+    m_command_buffer.Copy(source_sbt, destination_sbt);
+    m_command_buffer.Barrier(barrier);
+
+    vk::CmdTraceRaysIndirectKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                                &trace_rays_sbt.callable_sbt, indirect_buffer.Address());
+
+    m_command_buffer.End();
+}
