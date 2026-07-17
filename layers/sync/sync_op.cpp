@@ -37,8 +37,7 @@ namespace syncval {
 SyncOpPipelineBarrier::SyncOpPipelineBarrier(BarrierSet&& barrier_set) : barrier_set_(std::move(barrier_set)) {}
 
 void SyncOpPipelineBarrier::ReplayRecord(CommandExecutionContext& exec_context, const ResourceUsageTag exec_tag) const {
-    const SyncValidator& validator = exec_context.GetSyncState();
-    validator.ApplyBarrier(exec_context, barrier_set_, exec_tag);
+    ApplyBarrier(exec_context, barrier_set_, exec_tag);
 }
 
 bool SyncOpPipelineBarrier::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
@@ -108,33 +107,10 @@ bool SyncOpWaitEvents::ReplayValidate(ReplayState& replay, ResourceUsageTag reco
     return validator.ValidateCmdWaitEvents(exec_context, events_, barrier_sets_, exec_tag, Location(command_));
 }
 
-SyncOpBeginRenderPass::SyncOpBeginRenderPass(vvl::Func command, const SyncValidator& sync_state,
-                                             const VkRenderPassBeginInfo& render_pass_begin_info,
-                                             const VkSubpassBeginInfo* p_subpass_begin_info)
-    : SyncOpBase(command), rp_context_(nullptr) {
-    rp_state_ = sync_state.Get<vvl::RenderPass>(render_pass_begin_info.renderPass);
-    renderpass_begin_info_ = vku::safe_VkRenderPassBeginInfo(&render_pass_begin_info);
-    auto fb_state = sync_state.Get<vvl::Framebuffer>(render_pass_begin_info.framebuffer);
-    if (fb_state) {
-        attachments_ = sync_state.device_state->GetAttachmentViews(*renderpass_begin_info_.ptr(), *fb_state);
-    }
-    if (p_subpass_begin_info) {
-        subpass_begin_info_ = vku::safe_VkSubpassBeginInfo(p_subpass_begin_info);
-    }
-}
-
-ResourceUsageTag SyncOpBeginRenderPass::Record(CommandBufferAccessContext& cb_context) {
-    if (!rp_state_) {
-        return cb_context.NextCommandTag(command_);
-    }
-    const ResourceUsageTag begin_tag =
-        cb_context.RecordBeginRenderPass(command_, *rp_state_.get(), renderpass_begin_info_.renderArea, attachments_);
-
-    // Note: this state update must be after RecordBeginRenderPass as there is no current render pass until that function runs
-    rp_context_ = cb_context.GetCurrentRenderPassContext();
-
-    return begin_tag;
-}
+SyncOpBeginRenderPass::SyncOpBeginRenderPass(std::shared_ptr<const vvl::RenderPass>&& rp_state,
+                                             std::vector<std::shared_ptr<const vvl::ImageView>>&& attachments,
+                                             const RenderPassAccessContext* rp_context, const Location& loc)
+    : SyncOpBase(loc.function), rp_state_(std::move(rp_state)), attachments_(std::move(attachments)), rp_context_(rp_context) {}
 
 bool SyncOpBeginRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     CommandExecutionContext& exec_context = replay.GetExecutionContext();
@@ -152,13 +128,7 @@ void SyncOpBeginRenderPass::ReplayRecord(CommandExecutionContext& exec_context, 
     // All the needed replay state changes (for the layout transition, and context update) have to happen in ReplayValidate
 }
 
-SyncOpNextSubpass::SyncOpNextSubpass(vvl::Func command, const SyncValidator& sync_state,
-                                     const VkSubpassBeginInfo* pSubpassBeginInfo, const VkSubpassEndInfo* pSubpassEndInfo)
-    : SyncOpBase(command) {}
-
-ResourceUsageTag SyncOpNextSubpass::Record(CommandBufferAccessContext& cb_context) {
-    return cb_context.RecordNextSubpass(command_);
-}
+SyncOpNextSubpass::SyncOpNextSubpass(const Location& loc) : SyncOpBase(loc.function) {}
 
 bool SyncOpNextSubpass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     // Any store/resolve operations happen before the NextSubpass tag so we can advance to the next subpass state
@@ -177,13 +147,7 @@ void SyncOpNextSubpass::ReplayRecord(CommandExecutionContext& exec_context, Reso
     // All the needed replay state changes (for the layout transition, and context update) have to happen in ReplayValidate
 }
 
-SyncOpEndRenderPass::SyncOpEndRenderPass(vvl::Func command, const SyncValidator& sync_state,
-                                         const VkSubpassEndInfo* pSubpassEndInfo)
-    : SyncOpBase(command) {}
-
-ResourceUsageTag SyncOpEndRenderPass::Record(CommandBufferAccessContext& cb_context) {
-    return cb_context.RecordEndRenderPass(command_);
-}
+SyncOpEndRenderPass::SyncOpEndRenderPass(const Location& loc) : SyncOpBase(loc.function) {}
 
 bool SyncOpEndRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     // The record_tag is the final layout transition. Any store/resolve operations happen before

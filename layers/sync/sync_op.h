@@ -176,37 +176,33 @@ class SyncOpWaitEvents : public SyncOpBase {
 
 class SyncOpBeginRenderPass : public SyncOpBase {
   public:
-    SyncOpBeginRenderPass(vvl::Func command, const SyncValidator& sync_state, const VkRenderPassBeginInfo& render_pass_begin_info,
-                          const VkSubpassBeginInfo* p_subpass_begin_info);
-
-    ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
+    SyncOpBeginRenderPass(std::shared_ptr<const vvl::RenderPass>&& rp_state,
+                          std::vector<std::shared_ptr<const vvl::ImageView>>&& attachments,
+                          const RenderPassAccessContext* rp_context, const Location& loc);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
     const RenderPassAccessContext* GetRenderPassAccessContext() const { return rp_context_; }
 
   protected:
-    vku::safe_VkRenderPassBeginInfo renderpass_begin_info_;
-    vku::safe_VkSubpassBeginInfo subpass_begin_info_;
-    std::vector<std::shared_ptr<const vvl::ImageView>> attachments_;
+    // Keep references to rp_state and attachments in case they are deleted.
+    // The RenderPassAccessContext keeps only pointers to them.
+    // TODO: make RenderPassAccessContext the owner of rp_state and attachments
     std::shared_ptr<const vvl::RenderPass> rp_state_;
-    const RenderPassAccessContext* rp_context_;
+    std::vector<std::shared_ptr<const vvl::ImageView>> attachments_;
+
+    const RenderPassAccessContext* rp_context_ = nullptr;
 };
 
 class SyncOpNextSubpass : public SyncOpBase {
   public:
-    SyncOpNextSubpass(vvl::Func command, const SyncValidator& sync_state, const VkSubpassBeginInfo* pSubpassBeginInfo,
-                      const VkSubpassEndInfo* pSubpassEndInfo);
-
-    ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
+    SyncOpNextSubpass(const Location& loc);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
 };
 
 class SyncOpEndRenderPass : public SyncOpBase {
   public:
-    SyncOpEndRenderPass(vvl::Func command, const SyncValidator& sync_state, const VkSubpassEndInfo* pSubpassEndInfo);
-
-    ResourceUsageTag Record(CommandBufferAccessContext& cb_context);
+    SyncOpEndRenderPass(const Location& loc);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
 };

@@ -179,7 +179,6 @@ class SyncValidator : public vvl::DeviceProxy {
                                            uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
                                            const ErrorObject &error_obj) const override;
 
-    void ApplyBarrier(CommandExecutionContext& exec_context, const BarrierSet& barrier_set, ResourceUsageTag tag) const;
     void RecordCmdPipelineBarrier(CommandBufferAccessContext& cb_context, BarrierSet&& barrier_set, const Location& loc) const;
     void PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                           VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
