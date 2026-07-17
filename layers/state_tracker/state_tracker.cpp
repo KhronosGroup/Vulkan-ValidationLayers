@@ -4444,7 +4444,7 @@ void InstanceState::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, con
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface);
+    RecordVulkanSurface(pSurface, SurfaceType::Win32);
 }
 
 void DeviceState::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
@@ -5128,7 +5128,7 @@ void InstanceState::PreCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfac
     Destroy<Surface>(surface);
 }
 
-void InstanceState::RecordVulkanSurface(VkSurfaceKHR* pSurface) { Add(std::make_shared<Surface>(*pSurface)); }
+void InstanceState::RecordVulkanSurface(VkSurfaceKHR* pSurface, SurfaceType type) { Add(std::make_shared<Surface>(*pSurface, type)); }
 
 void InstanceState::PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance,
                                                                const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
@@ -5137,7 +5137,7 @@ void InstanceState::PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instan
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface);
+    RecordVulkanSurface(pSurface, SurfaceType::DisplayPlane);
 }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
@@ -5147,7 +5147,7 @@ void InstanceState::PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, c
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface);
+    RecordVulkanSurface(pSurface, SurfaceType::Android);
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
@@ -5159,7 +5159,7 @@ void InstanceState::PostCallRecordCreateImagePipeSurfaceFUCHSIA(VkInstance insta
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface);
+    RecordVulkanSurface(pSurface, SurfaceType::ImagePipe_FUCHSIA);
 }
 #endif  // VK_USE_PLATFORM_FUCHSIA
 
@@ -5170,7 +5170,7 @@ void InstanceState::PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface);
+    RecordVulkanSurface(pSurface, SurfaceType::IOS_MVK);
 }
 #endif  // VK_USE_PLATFORM_IOS_MVK
 
@@ -5181,7 +5181,7 @@ void InstanceState::PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, con
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface);
+    RecordVulkanSurface(pSurface, SurfaceType::MacOS_MVK);
 }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
@@ -5192,7 +5192,7 @@ void InstanceState::PostCallRecordCreateMetalSurfaceEXT(VkInstance instance, con
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface);
+    RecordVulkanSurface(pSurface, SurfaceType::Metal);
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
@@ -5203,7 +5203,7 @@ void InstanceState::PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, c
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface);
+    RecordVulkanSurface(pSurface, SurfaceType::Wayland);
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
@@ -5217,7 +5217,7 @@ void InstanceState::PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const
 #if defined(DEBUG_CAPTURE_KEYBOARD)
     xcb_connection = (void*)pCreateInfo->connection;
 #endif
-    RecordVulkanSurface(pSurface);
+    RecordVulkanSurface(pSurface, SurfaceType::Xcb);
 }
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
@@ -5231,7 +5231,7 @@ void InstanceState::PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, cons
 #if defined(DEBUG_CAPTURE_KEYBOARD)
     xlib_display = (void*)pCreateInfo->dpy;
 #endif
-    RecordVulkanSurface(pSurface);
+    RecordVulkanSurface(pSurface, SurfaceType::Xlib);
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
@@ -5242,7 +5242,7 @@ void InstanceState::PostCallRecordCreateScreenSurfaceQNX(VkInstance instance, co
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface);
+    RecordVulkanSurface(pSurface, SurfaceType::Screen_QNX);
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
@@ -5252,7 +5252,7 @@ void InstanceState::PostCallRecordCreateHeadlessSurfaceEXT(VkInstance instance, 
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface);
+    RecordVulkanSurface(pSurface, SurfaceType::Headless);
 }
 
 void InstanceState::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
