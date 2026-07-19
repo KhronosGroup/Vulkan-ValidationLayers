@@ -164,6 +164,12 @@ bool DescriptorValidator::ValidateDescriptorsStatic(const spirv::ResourceInterfa
         count = resource_variable.array_length;
     }
 
+    if (count > binding.descriptors.size()) {
+        // An out-of-range binding index requires an invalid pipeline to reach
+        // draw-time validation. Just skip all validation from here as things are already bad.
+        return skip;
+    }
+
     for (uint32_t index = 0; !skip && index < count; index++) {
         const auto& descriptor = binding.descriptors[index];
 
