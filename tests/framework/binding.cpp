@@ -2504,6 +2504,7 @@ IndirectExecutionSet::IndirectExecutionSet(const Device& dev, const VkIndirectEx
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
 VkResult Surface::Init(VkInstance instance, const VkWin32SurfaceCreateInfoKHR& info) {
+    type_ = vvl::SurfaceType::Win32;
     VkResult result = vk::CreateWin32SurfaceKHR(instance, &info, nullptr, &handle_);
     instance_ = instance;
     return result;
@@ -2511,6 +2512,7 @@ VkResult Surface::Init(VkInstance instance, const VkWin32SurfaceCreateInfoKHR& i
 #endif
 #if defined(VK_USE_PLATFORM_METAL_EXT)
 VkResult Surface::Init(VkInstance instance, const VkMetalSurfaceCreateInfoEXT& info) {
+    type_ = vvl::SurfaceType::Metal;
     VkResult result = vk::CreateMetalSurfaceEXT(instance, &info, nullptr, &handle_);
     instance_ = instance;
     return result;
@@ -2518,6 +2520,7 @@ VkResult Surface::Init(VkInstance instance, const VkMetalSurfaceCreateInfoEXT& i
 #endif
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 VkResult Surface::Init(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR& info) {
+    type_ = vvl::SurfaceType::Android;
     VkResult result = vk::CreateAndroidSurfaceKHR(instance, &info, nullptr, &handle_);
     instance_ = instance;
     return result;
@@ -2525,6 +2528,7 @@ VkResult Surface::Init(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR&
 #endif
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
 VkResult Surface::Init(VkInstance instance, const VkXlibSurfaceCreateInfoKHR& info) {
+    type_ = vvl::SurfaceType::Xlib;
     VkResult result = vk::CreateXlibSurfaceKHR(instance, &info, nullptr, &handle_);
     instance_ = instance;
     return result;
@@ -2532,6 +2536,7 @@ VkResult Surface::Init(VkInstance instance, const VkXlibSurfaceCreateInfoKHR& in
 #endif
 #if defined(VK_USE_PLATFORM_XCB_KHR)
 VkResult Surface::Init(VkInstance instance, const VkXcbSurfaceCreateInfoKHR& info) {
+    type_ = vvl::SurfaceType::Xcb;
     VkResult result = vk::CreateXcbSurfaceKHR(instance, &info, nullptr, &handle_);
     instance_ = instance;
     return result;
@@ -2539,6 +2544,7 @@ VkResult Surface::Init(VkInstance instance, const VkXcbSurfaceCreateInfoKHR& inf
 #endif
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
 VkResult Surface::Init(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR& info) {
+    type_ = vvl::SurfaceType::Wayland;
     VkResult result = vk::CreateWaylandSurfaceKHR(instance, &info, nullptr, &handle_);
     instance_ = instance;
     return result;
