@@ -651,6 +651,9 @@ TEST_F(NegativeBestPractices, SwapchainCreationTest) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
     RETURN_IF_SKIP(InitSurface());
+    if (vvl::SurfaceType::Wayland == m_surface.GetType()) {
+        GTEST_SKIP() << "No MAILBOX warning for Wayland";
+    }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     m_surface_composite_alpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;

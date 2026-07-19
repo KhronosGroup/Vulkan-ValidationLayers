@@ -26,6 +26,7 @@
 #include "containers/span.h"
 #include "containers/limits.h"
 #include "generated/vk_function_pointers.h"
+#include "state_tracker/wsi_state.h"
 #include "utils/cast_utils.h"
 #include "test_common.h"
 
@@ -1501,10 +1502,14 @@ class Surface {
     std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice physical_device) const;
     VkSurfacePresentScalingCapabilitiesKHR GetScalingCapabilities(VkPhysicalDevice physical_device,
                                                                   VkPresentModeKHR present_mode) const;
+    vvl::SurfaceType GetType() const noexcept {
+        return type_;
+    }
 
   private:
     VkInstance instance_ = VK_NULL_HANDLE;
     VkSurfaceKHR handle_ = VK_NULL_HANDLE;
+    vvl::SurfaceType type_ = vvl::SurfaceType::Unknown;
 };
 
 const VkAllocationCallbacks *DefaultAllocator();
