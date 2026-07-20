@@ -410,7 +410,7 @@
                             ],
                             "messages": [
                                 {
-                                    "key": "validate_core_msg0",
+                                    "key": "message_validate_core_0",
                                     "title": "Validation layer performance issue",
                                     "version": 1,
                                     "description": "Both 'Core validation' and 'GPU-assisted validation' are enabled. This is going to require a lot of CPU resource causing the Vulkan application to run very slowly.",
@@ -1138,7 +1138,7 @@
                             ],
                             "messages": [
                                 {
-                                    "key": "gpuav_enable_msg0",
+                                    "key": "message_gpuav_enable_0",
                                     "title": "Validation layer performance warning",
                                     "version": 1,
                                     "description": "Both 'Core validation' and 'GPU-assisted validation' are enabled. This is going to require a lot of CPU resource causing the Vulkan application to run very slowly.",
@@ -1183,16 +1183,17 @@
                                     "default": false,
                                     "messages": [
                                         {
-                                            "key": "gpu_dump_enable_msg1",
-                                            "title": "Warning: GPU Dump without info level message severity flag",
+                                            "key": "message_gpu_dump_enable_1",
+                                            "title": "Warning: GPU Dump without info/warning level message severity",
                                             "version": 1,
-                                            "description": "Enabling GPU Dump for Descriptors, with output directed to the debug callback, but 'warning' level message severity is disabled, so printf message won't be shown.",
-                                            "informative": "Are you sure you want to enable 'Dump Descriptor Heap/Buffer' and add warning' level to 'Message Severity'?",
+                                            "description": "Enabling GPU Dump for Descriptors, but both 'info' and 'warning' level message severity is disabled, so GPU Dump message won't be shown.",
+                                            "informative": "Do you want to add 'warning' level to 'Message Severity'?",
                                             "severity": "INFORMATION",
                                             "conditions": [
                                                 { "setting": { "key": "gpu_dump_descriptors", "value": true }},
                                                 { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
-                                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
+                                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" },
+                                                { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
                                             ],
                                             "actions": {
                                                 "default": "BUTTON0",
@@ -1220,16 +1221,17 @@
                                     "default": false,
                                     "messages": [
                                         {
-                                            "key": "gpu_dump_enable_msg2",
-                                            "title": "Warning: GPU Dump without info level message severity flag",
+                                            "key": "message_gpu_dump_enable_2",
+                                            "title": "Warning: GPU Dump without info/warning level message severity",
                                             "version": 1,
-                                            "description": "Enabling GPU Dump for Copy Memory Indirect, with output directed to the debug callback, but 'warning' level message severity is disabled, so printf message won't be shown.",
-                                            "informative": "Are you sure you want to enable 'Dump VK_KHR_copy_memory_indirect' and add 'warning' level to 'Message Severity'",
+                                            "description": "Enabling GPU Dump for Copy Memory Indirect, but both 'info' and 'warning' level message severity is disabled, so GPU Dump message won't be shown.",
+                                            "informative": "Do you want to add 'warning' level to 'Message Severity'?",
                                             "severity": "INFORMATION",
                                             "conditions": [
                                                 { "setting": { "key": "gpu_dump_copy_memory_indirect", "value": true }},
                                                 { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
-                                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
+                                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" },
+                                                { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
                                             ],
                                             "actions": {
                                                 "default": "BUTTON0",
@@ -1257,16 +1259,17 @@
                                     "default": false,
                                     "messages": [
                                         {
-                                            "key": "gpu_dump_enable_msg3",
-                                            "title": "Warning: GPU Dump without info level message severity flag",
+                                            "key": "message_gpu_dump_enable_3",
+                                            "title": "Warning: GPU Dump without info/warning level message severity",
                                             "version": 1,
-                                            "description": "Enabling GPU Dump for Device Generated Commands, with output directed to the debug callback, but 'warning' level message severity is disabled, so printf message won't be shown.",
-                                            "informative": "Are you sure you want to enable 'Dump VK_EXT_device_generated_commands' and add 'warning' level to 'Message Severity'?",
+                                            "description": "Enabling GPU Dump for Device Generated Commands, but both 'info' and 'warning' level message severity is disabled, so GPU Dump message won't be shown.",
+                                            "informative": "Do you want to add 'warning' level to 'Message Severity'?",
                                             "severity": "INFORMATION",
                                             "conditions": [
                                                 { "setting": { "key": "gpu_dump_device_generated_commands", "value": true }},
                                                 { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
-                                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
+                                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" },
+                                                { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
                                             ],
                                             "actions": {
                                                 "default": "BUTTON0",
@@ -1355,11 +1358,11 @@
                                     },
                                     "messages": [
                                         {
-                                            "key": "printf_enable_msg3",
+                                            "key": "message_printf_enable_3",
                                             "title": "Debug Printf without 'info' level message severity flag",
                                             "version": 1,
-                                            "description": "Enabling Debug Printf output redirection to the debug callback, but 'info' level message severity is disabled, so printf message won't be shown.",
-                                            "informative": "Are you sure you want to enable 'Redirect Printf messages to stdout' and add 'info' level to 'Message Severity'?",
+                                            "description": "Enabling Debug Printf without stdout redirection, but 'info' level message severity is disabled, so printf message won't be shown.",
+                                            "informative": "Do you want to add 'info' level to 'Message Severity'?",
                                             "severity": "INFORMATION",
                                             "conditions": [
                                                 { "setting": { "key": "printf_enable", "value": true }},
@@ -1377,7 +1380,7 @@
                                                 "BUTTON1": {
                                                     "type": "CANCEL",
                                                     "changes": [
-                                                        { "setting": { "key": "printf_to_stdout", "value": false }}
+                                                        { "setting": { "key": "printf_to_stdout", "value": true }}
                                                     ]
                                                 }
                                             }
@@ -1418,11 +1421,11 @@
                             ],
                             "messages": [
                                 {
-                                    "key": "printf_enable_msg1",
+                                    "key": "message_printf_enable_1",
                                     "title": "Warning: Debug Printf without info level message severity flag",
                                     "version": 1,
-                                    "description": "Enabling Debug Printf, with output directed to the debug callback, but info level message severity is disabled, so printf message won't be shown.",
-                                    "informative": "Are you sure you want to enable 'Debug Printf' and add 'info' level to 'Message Severity'?",
+                                    "description": "Enabling Debug Printf, but info level message severity is disabled, so printf message won't be shown.",
+                                    "informative": "Do you want to add 'info' level to 'Message Severity'?",
                                     "severity": "INFORMATION",
                                     "conditions": [
                                         { "setting": { "key": "printf_enable", "value": true }},
@@ -1438,10 +1441,7 @@
                                             ]
                                         },
                                         "BUTTON1": {
-                                            "type": "CANCEL",
-                                            "changes": [
-                                                { "setting": { "key": "gpu_dump_descriptors", "value": false }}
-                                            ]
+                                            "type": "CANCEL"
                                         }
                                     }
                                 }
@@ -1541,10 +1541,10 @@
                     ],
                     "messages": [
                         {
-                            "key": "printf_enable_msg2",
+                            "key": "message_printf_enable_2",
                             "title": "Debug Printf without 'info' level message severity flag",
                             "version": 1,
-                            "description": "Disabling info level message severity is disabled, but Debug Printf output is directed to the debug callback, so printf message won't be shown.",
+                            "description": "Disabling info level message severity is disabled, so printf message won't be shown.",
                             "informative": "Are you sure you want to remove 'info' level from 'Message Severity'?",
                             "severity": "INFORMATION",
                             "conditions": [
@@ -1566,16 +1566,17 @@
                             }
                         },
                         {
-                            "key": "gpu_dump_enable_msg1b",
-                            "title": "GPU Dump without 'warning' level message severity flag",
+                            "key": "message_gpu_dump_enable_1b",
+                            "title": "GPU Dump without info/warning level message severity",
                             "version": 1,
-                            "description": "Enabling GPU Dump for Descriptors, with output directed to the debug callback, but 'warning' level message severity is disabled, so printf message won't be shown.",
-                            "informative": "Are you sure you want to remove 'warning' level to 'Message Severity'?",
+                            "description": "Enabling GPU Dump for Descriptors, but both 'info' and 'warning' level message severity is disabled, so GPU Dump message won't be shown.",
+                            "informative": "Are you sure you want to remove 'info' and 'warning' level to 'Message Severity'?",
                             "severity": "INFORMATION",
                             "conditions": [
                                 { "setting": { "key": "gpu_dump_descriptors", "value": true }},
                                 { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
-                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
+                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" },
+                                { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
                             ],
                             "actions": {
                                 "default": "BUTTON0",
@@ -1593,16 +1594,17 @@
                             }
                         },
                         {
-                            "key": "gpu_dump_enable_msg2b",
-                            "title": "GPU Dump 'warning' info level message severity flag",
+                            "key": "message_gpu_dump_enable_2b",
+                            "title": "GPU Dump without info/warning level message severity",
                             "version": 1,
-                            "description": "Enabling GPU Dump for Copy Memory Indirect, with output directed to the debug callback, but 'warning' level message severity is disabled, so printf message won't be shown.",
-                            "informative": "Are you sure you want to remove 'warning' level to 'Message Severity'?",
+                            "description": "Enabling GPU Dump for Copy Memory Indirect, but both 'info' and 'warning' level message severity is disabled, so GPU Dump message won't be shown.",
+                            "informative": "Are you sure you want to remove 'info' and 'warning' level to 'Message Severity'?",
                             "severity": "INFORMATION",
                             "conditions": [
                                 { "setting": { "key": "gpu_dump_copy_memory_indirect", "value": true }},
                                 { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
-                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
+                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" },
+                                { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
                             ],
                             "actions": {
                                 "default": "BUTTON0",
@@ -1620,16 +1622,17 @@
                             }
                         },
                         {
-                            "key": "gpu_dump_enable_msg3",
-                            "title": "GPU Dump without 'warning' level message severity flag",
+                            "key": "message_gpu_dump_enable_3b",
+                            "title": "GPU Dump without info/warning level message severity",
                             "version": 1,
-                            "description": "Enabling GPU Dump for Device Generated Commands, with output directed to the debug callback, but 'warning' level message severity is disabled, so printf message won't be shown.",
-                            "informative": "Are you sure you want to remove 'warning' level to 'Message Severity'?",
+                            "description": "Enabling GPU Dump for Device Generated Commands, but both 'info' and 'warning' level message severity is disabled, so GPU Dump message won't be shown.",
+                            "informative": "Are you sure you want to remove 'info' and 'warning' level to 'Message Severity'?",
                             "severity": "INFORMATION",
                             "conditions": [
                                 { "setting": { "key": "gpu_dump_device_generated_commands", "value": true }},
                                 { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
-                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
+                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" },
+                                { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
                             ],
                             "actions": {
                                 "default": "BUTTON0",
