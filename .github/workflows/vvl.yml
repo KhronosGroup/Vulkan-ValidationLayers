@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: '0'
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.10'
       - name: install python packages
@@ -227,7 +227,7 @@ jobs:
     if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.10'
       - uses: hendrikmuhs/ccache-action@v1.2
@@ -255,7 +255,7 @@ jobs:
         arch: [ amd64 ]
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.10'
       - uses: ilammy/msvc-dev-cmd@v1
@@ -291,7 +291,7 @@ jobs:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.10'
       - uses: ilammy/msvc-dev-cmd@v1
@@ -405,7 +405,7 @@ jobs:
     if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.10'
       - name: Setup ccache
@@ -444,7 +444,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: mingw-ccache
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.10'
       - run: |
