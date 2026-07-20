@@ -191,8 +191,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenShaderRecordDescriptorHeap) {
     const VkDeviceSize as_descriptor_size =
         vk::GetPhysicalDeviceDescriptorSizeEXT(m_device->Physical(), VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = vku::InitStructHelper();
-    mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT;
     mapping.sourceData.shaderRecordIndex = {};
     mapping.sourceData.shaderRecordIndex.heapOffset = (uint32_t)as_heap_offset;
@@ -437,8 +436,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShaderDesc
     const VkDeviceSize as_descriptor_size =
         vk::GetPhysicalDeviceDescriptorSizeEXT(m_device->Physical(), VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = vku::InitStructHelper();
-    mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT;
     mapping.sourceData.shaderRecordIndex = {};
     mapping.sourceData.shaderRecordIndex.heapOffset = (uint32_t)buffer_heap_offset;
@@ -592,8 +590,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShaderDesc
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
-    VkDescriptorSetAndBindingMappingEXT mapping = vku::InitStructHelper();
-    mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT;
     mapping.sourceData.shaderRecordDataOffset = 0;
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -747,8 +744,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShaderDesc
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
-    VkDescriptorSetAndBindingMappingEXT mapping = vku::InitStructHelper();
-    mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT;
     mapping.sourceData.shaderRecordAddressOffset = 0;
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
