@@ -2118,6 +2118,85 @@ TEST_F(NegativeSyncVal, CopyVsShaderDescriptorAccess) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeSyncVal, ClearStencilThenSampleWithDrawMultiIndexed) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12720");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::multiDraw);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
+    vkt::Image depth_stencil_image(*m_device, 64, 64, depth_stencil_format,
+                                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView attachment_view = depth_stencil_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView sampled_stencil_view = depth_stencil_image.CreateView(VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    const char* fs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform usampler2D sampled_stencil;
+        void main() {
+            if (texture(sampled_stencil, vec2(0.0)).r == 0u) {
+                discard;
+            }
+        }
+    )glsl";
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
+    pipe.cb_ci_.attachmentCount = 0;
+    pipe.CreateGraphicsPipeline();
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, sampled_stencil_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                   VK_IMAGE_LAYOUT_GENERAL);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    VkRenderingAttachmentInfo depth_stencil_attachment = vku::InitStructHelper();
+    depth_stencil_attachment.imageView = attachment_view;
+    depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    depth_stencil_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depth_stencil_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo depth_stencil_rendering_info = vku::InitStructHelper();
+    depth_stencil_rendering_info.renderArea.extent = {64, 64};
+    depth_stencil_rendering_info.layerCount = 1;
+    depth_stencil_rendering_info.pDepthAttachment = &depth_stencil_attachment;
+    depth_stencil_rendering_info.pStencilAttachment = &depth_stencil_attachment;
+
+    VkRenderingInfo sampled_rendering_info = vku::InitStructHelper();
+    sampled_rendering_info.renderArea.extent = {64, 64};
+    sampled_rendering_info.layerCount = 1;
+
+    VkClearAttachment clear_attachment = {};
+    clear_attachment.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    clear_attachment.clearValue.depthStencil = {0.0f, 0};
+    const VkClearRect clear_rect = {{{0, 0}, {64, 64}}, 0, 1};
+
+    vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint16_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    const VkMultiDrawIndexedInfoEXT draw_info = {0, 3, 0};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(depth_stencil_rendering_info);
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_command_buffer.EndRendering();
+
+    // Missing dependency from the depth/stencil attachment write to the fragment shader sampled read.
+    m_command_buffer.BeginRendering(sampled_rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer, 1, &draw_info, 1, 0, sizeof(draw_info), nullptr);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeSyncVal, VertexBufferHazard) {
     TEST_DESCRIPTION("Hazard when vkCmdDraw accesses vertex buffer");
     RETURN_IF_SKIP(InitSyncVal());

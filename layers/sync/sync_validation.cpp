@@ -1599,6 +1599,47 @@ void SyncValidator::PostCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuff
     RecordCountBuffer(cb_access_context, tag, countBuffer, countBufferOffset);
 }
 
+bool SyncValidator::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                                          const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
+                                                          uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset,
+                                                          const ErrorObject& error_obj) const {
+    bool skip = false;
+    if (!pIndexInfo) {
+        return skip;
+    }
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
+
+    skip |= cb_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
+    skip |= cb_context.ValidateDrawAttachment(error_obj.location);
+    const auto ptr = reinterpret_cast<const uint8_t*>(pIndexInfo);
+    for (uint32_t i = 0; i < drawCount; i++) {
+        const auto info_ptr = reinterpret_cast<const VkMultiDrawIndexedInfoEXT*>(ptr + i * stride);
+        skip |= cb_context.ValidateDrawVertexIndex(info_ptr->indexCount, info_ptr->firstIndex, error_obj.location);
+    }
+    return skip;
+}
+
+void SyncValidator::PostCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                                         const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
+                                                         uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset,
+                                                         const RecordObject& record_obj) {
+    if (!pIndexInfo) {
+        return;
+    }
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
+    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
+
+    cb_context.RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
+    cb_context.RecordDrawAttachment(tag);
+    const auto ptr = reinterpret_cast<const uint8_t*>(pIndexInfo);
+    for (uint32_t i = 0; i < drawCount; i++) {
+        const auto info_ptr = reinterpret_cast<const VkMultiDrawIndexedInfoEXT*>(ptr + i * stride);
+        cb_context.RecordDrawVertexIndex(info_ptr->indexCount, info_ptr->firstIndex, tag);
+    }
+}
+
 bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                       const VkClearColorValue* pColor, uint32_t rangeCount,
                                                       const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const {
