@@ -2286,16 +2286,19 @@ bool CoreChecks::ValidateActionStatePushConstantDescriptorHeap(const vvl::Comman
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11376),
                              cb_state.GetObjectList(bind_point), loc,
                              "shader %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
-                             "), but vkCmdPushDataEXT was never called for range [%" PRIu32 ", %" PRIu32 ").",
+                             "), but vkCmdPushDataEXT was never called for range [%" PRIu32 ", %" PRIu32
+                             ").\nIf the variables are not used in shader, and just declared, this is a known limitation of VVL "
+                             "being worked on https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12747",
                              stage_state.entrypoint->Describe().c_str(), pc_variable.offset, pc_variable.offset + pc_variable.size,
                              unset_start, unset_end);
         }
     } else {
-        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11376), cb_state.GetObjectList(bind_point),
-                         loc,
-                         "shader %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
-                         "), while there was no call to vkCmdPushDataEXT.",
-                         stage_state.entrypoint->Describe().c_str(), pc_variable.offset, pc_variable.offset + pc_variable.size);
+        skip |= LogError(
+            CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11376), cb_state.GetObjectList(bind_point), loc,
+            "shader %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
+            "), while there was no call to vkCmdPushDataEXT.\nIf the variables are not used in shader, and just declared, this is "
+            "a known limitation of VVL being worked on https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12747",
+            stage_state.entrypoint->Describe().c_str(), pc_variable.offset, pc_variable.offset + pc_variable.size);
     }
 
     return skip;

@@ -1992,6 +1992,290 @@ TEST_F(PositiveDescriptorHeap, CmdPushData) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveDescriptorHeap, PushDataUnusedStatic) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6753");
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_scalar_block_layout : enable
+
+        layout(push_constant, scalar) uniform PC {
+            uint a;
+            uint b;
+            uint c;
+            uint d;
+        };
+        layout(set = 0, binding = 0) buffer A { uint data; };
+        void main() {
+            data = b + c;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    uint8_t data[8];
+    m_command_buffer.PushData(4, 8, data);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    // TODO - Remove this false positive
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12747
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDispatch-None-11376");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDescriptorHeap, PushDataUnusedStaticIndex) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6753");
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_scalar_block_layout : enable
+
+        layout(push_constant, scalar) uniform PC {
+            uint a[4];
+            uint b[4];
+            uint c[4];
+            uint d[4];
+        };
+        layout(set = 0, binding = 0) buffer A { uint data; };
+        void main() {
+            uint x = b[0];
+            data = c[x];
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    uint8_t data[32];
+    m_command_buffer.PushData(16, 32, data);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    // TODO - Remove this false positive
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12747
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDispatch-None-11376");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDescriptorHeap, PushDataUnusedDynamic) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6753");
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_scalar_block_layout : enable
+
+        layout(push_constant, scalar) uniform PC {
+            uint a;
+            uint b[4];
+        };
+        layout(set = 0, binding = 0) buffer A { uint data; };
+        void main() {
+            data = b[a];
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    uint8_t data[8];
+    m_command_buffer.PushData(0, 8, data);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    // TODO - Remove this false positive
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12747
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDispatch-None-11376");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDescriptorHeap, PushDataUnusedHole) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6753");
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_scalar_block_layout : enable
+
+        layout(push_constant, scalar) uniform PC {
+            uint a;
+            layout(offset = 32) uint b;
+        };
+        layout(set = 0, binding = 0) buffer A { uint data; };
+        void main() {
+            data = a + b;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    uint8_t data = 0;
+    m_command_buffer.PushData(0, 4, &data);
+    m_command_buffer.PushData(32, 4, &data);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    // TODO - Remove this false positive
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12747
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDispatch-None-11376");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDescriptorHeap, PushDataUnusedStructStaticIndex) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6753");
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_scalar_block_layout : enable
+
+        struct Foo {
+            uint  a;
+            uvec4 b;
+            uint  c;
+        };
+
+        layout(push_constant, scalar) uniform PC {
+            Foo a[4]; // array stride 24
+        };
+        layout(set = 0, binding = 0) buffer A { uint data; };
+        void main() {
+            data = a[0].a + a[1].a;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+
+    m_command_buffer.Begin();
+    uint8_t data = 0;
+    m_command_buffer.PushData(0, 4, &data);
+    m_command_buffer.PushData(24, 4, &data);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    // TODO - Remove this false positive
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12747
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDispatch-None-11376");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDescriptorHeap, PushDataUnusedChainedAccessChains) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6753");
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+               OpCapability Shader
+          %2 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %_ %__0
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %A Block
+               OpMemberDecorate %A 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+               OpDecorate %_arr_uint_uint_4 ArrayStride 4
+               OpDecorate %PC Block
+               OpMemberDecorate %PC 0 Offset 0
+               OpMemberDecorate %PC 1 Offset 4
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+          %A = OpTypeStruct %uint
+%_ptr_StorageBuffer_A = OpTypePointer StorageBuffer %A
+          %_ = OpVariable %_ptr_StorageBuffer_A StorageBuffer
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+     %uint_4 = OpConstant %uint 4
+%_arr_uint_uint_4 = OpTypeArray %uint %uint_4
+         %PC = OpTypeStruct %uint %_arr_uint_uint_4
+%_ptr_PushConstant_PC = OpTypePointer PushConstant %PC
+        %__0 = OpVariable %_ptr_PushConstant_PC PushConstant
+      %int_1 = OpConstant %int 1
+%_ptr_PushConstant_arr = OpTypePointer PushConstant %_arr_uint_uint_4
+%_ptr_PushConstant_uint = OpTypePointer PushConstant %uint
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+  %array_ptr = OpAccessChain %_ptr_PushConstant_arr %__0 %int_1
+         %20 = OpAccessChain %_ptr_PushConstant_uint %array_ptr %int_0
+         %21 = OpLoad %uint %20
+         %22 = OpAccessChain %_ptr_PushConstant_uint %array_ptr %int_1
+         %23 = OpLoad %uint %22
+         %24 = OpIAdd %uint %21 %23
+         %26 = OpAccessChain %_ptr_StorageBuffer_uint %_ %int_0
+               OpStore %26 %24
+               OpReturn
+               OpFunctionEnd
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_ASM);
+
+    m_command_buffer.Begin();
+    uint8_t data = 0;
+    m_command_buffer.PushData(0, 4, &data);
+    m_command_buffer.PushData(24, 4, &data);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    // TODO - Remove this false positive
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12747
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDispatch-None-11376");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveDescriptorHeap, DescriptorBufferInvalidating) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7504#note_616506");
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);

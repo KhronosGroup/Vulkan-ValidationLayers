@@ -1820,3 +1820,105 @@ TEST_F(PositiveDescriptorHeapUntyped, SlangBasicBuffer) {
         ASSERT_EQ(data[0], 43);
     }
 }
+
+TEST_F(PositiveDescriptorHeapUntyped, PushDataUnused) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6753");
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    vkt::Buffer ssbo_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    // In case someone is crazy enough this looks like
+    // layout(push_constant, scalar) uniform PC {
+    //     uint a;
+    //     uint b[4];
+    // };
+    // layout(set = 0, binding = 0) buffer A { uint data; };
+    // void main() {
+    //     uint c[5] = cast<pc>;
+    //     data = c[0] + c[1]; // same as (a + b[0])
+    // }
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %ssbo %pc_var
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %A Block
+               OpMemberDecorate %A 0 Offset 0
+               OpDecorate %ssbo Binding 0
+               OpDecorate %ssbo DescriptorSet 0
+               OpDecorate %array_uint_4 ArrayStride 4
+               OpDecorate %array_uint_5 ArrayStride 4
+               OpDecorate %PC Block
+               OpMemberDecorate %PC 0 Offset 0
+               OpMemberDecorate %PC 1 Offset 4
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+     %uint_4 = OpConstant %uint 4
+     %uint_5 = OpConstant %uint 5
+
+%array_uint_4 = OpTypeArray %uint %uint_4
+;; Type-pun array representation: uint c[5]
+%array_uint_5 = OpTypeArray %uint %uint_5
+
+          %A = OpTypeStruct %uint
+   %ssbo_ptr = OpTypePointer StorageBuffer %A
+       %ssbo = OpVariable %ssbo_ptr StorageBuffer
+         %PC = OpTypeStruct %uint %array_uint_4
+         %_ptr_PushConstant_PC = OpTypePointer PushConstant %PC
+         %pc_var = OpVariable %_ptr_PushConstant_PC PushConstant
+%untyped_pc = OpTypeUntypedPointerKHR PushConstant
+%storage_ptr_uint = OpTypePointer StorageBuffer %uint
+
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         ; Access c[0] -> Offset 0 ('a')
+         %19 = OpUntypedAccessChainKHR %untyped_pc %array_uint_5 %pc_var %int_0
+         %20 = OpLoad %uint %19
+
+         ; Access c[1] -> Offset 4 ('b[0]')
+         %22 = OpUntypedAccessChainKHR %untyped_pc %array_uint_5 %pc_var %int_1
+         %23 = OpLoad %uint %22
+
+         %24 = OpIAdd %uint %20 %23
+         %26 = OpAccessChain %storage_ptr_uint %ssbo %int_0
+               OpStore %26 %24
+               OpReturn
+               OpFunctionEnd
+    )";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_ASM);
+
+    m_command_buffer.Begin();
+    uint32_t a_value = 3;
+    uint32_t b_value = 7;
+    m_command_buffer.PushData(0, 4, &a_value);
+    m_command_buffer.PushData(4, 4, &b_value);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    // TODO - Remove this false positive
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12747
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDispatch-None-11376");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        uint32_t* data = static_cast<uint32_t*>(ssbo_buffer.Memory().Map());
+        ASSERT_EQ(data[0], 10);
+    }
+}
