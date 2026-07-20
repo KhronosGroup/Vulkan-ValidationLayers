@@ -4663,11 +4663,7 @@ TEST_F(NegativeDescriptorHeap, PushDataRange) {
 
     vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
-    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-    mapping.sourceData.constantOffset.heapOffset = 0;
-    mapping.sourceData.constantOffset.heapArrayStride = 0;
-
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -4760,8 +4756,7 @@ TEST_F(NegativeDescriptorHeap, PushDataRangeNonDword) {
     AddRequiredFeature(vkt::Feature::storagePushConstant8);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     CreateResourceHeap(heap_props.bufferDescriptorSize);
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
-    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -4816,8 +4811,7 @@ TEST_F(NegativeDescriptorHeap, MaxPushDataSizeStatic) {
         GTEST_SKIP() << "maxPushDataSize is not 256";
     }
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
-    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -4912,10 +4906,7 @@ TEST_F(NegativeDescriptorHeap, ArrayLengthOnMappingSourceAddress) {
     TEST_DESCRIPTION("OpArrayLength instruction on incompatible mapping source type");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
-    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
-    mapping.sourceData.pushAddressOffset = 0u;
-
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;

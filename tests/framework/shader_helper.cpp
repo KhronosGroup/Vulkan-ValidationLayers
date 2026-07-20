@@ -602,3 +602,15 @@ VkDescriptorSetAndBindingMappingEXT MakeSetAndBindingMapping(uint32_t set, uint3
     mapping.resourceMask = mask;
     return mapping;
 }
+
+VkDescriptorSetAndBindingMappingEXT MakeZeroSetAndBindingMapping(uint32_t set, uint32_t binding,
+                                                                 VkDescriptorMappingSourceEXT source) {
+    VkDescriptorSetAndBindingMappingEXT mapping = vku::InitStructHelper();
+    mapping.descriptorSet = set;
+    mapping.firstBinding = binding;
+    mapping.bindingCount = 1;
+    mapping.resourceMask = VK_SPIRV_RESOURCE_TYPE_ALL_EXT;
+    mapping.source = source;
+    mapping.sourceData = {};
+    return mapping;
+}
