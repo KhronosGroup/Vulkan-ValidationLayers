@@ -566,9 +566,13 @@ void OpticalFlowHelper::CreateOpticalFlow() {
     optical_flow_ci_.width = params_.width;
     optical_flow_ci_.imageFormat = GetAnyOpticalFlowFormat(VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_INPUT_BIT_ARM);
     optical_flow_ci_.flowVectorFormat = GetAnyOpticalFlowFormat(VK_DATA_GRAPH_OPTICAL_FLOW_IMAGE_USAGE_OUTPUT_BIT_ARM);
-    optical_flow_ci_.outputGridSize = params_.outputGridSize ? params_.outputGridSize
-        : static_cast<VkDataGraphOpticalFlowGridSizeFlagsARM>(GetAnyOpticalFlowGridSize(optical_flow_properties_));
-    optical_flow_ci_.hintGridSize = params_.hintGridSize ? params_.hintGridSize : optical_flow_ci_.outputGridSize;
+    optical_flow_ci_.outputGridSize =
+        params_.outputGridSize != VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_FLAG_BITS_MAX_ENUM_ARM
+            ? params_.outputGridSize
+            : static_cast<VkDataGraphOpticalFlowGridSizeFlagsARM>(GetAnyOpticalFlowGridSize(optical_flow_properties_));
+    optical_flow_ci_.hintGridSize = params_.hintGridSize != VK_DATA_GRAPH_OPTICAL_FLOW_GRID_SIZE_FLAG_BITS_MAX_ENUM_ARM
+                                        ? params_.hintGridSize
+                                        : optical_flow_ci_.outputGridSize;
     if (optical_flow_properties_.hintSupported) {
         optical_flow_ci_.flags |= VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM;
     }
