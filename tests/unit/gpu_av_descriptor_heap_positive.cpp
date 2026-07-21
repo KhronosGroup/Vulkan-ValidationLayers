@@ -1826,6 +1826,129 @@ TEST_F(PositiveGpuAVDescriptorHeap, CombinedSampler) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
+TEST_F(PositiveGpuAVDescriptorHeap, UntypedSampler) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}, false));
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.imageDescriptorSize);
+    desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize * 16);
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    desc_heap.WriteImageDescriptor(image);
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    VkHostAddressRangeEXT sampler_host_data{desc_heap.sampler_heap_data_ + (heap_props.samplerDescriptorSize * 15),
+                                            (size_t)heap_props.samplerDescriptorSize};
+    vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_ci, &sampler_host_data);
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_descriptor_heap : require
+        layout(descriptor_heap) uniform texture2D heapTextures[];
+        layout(descriptor_heap) uniform sampler heapSamplers[];
+        void main() {
+            vec4 data = texture(sampler2D(heapTextures[0], heapSamplers[15]), vec2(0.5f));
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr);
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    desc_heap.BindSamplerHeap(m_command_buffer);
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVDescriptorHeap, UntypedSamplerOffset) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    AddRequiredFeature(vkt::Feature::computeDerivativeGroupQuads);
+    const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}, false));
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.imageDescriptorSize * 8);
+    desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    desc_heap.WriteImageDescriptorAtOffset(image, heap_props.imageDescriptorSize * 7);
+    desc_heap.WriteSamplerDescriptor();
+    // heap {
+    //     layout(offset = image_size * 7) texture2D y;
+    //     layout(offset = 0) sampler s;
+    // } heap_layout;
+    // void main() {
+    //     vec4 data = texture(sampler2D(heap_layout.y, heap_layout.s), vec2(0.5f));
+    // }
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability ComputeDerivativeGroupQuadsKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpExtension "SPV_KHR_compute_shader_derivatives"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap %sampler_heap
+               OpExecutionMode %main LocalSize 2 2 1
+               OpExecutionMode %main DerivativeGroupQuadsKHR
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %sampler_heap BuiltIn SamplerHeapEXT
+               OpDecorate %heap_layout Block
+               OpMemberDecorateIdEXT %heap_layout 0 OffsetIdEXT %img_size7
+               OpMemberDecorate %heap_layout 1 Offset 0
+       %void = OpTypeVoid
+    %void_fn = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_7 = OpConstant %int 7
+      %float = OpTypeFloat 32
+    %v2float = OpTypeVector %float 2
+    %v4float = OpTypeVector %float 4
+  %float_0_5 = OpConstant %float 0.5
+   %uv2_0_5 = OpConstantComposite %v2float %float_0_5 %float_0_5
+
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+%sampler_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+ %type_image = OpTypeImage %float 2D 0 0 0 1 Unknown
+%type_sampler = OpTypeSampler
+%type_sampled_image = OpTypeSampledImage %type_image
+   %img_size = OpConstantSizeOfEXT %int %type_image
+  %img_size7 = OpSpecConstantOp %int IMul %img_size %int_7
+%heap_layout = OpTypeStruct %type_image %type_sampler
+
+       %main = OpFunction %void None %void_fn
+          %5 = OpLabel
+ %heap_ptr_y = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap %int_0
+      %val_y = OpLoad %type_image %heap_ptr_y
+ %heap_ptr_s = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %sampler_heap %int_1
+      %val_s = OpLoad %type_sampler %heap_ptr_s
+%sampled_img = OpSampledImage %type_sampled_image %val_y %val_s
+       %data = OpImageSampleImplicitLod %v4float %sampled_img %uv2_0_5
+               OpReturn
+               OpFunctionEnd
+    )";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    desc_heap.BindSamplerHeap(m_command_buffer);
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveGpuAVDescriptorHeap, ComputeAndGraphicsShareDescriptor) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);

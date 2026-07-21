@@ -982,6 +982,25 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
 
             const uint32_t index_0_operand = base_operand + 1;
             path.sampler_descriptor_index_id = next_access_chain->Operand(index_0_operand);
+
+            if (next_access_chain->IsUntypedAccessChain()) {
+                const uint32_t pointer_type_id = next_access_chain->Operand(0);
+                path.sampler_pointer_type = FindTypeById(pointer_type_id);
+            } else {
+                path.sampler_pointer_type = path.sampler_variable->PointerType(*this);
+            }
+            assert(path.sampler_pointer_type);
+        }
+
+        // Hack for Offset in Heaps until get better understanding
+        if (path.sampler_pointer_type && !path.sampler_pointer_type->IsArray()) {
+            if (path.sampler_variable->interface_.IsHeap() && path.sampler_pointer_type->spv_type_ == SpvType::kStruct) {
+                if (next_access_chain && next_access_chain->IsUntypedAccessChain() && next_access_chain->Length() > 5) {
+                    const Constant* struct_member_index_constant = FindConstantById(next_access_chain->Word(5));
+                    assert(struct_member_index_constant);
+                    path.sampler_heap_offset_member_index = struct_member_index_constant->GetValueUint32();
+                }
+            }
         }
     }
 

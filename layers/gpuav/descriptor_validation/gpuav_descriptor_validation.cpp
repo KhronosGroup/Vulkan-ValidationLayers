@@ -68,7 +68,7 @@ void UpdateBoundDescriptorHeap(Validator& gpuav, CommandBufferSubState& cb_state
         return;
     }
     DescriptorHeapBindings::BindingCommand bound_heap_snapshot{};
-    desc_heap_bindings->on_update_bound_descriptor_heap(gpuav, cb_state, bound_heap_snapshot, is_sampler);
+    desc_heap_bindings->on_update_bound_descriptor_heap(gpuav, cb_state, bound_heap_snapshot, is_sampler, false);
     desc_heap_bindings->bound_heap_snapshots.emplace_back(std::move(bound_heap_snapshot));
 }
 

@@ -61,7 +61,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
     DescriptorHeapBindings& desc_heap_bindings = cb.shared_resources_cache.GetOrCreate<DescriptorHeapBindings>();
 
     desc_heap_bindings.on_update_bound_descriptor_heap =
-        [](Validator& gpuav, CommandBufferSubState& cb, DescriptorHeapBindings::BindingCommand& desc_binding_cmd, bool is_sampler) {
+        [](Validator& gpuav, CommandBufferSubState& cb, DescriptorHeapBindings::BindingCommand& desc_binding_cmd, bool is_sampler,
+           bool is_inheritance) {
             DescriptorChecksHeapCbState& dc_cb_state = cb.shared_resources_cache.GetOrCreate<DescriptorChecksHeapCbState>();
 
             auto& cb_heap = cb.base.descriptor_heap;
@@ -70,10 +71,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
 
             // We only bind one at a time via vkCmdBindResourceHeapEXT/vkCmdBindSamplerHeapEXT
             // but might be binding both with secondary command buffer inheritance
-            const bool has_inheritance =
-                cb.base.descriptor_heap.is_sampler_inherited || cb.base.descriptor_heap.is_resource_inherited;
-            const bool update_sampler = (!has_inheritance && is_sampler) || cb.base.descriptor_heap.is_sampler_inherited;
-            const bool update_resource = (!has_inheritance && !is_sampler) || cb.base.descriptor_heap.is_resource_inherited;
+            const bool update_sampler = (!is_inheritance && is_sampler) || cb.base.descriptor_heap.is_sampler_inherited;
+            const bool update_resource = (!is_inheritance && !is_sampler) || cb.base.descriptor_heap.is_resource_inherited;
 
             if (update_sampler) {
                 dc_cb_state.last_bound_heap_info_sampler =
@@ -112,7 +111,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
     // RegisterDescriptorChecksHeapValidation is called.
     if (cb.base.descriptor_heap.is_resource_inherited || cb.base.descriptor_heap.is_sampler_inherited) {
         DescriptorHeapBindings::BindingCommand bound_heap_snapshot{};
-        desc_heap_bindings.on_update_bound_descriptor_heap(gpuav, cb, bound_heap_snapshot, false);
+        desc_heap_bindings.on_update_bound_descriptor_heap(gpuav, cb, bound_heap_snapshot, false, true);
         desc_heap_bindings.bound_heap_snapshots.emplace_back(std::move(bound_heap_snapshot));
     }
 
