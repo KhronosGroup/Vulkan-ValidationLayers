@@ -231,7 +231,7 @@ class DescriptorHeapBindings {
 
     // Callback system to route the state tracking into the single file doing all the logic
     using OnDescriptorHeapBindingFunc =
-        stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb, BindingCommand&, bool)>;
+        stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb, BindingCommand&, bool, bool)>;
     OnDescriptorHeapBindingFunc on_update_bound_descriptor_heap;
 
     // We capture the PushData each action command so the error message can reference it correctly

@@ -192,6 +192,7 @@ struct AccessPath {
 
     // Optional variable of seperate sampler descriptor (still null if combinedImageSampler)
     const Variable* sampler_variable = nullptr;
+    const Type* sampler_pointer_type = nullptr;
     bool is_combined_image_sampler = false;
     bool HasSampler() const { return sampler_variable != nullptr || is_combined_image_sampler; }
 
@@ -206,6 +207,7 @@ struct AccessPath {
 
     // TODO - Need to handle OffsetIdEXT correctly, this is a dumb hack
     uint32_t heap_offset_member_index = 0;
+    uint32_t sampler_heap_offset_member_index = 0;
 
     VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
 

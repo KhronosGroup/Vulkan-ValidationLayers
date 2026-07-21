@@ -32,6 +32,14 @@ class DescriptorHeapPass : public Pass {
     void PrintDebugInfo() const final;
 
   private:
+    struct UntypedLayout {
+        // If zero, means it is implicitly zero
+        uint32_t offset_id = 0;
+        uint32_t array_stride_id = 0;
+        // Temp value until we properly support MultidimensionalArray
+        bool is_multidimensional_array = false;
+    };
+
     struct InstructionMeta {
         const Instruction* target_instruction = nullptr;
 
@@ -46,9 +54,8 @@ class DescriptorHeapPass : public Pass {
         // Null if untyped pointers
         const VkDescriptorSetAndBindingMappingEXT* mapping_ptr = nullptr;
         const VkDescriptorSetAndBindingMappingEXT* mapping_ptr_sampler = nullptr;
-        // If zero, means it is implicitly zero
-        uint32_t untyped_heap_offset_id = 0;
-        uint32_t untyped_array_stride_id = 0;
+        UntypedLayout untyped_layout_resource;
+        UntypedLayout untyped_layout_sampler;
         uint32_t Hash(const uint32_t descriptor_index, VkDescriptorType vk_type) const;
 
         bool instrument_seperate_sampler = false;
@@ -66,6 +73,8 @@ class DescriptorHeapPass : public Pass {
                                     bool is_sampler) const;
     uint32_t GetMapping(const AccessPath& access_path, bool is_sampler) const;
     uint32_t GetMinBufferAlignment(const InstructionMeta& meta) const;
+
+    UntypedLayout GetUntypedLayout(const Type& pointer_type, uint32_t heap_offset_member_index);
 
     // < original ID, new CopyObject ID >
     vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;

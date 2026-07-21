@@ -241,14 +241,18 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
 
     if (!mapping) {
         assert(descriptor_variable.interface_.IsHeap());  // Untyped
+        const DescriptorHeapPass::UntypedLayout& untyped_layout =
+            is_seperate_sampler ? meta.untyped_layout_sampler : meta.untyped_layout_resource;
+        // We need to do the CastToUint32 here otherwise if there are non-uint32 we won't hash duplicates as each access would
+        // become a different ID from the result of CastToUint32
         uint32_t heap_offset_id = type_manager_.GetConstantZeroUint32().Id();
-        if (meta.untyped_heap_offset_id != 0) {
-            heap_offset_id = CastToUint32(meta.untyped_heap_offset_id, block, inst_it);  // might be int32
+        if (untyped_layout.offset_id != 0) {
+            heap_offset_id = CastToUint32(untyped_layout.offset_id, block, inst_it);  // might be int32
         }
 
         uint32_t array_stride_id = type_manager_.GetConstantZeroUint32().Id();
-        if (meta.untyped_array_stride_id != 0) {
-            array_stride_id = CastToUint32(meta.untyped_array_stride_id, block, inst_it);  // might be int32
+        if (untyped_layout.array_stride_id != 0) {
+            array_stride_id = CastToUint32(untyped_layout.array_stride_id, block, inst_it);  // might be int32
         }
 
         const uint32_t function_def = GetLinkFunctionId(UNTYPED);
@@ -551,6 +555,51 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
     return function_result;
 }
 
+// TODO - this should just be part of AccessPath
+DescriptorHeapPass::UntypedLayout DescriptorHeapPass::GetUntypedLayout(const Type& pointer_type,
+                                                                       uint32_t heap_offset_member_index) {
+    DescriptorHeapPass::UntypedLayout untyped_layout;
+    const Type* descriptor_array = nullptr;
+    if (pointer_type.spv_type_ == SpvType::kStruct) {
+        const Instruction* offset_decoration =
+            GetMemberDecoration(pointer_type.Id(), heap_offset_member_index, spv::DecorationOffsetIdEXT);
+        if (offset_decoration) {
+            untyped_layout.offset_id = offset_decoration->Word(4);
+        } else {
+            // user has hardcoded offsets, if still can't find, then we can assume an implicit zero value
+            offset_decoration = GetMemberDecoration(pointer_type.Id(), heap_offset_member_index, spv::DecorationOffset);
+            if (offset_decoration) {
+                untyped_layout.offset_id = type_manager_.CreateConstantUInt32(offset_decoration->Word(4)).Id();
+            }
+        }
+
+        descriptor_array = type_manager_.FindTypeById(pointer_type.inst_.Operand(heap_offset_member_index));
+    } else {
+        descriptor_array = &pointer_type;
+    }
+
+    if (descriptor_array->IsArray()) {
+        const Type* element_type = type_manager_.FindTypeById(descriptor_array->inst_.Word(2));
+        if (element_type->IsArray()) {
+            // TODO - Handle MultidimensionalArray (GPU Dump has support for reference)
+            untyped_layout.is_multidimensional_array = true;
+            return untyped_layout;
+        }
+        const Instruction* array_stride_decoration = GetDecoration(descriptor_array->Id(), spv::DecorationArrayStrideIdEXT);
+        if (array_stride_decoration) {
+            const Constant* array_stride = type_manager_.FindConstantById(array_stride_decoration->Word(3));
+            untyped_layout.array_stride_id = array_stride->Id();
+        } else {
+            // user has hardcoded array stride
+            array_stride_decoration = GetDecoration(descriptor_array->Id(), spv::DecorationArrayStride);
+            if (array_stride_decoration) {
+                untyped_layout.array_stride_id = type_manager_.CreateConstantUInt32(array_stride_decoration->Word(3)).Id();
+            }
+        }
+    }
+    return untyped_layout;
+}
+
 bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
     meta.access_path = type_manager_.BuildAccessPath(function, inst);
     if (!meta.access_path.IsValid() || !meta.access_path.variable->IsDescriptor()) {
@@ -593,45 +642,15 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
     meta.instrument_seperate_sampler = meta.access_path.HasSampler() && !has_embedded_sampler;
 
     if (meta.mapping_index_resource == glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
-        const Type* descriptor_array = nullptr;
-        if (meta.access_path.pointer_type->spv_type_ == SpvType::kStruct) {
-            const Instruction* offset_decoration = GetMemberDecoration(
-                meta.access_path.pointer_type->Id(), meta.access_path.heap_offset_member_index, spv::DecorationOffsetIdEXT);
-            if (offset_decoration) {
-                meta.untyped_heap_offset_id = offset_decoration->Word(4);
-            } else {
-                // user has hardcoded offsets, if still can't find, then we can assume an implicit zero value
-                offset_decoration = GetMemberDecoration(meta.access_path.pointer_type->Id(),
-                                                        meta.access_path.heap_offset_member_index, spv::DecorationOffset);
-                if (offset_decoration) {
-                    meta.untyped_heap_offset_id = type_manager_.CreateConstantUInt32(offset_decoration->Word(4)).Id();
-                }
-            }
-
-            descriptor_array =
-                type_manager_.FindTypeById(meta.access_path.pointer_type->inst_.Operand(meta.access_path.heap_offset_member_index));
-        } else {
-            descriptor_array = meta.access_path.pointer_type;
-        }
-
-        if (descriptor_array->IsArray()) {
-            const Type* element_type = type_manager_.FindTypeById(descriptor_array->inst_.Word(2));
-            if (element_type->IsArray()) {
-                // TODO - Handle MultidimensionalArray (GPU Dump has support for reference)
-                return false;
-            }
-            const Instruction* array_stride_decoration = GetDecoration(descriptor_array->Id(), spv::DecorationArrayStrideIdEXT);
-            if (array_stride_decoration) {
-                const Constant* array_stride = type_manager_.FindConstantById(array_stride_decoration->Word(3));
-                meta.untyped_array_stride_id = array_stride->Id();
-            } else {
-                // user has hardcoded array stride
-                array_stride_decoration = GetDecoration(descriptor_array->Id(), spv::DecorationArrayStride);
-                if (array_stride_decoration) {
-                    meta.untyped_array_stride_id = type_manager_.CreateConstantUInt32(array_stride_decoration->Word(3)).Id();
-                }
-            }
-        }
+        meta.untyped_layout_resource = GetUntypedLayout(*meta.access_path.pointer_type, meta.access_path.heap_offset_member_index);
+    }
+    // again... because samplers
+    if (meta.mapping_index_sampler == glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
+        meta.untyped_layout_sampler =
+            GetUntypedLayout(*meta.access_path.sampler_pointer_type, meta.access_path.sampler_heap_offset_member_index);
+    }
+    if (meta.untyped_layout_resource.is_multidimensional_array || meta.untyped_layout_sampler.is_multidimensional_array) {
+        return false;  // no support currently
     }
 
     return true;
@@ -643,7 +662,9 @@ uint32_t DescriptorHeapPass::InstructionMeta::Hash(const uint32_t descriptor_ind
 
     uint32_t hash = 0;
     if (mapping_index_resource == glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
-        uint32_t hash_content[4] = {desc_type, descriptor_index, untyped_heap_offset_id, untyped_array_stride_id};
+        const bool is_sampler = vk_type == VK_DESCRIPTOR_TYPE_SAMPLER;
+        const DescriptorHeapPass::UntypedLayout& untyped_layout = is_sampler ? untyped_layout_sampler : untyped_layout_resource;
+        uint32_t hash_content[4] = {desc_type, descriptor_index, untyped_layout.offset_id, untyped_layout.array_stride_id};
         hash = hash_util::Hash32(hash_content, sizeof(uint32_t) * 4);
     } else if (mapping_ptr->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
         const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping_ptr->sourceData.constantOffset;
