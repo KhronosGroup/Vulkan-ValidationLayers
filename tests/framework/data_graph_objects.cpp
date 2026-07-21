@@ -112,8 +112,7 @@ std::string DataGraphPipelineHelper::GetSpirvMultiEntryTwoDataGraph() {
                           %in_1 = OpGraphInputARM %uchar_1_8_16_4_tensor %uint_0
                           %op_2 = OpExtInst %uchar_1_4_8_4_tensor %tosa AVG_POOL2D %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_1 %in_1 %uchar_1_tensor_0 %uchar_1_tensor_0
                           %op_3 = OpExtInst %uchar_1_2_4_4_tensor %tosa AVG_POOL2D %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_1 %op_2 %uchar_1_tensor_0 %uchar_1_tensor_0
-                          %op_4 = OpExtInst %uchar_1_2_4_4_tensor %tosa ADD %op_3 %constant0
-                                  OpGraphSetOutputARM %op_4 %uint_0
+                                  OpGraphSetOutputARM %op_3 %uint_0
                                   OpGraphEndARM
 ; bind graphs to entrypoints
                                   OpGraphEntryPointARM %graph_1 "entrypoint_1" %main_arg_0 %main_res_0
@@ -297,8 +296,12 @@ std::string DataGraphPipelineHelper::GetSpirvTensorArrayDataGraph(bool is_runtim
 
 std::string DataGraphPipelineHelper::GetSpirvConstantDataGraph() {
     vkt::dg::ModifiableShaderParameters spirv_params;
-    spirv_params.types = "%constant_0 = OpGraphConstantARM %uchar_1_2_4_4_tensor 0";
-    spirv_params.instructions = "%dummy = OpExtInst %uchar_1_2_4_4_tensor %tosa ADD %op_1 %constant_0";
+    spirv_params.types = R"(
+    %i32_1_2_4_4_tensor = OpTypeTensorARM %uint %uint_4 %uint_arr_4_1_2_4_4
+    %constant_0 = OpGraphConstantARM %i32_1_2_4_4_tensor 0)";
+    spirv_params.instructions = R"(
+    %i32_op_1 = OpExtInst %i32_1_2_4_4_tensor %tosa CAST %op_1
+    %dummy = OpExtInst %i32_1_2_4_4_tensor %tosa ADD %i32_op_1 %constant_0)";
     return vkt::dg::DataGraphPipelineHelper::GetSpirvModifyableDataGraph(spirv_params);
 }
 

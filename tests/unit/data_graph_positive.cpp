@@ -73,19 +73,34 @@ VkTensorDescriptionARM DataGraphTest::DefaultConstantTensorDesc() {
     VkTensorDescriptionARM desc = vku::InitStructHelper();
     static std::vector<int64_t> dimensions{1, 2, 4, 4};
     desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
-    desc.format = VK_FORMAT_R8_UINT;
+    desc.format = VK_FORMAT_R32_SINT;
     desc.dimensionCount = dimensions.size();
     desc.pDimensions = dimensions.data();
     desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
     return desc;
 }
 
+// Assumes description defines a packed tensor with linear tiling.
+inline VkDeviceSize GetLinearTensorBufferSizeBytes(const VkTensorDescriptionARM &description) {
+    assert(description.dimensionCount > 0);
+    assert(description.pDimensions);
+    // NOTE: no assert for linear tiling: used for different tilings in negative tests
+
+    VkDeviceSize size = vkuFormatTexelBlockSize(description.format);
+    for (uint32_t i = 0; i < description.dimensionCount; ++i) {
+        assert(description.pDimensions[i] > 0);
+        size *= static_cast<VkDeviceSize>(description.pDimensions[i]);
+    }
+    return size;
+}
+
 // Constant for GetSpirvModifyableDataGraph and GetSpirvMultiEntryTwoDataGraph
 VkDataGraphPipelineConstantARM DataGraphTest::GetConstant(const VkTensorDescriptionARM& desc) {
     VkDataGraphPipelineConstantARM constant = vku::InitStructHelper();
     constant.id = 0;
-    // buffer size correct for DefaultConstantTensorDesc
-    static std::array<uint8_t, 32> constant_data;
+
+    VkDeviceSize buffer_size = GetLinearTensorBufferSizeBytes(desc);
+    static std::vector<uint8_t> constant_data(buffer_size);
     constant.pConstantData = constant_data.data();
     constant.pNext = &desc;
     return constant;
@@ -237,11 +252,6 @@ TEST_F(PositiveDataGraph, DataGraphMultipleEntrypoints) {
         params.spirv_source = two_entrypoint_spirv.c_str();
         params.entrypoint = "entrypoint_2";
         vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
-
-        VkDataGraphPipelineConstantARM constant = GetConstant();
-        pipeline.shader_module_ci_.constantCount = 1;
-        pipeline.shader_module_ci_.pConstants = &constant;
-
         pipeline.CreateDataGraphPipeline();
     }
 }
