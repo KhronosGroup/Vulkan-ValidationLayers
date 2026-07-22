@@ -125,6 +125,10 @@ constexpr T AlignToMultiple(T x, T p) {
     return ((x + p - 1) / p) * p;
 }
 
+inline uint32_t GetDispatchWorkGroupCount(uint32_t shader_threads_count, uint32_t work_group_size) {
+    return shader_threads_count / work_group_size + uint32_t((shader_threads_count % work_group_size) > 0);
+}
+
 // Returns the 0-based index of the LSB. An input mask of 0 yields -1
 static inline int LeastSignificantBit(uint32_t mask) { return u_ffs(static_cast<int>(mask)) - 1; }
 

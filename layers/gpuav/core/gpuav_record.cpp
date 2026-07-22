@@ -18,7 +18,6 @@
 #include <vulkan/vulkan_core.h>
 #include "chassis/chassis_modification_state.h"
 #include "gpuav/core/gpuav.h"
-#include "gpuav/core/gpuav_constants.h"
 #include "gpuav/debug_printf/debug_printf.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/instrumentation/descriptor_checks_classic.h"
@@ -710,6 +709,10 @@ void Validator::PostCallRecordCmdBuildAccelerationStructuresKHR(
 
     auto& cb_sub_state = SubState(*cb_state);
     UpdateAccelerationStructureGpuState(*this, cb_sub_state, record_obj.location, infoCount, pInfos);
+    for (auto& f : cb_sub_state.on_post_call_record_cmd_build_as_functions) {
+        f(*this, cb_sub_state);
+    }
+    cb_sub_state.on_post_call_record_cmd_build_as_functions.clear();
 }
 
 void Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,

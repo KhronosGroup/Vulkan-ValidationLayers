@@ -1152,16 +1152,16 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_INDEX_BUFFERS)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_INDEX_BUFFERS, gpuav_settings.validate_index_buffers);
         }
-    }
-
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_ACCELERATION_STRUCTURES_BUILDS)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_ACCELERATION_STRUCTURES_BUILDS,
-                                gpuav_settings.validate_acceleration_structures_builds);
-    }
-
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_RAY_TRACING_BUFFERS_CONSISTENCY)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_RAY_TRACING_BUFFERS_CONSISTENCY,
-                                gpuav_settings.ray_tracing_buffers_consistency);
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_ACCELERATION_STRUCTURES_BUILDS)) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_ACCELERATION_STRUCTURES_BUILDS,
+                                    gpuav_settings.validate_acceleration_structures_builds);
+        }
+        if (gpuav_settings.validate_acceleration_structures_builds) {
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_RAY_TRACING_BUFFERS_CONSISTENCY)) {
+                vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_RAY_TRACING_BUFFERS_CONSISTENCY,
+                                        gpuav_settings.ray_tracing_buffers_consistency);
+            }
+        }
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_FORCE_ON_ROBUSTNESS)) {
