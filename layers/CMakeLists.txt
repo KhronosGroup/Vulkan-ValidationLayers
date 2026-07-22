@@ -541,6 +541,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${LAYER_SOURCES})
 if(MSVC)
     set(GPUAV_SHADERS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gpuav/shaders")
     file(GLOB_RECURSE GPUAV_SHADERS
+        "${GPUAV_SHADERS_DIR}/*.slang"
         "${GPUAV_SHADERS_DIR}/*.vert"
         "${GPUAV_SHADERS_DIR}/*.comp"
         "${GPUAV_SHADERS_DIR}/*.h"
