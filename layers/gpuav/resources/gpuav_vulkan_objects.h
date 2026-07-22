@@ -25,6 +25,7 @@
 #include "containers/range.h"
 
 struct Location;
+
 namespace gpuav {
 class Validator;
 
@@ -91,11 +92,12 @@ struct BufferRange {
     VkDeviceAddress offset_address = 0;
     VmaAllocation vma_alloc = VK_NULL_HANDLE;  // Todo: get rid of this once host cached allocation are removed
 
+    bool Valid() const { return buffer != VK_NULL_HANDLE; }
     VkDescriptorBufferInfo GetDescriptorBufferInfo() const { return {buffer, offset, size}; }
     void Clear() const;
 };
 
-void CmdSynchronizedCopyBufferRange(VkCommandBuffer cb, const vko::BufferRange &dst, const vko::BufferRange &src);
+void CmdSynchronizedCopyBufferRange(VkCommandBuffer cb, const vko::BufferRange& dst, const vko::BufferRange& src);
 
 // Register/Create and register GPU resources, all to be destroyed upon a call to DestroyResources
 class GpuResourcesManager {
@@ -105,11 +107,13 @@ class GpuResourcesManager {
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
 
     vko::BufferRange GetHostCoherentBufferRange(VkDeviceSize size);
+    // WARNING: When returning a range, make sure the GPU cannot happen to use it anymore
     void ReturnHostCoherentBufferRange(const vko::BufferRange& buffer_range);
     vko::BufferRange GetHostCachedBufferRange(VkDeviceSize size);
     void FlushAllocation(const vko::BufferRange &buffer_range);
     void InvalidateAllocation(const vko::BufferRange &buffer_range);
     vko::BufferRange GetDeviceLocalBufferRange(VkDeviceSize size);
+    // WARNING: When returning a range, make sure the GPU cannot happen to use it anymore
     void ReturnDeviceLocalBufferRange(const vko::BufferRange &buffer_range);
     vko::BufferRange GetDeviceLocalIndirectBufferRange(VkDeviceSize size);
     vko::BufferRange GetStagingBufferRange(VkDeviceSize size);

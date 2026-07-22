@@ -18,7 +18,6 @@
 #include <vulkan/vulkan_core.h>
 #include "chassis/chassis_modification_state.h"
 #include "gpuav/core/gpuav.h"
-#include "gpuav/core/gpuav_constants.h"
 #include "gpuav/debug_printf/debug_printf.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/instrumentation/descriptor_checks_classic.h"
@@ -61,23 +60,13 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
     }
 
     // Indirect buffers will require validation shader to bind the indirect buffers as a storage buffer.
-    // Note - when using VK_KHR_device_address_commands we need to make sure to set
-    // VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR now
-    if (gpuav_settings.IsBufferValidationEnabled() &&
-        (in_usage & (VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT))) {
-        if (flags2) {
-            const_cast<VkBufferUsageFlags2CreateInfo*>(flags2)->usage |= VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT;
-        } else {
-            chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        }
-    }
-
-    if (gpuav_settings.validate_acceleration_structures_builds &&
-        (in_usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR)) {
-        if (flags2) {
-            const_cast<VkBufferUsageFlags2CreateInfo*>(flags2)->usage |= VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT;
-        } else {
-            chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    if (gpuav_settings.IsBufferValidationEnabled()) {
+        if (in_usage & (VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT)) {
+            if (flags2) {
+                const_cast<VkBufferUsageFlags2CreateInfo*>(flags2)->usage |= VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT;
+            } else {
+                chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            }
         }
     }
 
@@ -736,6 +725,10 @@ void Validator::PostCallRecordCmdBuildAccelerationStructuresKHR(
 
     auto& cb_sub_state = SubState(*cb_state);
     UpdateAccelerationStructureGpuState(*this, cb_sub_state, record_obj.location, infoCount, pInfos);
+    for (auto& f : cb_sub_state.on_post_call_record_cmd_build_as_functions) {
+        f(*this, cb_sub_state);
+    }
+    cb_sub_state.on_post_call_record_cmd_build_as_functions.clear();
 }
 
 void Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,

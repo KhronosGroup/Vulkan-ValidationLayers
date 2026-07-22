@@ -341,8 +341,6 @@ void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState
 
     valpipe::RestorablePipelineState restorable_state(cb, VK_PIPELINE_BIND_POINT_COMPUTE);
 
-    DispatchCmdBindPipeline(cb.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, as_gpu_state_update_pipeline.pipeline);
-
     VkPipelineStageFlags all_shaders_stage_mask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
     if (gpuav.enabled_features.rayTracingPipeline) {
         all_shaders_stage_mask |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
@@ -355,6 +353,8 @@ void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState
         DispatchCmdPipelineBarrier(cb.VkHandle(), all_shaders_stage_mask, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1,
                                    &barrier_write_after_read, 0, nullptr, 0, nullptr);
     }
+
+    DispatchCmdBindPipeline(cb.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, as_gpu_state_update_pipeline.pipeline);
 
     for (uint32_t info_i = 0; info_i < info_count; ++info_i) {
         const VkAccelerationStructureBuildGeometryInfoKHR& info = infos[info_i];

@@ -18,8 +18,9 @@
 
 #pragma once
 
-#include <array>
+#include <mutex>
 #include <vector>
+#include <vulkan/utility/vk_safe_struct.hpp>
 
 #include "containers/small_vector.h"
 #include "external/inplace_function.h"
@@ -30,6 +31,7 @@
 // We pull in most the core state tracking files
 // gpuav_state_trackers.h should NOT be included by any other header file
 
+#include "gpuav/validation_cmd/gpuav_ray_tracing.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/image_state.h"
@@ -81,12 +83,15 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     using OnPreCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_pre_submission_cb), 48>;
     using OnPostCommandBufferSubmission =
-        stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_post_submission_cb)>;
+        stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_post_submission_cb), 32>;
+    using OnPostCallRecordCmdBuildAccelerationStructures =
+        stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb), 64>;
     std::vector<OnInstrumentationErrorLoggerRegister> on_instrumentation_error_logger_register_functions;
     std::vector<OnInstrumentationCommonDescUpdate> on_instrumentation_common_desc_update_functions;
     std::vector<OnPreCommandBufferSubmission> on_pre_cb_submission_functions;
     std::vector<OnPostCommandBufferSubmission> on_post_cb_submission_functions;
     std::vector<OnCommandBufferCompletion> on_cb_completion_functions;
+    std::vector<OnPostCallRecordCmdBuildAccelerationStructures> on_post_call_record_cmd_build_as_functions;
 
     vko::SharedResourcesCache<false> shared_resources_cache;
 
@@ -366,6 +371,7 @@ static inline AccelerationStructureNVSubState &SubState(vvl::AccelerationStructu
 static inline const AccelerationStructureNVSubState &SubState(const vvl::AccelerationStructureNV &obj) {
     return *static_cast<const AccelerationStructureNVSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
 }
+
 class AccelerationStructureKHRSubState : public vvl::AccelerationStructureKHRSubState {
   public:
     AccelerationStructureKHRSubState(Validator& validator, vvl::AccelerationStructureKHR& obj, DescriptorIdPool& id_pool);
@@ -374,17 +380,33 @@ class AccelerationStructureKHRSubState : public vvl::AccelerationStructureKHRSub
 
     DescriptorId Id() const { return id_tracker ? id_tracker->id : 0; }
     std::optional<DescriptorIdTracker> id_tracker;
-    // sized by geometryCount supplied during build
-    std::vector<vko::BufferRange> index_buffer_copies{};
-    struct GeometryBufferRange {
-        vko::BufferRange range{};
-        VkDeviceSize stride{};
+
+    struct BuildStateGpuBuffers {
+        std::vector<vko::BufferRange> geometries_x_component_copies;
+        std::vector<vko::BufferRange> index_buffer_copies;
+        vko::BufferRange build_cmd_copy;
     };
-    std::vector<GeometryBufferRange> geometry_buffer_copies{};
+
+    struct LockedBuildStateGpuBuffers {
+        std::unique_lock<std::mutex> lock;
+        const BuildStateGpuBuffers& buffers;
+    };
+
+    // Just in charge of allocating large enough GPU buffers and recycling the old ones.
+    // Does not try to actually update them with relevant data.
+    // For now GPU buffers may be allocated on both "Build" and "Update" builds, not just on "Build".
+    // Done to account for deserialized builds.
+    LockedBuildStateGpuBuffers AllocateBuildStateGpuBuffer(const VkAccelerationStructureBuildGeometryInfoKHR& build_info,
+                                                           const VkAccelerationStructureBuildRangeInfoKHR* build_range_infos);
+
+    vko::BufferRange last_build_cmd_ptr;
     vko::BufferRange gpu_state;
 
   private:
     Validator& validator;
+    std::mutex build_state_gpu_mutex;
+    BuildStateGpuBuffers build_state_gpu_buffers;
+    std::vector<vko::BufferRange> retired_build_buffers;
 };
 static inline AccelerationStructureKHRSubState &SubState(vvl::AccelerationStructureKHR &obj) {
     return *static_cast<AccelerationStructureKHRSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
