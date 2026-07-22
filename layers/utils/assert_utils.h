@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+/* Copyright (c) 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,6 +29,14 @@
             assert(false);      \
             return;             \
         }                       \
+    } while (0)
+
+#define ASSERT_AND_RETURN_VALUE(cond, value) \
+    do {                                     \
+        if (!(cond)) {                       \
+            assert(false);                   \
+            return (value);                  \
+        }                                    \
     } while (0)
 
 #define ASSERT_AND_RETURN_SKIP(cond) \

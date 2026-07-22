@@ -13,11 +13,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-// Values used between the GLSL shaders and the GPU-AV logic
+// Values used between the Slang shaders and the GPU-AV logic
 
-// NOTE: This header is included by the instrumentation shaders and glslang doesn't support #pragma once
-#ifndef BUILD_ACCELERATION_STRUCTURES_H
-#define BUILD_ACCELERATION_STRUCTURES_H
+#pragma once
 
 #define BUILD_AS_METADATA_VALID_BUFFER 1u
 #define GET_BUILD_AS_METADATA_BUFFER_STATUS(metadata) ((metadata & (0x1 << 0u)) >> 0u)
@@ -32,46 +30,22 @@
 #define SET_BUILD_AS_METADATA_BUFFER_MEMORY_STATUS(is_memory_destroyed) ((uint32_t(is_memory_destroyed) & 0x1) << 3u)
 
 #ifdef __cplusplus
-
 #include <cstdint>
-
-namespace gpuav {
-namespace glsl {
-using uint = uint32_t;
-#else
-#extension GL_ARB_gpu_shader_int64 : require
-#extension GL_EXT_buffer_reference : require
-#extension GL_EXT_buffer_reference2 : require
-#extension GL_EXT_buffer_reference_uvec2 : require
-#extension GL_EXT_scalar_block_layout : require
 #endif
 
-#ifdef __cplusplus
-using PtrToBlasArray = uint64_t;
-using PtrToBlasPtrArray = uint64_t;
-using PtrToAccelerationStructureAddressArray = uint64_t;
-using PtrToAccelerationStructureMetadataArray = uint64_t;
-using PtrToAccelerationStructureBufferRangeArray = uint64_t;
-using PtrtoPtrToAccelerationStructureArrays = uint64_t;
-using PtrToBlasBuiltInCmd = uint64_t;
+namespace gpuav {
+namespace shader {
 
-#else
+struct VkTransformMatrix {
+    float matrix[3][4];
+};
+
 struct VkAccelerationStructureInstance {
-    mat3x4 transform;
-    uint instanceCustomIndex_and_mask;
-    uint instanceShaderBindingTableRecordOffset_and_flags;
+    VkTransformMatrix transform;
+    uint32_t instanceCustomIndex_and_mask;
+    uint32_t instanceShaderBindingTableRecordOffset_and_flags;
     uint64_t accelerationStructureReference;
 };
-
-layout(buffer_reference, scalar) buffer VkAccelerationStructureInstancePtr { VkAccelerationStructureInstance as_instance; };
-
-layout(buffer_reference, scalar) buffer PtrToAccelerationStructureAddressArray {
-    uint count;
-    uint pad_;
-    uint64_t array[];
-};
-
-layout(buffer_reference, scalar) buffer PtrToAccelerationStructureMetadataArray { uint array[]; };
 
 // Represent a [begin, end) range, where end is one past the last element held in range
 struct Range {
@@ -79,71 +53,90 @@ struct Range {
     uint64_t end;
 };
 
-layout(buffer_reference, scalar) buffer PtrToAccelerationStructureBufferRangeArray { Range array[]; };
+struct AccelerationStructureAddressArray {
+    uint32_t count;
+    uint32_t pad_;
+#ifndef __cplusplus
+    uint64_t array[];
 #endif
+};
 
 // "Struct of arrays" memory pattern to improve locality
 struct AccelerationStructureArraysPtr {
-    PtrToAccelerationStructureAddressArray addresses_ptr;
-    PtrToAccelerationStructureMetadataArray metadata_ptr;
-    PtrToAccelerationStructureBufferRangeArray buffer_ranges_ptr;
+    AccelerationStructureAddressArray* addresses_ptr;
+    uint32_t* metadata_ptr;
+    Range* buffer_ranges_ptr;
 };
 
-#ifndef __cplusplus
-layout(buffer_reference, scalar) buffer PtrtoPtrToAccelerationStructureArrays { AccelerationStructureArraysPtr as_arrays_ptrs; };
+static const uint32_t kBuildASValidationMode_invalid_AS = 0;
+static const uint32_t kBuildASValidationMode_memory_overlaps = 1;
 
-layout(buffer_reference, scalar) buffer PtrToBlasArray { VkAccelerationStructureInstance blas_array[]; };
-
-layout(buffer_reference, scalar) buffer PtrToBlasPtrArray { VkAccelerationStructureInstancePtr blas_ptr_array[]; };
-
-layout(buffer_reference, scalar) buffer PtrToBlasBuiltInCmd { Range buffer_ranges[]; };
-#endif
-
-const uint kBuildASValidationMode_invalid_AS = 0;
-const uint kBuildASValidationMode_memory_overlaps = 1;
-
+static const uint32_t tlas_validation_shader_wg_x = 8;
+static const uint32_t tlas_validation_shader_wg_y = 8;
 struct TLASValidationShaderPushData {
-    PtrtoPtrToAccelerationStructureArrays ptr_to_ptr_to_accel_structs_arrays;
+    AccelerationStructureArraysPtr* ptr_to_ptr_to_accel_structs_arrays;
     uint64_t valid_dummy_blas_addr;
 
     // BLAS arrays to validate
     // Either an array of VkAccelerationStructureInstance,
     // or pointers to such structs.
-    PtrToBlasArray blas_array_start_addr;
-    PtrToBlasPtrArray blas_ptr_array_start_addr;
-    uint blas_array_size;
-    uint is_array_of_pointers;
-    uint blas_array_i;  // Used to find back invalid build cmd pInfos if an error is found
-    uint validation_mode;
+    VkAccelerationStructureInstance* blas_array_start_addr;
+    VkAccelerationStructureInstance** blas_ptr_array_start_addr;
+    uint32_t blas_array_size;
+    uint32_t is_array_of_pointers;
+    uint32_t blas_array_i;  // Used to find back invalid build cmd pInfos if an error is found
+    uint32_t validation_mode;
 
-    PtrToBlasBuiltInCmd blas_built_in_cmd_array_ptr;
-    uint blas_built_in_cmd_array_size;
+    Range* blas_built_in_cmd_array_ptr;
+    uint32_t blas_built_in_cmd_array_size;
 };
 
-const uint kBLASValidationMode_triangles_indices = 0;
-const uint kBLASValidationMode_active_triangles = 1;
-const uint kBLASValidationMode_aabbs = 2;
-const uint kBLASValidationMode_transform_matrix = 3;
+static const uint32_t kBLASValidationMode_triangles_indices = 0;
+static const uint32_t kBLASValidationMode_active_triangles = 1;
+static const uint32_t kBLASValidationMode_aabbs = 2;
+static const uint32_t kBLASValidationMode_transform_matrix = 3;
 
-// #ARNO_TODO Vulkan only guarantees 128 bytes of push constants, need to move this to a buffer
+// GPU representation of a single VkAccelerationStructureGeometryKHR
+struct AccelerationStructureGeometryGPU {
+    uint64_t stride;
+    uint64_t index_buffer;
+    uint64_t index_buffer_copies;
+    // WARNING: Read start at offset primitive_offset
+    uint64_t geometry_buffer;
+    float* geometry_x_components_copies;
+    // WARNING: Read start at offset transform_offset
+    uint64_t transform;
+    uint32_t is_update_build;
+    uint32_t geometry_type;
+    uint32_t index_type;
+    uint32_t vertex_format;
+    uint32_t max_vertex;
+    uint32_t is_array_of_pointers;
+
+    uint32_t primitive_offset;
+    uint32_t primitive_count;
+    uint32_t first_vertex;
+    uint32_t transform_offset;
+
+    uint32_t geometry_i;
+    uint32_t error_info_i;  // put that somewhere else?
+};
+
+struct AccelerationStructureGeometriesGPU {
+    uint32_t count;
+    uint32_t pad_;
+#ifndef __cplusplus
+    AccelerationStructureGeometryGPU array[];
+#endif
+};
+
+static const uint32_t blas_validation_shader_wg_x = 64;
 struct BLASValidationShaderPushData {
-    uint64_t address;  // Cast it appropriately according to index_type
-    uint64_t address_2;
-    uint64_t address_3;
-    uint64_t update_time_stride;
-    uint64_t build_time_stride;
-    uint validation_mode;
-    uint index_type;
-    uint vertex_format;
-    uint max_vertex;
-    uint first_vertex;
-    uint primitive_offset;
-    uint primitive_count;
-    uint error_info_i;
+    // #ARNO_TODO So I think now I can just turn this into a pointer to dst_as_gpu_state
+    AccelerationStructureGeometriesGPU** last_build_as_geometries_gpu;
+    AccelerationStructureGeometryGPU* as_geometry_gpu;
+    uint32_t validation_mode;
 };
 
-#ifdef __cplusplus
-}  // namespace glsl
+}  // namespace shader
 }  // namespace gpuav
-#endif
-#endif
