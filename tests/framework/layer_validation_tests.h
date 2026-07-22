@@ -505,6 +505,7 @@ class SyncObjectTest : public VkLayerTest {
 class TensorTest : public VkLayerTest {
   public:
     void InitBasicTensor();
+    void InitTensorControls();
     static VkTensorDescriptionARM DefaultDesc();
     static VkTensorDescriptionARM TensorShaderDesc();
     static VkTensorCreateInfoARM DefaultCreateInfo(VkTensorDescriptionARM *desc = nullptr);
