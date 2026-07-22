@@ -18,6 +18,7 @@ void DataGraphTest::InitBasicDataGraph(bool optical_flow) {
     SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredExtensions(VK_ARM_DATA_GRAPH_EXTENSION_NAME);
+    AddRequiredExtensions(VK_ARM_DATA_GRAPH_INSTRUCTION_SET_TOSA_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tensors);
     AddRequiredFeature(vkt::Feature::dataGraph);
     AddRequiredFeature(vkt::Feature::dataGraphShaderModule);
@@ -316,6 +317,7 @@ TEST_F(PositiveDataGraph, CmdDispatchDescriptorBuffer) {
 }
 
 TEST_F(PositiveDataGraph, ResourceInfoImageLayoutsUnifiedImageLayouts) {
+    TEST_DESCRIPTION("Execute a datagraph with image resources and no layout info, with unifiedImageLayouts feature enabled");
     AddRequiredFeature(vkt::Feature::unifiedImageLayouts);
     RETURN_IF_SKIP(InitBasicDataGraph(true));
 
@@ -472,4 +474,47 @@ TEST_F(PositiveDataGraph, CopyUpdateDescriptor) {
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveDataGraph, ProcessingEnginesGetProperties) {
+    TEST_DESCRIPTION("Request the Processing Engine properties");
+    RETURN_IF_SKIP(InitBasicDataGraph(true));
+
+    // get the available properties
+    uint32_t queue_index = DefaultQueue()->family_index;
+    uint32_t n_properties = 0;
+    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), queue_index, &n_properties, nullptr));
+    if (n_properties == 0) {
+        GTEST_SKIP() << "The physical device does not support any datagraph properties, skip.";
+    }
+    std::vector<VkQueueFamilyDataGraphPropertiesARM> data_graph_queue_family_properties(
+        n_properties, vku::InitStruct<VkQueueFamilyDataGraphPropertiesARM>());
+    ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), queue_index, &n_properties,
+                                                                                 data_graph_queue_family_properties.data()));
+
+    // The 2 properties that can be supported by the default engine.
+    // TODO: add more properties for other engines
+    static constexpr VkPhysicalDeviceDataGraphOperationSupportARM tosa_operation{
+        VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM, "TOSA.001000.1", 0};
+    static constexpr VkPhysicalDeviceDataGraphOperationSupportARM optical_flow_operation{
+        VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM, "OpticalFlow", 1};
+
+    // get the values for the 2 properties supported in the default processing engine.
+    VkQueueFamilyDataGraphOpticalFlowPropertiesARM op_flow_properties = vku::InitStructHelper();
+    VkQueueFamilyDataGraphTOSAPropertiesARM tosa_properties = vku::InitStructHelper();
+    for (auto& prop : data_graph_queue_family_properties) {
+        VkBaseOutStructure* pProperties = nullptr;
+        if (prop.operation.operationType == optical_flow_operation.operationType &&
+            strcmp(prop.operation.name, optical_flow_operation.name) == 0) {
+            pProperties = reinterpret_cast<VkBaseOutStructure*>(&op_flow_properties);
+        } else if (prop.operation.operationType == tosa_operation.operationType &&
+                   strcmp(prop.operation.name, tosa_operation.name) == 0) {
+            pProperties = reinterpret_cast<VkBaseOutStructure*>(&tosa_properties);
+        } else {
+            // some other property that we haven't considered (other engine? Add)
+            continue;
+        }
+        ASSERT_EQ(VK_SUCCESS,
+                  vk::GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(Gpu(), queue_index, &prop, pProperties));
+    }
 }
