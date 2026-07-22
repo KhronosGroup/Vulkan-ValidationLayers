@@ -472,6 +472,12 @@ StatelessDeviceData::StatelessDeviceData(DispatchInstance* instance, VkPhysicalD
                                              &phys_dev_ext_props.cooperative_vector_props_nv);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_arm_render_pass_striped,
                                              &phys_dev_ext_props.renderpass_striped_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_arm_scheduling_controls,
+                                             &phys_dev_ext_props.scheduling_controls_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_arm_scheduling_controls,
+                                             &phys_dev_ext_props.scheduling_controls_dispatch_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_arm_shader_core_builtins,
+                                             &phys_dev_ext_props.shader_core_builtins_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_external_memory_host,
                                              &phys_dev_ext_props.external_memory_host_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_maintenance9,

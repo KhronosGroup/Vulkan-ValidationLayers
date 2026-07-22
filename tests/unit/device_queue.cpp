@@ -742,3 +742,72 @@ TEST_F(NegativeDeviceQueue, ScaledFrequencyPerfHintButInvalidScale) {
     vk::QueueSetPerfHintQCOM(perf_hint_queue, &perf_hint_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDeviceQueue, ArmSchedulingControlsCreateDevice) {
+    TEST_DESCRIPTION("Validate VK_ARM_scheduling_controls queue shader-core control usage during device creation.");
+
+    AddRequiredExtensions(VK_ARM_SHADER_CORE_BUILTINS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_ARM_SCHEDULING_CONTROLS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    uint32_t queue_family_count = 0;
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_props.data());
+
+    uint32_t queue_family_index = 0;
+    for (; queue_family_index < queue_family_count; ++queue_family_index) {
+        if (queue_props[queue_family_index].queueCount > 0) {
+            break;
+        }
+    }
+    if (queue_family_index == queue_family_count) {
+        GTEST_SKIP() << "No queue family available.";
+    }
+
+    VkPhysicalDeviceSchedulingControlsPropertiesARM scheduling_controls_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(scheduling_controls_props);
+    const bool has_shader_core_count_control =
+        (scheduling_controls_props.schedulingControlsFlags & VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM) != 0;
+
+    float priority = 1.0f;
+    VkDeviceQueueShaderCoreControlCreateInfoARM queue_shader_core_control = vku::InitStructHelper();
+    queue_shader_core_control.shaderCoreCount = 1;
+
+    VkDeviceQueueCreateInfo device_queue_ci = vku::InitStructHelper(&queue_shader_core_control);
+    device_queue_ci.queueFamilyIndex = queue_family_index;
+    device_queue_ci.queueCount = 1;
+    device_queue_ci.pQueuePriorities = &priority;
+
+    VkDeviceQueueShaderCoreControlCreateInfoARM device_shader_core_control = vku::InitStructHelper();
+    device_shader_core_control.shaderCoreCount = 1;
+    VkPhysicalDeviceSchedulingControlsFeaturesARM scheduling_controls_features =
+        vku::InitStructHelper(&device_shader_core_control);
+    scheduling_controls_features.schedulingControls = VK_TRUE;
+
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper(&scheduling_controls_features);
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &device_queue_ci;
+    device_ci.enabledLayerCount = 0;
+    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-09396");
+    if (!has_shader_core_count_control) {
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-09397");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceQueueCreateInfo-pNext-09398");
+    }
+    VkDevice device = VK_NULL_HANDLE;
+    vk::CreateDevice(Gpu(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+
+    device_queue_ci.pNext = nullptr;
+    device_shader_core_control.shaderCoreCount = 0;
+
+    if (!has_shader_core_count_control) {
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-09397");
+    }
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceQueueShaderCoreControlCreateInfoARM-shaderCoreCount-09399");
+    vk::CreateDevice(Gpu(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+}
