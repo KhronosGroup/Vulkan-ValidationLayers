@@ -121,7 +121,8 @@ VkDeviceSize GpuAVDescriptorHeap::AlignSampler(VkDeviceSize offset) { return Ali
 
 class NegativeGpuAVDescriptorHeap : public GpuAVDescriptorHeap {};
 
-TEST_F(NegativeGpuAVDescriptorHeap, IndexBufferOOB) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
+TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_IndexBufferOOB) {
     TEST_DESCRIPTION("Validate overruning the index buffer");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
@@ -628,7 +629,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingsUsed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, DispatchWorkgroupSize) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
+TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_DispatchWorkgroupSize) {
     TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand with descriptor heap");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);

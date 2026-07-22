@@ -55,6 +55,10 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         return;
     }
 
+    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer || last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
+        return;
+    }
+
     valpipe::RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     ValidationCommandsGpuavState& val_cmd_gpuav_state =
@@ -365,6 +369,10 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
           const VkAccelerationStructureBuildRangeInfoKHR* const* build_ranges_infos) {
     VVL_ZoneScoped;
     if (!gpuav.gpuav_settings.validate_acceleration_structures_builds) {
+        return;
+    }
+
+    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer || last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
         return;
     }
 
@@ -743,6 +751,10 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
           const VkAccelerationStructureBuildRangeInfoKHR* const* pp_build_ranges_infos) {
     VVL_ZoneScoped;
     if (!gpuav.gpuav_settings.validate_acceleration_structures_builds) {
+        return;
+    }
+
+    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer || last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
         return;
     }
 

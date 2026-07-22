@@ -455,16 +455,19 @@ class Pipeline {
     void SetGlslRayGenShader(const char* glsl, const void* shader_module_create_info_pnext = nullptr,
                              const void* pipeline_shader_stage_create_info_pNext = nullptr);
     void AddSpirvRayGenShader(const char* spirv, const char* entry_point);
-    void AddSlangRayGenShader(const char* slang, const char* entry_point);
+    void AddSlangRayGenShader(const char* slang, const char* entry_point, const void* shader_module_create_info_pnext = nullptr,
+                              const void* pipeline_shader_stage_create_info_pNext = nullptr);
     void AddGlslMissShader(const char* glsl, const void* shader_module_create_info_pnext = nullptr,
                            const void* pipeline_shader_stage_create_info_pNext = nullptr);
     void AddSpirvMissShader(const char* spirv, const char* entry_point);
-    void AddSlangMissShader(const char* slang, const char* entry_point);
+    void AddSlangMissShader(const char* slang, const char* entry_point, const void* shader_module_create_info_pnext = nullptr,
+                            const void* pipeline_shader_stage_create_info_pNext = nullptr);
     void AddGlslClosestHitShader(const char* glsl, const void* shader_module_create_info_pnext = nullptr,
                                  const void* pipeline_shader_stage_create_info_pNext = nullptr);
     void AddGlslHitGroupShader(const char* closest_hit_glsl, const char* intersection_glsl = nullptr);
     void AddSpirvClosestHitShader(const char* spirv, const char* entry_point);
-    void AddSlangClosestHitShader(const char* slang, const char* entry_point);
+    void AddSlangClosestHitShader(const char* slang, const char* entry_point, const void* shader_module_create_info_pnext = nullptr,
+                                  const void* pipeline_shader_stage_create_info_pNext = nullptr);
     void AddLibrary(const Pipeline& library);
     void AddDynamicState(VkDynamicState dynamic_state);
     // Will be the same size for *all* shaders

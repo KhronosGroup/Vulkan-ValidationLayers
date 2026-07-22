@@ -468,6 +468,13 @@ void Validator::InitSettings(const Location& loc) {
         gpuav_settings.DisableShaderInstrumentationAndOptions();
     }
 
+    if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) || IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        adjustment_warnings +=
+            "VK_EXT_descriptor_buffer or VK_EXT_descriptor_heap are enabled. Buffers and acceleration structure validation is not "
+            "yet supported with those extensions. [Disabling gpuav_buffers_validation]";
+        gpuav_settings.SetBufferValidationEnabled(false);
+    }
+
     if (!adjustment_warnings.empty()) {
         AdjustmentWarning(device, loc, adjustment_warnings.c_str());
     }

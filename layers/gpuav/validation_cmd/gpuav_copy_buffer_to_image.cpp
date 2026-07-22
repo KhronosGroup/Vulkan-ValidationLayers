@@ -72,6 +72,13 @@ void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubSt
         return;
     }
 
+    for (LastBound& last_bound : cb_state.base.lastBound) {
+        if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer ||
+            last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
+            return;
+        }
+    }
+
     // No need to perform validation if VK_EXT_depth_range_unrestricted is enabled
     if (IsExtEnabled(gpuav.extensions.vk_ext_depth_range_unrestricted)) {
         return;
