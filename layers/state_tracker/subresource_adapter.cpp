@@ -180,7 +180,7 @@ RangeEncoder::RangeEncoder(const VkImageSubresourceRange& full_range, const Aspe
     PopulateFunctionPointers();
 }
 
-#ifndef NDEBUG
+#ifdef VVL_DEBUG_SUBRESOURCE
 static bool IsValid(const RangeEncoder& encoder, const VkImageSubresourceRange& bounds) {
     const auto& limits = encoder.Limits();
     return (((bounds.aspectMask & limits.aspectMask) == bounds.aspectMask) &&
@@ -607,7 +607,7 @@ ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const
       extent_(),
       base_address_(base_address),
       is_depth_sliced_(is_depth_sliced) {
-#ifndef NDEBUG
+#ifdef VVL_DEBUG_SUBRESOURCE
     assert(IsValid(*encoder_, subres_range_));
 #endif
     if (SubresourceRangeIsEmpty(subres_range)) {
@@ -669,7 +669,7 @@ ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const
       extent_(extent),
       base_address_(base_address),
       is_depth_sliced_(is_depth_sliced) {
-#ifndef NDEBUG
+#ifdef VVL_DEBUG_SUBRESOURCE
     assert(IsValid(*encoder_, subres_range_));
 #endif
 

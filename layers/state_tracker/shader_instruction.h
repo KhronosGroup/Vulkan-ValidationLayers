@@ -143,7 +143,7 @@ class Instruction {
     const uint32_t position_offset_;
     const OperandInfo& operand_info_;
 
-#ifndef NDEBUG
+#ifdef VVL_DEBUG_SPIRV
     // Helping values to make debugging what is happening in a instruction easier
     std::string d_opcode_;
     uint32_t d_length_;

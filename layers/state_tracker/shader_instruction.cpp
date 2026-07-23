@@ -81,7 +81,7 @@ void Instruction::SetResultTypeIndex() {
 }
 
 void Instruction::UpdateDebugInfo() {
-#ifndef NDEBUG
+#ifdef VVL_DEBUG_SPIRV
     d_opcode_ = std::string(string_SpvOpcode(Opcode()));
     d_length_ = Length();
     d_result_id_ = ResultId();
@@ -331,7 +331,7 @@ void Instruction::Fill(const std::vector<uint32_t>& words) {
 
 void Instruction::UpdateWord(uint32_t index, uint32_t data) {
     words_[index] = data;
-#ifndef NDEBUG
+#ifdef VVL_DEBUG_SPIRV
     d_words_[index] = data;
 #endif
 }
