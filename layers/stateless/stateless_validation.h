@@ -5,6 +5,7 @@
  * Copyright (C) 2025 Arm Limited.
  * Copyright (C) 2026 Qualcomm Technologies, Inc.
  * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright (C) 2026 Qualcomm Technologies, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -569,6 +570,14 @@ class Device : public vvl::BaseDevice {
                                                const VkImageResolve *pRegions, const Context &context) const;
     bool manual_PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *pResolveImageInfo,
                                                 const Context &context) const;
+    bool manual_PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2 *pBlitImageInfo,
+                                             const Context &context) const;
+    bool manual_PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
+                                                     const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo,
+                                                     const Context &context) const;
+    bool manual_PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
+                                                     const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo,
+                                                     const Context &context) const;
 
     bool manual_PreCallValidateCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkTensorARM *pTensor,
