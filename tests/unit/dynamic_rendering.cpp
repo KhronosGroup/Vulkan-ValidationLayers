@@ -8545,3 +8545,220 @@ TEST_F(NegativeDynamicRendering, ImageView3D) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDynamicRendering, DynamicRenderingTilePropertiesWithInvalidFragmentDensityMapUsage) {
+    TEST_DESCRIPTION("Try to query dynamic rendering tile properties with an invalid fragment density map attachment.");
+    AddRequiredExtensions(VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileProperties);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMap);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMapNonSubsampledImages);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
+    vkt::Image color_image{*m_device, image_ci};
+    vkt::ImageView color_image_view = color_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = color_image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    vkt::Image fdm_image{*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT};
+    vkt::ImageView fdm_view = fdm_image.CreateView();
+
+    VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map = vku::InitStructHelper();
+    fragment_density_map.imageView = fdm_view;
+    fragment_density_map.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&fragment_density_map);
+    rendering_info.renderArea = {{0, 0}, {64, 64}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkTilePropertiesQCOM tile_properties = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06158");
+    vk::GetDynamicRenderingTilePropertiesQCOM(device(), &rendering_info, &tile_properties);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRendering, DynamicRenderingTilePropertiesWithInvalidFragmentShadingRateUsage) {
+    TEST_DESCRIPTION("Try to query dynamic rendering tile properties with an invalid fragment shading rate attachment.");
+    AddRequiredExtensions(VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileProperties);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Image color_image{*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT};
+    vkt::ImageView color_image_view = color_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = color_image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(fsr_properties);
+
+    vkt::Image fsr_image{*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT};
+    vkt::ImageView fsr_view = fsr_image.CreateView();
+
+    VkRenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate = vku::InitStructHelper();
+    fragment_shading_rate.imageView = fsr_view;
+    fragment_shading_rate.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    fragment_shading_rate.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&fragment_shading_rate);
+    rendering_info.renderArea = {{0, 0}, {64, 64}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkTilePropertiesQCOM tile_properties = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06148");
+    vk::GetDynamicRenderingTilePropertiesQCOM(device(), &rendering_info, &tile_properties);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRendering, DynamicRenderingTilePropertiesWithInvalidMultisampledRenderToSingleSampledInfo) {
+    TEST_DESCRIPTION("Try to query dynamic rendering tile properties with invalid multisampled render-to-single-sampled information.");
+    AddRequiredExtensions(VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileProperties);
+    AddRequiredFeature(vkt::Feature::multisampledRenderToSingleSampled);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT;
+    vkt::Image color_image{*m_device, image_ci};
+    vkt::ImageView color_image_view = color_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = color_image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkMultisampledRenderToSingleSampledInfoEXT msrtss_info = vku::InitStructHelper();
+    msrtss_info.multisampledRenderToSingleSampledEnable = VK_TRUE;
+    msrtss_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&msrtss_info);
+    rendering_info.renderArea = {{0, 0}, {64, 64}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkTilePropertiesQCOM tile_properties = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-VkMultisampledRenderToSingleSampledInfoEXT-rasterizationSamples-06878");
+    vk::GetDynamicRenderingTilePropertiesQCOM(device(), &rendering_info, &tile_properties);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRendering, DynamicRenderingTilePropertiesWithTileShadingAndFragmentDensityMap) {
+    TEST_DESCRIPTION("Try to query dynamic rendering tile properties with tile shading and a fragment density map attachment.");
+    AddRequiredExtensions(VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_TILE_SHADING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileProperties);
+    AddRequiredFeature(vkt::Feature::tileShading);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMap);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMapNonSubsampledImages);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R8G8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+        GTEST_SKIP() << "VK_FORMAT_R8G8_UNORM doesn't support VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT format feature, "
+                        "skipping test.";
+    }
+
+    vkt::Image color_image{*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT};
+    vkt::ImageView color_image_view = color_image.CreateView();
+
+    vkt::Image fdm_image{*m_device, 64, 64, VK_FORMAT_R8G8_UNORM, VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT};
+    vkt::ImageView fdm_view = fdm_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = color_image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map = vku::InitStructHelper();
+    fragment_density_map.imageView = fdm_view;
+    fragment_density_map.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassTileShadingCreateInfoQCOM tile_shading_info = vku::InitStructHelper(&fragment_density_map);
+    tile_shading_info.flags = VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM;
+    tile_shading_info.tileApronSize = {0, 0};
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&tile_shading_info);
+    rendering_info.renderArea = {{0, 0}, {64, 64}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkTilePropertiesQCOM tile_properties = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-10643");
+    vk::GetDynamicRenderingTilePropertiesQCOM(device(), &rendering_info, &tile_properties);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRendering, DynamicRenderingTilePropertiesWithResolveAttachmentBoundToTileMemory) {
+    TEST_DESCRIPTION("Try to query dynamic rendering tile properties with a resolve attachment bound to tile memory.");
+    AddRequiredExtensions(VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileProperties);
+    AddRequiredFeature(vkt::Feature::tileMemoryHeap);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image msaa_image{*m_device, image_ci, vkt::set_layout};
+    vkt::ImageView msaa_image_view = msaa_image.CreateView();
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.usage |= VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM;
+    vkt::Image tile_memory_image{*m_device, image_ci, vkt::no_mem};
+
+    VkImageMemoryRequirementsInfo2 image_info = vku::InitStructHelper();
+    VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
+    VkMemoryRequirements2 image_reqs = vku::InitStructHelper(&tile_mem_reqs);
+    image_info.image = tile_memory_image;
+    vk::GetImageMemoryRequirements2(device(), &image_info, &image_reqs);
+    if (tile_mem_reqs.size == 0) {
+        GTEST_SKIP() << "Image is not eligible for tile memory binding, skipping test.";
+    }
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.memoryTypeIndex = 0;
+    alloc_info.allocationSize = tile_mem_reqs.size;
+    if (!m_device->Physical().SetMemoryType(image_reqs.memoryRequirements.memoryTypeBits, &alloc_info,
+                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM)) {
+        GTEST_SKIP() << "Failed to find an eligible tile memory type, skipping test.";
+    }
+
+    vkt::DeviceMemory image_memory{*m_device, alloc_info};
+    vk::BindImageMemory(device(), tile_memory_image, image_memory, 0);
+    vkt::ImageView resolve_image_view = tile_memory_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = msaa_image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.resolveImageView = resolve_image_view;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+    rendering_info.layerCount = 1;
+    rendering_info.renderArea = {{0, 0}, {64, 64}};
+
+    VkTilePropertiesQCOM tile_properties = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-resolveImageView-10728");
+    vk::GetDynamicRenderingTilePropertiesQCOM(device(), &rendering_info, &tile_properties);
+    m_errorMonitor->VerifyFound();
+}
