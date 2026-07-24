@@ -1847,8 +1847,11 @@ void UntypedContext::FindAccess(const spirv::Instruction* next_inst, bool image_
             const spirv::Instruction* ac_inst = module.FindDef(base_type->Word(3));
             AddAccess(descriptor_type, ac_inst, from_function_call);
         } else if (base_type->Opcode() == spv::OpUntypedImageTexelPointerEXT) {
-            // Atomic storage image
-            const VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+            // Atomic storage image/texel buffer
+            const spirv::Instruction* image_type = module.FindDef(base_type->Word(3));
+            assert(image_type->Opcode() == spv::OpTypeImage);
+            const VkDescriptorType descriptor_type = image_type->GetImageType();
+
             const spirv::Instruction* ac_inst = module.FindDef(base_type->Word(4));
             AddAccess(descriptor_type, ac_inst, from_function_call);
         } else if (base_type->Opcode() == spv::OpFunctionParameter) {
