@@ -583,6 +583,35 @@
                                         }
                                     ]
                                 }
+                            ],
+                            "messages": [
+                                {
+                                    "key": "message_legacy_enable_1",
+                                    "title": "Warning: Legacy Detection without warning level message severity",
+                                    "version": 1,
+                                    "description": "Enabling Legacy Detection, but the 'warning' level message severity is disabled, so messages won't be shown.",
+                                    "informative": "Do you want to add 'warning' level to 'Message Severity'?",
+                                    "severity": "INFORMATION",
+                                    "conditions": [
+                                        { "setting": { "key": "legacy_detection", "value": true }},
+                                        { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
+                                    ],
+                                    "actions": {
+                                        "default": "BUTTON0",
+                                        "BUTTON0": {
+                                            "type": "OK",
+                                            "changes": [
+                                                { "setting": { "key": "report_flags", "value": ["warn"] }, "operator": "APPEND" }
+                                            ]
+                                        },
+                                        "BUTTON1": {
+                                            "type": "CANCEL",
+                                            "changes": [
+                                                { "setting": { "key": "legacy_detection", "value": false }}
+                                            ]
+                                        }
+                                    }
+                                }
                             ]
                         },
                         {
@@ -1633,6 +1662,32 @@
                                 { "setting": { "key": "gpu_dump_to_stdout", "value": false }},
                                 { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" },
                                 { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
+                            ],
+                            "actions": {
+                                "default": "BUTTON0",
+                                "BUTTON0": {
+                                    "type": "OK",
+                                    "changes": [
+                                    ]
+                                },
+                                "BUTTON1": {
+                                    "type": "CANCEL",
+                                    "changes": [
+                                        { "setting": { "key": "report_flags", "value": ["warn"] }, "operator": "APPEND" }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "key": "message_legacy_enable_1b",
+                            "title": "Legacy Detection without warning level message severity",
+                            "version": 1,
+                            "description": "Enabling Legacy Detection, but the 'warning' level message severity is disabled, so messages won't be shown.",
+                            "informative": "Are you sure you want to remove 'warning' level to 'Message Severity'?",
+                            "severity": "INFORMATION",
+                            "conditions": [
+                                { "setting": { "key": "legacy_detection", "value": true }},
+                                { "setting": { "key": "report_flags", "value": ["warn"]}, "operator": "NOT" }
                             ],
                             "actions": {
                                 "default": "BUTTON0",
