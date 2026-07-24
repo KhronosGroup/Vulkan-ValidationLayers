@@ -881,6 +881,13 @@ const AccessPath TypeManager::BuildAccessPath(const Function& function, const In
                    next_access_chain->Opcode() == spv::OpUntypedImageTexelPointerEXT) {
             // Atomic Storage Image
             path.descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+
+            // Found CTS that uses this for texel buffer, but doesn't seem to be done for typed
+            // ... Not sure if this is just missing from OpImageTexelPointer
+            if (next_access_chain->Opcode() == spv::OpUntypedImageTexelPointerEXT) {
+                path.descriptor_type = FindTypeById(next_access_chain->Word(3))->inst_.GetImageType();
+            }
+
             const uint32_t image_operand = next_access_chain->Opcode() == spv::OpUntypedImageTexelPointerEXT ? 1 : 0;
             const Instruction* access_chain_inst = function.FindInstruction(next_access_chain->Operand(image_operand));
             if (access_chain_inst && access_chain_inst->IsNonPtrAccessChain()) {
