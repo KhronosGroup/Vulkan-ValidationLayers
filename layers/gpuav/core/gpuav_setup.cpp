@@ -524,9 +524,10 @@ bool Validator::IsAllDeviceLocalMappable() const {
 // resources we need to track. One issue is on vkDestroyDevice we need to teardown the GPU-AV class, then after we try and destroy
 // leaked state objects (ex. user forgot to call vkDestroySampler).
 void Validator::DestroySubstate() {
-    if (!dispatch_device_ || aborted_) {
+    if (!dispatch_device_ || aborted_ || substates_destroyed_) {
         return;
     }
+    substates_destroyed_ = true;
 
     // While this is not ideal, it is more important to keep normal code fast and do extra cleanup on teardown
     for (auto object_it = dispatch_device_->object_dispatch.begin(); object_it != dispatch_device_->object_dispatch.end();
@@ -536,6 +537,17 @@ void Validator::DestroySubstate() {
             state_tracker.RemoveSubState(LayerObjectTypeGpuAssisted);
         }
     }
+}
+
+// In normal operation, the substate are already removed from tracked objects by the time
+// we get here, because Validator::DestroySubstate() is called during DestroyDevice().
+// However, if the DeviceDispatch is destroyed during exit, by FreeAllDispatchObjects(), then DestroyDevice()
+// is never called.
+// We end up in a situation where GPUAV substates would survive the Validator, only to be later freed as
+// the states themselves are destroyed.
+// We can't let it happen in this order since some substates keep a reference to the validator to run cleanup code,
+Validator::~Validator() {
+    DestroySubstate();
 }
 
 }  // namespace gpuav

@@ -832,6 +832,9 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     static std::string GetDebugRegionName(const std::vector<LabelCommand>& label_commands, uint32_t label_command_index,
                                           const std::vector<std::string>& initial_label_stack = {});
 
+    // This command buffer might contain a push descriptor set, which is not tracked in the object maps.
+    // So the only way to cleanup SubStates on the descriptor set is through here.
+    void RemoveOwnedSubState(LayerObjectTypeId id);
   private:
     void ResetCBState();
 
