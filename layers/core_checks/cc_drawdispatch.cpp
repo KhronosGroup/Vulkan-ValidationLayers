@@ -62,13 +62,13 @@ bool CoreChecks::ValidateGraphicsIndexedCmd(const LastBound& last_bound, const L
     if (!cb_state.index_buffer_binding.bound) {
         const char* extra =
             enabled_features.maintenance6
-                ? "Even with maintenance6, you need to set the buffer in vkCmdBindIndexBuffer to be VK_NULL_HANDLE, not "
+                ? "\nEven with maintenance6, you need to set the buffer in vkCmdBindIndexBuffer to be VK_NULL_HANDLE, not "
                   "calling vkCmdBindIndexBuffer still has the buffer as undeclared."
-                : "With maintenance6, you are allowed to set the buffer in vkCmdBindIndexBuffer to be VK_NULL_HANDLE.";
+                : "\nWith maintenance6, you are allowed to set the buffer in vkCmdBindIndexBuffer to be VK_NULL_HANDLE.";
         skip |= LogError(
             CreateActionVuid(loc.function, vvl::ActionVUID::INDEX_BINDING_07312),
             cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-            "no vkCmdBindIndexBuffer call has bound an index buffer to this command buffer prior to this indexed draw. %s", extra);
+            "no vkCmdBindIndexBuffer call has bound an index buffer to this command buffer prior to this indexed draw.%s", extra);
     }
 
     // only used for GL emulation, so skip check otherwise
