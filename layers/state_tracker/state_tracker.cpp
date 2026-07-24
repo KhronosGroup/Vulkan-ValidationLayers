@@ -88,7 +88,10 @@ void DeviceState::RemoveProxy(LayerObjectTypeId id) {
 // cleanup tries to destroy the substate)
 void DeviceState::RemoveSubState(LayerObjectTypeId id) {
     // Currently we have not good way to track all objects that have a substate, so this is a list from manual inspection
-    ForEachShared<vvl::CommandBuffer>([id](std::shared_ptr<vvl::CommandBuffer> state) { state->RemoveSubState(id); });
+    ForEachShared<vvl::CommandBuffer>([id](std::shared_ptr<vvl::CommandBuffer> state) {
+        state->RemoveSubState(id);
+        state->RemoveOwnedSubState(id);
+    });
     ForEachShared<vvl::Queue>([id](std::shared_ptr<vvl::Queue> state) { state->RemoveSubState(id); });
     ForEachShared<vvl::Swapchain>([id](std::shared_ptr<vvl::Swapchain> state) { state->RemoveSubState(id); });
     ForEachShared<vvl::ImageView>([id](std::shared_ptr<vvl::ImageView> state) { state->RemoveSubState(id); });

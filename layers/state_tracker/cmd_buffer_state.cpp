@@ -2741,6 +2741,14 @@ std::string CommandBuffer::DescribeInvalidatedState(CBDynamicState dynamic_state
     return ss.str();
 }
 
+void CommandBuffer::RemoveOwnedSubState(LayerObjectTypeId id) {
+    for (auto& last_bound : lastBound) {
+        if (last_bound.push_descriptor_set) {
+            last_bound.push_descriptor_set->RemoveSubState(id);
+        }
+    }
+}
+
 VulkanTypedHandle CommandBufferSubState::Handle() const { return base.Handle(); }
 VkCommandBuffer CommandBufferSubState::VkHandle() const { return base.VkHandle(); }
 
