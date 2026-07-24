@@ -4669,6 +4669,16 @@ void DeviceState::RecordCreateSwapchainState(VkResult result, const VkSwapchainC
         if (old_swapchain_state) {
             old_swapchain_state->new_swapchain = swapchain;
             swapchain->old_swapchain = old_swapchain_state->shared_from_this();
+
+            // Add all currently waiting present semaphores on images
+            // of the old swapchain to the list that will be cleared when
+            // a present completes on the new swapchain.
+            // see SwapchainImage::ResetPresentWaitSemaphores()
+            for (auto& image : old_swapchain_state->images) {
+                swapchain->old_swapchain_present_wait_semaphores.insert(swapchain->old_swapchain_present_wait_semaphores.end(),
+                                                                        image.present_wait_semaphores.begin(),
+                                                                        image.present_wait_semaphores.end());
+            }
         }
         Add(std::move(swapchain));
     } else {
