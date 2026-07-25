@@ -194,10 +194,11 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
 
     if ((!enabled_features.shaderStorageImageMultisample) && ((usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0) &&
         (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT)) {
-        skip |= LogError("VUID-VkImageCreateInfo-usage-00968", device, create_info_loc.dot(Field::usage),
-                         "includes VK_IMAGE_USAGE_STORAGE_BIT and imageType is %s, but shaderStorageImageMultisample feature "
-                         "was not enabled.",
-                         string_VkSampleCountFlagBits(pCreateInfo->samples));
+        skip |= LogError(
+            "VUID-VkImageCreateInfo-usage-00968", device, create_info_loc.dot(Field::usage),
+            "includes VK_IMAGE_USAGE_STORAGE_BIT and pCreateInfo->samples is %s, but shaderStorageImageMultisample feature "
+            "was not enabled.",
+            string_VkSampleCountFlagBits(pCreateInfo->samples));
     }
 
     if (!enabled_features.hostImageCopy && (usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) != 0) {
