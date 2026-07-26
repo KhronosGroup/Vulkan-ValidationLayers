@@ -28,7 +28,7 @@ bool Device::ValidateDrawIndirect2Info(VkCommandBuffer commandBuffer, const VkDr
 
     if (!IsPointerAligned(info.addressRange.address, 4u)) {
         skip |= LogError("VUID-VkDrawIndirect2InfoKHR-addressRange-13109", commandBuffer,
-                         info_loc.dot(Field::addressRange).dot(Field::address), "(0x%" PRIu64 ") must be aligned to 4 bytes.",
+                         info_loc.dot(Field::addressRange).dot(Field::address), "(0x%" PRIx64 ") must be aligned to 4 bytes.",
                          info.addressRange.address);
     }
 
@@ -290,7 +290,7 @@ bool Device::manual_PreCallValidateCmdDispatchIndirect2KHR(VkCommandBuffer comma
 
     if (!IsPointerAligned(pInfo->addressRange.address, 4u)) {
         skip |= LogError("VUID-VkDispatchIndirect2InfoKHR-addressRange-13109", commandBuffer,
-                         info_loc.dot(Field::addressRange).dot(Field::address), "(0x%" PRIu64 ") must be aligned to 4 bytes.",
+                         info_loc.dot(Field::addressRange).dot(Field::address), "(0x%" PRIx64 ") must be aligned to 4 bytes.",
                          pInfo->addressRange.address);
     }
 
