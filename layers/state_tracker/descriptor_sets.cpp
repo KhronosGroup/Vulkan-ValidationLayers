@@ -553,7 +553,7 @@ bool vvl::ImmutableSamplersAreEqual(const DescriptorSetLayoutDef& dsl_def1, cons
     const std::vector<vku::safe_VkSamplerCreateInfo>& create_infos1 =
         dsl_def1.GetImmutableSamplerCreateInfosFromIndex(binding_index);
     const std::vector<vku::safe_VkSamplerCreateInfo>& create_infos2 =
-        dsl_def1.GetImmutableSamplerCreateInfosFromIndex(binding_index);
+        dsl_def2.GetImmutableSamplerCreateInfosFromIndex(binding_index);
     if (create_infos1.size() != create_infos2.size()) {
         return false;
     }
