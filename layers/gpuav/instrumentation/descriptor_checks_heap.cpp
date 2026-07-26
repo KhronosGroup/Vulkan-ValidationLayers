@@ -429,6 +429,16 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         ss << "- vkCmdPushDataEXT[" << std::dec << push_offset << ":"
                            << (has_two_push_dwords ? push_offset + 7 : push_offset + 3)
                            << "] was not called and the values are undefined\n";
+                    } else if (push_data_snapshot) {
+                        ss << "- vkCmdPushDataEXT[" << std::dec << push_offset << ":"
+                           << (has_two_push_dwords ? push_offset + 7 : push_offset + 3) << "] = ";
+                        if (has_two_push_dwords) {
+                            const VkDeviceAddress push_data = *((VkDeviceAddress*)&push_data_snapshot->value[push_offset]);
+                            ss << "0x" << std::hex << push_data << "\n";
+                        } else {
+                            const uint32_t push_data = *((uint32_t*)&push_data_snapshot->value[push_offset]);
+                            ss << std::dec << push_data << "\n";
+                        }
                     }
 
                     ss << "- Mapped with pMapping[" << std::dec << heap_status->mapping_index << "] with "
