@@ -73,8 +73,6 @@ class Validator : public GpuShaderInstrumentor {
     Validator(vvl::DispatchDevice* dev, Instance* instance_vo)
         : GpuShaderInstrumentor(dev, instance_vo, LayerObjectTypeGpuAssisted),
           global_indices_buffer_(*this),
-          global_resource_descriptor_buffer_(*this),
-          global_resource_descriptor_heap_(*this),
           gpu_resources_manager_(*this, true) {}
     ~Validator();
 
@@ -307,14 +305,7 @@ class Validator : public GpuShaderInstrumentor {
         VkDeviceSize reserved_offset_ = 0;
     } resource_heap;
 
-    vko::Buffer& GetGlobalDescriptorBuffer();
-    vko::Buffer& GetGlobalDescriptorHeap();
-
   private:
-    // For Descriptor Buffer/Heap we have our own global buffer, but lazily allocate it when first used
-    vko::Buffer global_resource_descriptor_buffer_;
-    vko::Buffer global_resource_descriptor_heap_;
-
     std::string instrumented_shader_cache_path_{};
 
     // Make sure we call the right versions of any timeline semaphore functions.

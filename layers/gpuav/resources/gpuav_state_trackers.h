@@ -164,6 +164,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     uint32_t GetErrorLoggerIndex() { return (uint32_t)command_error_loggers_.size(); }
     const CommandErrorLogger &GetErrorLogger(uint32_t i) { return command_error_loggers_[i]; }
 
+    vko::Buffer& GetInternalDescriptorHeap();
+    vko::Buffer& GetInternalDescriptorBuffer();
+
     // Buffer storing GPU-AV errors
     vko::BufferRange error_output_buffer_range_;
     // Buffer storing an error count per validated commands.
@@ -185,6 +188,12 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     VkDescriptorSetLayout instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
     std::vector<CommandErrorLogger> command_error_loggers_;
+
+    // For Descriptor Buffer/Heap we have our own internal buffer to store our descriptors
+    // We lazily allocate it when first used
+    // We do this instead of |gpu_resources_manager| as its tied to all validation checks
+    vko::Buffer internal_descriptor_buffer_;
+    vko::Buffer internal_descriptor_heap_;
 };
 
 static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {

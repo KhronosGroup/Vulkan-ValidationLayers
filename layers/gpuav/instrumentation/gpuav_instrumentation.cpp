@@ -553,7 +553,7 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator& gpuav, 
 
     const VkDeviceSize indirect_buffer_offset = gpuav.heap_indirect_buffer_stride_ * common_error_info.total_action_commands;
 
-    const auto& indirect_buffer = gpuav.GetGlobalDescriptorHeap();
+    const auto& indirect_buffer = cb_state.GetInternalDescriptorHeap();
     uint8_t* indirect_buffer_ptr = static_cast<uint8_t*>(indirect_buffer.GetMappedPtr());
     indirect_buffer_ptr += indirect_buffer_offset;
 
@@ -602,7 +602,7 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator& gpuav
         return;
     }
 
-    const auto& gloabl_descriptor_buffer = gpuav.GetGlobalDescriptorBuffer();
+    const auto& gloabl_descriptor_buffer = cb_state.GetInternalDescriptorBuffer();
 
     // There likely is only Push Constants (and BDA) used, but because the VkDescriptorSetLayout is using VK_EXT_descriptor_buffer,
     // and GPU-AV requires using a previous vkCmdBindDescriptorBuffersEXT to inject our code, so we have to inject it ourselves

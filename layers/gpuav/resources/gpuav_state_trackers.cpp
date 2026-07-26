@@ -33,7 +33,12 @@
 namespace gpuav {
 
 CommandBufferSubState::CommandBufferSubState(Validator& gpuav, vvl::CommandBuffer& cb)
-    : vvl::CommandBufferSubState(cb), gpu_resources_manager(gpuav, false), cmd_errors_counts_buffer_(gpuav), gpuav_(gpuav) {
+    : vvl::CommandBufferSubState(cb),
+      gpu_resources_manager(gpuav, false),
+      cmd_errors_counts_buffer_(gpuav),
+      gpuav_(gpuav),
+      internal_descriptor_buffer_(gpuav),
+      internal_descriptor_heap_(gpuav) {
     Location loc(vvl::Func::vkAllocateCommandBuffers);
     AllocateResources(loc);
 }
@@ -206,6 +211,9 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     if (should_destroy) {
         error_output_buffer_range_ = {};
         cmd_errors_counts_buffer_.Destroy();
+
+        internal_descriptor_buffer_.Destroy();
+        internal_descriptor_heap_.Destroy();
     }
 
     draw_index = 0;
@@ -265,6 +273,42 @@ std::string CommandBufferSubState::GetDebugLabelRegion(uint32_t label_command_i,
         }
     }
     return debug_region_name;
+}
+
+vko::Buffer& CommandBufferSubState::GetInternalDescriptorBuffer() {
+    if (internal_descriptor_buffer_.IsDestroyed()) {
+        VkBufferCreateInfo buffer_info = vku::InitStructHelper();
+        // TODO - This is about 6MB and need a fraction of this if using DebugPrintf only
+        buffer_info.size = gpuav_.resource_descriptor_buffer_stride_ * gpuav_.gpuav_settings.indices_buffer_count;
+        buffer_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        VmaAllocationCreateInfo alloc_info = {};
+        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        const VkResult result = internal_descriptor_buffer_.Create(&buffer_info, &alloc_info);
+        if (result != VK_SUCCESS) {
+            gpuav_.InternalVmaError(base.Handle(), result, "Failed to create an internal resource Descriptor Buffer.");
+        }
+    }
+    return internal_descriptor_buffer_;
+}
+
+// This buffer is going to be the indirect buffer for a VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT mapping.
+vko::Buffer& CommandBufferSubState::GetInternalDescriptorHeap() {
+    if (internal_descriptor_heap_.IsDestroyed()) {
+        VkBufferCreateInfo buffer_info = vku::InitStructHelper();
+        buffer_info.size = gpuav_.heap_indirect_buffer_stride_ * gpuav_.gpuav_settings.indices_buffer_count;
+        // Note that maxUniformBufferRange is smaller likely to what we need here, but this buffer doesn't need to worry because we
+        // are not "binding" this, so we can use maxBufferSize instead
+        buffer_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        VmaAllocationCreateInfo alloc_info = {};
+        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        const VkResult result = internal_descriptor_heap_.Create(&buffer_info, &alloc_info);
+        if (result != VK_SUCCESS) {
+            gpuav_.InternalVmaError(base.Handle(), result, "Failed to create an internal resource Descriptor Heap.");
+        }
+    }
+    return internal_descriptor_heap_;
 }
 
 struct FenceWaiter {
