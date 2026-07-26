@@ -538,7 +538,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140) {
     uniform_buffer_ptr[0] = storage_buffer.Address();
     uniform_buffer_ptr[1] = 5;
 
-    m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
+    m_errorMonitor->SetDesiredError("Out of bounds: trying to write 4 bytes", 3);
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
@@ -621,7 +621,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
     uniform_buffer_ptr[0] = storage_buffer_addr;
     uniform_buffer_ptr[1] = 5;  // Will provoke a 4 bytes write past buffer end
 
-    m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
+    m_errorMonitor->SetDesiredError("Out of bounds: trying to write 4 bytes", 3);
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
@@ -686,7 +686,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
     uniform_buffer_ptr[0] = storage_buffer.Address();
     uniform_buffer_ptr[1] = 5;
 
-    m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
+    m_errorMonitor->SetDesiredError("Out of bounds: trying to write 4 bytes", 3);
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
@@ -799,7 +799,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     auto uniform_buffer_ptr = static_cast<VkDeviceAddress*>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = storage_buffer_addr;
 
-    m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
+    m_errorMonitor->SetDesiredError("Out of bounds: trying to write 12 bytes");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
@@ -891,7 +891,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayoutFront) {
     // The OpStore is aligned to 16 bytes, so need to substract by that
     uniform_buffer_ptr[0] = storage_buffer_addr - 16;
 
-    m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written");
+    m_errorMonitor->SetDesiredError("Out of bounds: trying to write 4 bytes");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -950,7 +950,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     auto uniform_buffer_ptr = static_cast<VkDeviceAddress*>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = storage_buffer_addr;
 
-    m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
+    m_errorMonitor->SetDesiredError("Out of bounds: trying to write 12 bytes");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
@@ -1013,7 +1013,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayoutFront) {
     // The OpStore is aligned to 16 bytes, so need to substract by that
     uniform_buffer_ptr[0] = storage_buffer_addr - 16;
 
-    m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written");
+    m_errorMonitor->SetDesiredError("Out of bounds: trying to write 4 bytes");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -1084,7 +1084,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
         uniform_buffer_ptr[i] = addr;
     }
 
-    m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
+    m_errorMonitor->SetDesiredError("Out of bounds: trying to write 12 bytes");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 

@@ -58,10 +58,11 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                 const uint32_t error_sub_code = GetSubError(error_record);
                 switch (error_sub_code) {
                     case kErrorSubCode_BufferDeviceAddress_UnallocRef: {
-                        const char* access_type = is_write ? "written" : "read";
+                        const char* access_type = is_write ? "write" : "read";
                         const uint32_t byte_size = payload & kInst_BuffAddrAccess_PayloadMaskAccessInfo;
-                        ss << "Out of bounds access: " << byte_size << " bytes " << access_type << " at buffer device address 0x"
-                           << std::hex << address << '.';
+                        ss << "Out of bounds: trying to " << access_type << " " << byte_size << " bytes at [0x" << std::hex
+                           << address << ", 0x" << (address + byte_size) - 1
+                           << ") but no buffer device address was found at this range.";
                         if (is_struct) {
                             // Added because glslang currently has no way to seperate out the struct (Slang does as of 2025.6.2)
                             ss << " This " << (is_write ? "write" : "read") << " corresponds to a full OpTypeStruct load";
