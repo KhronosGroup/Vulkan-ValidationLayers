@@ -79,8 +79,7 @@ bool DescriptorBufferPass::RequiresInstrumentation(const Function& function, con
     if (meta.access_path.descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
         return false;  // not supported yet
     }
-    if (meta.access_path.descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLER ||
-        meta.access_path.descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+    if (meta.access_path.descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLER || meta.access_path.is_combined_image_sampler) {
         // Need to be cautious of Embedded Samplers as well when adding support
         return false;  // not supported yet
     }

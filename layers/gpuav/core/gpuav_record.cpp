@@ -144,13 +144,13 @@ void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer command
         vku::safe_VkDescriptorBufferBindingInfoEXT& new_bind_info = chassis_state.modified_binding_infos[i];
         new_bind_info.initialize(&pBindingInfos[i]);
     }
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    CommandBufferSubState& gpuav_cb_state = SubState(*cb_state);
 
     vku::safe_VkDescriptorBufferBindingInfoEXT& modified_binding_info = chassis_state.modified_binding_infos[bufferCount];
     modified_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-    modified_binding_info.address = GetGlobalDescriptorBuffer().Address();
+    modified_binding_info.address = gpuav_cb_state.GetInternalDescriptorBuffer().Address();
 
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    CommandBufferSubState& gpuav_cb_state = SubState(*cb_state);
     gpuav_cb_state.resource_descriptor_buffer_index_ = bufferCount;
 
     // Set the pointer the chassis will use
@@ -297,8 +297,6 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
     gpu_resources_manager_.DestroyResources();
 
     global_indices_buffer_.Destroy();
-    global_resource_descriptor_buffer_.Destroy();
-    global_resource_descriptor_heap_.Destroy();
 
     GpuShaderInstrumentor::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 

@@ -14,6 +14,30 @@ Each time we do a draw/dispatch, we update the address to our bindings.
 
 ![gpu_av_descriptor_heap_mapping](images/gpu_av_descriptor_heap_mapping.png)
 
+## Global is really per-command buffer
+
+Originally the above buffer holding all the descriptors was held globally once per `VkDevice`, but this was wrong and now we allocate it once per `VkCommandBuffer`.
+
+The issue is someone is using frames in flights, records two command buffers, and submits them together like:
+
+```c++
+cb_0.Begin();
+cb_0.Draw();
+cb_0.End();
+vkQueueSubmit(cb_0);
+
+cb_1.Begin();
+cb_1.Draw();
+cb_1.End();
+vkQueueSubmit(cb_1);
+
+sync(cb_0);
+cb_0.Begin();
+// ...
+```
+
+will cause issues. This is because we were sharing the same indirect buffer and both `cb_0` and `cb_1` were sharing the same descriptors. This ment `cb_0` would start to see the value from `cb_1` and causing very awful, subtle race conditions.
+
 # Packing Problem
 
 > "Ha you're hitting the classic packing problem" ~Piers (smart driver dev)

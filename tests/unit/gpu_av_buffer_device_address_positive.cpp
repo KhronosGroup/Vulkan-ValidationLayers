@@ -15,6 +15,7 @@
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "descriptor_helper.h"
+#include "descriptor_heap_object.h"
 #include "generated/vk_function_pointers.h"
 
 void GpuAVBufferDeviceAddressTest::InitGpuVUBufferDeviceAddress(bool safe_mode) {
@@ -2662,4 +2663,117 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, SharingStructWithDifferPSB) {
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, HeapMultipleSubmissions) {
+    TEST_DESCRIPTION("Mimic SaschaWillems example causing issues with BDA");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderUniformBufferArrayNonUniformIndexing);
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    InitDynamicRenderTarget();
+
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(heap_props);
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
+    desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
+
+    vkt::Buffer ubo(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+    desc_heap.WriteBufferDescriptor(ubo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    desc_heap.WriteBufferDescriptor(ubo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+    const char* vs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_descriptor_heap: require
+        #extension GL_EXT_buffer_reference : enable
+        #extension GL_EXT_nonuniform_qualifier : require
+
+        layout (buffer_reference) readonly buffer MatrixReference {
+            mat4 mvp;
+            uint samplerIndex;
+        };
+
+        layout (push_constant) uniform PushConstants {
+            MatrixReference matrixReference;
+        } pc;
+
+        layout (descriptor_heap) uniform UBO {
+            vec4 pos;
+            vec4 color;
+        } ubo[2];
+
+        void main() {
+            MatrixReference uniformData = pc.matrixReference;
+            vec3 localPos = 0.25f + ubo[nonuniformEXT(gl_InstanceIndex)].pos.xyz;
+            gl_Position = uniformData.mvp * vec4(localPos, 1.0);
+        }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper(&pipeline_rendering_info);
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    VkPipelineShaderStageCreateInfo stages[2] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.gp_ci_.layout = VK_NULL_HANDLE;
+    pipe.gp_ci_.stageCount = 2;
+    pipe.gp_ci_.pStages = stages;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
+    pipe.CreateGraphicsPipeline(false);
+
+    vkt::Buffer index_buffer(*m_device, 64, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    const VkRect2D scissor = {{0, 0}, {100u, 100u}};
+
+    vkt::Buffer bda_0(*m_device, 256, 0, vkt::device_address);
+    vkt::Buffer bda_1(*m_device, 256, 0, vkt::device_address);
+
+    vkt::CommandBuffer cb_0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb_1(*m_device, m_command_pool);
+
+    cb_0.Begin();
+    cb_0.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    vk::CmdBindPipeline(cb_0, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdSetScissor(cb_0, 0u, 1u, &scissor);
+    desc_heap.BindResourceHeap(cb_0);
+    desc_heap.BindSamplerHeap(cb_0);
+    VkDeviceAddress bda_buffer_addr_0 = bda_0.Address();
+    cb_0.PushData(0, sizeof(VkDeviceAddress), &bda_buffer_addr_0);
+    vk::CmdBindIndexBuffer(cb_0, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexed(cb_0, 3, 1, 0, 0, 0);
+    vk::CmdDrawIndexed(cb_0, 3, 1, 0, 0, 1);
+    cb_0.EndRendering();
+    cb_0.End();
+
+    cb_1.Begin();
+    cb_1.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    vk::CmdBindPipeline(cb_1, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdSetScissor(cb_1, 0u, 1u, &scissor);
+    desc_heap.BindResourceHeap(cb_1);
+    desc_heap.BindSamplerHeap(cb_1);
+    VkDeviceAddress bda_buffer_addr_1 = bda_1.Address();
+    cb_1.PushData(0, sizeof(VkDeviceAddress), &bda_buffer_addr_1);
+    vk::CmdBindIndexBuffer(cb_1, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexed(cb_1, 3, 1, 0, 0, 0);
+    vk::CmdDrawIndexed(cb_1, 3, 1, 0, 0, 1);
+    cb_1.EndRendering();
+    cb_1.End();
+
+    // Submit asynchronously (NO WAIT between submits)
+    m_default_queue->Submit(cb_0);
+    m_default_queue->Submit(cb_1);
+
+    m_default_queue->Wait();
 }
