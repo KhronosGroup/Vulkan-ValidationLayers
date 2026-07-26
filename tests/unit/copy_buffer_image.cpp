@@ -5380,3 +5380,24 @@ TEST_F(NegativeCopyBufferImage, DestroyAfterCopyImageToMemory) {
     vk::EndCommandBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeCopyBufferImage, BC3Copy) {
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    vkt::Image image(*m_device, 5u, 8u, VK_FORMAT_BC3_UNORM_BLOCK, kSrcDstUsage);
+    vkt::Buffer buffer(*m_device, 56u, kSrcDstUsage);
+
+    VkBufferImageCopy region = {};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    region.imageExtent = {5u, 8u, 1u};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-pRegions-00171");
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
