@@ -1741,7 +1741,10 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                                                                     &instrumented_pipeline_lib);
             if (result != VK_SUCCESS || instrumented_pipeline_lib == VK_NULL_HANDLE) {
                 // could just check result, but being extra cautious around GPL and checking handle as well
-                InternalError(device, loc, "Failed to recreate instrumented pipeline library.");
+                //
+                // We had this as an error before, but found things that would hit this because the original GPL was already
+                // bad and GPU-AV is not the cause. In that case the app will properly recover so now this is only a warning
+                InternalWarning(device, loc, "Failed to recreate instrumented pipeline library.");
                 return false;
             }
 
