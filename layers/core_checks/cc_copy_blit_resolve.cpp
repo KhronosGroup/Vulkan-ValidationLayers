@@ -2139,14 +2139,18 @@ bool CoreChecks::ValidateBufferBounds(const vvl::CommandBuffer& cb_state, const 
     const uint32_t last_z = region.imageExtent.depth - 1;
     const uint32_t last_layer = normalized_layer_count - 1;
 
+    // We have to cast to double before using std::ceil, otherwise when dividing integers the fractional part will be truncated,
+    // making std::ceil a no-op.
     const VkDeviceSize row_extent =
-        static_cast<VkDeviceSize>(std::ceil(std::max(region.bufferRowLength, region.imageExtent.width) / block_extent.width)) *
+        static_cast<VkDeviceSize>(
+            std::ceil(static_cast<double>(std::max(region.bufferRowLength, region.imageExtent.width)) / block_extent.width)) *
         block_size;
     const VkDeviceSize slice_extent =
-        static_cast<VkDeviceSize>(std::ceil(std::max(region.bufferImageHeight, region.imageExtent.height) / block_extent.height)) *
+        static_cast<VkDeviceSize>(
+            std::ceil(static_cast<double>(std::max(region.bufferImageHeight, region.imageExtent.height)) / block_extent.height)) *
         row_extent;
     const VkDeviceSize layer_extent =
-        static_cast<VkDeviceSize>(std::ceil(region.imageExtent.depth / block_extent.depth)) * slice_extent;
+        static_cast<VkDeviceSize>(std::ceil(static_cast<double>(region.imageExtent.depth) / block_extent.depth)) * slice_extent;
 
     const VkDeviceSize x_value = static_cast<VkDeviceSize>(std::floor(last_x / block_extent.width)) * block_size;
     const VkDeviceSize y_value = static_cast<VkDeviceSize>(std::floor(last_y / block_extent.height)) * row_extent;
@@ -2206,14 +2210,18 @@ bool CoreChecks::ValidateDeviceAddressBufferBounds(const vvl::CommandBuffer& cb_
     const uint32_t last_z = region.imageExtent.depth - 1;
     const uint32_t last_layer = normalized_layer_count - 1;
 
+    // We have to cast to double before using std::ceil, otherwise when dividing integers the fractional part will be truncated,
+    // making std::ceil a no-op.
     const VkDeviceSize row_extent =
-        static_cast<VkDeviceSize>(std::ceil(std::max(region.addressRowLength, region.imageExtent.width) / block_extent.width)) *
+        static_cast<VkDeviceSize>(
+            std::ceil(static_cast<double>(std::max(region.addressRowLength, region.imageExtent.width)) / block_extent.width)) *
         block_size;
     const VkDeviceSize slice_extent =
-        static_cast<VkDeviceSize>(std::ceil(std::max(region.addressImageHeight, region.imageExtent.height) / block_extent.height)) *
+        static_cast<VkDeviceSize>(
+            std::ceil(static_cast<double>(std::max(region.addressImageHeight, region.imageExtent.height)) / block_extent.height)) *
         row_extent;
     const VkDeviceSize layer_extent =
-        static_cast<VkDeviceSize>(std::ceil(region.imageExtent.depth / block_extent.depth)) * slice_extent;
+        static_cast<VkDeviceSize>(std::ceil(static_cast<double>(region.imageExtent.depth) / block_extent.depth)) * slice_extent;
 
     const VkDeviceSize x_value = static_cast<VkDeviceSize>(std::floor(last_x / block_extent.width)) * block_size;
     const VkDeviceSize y_value = static_cast<VkDeviceSize>(std::floor(last_y / block_extent.height)) * row_extent;
