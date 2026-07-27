@@ -2178,3 +2178,134 @@ TEST_F(PositiveDynamicRendering, QueryDynamicRenderingTileProperties) {
     VkTilePropertiesQCOM tile_properties = vku::InitStructHelper();
     vk::GetDynamicRenderingTilePropertiesQCOM(device(), &rendering_info, &tile_properties);
 }
+
+TEST_F(PositiveDynamicRendering, RenderAreaMipLevel) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12772");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 64, 4, 1, color_format,
+                                                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+    // Mip 0 size: 128 x 64
+    // Mip 1 size: 64 x 32
+    // Mip 2 size: 32 x 16
+    // Mip 3 size: 16 x 8
+    vkt::Image bloom_image(*m_device, image_ci);
+    vkt::ImageView view_mip0 = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 0, 1);
+    vkt::ImageView view_mip1 = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 1, 1, 0, 1);
+    vkt::ImageView view_mip2 = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 2, 1, 0, 1);
+    vkt::ImageView view_mip3 = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 3, 1, 0, 1);
+
+    VkPipelineRenderingCreateInfo rendering_ci = vku::InitStructHelper();
+    rendering_ci.colorAttachmentCount = 1;
+    rendering_ci.pColorAttachmentFormats = &color_format;
+
+    CreatePipelineHelper pipe(*this, &rendering_ci);
+    pipe.CreateGraphicsPipeline();
+    m_command_buffer.Begin();
+
+    VkRenderingAttachmentInfo attachment_info = vku::InitStructHelper();
+    attachment_info.imageView = view_mip0;
+    attachment_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment_info.clearValue.color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {128, 64}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &attachment_info;
+
+    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    vk::CmdEndRendering(m_command_buffer);
+    m_command_buffer.FullMemoryBarrier();
+
+    attachment_info.imageView = view_mip1;
+    rendering_info.renderArea.extent = {64, 32};
+    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    vk::CmdEndRendering(m_command_buffer);
+    m_command_buffer.FullMemoryBarrier();
+
+    attachment_info.imageView = view_mip2;
+    rendering_info.renderArea.extent = {32, 16};
+    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    vk::CmdEndRendering(m_command_buffer);
+    m_command_buffer.FullMemoryBarrier();
+
+    attachment_info.imageView = view_mip3;
+    rendering_info.renderArea.extent = {16, 8};
+    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    vk::CmdEndRendering(m_command_buffer);
+
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDynamicRendering, RenderAreaMipLevelMultipleLevels) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12772");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 64, 4, 1, color_format,
+                                                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+    // Mip 0 size: 128 x 64
+    // Mip 1 size: 64 x 32
+    // Mip 2 size: 32 x 16
+    // Mip 3 size: 16 x 8
+    vkt::Image bloom_image(*m_device, image_ci);
+    vkt::ImageView view_mip0 = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 0, 1);
+    vkt::ImageView view_mip123 = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 1, 3, 0, 1);
+
+    VkPipelineRenderingCreateInfo rendering_ci = vku::InitStructHelper();
+    rendering_ci.colorAttachmentCount = 1;
+    rendering_ci.pColorAttachmentFormats = &color_format;
+
+    CreatePipelineHelper pipe(*this, &rendering_ci);
+    pipe.CreateGraphicsPipeline();
+    m_command_buffer.Begin();
+
+    VkRenderingAttachmentInfo attachment_info = vku::InitStructHelper();
+    attachment_info.imageView = view_mip0;
+    attachment_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment_info.clearValue.color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {128, 64}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &attachment_info;
+
+    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    vk::CmdEndRendering(m_command_buffer);
+    m_command_buffer.FullMemoryBarrier();
+
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4918
+    // only the base mip should be rendered to
+    attachment_info.imageView = view_mip123;
+    rendering_info.renderArea.extent = {64, 32};
+    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    vk::CmdEndRendering(m_command_buffer);
+    m_command_buffer.FullMemoryBarrier();
+
+    m_command_buffer.End();
+}
