@@ -91,8 +91,8 @@ class Instance : public vvl::InstanceProxy {
                                      const ErrorObject& error_obj) const override;
     bool ValidateQueueFamilyIndex(const vvl::PhysicalDevice& pd_state, uint32_t requested_queue_family, const char* vuid,
                                   const Location& loc) const;
-    bool ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice& pd_state, uint32_t info_count,
-                                        const VkDeviceQueueCreateInfo* infos, const void* pNext, const Location& loc) const;
+    bool ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice& pd_state, const VkDeviceCreateInfo& device_ci,
+                                        const Location& device_ci_loc) const;
     bool ValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice gpu,
                                                          const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                          VkImageFormatProperties2* pImageFormatProperties,
