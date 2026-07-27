@@ -58,6 +58,7 @@ class DescriptorHeap {
     VkDeviceSize WriteImageDescriptorAtOffset(const vkt::Image& image, VkDeviceSize heap_offset,
                                               VkDescriptorType desc_type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                                               VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    VkDeviceSize WriteSamplerDescriptorAtOffset(VkSamplerCreateInfo* sampler_create_info, VkDeviceSize heap_offset);
     VkDeviceSize WriteNullDescriptorAtOffset(VkDescriptorType desc_type, VkDeviceSize heap_offset);
 
     VkDeviceSize AlignResource(VkDeviceSize offset);

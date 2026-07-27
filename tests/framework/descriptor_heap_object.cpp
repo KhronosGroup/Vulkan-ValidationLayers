@@ -177,6 +177,19 @@ VkDeviceSize DescriptorHeap::WriteSamplerDescriptor(VkSamplerCreateInfo* sampler
     return write_offset;
 }
 
+VkDeviceSize DescriptorHeap::WriteSamplerDescriptorAtOffset(VkSamplerCreateInfo* sampler_create_info, VkDeviceSize heap_offset) {
+    VkSamplerCreateInfo safe_create_info = SafeSaneSamplerCreateInfo();
+
+    VkHostAddressRangeEXT sampler_host_data{};
+    sampler_host_data.address = sampler_heap_data_ + heap_offset;
+    sampler_host_data.size = static_cast<size_t>(heap_props.samplerDescriptorSize);
+
+    vk::WriteSamplerDescriptorsEXT(*test_->DeviceObj(), 1u, sampler_create_info ? sampler_create_info : &safe_create_info,
+                                   &sampler_host_data);
+
+    return heap_offset;
+}
+
 VkDeviceSize DescriptorHeap::WriteNullDescriptorAtOffset(VkDescriptorType desc_type, VkDeviceSize heap_offset) {
     assert(resource_heap_.handle() != VK_NULL_HANDLE);
     VkResourceDescriptorInfoEXT desc_info = vku::InitStructHelper();

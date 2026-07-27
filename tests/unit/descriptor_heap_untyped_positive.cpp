@@ -13,6 +13,7 @@
 #include <cstdint>
 #include "descriptor_heap_object.h"
 #include "shader_helper.h"
+#include "shader_templates.h"
 #include "test_framework.h"
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
@@ -224,15 +225,8 @@ TEST_F(PositiveDescriptorHeapUntyped, ImageAndSampler) {
     descriptor_info[1].data.pAddressRange = &buffer_address_range;
     vk::WriteResourceDescriptorsEXT(*m_device, 2u, descriptor_info, resource_host);
 
-    VkDeviceSize sampler_desc_heap_size_tracker = 0u;
-    const VkDeviceSize sampler_offset = AlignedAppend(sampler_desc_heap_size_tracker, VK_DESCRIPTOR_TYPE_SAMPLER);
-    const VkDeviceSize sampler_size = sampler_desc_heap_size_tracker - sampler_offset;
-
-    desc_heap.CreateSamplerHeap(sampler_desc_heap_size_tracker);
-
-    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    VkHostAddressRangeEXT sampler_host = {desc_heap.sampler_heap_data_ + sampler_offset, static_cast<size_t>(sampler_size)};
-    vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
+    desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
+    desc_heap.WriteSamplerDescriptor();
 
     char const* cs_source = R"glsl(
         #version 450
@@ -816,6 +810,67 @@ TEST_F(PositiveDescriptorHeapUntyped, SecondaryCmdBufferGraphics) {
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        uint32_t* data = static_cast<uint32_t*>(buffer.Memory().Map());
+        ASSERT_EQ(data[0], src_data);
+    }
+}
+
+TEST_F(PositiveDescriptorHeapUntyped, VertexStorage) {
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+    InitRenderTarget();
+
+    vkt::DescriptorHeap desc_heap(*this);
+    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    desc_heap.CreateResourceHeap(resource_stride);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    desc_heap.WriteBufferDescriptor(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    char const* vs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_descriptor_heap : require
+
+        layout(descriptor_heap) buffer A { uint a; } heap[];
+        layout(push_constant) uniform PushConstant {
+            uint b;
+        };
+        void main() {
+            heap[0].a = b;
+            gl_Position = vec4(1.0f);
+        }
+    )glsl";
+    VkShaderObj vert_module = VkShaderObj(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj frag_module = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineShaderStageCreateInfo stages[2] = {vert_module.GetStageCreateInfo(), frag_module.GetStageCreateInfo()};
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.gp_ci_.layout = VK_NULL_HANDLE;
+    pipe.gp_ci_.stageCount = 2;
+    pipe.gp_ci_.pStages = stages;
+    pipe.CreateGraphicsPipeline(false);
+
+    uint32_t src_data = 4321u;
+
+    VkPushConstantRange push_const_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)};
+    VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
+    pipeline_layout_info.pushConstantRangeCount = 1u;
+    pipeline_layout_info.pPushConstantRanges = &push_const_range;
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_info);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_command_buffer.PushData(0, sizeof(uint32_t), &src_data);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
