@@ -2716,6 +2716,58 @@ TEST_F(NegativeDynamicRendering, DeviceGroupAreaGreaterThanAttachmentExtent) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDynamicRendering, RenderAreaMipLevel) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12772");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(1280, 687, 4, 1, color_format,
+                                                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    // Mip 0 size: 1280 x 687
+    // Mip 1 size: 640 x 343
+    // Mip 2 size: 320 x 171
+    vkt::Image bloom_image(*m_device, image_ci);
+    vkt::ImageView view_mip0 = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 0, 1);
+    vkt::ImageView view_mip1 = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 1, 1, 0, 1);
+    // has mip 1 and 2
+    vkt::ImageView view_mip12 = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 1, 2, 0, 1);
+
+    VkRenderingAttachmentInfo attachment_info = vku::InitStructHelper();
+    attachment_info.imageView = view_mip0;
+    attachment_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment_info.clearValue.color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {1280, 688}};  // over by 1
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &attachment_info;
+    m_command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06080");
+    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    attachment_info.imageView = view_mip1;
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06079");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06080");
+    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    attachment_info.imageView = view_mip12;
+    rendering_info.renderArea.extent = {640 + 320, 343 + 171};
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06079");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06080");
+    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleRenderPass) {
     TEST_DESCRIPTION("Execute secondary command buffers within render pass instance with incompatible render pass");
 

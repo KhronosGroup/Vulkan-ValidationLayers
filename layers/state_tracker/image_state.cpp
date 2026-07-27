@@ -385,6 +385,8 @@ VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresource& sub) c
 }
 
 VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceRange& range) const {
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4918
+    // When dealing with ranges you use only the base level
     return GetEffectiveSubresourceExtent(range.aspectMask, range.baseMipLevel);
 }
 

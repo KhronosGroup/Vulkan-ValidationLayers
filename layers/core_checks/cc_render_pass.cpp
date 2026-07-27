@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
@@ -2971,33 +2972,91 @@ bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRe
     return PreCallValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, error_obj);
 }
 
-bool CoreChecks::ValidateRenderingInfoAttachmentDeviceGroup(const vvl::Image& image_state, const VkRenderingInfo& rendering_info,
-                                                            const LogObjectList& objlist, const Location& loc) const {
+bool CoreChecks::ValidateRenderingInfoAttachment(const vvl::ImageView& image_view_state, const VkRenderingInfo& rendering_info,
+                                                 const LogObjectList& objlist, const Location& attachment_loc) const {
     bool skip = false;
+
+    const bool is_color = attachment_loc.field == Field::pColorAttachments;
+    const bool is_depth = attachment_loc.field == Field::pDepthAttachment;
+    assert(is_color || is_depth || attachment_loc.field == Field::pStencilAttachment);
+
+    const VkComponentMapping components = image_view_state.create_info.components;
+    if (!IsIdentitySwizzle(components)) {
+        const char* vuid = is_color   ? "VUID-VkRenderingInfo-colorAttachmentCount-09479"
+                           : is_depth ? "VUID-VkRenderingInfo-pDepthAttachment-09481"
+                                      : "VUID-VkRenderingInfo-pStencilAttachment-09483";
+        skip |=
+            LogError(vuid, objlist, attachment_loc, "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
+                     string_VkComponentMapping(components).c_str());
+    }
+
+    if (rendering_info.viewMask == 0 && rendering_info.layerCount > image_view_state.normalized_subresource_range.layerCount) {
+        const char* vuid = is_color   ? "VUID-VkRenderingInfo-viewMask-10859"
+                           : is_depth ? "VUID-VkRenderingInfo-viewMask-10860"
+                                      : "VUID-VkRenderingInfo-viewMask-10861";
+        skip |= LogError(vuid, objlist, attachment_loc.dot(Field::layerCount),
+                         "(%" PRIu32 ") is greater than the imageView which was created with a layerCount of %" PRIu32 ".",
+                         rendering_info.layerCount, image_view_state.normalized_subresource_range.layerCount);
+    }
+
+    if (rendering_info.viewMask != 0 &&
+        image_view_state.normalized_subresource_range.layerCount <= (uint32_t)MostSignificantBit(rendering_info.viewMask)) {
+        const char* vuid = is_color   ? "VUID-VkRenderingInfo-viewMask-12403"
+                           : is_depth ? "VUID-VkRenderingInfo-viewMask-12404"
+                                      : "VUID-VkRenderingInfo-viewMask-12405";
+        skip |= LogError(vuid, objlist, attachment_loc,
+                         "must have a layerCount (%" PRIu32
+                         ") greater than the most significant bit index (%d) in viewMask (0x%" PRIx32 ")",
+                         image_view_state.normalized_subresource_range.layerCount, MostSignificantBit(rendering_info.viewMask),
+                         rendering_info.viewMask);
+    }
 
     auto device_group_render_pass_begin_info = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(rendering_info.pNext);
     if (!device_group_render_pass_begin_info || device_group_render_pass_begin_info->deviceRenderAreaCount == 0) {
+        const vvl::Image& image_state = *image_view_state.image_state;
+
+        const VkExtent3D effective_extent =
+            image_state.GetEffectiveSubresourceExtent(image_view_state.create_info.subresourceRange);
+
         // Upcasting to handle overflow
         const bool x_extent_valid =
-            static_cast<int64_t>(image_state.GetExtent().width) >=
+            static_cast<int64_t>(effective_extent.width) >=
             static_cast<int64_t>(rendering_info.renderArea.offset.x) + static_cast<int64_t>(rendering_info.renderArea.extent.width);
         if (!x_extent_valid) {
+            std::ostringstream ss;
+            ss << "width (" << effective_extent.width << ") is less than pRenderingInfo->renderArea.offset.x ("
+               << rendering_info.renderArea.offset.x << ") + pRenderingInfo->renderArea.extent.width ("
+               << rendering_info.renderArea.extent.width << ").";
+            if (image_view_state.normalized_subresource_range.baseMipLevel != 0) {
+                ss << "\nThe VkImageView baseMipLevel (" << image_view_state.normalized_subresource_range.baseMipLevel
+                   << ") has an effective extent [" << string_VkExtent3D(effective_extent) << "] based off the VkImage extent ["
+                   << string_VkExtent3D(image_state.GetExtent()) << "]";
+                if (rendering_info.renderArea.extent.width == image_state.GetExtent().width) {
+                    ss << "\nHint: Did you forget to adjust the renderArea::extent for the mip level?";
+                }
+            }
             skip |=
-                LogError("VUID-VkRenderingInfo-pNext-06079", objlist, loc,
-                         "width (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.x (%" PRId32
-                         ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
-                         image_state.GetExtent().width, rendering_info.renderArea.offset.x, rendering_info.renderArea.extent.width);
+                LogError("VUID-VkRenderingInfo-pNext-06079", objlist, attachment_loc.dot(Field::imageView), "%s", ss.str().c_str());
         }
 
-        const bool y_extent_valid = static_cast<int64_t>(image_state.GetExtent().height) >=
-                                    static_cast<int64_t>(rendering_info.renderArea.offset.y) +
-                                        static_cast<int64_t>(rendering_info.renderArea.extent.height);
+        const bool y_extent_valid =
+            static_cast<int64_t>(effective_extent.height) >= static_cast<int64_t>(rendering_info.renderArea.offset.y) +
+                                                                 static_cast<int64_t>(rendering_info.renderArea.extent.height);
         if (!y_extent_valid) {
-            skip |= LogError("VUID-VkRenderingInfo-pNext-06080", objlist, loc,
-                             "height (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.y (%" PRId32
-                             ") + pRenderingInfo->renderArea.extent.height (%" PRIu32 ").",
-                             image_state.GetExtent().height, rendering_info.renderArea.offset.y,
-                             rendering_info.renderArea.extent.height);
+            std::ostringstream ss;
+            ss << "height (" << effective_extent.height << ") is less than pRenderingInfo->renderArea.offset.y ("
+               << rendering_info.renderArea.offset.y << ") + pRenderingInfo->renderArea.extent.height ("
+               << rendering_info.renderArea.extent.height << ").";
+            if (image_view_state.normalized_subresource_range.baseMipLevel != 0) {
+                ss << "\nThe VkImageView baseMipLevel (" << image_view_state.normalized_subresource_range.baseMipLevel
+                   << ") has an effective extent [" << string_VkExtent3D(effective_extent) << "] based off the VkImage extent ["
+                   << string_VkExtent3D(image_state.GetExtent()) << "]";
+                if (rendering_info.renderArea.extent.height == image_state.GetExtent().height) {
+                    ss << "\nHint: Did you forget to adjust the renderArea::extent for the mip level?";
+                }
+            }
+            skip |=
+                LogError("VUID-VkRenderingInfo-pNext-06080", objlist, attachment_loc.dot(Field::imageView), "%s", ss.str().c_str());
         }
     }
 
@@ -4155,38 +4214,15 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer&
             ASSERT_AND_CONTINUE(image_view_state);
             const vvl::Image& image_state = *image_view_state->image_state;
             const LogObjectList objlist(commandBuffer, image_view_state->Handle(), image_state.Handle());
-            const Location color_image_view = color_attachment_loc.dot(Field::imageView);
 
             if (!(image_view_state->inherited_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
-                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06087", objlist, color_image_view,
-                                 "references an image which was not created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.\n%s",
-                                 image_view_state->DescribeImageUsage(*this).c_str());
+                skip |=
+                    LogError("VUID-VkRenderingInfo-colorAttachmentCount-06087", objlist, color_attachment_loc.dot(Field::imageView),
+                             "references an image which was not created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.\n%s",
+                             image_view_state->DescribeImageUsage(*this).c_str());
             }
 
-            const VkComponentMapping components = image_view_state->create_info.components;
-            if (!IsIdentitySwizzle(components)) {
-                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-09479", objlist, color_image_view,
-                                 "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
-                                 string_VkComponentMapping(components).c_str());
-            }
-
-            if (rendering_info.viewMask == 0 &&
-                rendering_info.layerCount > image_view_state->normalized_subresource_range.layerCount) {
-                skip |= LogError("VUID-VkRenderingInfo-viewMask-10859", objlist, color_attachment_loc.dot(Field::layerCount),
-                                 "(%" PRIu32 ") is greater than the imageView which was created with a layerCount of %" PRIu32 ".",
-                                 rendering_info.layerCount, image_view_state->normalized_subresource_range.layerCount);
-            }
-
-            if (rendering_info.viewMask != 0 && image_view_state->normalized_subresource_range.layerCount <=
-                                                    (uint32_t)MostSignificantBit(rendering_info.viewMask)) {
-                skip |= LogError("VUID-VkRenderingInfo-viewMask-12403", objlist, color_image_view,
-                                 "must have a layerCount (%" PRIu32
-                                 ") greater than the most significant bit index (%d) in viewMask (0x%" PRIx32 ")",
-                                 image_view_state->normalized_subresource_range.layerCount,
-                                 MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
-            }
-
-            skip |= ValidateRenderingInfoAttachmentDeviceGroup(image_state, rendering_info, objlist, color_image_view);
+            skip |= ValidateRenderingInfoAttachment(*image_view_state, rendering_info, objlist, color_attachment_loc);
         }
 
         auto resolve_view_state = Get<vvl::ImageView>(color_attachment.resolveImageView);
@@ -4333,43 +4369,20 @@ bool CoreChecks::ValidateBeginRenderingDepthAttachment(const vvl::CommandBuffer&
         ASSERT_AND_RETURN_SKIP(depth_view_state);
         const vvl::Image& image_state = *depth_view_state->image_state;
         const LogObjectList objlist(commandBuffer, depth_view_state->Handle(), image_state.Handle());
-        const Location depth_image_view = depth_attachment_loc.dot(Field::imageView);
 
         if (!(depth_view_state->inherited_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06088", objlist, depth_image_view,
+            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06088", objlist, depth_attachment_loc.dot(Field::imageView),
                              "references an image which was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.\n%s",
                              depth_view_state->DescribeImageUsage(*this).c_str());
         }
 
         if (!vkuFormatHasDepth(depth_view_state->create_info.format)) {
-            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06547", objlist, depth_image_view,
+            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06547", objlist, depth_attachment_loc.dot(Field::imageView),
                              "was created with a format (%s) that does not have a depth aspect.",
                              string_VkFormat(depth_view_state->create_info.format));
         }
 
-        const VkComponentMapping components = depth_view_state->create_info.components;
-        if (!IsIdentitySwizzle(components)) {
-            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-09481", objlist, depth_image_view,
-                             "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
-                             string_VkComponentMapping(components).c_str());
-        }
-
-        if (rendering_info.viewMask == 0 && rendering_info.layerCount > depth_view_state->normalized_subresource_range.layerCount) {
-            skip |= LogError("VUID-VkRenderingInfo-viewMask-10860", objlist, depth_attachment_loc.dot(Field::layerCount),
-                             "(%" PRIu32 ") is greater than the imageView which was created with a layerCount of %" PRIu32 ".",
-                             rendering_info.layerCount, depth_view_state->normalized_subresource_range.layerCount);
-        }
-
-        if (rendering_info.viewMask != 0 &&
-            depth_view_state->normalized_subresource_range.layerCount <= (uint32_t)MostSignificantBit(rendering_info.viewMask)) {
-            skip |= LogError("VUID-VkRenderingInfo-viewMask-12404", objlist, depth_image_view,
-                             "must have a layerCount (%" PRIu32
-                             ") greater than the most significant bit index (%d) in viewMask (0x%" PRIx32 ")",
-                             depth_view_state->normalized_subresource_range.layerCount, MostSignificantBit(rendering_info.viewMask),
-                             rendering_info.viewMask);
-        }
-
-        skip |= ValidateRenderingInfoAttachmentDeviceGroup(image_state, rendering_info, objlist, depth_image_view);
+        skip |= ValidateRenderingInfoAttachment(*depth_view_state, rendering_info, objlist, depth_attachment_loc);
     }
 
     if (depth_attachment.resolveMode != VK_RESOLVE_MODE_NONE) {
@@ -4439,44 +4452,20 @@ bool CoreChecks::ValidateBeginRenderingStencilAttachment(const vvl::CommandBuffe
         ASSERT_AND_RETURN_SKIP(stencil_view_state);
         const vvl::Image& image_state = *stencil_view_state->image_state;
         const LogObjectList objlist(commandBuffer, stencil_view_state->Handle(), image_state.Handle());
-        const Location stencil_image_view = stencil_attachment_loc.dot(Field::imageView);
 
         if (!(stencil_view_state->inherited_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06089", objlist, stencil_image_view,
+            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06089", objlist, stencil_attachment_loc.dot(Field::imageView),
                              "references an image which was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.\n%s",
                              stencil_view_state->DescribeImageUsage(*this).c_str());
         }
 
         if (!vkuFormatHasStencil(stencil_view_state->create_info.format)) {
-            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06548", objlist, stencil_image_view,
+            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06548", objlist, stencil_attachment_loc.dot(Field::imageView),
                              "was created with a format (%s) that does not have a stencil aspect.",
                              string_VkFormat(stencil_view_state->create_info.format));
         }
 
-        const VkComponentMapping components = stencil_view_state->create_info.components;
-        if (!IsIdentitySwizzle(components)) {
-            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-09483", objlist, stencil_image_view,
-                             "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
-                             string_VkComponentMapping(components).c_str());
-        }
-
-        if (rendering_info.viewMask == 0 &&
-            rendering_info.layerCount > stencil_view_state->normalized_subresource_range.layerCount) {
-            skip |= LogError("VUID-VkRenderingInfo-viewMask-10861", objlist, stencil_attachment_loc.dot(Field::layerCount),
-                             "(%" PRIu32 ") is greater than the imageView which was created with a layerCount of %" PRIu32 ".",
-                             rendering_info.layerCount, stencil_view_state->normalized_subresource_range.layerCount);
-        }
-
-        if (rendering_info.viewMask != 0 &&
-            stencil_view_state->normalized_subresource_range.layerCount <= (uint32_t)MostSignificantBit(rendering_info.viewMask)) {
-            skip |= LogError("VUID-VkRenderingInfo-viewMask-12405", objlist, stencil_image_view,
-                             "must have a layerCount (%" PRIu32
-                             ") greater than the most significant bit index (%d) in viewMask (0x%" PRIx32 ")",
-                             stencil_view_state->normalized_subresource_range.layerCount,
-                             MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
-        }
-
-        skip |= ValidateRenderingInfoAttachmentDeviceGroup(image_state, rendering_info, objlist, stencil_image_view);
+        skip |= ValidateRenderingInfoAttachment(*stencil_view_state, rendering_info, objlist, stencil_attachment_loc);
     }
     if (stencil_attachment.resolveMode != VK_RESOLVE_MODE_NONE) {
         if (stencil_attachment.resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID) {
