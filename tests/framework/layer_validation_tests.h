@@ -297,30 +297,7 @@ class GpuAVDescriptorHeap : public GpuAVTest {
   public:
     void InitGpuAVDescriptorHeap(std::vector<VkLayerSettingEXT> layer_settings = {}, bool safe_mode = true);
 
-    void CreateResourceHeap(VkDeviceSize app_size, bool reserved_range_in_front = false);
-    void CreateSamplerHeap(VkDeviceSize app_size, bool reserved_range_in_front = false, bool use_embedded_samplers = false);
-
-    void BindResourceHeap();
-    void BindSamplerHeap();
-
-    void WriteBufferToHeap(const vkt::Buffer& buffer, uint32_t stride = 0,
-                           VkDescriptorType type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    void WriteImageToHeap(const vkt::Image& image, uint32_t stride = 0, VkDescriptorType type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-
     VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-
-    vkt::Buffer resource_heap_;
-    uint8_t *resource_heap_data_ = nullptr;
-    bool resource_reserved_range_in_front_ = false;
-    vkt::Buffer sampler_heap_;
-    uint8_t *sampler_heap_data_ = nullptr;
-    bool sampler_reserved_range_in_front_ = false;
-
-    VkDeviceSize AlignResource(VkDeviceSize offset);
-    VkDeviceSize AlignSampler(VkDeviceSize offset);
-
-  private:
-    bool embedded_samplers = false;
 };
 
 class GpuAVRayHitObjectTest : public GpuAVTest {
@@ -366,28 +343,9 @@ class DescriptorHeapTest : public VkLayerTest {
   public:
     void InitBasicDescriptorHeap();
     void InitUntypedDescriptorHeap();
-    void CreateResourceHeap(VkDeviceSize app_size, bool reserved_range_in_front = false);
-    void CreateSamplerHeap(VkDeviceSize app_size, bool reserved_range_in_front = false, bool use_embedded_samplers = false);
-
-    void BindResourceHeap();
-    void BindSamplerHeap();
-
-    VkDeviceSize AlignedAppend(VkDeviceSize& end, VkDescriptorType type, uint32_t count = 1);
-    VkDeviceSize AlignResource(VkDeviceSize offset);
-    VkDeviceSize AlignSampler(VkDeviceSize offset);
 
     VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
     VkPhysicalDeviceDescriptorHeapTensorPropertiesARM tensor_heap_props = vku::InitStructHelper();
-
-    vkt::Buffer resource_heap_;
-    uint8_t* resource_heap_data_ = nullptr;
-    bool resource_reserved_range_in_front_ = false;
-    vkt::Buffer sampler_heap_;
-    uint8_t *sampler_heap_data_ = nullptr;
-    bool sampler_reserved_range_in_front_ = false;
-
-  private:
-    bool embedded_samplers = false;
 };
 
 class DeviceAddressCommands : public VkLayerTest {
