@@ -65,6 +65,9 @@ struct BindingInfo {
             if (count > 1) {
                 ss << " * descriptorCount [" << std::dec << count << "]";
             }
+            if (type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+                ss << " (max of all mutable types)";
+            }
             ss << "\n";
         }
     }
@@ -126,6 +129,8 @@ bool SetInfo::ValidateBufferUsage(std::ostringstream& ss, const BindingInfo& bin
 
 bool BindingInfo::ValidateDescriptor(std::ostringstream& ss, GpuDump& dev_data) {
     if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+        return false;  // TODO - handle
+    } else if (type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
         return false;  // TODO - handle
     }
 
@@ -408,6 +413,11 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
                 if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
                     descriptor_size =
                         (uint32_t)dev_data.phys_dev_ext_props.descriptor_buffer_props.combinedImageSamplerDescriptorSize;
+                } else if (type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+                    for (VkDescriptorType mutable_type : ds_layout_def.GetMutableTypes(var_binding)) {
+                        descriptor_size = std::max(
+                            descriptor_size, (uint32_t)dev_data.device_state->cached_descriptor_size.GetSize(mutable_type, false));
+                    }
                 } else {
                     descriptor_size = (uint32_t)dev_data.device_state->cached_descriptor_size.GetSize(type, false);
                 }
