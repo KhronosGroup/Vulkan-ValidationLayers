@@ -176,7 +176,16 @@ struct AccessPath {
     // The variable at the end of the access chain
     const Variable* variable = nullptr;
 
-    bool IsValid() const { return access_type != nullptr && pointer_type != nullptr && variable != nullptr; }
+    // PhysicalStorageBuffer don't have a variable as it just a pointer
+    bool is_bda = false;
+
+    bool IsValid(spv::StorageClass storage_class) const {
+        return access_type != nullptr && pointer_type != nullptr && variable != nullptr &&
+               variable->StorageClass() == storage_class;
+    }
+    bool IsValidDescriptor() const {
+        return access_type != nullptr && pointer_type != nullptr && variable != nullptr && variable->IsDescriptor();
+    }
 
     // List of OpAccessChains from the variable to the "access"
     // - The front() will be closest to the OpVariable

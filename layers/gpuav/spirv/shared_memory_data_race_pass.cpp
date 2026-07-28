@@ -176,9 +176,7 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
     }
 
     const AccessPath access_path = type_manager_.BuildAccessPath(function, inst);
-    if (!access_path.IsValid()) {
-        return false;
-    } else if (access_path.variable->StorageClass() != spv::StorageClassWorkgroup) {
+    if (!access_path.IsValid(spv::StorageClassWorkgroup)) {
         return false;
     }
 
