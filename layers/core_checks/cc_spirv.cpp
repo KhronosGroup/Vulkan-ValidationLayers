@@ -494,9 +494,9 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
 
                 if (m.scope == VK_SCOPE_WORKGROUP_KHR && !enabled_features.cooperativeMatrixWorkgroupScope) {
                     skip |= LogError("VUID-RuntimeSpirv-cooperativeMatrixWorkgroupScope-10164", module_state.handle(), loc,
-                                     entrypoint.Describe().c_str(),
                                      "shader %s has a cooperative matrix that uses workgroup scope but "
-                                     "cooperativeMatrixWorkgroupScope is not enabled.");
+                                     "cooperativeMatrixWorkgroupScope is not enabled.",
+                                     entrypoint.Describe().c_str());
                     found_error = true;
                 }
 
