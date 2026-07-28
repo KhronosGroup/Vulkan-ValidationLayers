@@ -66,7 +66,7 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlock& block, In
 bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
                                                                 InstructionMeta& meta) {
     meta.access_path = type_manager_.BuildAccessPath(function, inst);
-    if (!meta.access_path.IsValid() || !meta.access_path.variable->IsDescriptor()) {
+    if (!meta.access_path.IsValidDescriptor()) {
         return false;
     }
 

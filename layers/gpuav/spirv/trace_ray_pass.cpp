@@ -16,6 +16,7 @@
 #include "trace_ray_pass.h"
 
 #include "containers/container_utils.h"
+#include "generated/spirv_grammar_helper.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "module.h"
@@ -60,7 +61,7 @@ std::vector<uint32_t> TraceRayPass::GetTlasValidationFunctionCallInstructions(co
     }
 
     const AccessPath access_path = type_manager_.BuildAccessPath(function, *as_op_load_inst);
-    if (!access_path.IsValid()) {
+    if (!access_path.IsValidDescriptor() || access_path.access_type->spv_type_ != SpvType::kAccelerationStructureKHR) {
         return {};
     }
 

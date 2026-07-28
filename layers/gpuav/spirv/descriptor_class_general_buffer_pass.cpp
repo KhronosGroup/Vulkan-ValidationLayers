@@ -99,7 +99,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     }
 
     meta.access_path = type_manager_.BuildAccessPath(function, inst);
-    if (!meta.access_path.IsValid()) {
+    if (!meta.access_path.IsValidDescriptor()) {
         return false;
     }
 
