@@ -2043,8 +2043,10 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
         ss << "- vkCmdBindResourceHeapEXT last bound the resource heap to "
            << string_range_hex(cb_state.descriptor_heap.resource_range);
         if (!cb_state.descriptor_heap.resource_reserved.empty()) {
-            ss << " (reserved range " << std::dec << cb_state.descriptor_heap.resource_reserved.size() << " bytes at "
-               << string_range_hex(cb_state.descriptor_heap.resource_reserved) << ")";
+            VkDeviceSize rr_offset =
+                cb_state.descriptor_heap.resource_reserved.begin - cb_state.descriptor_heap.resource_range.begin;
+            ss << " (reserved range: " << std::dec << cb_state.descriptor_heap.resource_reserved.size() << " bytes at offset "
+               << rr_offset << ")";
         } else {
             ss << " (no reserved range)";
         }
@@ -2055,8 +2057,9 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
         ss << "- vkCmdBindSamplerHeapEXT last bound the sampler heap to "
            << string_range_hex(cb_state.descriptor_heap.sampler_range);
         if (!cb_state.descriptor_heap.sampler_reserved.empty()) {
-            ss << " (reserved range " << std::dec << cb_state.descriptor_heap.sampler_reserved.size() << " bytes at "
-               << string_range_hex(cb_state.descriptor_heap.sampler_reserved) << ")";
+            VkDeviceSize rr_offset = cb_state.descriptor_heap.sampler_reserved.begin - cb_state.descriptor_heap.sampler_range.begin;
+            ss << " (reserved range: " << std::dec << cb_state.descriptor_heap.sampler_reserved.size() << " bytes at offset "
+               << rr_offset << ")";
         } else {
             ss << " (no reserved range)";
         }
