@@ -267,9 +267,10 @@ TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedBuffer) {
                OpDecorate %A Block
                OpMemberDecorate %A 0 Offset 0
                OpDecorate %PushConstant Block
+               OpDecorate %bad_offset SpecId 0
                OpMemberDecorate %PushConstant 0 Offset 0
                OpMemberDecorate %heap_struct 0 Offset 0
-               OpMemberDecorate %heap_struct 1 Offset 5
+               OpMemberDecorateIdEXT %heap_struct 1 OffsetIdEXT %bad_offset
        %void = OpTypeVoid
           %3 = OpTypeFunction %void
 %_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
@@ -279,6 +280,7 @@ TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedBuffer) {
        %uint = OpTypeInt 32 0
           %A = OpTypeStruct %uint
       %int_0 = OpConstant %int 0
+  %bad_offset = OpSpecConstant %int 5
 %PushConstant = OpTypeStruct %uint
 %_ptr_PushConstant_PushConstant = OpTypePointer PushConstant %PushConstant
           %_ = OpVariable %_ptr_PushConstant_PushConstant PushConstant
@@ -298,7 +300,9 @@ TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedBuffer) {
                OpFunctionEnd
 
     )";
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-bufferDescriptorAlignment-11478");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
+    // TODO - Move VUID to spirv-val
+    // m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-bufferDescriptorAlignment-11478");
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
@@ -365,8 +369,11 @@ TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedMixedType) {
                OpReturn
                OpFunctionEnd
     )";
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-imageDescriptorAlignment-11477");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08737");
+    VkShaderObj::CreateFromASM(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    // TODO - Move VUID to spirv-val
+    // m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-imageDescriptorAlignment-11477");
+    // vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
