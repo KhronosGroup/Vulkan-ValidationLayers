@@ -195,8 +195,7 @@ BoolResultXY SanitizerPass::FminmaxCheck(BasicBlock& block, InstructionIt* inst_
 // For BDA pointers, converts the pointer to its low 32 bits. Returns 0 if not a BDA pointer.
 uint32_t SanitizerPass::GetCoopMatPointerAddress(const Type* pointer_type, uint32_t pointer_id, BasicBlock& block,
                                                  InstructionIt* inst_it) {
-    if (pointer_type && pointer_type->spv_type_ == SpvType::kPointer &&
-        pointer_type->inst_.StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
+    if (pointer_type && pointer_type->IsBDA()) {
         module_.use_bda_ = true;
         const Type& uint32_type = type_manager_.GetTypeInt(32, false);
         const Type& uint64_type = type_manager_.GetTypeInt(64, false);

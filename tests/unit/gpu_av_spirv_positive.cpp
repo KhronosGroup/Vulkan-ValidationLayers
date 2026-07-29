@@ -647,3 +647,225 @@ TEST_F(PositiveGpuAVSpirv, ConstantFoldFConvert) {
     pipe.dsl_bindings_ = {{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveGpuAVSpirv, EndAccessChainWithCopyObject) {
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* spv_source = R"(
+      OpCapability Shader
+      OpMemoryModel Logical GLSL450
+      OpEntryPoint GLCompute %main "main"
+      OpExecutionMode %main LocalSize 1 1 1
+      OpDecorate %struct BufferBlock
+      OpMemberDecorate %struct 0 Offset 0
+      OpDecorate %buf_array DescriptorSet 0
+      OpDecorate %buf_array Binding 0
+      %void = OpTypeVoid
+      %func_type = OpTypeFunction %void
+      %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %uint = OpTypeInt 32 0
+      %uint_4 = OpConstant %uint 4
+      %struct = OpTypeStruct %int
+      %struct_array = OpTypeArray %struct %uint_4
+      %ptr_struct_array = OpTypePointer Uniform %struct_array
+      %ptr_struct = OpTypePointer Uniform %struct
+      %ptr_int = OpTypePointer Uniform %int
+      %buf_array = OpVariable %ptr_struct_array Uniform
+      %main = OpFunction %void None %func_type
+      %entry = OpLabel
+
+      ; OpCopyObject on the descriptor array variable %buf_array
+      %var_copy = OpCopyObject %ptr_struct_array %buf_array
+      ;  AccessChain through the copied handle
+      %buf_ptr = OpAccessChain %ptr_struct %var_copy %int_0
+      %int_ptr = OpAccessChain %ptr_int %buf_ptr %int_0
+      ; Memory access instruction that triggers AccessPath evaluation
+      %val = OpLoad %int %int_ptr
+
+      OpReturn
+      OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveGpuAVSpirv, SamplerCopyObject) {
+    AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::computeDerivativeGroupQuads);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* spv_source = R"(
+            OpCapability Shader
+            OpCapability ComputeDerivativeGroupQuadsKHR
+            OpExtension "SPV_KHR_compute_shader_derivatives"
+            OpMemoryModel Logical GLSL450
+            OpEntryPoint GLCompute %main "main"
+            OpExecutionMode %main LocalSize 2 2 1
+            OpExecutionMode %main DerivativeGroupQuadsKHR
+            OpDecorate %sampler_array DescriptorSet 0
+            OpDecorate %sampler_array Binding 0
+            OpDecorate %image DescriptorSet 0
+            OpDecorate %image Binding 1
+            %void = OpTypeVoid
+            %func_type = OpTypeFunction %void
+            %float = OpTypeFloat 32
+            %vec2 = OpTypeVector %float 2
+            %vec4 = OpTypeVector %float 4
+            %int = OpTypeInt 32 1
+            %int_0 = OpConstant %int 0
+            %uint = OpTypeInt 32 0
+            %uint_2 = OpConstant %uint 2
+            %image_type = OpTypeImage %float 2D 0 0 0 1 Unknown
+            %sampler_type = OpTypeSampler
+            %sampled_image_type = OpTypeSampledImage %image_type
+            %sampler_array_type = OpTypeArray %sampler_type %uint_2
+            %ptr_sampler_array = OpTypePointer UniformConstant %sampler_array_type
+            %ptr_sampler = OpTypePointer UniformConstant %sampler_type
+            %ptr_image = OpTypePointer UniformConstant %image_type
+            %sampler_array = OpVariable %ptr_sampler_array UniformConstant
+            %image = OpVariable %ptr_image UniformConstant
+            %main = OpFunction %void None %func_type
+            %entry = OpLabel
+
+            %img_handle = OpLoad %image_type %image
+            %sampler_ptr = OpAccessChain %ptr_sampler %sampler_array %int_0
+            %sampler_ptr_copy = OpCopyObject %ptr_sampler %sampler_ptr
+            %sampler_handle = OpLoad %sampler_type %sampler_ptr_copy
+            %sampled_img = OpSampledImage %sampled_image_type %img_handle %sampler_handle
+            %uv = OpUndef %vec2
+            %color = OpImageSampleImplicitLod %vec4 %sampled_img %uv
+
+            OpReturn
+            OpFunctionEnd
+    )";
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cs_ = VkShaderObj(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveGpuAVSpirv, SamplerCopyObject2) {
+    AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::computeDerivativeGroupQuads);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* spv_source = R"(
+            OpCapability Shader
+            OpCapability ComputeDerivativeGroupQuadsKHR
+            OpExtension "SPV_KHR_compute_shader_derivatives"
+            OpMemoryModel Logical GLSL450
+            OpEntryPoint GLCompute %main "main"
+            OpExecutionMode %main LocalSize 2 2 1
+            OpExecutionMode %main DerivativeGroupQuadsKHR
+            OpDecorate %sampler_var DescriptorSet 0
+            OpDecorate %sampler_var Binding 0
+            OpDecorate %image_var DescriptorSet 0
+            OpDecorate %image_var Binding 1
+            %void = OpTypeVoid
+            %func_type = OpTypeFunction %void
+            %float = OpTypeFloat 32
+            %vec2 = OpTypeVector %float 2
+            %vec4 = OpTypeVector %float 4
+            %image_type = OpTypeImage %float 2D 0 0 0 1 Unknown
+            %sampler_type = OpTypeSampler
+            %sampled_image_type = OpTypeSampledImage %image_type
+            %ptr_sampler = OpTypePointer UniformConstant %sampler_type
+            %ptr_image = OpTypePointer UniformConstant %image_type
+            %sampler_var = OpVariable %ptr_sampler UniformConstant
+            %image_var = OpVariable %ptr_image UniformConstant
+            %main = OpFunction %void None %func_type
+            %entry = OpLabel
+
+            %img_handle = OpLoad %image_type %image_var
+            %sampler_handle = OpLoad %sampler_type %sampler_var
+            %sampler_copy = OpCopyObject %sampler_type %sampler_handle
+            %sampled_img = OpSampledImage %sampled_image_type %img_handle %sampler_copy
+            %uv = OpUndef %vec2
+            %color = OpImageSampleImplicitLod %vec4 %sampled_img %uv
+
+            OpReturn
+            OpFunctionEnd
+    )";
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cs_ = VkShaderObj(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}
+TEST_F(PositiveGpuAVSpirv, SamplerCopyObjectFunction) {
+    AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::computeDerivativeGroupQuads);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* spv_source = R"(
+            OpCapability Shader
+            OpCapability ComputeDerivativeGroupQuadsKHR
+            OpExtension "SPV_KHR_compute_shader_derivatives"
+            OpMemoryModel Logical GLSL450
+            OpEntryPoint GLCompute %main "main"
+            OpExecutionMode %main LocalSize 2 2 1
+            OpExecutionMode %main DerivativeGroupQuadsKHR
+            OpDecorate %sampler_var DescriptorSet 0
+            OpDecorate %sampler_var Binding 0
+            OpDecorate %image_var DescriptorSet 0
+            OpDecorate %image_var Binding 1
+            %void = OpTypeVoid
+            %func_type = OpTypeFunction %void
+            %float = OpTypeFloat 32
+            %vec2 = OpTypeVector %float 2
+            %vec4 = OpTypeVector %float 4
+            %image_type = OpTypeImage %float 2D 0 0 0 1 Unknown
+            %sampler_type = OpTypeSampler
+            %sampled_image_type = OpTypeSampledImage %image_type
+            %helper_type = OpTypeFunction %vec4 %sampler_type
+            %ptr_image = OpTypePointer UniformConstant %image_type
+            %ptr_sampler = OpTypePointer UniformConstant %sampler_type
+            %image_var = OpVariable %ptr_image UniformConstant
+            %sampler_var = OpVariable %ptr_sampler UniformConstant
+            %sample_helper = OpFunction %vec4 None %helper_type
+            %sampler_param = OpFunctionParameter %sampler_type
+            %helper_entry = OpLabel
+            %img_handle = OpLoad %image_type %image_var
+            %sampler_param_copy = OpCopyObject %sampler_type %sampler_param
+            %sampled_img = OpSampledImage %sampled_image_type %img_handle %sampler_param_copy
+            %uv = OpUndef %vec2
+            %color = OpImageSampleImplicitLod %vec4 %sampled_img %uv
+            OpReturnValue %color
+            OpFunctionEnd
+            %main = OpFunction %void None %func_type
+            %main_entry = OpLabel
+            %sampler_val = OpLoad %sampler_type %sampler_var
+            %res = OpFunctionCall %vec4 %sample_helper %sampler_val
+            OpReturn
+            OpFunctionEnd
+    )";
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cs_ = VkShaderObj(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}

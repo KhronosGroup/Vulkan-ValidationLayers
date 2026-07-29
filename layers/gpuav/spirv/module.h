@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include "access_path.h"
 #include "containers/custom_containers.h"
 #include "link.h"
 #include "interface.h"
@@ -92,6 +93,9 @@ class Module {
     // Finds (and creates if needed) decoration and returns the OpVariable it points to
     const Variable& GetBuiltInVariable(uint32_t built_in);
 
+    // We will build up all the AccessPath on the first pass and then return them each sequential pass
+    const AccessPath* GetAccessPath(const Function& function, const Instruction& inst);
+
     // Global settings we would know at vkCreateDevice
     const DeviceSettings& settings_;
     // Per-pipeline/shaderObject information
@@ -139,6 +143,8 @@ class Module {
     bool ConstantFoldCompositeExtract(Instruction* inst, const Type& type);
     bool ConstantFoldCompositeInsert(Instruction* inst, const Type& type);
     uint32_t ResolveConstantSizeOf(const Instruction& inst);
+
+    vvl::unordered_map<const Instruction*, std::unique_ptr<AccessPath>> access_path_cache_;
 };
 
 }  // namespace spirv

@@ -15,11 +15,12 @@
 #pragma once
 
 #include <stdint.h>
-#include "type_manager.h"
 #include "pass.h"
 
 namespace gpuav {
 namespace spirv {
+
+struct AccessPath;
 
 // Create a pass to instrument descriptor indexing.
 // This pass makes sure any index into an descriptor array is not OOB or uninitialized
@@ -35,7 +36,7 @@ class DescriptorIndexingOOBPass : public Pass {
     struct InstructionMeta {
         const Instruction* target_instruction = nullptr;
 
-        AccessPath access_path;
+        const AccessPath* access_path;
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);

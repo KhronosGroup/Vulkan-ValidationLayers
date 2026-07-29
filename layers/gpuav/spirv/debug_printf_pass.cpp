@@ -856,8 +856,7 @@ bool DebugPrintfPass::Validate(const Function& current_function, const Instructi
             }
         }
 
-        const bool is_pointer_type = argument_type->spv_type_ == SpvType::kPointer &&
-                                     (argument_type->inst_.StorageClass() == spv::StorageClassPhysicalStorageBuffer);
+        const bool is_pointer_type = argument_type->IsBDA();
 
         // this is after stripping the vector
         // Pointers are handled by themselves

@@ -15,6 +15,7 @@
 
 #include "post_process_descriptor_indexing_pass.h"
 
+#include "access_path.h"
 #include "module.h"
 #include "generated/gpuav_offline_spirv.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
@@ -40,15 +41,17 @@ PostProcessDescriptorIndexingPass::PostProcessDescriptorIndexingPass(Module& mod
 uint32_t PostProcessDescriptorIndexingPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
 void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
-    const DescriptorInterface& interface = meta.access_path.variable->interface_;
+    const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
+
+    const DescriptorInterface& interface = meta.access_path->variable->interface_;
     const Constant& set_constant = type_manager_.GetConstantUInt32(interface.set);
     const Constant& binding_constant = type_manager_.GetConstantUInt32(interface.binding);
-    const uint32_t descriptor_index_id = CastToUint32(meta.access_path.descriptor_index_id, block, inst_it);  // might be int32
+    const uint32_t descriptor_index_id = CastToUint32(descriptor_path.index_id, block, inst_it);  // might be int32
 
     const auto& layout_lut = module_.interface_.instrumentation_dsl.set_index_to_bindings_layout_lut;
     BindingLayout binding_layout = layout_lut[interface.set][interface.binding];
     const Constant& binding_layout_offset = type_manager_.GetConstantUInt32(binding_layout.start);
-    const Constant& variable_id_constant = type_manager_.GetConstantUInt32(meta.access_path.variable->Id());
+    const Constant& variable_id_constant = type_manager_.GetConstantUInt32(meta.access_path->variable->Id());
 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
@@ -65,12 +68,12 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlock& block, In
 
 bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
                                                                 InstructionMeta& meta) {
-    meta.access_path = type_manager_.BuildAccessPath(function, inst);
-    if (!meta.access_path.IsValidDescriptor()) {
+    meta.access_path = module_.GetAccessPath(function, inst);
+    if (!meta.access_path || !meta.access_path->IsValidDescriptor()) {
         return false;
     }
 
-    if (meta.access_path.variable->interface_.set >= glsl::kDebugInputBindlessMaxDescSets) {
+    if (meta.access_path->variable->interface_.set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }
@@ -114,12 +117,12 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
                     continue;
                 }
 
-                const uint32_t hash_descriptor_index_id = pc_access.next_alias_id == meta.access_path.descriptor_index_id
-                                                              ? pc_access.descriptor_index_id
-                                                              : meta.access_path.descriptor_index_id;
-                uint32_t hash_content[4] = {meta.access_path.variable->interface_.set,
-                                            meta.access_path.variable->interface_.binding, hash_descriptor_index_id,
-                                            meta.access_path.variable->Id()};
+                const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
+                const uint32_t hash_descriptor_index_id =
+                    pc_access.next_alias_id == descriptor_path.index_id ? pc_access.descriptor_index_id : descriptor_path.index_id;
+                uint32_t hash_content[4] = {meta.access_path->variable->interface_.set,
+                                            meta.access_path->variable->interface_.binding, hash_descriptor_index_id,
+                                            meta.access_path->variable->Id()};
                 const uint32_t hash = hash_util::Hash32(hash_content, sizeof(uint32_t) * 4);
                 if (function_duplicate_tracker.FindAndUpdate(block_duplicate_tracker, hash)) {
                     continue;  // duplicate detected

@@ -12,11 +12,13 @@
  */
 
 #include <gtest/gtest.h>
+#include <spirv-tools/libspirv.h>
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "descriptor_helper.h"
 #include "descriptor_heap_object.h"
 #include "generated/vk_function_pointers.h"
+#include "shader_helper.h"
 
 void GpuAVBufferDeviceAddressTest::InitGpuVUBufferDeviceAddress(bool safe_mode) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -32,7 +34,7 @@ class PositiveGpuAVBufferDeviceAddress : public GpuAVBufferDeviceAddressTest {};
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140) {
     TEST_DESCRIPTION("Makes sure that writing to a buffer that was created after command buffer record doesn't get OOB error");
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
     InitRenderTarget();
 
     const char* shader_source = R"glsl(
@@ -97,7 +99,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140NumerousAddressRanges) {
     TEST_DESCRIPTION(
         "Makes sure that writing to a buffer that was created after command buffer record doesn't get OOB error, even when there "
         "are numerous valid address ranges");
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
     InitRenderTarget();
 
     const char* shader_source = R"glsl(
@@ -166,7 +168,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140NumerousAddressRanges) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430) {
     TEST_DESCRIPTION("Makes sure that writing to a buffer that was created after command buffer record doesn't get OOB error");
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
     InitRenderTarget();
 
     const char* shader_source = R"glsl(
@@ -228,7 +230,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, StoreExplicitOffset) {
     TEST_DESCRIPTION("Do a OpStore to a PhysicalStorageBuffer");
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* shader_source = R"glsl(
         #version 450
@@ -281,7 +283,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreExplicitOffset) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoad) {
     TEST_DESCRIPTION("Do a OpLoad through a struct PhysicalStorageBuffer");
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* shader_source = R"glsl(
         #version 450
@@ -348,7 +350,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoad) {
 // Emitting an OOB access error when it should not
 TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
     TEST_DESCRIPTION("Do a OpLoad through a padded struct PhysicalStorageBuffer");
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* shader_source = R"glsl(
         #version 450
@@ -595,7 +597,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BitCastUvec2) {
 TEST_F(PositiveGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     TEST_DESCRIPTION("No false OOB detected - use VK_KHR_relaxed_block_layout");
     AddRequiredExtensions(VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     // #version 450
     // #extension GL_EXT_buffer_reference : enable
@@ -705,12 +707,10 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     TEST_DESCRIPTION("No false OOB detected - use VK_EXT_scalar_block_layout");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::scalarBlockLayout);
-
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* shader_source = R"glsl(
         #version 450
@@ -767,7 +767,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
     TEST_DESCRIPTION("No false OOB accesses detected in a linked list");
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
     const uint32_t uniform_buffer_size = 3 * sizeof(VkDeviceAddress);
@@ -840,8 +840,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleBufferReferenceBlocks) {
     TEST_DESCRIPTION("No false OOB detected - store & load");
-
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* shader_source = R"glsl(
         #version 450
@@ -910,8 +909,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleBufferReferenceBlocks) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
     TEST_DESCRIPTION("No false OOB detected when using a struct");
-
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* shader_source = R"glsl(
         #version 450
@@ -1017,7 +1015,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ConcurrentAccessesToBdaBuffer) {
     TEST_DESCRIPTION(
         "Make sure BDA buffer maintained in GPU-AV is correctly read/written to. When this buffer was not maintained per command "
         "buffer, and a global buffer was used instead, concurrent accesses were not handled correctly.");
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
     InitRenderTarget();
 
     const char* shader_source = R"glsl(
@@ -1296,10 +1294,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BasicRangeUnsafe) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, NonStructPointer) {
     TEST_DESCRIPTION("Slang allows BDA pointers to be with POD instead of a struct");
-
     RETURN_IF_SKIP(CheckSlangSupport());
-
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* slang_shader = R"slang(
         uniform uint* data_ptr;
@@ -1338,10 +1334,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, NonStructPointer) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleAccessChains) {
     TEST_DESCRIPTION("Slang will produce a chain of OpAccessChains");
-
     RETURN_IF_SKIP(CheckSlangSupport());
-
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* slang_shader = R"slang(
         struct Data {
@@ -1544,7 +1538,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleStructPointerSlang) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, AtomicExchangeSlang) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     // struct Foo {
     //     uint pad_0;
@@ -1654,7 +1648,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MemoryModelOperand) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9018");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* shader_source = R"glsl(
         #version 450
@@ -1708,7 +1702,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MemoryModelOperand2) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* shader_source = R"glsl(
         #version 460
@@ -1770,7 +1764,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, Atomics) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* shader_source = R"glsl(
         #version 460
@@ -1824,7 +1818,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, Atomics2) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* shader_source = R"glsl(
         #version 450
@@ -1883,7 +1877,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, Atomics2) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, AtomicsWorkgroups) {
     TEST_DESCRIPTION("Found case where a potential BDA points to a variable not in the function");
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* shader_source = R"glsl(
         #version 450
@@ -1908,11 +1902,9 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, AtomicsWorkgroups) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, PieceOfDataPointer) {
     TEST_DESCRIPTION("Slang can have a BDA pointer of a int that is not wrapped in a struct");
-
     RETURN_IF_SKIP(CheckSlangSupport());
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* slang_shader = R"slang(
         RWStructuredBuffer<uint> result;
@@ -1964,11 +1956,9 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PieceOfDataPointer) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, PieceOfDataPointerInStruct) {
     TEST_DESCRIPTION("Slang can have a BDA pointer of a int that is not wrapped in a struct");
-
     RETURN_IF_SKIP(CheckSlangSupport());
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* slang_shader = R"slang(
         RWStructuredBuffer<uint> result;
@@ -2027,7 +2017,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PieceOfDataPointerInStruct) {
 TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushConstants) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8377");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
     InitRenderTarget();
 
     // Create 2 pipeline layouts. Pipeline layout 2 starts the same as pipeline layout 1, with one push constant range,
@@ -2126,7 +2116,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushC
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderObject);
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
     InitDynamicRenderTarget();
 
     // Create 2 pipeline layouts. Pipeline layout 2 starts the same as pipeline layout 1, with one push constant range,
@@ -2235,7 +2225,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushC
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, PointerChain) {
     TEST_DESCRIPTION("Have BDA point to more BDA creating a chain");
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* shader_source = R"glsl(
         #version 450
@@ -2298,10 +2288,11 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PointerChain) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, ManyAccessToSameStruct) {
     TEST_DESCRIPTION("Used to mimic cases where apps have 100s of the same BDA instrumented.");
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(CheckSlangSupport());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
     InitRenderTarget();
 
-    const char* shader_source = R"glsl(
+    const char* glsl_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
 
@@ -2332,13 +2323,54 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ManyAccessToSameStruct) {
         }
     )glsl";
 
+    const char* slang_source = R"slang(
+        struct BDA
+        {
+            uint4 payload[16];
+            uint x;
+        };
+
+        struct Uniforms
+        {
+            BDA* ptr0;
+            BDA* ptr1;
+        };
+
+        [vk::push_constant]
+        Uniforms uniforms;
+
+        [shader("compute")]
+        [numthreads(1, 1, 1)]
+        void main()
+        {
+            uint a = 0;
+            a += uniforms.ptr0->payload[2].x + uniforms.ptr0->payload[2].y;
+            a += uniforms.ptr0->payload[3].x + uniforms.ptr0->payload[3].y;
+            a += uniforms.ptr0->payload[4].x + uniforms.ptr0->payload[4].y;
+            a += uniforms.ptr0->payload[6].x + uniforms.ptr0->payload[6].y;
+            a += uniforms.ptr0->payload[8].x + uniforms.ptr0->payload[8].y;
+            a += uniforms.ptr0->payload[7].x + uniforms.ptr0->payload[7].y;
+
+            a += uniforms.ptr1->payload[6].x + uniforms.ptr1->payload[6].y;
+            a += uniforms.ptr1->payload[10].x + uniforms.ptr1->payload[10].y;
+            a += uniforms.ptr1->payload[8].x + uniforms.ptr1->payload[8].y;
+
+            uniforms.ptr0->x = a;
+        }
+    )slang";
+
     VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress) * 2};
     const vkt::PipelineLayout pipeline_layout(*m_device, {}, {pc_range});
 
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cp_ci_.layout = pipeline_layout;
-    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.CreateComputePipeline();
+    CreateComputePipelineHelper pipe_g(*this);
+    pipe_g.cp_ci_.layout = pipeline_layout;
+    pipe_g.cs_ = VkShaderObj(*m_device, glsl_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe_g.CreateComputePipeline();
+
+    CreateComputePipelineHelper pipe_s(*this);
+    pipe_s.cp_ci_.layout = pipeline_layout;
+    pipe_s.cs_ = VkShaderObj(*m_device, slang_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG);
+    pipe_s.CreateComputePipeline();
 
     vkt::Buffer bda_buffer(*m_device, 1024, 0, vkt::device_address);
     auto bda_buffer_addr = bda_buffer.Address();
@@ -2348,7 +2380,9 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ManyAccessToSameStruct) {
                          &bda_buffer_addr);
     vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, sizeof(VkDeviceAddress),
                          sizeof(VkDeviceAddress), &bda_buffer_addr);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_g);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_s);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -2357,7 +2391,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ManyAccessToSameStruct) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, GlobalInvocationIdIVec3) {
     TEST_DESCRIPTION("Found issue when we assumed GlobalInvocationId was a uvec3 and it was a ivec3");
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     // Looks like the following, but we force the ivec3 over a uvec3
     //
@@ -2420,7 +2454,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, DualShaderLibrary) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
     InitRenderTarget();
 
     const char* fs_source = R"glsl(
@@ -2495,7 +2529,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, DualShaderLibraryDestroyModule) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
     InitRenderTarget();
 
     const char* fs_source = R"glsl(
@@ -2571,7 +2605,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, DualShaderLibraryDestroyModule) {
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, LinkingSameStruct) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/spirv/SPIR-V/-/issues/918");
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* shader_source = R"glsl(
         #version 450
@@ -2675,7 +2709,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, HeapMultipleSubmissions) {
     AddRequiredFeature(vkt::Feature::descriptorHeap);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderUniformBufferArrayNonUniformIndexing);
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
     InitDynamicRenderTarget();
 
     VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();

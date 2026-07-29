@@ -14,6 +14,7 @@
  */
 
 #include "descriptor_class_general_buffer_pass.h"
+#include "access_path.h"
 #include "generated/device_features.h"
 #include "generated/spirv_grammar_helper.h"
 #include "containers/container_utils.h"
@@ -55,12 +56,14 @@ uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId(bool is_coop_mat) {
 }
 
 void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
-    assert(!meta.access_path.ac_list.empty());
-    const DescriptorInterface& interface = meta.access_path.variable->interface_;
-    const Constant& desc_set_constant = type_manager_.GetConstantUInt32(interface.set);
-    const uint32_t desc_index_id = CastToUint32(meta.access_path.descriptor_index_id, block, inst_it);  // might be int32
+    const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
 
-    const uint32_t descriptor_offset_id = GetLastByte(meta.access_path, block, inst_it);
+    assert(!meta.access_path->ac_list.empty());
+    const DescriptorInterface& interface = meta.access_path->variable->interface_;
+    const Constant& desc_set_constant = type_manager_.GetConstantUInt32(interface.set);
+    const uint32_t desc_index_id = CastToUint32(descriptor_path.index_id, block, inst_it);  // might be int32
+
+    const uint32_t descriptor_offset_id = GetLastByte(*meta.access_path, block, inst_it);
 
     const auto& layout_lut = module_.interface_.instrumentation_dsl.set_index_to_bindings_layout_lut;
     BindingLayout binding_layout = layout_lut[interface.set][interface.binding];
@@ -70,7 +73,7 @@ void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, Ins
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
     const uint32_t function_result = module_.TakeNextId();
-    const bool is_coop_mat = meta.access_path.coop_mat.used;
+    const bool is_coop_mat = meta.access_path->coop_mat.used;
     const uint32_t function_def = GetLinkFunctionId(is_coop_mat);
     const uint32_t void_type = type_manager_.GetTypeVoid().Id();
 
@@ -98,41 +101,41 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         return false;
     }
 
-    meta.access_path = type_manager_.BuildAccessPath(function, inst);
-    if (!meta.access_path.IsValidDescriptor()) {
+    meta.access_path = module_.GetAccessPath(function, inst);
+    if (!meta.access_path || !meta.access_path->IsValidDescriptor()) {
         return false;
     }
 
-    if (meta.access_path.ac_list.empty()) {
+    if (meta.access_path->ac_list.empty()) {
         // Apperently thie is possible, but not sure if this means we should consider this offset zero into the buffer, as that
         // technically not allowed with typed pointers, so for now just skip these as seems no actual code generators produce this
         // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12618
         return false;
     }
 
-    uint32_t storage_class = meta.access_path.variable->StorageClass();
+    uint32_t storage_class = meta.access_path->variable->StorageClass();
     // The idea is General Buffer will not include any UniformConstant descriptor type
     if (storage_class != spv::StorageClassUniform && storage_class != spv::StorageClassStorageBuffer) {
         return false;
     }
 
-    if (meta.access_path.pointer_type->spv_type_ == SpvType::kRuntimeArray) {
+    if (meta.access_path->pointer_type->spv_type_ == SpvType::kRuntimeArray) {
         return false;  // TODO - Currently we mark these as "bindless"
     }
 
-    const bool is_descriptor_array = meta.access_path.pointer_type->IsArray();
+    const bool is_descriptor_array = meta.access_path->pointer_type->IsArray();
     meta.descriptor_block_type_id =
-        is_descriptor_array ? meta.access_path.pointer_type->inst_.Operand(0) : meta.access_path.pointer_type->Id();
+        is_descriptor_array ? meta.access_path->pointer_type->inst_.Operand(0) : meta.access_path->pointer_type->Id();
     assert(type_manager_.FindTypeById(meta.descriptor_block_type_id)->spv_type_ == SpvType::kStruct && "unexpected block type");
 
-    if (meta.access_path.variable->interface_.set >= glsl::kDebugInputBindlessMaxDescSets) {
+    if (meta.access_path->variable->interface_.set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }
 
     if (!module_.settings_.safe_mode) {
-        meta.access_offset = FindOffsetInStruct(meta.descriptor_block_type_id, &meta.access_path.coop_mat, is_descriptor_array,
-                                                meta.access_path.ac_list);
+        meta.access_offset = FindOffsetInStruct(meta.descriptor_block_type_id, &meta.access_path->coop_mat, is_descriptor_array,
+                                                meta.access_path->ac_list);
     }
 
     // Save information to be used to make the Function

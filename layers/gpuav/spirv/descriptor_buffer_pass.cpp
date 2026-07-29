@@ -15,6 +15,7 @@
 
 #include "descriptor_buffer_pass.h"
 #include <vulkan/vulkan_core.h>
+#include "access_path.h"
 #include "link.h"
 #include "module.h"
 #include <cassert>
@@ -42,10 +43,12 @@ DescriptorBufferPass::DescriptorBufferPass(Module& module) : Pass(module, kOffli
 uint32_t DescriptorBufferPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
 uint32_t DescriptorBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
-    const DescriptorInterface& interface = meta.access_path.variable->interface_;
+    const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
+
+    const DescriptorInterface& interface = meta.access_path->variable->interface_;
     const uint32_t desc_set_id = type_manager_.GetConstantUInt32(interface.set).Id();
     const uint32_t desc_binding_id = type_manager_.GetConstantUInt32(interface.binding).Id();
-    const uint32_t desc_index_id = CastToUint32(meta.access_path.descriptor_index_id, block, inst_it);  // might be int32
+    const uint32_t desc_index_id = CastToUint32(descriptor_path.index_id, block, inst_it);  // might be int32
 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
@@ -54,7 +57,7 @@ uint32_t DescriptorBufferPass::CreateFunctionCall(BasicBlock& block, Instruction
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = type_manager_.GetTypeBool().Id();
 
-    const VkDescriptorType vk_desc_type = meta.access_path.descriptor_type;
+    const VkDescriptorType vk_desc_type = descriptor_path.type;
     uint8_t desc_type_mask = (uint8_t)GetMaskFromDescriptorType(vk_desc_type);
     const uint32_t desc_type_id = type_manager_.GetConstantUInt32(desc_type_mask).Id();
 
@@ -72,16 +75,17 @@ uint32_t DescriptorBufferPass::CreateFunctionCall(BasicBlock& block, Instruction
 }
 
 bool DescriptorBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
-    meta.access_path = type_manager_.BuildAccessPath(function, inst);
-    if (!meta.access_path.IsValidDescriptor()) {
+    meta.access_path = module_.GetAccessPath(function, inst);
+    if (!meta.access_path || !meta.access_path->IsValidDescriptor()) {
         return false;
     }
-    if (meta.access_path.descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+    const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
+    if (descriptor_path.type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
         return false;  // not supported yet
-    } else if (meta.access_path.descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLER || meta.access_path.is_combined_image_sampler) {
+    } else if (descriptor_path.type == VK_DESCRIPTOR_TYPE_SAMPLER || descriptor_path.is_combined_image_sampler) {
         // Need to be cautious of Embedded Samplers as well when adding support
         return false;  // not supported yet
-    } else if (meta.access_path.descriptor_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+    } else if (descriptor_path.type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
         return false;  // not supported yet
     }
 
@@ -131,11 +135,12 @@ bool DescriptorBufferPass::Instrument() {
                 }
 
                 if (!module_.settings_.safe_mode) {
-                    const uint32_t hash_descriptor_index_id = pc_access.next_alias_id == meta.access_path.descriptor_index_id
+                    const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
+                    const uint32_t hash_descriptor_index_id = pc_access.next_alias_id == descriptor_path.index_id
                                                                   ? pc_access.descriptor_index_id
-                                                                  : meta.access_path.descriptor_index_id;
-                    uint32_t hash_content[3] = {meta.access_path.variable->interface_.set,
-                                                meta.access_path.variable->interface_.binding, hash_descriptor_index_id};
+                                                                  : descriptor_path.index_id;
+                    uint32_t hash_content[3] = {meta.access_path->variable->interface_.set,
+                                                meta.access_path->variable->interface_.binding, hash_descriptor_index_id};
                     const uint32_t hash = hash_util::Hash32(hash_content, sizeof(uint32_t) * 3);
                     if (function_duplicate_tracker.FindAndUpdate(block_duplicate_tracker, hash)) {
                         continue;  // duplicate detected

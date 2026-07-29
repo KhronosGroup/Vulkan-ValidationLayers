@@ -16,13 +16,14 @@
 
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
-#include "type_manager.h"
 #include "pass.h"
 
 struct VkDescriptorSetAndBindingMappingEXT;
 
 namespace gpuav {
 namespace spirv {
+
+struct AccessPath;
 
 class DescriptorHeapPass : public Pass {
   public:
@@ -43,7 +44,7 @@ class DescriptorHeapPass : public Pass {
     struct InstructionMeta {
         const Instruction* target_instruction = nullptr;
 
-        AccessPath access_path;
+        const AccessPath* access_path;
 
         // Internal encoded index to map into InstrumentationStatus::Device
         uint32_t mapping_index_resource = 0;

@@ -2815,3 +2815,56 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, SecondaryCommandBuffer) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, ImplicitVectorLoad) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::scalarBlockLayout);
+    RETURN_IF_SKIP(CheckSlangSupport());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    InitRenderTarget();
+
+    const char* cs_source = R"slang(
+        struct BDA
+        {
+            uint x;
+            uint4 payload[16]; // offset 4
+        };
+
+        struct Uniforms
+        {
+            BDA* ptr0;
+            BDA* ptr1;
+        };
+
+        [vk::push_constant]
+        Uniforms uniforms;
+
+        [shader("compute")]
+        [numthreads(1, 1, 1)]
+        void main() {
+            // Slang will load the entire vector here
+            uniforms.ptr0->x = uniforms.ptr0->payload[0].x;
+        }
+    )slang";
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress) * 2};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {pc_range});
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer bda_buffer(*m_device, 16, 0, vkt::device_address);
+    auto bda_buffer_addr = bda_buffer.Address();
+
+    m_command_buffer.Begin();
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress),
+                         &bda_buffer_addr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
