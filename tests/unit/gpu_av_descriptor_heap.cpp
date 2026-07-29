@@ -1996,6 +1996,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, BufferDescriptorAlignmentUntypedPointers) {
                OpReturn
                OpFunctionEnd
     )";
+    // spirv-val can detect this, but still want to test at GPU-AV time
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08737");
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
@@ -2068,6 +2070,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, StorageImageDescriptorAlignmentUntypedPointe
     const uint32_t data = (uint32_t)heap_props.imageDescriptorSize - 1;
     const VkSpecializationMapEntry entry = {1, 0, sizeof(uint32_t)};
     const VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    // spirv-val can detect this, but still want to test at GPU-AV time
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM, &specialization_info);
 
     m_command_buffer.Begin();
@@ -2141,6 +2145,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, StorageImageAtomicDescriptorAlignmentUntyped
     const uint32_t data = (uint32_t)heap_props.imageDescriptorSize - 1;
     const VkSpecializationMapEntry entry = {1, 0, sizeof(uint32_t)};
     const VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    // spirv-val can detect this, but still want to test at GPU-AV time
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM, &specialization_info);
 
     m_command_buffer.Begin();

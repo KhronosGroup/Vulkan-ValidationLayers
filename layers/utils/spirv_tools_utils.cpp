@@ -19,11 +19,13 @@
 
 #include "spirv_tools_utils.h"
 
+#include "chassis/dispatch_object.h"
 #include "generated/device_features.h"
 #include "generated/vk_api_version.h"
 #include "generated/vk_extension_helper.h"
 #include "utils/hash_util.h"
 
+#include <cstdint>
 #include <sstream>
 
 spv_target_env PickSpirvEnv(const APIVersion& api_version, bool spirv_1_4) {
@@ -45,8 +47,8 @@ spv_target_env PickSpirvEnv(const APIVersion& api_version, bool spirv_1_4) {
 
 // Some Vulkan extensions/features are just all done in spirv-val behind optional settings
 void AdjustValidatorOptions(const DeviceExtensions& device_extensions, const DeviceFeatures& enabled_features,
-                            spv_target_env spirv_environment, spvtools::ValidatorOptions& out_options, uint32_t* out_hash,
-                            std::string& out_command) {
+                            const vvl::DeviceExtensionProperties& phys_dev_ext_props, spv_target_env spirv_environment,
+                            spvtools::ValidatorOptions& out_options, uint32_t* out_hash, std::string& out_command) {
     struct Settings {
         bool relax_block_layout;
         bool uniform_buffer_standard_layout;
@@ -99,6 +101,32 @@ void AdjustValidatorOptions(const DeviceExtensions& device_extensions, const Dev
     if (settings.allow_vulkan_32_bit_bitwise) {
         ss << " --allow-vulkan-32-bit-bitwise";
         out_options.SetAllowVulkan32BitBitwise(true);
+    }
+
+    if (enabled_features.descriptorHeap) {
+        // Added as this change caused strange issues on Android
+        assert(IsExtEnabled(device_extensions.vk_ext_descriptor_heap) &&
+               phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment > 0);
+
+        const auto& heap_props = phys_dev_ext_props.descriptor_heap_props;
+        ss << " --buffer-descriptor-layout " << heap_props.bufferDescriptorSize << ":" << heap_props.bufferDescriptorAlignment;
+        out_options.SetBufferDescriptorLayout((uint32_t)heap_props.bufferDescriptorSize,
+                                              (uint32_t)heap_props.bufferDescriptorAlignment);
+
+        ss << " --image-descriptor-layout " << heap_props.imageDescriptorSize << ":" << heap_props.imageDescriptorAlignment;
+        out_options.SetImageDescriptorLayout((uint32_t)heap_props.imageDescriptorSize,
+                                             (uint32_t)heap_props.imageDescriptorAlignment);
+
+        ss << " --sampler-descriptor-layout " << heap_props.samplerDescriptorSize << ":" << heap_props.samplerDescriptorAlignment;
+        out_options.SetSamplerDescriptorLayout((uint32_t)heap_props.samplerDescriptorSize,
+                                               (uint32_t)heap_props.samplerDescriptorAlignment);
+
+        if (enabled_features.tensors) {
+            ss << " --tensor-descriptor-layout " << phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorSize << ":"
+               << phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorAlignment;
+            out_options.SetTensorDescriptorLayout((uint32_t)heap_props.samplerDescriptorSize,
+                                                  (uint32_t)heap_props.samplerDescriptorAlignment);
+        }
     }
 
     switch (spirv_environment) {

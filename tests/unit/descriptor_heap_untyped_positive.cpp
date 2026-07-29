@@ -1137,6 +1137,9 @@ TEST_F(PositiveDescriptorHeapUntyped, BadArrayStrideWithSingleDescriptor) {
                OpReturn
                OpFunctionEnd
     )";
+    // spirv-val will now catch this early, but want to still test VVL will not look at
+    // garbage array strides if they are not used
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08737");
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();

@@ -406,8 +406,8 @@ void CoreChecks::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const 
     vvl::DeviceProxy::FinishDeviceSetup(pCreateInfo, loc);
 
     spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(extensions.vk_khr_spirv_1_4));
-    AdjustValidatorOptions(extensions, enabled_features, spirv_environment, spirv_val_options, &spirv_val_option_hash,
-                           spirv_val_command);
+    AdjustValidatorOptions(extensions, enabled_features, phys_dev_ext_props, spirv_environment, spirv_val_options,
+                           &spirv_val_option_hash, spirv_val_command);
 
     // Allocate shader validation cache
     if (!disabled[shader_validation_caching] && !disabled[shader_validation] && !core_validation_cache) {
