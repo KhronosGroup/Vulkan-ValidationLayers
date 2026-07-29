@@ -185,10 +185,15 @@ TEST_F(PositiveBestPractices, PipelineLibraryNoRendering) {
 
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
+    VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1u;
+    pipeline_rendering_info.pColorAttachmentFormats = &format;
+
     CreatePipelineHelper pre_raster_lib(*this);
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
-    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci, &pipeline_rendering_info);
     pre_raster_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
     pre_raster_lib.gp_ci_.flags |= VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
     pre_raster_lib.CreateGraphicsPipeline();
