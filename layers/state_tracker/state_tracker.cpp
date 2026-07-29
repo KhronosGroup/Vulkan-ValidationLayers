@@ -6727,7 +6727,7 @@ void DeviceState::PostCallRecordCmdSetColorWriteMaskEXT(VkCommandBuffer commandB
     }
     for (uint32_t i = 0; i < attachmentCount; i++) {
         cb_state->dynamic_state_value.color_write_mask_attachments.set(firstAttachment + i);
-        cb_state->dynamic_state_value.color_write_masks[i] = pColorWriteMasks[i];
+        cb_state->dynamic_state_value.color_write_masks[firstAttachment + i] = pColorWriteMasks[i];
     }
 }
 
