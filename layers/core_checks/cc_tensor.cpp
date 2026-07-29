@@ -18,23 +18,76 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 
+#include "containers/container_utils.h"
 #include "core_validation.h"
 #include "generated/dispatch_functions.h"
 #include "state_tracker/tensor_state.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "utils/math_utils.h"
+
+VkFormatFeatureFlags2 CoreChecks::GetTensorFormatFeatureFlags(VkTensorTilingARM tiling, VkFormat format) const {
+    VkFormatFeatureFlags2 tensor_feature_flags{};
+    switch (tiling) {
+    case VK_TENSOR_TILING_OPTIMAL_ARM: {
+        VkTensorFormatPropertiesARM tensor_fmt_props = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&tensor_fmt_props);
+        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
+        tensor_feature_flags = tensor_fmt_props.optimalTilingTensorFeatures;
+        break;
+    }
+    case VK_TENSOR_TILING_LINEAR_ARM: {
+        VkTensorFormatPropertiesARM tensor_fmt_props = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&tensor_fmt_props);
+        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
+        tensor_feature_flags = tensor_fmt_props.linearTilingTensorFeatures;
+        break;
+    }
+    case VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_64K_ARM: {
+        VkTensorExplicitTilingFormatPropertiesARM tensor_fmt_props = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&tensor_fmt_props);
+        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
+        tensor_feature_flags = tensor_fmt_props.blockU64kTilingTensorFeatures;
+        break;
+    }
+    case VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_ARM : {
+        VkTensorExplicitTilingFormatPropertiesARM tensor_fmt_props = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&tensor_fmt_props);
+        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
+        tensor_feature_flags = tensor_fmt_props.blockUTilingTensorFeatures;
+        break;
+    }
+    case VK_TENSOR_TILING_BRICK_16_WIDE_ARM : {
+        VkTensorExplicitTilingFormatPropertiesARM tensor_fmt_props = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&tensor_fmt_props);
+        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
+        tensor_feature_flags = tensor_fmt_props.brick16TilingTensorFeatures;
+        break;
+    }
+    case VK_TENSOR_TILING_BRICK_8_WIDE_ARM: {
+        VkTensorExplicitTilingFormatPropertiesARM tensor_fmt_props = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&tensor_fmt_props);
+        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
+        tensor_feature_flags = tensor_fmt_props.brick8TilingTensorFeatures;
+        break;
+    }
+    case VK_TENSOR_TILING_BRICK_4_WIDE_ARM : {
+        VkTensorExplicitTilingFormatPropertiesARM tensor_fmt_props = vku::InitStructHelper();
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&tensor_fmt_props);
+        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
+        tensor_feature_flags = tensor_fmt_props.brick4TilingTensorFeatures;
+        break;
+    }
+    case VK_TENSOR_TILING_MAX_ENUM_ARM:
+        tensor_feature_flags = 0;
+        break;
+    }
+    return tensor_feature_flags;
+}
 
 bool CoreChecks::ValidateTensorFormatUsage(VkFormat format, VkTensorUsageFlagsARM usage, VkTensorTilingARM tiling, const char* vuid,
                                            const Location& loc) const {
     bool skip = false;
-    VkTensorFormatPropertiesARM tensor_fmt_props = vku::InitStructHelper();
-    VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&tensor_fmt_props);
-    DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
-    VkFormatFeatureFlags2 tensor_feature_flags{};
-    if (VK_TENSOR_TILING_OPTIMAL_ARM == tiling) {
-        tensor_feature_flags = tensor_fmt_props.optimalTilingTensorFeatures;
-    } else if (VK_TENSOR_TILING_LINEAR_ARM == tiling) {
-        tensor_feature_flags = tensor_fmt_props.linearTilingTensorFeatures;
-    }
+    VkFormatFeatureFlags2 tensor_feature_flags = GetTensorFormatFeatureFlags(tiling, format);
 
     const std::vector<std::pair<VkTensorUsageFlagBitsARM, VkFormatFeatureFlagBits2>> usage_to_feature_map = {
         {VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM, VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT},
@@ -53,6 +106,88 @@ bool CoreChecks::ValidateTensorFormatUsage(VkFormat format, VkTensorUsageFlagsAR
                              string_VkTensorUsageFlagsARM(usage).c_str(), string_VkTensorUsageFlagsARM(usage_bit).c_str(),
                              string_VkTensorUsageFlagsARM(tensor_feature_flags).c_str(),
                              string_VkTensorUsageFlagsARM(feature_bit).c_str());
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateRollingTensorInfo(const VkTensorDescriptionARM& description,
+                                           const VkTensorRollingBackingCreateInfoARM& rolling_backing_info,
+                                           const Location& create_info_loc) const {
+    bool skip = false;
+    if (!IsValueIn(description.tiling, {VK_TENSOR_TILING_LINEAR_ARM, VK_TENSOR_TILING_BRICK_16_WIDE_ARM,
+                                        VK_TENSOR_TILING_BRICK_8_WIDE_ARM, VK_TENSOR_TILING_BRICK_4_WIDE_ARM})) {
+        skip |= LogError("VUID-VkTensorCreateInfoARM-pNext-09833", device, create_info_loc.dot(Field::pNext),
+                         "the pNext chain includes a VkTensorRollingBackingCreateInfoARM with invalid tiling (%s)",
+                         string_VkTensorTilingARM(description.tiling));
+    }
+    if (description.dimensionCount > VK_MAX_TENSOR_CREATE_INFO_ROLLING_BACKING_WRAP_COUNT_ARM) {
+        skip |= LogError(
+            "VUID-VkTensorCreateInfoARM-pNext-09834", device, create_info_loc.dot(Field::pDescription).dot(Field::dimensionCount),
+            "(%" PRIu32 ") must be less than or equal to VK_MAX_TENSOR_CREATE_INFO_ROLLING_BACKING_WRAP_COUNT_ARM (%" PRIu32
+            ") in a rolling tensor.",
+            description.dimensionCount, VK_MAX_TENSOR_CREATE_INFO_ROLLING_BACKING_WRAP_COUNT_ARM);
+    } else {
+        auto& wraps = rolling_backing_info.wraps;
+        for (uint32_t i = 0; i < description.dimensionCount; i++) {
+            if (wraps[i] > description.pDimensions[i]) {
+                skip |= LogError("VUID-VkTensorRollingBackingCreateInfoARM-wraps-09835", device,
+                                 create_info_loc.pNext(Struct::VkTensorRollingBackingCreateInfoARM, Field::wraps, i),
+                                 "(%" PRIu32 ") is greater than pDimensions[%" PRIu32 "] (%" PRIi64 ")", wraps[i], i,
+                                 description.pDimensions[i]);
+            }
+            if (wraps[i] != description.pDimensions[i]) {
+                if (wraps[i] >= (1 << 16)) {
+                    skip |= LogError("VUID-VkTensorRollingBackingCreateInfoARM-wraps-09836", device,
+                                     create_info_loc.pNext(Struct::VkTensorRollingBackingCreateInfoARM, Field::wraps, i),
+                                     "(%" PRIu32 ") is greater than 2^16 (%" PRIu32 ") and not equal to pDimensions[%" PRIu32
+                                     "] (%" PRIi64 ")",
+                                     wraps[i], (1 << 16), i, description.pDimensions[i]);
+                }
+                for (uint32_t j = 0; j < i; j++) {
+                    if (!IsPowerOfTwo(wraps[j]) && !IsPowerOfTwo(wraps[i])) {
+                        skip |= LogError("VUID-VkTensorRollingBackingCreateInfoARM-wraps-09837", device,
+                                         create_info_loc.pNext(Struct::VkTensorRollingBackingCreateInfoARM, Field::wraps, i),
+                                         "(%" PRIu32 ") and wrap[%" PRIu32 "] (%" PRIu32 ") are not a power of two.", wraps[i], j,
+                                         wraps[j]);
+                        break;
+                    }
+                }
+            }
+        }
+        uint32_t brick_outer_size = description.tiling == VK_TENSOR_TILING_BRICK_16_WIDE_ARM  ? 16
+                                    : description.tiling == VK_TENSOR_TILING_BRICK_8_WIDE_ARM ? 8
+                                    : description.tiling == VK_TENSOR_TILING_BRICK_4_WIDE_ARM ? 4
+                                                                                              : 1;
+        if (description.dimensionCount > 1 &&
+            wraps[description.dimensionCount - 2] != description.pDimensions[description.dimensionCount - 2] &&
+            !IsIntegerMultipleOf(wraps[description.dimensionCount - 2], brick_outer_size)) {
+            skip |= LogError(
+                "VUID-VkTensorRollingBackingCreateInfoARM-wraps-09838", device,
+                create_info_loc.pNext(Struct::VkTensorRollingBackingCreateInfoARM, Field::wraps, description.dimensionCount - 2),
+                "(%" PRIu32 ") with dimensionCount %" PRIu32 " is both not equal to pDimensions[dimensionCount - 2] (%" PRIi64
+                ") nor a multiple of brickOuterSize (%" PRIu32 ")",
+                wraps[description.dimensionCount - 2], description.dimensionCount,
+                description.pDimensions[description.dimensionCount - 2], brick_outer_size);
+        }
+        if (brick_outer_size != 1 &&
+            wraps[description.dimensionCount - 1] != description.pDimensions[description.dimensionCount - 1]) {
+            const auto element_size = vkuFormatTexelBlockSize(description.format);
+            auto factor = 64 / brick_outer_size / element_size;
+            if (!IsIntegerMultipleOf(wraps[description.dimensionCount - 1], factor)) {
+                skip |= LogError("VUID-VkTensorRollingBackingCreateInfoARM-wraps-09839", device,
+                                 create_info_loc.pNext(Struct::VkTensorRollingBackingCreateInfoARM, Field::wraps,
+                                                       description.dimensionCount - 1),
+                                 "(%" PRIu32 ") with dimensionCount %" PRIu32
+                                 " is both not equal to pDimensions[dimensionCount - 1] (%" PRIi64 ") nor a multiple of %" PRIu32
+                                 ".\nThe factor %" PRIu32
+                                 " is computed as (64 / brickOuterSize / elementSize) which resolves to (64 / %" PRIu32
+                                 " / %" PRIu32 "), for format (%s)",
+                                 wraps[description.dimensionCount - 1], description.dimensionCount,
+                                 description.pDimensions[description.dimensionCount - 1], factor, factor, brick_outer_size,
+                                 element_size, string_VkFormat(description.format));
+            }
         }
     }
 
@@ -98,6 +233,10 @@ bool CoreChecks::ValidateTensorCreateInfo(const VkTensorCreateInfoARM& create_in
     if ((description.usage & required_bits) == 0) {
         skip |= ValidateTensorFormatUsage(description.format, description.usage, description.tiling,
                                           "VUID-VkTensorCreateInfoARM-pDescription-09728", create_info_loc);
+    }
+
+    if (const auto rolling_backing_info = vku::FindStructInPNextChain<VkTensorRollingBackingCreateInfoARM>(create_info.pNext)) {
+        skip |= ValidateRollingTensorInfo(description, *rolling_backing_info, create_info_loc);
     }
 
     return skip;

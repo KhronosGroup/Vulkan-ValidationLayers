@@ -16,6 +16,7 @@
 
 #include <vulkan/utility/vk_format_utils.h>
 #include "stateless/stateless_validation.h"
+#include "containers/container_utils.h"
 #include "utils/math_utils.h"
 #include <cstdint>
 
@@ -214,6 +215,25 @@ bool Device::manual_PreCallValidateCreateTensorARM(VkDevice device, const VkTens
                              string_VkTensorCreateFlagsARM(VK_TENSOR_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM).c_str());
         }
     }
+
+    if (IsValueIn(description.tiling, {VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_ARM, VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_64K_ARM}) &&
+         description.pDimensions[description.dimensionCount - 1] > 4) {
+        skip |= LogError("VUID-VkTensorDescriptionARM-tiling-09842", device,
+                         create_info_loc.dot(Field::pDescription).dot(Field::tiling),
+                         "(%s) is incompatible with pDimensions[dimensionCount-1] (%" PRIi64 ") > 4\ndimensionCount = %" PRIu32 "",
+                         string_VkTensorTilingARM(description.tiling), description.pDimensions[description.dimensionCount - 1],
+                         description.dimensionCount);
+    }
+    if (description.pStrides &&
+        IsValueIn(description.tiling,
+                  {VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_ARM, VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_64K_ARM,
+                   VK_TENSOR_TILING_BRICK_16_WIDE_ARM, VK_TENSOR_TILING_BRICK_8_WIDE_ARM, VK_TENSOR_TILING_BRICK_4_WIDE_ARM})) {
+        skip |= LogError(
+            "VUID-VkTensorDescriptionARM-tiling-09843", device, create_info_loc.dot(Field::pDescription).dot(Field::tiling),
+            "(%s) is incompatible with non-NULL pStrides (%p).",
+            string_VkTensorTilingARM(description.tiling), description.pStrides);
+    }
+
     if (auto external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryTensorCreateInfoARM>(pCreateInfo->pNext)) {
         VkPhysicalDeviceExternalTensorInfoARM tensor_info = vku::InitStructHelper();
         tensor_info.pDescription = pCreateInfo->pDescription;

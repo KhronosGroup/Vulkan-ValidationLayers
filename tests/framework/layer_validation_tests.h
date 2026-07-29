@@ -463,9 +463,11 @@ class SyncObjectTest : public VkLayerTest {
 class TensorTest : public VkLayerTest {
   public:
     void InitBasicTensor();
+    void InitTensorControls();
     static VkTensorDescriptionARM DefaultDesc();
     static VkTensorDescriptionARM TensorShaderDesc();
     static VkTensorCreateInfoARM DefaultCreateInfo(VkTensorDescriptionARM *desc = nullptr);
+    static VkTensorRollingBackingCreateInfoARM InitTensorRollingInfo(const uint32_t (&wraps)[4]);
 };
 
 class DataGraphTest : public VkLayerTest {

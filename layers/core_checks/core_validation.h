@@ -1347,8 +1347,12 @@ class CoreChecks : public vvl::DeviceProxy {
                                          const ErrorObject& error_obj) const override;
     bool ValidateTensorUsageFlags(VkCommandBuffer commandBuffer, vvl::Tensor const& tensor_state, VkTensorUsageFlagsARM desired,
                                   const char* vuid, const Location& tensor_loc) const;
+    VkFormatFeatureFlags2 GetTensorFormatFeatureFlags(VkTensorTilingARM tiling, VkFormat format) const;
     bool ValidateTensorFormatUsage(VkFormat format, VkTensorUsageFlagsARM usage, VkTensorTilingARM tiling, const char* vuid,
                                    const Location& tensor_loc) const;
+    bool ValidateRollingTensorInfo(const VkTensorDescriptionARM& description,
+                                   const VkTensorRollingBackingCreateInfoARM& rolling_backing_info,
+                                   const Location& create_info_loc) const;
     bool PreCallValidateGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device, const VkTensorCaptureDescriptorDataInfoARM* pInfo,
                                                                 void* pData, const ErrorObject& error_obj) const override;
     bool PreCallValidateGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
