@@ -15,6 +15,7 @@
 
 #include "module.h"
 #include <cassert>
+#include <memory>
 #include <spirv/unified1/spirv.hpp>
 #include "containers/container_utils.h"
 #include "containers/custom_containers.h"
@@ -494,6 +495,27 @@ const Variable& Module::GetBuiltInVariable(uint32_t built_in) {
     }
 
     return *built_in_variable;
+}
+
+const AccessPath* Module::GetAccessPath(const Function& function, const Instruction& inst) {
+    // Access path is only for memory accesses
+    if (!inst.IsMemoryAccess()) {
+        return nullptr;
+    }
+
+    auto it = access_path_cache_.find(&inst);
+    if (it != access_path_cache_.end()) {
+        return it->second.get();
+    }
+
+    auto path = std::make_unique<AccessPath>(*this, type_manager_, function, inst);
+    if (!path->is_valid) {
+        return nullptr;
+    }
+
+    const AccessPath* path_ptr = path.get();
+    access_path_cache_[&inst] = std::move(path);
+    return path_ptr;
 }
 
 // Found in extreme cases production shaders have maybe 5 entrypoints

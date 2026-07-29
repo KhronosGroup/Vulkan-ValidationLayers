@@ -14,6 +14,7 @@
  */
 
 #include "shared_memory_data_race_pass.h"
+#include "access_path.h"
 #include "containers/container_utils.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "module.h"
@@ -175,8 +176,8 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
         return true;
     }
 
-    const AccessPath access_path = type_manager_.BuildAccessPath(function, inst);
-    if (!access_path.IsValid(spv::StorageClassWorkgroup)) {
+    const AccessPath* access_path = module_.GetAccessPath(function, inst);
+    if (!access_path || !access_path->IsValid(spv::StorageClassWorkgroup)) {
         return false;
     }
 
@@ -185,8 +186,8 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
 
     // ptr_elem_type will point to the portion of the variable being accessed. Initialize it
     // to the variable's pointee type in case of no access chains.
-    const Type* ptr_elem_type = type_manager_.FindChildType(*type_manager_.FindTypeById(access_path.variable->inst_.Word(1)), 0);
-    for (auto ac : access_path.ac_list) {
+    const Type* ptr_elem_type = type_manager_.FindChildType(*type_manager_.FindTypeById(access_path->variable->inst_.Word(1)), 0);
+    for (auto ac : access_path->ac_list) {
         const Type* base_ptr_type = type_manager_.FindTypeGlobal(function, ac->Word(3));
 
         // Get the base pointer pointee type.
@@ -240,9 +241,9 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
     }
 
     meta.access_chain_idx_id = offset_id;
-    meta.start = slot_start_[access_path.variable->Id()];
+    meta.start = slot_start_[access_path->variable->Id()];
     meta.element_count = type_manager_.GetScalarElementCount(*ptr_elem_type);
-    meta.variable_idx = access_path.variable->Id();
+    meta.variable_idx = access_path->variable->Id();
 
     switch (opcode) {
         case spv::OpLoad:

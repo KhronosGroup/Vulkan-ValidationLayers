@@ -15,13 +15,12 @@
 #pragma once
 
 #include <stdint.h>
-#include "type_manager.h"
 #include "pass.h"
 
 namespace gpuav {
-
 namespace spirv {
 
+struct AccessPath;
 struct Type;
 
 class PostProcessDescriptorIndexingPass : public Pass {
@@ -37,7 +36,7 @@ class PostProcessDescriptorIndexingPass : public Pass {
     struct InstructionMeta {
         const Instruction* target_instruction = nullptr;
 
-        AccessPath access_path;
+        const AccessPath* access_path;
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);

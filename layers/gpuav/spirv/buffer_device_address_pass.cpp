@@ -14,8 +14,11 @@
  */
 
 #include "buffer_device_address_pass.h"
+#include "access_path.h"
 #include "link.h"
 #include "module.h"
+#include "access_path.h"
+#include <cassert>
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
 #include "utils/math_utils.h"
@@ -95,7 +98,7 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
         }
     }
 
-    const Constant& alignment_constant = type_manager_.GetConstantUInt32(meta.alignment_literal);
+    const Constant& alignment_constant = type_manager_.GetConstantUInt32(meta.access_path->bda_alignment);
 
     const uint32_t function_align_result = module_.TakeNextId();
     const uint32_t function_align_id = GetLinkFunction(function_align_id_, kOfflineFunctionAlign);
@@ -117,62 +120,17 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
 }
 
 bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
-    const uint32_t opcode = inst.Opcode();
-    if (opcode == spv::OpLoad || opcode == spv::OpStore) {
-        // We only care if there is an Aligned Memory Operands
-        // VUID-StandaloneSpirv-PhysicalStorageBuffer64-04708 requires there to be an Aligned operand
-        const uint32_t memory_operand_index = opcode == spv::OpLoad ? 4 : 3;
-        const uint32_t alignment_word_index = opcode == spv::OpLoad ? 5 : 4;  // OpStore is at [4]
-        if (inst.Length() < alignment_word_index) {
-            return false;
-        }
-        const uint32_t memory_operands = inst.Word(memory_operand_index);
-        if ((memory_operands & spv::MemoryAccessAlignedMask) == 0) {
-            return false;
-        }
-        // Even if they are other Memory Operands the spec says it is ordered by smallest bit first,
-        // Luckily |Aligned| is the smallest bit that can have an operand so we know it is here
-        meta.alignment_literal = inst.Word(alignment_word_index);
-
-        // Aligned 0 was not being validated (https://github.com/KhronosGroup/glslang/issues/3893)
-        // This is nonsense and we should skip (as it should be validated in spirv-val)
-        if (!IsPowerOfTwo(meta.alignment_literal)) return false;
-    } else if (AtomicOperation(opcode)) {
-        // Atomics are naturally aligned and by setting this to 1, it will always pass the alignment check
-        meta.alignment_literal = 1;
-    } else {
-        return false;
-    }
-
-    // While the Pointer Id might not be an OpAccessChain (can be OpLoad, OpCopyObject, etc), we can just examine its result type to
-    // see if it is a PhysicalStorageBuffer pointer or not
-    const uint32_t pointer_id = inst.Operand(0);
-    meta.pointer_inst = function.FindInstruction(pointer_id);
-    if (!meta.pointer_inst) {
-        return false;  // Can be pointing to a Workgroup variable out of the function
-    }
-
-    // Get the OpTypePointer
-    const Type* op_type_pointer = type_manager_.FindTypeById(meta.pointer_inst->TypeId());
-    if (!op_type_pointer || op_type_pointer->spv_type_ != SpvType::kPointer ||
-        op_type_pointer->inst_.Operand(0) != spv::StorageClassPhysicalStorageBuffer) {
-        return false;
-    }
-
-    // The OpTypePointer's type
-    uint32_t accessed_type_id = op_type_pointer->inst_.Operand(1);
-    const Type* accessed_type = type_manager_.FindTypeById(accessed_type_id);
-    if (!accessed_type) {
-        assert(false);
+    meta.access_path = module_.GetAccessPath(function, inst);
+    if (!meta.access_path || !meta.access_path->IsValidBda()) {
         return false;
     }
 
     // This might be an OpTypeStruct, even if some compilers are smart enough (know Mesa is) to detect only the first part of a
     // struct is loaded, we have to assume the entire struct is loaded and the entire memory is accessed (see
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8089)
-    meta.access_size = type_manager_.GetTypeBytesSize(*accessed_type);
+    meta.access_size = type_manager_.GetTypeBytesSize(*meta.access_path->access_type);
     // Will mark this is a struct acess to inform the user
-    meta.type_is_struct = accessed_type->spv_type_ == SpvType::kStruct;
+    meta.type_is_struct = meta.access_path->access_type->spv_type_ == SpvType::kStruct;
 
     meta.target_instruction = &inst;
     return true;
@@ -220,58 +178,47 @@ bool BufferDeviceAddressPass::Instrument() {
                         continue;
                     }
 
-                    if (!meta.pointer_inst->IsAccessChain()) {
+                    if (meta.access_path->ac_list.empty()) {
                         continue;
                     }
-                    // OpTypeStruct -> OpTypePointer (PSB) -> OpLoad/OpBitcast -> OpAccesschain
-                    std::vector<const Instruction*> access_chain_insts;
-
-                    const Instruction* next_inst = meta.pointer_inst;
-                    // First walk back to the outer most access chain
-                    while (next_inst && next_inst->IsAccessChain()) {
-                        access_chain_insts.insert(access_chain_insts.begin(), next_inst);
-
-                        const uint32_t access_chain_base_id = next_inst->Operand(0);
-                        next_inst = function.FindInstruction(access_chain_base_id);
-                    }
-                    if (access_chain_insts.empty() || !next_inst) {
-                        continue;
-                    }
+                    const Instruction* last_access = meta.access_path->ac_list.front();
+                    const uint32_t access_chain_base_id = last_access->Operand(0);
+                    const Instruction* next_inst = function.FindInstruction(access_chain_base_id);
 
                     const Type* load_type_pointer = type_manager_.FindTypeById(next_inst->TypeId());
-                    if (load_type_pointer && load_type_pointer->spv_type_ == SpvType::kPointer &&
-                        load_type_pointer->inst_.StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
-                        const Type* struct_type = type_manager_.FindTypeById(load_type_pointer->inst_.Operand(1));
-                        if (struct_type && struct_type->spv_type_ == SpvType::kStruct) {
-                            uint32_t root_struct_id = struct_type->Id();
+                    if (!load_type_pointer || !load_type_pointer->IsBDA()) {
+                        assert(false);
+                        continue;
+                    }
 
-                            // GLSL/HLSL will only ever a struct, but for Slang, we might have the first access be the pointer and
-                            // we actually need that outer struct, which "looks" an OpTypePointer with an ArrayStride attached to it
-                            const Instruction* last_access = access_chain_insts.front();
-                            if (!last_access->IsNonPtrAccessChain() && last_access->TypeId() == load_type_pointer->Id()) {
-                                root_struct_id = load_type_pointer->Id();
-                            }
-
-                            if (struct_id_temp_workaround.find(root_struct_id) != struct_id_temp_workaround.end()) {
-                                continue;
-                            }
-
-                            const uint32_t struct_offset = FindOffsetInStruct(root_struct_id, nullptr, false, access_chain_insts);
-                            if (struct_offset == 0) {
-                                continue;
-                            }
-                            uint32_t inst_position = meta.target_instruction->GetPositionOffset();
-                            block_skip_list_.insert(inst_position);
-
-                            Range& range = block_struct_range_map_[struct_type->Id()];
-                            // If there is only a single item in the struct used, we want the min/max to be the same.
-                            // The final range is ((max - min) + min_instruction_offset)
-                            if (struct_offset < range.min_struct_offsets) {
-                                range.min_instruction = inst_position;
-                                range.min_struct_offsets = struct_offset;
-                            }
-                            range.max_struct_offsets = std::max(range.max_struct_offsets, struct_offset);
+                    const Type* struct_type = type_manager_.FindTypeById(load_type_pointer->inst_.Operand(1));
+                    if (struct_type && struct_type->spv_type_ == SpvType::kStruct) {
+                        uint32_t root_struct_id = struct_type->Id();
+                        if (struct_id_temp_workaround.find(root_struct_id) != struct_id_temp_workaround.end()) {
+                            continue;
                         }
+
+                        // GLSL/HLSL will only ever use structs, but for Slang, we might have the first access be the pointer and
+                        // we actually need that outer struct, which "looks" an OpTypePointer with an ArrayStride attached to it.
+                        // aka. we have a pointer-of-structs and need to use that to get the offset
+                        if (!last_access->IsNonPtrAccessChain() && last_access->TypeId() == load_type_pointer->Id()) {
+                            root_struct_id = load_type_pointer->Id();
+                        }
+
+                        const uint32_t struct_offset =
+                            FindOffsetInStruct(root_struct_id, nullptr, false, meta.access_path->ac_list);
+                        if (struct_offset == 0) {
+                            continue;
+                        }
+                        uint32_t inst_position = meta.target_instruction->GetPositionOffset();
+                        block_skip_list_.insert(inst_position);
+
+                        Range& range = block_struct_range_map_[struct_type->Id()];
+                        if (struct_offset < range.min_struct_offsets) {
+                            range.min_instruction = inst_position;
+                            range.min_struct_offsets = struct_offset;
+                        }
+                        range.max_struct_offsets = std::max(range.max_struct_offsets, struct_offset);
                     }
                 }
             }

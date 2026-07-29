@@ -15,6 +15,7 @@
 
 #include "mesh_shading_pass.h"
 #include <vulkan/vulkan_core.h>
+#include "access_path.h"
 #include "containers/container_utils.h"
 #include "module.h"
 #include <cassert>
@@ -72,8 +73,8 @@ bool MeshShading::RequiresInstrumentation(const Function& function, const Instru
         meta.function_id = SET_MESH_OUTPUT;
         return true;
     } else if (guard_all_task_payloads_ && (IsValueIn(opcode, {spv::OpLoad, spv::OpStore}) || AtomicOperation(opcode))) {
-        const AccessPath access_path = type_manager_.BuildAccessPath(function, inst);
-        if (!access_path.IsValid(spv::StorageClassTaskPayloadWorkgroupEXT)) {
+        const AccessPath* access_path = module_.GetAccessPath(function, inst);
+        if (!access_path || !access_path->IsValid(spv::StorageClassTaskPayloadWorkgroupEXT)) {
             return false;
         }
 

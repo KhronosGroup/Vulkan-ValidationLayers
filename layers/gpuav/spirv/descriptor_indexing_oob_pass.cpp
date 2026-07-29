@@ -14,6 +14,7 @@
  */
 
 #include "descriptor_indexing_oob_pass.h"
+#include "access_path.h"
 #include "link.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
@@ -51,10 +52,12 @@ uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId(bool is_combined_image_sam
 }
 
 uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
+    const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
+
     // TODO - This logic is not obvious and should be either fixed or moved to a common util
     // If dealing with a seperate sampler, only need to do it on the resource
     // To add to the fire, this needs to go first otherwise the Function::CreateInstruction will break the inst_it
-    if (meta.access_path.image_load_inst) {
+    if (descriptor_path.image_load_inst) {
         const uint32_t opcode = meta.target_instruction->Opcode();
         if (opcode != spv::OpImageRead && opcode != spv::OpImageFetch && opcode != spv::OpImageWrite) {
             // if not a direct read/write/fetch, will be a OpSampledImage
@@ -82,10 +85,10 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
         }
     }
 
-    const DescriptorInterface& interface = meta.access_path.variable->interface_;
+    const DescriptorInterface& interface = meta.access_path->variable->interface_;
     const Constant& set_constant = type_manager_.GetConstantUInt32(interface.set);
     const Constant& binding_constant = type_manager_.GetConstantUInt32(interface.binding);
-    const uint32_t descriptor_index_id = CastToUint32(meta.access_path.descriptor_index_id, block, inst_it);  // might be int32
+    const uint32_t descriptor_index_id = CastToUint32(descriptor_path.index_id, block, inst_it);  // might be int32
 
     const auto& layout_lut = module_.interface_.instrumentation_dsl.set_index_to_bindings_layout_lut;
     BindingLayout binding_layout = layout_lut[interface.set][interface.binding];
@@ -96,7 +99,7 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
     uint32_t function_result = module_.TakeNextId();
-    const uint32_t function_def = GetLinkFunctionId(meta.access_path.is_combined_image_sampler);
+    const uint32_t function_def = GetLinkFunctionId(descriptor_path.is_combined_image_sampler);
     const uint32_t bool_type = type_manager_.GetTypeBool().Id();
 
     block.CreateInstruction(spv::OpFunctionCall,
@@ -110,14 +113,14 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     //     bool valid_image = inst_descriptor_indexing_oob(image);
     //     bool valid_sampler = inst_descriptor_indexing_oob(sampler);
     //     bool valid_both = image_valid && sampler_valid;
-    if (meta.access_path.sampler_variable) {
+    if (descriptor_path.sampler_variable) {
         const uint32_t valid_image = function_result;
         const uint32_t valid_sampler = module_.TakeNextId();
-        const DescriptorInterface& sampler_interface = meta.access_path.sampler_variable->interface_;
+        const DescriptorInterface& sampler_interface = descriptor_path.sampler_variable->interface_;
 
         const Constant& sampler_set_constant = type_manager_.GetConstantUInt32(sampler_interface.set);
         const Constant& sampler_binding_constant = type_manager_.GetConstantUInt32(sampler_interface.binding);
-        const uint32_t sampler_descriptor_index_id = CastToUint32(meta.access_path.sampler_descriptor_index_id, block, inst_it);
+        const uint32_t sampler_descriptor_index_id = CastToUint32(descriptor_path.sampler_index_id, block, inst_it);
 
         BindingLayout sampler_binding_layout = layout_lut[sampler_interface.set][sampler_interface.binding];
         const Constant& sampler_binding_layout_size = type_manager_.GetConstantUInt32(sampler_binding_layout.count);
@@ -137,38 +140,39 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
 }
 
 bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
-    meta.access_path = type_manager_.BuildAccessPath(function, inst);
-    if (!meta.access_path.IsValidDescriptor()) {
+    meta.access_path = module_.GetAccessPath(function, inst);
+    if (!meta.access_path || !meta.access_path->IsValidDescriptor()) {
         return false;
     }
 
     // guaranteed to be valid already, save compiler time optimizing the check out
-    if (!meta.access_path.pointer_type->IsArray() && !module_.has_bindless_descriptors_) {
+    if (!meta.access_path->pointer_type->IsArray() && !module_.has_bindless_descriptors_) {
         return false;
     }
 
-    if (meta.access_path.variable->interface_.set >= glsl::kDebugInputBindlessMaxDescSets) {
+    if (meta.access_path->variable->interface_.set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }
 
+    const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
     if (!module_.settings_.safe_mode) {
-        uint32_t variable_id = meta.access_path.variable->Id();
+        uint32_t variable_id = meta.access_path->variable->Id();
         auto variable_found_it = block_instrumented_table_.find(variable_id);
         if (variable_found_it == block_instrumented_table_.end()) {
-            block_instrumented_table_[variable_id] = {meta.access_path.descriptor_index_id};
+            block_instrumented_table_[variable_id] = {descriptor_path.index_id};
         } else {
             vvl::unordered_set<uint32_t>& descriptor_index_set = variable_found_it->second;
-            if (descriptor_index_set.find(meta.access_path.descriptor_index_id) != descriptor_index_set.end()) {
+            if (descriptor_index_set.find(descriptor_path.index_id) != descriptor_index_set.end()) {
                 return false;  // Already instrumented, can skip
             } else {
-                descriptor_index_set.emplace(meta.access_path.descriptor_index_id);
+                descriptor_index_set.emplace(descriptor_path.index_id);
             }
         }
     }
 
-    if (meta.access_path.sampler_variable &&
-        meta.access_path.sampler_variable->interface_.set >= glsl::kDebugInputBindlessMaxDescSets) {
+    if (descriptor_path.sampler_variable &&
+        descriptor_path.sampler_variable->interface_.set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Sampler Tried to use a descriptor slot over the current max limit");
         return false;
     }
@@ -247,11 +251,12 @@ bool DescriptorIndexingOOBPass::Instrument() {
                 }
 
                 if (!module_.settings_.safe_mode) {
-                    const uint32_t hash_descriptor_index_id = pc_access.next_alias_id == meta.access_path.descriptor_index_id
+                    const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
+                    const uint32_t hash_descriptor_index_id = pc_access.next_alias_id == descriptor_path.index_id
                                                                   ? pc_access.descriptor_index_id
-                                                                  : meta.access_path.descriptor_index_id;
-                    uint32_t hash_content[3] = {meta.access_path.variable->interface_.set,
-                                                meta.access_path.variable->interface_.binding, hash_descriptor_index_id};
+                                                                  : descriptor_path.index_id;
+                    uint32_t hash_content[3] = {meta.access_path->variable->interface_.set,
+                                                meta.access_path->variable->interface_.binding, hash_descriptor_index_id};
                     const uint32_t hash = hash_util::Hash32(hash_content, sizeof(uint32_t) * 3);
                     if (function_duplicate_tracker.FindAndUpdate(block_duplicate_tracker, hash)) {
                         continue;  // duplicate detected

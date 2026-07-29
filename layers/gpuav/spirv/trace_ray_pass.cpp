@@ -15,6 +15,7 @@
 
 #include "trace_ray_pass.h"
 
+#include "access_path.h"
 #include "containers/container_utils.h"
 #include "generated/spirv_grammar_helper.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
@@ -60,23 +61,24 @@ std::vector<uint32_t> TraceRayPass::GetTlasValidationFunctionCallInstructions(co
         return {};
     }
 
-    const AccessPath access_path = type_manager_.BuildAccessPath(function, *as_op_load_inst);
-    if (!access_path.IsValidDescriptor() || access_path.access_type->spv_type_ != SpvType::kAccelerationStructureKHR) {
+    const AccessPath* access_path = module_.GetAccessPath(function, *as_op_load_inst);
+    if (!access_path || !access_path->IsValidDescriptor() ||
+        access_path->access_type->spv_type_ != SpvType::kAccelerationStructureKHR) {
         return {};
     }
 
-    if (access_path.pointer_type->spv_type_ == SpvType::kRuntimeArray) {
+    if (access_path->pointer_type->spv_type_ == SpvType::kRuntimeArray) {
         return {};  // TODO - Currently we mark these as "bindless"
     }
 
-    const DescriptorInterface& interface = access_path.variable->interface_;
+    const DescriptorInterface& interface = access_path->variable->interface_;
     if (interface.set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return {};
     }
 
     const Constant& desc_set_constant = type_manager_.GetConstantUInt32(interface.set);
-    const uint32_t desc_index_id = CastToUint32(access_path.descriptor_index_id, block, trace_ray_inst_it);  // might be int32
+    const uint32_t desc_index_id = CastToUint32(access_path->descriptor.index_id, block, trace_ray_inst_it);  // might be int32
 
     const auto& layout_lut = module_.interface_.instrumentation_dsl.set_index_to_bindings_layout_lut;
     BindingLayout binding_layout = layout_lut[interface.set][interface.binding];

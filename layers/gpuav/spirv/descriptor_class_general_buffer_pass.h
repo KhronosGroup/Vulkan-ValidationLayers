@@ -16,11 +16,12 @@
 
 #include <stdint.h>
 #include <cstdint>
-#include "type_manager.h"
 #include "pass.h"
 
 namespace gpuav {
 namespace spirv {
+
+struct AccessPath;
 
 // Will make sure Buffers (Storage and Uniform Buffers) that are non bindless are not OOB Uses robustBufferAccess to ensure if we
 // are OOB that it won't crash and we will return the error safely
@@ -41,7 +42,7 @@ class DescriptorClassGeneralBufferPass : public Pass {
         // The ID to the OpTypeStruct inside the SSBO/UBO
         uint32_t descriptor_block_type_id = 0;
 
-        AccessPath access_path;
+        const AccessPath* access_path;
 
         // Capture the upper bound offset into the struct the instruction accesses
         // Will be zero if we can't determine it (or in Safe Mode)

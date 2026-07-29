@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 
 namespace gpuav {
 namespace spirv {
+struct AccessPath;
 
 // Create a pass to instrument physical buffer address checking
 // This pass instruments all physical buffer address references to check that
@@ -35,8 +36,9 @@ class BufferDeviceAddressPass : public Pass {
     // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later
     struct InstructionMeta {
         const Instruction* target_instruction = nullptr;
-        const Instruction* pointer_inst = nullptr;
-        uint32_t alignment_literal = 0;
+
+        const AccessPath* access_path;
+
         uint32_t access_size = 0;
         bool type_is_struct = false;
     };

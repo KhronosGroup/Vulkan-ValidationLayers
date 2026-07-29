@@ -15,6 +15,7 @@
 
 #include "descriptor_heap_pass.h"
 #include <vulkan/vulkan_core.h>
+#include "access_path.h"
 #include "chassis/dispatch_object.h"
 #include "containers/container_utils.h"
 #include "generated/spirv_grammar_helper.h"
@@ -65,6 +66,7 @@ uint32_t DescriptorHeapPass::GetLinkFunctionId(const FunctionNames func_name) {
 // Unfortunately this is a duplicate of the util function because there is no spirv::ResourceInterfaceVariable
 bool DescriptorHeapPass::ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type, const AccessPath& access_path,
                                                     bool is_sampler) const {
+    VkDescriptorType descriptor_type = access_path.descriptor.type;
     if (resource_type == VK_SPIRV_RESOURCE_TYPE_ALL_EXT) {
         return true;
     }
@@ -74,12 +76,11 @@ bool DescriptorHeapPass::ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT 
         return true;
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT) != 0 &&
-        (access_path.descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)) {
+        (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)) {
         return true;
     }
-    if (access_path.descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ||
-        access_path.descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER ||
-        access_path.descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
+    if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE || descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER ||
+        descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
         // NonWritable must be on the OpVariable, not the OpTypeStruct
         // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4789
         const bool nonwritable = GetDecoration(access_path.variable->Id(), spv::DecorationNonWritable) != nullptr;
@@ -91,14 +92,15 @@ bool DescriptorHeapPass::ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT 
         }
     }
 
-    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT) != 0 && access_path.is_combined_image_sampler) {
+    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT) != 0 &&
+        access_path.descriptor.is_combined_image_sampler) {
         return true;
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT) != 0 &&
-        access_path.descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+        descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
         return true;
     }
-    if (access_path.descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+    if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
         // NonWritable must be on the OpVariable, not the OpTypeStruct
         // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4789
         const bool nonwritable = GetDecoration(access_path.variable->Id(), spv::DecorationNonWritable) != nullptr;
@@ -110,7 +112,7 @@ bool DescriptorHeapPass::ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT 
         }
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT) != 0 &&
-        access_path.descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+        descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
         return true;
     }
 
@@ -124,7 +126,7 @@ const uint32_t kMappingIndexInvalid = 0xFFFFFFFF;
 // TODO - Handle SHADER_RECORD
 const uint32_t kMappingIndexShaderRecord = 0xFFFFFFFE;
 uint32_t DescriptorHeapPass::GetMapping(const AccessPath& access_path, bool is_sampler) const {
-    const Variable& variable = is_sampler ? *access_path.sampler_variable : *access_path.variable;
+    const Variable& variable = is_sampler ? *access_path.descriptor.sampler_variable : *access_path.variable;
     const DescriptorInterface& interface = variable.interface_;
     if (interface.IsHeap()) {
         return glsl::kInst_DescriptorHeap_MappingIndexUntyped;
@@ -160,7 +162,7 @@ uint32_t DescriptorHeapPass::GetMapping(const AccessPath& access_path, bool is_s
 }
 
 uint32_t DescriptorHeapPass::GetMinBufferAlignment(const InstructionMeta& meta) const {
-    const bool is_uniform = meta.access_path.descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    const bool is_uniform = meta.access_path->descriptor.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     const VkDeviceSize buffer_alignment = is_uniform ? module_.settings_.phys_dev_props->limits.minUniformBufferOffsetAlignment
                                                      : module_.settings_.phys_dev_props->limits.minStorageBufferOffsetAlignment;
     return type_manager_.GetConstantUInt32((uint32_t)buffer_alignment).Id();
@@ -168,10 +170,12 @@ uint32_t DescriptorHeapPass::GetMinBufferAlignment(const InstructionMeta& meta) 
 
 uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
                                                 bool is_seperate_sampler) {
+    const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
+
     // TODO - This logic is not obvious and should be either fixed or moved to a common util
     // If dealing with a seperate sampler, only need to do it on the resource
     // To add to the fire, this needs to go first otherwise the Function::CreateInstruction will break the inst_it
-    if (meta.access_path.image_load_inst && !is_seperate_sampler) {
+    if (descriptor_path.image_load_inst && !is_seperate_sampler) {
         const uint32_t opcode = meta.target_instruction->Opcode();
         if (opcode != spv::OpImageRead && opcode != spv::OpImageFetch && opcode != spv::OpImageWrite) {
             // if not a direct read/write/fetch, will be a OpSampledImage
@@ -199,9 +203,8 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         }
     }
 
-    const Variable& descriptor_variable = is_seperate_sampler ? *meta.access_path.sampler_variable : *meta.access_path.variable;
-    const uint32_t descriptor_index =
-        is_seperate_sampler ? meta.access_path.sampler_descriptor_index_id : meta.access_path.descriptor_index_id;
+    const Variable& descriptor_variable = is_seperate_sampler ? *descriptor_path.sampler_variable : *meta.access_path->variable;
+    const uint32_t descriptor_index = is_seperate_sampler ? descriptor_path.sampler_index_id : descriptor_path.index_id;
     const uint32_t descriptor_index_id = CastToUint32(descriptor_index, block, inst_it);  // might be int32
 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
@@ -212,7 +215,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
 
     // We try and encode a lot of information in a single uint32_t
     uint32_t desc_encoding_id = 0;
-    const VkDescriptorType vk_desc_type = is_seperate_sampler ? VK_DESCRIPTOR_TYPE_SAMPLER : meta.access_path.descriptor_type;
+    const VkDescriptorType vk_desc_type = is_seperate_sampler ? VK_DESCRIPTOR_TYPE_SAMPLER : descriptor_path.type;
     const uint32_t desc_size_value = (uint32_t)module_.settings_.cached_descriptor_size->GetSize(vk_desc_type);
     {
         uint8_t desc_type_mask = (uint8_t)GetMaskFromDescriptorType(vk_desc_type);
@@ -237,7 +240,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
     bool return_uint = false;
 
     const uint32_t binding_offset = mapping ? descriptor_variable.interface_.binding - mapping->firstBinding : 0;
-    const bool combined_index = meta.access_path.is_combined_image_sampler && mapping && HasCombinedImageSamplerIndex(*mapping);
+    const bool combined_index = descriptor_path.is_combined_image_sampler && mapping && HasCombinedImageSamplerIndex(*mapping);
 
     if (!mapping) {
         assert(descriptor_variable.interface_.IsHeap());  // Untyped
@@ -343,7 +346,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         const uint32_t heap_offset_id = type_manager_.GetConstantUInt32(map_data.heapOffset).Id();
         const uint32_t push_offset_id = type_manager_.GetConstantUInt32(map_data.pushOffset / 4).Id();
 
-        assert(meta.access_path.descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        assert(descriptor_path.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         const uint32_t buffer_alignment_id = GetMinBufferAlignment(meta);
 
         const uint32_t function_def = GetLinkFunctionId(MAPPING_RESOURCE_HEAP_DATA);
@@ -411,17 +414,17 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
 // If there is a sampler, we have another descriptor at this spot we need to validate
 uint32_t DescriptorHeapPass::CreateFunctionCallSampler(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
                                                        uint32_t non_sampler_result) {
+    const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
     uint32_t valid_sampler = 0;
-    if (meta.access_path.is_combined_image_sampler) {
+    if (descriptor_path.is_combined_image_sampler) {
         assert(meta.mapping_ptr);  // not allowed with untyped pointers
-        valid_sampler =
-            CreateFunctionCallCombinedSampler(block, inst_it, meta, *meta.mapping_ptr, meta.access_path.descriptor_index_id);
+        valid_sampler = CreateFunctionCallCombinedSampler(block, inst_it, meta, *meta.mapping_ptr, descriptor_path.index_id);
     } else {
         valid_sampler = CreateFunctionCall(block, inst_it, meta, true);
     }
 
     // This is just a dumb hack around iterators, for samplers we call a second function
-    if (inst_it && meta.access_path.HasSampler()) {
+    if (inst_it && descriptor_path.HasSampler()) {
         inst_it++;
     }
 
@@ -462,7 +465,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
     const bool combined_index = HasCombinedImageSamplerIndex(mapping);
     const uint32_t combined_index_id = type_manager_.GetConstantBool(combined_index).Id();
 
-    const uint32_t binding_offset = meta.access_path.variable->interface_.binding - mapping.firstBinding;
+    const uint32_t binding_offset = meta.access_path->variable->interface_.binding - mapping.firstBinding;
 
     uint32_t function_result = module_.TakeNextId();
     const uint32_t uint_type = type_manager_.GetTypeInt(32, 0).Id();
@@ -601,18 +604,19 @@ DescriptorHeapPass::UntypedLayout DescriptorHeapPass::GetUntypedLayout(const Typ
 }
 
 bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
-    meta.access_path = type_manager_.BuildAccessPath(function, inst);
-    if (!meta.access_path.IsValidDescriptor()) {
+    meta.access_path = module_.GetAccessPath(function, inst);
+    if (!meta.access_path || !meta.access_path->IsValidDescriptor()) {
         return false;
     }
-    if (meta.access_path.descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+    const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
+    if (descriptor_path.type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
         return false;  // not supported yet
     }
 
     // We look for mappings here incase we can't find it, we can skip safely
-    meta.mapping_index_resource = GetMapping(meta.access_path, false);
-    if (meta.access_path.sampler_variable) {
-        meta.mapping_index_sampler = GetMapping(meta.access_path, true);
+    meta.mapping_index_resource = GetMapping(*meta.access_path, false);
+    if (descriptor_path.sampler_variable) {
+        meta.mapping_index_sampler = GetMapping(*meta.access_path, true);
     }
     if (meta.mapping_index_resource == kMappingIndexInvalid || meta.mapping_index_sampler == kMappingIndexInvalid) {
         return false;
@@ -627,7 +631,7 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
         meta.mapping_ptr = &module_.out_status.device.heap_mappings[meta.mapping_index_resource].mapping_data;
     }
     // Get to do it again... because samplers
-    if (meta.access_path.sampler_variable) {
+    if (descriptor_path.sampler_variable) {
         if (meta.mapping_index_sampler != glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
             meta.mapping_ptr_sampler = &module_.out_status.device.heap_mappings[meta.mapping_index_sampler].mapping_data;
         }
@@ -639,15 +643,15 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
     } else if (meta.mapping_ptr) {
         has_embedded_sampler = GetEmbeddedSampler(*meta.mapping_ptr) != nullptr;
     }
-    meta.instrument_seperate_sampler = meta.access_path.HasSampler() && !has_embedded_sampler;
+    meta.instrument_seperate_sampler = descriptor_path.HasSampler() && !has_embedded_sampler;
 
     if (meta.mapping_index_resource == glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
-        meta.untyped_layout_resource = GetUntypedLayout(*meta.access_path.pointer_type, meta.access_path.heap_offset_member_index);
+        meta.untyped_layout_resource = GetUntypedLayout(*meta.access_path->pointer_type, descriptor_path.heap_offset_member_index);
     }
     // again... because samplers
     if (meta.mapping_index_sampler == glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
         meta.untyped_layout_sampler =
-            GetUntypedLayout(*meta.access_path.sampler_pointer_type, meta.access_path.sampler_heap_offset_member_index);
+            GetUntypedLayout(*descriptor_path.sampler_pointer_type, descriptor_path.sampler_heap_offset_member_index);
     }
     if (meta.untyped_layout_resource.is_multidimensional_array || meta.untyped_layout_sampler.is_multidimensional_array) {
         return false;  // no support currently
@@ -703,7 +707,7 @@ uint32_t DescriptorHeapPass::InstructionMeta::Hash(const uint32_t descriptor_ind
         hash = hash_util::Hash32(hash_content, sizeof(uint32_t) * 4);
     }
 
-    if (access_path.is_combined_image_sampler) {
+    if (access_path->descriptor.is_combined_image_sampler) {
         if (mapping_ptr->source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
             const VkDescriptorMappingSourceConstantOffsetEXT& map_data = mapping_ptr->sourceData.constantOffset;
             uint32_t hash_content[3] = {hash, map_data.samplerHeapOffset, map_data.samplerHeapArrayStride};
@@ -772,17 +776,17 @@ bool DescriptorHeapPass::Instrument() {
                 bool skip_resource = false;
                 bool skip_sampler = !meta.instrument_seperate_sampler;
                 if (!module_.settings_.safe_mode) {
-                    const uint32_t hash_descriptor_index_id = pc_access.next_alias_id == meta.access_path.descriptor_index_id
+                    const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
+                    const uint32_t hash_descriptor_index_id = pc_access.next_alias_id == descriptor_path.index_id
                                                                   ? pc_access.descriptor_index_id
-                                                                  : meta.access_path.descriptor_index_id;
-                    const uint32_t resource_hash = meta.Hash(hash_descriptor_index_id, meta.access_path.descriptor_type);
+                                                                  : descriptor_path.index_id;
+                    const uint32_t resource_hash = meta.Hash(hash_descriptor_index_id, descriptor_path.type);
                     if (resource_hash != 0 && function_duplicate_tracker.FindAndUpdate(block_duplicate_tracker, resource_hash)) {
                         skip_resource = true;
                     }
 
                     if (meta.instrument_seperate_sampler) {
-                        const uint32_t sampler_hash =
-                            meta.Hash(meta.access_path.sampler_descriptor_index_id, VK_DESCRIPTOR_TYPE_SAMPLER);
+                        const uint32_t sampler_hash = meta.Hash(descriptor_path.sampler_index_id, VK_DESCRIPTOR_TYPE_SAMPLER);
                         if (sampler_hash != 0 && function_duplicate_tracker.FindAndUpdate(block_duplicate_tracker, sampler_hash)) {
                             skip_sampler = true;
                         }
