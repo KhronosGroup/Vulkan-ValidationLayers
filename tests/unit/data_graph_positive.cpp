@@ -152,6 +152,7 @@ TEST_F(PositiveDataGraph, DISABLED_ProtectedMemoryDataGraph) {
     AddRequiredFeature(vkt::Feature::protectedMemory);
     AddRequiredFeature(vkt::Feature::pipelineProtectedAccess);
     RETURN_IF_SKIP(InitFramework());
+    // We need to create a device with ALSO a protected queue (VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)
     RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
 
     vkt::dg::HelperParameters params;
