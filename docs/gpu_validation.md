@@ -63,7 +63,7 @@ By assuming things "should likely be working", we can make GPU-AV much faster
 
 We realize if we don't stop your Device Lost, no one else will. If you are stuck on a nasty bug and need the extra help, this is for you.
 
-**Please turn off Safe Mode**, this will sacrifice performance, but GPU-AV will try to stop things from crashing. We have a way to [reduce the scope](./gpu_av_scope.md) as this will **greatly** improve performance if we only need to validate a smaller surface area.
+**Please turn off Safe Mode**, this will sacrifice performance, but GPU-AV will try to stop things from crashing. We have a way to [reduce the scoped](./gpu_av_scoped.md) as this will **greatly** improve performance if we only need to validate a smaller surface area.
 
 #### Force on Robustness
 
