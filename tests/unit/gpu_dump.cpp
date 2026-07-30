@@ -2693,3 +2693,59 @@ TEST_F(NegativeGpuDump, DescriptorHeapUntypedPointersImageFunctionParam) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeRuntimeArray) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12786");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(InitDescriptorHeap());
+
+    VkDeviceSize heap_size = heap_props.bufferDescriptorSize * 4;
+
+    // For devices with no reserved range, add a bit after regardless
+    const bool no_reserved_range = heap_props.minResourceHeapReservedRange == 0;
+    if (no_reserved_range) {
+        heap_size += heap_props.bufferDescriptorSize;
+    }
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_size);
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout (set = 0, binding = 0) buffer SSBO {
+            uint data;
+        } buffers[];
+
+        void main() {
+            uint tid = gl_GlobalInvocationID.x;
+            buffers[tid].data = 0;
+        }
+    )glsl";
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = 0;
+    mapping.sourceData.constantOffset.heapArrayStride = (uint32_t)heap_props.bufferDescriptorSize;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = desc_heap.resource_heap_.AddressRange();
+    bind_resource_info.reservedRangeOffset = desc_heap.GetResourceHeapReservedRangeOffset();
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    if (no_reserved_range) {
+        bind_resource_info.reservedRangeOffset -= heap_props.bufferDescriptorSize;
+        bind_resource_info.reservedRangeSize = heap_props.bufferDescriptorSize;
+    }
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    m_errorMonitor->SetDesiredInfo("[INFO] RESERVED RANGE");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
