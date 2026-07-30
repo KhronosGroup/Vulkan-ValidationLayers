@@ -1955,13 +1955,13 @@ bool Device::manual_PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer
                                                             error_obj.location.dot(Field::pCallableShaderBindingTable));
     }
 
-    const uint64_t invocations = static_cast<uint64_t>(width) * static_cast<uint64_t>(depth) * static_cast<uint64_t>(height);
+    const uint64_t invocations = static_cast<uint64_t>(width) * static_cast<uint64_t>(height) * static_cast<uint64_t>(depth);
     if (invocations > phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount) {
         skip |= LogError("VUID-vkCmdTraceRaysKHR-width-03641", commandBuffer, error_obj.location,
                          "width x height x depth (%" PRIu32 " x %" PRIu32 " x %" PRIu32
                          ") must be less than or equal to "
                          "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayDispatchInvocationCount (%" PRIu32 ").",
-                         width, depth, height, phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount);
+                         width, height, depth, phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount);
     }
 
     const uint64_t max_width = static_cast<uint64_t>(phys_dev_props.limits.maxComputeWorkGroupCount[0]) *
