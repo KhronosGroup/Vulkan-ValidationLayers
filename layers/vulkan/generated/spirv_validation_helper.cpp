@@ -272,9 +272,11 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityRawAccessChainsNV, {0, &DeviceFeatures::shaderRawAccessChains, nullptr, ""}},
         {spv::CapabilityReplicatedCompositesEXT, {0, &DeviceFeatures::shaderReplicatedComposites, nullptr, ""}},
         {spv::CapabilityTensorAddressingNV, {0, &DeviceFeatures::cooperativeMatrixTensorAddressing, nullptr, ""}},
-        {spv::CapabilityCooperativeMatrixReductionsNV, {0, &DeviceFeatures::cooperativeMatrixReductions, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityCooperativeMatrixReductionsNV, {0, &DeviceFeatures::cooperativeMatrixReductions, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixConversionsNV, {0, &DeviceFeatures::cooperativeMatrixConversions, nullptr, ""}},
-        {spv::CapabilityCooperativeMatrixPerElementOperationsNV, {0, &DeviceFeatures::cooperativeMatrixPerElementOperations, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityCooperativeMatrixPerElementOperationsNV, {0, &DeviceFeatures::cooperativeMatrixPerElementOperations, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixTensorAddressingNV, {0, &DeviceFeatures::cooperativeMatrixTensorAddressing, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixBlockLoadsNV, {0, &DeviceFeatures::cooperativeMatrixBlockLoads, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixDecodeVectorNV, {0, &DeviceFeatures::cooperativeMatrixDecodeVector, nullptr, ""}},
@@ -313,14 +315,10 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityMXInt8EXT, {0, &DeviceFeatures::shaderMXInt8, nullptr, ""}},
         {spv::CapabilityBitcastExtractEXT, {0, &DeviceFeatures::shaderFloat4, nullptr, ""}},
         {spv::CapabilityBitcastExtractEXT, {0, &DeviceFeatures::shaderFloat6, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityCooperativeMatrixReductionsEXT, {0, &DeviceFeatures::cooperativeMatrixReductions, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityCooperativeMatrixConversionsEXT, {0, &DeviceFeatures::cooperativeMatrixConversions, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityCooperativeMatrixPerElementOperationsEXT, {0, &DeviceFeatures::cooperativeMatrixPerElementOperations, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityCooperativeMatrixGetCoordinateEXT, {0, &DeviceFeatures::cooperativeMatrixGetCoordinate, nullptr, ""}},
+        {spv::CapabilityCooperativeMatrixReductionsEXT, {0, &DeviceFeatures::cooperativeMatrixReductions, nullptr, ""}},
+        {spv::CapabilityCooperativeMatrixConversionsEXT, {0, &DeviceFeatures::cooperativeMatrixConversions, nullptr, ""}},
+        {spv::CapabilityCooperativeMatrixPerElementOperationsEXT, {0, &DeviceFeatures::cooperativeMatrixPerElementOperations, nullptr, ""}},
+        {spv::CapabilityCooperativeMatrixGetCoordinateEXT, {0, &DeviceFeatures::cooperativeMatrixGetCoordinate, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -853,12 +851,14 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "LongVectorEXT";
         case spv::CapabilityShader64BitIndexingEXT:
             return "Shader64BitIndexingEXT";
-        case spv::CapabilityCooperativeMatrixReductionsNV:
-            return "CooperativeMatrixReductionsNV";
+        case spv::CapabilityCooperativeMatrixConversionsEXT:
+            return "CooperativeMatrixConversionsEXT";
+        case spv::CapabilityCooperativeMatrixReductionsEXT:
+            return "CooperativeMatrixReductionsEXT";
         case spv::CapabilityCooperativeMatrixConversionsNV:
             return "CooperativeMatrixConversionsNV";
-        case spv::CapabilityCooperativeMatrixPerElementOperationsNV:
-            return "CooperativeMatrixPerElementOperationsNV";
+        case spv::CapabilityCooperativeMatrixPerElementOperationsEXT:
+            return "CooperativeMatrixPerElementOperationsEXT";
         case spv::CapabilityCooperativeMatrixTensorAddressingNV:
             return "CooperativeMatrixTensorAddressingNV";
         case spv::CapabilityCooperativeMatrixBlockLoadsNV:
@@ -867,6 +867,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "CooperativeVectorTrainingNV";
         case spv::CapabilityRayTracingClusterAccelerationStructureNV:
             return "RayTracingClusterAccelerationStructureNV";
+        case spv::CapabilityCooperativeMatrixGetCoordinateEXT:
+            return "CooperativeMatrixGetCoordinateEXT";
         case spv::CapabilityTensorAddressingNV:
             return "TensorAddressingNV";
         case spv::CapabilityCooperativeMatrixDecodeVectorNV:
@@ -1316,9 +1318,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityRawAccessChainsNV, "VkPhysicalDeviceRawAccessChainsFeaturesNV::shaderRawAccessChains"},
     {spv::CapabilityReplicatedCompositesEXT, "VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT::shaderReplicatedComposites"},
     {spv::CapabilityTensorAddressingNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixTensorAddressing"},
-    {spv::CapabilityCooperativeMatrixReductionsNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixReductions"},
     {spv::CapabilityCooperativeMatrixConversionsNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixConversions"},
-    {spv::CapabilityCooperativeMatrixPerElementOperationsNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixPerElementOperations"},
     {spv::CapabilityCooperativeMatrixTensorAddressingNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixTensorAddressing"},
     {spv::CapabilityCooperativeMatrixBlockLoadsNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixBlockLoads"},
     {spv::CapabilityCooperativeMatrixDecodeVectorNV, "VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV::cooperativeMatrixDecodeVector"},
@@ -1354,6 +1354,10 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityFloat8UnsignedE8M0EXT, "VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderFloat8UnsignedE8M0"},
     {spv::CapabilityMXInt8EXT, "VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderMXInt8"},
     {spv::CapabilityBitcastExtractEXT, "VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderFloat4 OR VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderFloat6"},
+    {spv::CapabilityCooperativeMatrixReductionsEXT, "VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT::cooperativeMatrixReductions"},
+    {spv::CapabilityCooperativeMatrixConversionsEXT, "VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT::cooperativeMatrixConversions"},
+    {spv::CapabilityCooperativeMatrixPerElementOperationsEXT, "VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT::cooperativeMatrixPerElementOperations"},
+    {spv::CapabilityCooperativeMatrixGetCoordinateEXT, "VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT::cooperativeMatrixGetCoordinate"},
     };
 
     // VUs before catch unknown capabilities

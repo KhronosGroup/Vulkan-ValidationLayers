@@ -853,8 +853,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpCooperativeVectorReduceSumAccumulateNV";
         case spv::OpCooperativeVectorMatrixMulAddNV:
             return "OpCooperativeVectorMatrixMulAddNV";
-        case spv::OpCooperativeMatrixConvertNV:
-            return "OpCooperativeMatrixConvertNV";
+        case spv::OpCooperativeMatrixConvertUseEXT:
+            return "OpCooperativeMatrixConvertUseEXT";
         case spv::OpEmitMeshTasksEXT:
             return "OpEmitMeshTasksEXT";
         case spv::OpSetMeshOutputsEXT:
@@ -975,18 +975,20 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpCooperativeMatrixMulAddNV";
         case spv::OpCooperativeMatrixLengthNV:
             return "OpCooperativeMatrixLengthNV";
+        case spv::OpCooperativeMatrixGetCoordinateEXT:
+            return "OpCooperativeMatrixGetCoordinateEXT";
         case spv::OpBeginInvocationInterlockEXT:
             return "OpBeginInvocationInterlockEXT";
         case spv::OpEndInvocationInterlockEXT:
             return "OpEndInvocationInterlockEXT";
-        case spv::OpCooperativeMatrixReduceNV:
-            return "OpCooperativeMatrixReduceNV";
+        case spv::OpCooperativeMatrixReduceEXT:
+            return "OpCooperativeMatrixReduceEXT";
         case spv::OpCooperativeMatrixLoadTensorNV:
             return "OpCooperativeMatrixLoadTensorNV";
         case spv::OpCooperativeMatrixStoreTensorNV:
             return "OpCooperativeMatrixStoreTensorNV";
-        case spv::OpCooperativeMatrixPerElementOpNV:
-            return "OpCooperativeMatrixPerElementOpNV";
+        case spv::OpCooperativeMatrixPerElementOpEXT:
+            return "OpCooperativeMatrixPerElementOpEXT";
         case spv::OpTypeTensorLayoutNV:
             return "OpTypeTensorLayoutNV";
         case spv::OpTypeTensorViewNV:
@@ -1713,6 +1715,8 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "BoundSamplerNV";
         case spv::DecorationBoundImageNV:
             return "BoundImageNV";
+        case spv::DecorationCooperativeMatrixTransposeEXT:
+            return "CooperativeMatrixTransposeEXT";
         case spv::DecorationSIMTCallINTEL:
             return "SIMTCallINTEL";
         case spv::DecorationReferencedIndirectlyINTEL:
@@ -2684,7 +2688,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpCooperativeVectorOuterProductAccumulateNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpCooperativeVectorReduceSumAccumulateNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpCooperativeVectorMatrixMulAddNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
-        {spv::OpCooperativeMatrixConvertNV, {{OperandKind::Id}}},
+        {spv::OpCooperativeMatrixConvertUseEXT, {{OperandKind::Id}}},
         {spv::OpEmitMeshTasksEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpSetMeshOutputsEXT, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpGroupNonUniformPartitionEXT, {{OperandKind::Id}}},
@@ -2745,12 +2749,13 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpCooperativeMatrixStoreNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpCooperativeMatrixMulAddNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpCooperativeMatrixLengthNV, {{OperandKind::Id}}},
+        {spv::OpCooperativeMatrixGetCoordinateEXT, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpBeginInvocationInterlockEXT, {{}}},
         {spv::OpEndInvocationInterlockEXT, {{}}},
-        {spv::OpCooperativeMatrixReduceNV, {{OperandKind::Id, OperandKind::BitEnum, OperandKind::Id}}},
+        {spv::OpCooperativeMatrixReduceEXT, {{OperandKind::Id, OperandKind::BitEnum, OperandKind::Id}}},
         {spv::OpCooperativeMatrixLoadTensorNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum, OperandKind::BitEnum}}},
         {spv::OpCooperativeMatrixStoreTensorNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum, OperandKind::BitEnum}}},
-        {spv::OpCooperativeMatrixPerElementOpNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpCooperativeMatrixPerElementOpEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpTypeTensorLayoutNV, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpTypeTensorViewNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpCreateTensorLayoutNV, {{}}},
