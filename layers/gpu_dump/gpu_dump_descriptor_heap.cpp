@@ -154,14 +154,14 @@ const char* new_sub_line = "\n            ";
 // Holds all the warnings we will find along the way
 struct WarnInfo {
     std::ostringstream ss;
-    bool indirect_buffer = false;
+    bool found = false;
     uint32_t reserved_range_start = vvl::kNoIndex32;
     uint32_t reserved_range_end = vvl::kNoIndex32;
 
     const DumpInfo& dump;
     WarnInfo(const DumpInfo& dump) : dump(dump) {}
 
-    bool FoundWarning() { return indirect_buffer || !ss.str().empty(); }
+    bool FoundWarning() { return found; }
 
     void HeapOOB(VkDeviceSize offset, bool from_sampler);
     void AlignmentScalarIndirect(VkDeviceAddress address, VkDeviceSize alignment);
@@ -184,11 +184,13 @@ struct WarnInfo {
 void WarnInfo::HeapOOB(VkDeviceSize offset, bool from_sampler) {
     if (from_sampler) {
         if (offset > dump.sampler_range.size()) {
+            found = true;
             ss << new_bullet_line
                << "[WARNING] OUT OF BOUNDS - descriptor not in sampler heap and any access to this descriptor will be invalid";
         }
     } else {
         if (offset > dump.heap_range.size()) {
+            found = true;
             ss << new_bullet_line
                << "[WARNING] OUT OF BOUNDS - descriptor not in resource heap and any access to this descriptor will be "
                   "invalid";
@@ -198,6 +200,7 @@ void WarnInfo::HeapOOB(VkDeviceSize offset, bool from_sampler) {
 
 void WarnInfo::AlignmentScalarIndirect(VkDeviceAddress address, VkDeviceSize alignment) {
     if (!IsPointerAligned(address, alignment)) {
+        found = true;
         ss << new_bullet_line << "[WARNING] MISALIGNED - the indirect address is not aligned to ";
         if (alignment == 4) {
             ss << "4 (scalar alignment for a uint32_t)";
@@ -214,14 +217,15 @@ void WarnInfo::IndirectUniformUsage(VkDeviceAddress address) {
     auto buffer_states = dump.dev_data.GetBuffersByAddress(address);
     // warning elsewhere if this is empty
     if (!buffer_states.empty()) {
-        bool found = false;
+        bool buffer_found = false;
         for (const auto& buffer_state : buffer_states) {
             if (buffer_state->usage & VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT) {
-                found = true;
+                buffer_found = true;
                 break;
             }
         }
-        if (!found) {
+        if (!buffer_found) {
+            found = true;
             if (buffer_states.size() == 1) {
                 const vvl::Buffer& buffer_state = *buffer_states.front();
                 ss << new_bullet_line << "[WARNING] BUFFER TYPE - the indirect address (0x" << std::hex << address
@@ -246,14 +250,15 @@ void WarnInfo::ResourceBufferUsage(VkDeviceAddress address) {
         const bool is_storage_buffer = dump.resource_variable.is_storage_buffer;
         const VkBufferUsageFlagBits2 search_usage =
             is_storage_buffer ? VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT : VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT;
-        bool found = false;
+        bool buffer_found = false;
         for (const auto& buffer_state : buffer_states) {
             if (buffer_state->usage & search_usage) {
-                found = true;
+                buffer_found = true;
                 break;
             }
         }
-        if (!found) {
+        if (!buffer_found) {
+            found = true;
             ss << new_bullet_line << "[WARNING] BUFFER TYPE - the resource address (0x" << std::hex << address
                << ") is not accessing any VkBuffer created with "
                << (is_storage_buffer ? "VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT" : "VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT")
@@ -265,6 +270,7 @@ void WarnInfo::ResourceBufferUsage(VkDeviceAddress address) {
 void WarnInfo::AlignmentHeapUBO(VkDeviceAddress address) {
     VkDeviceSize alignment = dump.dev_data.phys_dev_props.limits.minUniformBufferOffsetAlignment;
     if (!IsPointerAligned(address, alignment)) {
+        found = true;
         ss << new_bullet_line << "[WARNING] MISALIGNED - the heap address is not aligned to minUniformBufferOffsetAlignment ("
            << std::dec << alignment << ") and any access to this descriptor will be invalid";
     }
@@ -282,6 +288,7 @@ void WarnInfo::AlignmentIndirectAddress(VkDeviceAddress address, bool from_resou
     }
 
     if (!IsPointerAligned(address, alignment)) {
+        found = true;
         ss << new_bullet_line << "[WARNING] MISALIGNED - the ";
         if (from_resource) {
             ss << "resource";
@@ -305,6 +312,7 @@ void WarnInfo::AlignmentIndirectAddress(VkDeviceAddress address, bool from_resou
 
 void WarnInfo::AlignmentDescriptor(VkDeviceAddress address) {
     if (!IsPointerAligned(address, dump.required_alignment)) {
+        found = true;
         ss << new_bullet_line << "[WARNING] MISALIGNED - the final address";
         if (dump.resource_variable.IsArray()) {
             ss << ", to the first element of the array,";
@@ -321,6 +329,7 @@ void WarnInfo::AlignmentDescriptor(VkDeviceAddress address) {
 
 void WarnInfo::AlignmentSampler(VkDeviceAddress address) {
     if (!IsPointerAligned(address, dump.heap_props.samplerDescriptorAlignment)) {
+        found = true;
         ss << new_bullet_line << "[WARNING] MISALIGNED - the final address";
         if (dump.resource_variable.IsArray()) {
             ss << ", to the first element of the array,";
@@ -332,6 +341,7 @@ void WarnInfo::AlignmentSampler(VkDeviceAddress address) {
 
 void WarnInfo::ArrayStride(uint32_t array_stride, bool is_sampler) {
     if (array_stride == 0) {
+        found = true;
         ss << new_bullet_line << "[WARNING] ZERO ARRAY STRIDE - " << (is_sampler ? "samplerHeapArrayStride" : "heapArrayStride")
            << " is zero, this mean every index of the descriptor array will be the same descriptor, which is likely not "
               "desired.";
@@ -340,6 +350,7 @@ void WarnInfo::ArrayStride(uint32_t array_stride, bool is_sampler) {
 
 void WarnInfo::IndexOOB(uint32_t max_index) {
     if (dump.array_length > (max_index + 1)) {
+        found = true;
         ss << new_bullet_line << "[WARNING] OUT OF BOUNDS - descriptor has an array length of [" << std::dec << dump.array_length
            << "] but any element accessed starting at [" << max_index + 1 << "] will be OOB of the heap and invalid if accessed";
     }
@@ -347,6 +358,7 @@ void WarnInfo::IndexOOB(uint32_t max_index) {
 
 void WarnInfo::IndexArray(std::vector<uint32_t>& bad_indexes) {
     if (!bad_indexes.empty()) {
+        found = true;
         ss << new_bullet_line << "[WARNING] OUT OF BOUNDS - descriptors indexes at [" << std::dec;
         for (uint32_t i = 0; i < bad_indexes.size(); i++) {
             if (i != 0) ss << ", ";
@@ -358,6 +370,7 @@ void WarnInfo::IndexArray(std::vector<uint32_t>& bad_indexes) {
 
 void WarnInfo::AlignmentIndexArray(std::vector<uint32_t>& bad_indexes) {
     if (!bad_indexes.empty()) {
+        found = true;
         ss << new_bullet_line << "[WARNING] MISALIGNED - descriptors indexes at [" << std::dec;
         for (uint32_t i = 0; i < bad_indexes.size(); i++) {
             if (i != 0) ss << ", ";
@@ -373,6 +386,7 @@ void WarnInfo::AlignmentIndexArray(std::vector<uint32_t>& bad_indexes) {
 
 void WarnInfo::AlignmentIndexArraySampler(std::vector<uint32_t>& bad_indexes) {
     if (!bad_indexes.empty()) {
+        found = true;
         ss << new_bullet_line << "[WARNING] MISALIGNED - descriptors indexes at [" << std::dec;
         for (uint32_t i = 0; i < bad_indexes.size(); i++) {
             if (i != 0) ss << ", ";
@@ -385,6 +399,7 @@ void WarnInfo::AlignmentIndexArraySampler(std::vector<uint32_t>& bad_indexes) {
 
 void WarnInfo::ReservedRangeIndexArray(std::vector<uint32_t>& bad_indexes) {
     if (!bad_indexes.empty()) {
+        found = true;
         ss << new_bullet_line << "[WARNING] RESERVED RANGE - descriptors indexes at [" << std::dec;
         for (uint32_t i = 0; i < bad_indexes.size(); i++) {
             if (i != 0) ss << ", ";
@@ -396,15 +411,25 @@ void WarnInfo::ReservedRangeIndexArray(std::vector<uint32_t>& bad_indexes) {
 
 void WarnInfo::ReservedRangeFinal() {
     if (reserved_range_start != vvl::kNoIndex32) {
+        // If using a runtime array, the user was likely not going to access the reserved range
+        // It is still worth informing them, but not as a warning
+        // (Don't do for ReservedRangeIndexArray as the user should be activly setting those elements)
+        if (dump.is_runtime_array) {
+            ss << new_bullet_line << "[INFO] ";
+        } else {
+            found = true;
+            ss << new_bullet_line << "[WARNING] ";
+        }
+
+        ss << "RESERVED RANGE - ";
         if (reserved_range_start == reserved_range_end) {
-            ss << new_bullet_line << "[WARNING] RESERVED RANGE - descriptor index at [" << std::dec << reserved_range_start
+            ss << "descriptor index at [" << std::dec << reserved_range_start
                << "] will overlap with the reserved range and the access will be invalid";
         } else if (reserved_range_end != vvl::kNoIndex32) {
-            ss << new_bullet_line << "[WARNING] RESERVED RANGE - descriptor index starting at [" << std::dec << reserved_range_start
-               << "] to [" << reserved_range_end << "] will overlap with the reserved range and the access will be invalid";
+            ss << "descriptor index starting at [" << std::dec << reserved_range_start << "] to [" << reserved_range_end
+               << "] will overlap with the reserved range and the access will be invalid";
         } else {
-            ss << new_bullet_line
-               << "[WARNING] RESERVED RANGE - this descriptor overlaps with the reserved range and any access will be invalid";
+            ss << "this descriptor overlaps with the reserved range and any access will be invalid";
         }
     }
 };
@@ -462,6 +487,7 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address, bool from_reso
             }
         }
         if (!entry) {
+            found = true;
             ss << new_bullet_line << "[WARNING] NO DESCRIPTOR - No known descriptor found in the heap at 0x" << std::hex << address;
             return "";
         }
@@ -472,11 +498,13 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address, bool from_reso
         if (descriptor_hashing.null_descriptor_allowed) {
             return "[Null Descriptor]";
         }
+        found = true;
         ss << new_bullet_line
            << "[WARNING] NO DESCRIPTOR - Found descriptor mapped to [Null Descriptor] but the nullDescriptor feature was not "
               "enabled";
         return "";
     } else if (!entry->HasType(descriptor_type)) {
+        found = true;
         ss << new_bullet_line << "[WARNING] WRONG DESCRIPTOR - At 0x" << std::hex << address << " expected a "
            << string_VkDescriptorType(descriptor_type)
            << " descriptor, but instead found a descriptor for: " << descriptor_hashing.Describe(*dump.dev_data.device_state, key);
@@ -495,11 +523,13 @@ VkDeviceSize CommandBufferSubState::GetPushData(std::ostringstream& ss, WarnInfo
         ss << "UNDEFINED";
         warn.ss << new_bullet_line << "[WARNING] PUSH DATA - " << std::dec << offset << " is over the maxPushDataSize ("
                 << push_data_value.size() << ") limit";
+        warn.found = true;
         return push_index;  // something to not blow up other calculations too bad
     } else if (!base.VerifyPushData(offset, size)) {
         ss << "UNDEFINED";
         warn.ss << new_bullet_line << "[WARNING] PUSH DATA - [" << std::dec << offset << ":" << (offset + size) - 1
                 << "] has not been set by vkCmdPushDataEXT and the value being read is undefined";
+        warn.found = true;
         return push_index;  // value being tracked in state tracking is undefined
     }
 
@@ -830,7 +860,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
 
     warn.AlignmentScalarIndirect(final_indirect_address, 4);
     warn.IndirectUniformUsage(final_indirect_address);
-    warn.indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
+    warn.found |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
     std::vector<uint8_t> indirect_index_data = dev_data.CopyDataFromMemory(final_indirect_address, 4);
     bool know_ubo = !indirect_index_data.empty();
@@ -939,7 +969,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
 
         warn.AlignmentScalarIndirect(final_indirect_address, 4);
         warn.IndirectUniformUsage(final_indirect_address);
-        warn.indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
+        warn.found |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
         indirect_index_data = dev_data.CopyDataFromMemory(final_indirect_address, 4);
         know_ubo = !indirect_index_data.empty();
@@ -1051,7 +1081,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
 
     warn.AlignmentScalarIndirect(final_indirect_address, 4);
     warn.IndirectUniformUsage(final_indirect_address);
-    warn.indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
+    warn.found |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
     ss << new_bullet_line << (dump.is_sampler ? "Sampler" : "Resource") << " Heap address: 0x"
        << dump.heap_range.begin + map_data.heapOffset << " + (indirectIndex * " << std::dec << map_data.heapIndexStride << ")";
@@ -1137,7 +1167,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
             }
         }
     } else {
-        assert(warn.indirect_buffer);
+        assert(warn.found);
     }
     warn.HeapOOB(map_data.heapOffset + dump.descriptor_size, false);
 
@@ -1167,7 +1197,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
 
         warn.AlignmentScalarIndirect(final_indirect_address, 4);
         warn.IndirectUniformUsage(final_indirect_address);
-        warn.indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
+        warn.found |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
         ss << new_bullet_line << "Sampler Heap address: 0x" << std::hex << dump.sampler_range.begin + map_data.samplerHeapOffset
            << " + (indirectIndex * " << std::dec << map_data.samplerHeapIndexStride << ")";
@@ -1252,7 +1282,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
                 }
             }
         } else {
-            assert(warn.indirect_buffer);
+            assert(warn.found);
         }
         warn.HeapOOB(map_data.samplerHeapOffset + dump.sampler_descriptor_size, true);
     }
@@ -1288,10 +1318,10 @@ void CommandBufferSubState::DumpDescriptorHeapPushAddress(std::ostringstream& ss
     warn.AlignmentIndirectAddress(indirect_address);
 
     if (warn.dump.resource_variable.is_acceleration_structure) {
-        warn.indirect_buffer |= dev_data.ListAccelerationStructures(ss, indirect_address, 3, true);
+        warn.found |= dev_data.ListAccelerationStructures(ss, indirect_address, 3, true);
     } else {
         warn.ResourceBufferUsage(indirect_address);
-        warn.indirect_buffer |= dev_data.ListBuffers(ss, indirect_address, 3, true);
+        warn.found |= dev_data.ListBuffers(ss, indirect_address, 3, true);
     }
 }
 
@@ -1307,7 +1337,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectAddress(std::ostringstream
 
     warn.AlignmentScalarIndirect(final_indirect_address, 8);
     warn.IndirectUniformUsage(final_indirect_address);
-    warn.indirect_buffer |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
+    warn.found |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
     std::vector<uint8_t> indirect_address_data = dev_data.CopyDataFromMemory(final_indirect_address, 8);
     if (!indirect_address_data.empty()) {
@@ -1317,10 +1347,10 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectAddress(std::ostringstream
         warn.AlignmentIndirectAddress(resource_address, true);
 
         if (warn.dump.resource_variable.is_acceleration_structure) {
-            warn.indirect_buffer |= dev_data.ListAccelerationStructures(ss, resource_address, 3, true);
+            warn.found |= dev_data.ListAccelerationStructures(ss, resource_address, 3, true);
         } else {
             warn.ResourceBufferUsage(resource_address);
-            warn.indirect_buffer |= dev_data.ListBuffers(ss, resource_address, 3, true);
+            warn.found |= dev_data.ListBuffers(ss, resource_address, 3, true);
         }
     }
 }
