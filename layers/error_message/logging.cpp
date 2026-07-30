@@ -405,13 +405,22 @@ std::string DebugReport::CreateMessageJson(VkFlags msg_flags, const Location& lo
 
         // For cases were where have multi-lines in the message, we need to escape them.
         // The idea is the JSON is machine readable and when someone prints the value out, the new lines will resolve then.
+        // clang-format off
         for (char c : main_message) {
-            if (c == '\n') {
-                oss << "\\n";
-            } else {
-                oss << c;
+            switch (c) {
+                case '"':  oss << "\\\""; break;
+                case '\\': oss << "\\\\"; break;
+                case '\n': oss << "\\n";  break;
+                case '\r': oss << "\\r";  break;
+                case '\t': oss << "\\t";  break;
+                case '\b': oss << "\\b";  break;
+                case '\f': oss << "\\f";  break;
+                default:
+                    oss << c;
+                    break;
             }
         }
+        // clang-format on
         oss << "\"," << new_line;
     }
     {
