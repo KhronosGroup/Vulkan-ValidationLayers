@@ -5519,7 +5519,8 @@ TEST_F(NegativeDescriptors, MaxInlineUniformTotalSize) {
     pipeline_layout_ci.pSetLayouts = &set_layout.handle();
 
     VkPipelineLayout pipeline_layout;
-    if (binding_count > inline_uniform_block_properties.maxDescriptorSetUpdateAfterBindInlineUniformBlocks) {
+    if (binding_count > inline_uniform_block_properties.maxDescriptorSetUpdateAfterBindInlineUniformBlocks &&
+        binding_count > inline_uniform_block_properties.maxDescriptorSetInlineUniformBlocks) {
         m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02217");
     }
     if (binding_count / 5 > inline_uniform_block_properties.maxPerStageDescriptorInlineUniformBlocks) {
