@@ -101,11 +101,12 @@ bool CoreChecks::ValidateTensorFormatUsage(VkFormat format, VkTensorUsageFlagsAR
         auto usage_bit = element.first;
         auto feature_bit = element.second;
         if (usage & usage_bit && !(tensor_feature_flags & feature_bit)) {
-            skip |= LogError(vuid, device, loc.dot(Field::usage),
-                             "(%s) has bit (%s) set but format features (%s) does not include matching required bit (%s)",
-                             string_VkTensorUsageFlagsARM(usage).c_str(), string_VkTensorUsageFlagsARM(usage_bit).c_str(),
-                             string_VkTensorUsageFlagsARM(tensor_feature_flags).c_str(),
-                             string_VkTensorUsageFlagsARM(feature_bit).c_str());
+            skip |=
+                LogError(vuid, device, loc.dot(Field::usage),
+                         "(%s) has bit (%s) set but format features (%s) for format %s do not include matching required bit (%s)",
+                         string_VkTensorUsageFlagsARM(usage).c_str(), string_VkTensorUsageFlagsARM(usage_bit).c_str(),
+                         string_VkTensorUsageFlagsARM(tensor_feature_flags).c_str(), string_VkFormat(format),
+                         string_VkTensorUsageFlagsARM(feature_bit).c_str());
         }
     }
 
