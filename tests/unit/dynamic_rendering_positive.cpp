@@ -2268,7 +2268,7 @@ TEST_F(PositiveDynamicRendering, RenderAreaMipLevelMultipleLevels) {
     // Mip 3 size: 16 x 8
     vkt::Image bloom_image(*m_device, image_ci);
     vkt::ImageView view_mip0 = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 0, 1);
-    vkt::ImageView view_mip123 = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 1, 3, 0, 1);
+    vkt::ImageView view_mip1 = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 1, 1, 0, 1);
 
     VkPipelineRenderingCreateInfo rendering_ci = vku::InitStructHelper();
     rendering_ci.colorAttachmentCount = 1;
@@ -2297,9 +2297,7 @@ TEST_F(PositiveDynamicRendering, RenderAreaMipLevelMultipleLevels) {
     vk::CmdEndRendering(m_command_buffer);
     m_command_buffer.FullMemoryBarrier();
 
-    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4918
-    // only the base mip should be rendered to
-    attachment_info.imageView = view_mip123;
+    attachment_info.imageView = view_mip1;
     rendering_info.renderArea.extent = {64, 32};
     vk::CmdBeginRendering(m_command_buffer, &rendering_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);

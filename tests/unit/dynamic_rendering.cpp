@@ -2733,6 +2733,7 @@ TEST_F(NegativeDynamicRendering, RenderAreaMipLevel) {
     vkt::ImageView view_mip1 = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 1, 1, 0, 1);
     // has mip 1 and 2
     vkt::ImageView view_mip12 = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 1, 2, 0, 1);
+    vkt::ImageView view_mip_all = bloom_image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, VK_REMAINING_MIP_LEVELS, 0, 1);
 
     VkRenderingAttachmentInfo attachment_info = vku::InitStructHelper();
     attachment_info.imageView = view_mip0;
@@ -2759,9 +2760,13 @@ TEST_F(NegativeDynamicRendering, RenderAreaMipLevel) {
     m_errorMonitor->VerifyFound();
 
     attachment_info.imageView = view_mip12;
-    rendering_info.renderArea.extent = {640 + 320, 343 + 171};
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06079");
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06080");
+    rendering_info.renderArea.extent = {320, 171};
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkRenderPassAttachmentBeginInfo-mipLevelCount");
+    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    attachment_info.imageView = view_mip_all;
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkRenderPassAttachmentBeginInfo-mipLevelCount");
     vk::CmdBeginRendering(m_command_buffer, &rendering_info);
     m_errorMonitor->VerifyFound();
 
