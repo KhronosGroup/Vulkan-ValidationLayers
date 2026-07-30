@@ -1171,14 +1171,14 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
 
         // TODO - Need to understand when this rule actually applies everywhere. There is some special language around
         // vk_khr_maintenance9 where this logic isn't true for pipeline barriers
-        const uint32_t layerCount = image_view_state->create_info.subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS
-                                        ? image_view_state->create_info.subresourceRange.layerCount
+        const uint32_t layer_count = image_view_create_info->subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS
+                                        ? image_view_create_info->subresourceRange.layerCount
                                         : image_state->GetExtent().depth;
-        if (framebuffer_attachment_image_info->layerCount != layerCount) {
+        if (framebuffer_attachment_image_info->layerCount != layer_count) {
             skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03213", objlist, attachment_loc,
                              "has a subresource range with a layerCount of %" PRIu32
                              ", but VkFramebufferAttachmentsCreateInfo::pAttachments[%" PRIu32 "].layerCount is %" PRIu32 ".",
-                             layerCount, i, framebuffer_attachment_image_info->layerCount);
+                             layer_count, i, framebuffer_attachment_image_info->layerCount);
         }
 
         const auto* image_format_list_create_info =
@@ -1242,7 +1242,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
 
         if (subresource_range.levelCount != 1) {
             skip |= LogError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03218", objlist, attachment_loc,
-                             "was created with multiple mip levels (%" PRIu32 ").", subresource_range.levelCount);
+                             "was created with mip levelCount %s but only a single mip level (levelCount ==  1) is allowed.",
+                              string_LevelCount(image_state->GetMipLevels(), image_view_create_info->subresourceRange).c_str());
+
         }
 
         if (IsIdentitySwizzle(image_view_create_info->components) == false) {
@@ -3009,6 +3011,12 @@ bool CoreChecks::ValidateRenderingInfoAttachment(const vvl::ImageView& image_vie
                          ") greater than the most significant bit index (%d) in viewMask (0x%" PRIx32 ")",
                          image_view_state.normalized_subresource_range.layerCount, MostSignificantBit(rendering_info.viewMask),
                          rendering_info.viewMask);
+    }
+
+    if (image_view_state.normalized_subresource_range.levelCount != 1) {
+        // VU being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8439
+        skip |= LogError("UNASSIGNED-VkRenderPassAttachmentBeginInfo-mipLevelCount", objlist, attachment_loc.dot(Field::imageView),
+                            "was created with mip levelCount %s but only a single mip level (levelCount ==  1) is allowed.", string_LevelCount(image_view_state.image_state->GetMipLevels(), image_view_state.create_info.subresourceRange).c_str());
     }
 
     auto device_group_render_pass_begin_info = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(rendering_info.pNext);
@@ -5114,9 +5122,8 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& c
         if (subresource_range.levelCount != 1) {
             LogObjectList objlist(create_info.renderPass, image_views[i], ivci.image);
             skip |= LogError("VUID-VkFramebufferCreateInfo-pAttachments-00883", objlist, attachment_loc,
-                             "has mip levelCount of %" PRIu32
-                             " but only a single mip level (levelCount ==  1) is allowed when creating a Framebuffer.",
-                             subresource_range.levelCount);
+                             "has mip levelCount of %s but only a single mip level (levelCount ==  1) is allowed when creating a Framebuffer.",
+                              string_LevelCount(image_state->GetMipLevels(), view_state->create_info.subresourceRange).c_str());
         }
         const uint32_t mip_level = subresource_range.baseMipLevel;
         uint32_t mip_width = std::max(1u, image_state->GetExtent().width >> mip_level);
