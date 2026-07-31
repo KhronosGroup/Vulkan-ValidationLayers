@@ -2361,7 +2361,7 @@ TEST_F(NegativeCopyBufferImage, CopyCommands2V13) {
 
     m_command_buffer.Begin();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-aspect-06663");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-aspect-06663");
     vk::CmdCopyImage2(m_command_buffer, &copy_image_info);
     m_errorMonitor->VerifyFound();
 
