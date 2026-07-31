@@ -3687,6 +3687,16 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceImageTilingControlFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_TILING_CONTROL_FEATURES_EXT: {  // Covers
+                                                                                     // VUID-VkPhysicalDeviceImageTilingControlFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceImageTilingControlFeaturesEXT);
+                VkPhysicalDeviceImageTilingControlFeaturesEXT* structure = (VkPhysicalDeviceImageTilingControlFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::imageTilingControl), structure->imageTilingControl);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_DECODE_VECTOR_FEATURES_NV: {  // Covers
                                                                                                 // VUID-VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV-sType-sType
@@ -5925,20 +5935,8 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         // No Validation code for VkVideoDecodeAV1InlineSessionParametersInfoKHR structure members  -- Covers
         // VUID-VkVideoDecodeAV1InlineSessionParametersInfoKHR-sType-sType
 
-        // Validation code for VkVideoEncodeFeedback2CapabilitiesKHR structure members
-        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_FEEDBACK_2_CAPABILITIES_KHR: {  // Covers
-                                                                            // VUID-VkVideoEncodeFeedback2CapabilitiesKHR-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkVideoEncodeFeedback2CapabilitiesKHR);
-                VkVideoEncodeFeedback2CapabilitiesKHR* structure = (VkVideoEncodeFeedback2CapabilitiesKHR*)header;
-                skip |= ValidateFlags(
-                    pNext_loc.dot(Field::supportedPerPartitionEncodeFeedbackFlags),
-                    vvl::FlagBitmask::VkVideoEncodePerPartitionFeedbackFlagBitsKHR, AllVkVideoEncodePerPartitionFeedbackFlagBitsKHR,
-                    structure->supportedPerPartitionEncodeFeedbackFlags, kRequiredFlags,
-                    "VUID-VkVideoEncodeFeedback2CapabilitiesKHR-supportedPerPartitionEncodeFeedbackFlags-parameter",
-                    "VUID-VkVideoEncodeFeedback2CapabilitiesKHR-supportedPerPartitionEncodeFeedbackFlags-requiredbitmask", false);
-            }
-        } break;
+        // No Validation code for VkVideoEncodeFeedback2CapabilitiesKHR structure members  -- Covers
+        // VUID-VkVideoEncodeFeedback2CapabilitiesKHR-sType-sType
 
         // Validation code for VkQueryPoolVideoEncodePerPartitionFeedbackCreateInfoKHR structure members
         case VK_STRUCTURE_TYPE_QUERY_POOL_VIDEO_ENCODE_PER_PARTITION_FEEDBACK_CREATE_INFO_KHR: {  // Covers
@@ -9055,6 +9053,17 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // Validation code for VkImageTilingControlCreateInfoEXT structure members
+        case VK_STRUCTURE_TYPE_IMAGE_TILING_CONTROL_CREATE_INFO_EXT: {  // Covers VUID-VkImageTilingControlCreateInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkImageTilingControlCreateInfoEXT);
+                VkImageTilingControlCreateInfoEXT* structure = (VkImageTilingControlCreateInfoEXT*)header;
+                skip |=
+                    ValidateRangedEnum(pNext_loc.dot(Field::tilingControl), vvl::Enum::VkImageTilingControlEXT,
+                                       structure->tilingControl, "VUID-VkImageTilingControlCreateInfoEXT-tilingControl-parameter");
+            }
+        } break;
+
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {  // Covers
                                                                                    // VUID-VkWriteDescriptorSetAccelerationStructureKHR-sType-sType
@@ -9208,7 +9217,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 284> allowed_structs_VkDeviceCreateInfo = {
+        constexpr std::array<VkStructureType, 285> allowed_structs_VkDeviceCreateInfo = {
             VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
@@ -9319,6 +9328,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_FEATURES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_SLICED_VIEW_OF_3D_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_TILING_CONTROL_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_MIN_LOD_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES,
@@ -10283,7 +10293,7 @@ bool Device::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo
                                        "VUID-vkCreateImage-pCreateInfo-parameter", "VUID-VkImageCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 27> allowed_structs_VkImageCreateInfo = {
+        constexpr std::array<VkStructureType, 28> allowed_structs_VkImageCreateInfo = {
             VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA,
             VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM,
             VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
@@ -10302,6 +10312,7 @@ bool Device::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo
             VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_2_CREATE_INFO_KHR,
             VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO,
             VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
+            VK_STRUCTURE_TYPE_IMAGE_TILING_CONTROL_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_IMAGE_USAGE_FLAGS_2_CREATE_INFO_KHR,
             VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
             VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
@@ -14709,7 +14720,7 @@ bool Device::PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, co
 
         if (pInfo->pCreateInfo != nullptr) {
             [[maybe_unused]] const Location pCreateInfo_loc = pInfo_loc.dot(Field::pCreateInfo);
-            constexpr std::array<VkStructureType, 27> allowed_structs_VkImageCreateInfo = {
+            constexpr std::array<VkStructureType, 28> allowed_structs_VkImageCreateInfo = {
                 VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA,
                 VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM,
                 VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
@@ -14728,6 +14739,7 @@ bool Device::PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, co
                 VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_2_CREATE_INFO_KHR,
                 VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO,
                 VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
+                VK_STRUCTURE_TYPE_IMAGE_TILING_CONTROL_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMAGE_USAGE_FLAGS_2_CREATE_INFO_KHR,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
@@ -14813,7 +14825,7 @@ bool Device::PreCallValidateGetDeviceImageSparseMemoryRequirements(VkDevice devi
 
         if (pInfo->pCreateInfo != nullptr) {
             [[maybe_unused]] const Location pCreateInfo_loc = pInfo_loc.dot(Field::pCreateInfo);
-            constexpr std::array<VkStructureType, 27> allowed_structs_VkImageCreateInfo = {
+            constexpr std::array<VkStructureType, 28> allowed_structs_VkImageCreateInfo = {
                 VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA,
                 VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM,
                 VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
@@ -14832,6 +14844,7 @@ bool Device::PreCallValidateGetDeviceImageSparseMemoryRequirements(VkDevice devi
                 VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_2_CREATE_INFO_KHR,
                 VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO,
                 VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
+                VK_STRUCTURE_TYPE_IMAGE_TILING_CONTROL_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMAGE_USAGE_FLAGS_2_CREATE_INFO_KHR,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
@@ -15766,7 +15779,7 @@ bool Device::PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, con
 
         if (pInfo->pCreateInfo != nullptr) {
             [[maybe_unused]] const Location pCreateInfo_loc = pInfo_loc.dot(Field::pCreateInfo);
-            constexpr std::array<VkStructureType, 27> allowed_structs_VkImageCreateInfo = {
+            constexpr std::array<VkStructureType, 28> allowed_structs_VkImageCreateInfo = {
                 VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA,
                 VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM,
                 VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
@@ -15785,6 +15798,7 @@ bool Device::PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, con
                 VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_2_CREATE_INFO_KHR,
                 VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO,
                 VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
+                VK_STRUCTURE_TYPE_IMAGE_TILING_CONTROL_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMAGE_USAGE_FLAGS_2_CREATE_INFO_KHR,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
@@ -26036,7 +26050,7 @@ bool Device::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(VkDevice 
                     VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO, false, kVUIDUndefined, "VUID-VkImageCreateInfo-sType-sType");
 
                 [[maybe_unused]] const Location imageCreateInfo_loc = pFormatConstraints_loc.dot(Field::imageCreateInfo);
-                constexpr std::array<VkStructureType, 27> allowed_structs_VkImageCreateInfo = {
+                constexpr std::array<VkStructureType, 28> allowed_structs_VkImageCreateInfo = {
                     VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA,
                     VK_STRUCTURE_TYPE_DATA_GRAPH_OPTICAL_FLOW_IMAGE_FORMAT_INFO_ARM,
                     VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
@@ -26055,6 +26069,7 @@ bool Device::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(VkDevice 
                     VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_2_CREATE_INFO_KHR,
                     VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO,
                     VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
+                    VK_STRUCTURE_TYPE_IMAGE_TILING_CONTROL_CREATE_INFO_EXT,
                     VK_STRUCTURE_TYPE_IMAGE_USAGE_FLAGS_2_CREATE_INFO_KHR,
                     VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
                     VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
