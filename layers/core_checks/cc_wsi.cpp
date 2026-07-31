@@ -591,7 +591,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
 
         const VkImageUsageFlags2KHR usage = has_extended_flags ? shared_present_capabilities_2.sharedPresentSupportedUsageFlags
                                                                : shared_present_capabilities.sharedPresentSupportedUsageFlags;
-        if (image_usage != (image_usage & shared_present_capabilities.sharedPresentSupportedUsageFlags)) {
+        if (image_usage != (image_usage & usage)) {
             if (LogError("VUID-VkSwapchainCreateInfoKHR-imageUsage-01384", device,
                          GetImageUsageLocation(create_info, create_info_loc),
                          "(%s), but the supported flag bits for %s present mode are %s.",
