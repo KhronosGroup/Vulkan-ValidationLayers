@@ -75,7 +75,6 @@ TEST_F(NegativeVideoEncodeFeedback2, CreateQueryPoolPerPartitionFeatureNotEnable
     VkQueryPool query_pool;
     m_errorMonitor->SetDesiredError("VUID-VkQueryPoolCreateInfo-queryType-12438");
     vk::CreateQueryPool(device(), &create_info, nullptr, &query_pool);
-    vk::DestroyQueryPool(device(), query_pool, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -110,7 +109,6 @@ TEST_F(NegativeVideoEncodeFeedback2, MissingPerPartitionFeedbackFlags) {
     VkQueryPool query_pool;
     m_errorMonitor->SetDesiredError("VUID-VkQueryPoolCreateInfo-queryType-12439");
     vk::CreateQueryPool(device(), &create_info, nullptr, &query_pool);
-    vk::DestroyQueryPool(device(), query_pool, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -146,7 +144,6 @@ TEST_F(NegativeVideoEncodeFeedback2, TooManyPerPartitionFeedbackEntries) {
     VkQueryPool query_pool;
     m_errorMonitor->SetDesiredError("VUID-VkQueryPoolCreateInfo-queryType-12440");
     vk::CreateQueryPool(device(), &create_info, nullptr, &query_pool);
-    vk::DestroyQueryPool(device(), query_pool, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -185,7 +182,6 @@ TEST_F(NegativeVideoEncodeFeedback2, UnsupportedPerPartitionFeedbackFlags) {
     VkQueryPool query_pool;
     m_errorMonitor->SetDesiredError("VUID-VkQueryPoolCreateInfo-queryType-12441");
     vk::CreateQueryPool(device(), &create_info, nullptr, &query_pool);
-    vk::DestroyQueryPool(device(), query_pool, nullptr);
     m_errorMonitor->VerifyFound();
 }
 

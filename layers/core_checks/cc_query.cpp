@@ -344,10 +344,11 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
 
                 auto enabled_encode_feedback2_flags = encode_feedback_info->encodeFeedbackFlags & kAllVideoEncodeFeedback2Flags;
                 if (enabled_encode_feedback2_flags && !enabled_features.videoEncodeFeedback2) {
-                    LogError("VUID-VkQueryPoolCreateInfo-queryType-12437", device,
-                             create_info_loc.pNext(Struct::VkQueryPoolVideoEncodeFeedbackCreateInfoKHR, Field::encodeFeedbackFlags),
-                             "contains %s but the videoEncodeFeedback2 device feature is not enabled.",
-                             string_VkVideoEncodeFeedbackFlagsKHR(enabled_encode_feedback2_flags).c_str());
+                    skip |= LogError(
+                        "VUID-VkQueryPoolCreateInfo-queryType-12437", device,
+                        create_info_loc.pNext(Struct::VkQueryPoolVideoEncodeFeedbackCreateInfoKHR, Field::encodeFeedbackFlags),
+                        "contains %s but the videoEncodeFeedback2 device feature is not enabled.",
+                        string_VkVideoEncodeFeedbackFlagsKHR(enabled_encode_feedback2_flags).c_str());
                 }
             }
 
@@ -359,18 +360,18 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
             if (encode_per_partition_feedback_info != nullptr) {
                 if (encode_per_partition_feedback_info->maxPerPartitionFeedbackEntries != 0 &&
                     !enabled_features.videoEncodeFeedback2) {
-                    LogError("VUID-VkQueryPoolCreateInfo-queryType-12438", device,
-                             encode_per_partition_feedback_info_loc.dot(Field::maxPerPartitionFeedbackEntries),
-                             "(%u) is not zero but the videoEncodeFeedback2 device feature is not enabled.",
-                             encode_per_partition_feedback_info->maxPerPartitionFeedbackEntries);
+                    skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-12438", device,
+                                     encode_per_partition_feedback_info_loc.dot(Field::maxPerPartitionFeedbackEntries),
+                                     "(%u) is not zero but the videoEncodeFeedback2 device feature is not enabled.",
+                                     encode_per_partition_feedback_info->maxPerPartitionFeedbackEntries);
                 }
 
                 if (encode_per_partition_feedback_info->maxPerPartitionFeedbackEntries != 0 &&
                     encode_per_partition_feedback_info->perPartitionEncodeFeedbackFlags == 0) {
-                    LogError("VUID-VkQueryPoolCreateInfo-queryType-12439", device,
-                             encode_per_partition_feedback_info_loc.dot(Field::maxPerPartitionFeedbackEntries),
-                             "(%u) is not zero but perPartitionEncodeFeedbackFlags is zero.",
-                             encode_per_partition_feedback_info->maxPerPartitionFeedbackEntries);
+                    skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-12439", device,
+                                     encode_per_partition_feedback_info_loc.dot(Field::maxPerPartitionFeedbackEntries),
+                                     "(%u) is not zero but perPartitionEncodeFeedbackFlags is zero.",
+                                     encode_per_partition_feedback_info->maxPerPartitionFeedbackEntries);
                 }
             }
 
@@ -407,11 +408,11 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
                 }
 
                 if (encode_per_partition_feedback_info != nullptr) {
-                    const auto &feedback2_caps = profile_desc.GetCapabilities().encode_ext.feedback2;
+                    const auto& feedback2_caps = profile_desc.GetCapabilities().encode_ext.feedback2;
 
                     if (encode_per_partition_feedback_info->maxPerPartitionFeedbackEntries >
                         feedback2_caps.maxPerPartitionFeedbackEntries) {
-                        LogError(
+                        skip |= LogError(
                             "VUID-VkQueryPoolCreateInfo-queryType-12440", device,
                             encode_per_partition_feedback_info_loc.dot(Field::maxPerPartitionFeedbackEntries),
                             "(%u) is greater than the VkVideoEncodeFeedback2CapabilitiesKHR::maxPerPartitionFeedbackEntries (%u) "
@@ -423,14 +424,14 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
                     auto requested_flags = encode_per_partition_feedback_info->perPartitionEncodeFeedbackFlags;
                     auto supported_flags = feedback2_caps.supportedPerPartitionEncodeFeedbackFlags;
                     if ((requested_flags & supported_flags) != requested_flags) {
-                        LogError("VUID-VkQueryPoolCreateInfo-queryType-12441", device,
-                                 encode_per_partition_feedback_info_loc.dot(Field::perPartitionEncodeFeedbackFlags),
-                                 "(%s) contains flags that are not supported as reported in "
-                                 "VkVideoEncodeFeedback2CapabilitiesKHR::supportedPerPartitionEncodeFeedbackFlags (%s) "
-                                 "supported by the video profile (%s).",
-                                 string_VkVideoEncodePerPartitionFeedbackFlagsKHR(requested_flags).c_str(),
-                                 string_VkVideoEncodePerPartitionFeedbackFlagsKHR(supported_flags).c_str(),
-                                 string_VideoProfileDesc(profile_desc).c_str());
+                        skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-12441", device,
+                                         encode_per_partition_feedback_info_loc.dot(Field::perPartitionEncodeFeedbackFlags),
+                                         "(%s) contains flags that are not supported as reported in "
+                                         "VkVideoEncodeFeedback2CapabilitiesKHR::supportedPerPartitionEncodeFeedbackFlags (%s) "
+                                         "supported by the video profile (%s).",
+                                         string_VkVideoEncodePerPartitionFeedbackFlagsKHR(requested_flags).c_str(),
+                                         string_VkVideoEncodePerPartitionFeedbackFlagsKHR(supported_flags).c_str(),
+                                         string_VideoProfileDesc(profile_desc).c_str());
                     }
                 }
             }
