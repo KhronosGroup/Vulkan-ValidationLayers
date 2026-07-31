@@ -2649,7 +2649,7 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2& crea
 
     if (resolve_depth_size > 0 &&
         ((vkuFormatDepthSize(ds_attachment_format) != resolve_depth_size) ||
-         (vkuFormatDepthNumericalType(ds_attachment_format) != vkuFormatDepthNumericalType(ds_attachment_format)))) {
+         (vkuFormatDepthNumericalType(ds_attachment_format) != vkuFormatDepthNumericalType(resolve_attachment_format)))) {
         skip |= LogError(
             "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03181", device, ds_resolve_loc,
             "has a depth component (size %" PRIu32 ") for pAttachments[%" PRIu32
