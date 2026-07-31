@@ -3760,6 +3760,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
             return {&vk_struct->imageSlicedViewOf3D, "VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT::imageSlicedViewOf3D"};
         }
 
+        case Feature::imageTilingControl: {
+            auto vk_struct = const_cast<VkPhysicalDeviceImageTilingControlFeaturesEXT*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceImageTilingControlFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceImageTilingControlFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->imageTilingControl, "VkPhysicalDeviceImageTilingControlFeaturesEXT::imageTilingControl"};
+        }
+
         case Feature::minLod: {
             auto vk_struct = const_cast<VkPhysicalDeviceImageViewMinLodFeaturesEXT*>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceImageViewMinLodFeaturesEXT>(*inout_pnext_chain));

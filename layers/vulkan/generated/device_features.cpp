@@ -2103,6 +2103,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->primitiveRestartIndex |= enabled->primitiveRestartIndex == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_TILING_CONTROL_FEATURES_EXT: {
+                const VkPhysicalDeviceImageTilingControlFeaturesEXT* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceImageTilingControlFeaturesEXT*>(pNext);
+                features->imageTilingControl |= enabled->imageTilingControl == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_DECODE_VECTOR_FEATURES_NV: {
                 const VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV* enabled =
                     reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV*>(pNext);

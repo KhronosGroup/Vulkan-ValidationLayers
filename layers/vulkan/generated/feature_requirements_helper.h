@@ -552,6 +552,8 @@ enum class Feature {
     robustImageAccess,
     // VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT
     imageSlicedViewOf3D,
+    // VkPhysicalDeviceImageTilingControlFeaturesEXT
+    imageTilingControl,
     // VkPhysicalDeviceImageViewMinLodFeaturesEXT
     minLod,
     // VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceVulkan12Features

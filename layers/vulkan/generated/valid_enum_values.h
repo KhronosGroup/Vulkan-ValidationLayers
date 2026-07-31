@@ -288,6 +288,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkThrottleHintTypeSEC value) con
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkNeuralAcceleratorStatisticsModeARM value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkImageTilingControlEXT value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkBuildAccelerationStructureModeKHR value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkShaderGroupShaderKHR value) const;

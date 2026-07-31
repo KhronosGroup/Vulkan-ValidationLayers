@@ -2581,6 +2581,18 @@ ValidValue stateless::Context::IsValidEnumValue(VkNeuralAcceleratorStatisticsMod
 }
 
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkImageTilingControlEXT value) const {
+    switch (value) {
+        case VK_IMAGE_TILING_CONTROL_DEFAULT_EXT:
+        case VK_IMAGE_TILING_CONTROL_MIN_SIZE_EXT:
+        case VK_IMAGE_TILING_CONTROL_MAX_PERFORMANCE_EXT:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkBuildAccelerationStructureModeKHR value) const {
     switch (value) {
         case VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR:
@@ -4417,6 +4429,15 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkNeuralAcceleratorStatist
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkNeuralAcceleratorStatisticsModeARM value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkImageTilingControlEXT value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkImageTilingControlEXT value) const {
     return nullptr;
 }
 

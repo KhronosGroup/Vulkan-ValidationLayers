@@ -1751,6 +1751,17 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_TILING_CONTROL_FEATURES_EXT: {
+                VkPhysicalDeviceImageTilingControlFeaturesEXT supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceImageTilingControlFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceImageTilingControlFeaturesEXT*>(current);
+                if (enabling->imageTilingControl && !supported.imageTilingControl) {
+                    ss << "VkPhysicalDeviceImageTilingControlFeaturesEXT::imageTilingControl is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_MIN_LOD_FEATURES_EXT: {
                 VkPhysicalDeviceImageViewMinLodFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

@@ -1334,6 +1334,7 @@ const char* String(Struct structure) {
     {"VkImageSubresourceLayers", 25},
     {"VkImageSubresourceRange", 24},
     {"VkImageSwapchainCreateInfoKHR", 30},
+    {"VkImageTilingControlCreateInfoEXT", 34},
     {"VkImageToMemoryCopy", 20},
     {"VkImageUsageFlags2CreateInfoKHR", 32},
     {"VkImageViewASTCDecodeModeEXT", 29},
@@ -1643,6 +1644,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceImageProcessingPropertiesQCOM", 46},
     {"VkPhysicalDeviceImageRobustnessFeatures", 40},
     {"VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT", 47},
+    {"VkPhysicalDeviceImageTilingControlFeaturesEXT", 46},
     {"VkPhysicalDeviceImageViewImageFormatInfoEXT", 44},
     {"VkPhysicalDeviceImageViewMinLodFeaturesEXT", 43},
     {"VkPhysicalDeviceImagelessFramebufferFeatures", 45},
@@ -3226,6 +3228,7 @@ const char* String(Field field) {
     {"imageSlicedViewOf3D", 20},
     {"imageSubresource", 17},
     {"imageTiling", 12},
+    {"imageTilingControl", 19},
     {"imageType", 10},
     {"imageUsage", 11},
     {"imageUsageFlags", 16},
@@ -5518,6 +5521,7 @@ const char* String(Field field) {
     {"tileSize", 9},
     {"tilesOffset", 12},
     {"tiling", 7},
+    {"tilingControl", 14},
     {"time", 5},
     {"timeDomain", 11},
     {"timeDomainCount", 16},
@@ -5797,6 +5801,7 @@ const char* String(Enum value) {
     {"VkGpaSampleTypeAMD", 19},
     {"VkImageLayout", 14},
     {"VkImageTiling", 14},
+    {"VkImageTilingControlEXT", 24},
     {"VkImageType", 12},
     {"VkImageViewType", 16},
     {"VkIndexType", 12},
@@ -6181,6 +6186,7 @@ const char* String(Extension extension) {
     {"VK_EXT_image_drm_format_modifier", 33},
     {"VK_EXT_image_robustness", 24},
     {"VK_EXT_image_sliced_view_of_3d", 31},
+    {"VK_EXT_image_tiling_control", 28},
     {"VK_EXT_image_view_min_lod", 26},
     {"VK_EXT_index_type_uint8", 24},
     {"VK_EXT_inline_uniform_block", 28},
@@ -9653,6 +9659,10 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT:
        return Struct::VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_TILING_CONTROL_FEATURES_EXT:
+       return Struct::VkPhysicalDeviceImageTilingControlFeaturesEXT;
+    case VK_STRUCTURE_TYPE_IMAGE_TILING_CONTROL_CREATE_INFO_EXT:
+       return Struct::VkImageTilingControlCreateInfoEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_DECODE_VECTOR_FEATURES_NV:
        return Struct::VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:

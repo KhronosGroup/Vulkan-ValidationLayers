@@ -562,6 +562,8 @@ struct DeviceFeatures {
     bool robustImageAccess;
     // VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT
     bool imageSlicedViewOf3D;
+    // VkPhysicalDeviceImageTilingControlFeaturesEXT
+    bool imageTilingControl;
     // VkPhysicalDeviceImageViewMinLodFeaturesEXT
     bool minLod;
     // VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceVulkan12Features
