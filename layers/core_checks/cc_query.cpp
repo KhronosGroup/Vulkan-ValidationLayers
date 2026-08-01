@@ -1505,8 +1505,8 @@ bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
     if (slot >= available_query_count) {
         const LogObjectList objlist(commandBuffer, queryPool);
         skip |=
-            LogError("VUID-vkCmdEndQueryIndexedEXT-query-02343", objlist, error_obj.location.dot(Field::index),
-                     "(%" PRIu32 ") is greater than or equal to the queryPool size (%" PRIu32 ").", index, available_query_count);
+            LogError("VUID-vkCmdEndQueryIndexedEXT-query-02343", objlist, error_obj.location.dot(Field::query),
+                     "(%" PRIu32 ") is greater than or equal to the queryPool size (%" PRIu32 ").", slot, available_query_count);
     }
     if (query_pool_ci.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT ||
         query_pool_ci.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
