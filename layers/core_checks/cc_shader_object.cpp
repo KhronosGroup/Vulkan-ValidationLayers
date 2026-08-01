@@ -434,7 +434,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
 
     bool has_compute = false;
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        has_compute = pCreateInfos[i].stage == VK_SHADER_STAGE_COMPUTE_BIT;
+        has_compute |= pCreateInfos[i].stage == VK_SHADER_STAGE_COMPUTE_BIT;
     }
 
     const VkQueueFlags queue_flag = has_compute ? VK_QUEUE_COMPUTE_BIT : VK_QUEUE_GRAPHICS_BIT;
