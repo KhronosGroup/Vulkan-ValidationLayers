@@ -1790,14 +1790,30 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBu
     return PreCallValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, error_obj);
 }
 
+static std::pair<VkCommandBuffer, vvl::Func> GetPendingEventWait(const CoreChecks& core, VkEvent event) {
+    std::pair<VkCommandBuffer, vvl::Func> result{VK_NULL_HANDLE, vvl::Func::Empty};
+    core.AnyOf<vvl::Queue>([event, &result](const vvl::Queue& queue_state) {
+        result = queue_state.GetPendingEventWaitCommand(event);
+        return result.second != vvl::Func::Empty;
+    });
+    return result;
+}
+
 bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const {
     bool skip = false;
-    if (auto event_state = Get<vvl::Event>(event)) {
-        skip |= ValidateObjectNotInUse(event_state.get(), error_obj.location, "VUID-vkSetEvent-event-09543");
-        if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT) {
-            skip |= LogError("VUID-vkSetEvent-event-03941", event, error_obj.location.dot(Field::event),
-                             "(%s) was created with VK_EVENT_CREATE_DEVICE_ONLY_BIT.", FormatHandle(event).c_str());
-        }
+    auto event_state = Get<vvl::Event>(event);
+    if (!event_state) {
+        return skip;
+    }
+    if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT) {
+        skip |= LogError("VUID-vkSetEvent-event-03941", event, error_obj.location.dot(Field::event),
+                         "(%s) was created with VK_EVENT_CREATE_DEVICE_ONLY_BIT.", FormatHandle(event).c_str());
+    }
+    const auto [pending_cb, pending_wait_command] = GetPendingEventWait(*this, event);
+    if (pending_wait_command != vvl::Func::Empty) {
+        skip |= LogError("VUID-vkSetEvent-event-09543", event, error_obj.location,
+                         "%s was set on the host, but a previously submitted %s command is still pending (%s).",
+                         FormatHandle(*event_state).c_str(), vvl::String(pending_wait_command), FormatHandle(pending_cb).c_str());
     }
     return skip;
 }
@@ -1809,18 +1825,13 @@ bool CoreChecks::PreCallValidateResetEvent(VkDevice device, VkEvent event, const
             skip |= LogError("VUID-vkResetEvent-event-03823", event, error_obj.location.dot(Field::event),
                              "(%s) was created with VK_EVENT_CREATE_DEVICE_ONLY_BIT.", FormatHandle(event).c_str());
         }
-
-        vvl::Func pending_wait_command = vvl::Func::Empty;
-        AnyOf<vvl::Queue>([event, &pending_wait_command](const vvl::Queue& queue_state) {
-            pending_wait_command = queue_state.GetPendingEventWaitCommand(event);
-            return pending_wait_command != vvl::Func::Empty;
-        });
+        const auto [pending_cb, pending_wait_command] = GetPendingEventWait(*this, event);
         if (pending_wait_command != vvl::Func::Empty) {
             const char* vuid = (pending_wait_command == vvl::Func::vkCmdWaitEvents) ? "VUID-vkResetEvent-event-03821"
                                                                                     : "VUID-vkResetEvent-event-03822";
             skip |= LogError(vuid, event, error_obj.location,
-                             "%s was reset on the host, but a previously submitted %s command is still pending.",
-                             FormatHandle(event).c_str(), vvl::String(pending_wait_command));
+                             "%s was reset on the host, but a previously submitted %s command is still pending (%s).",
+                             FormatHandle(event).c_str(), vvl::String(pending_wait_command), FormatHandle(pending_cb).c_str());
         }
     }
     return skip;

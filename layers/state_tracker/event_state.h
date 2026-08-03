@@ -68,7 +68,7 @@ struct EventWaitBarrierState {
 
 using EventSignalStateMap = vvl::unordered_map<VkEvent, EventSignalState>;
 using EventWaitBarrierMap = vvl::unordered_map<VkEvent, EventWaitBarrierState>;
-using EventWaitCommandMap = vvl::unordered_map<VkEvent, vvl::Func>;
+using EventWaitCommandMap = vvl::unordered_map<VkEvent, std::pair<VkCommandBuffer, vvl::Func>>;
 
 // Resolve the known signaling state from two levels: the secondary command buffer state and
 // the prior command buffer state (primary or prior secondary).

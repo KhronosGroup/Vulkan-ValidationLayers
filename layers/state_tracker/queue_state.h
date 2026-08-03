@@ -170,7 +170,9 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     // Check submissions up to and including until_seq.
     std::optional<SemaphoreInfo> FindTimelineWaitWithoutResolvingSignal(uint64_t until_seq) const;
 
-    vvl::Func GetPendingEventWaitCommand(VkEvent event) const;
+    // Return a pair of a pending command buffer and the event wait command.
+    // The returned command is vvl::Func::Empty if there is no pending event wait
+    std::pair<VkCommandBuffer, vvl::Func> GetPendingEventWaitCommand(VkEvent event) const;
 
     // VVL needs helps to retire submsissions on present-only queue that does not use explicit host synchronization
     void UpdatePresentOnlyQueueProgress(const DeviceState &device_state);

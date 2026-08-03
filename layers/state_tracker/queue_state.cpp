@@ -201,14 +201,14 @@ std::optional<vvl::SemaphoreInfo> vvl::Queue::FindTimelineWaitWithoutResolvingSi
     return {};
 }
 
-vvl::Func vvl::Queue::GetPendingEventWaitCommand(VkEvent event) const {
+std::pair<VkCommandBuffer, vvl::Func> vvl::Queue::GetPendingEventWaitCommand(VkEvent event) const {
     auto guard = Lock();
     for (const QueueSubmission& submission : submissions_) {
-        if (const vvl::Func* wait_command = vvl::Find(submission.event_wait_commands, event)) {
+        if (const auto* wait_command = vvl::Find(submission.event_wait_commands, event)) {
             return *wait_command;
         }
     }
-    return vvl::Func::Empty;
+    return {VK_NULL_HANDLE, vvl::Func::Empty};
 }
 
 // The submissions on present-only queue can be retired without explicit fence/semaphore sync.
