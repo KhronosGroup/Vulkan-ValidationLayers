@@ -271,9 +271,9 @@ class SyncValidator : public vvl::DeviceProxy {
     void RecordIndirectBuffer(CommandBufferAccessContext &cb_context, ResourceUsageTag tag, const VkDeviceSize struct_size,
                               const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount, uint32_t stride);
 
-    bool ValidateCountBuffer(const CommandBufferAccessContext &cb_context, const AccessContext &context, VkBuffer buffer,
-                             VkDeviceSize offset, const Location &loc) const;
-    void RecordCountBuffer(CommandBufferAccessContext &cb_context, ResourceUsageTag tag, VkBuffer buffer, VkDeviceSize offset);
+    bool ValidateCountBuffer(const CommandBufferAccessContext& cb_context, const AccessContext& context, VkBuffer buffer,
+                             VkDeviceSize offset, const Location& loc, const char* count_buffer_label = "draw count") const;
+    void RecordCountBuffer(CommandBufferAccessContext& cb_context, ResourceUsageTag tag, VkBuffer buffer, VkDeviceSize offset);
 
     bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
                                     const ErrorObject &error_obj) const override;
@@ -362,6 +362,10 @@ class SyncValidator : public vvl::DeviceProxy {
     void PostCallRecordCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                       uint32_t stride, const RecordObject &record_obj) override;
+    bool PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+                                            uint32_t groupCountZ, const ErrorObject& error_obj) const override;
+    void PostCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+                                           uint32_t groupCountZ, const RecordObject& record_obj) override;
     bool PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                     uint32_t drawCount, uint32_t stride,
                                                     const ErrorObject& error_obj) const override;
@@ -382,7 +386,19 @@ class SyncValidator : public vvl::DeviceProxy {
                                               const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
                                               uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset,
                                               const RecordObject& record_obj) override;
-
+    bool PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
+                                        uint32_t instanceCount, uint32_t firstInstance, uint32_t stride,
+                                        const ErrorObject& error_obj) const override;
+    void PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
+                                       uint32_t instanceCount, uint32_t firstInstance, uint32_t stride,
+                                       const RecordObject& record_obj) override;
+    bool PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount, uint32_t firstInstance,
+                                                    VkBuffer counterBuffer, VkDeviceSize counterBufferOffset,
+                                                    uint32_t counterOffset, uint32_t vertexStride,
+                                                    const ErrorObject& error_obj) const override;
+    void PostCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount, uint32_t firstInstance,
+                                                   VkBuffer counterBuffer, VkDeviceSize counterBufferOffset, uint32_t counterOffset,
+                                                   uint32_t vertexStride, const RecordObject& record_obj) override;
     bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                            const VkClearColorValue *pColor, uint32_t rangeCount,
                                            const VkImageSubresourceRange *pRanges, const ErrorObject &error_obj) const override;

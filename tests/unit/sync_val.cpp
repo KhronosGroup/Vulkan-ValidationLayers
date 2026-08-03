@@ -2197,6 +2197,84 @@ TEST_F(NegativeSyncVal, ClearStencilThenSampleWithDrawMultiIndexed) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeSyncVal, DrawMultiHazard) {
+    TEST_DESCRIPTION("Hazard when vkCmdDrawMultiEXT accesses vertex buffer");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::multiDraw);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer source_buffer(*m_device, 24, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer vertex_buffer(*m_device, 24, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkVertexInputBindingDescription vertex_binding = {0, 12, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription vertex_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.vi_ci_.pVertexBindingDescriptions = &vertex_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &vertex_attrib;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.cb_ci_.attachmentCount = 0;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+
+    const VkMultiDrawInfoEXT draw_infos[2] = {{0, 1}, {1, 1}};
+    const VkDeviceSize offset = 0;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(source_buffer, vertex_buffer);
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &offset);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE", 2);
+    vk::CmdDrawMultiEXT(m_command_buffer, 2, draw_infos, 1, 0, sizeof(VkMultiDrawInfoEXT));
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncVal, DrawIndirectByteCountHazard) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkPhysicalDeviceTransformFeedbackPropertiesEXT tf_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(tf_properties);
+    if (!tf_properties.transformFeedbackDraw) {
+        GTEST_SKIP() << "transformFeedbackDraw is not supported";
+    }
+
+    vkt::Buffer source_buffer(*m_device, 16, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer counter_buffer(*m_device, 16, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.cb_ci_.attachmentCount = 0;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(source_buffer, counter_buffer);
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdDrawIndirectByteCountEXT(m_command_buffer, 1, 0, counter_buffer, 0, 0, 4);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeSyncVal, VertexBufferHazard) {
     TEST_DESCRIPTION("Hazard when vkCmdDraw accesses vertex buffer");
     RETURN_IF_SKIP(InitSyncVal());
@@ -2504,6 +2582,60 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazardsDrawIndirectCount) {
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
     }
+}
+
+TEST_F(NegativeSyncVal, DrawMeshTasksHazard) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    vkt::Image storage_image(*m_device, 64, 64, format, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView storage_view = storage_image.CreateView();
+
+    const char* fs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0, rgba8) uniform image2D img;
+        layout(location=0) out vec4 color;
+        void main() { color = imageLoad(img, ivec2(0)); }
+    )glsl";
+
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {mesh_shader.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
+    pipe.cb_ci_.attachmentCount = 0;
+    pipe.CreateGraphicsPipeline();
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, storage_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                   VK_IMAGE_LAYOUT_GENERAL);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+
+    const VkClearColorValue clear_value = {};
+    const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdClearColorImage(m_command_buffer, storage_image, VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &range);
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeSyncVal, DrawMeshTasksIndirectTestAccess) {
