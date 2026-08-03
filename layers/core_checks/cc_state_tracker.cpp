@@ -651,7 +651,7 @@ void CommandBufferSubState::RecordWaitEvents(vvl::span<const VkEvent> events, Vk
 
     for (VkEvent event : events) {
         event_wait_barriers[event] = EventWaitBarrierState{barriers, loc.function};
-        first_event_wait_commands.insert({event, loc.function});
+        first_event_wait_commands.insert({event, {base.VkHandle(), loc.function}});
 
         EventSignalState* signal_state = vvl::Find(event_signal_states, event);
         if (signal_state) {
@@ -676,7 +676,7 @@ void CommandBufferSubState::RecordWaitEvent2(VkEvent event, const VkDependencyIn
     const VkPipelineStageFlags2 dst_stage_mask = sync_utils::GetExecScopes(dependency_info).dst;
     const VkPipelineStageFlags2 barriers = MakeEventBarriers(dst_stage_mask, base.GetQueueFlags());
     event_wait_barriers[event] = EventWaitBarrierState{barriers, loc.function};
-    first_event_wait_commands.insert({event, loc.function});
+    first_event_wait_commands.insert({event, {base.VkHandle(), loc.function}});
 
     EventSignalState* signal_state = vvl::Find(event_signal_states, event);
     const bool already_validated = signal_state && signal_state->HasKnownEffect();

@@ -739,42 +739,6 @@ TEST_F(NegativeEvent, WaitEventRenderPassHostBit) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, ResetEventThenHostSet) {
-    TEST_DESCRIPTION("Submit event reset then set it on the host");
-    RETURN_IF_SKIP(Init());
-
-    vkt::Event event(*m_device);
-
-    m_command_buffer.Begin();
-    m_command_buffer.ResetEvent(event);
-    m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-
-    m_errorMonitor->SetDesiredError("VUID-vkSetEvent-event-09543");
-    event.Set();
-    m_errorMonitor->VerifyFound();
-
-    m_default_queue->Wait();
-}
-
-TEST_F(NegativeEvent, SetEventThenHostSet) {
-    TEST_DESCRIPTION("Submit event set then set it on the host");
-    RETURN_IF_SKIP(Init());
-
-    vkt::Event event(*m_device);
-
-    m_command_buffer.Begin();
-    m_command_buffer.SetEvent(event);
-    m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-
-    m_errorMonitor->SetDesiredError("VUID-vkSetEvent-event-09543");
-    event.Set();
-    m_errorMonitor->VerifyFound();
-
-    m_default_queue->Wait();
-}
-
 TEST_F(NegativeEvent, WaitEventThenHostSet) {
     TEST_DESCRIPTION("Submit event wait then set it on the host");
     RETURN_IF_SKIP(Init());
@@ -790,6 +754,27 @@ TEST_F(NegativeEvent, WaitEventThenHostSet) {
     event.Set();
     m_errorMonitor->VerifyFound();
 
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeEvent, WaitEventThenHostSetMultipleCBs) {
+    RETURN_IF_SKIP(Init());
+    vkt::Event event(*m_device);
+
+    vkt::CommandBuffer set_cb(*m_device, m_command_pool);
+    set_cb.Begin();
+    set_cb.SetEvent(event);
+    set_cb.End();
+
+    vkt::CommandBuffer wait_cb(*m_device, m_command_pool);
+    wait_cb.Begin();
+    wait_cb.WaitEvent(event);
+    wait_cb.End();
+
+    m_default_queue->Submit({set_cb, wait_cb});
+    m_errorMonitor->SetDesiredError("VUID-vkSetEvent-event-09543");
+    event.Set();
+    m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
 
