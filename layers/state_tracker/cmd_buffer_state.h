@@ -493,7 +493,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
         }
     } rendering_attachments;
 
-    std::vector<VkEvent> events;
     vvl::unordered_set<QueryObject> active_queries;
     vvl::unordered_set<QueryObject> started_queries;
     vvl::unordered_set<QueryObject> updated_queries;
@@ -757,7 +756,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     void RecordSetEvent(VkEvent event, VkPipelineStageFlags stageMask, const Location& loc);
     void RecordSetEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc);
-    void RecordResetEvent(VkEvent event, VkPipelineStageFlags2KHR stageMask, const Location &loc);
+    void RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stageMask, const Location &loc);
     void RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                           const Location& loc);
     void RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& dep_info_loc);

@@ -350,7 +350,6 @@ void CommandBuffer::ResetCBState() {
     active_subpass_contents = VK_SUBPASS_CONTENTS_INLINE;
     SetActiveSubpass(0);
     rendering_attachments.Reset();
-    events.clear();
     active_queries.clear();
     started_queries.clear();
     render_pass_queries.clear();
@@ -1541,10 +1540,6 @@ void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secon
         linked_command_buffers.insert(secondary_cb_state.get());
         AddChild(secondary_cb_state);
 
-        for (auto& event : secondary_cb_state->events) {
-            events.push_back(event);
-        }
-
         if (first_action_or_sync_command == Func::Empty) {
             first_action_or_sync_command = secondary_cb_state->first_action_or_sync_command;
         }
@@ -2287,7 +2282,6 @@ void CommandBuffer::RecordSetEvent(VkEvent event, VkPipelineStageFlags stage_mas
             AddChild(event_state);
         }
     }
-    events.push_back(event);
 }
 
 void CommandBuffer::RecordSetEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& loc) {
@@ -2300,7 +2294,6 @@ void CommandBuffer::RecordSetEvent2(VkEvent event, const VkDependencyInfo& depen
             AddChild(event_state);
         }
     }
-    events.push_back(event);
 }
 
 void CommandBuffer::RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const Location& loc) {
@@ -2313,7 +2306,6 @@ void CommandBuffer::RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_
             AddChild(event_state);
         }
     }
-    events.push_back(event);
 }
 
 void CommandBuffer::RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask,
@@ -2327,7 +2319,6 @@ void CommandBuffer::RecordWaitEvents(vvl::span<const VkEvent> events, VkPipeline
                 AddChild(event_state);
             }
         }
-        this->events.push_back(event);
     }
 }
 
@@ -2340,7 +2331,6 @@ void CommandBuffer::RecordWaitEvent2(VkEvent event, const VkDependencyInfo& depe
             AddChild(event_state);
         }
     }
-    events.push_back(event);
 }
 
 void CommandBuffer::RecordBarrierObjects(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier* buffer_barriers,
