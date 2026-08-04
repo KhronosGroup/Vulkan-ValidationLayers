@@ -2714,7 +2714,8 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
         const CommandBufferAccessContext& recorded_cb_context = GetAccessContext(*recorded_cb);
 
         const ResourceUsageTag base_tag = proxy_cb_context.GetTagCount();
-        skip |= ReplayState(proxy_cb_context, recorded_cb_context, error_obj, cb_index, base_tag).ValidateFirstUse();
+        const Location cb_loc = error_obj.location.dot(vvl::Field::pCommandBuffers, cb_index);
+        skip |= ReplayState(proxy_cb_context, recorded_cb_context, cb_loc, base_tag).ValidateFirstUse();
 
         // Update proxy label commands so they can be used by ImportRecordedAccessLog
         const auto& recorded_label_commands = recorded_cb->GetLabelCommands();
@@ -3035,6 +3036,7 @@ bool SyncValidator::ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, cons
         if (has_unresolved_batches || !unresolved_waits.empty()) {
             UnresolvedBatch unresolved_batch;
             unresolved_batch.batch = std::move(batch);
+            unresolved_batch.submit_func = error_obj.location.function;
             unresolved_batch.submit_index = submit_id;
             unresolved_batch.batch_index = batch_idx;
             unresolved_batch.command_buffers = GetCommandBuffers(*device_state, submit);
@@ -3064,7 +3066,7 @@ bool SyncValidator::ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, cons
         const auto async_batches = batch->RegisterAsyncContexts(resolved_batches);
 
         const auto command_buffers = GetCommandBuffers(*device_state, submit);
-        skip |= batch->ValidateSubmit(command_buffers, submit_id, batch_idx, current_label_stack, error_obj);
+        skip |= batch->ValidateSubmit(command_buffers, submit_id, batch_idx, current_label_stack, error_obj.location);
 
         const auto submit_signals = vvl::make_span(submit.pSignalSemaphoreInfos, submit.signalSemaphoreInfoCount);
         new_timeline_signals |= signals_update.RegisterSignals(batch, submit_signals);
@@ -3083,7 +3085,7 @@ bool SyncValidator::ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, cons
 
     // Check if timeline signals resolve existing wait-before-signal dependencies
     if (new_timeline_signals) {
-        skip |= PropagateTimelineSignals(signals_update, error_obj);
+        skip |= PropagateTimelineSignals(signals_update);
     }
 
     if (!skip) {
@@ -3100,7 +3102,7 @@ bool SyncValidator::ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, cons
     return skip;
 }
 
-bool SyncValidator::PropagateTimelineSignals(SignalsUpdate& signals_update, const ErrorObject& error_obj) {
+bool SyncValidator::PropagateTimelineSignals(SignalsUpdate& signals_update) {
     bool skip = false;
 
     // The caller ensures we just registered new timeline signals
@@ -3152,7 +3154,8 @@ bool SyncValidator::PropagateTimelineSignals(SignalsUpdate& signals_update, cons
                 const auto async_batches = ready_batch.batch->RegisterAsyncContexts(ready_batch.resolved_dependencies);
 
                 skip |= ready_batch.batch->ValidateSubmit(ready_batch.command_buffers, ready_batch.submit_index,
-                                                          ready_batch.batch_index, ready_batch.label_stack, error_obj);
+                                                          ready_batch.batch_index, ready_batch.label_stack,
+                                                          Location(ready_batch.submit_func));
 
                 // Process signals. New timeline signals can resolve more batches on the next iteration
                 const auto submit_signals = vvl::make_span(ready_batch.signals.data(), ready_batch.signals.size());
@@ -3204,7 +3207,7 @@ bool SyncValidator::PreCallValidateSignalSemaphore(VkDevice device, const VkSema
     // previously submitted batches that are waiting for this signal, and this will
     // initiate validation that touches queue state. That's why queue mutex is used here.
     std::lock_guard lock_guard(queue_mutex_);
-    skip |= const_cast<SyncValidator*>(this)->ProcessSignalSemaphore(device, pSignalInfo, error_obj);
+    skip |= const_cast<SyncValidator*>(this)->ProcessSignalSemaphore(device, pSignalInfo);
     return skip;
 }
 
@@ -3213,8 +3216,7 @@ bool SyncValidator::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkS
     return PreCallValidateSignalSemaphore(device, pSignalInfo, error_obj);
 }
 
-bool SyncValidator::ProcessSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
-                                           const ErrorObject& error_obj) {
+bool SyncValidator::ProcessSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo) {
     bool skip = false;
 
     auto semaphore_state = Get<vvl::Semaphore>(pSignalInfo->semaphore);
@@ -3231,7 +3233,7 @@ bool SyncValidator::ProcessSignalSemaphore(VkDevice device, const VkSemaphoreSig
     }
 
     signals.emplace_back(SignalInfo(semaphore_state, pSignalInfo->value));
-    skip |= PropagateTimelineSignals(signals_update, error_obj);
+    skip |= PropagateTimelineSignals(signals_update);
 
     if (!skip) {
         ApplySignalsUpdate(signals_update, nullptr);

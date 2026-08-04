@@ -242,6 +242,7 @@ class BatchAccessLog {
 // Batch that has wait-before-signal dependencies.
 struct UnresolvedBatch {
     BatchContextPtr batch;
+    vvl::Func submit_func = vvl::Func::Empty;
     uint64_t submit_index = 0;
     uint32_t batch_index = 0;
     std::vector<CommandBufferConstPtr> command_buffers;
@@ -354,6 +355,9 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     SyncEventsContext& GetEventsContext() override { return events_context_; }
     const SyncEventsContext& GetEventsContext() const override { return events_context_; }
 
+    void SetRenderPassAccessContext(AccessContext& rp_access_context) { current_access_context_ = &rp_access_context; }
+    void SetOriginalAccessContext() { current_access_context_ = &access_context_; }
+
     VkQueueFlags GetQueueFlags() const { return queue_state_->GetQueue()->GetQueueFlags(); }
 
     ResourceUsageRange GetTagRange() const { return tag_range_; }
@@ -367,8 +371,8 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
                                                     std::vector<VkSemaphoreSubmitInfo>& unresolved_waits,
                                                     SignalsUpdate& signals_update);
 
-    bool ValidateSubmit(const std::vector<CommandBufferConstPtr> &command_buffers, uint64_t submit_index, uint32_t batch_index,
-                        std::vector<std::string> &current_label_stack, const ErrorObject &error_obj);
+    bool ValidateSubmit(const std::vector<CommandBufferConstPtr>& command_buffers, uint64_t submit_index, uint32_t batch_index,
+                        std::vector<std::string>& current_label_stack, const Location& submit_loc);
     void ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 
     // For Present
@@ -390,10 +394,6 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     void ApplyAcquireWait(const AcquiredImage &acquired);
     void OnResourceDestroyed(const AccessRange &resource_range);
 
-    void BeginRenderPassReplaySetup(ReplayState &replay, const SyncOpBeginRenderPass &begin_op);
-    void NextSubpassReplaySetup(ReplayState &replay);
-    void EndRenderPassReplayCleanup(ReplayState &replay);
-
     [[nodiscard]] std::vector<BatchContextPtr> RegisterAsyncContexts(const std::vector<BatchContextPtr>& batches_resolved);
     void ResolveLastBatch(const BatchContextPtr& last_batch);
 
@@ -401,6 +401,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     void ImportTags(const QueueBatchContext &from);
 
     const AccessContext &GetAccessContext() const { return access_context_; }
+    AccessContext& GetAccessContext() { return access_context_; }
 
   public:
     LastSynchronizedPresent last_synchronized_present;

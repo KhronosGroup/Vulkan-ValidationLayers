@@ -94,7 +94,7 @@ class SyncValidator : public vvl::DeviceProxy {
     // The update object is mutable to be able to std::move SignalInfo from it.
     void ApplySignalsUpdate(SignalsUpdate& update, const BatchContextPtr& last_batch);
 
-    bool PropagateTimelineSignals(SignalsUpdate& signals_update, const ErrorObject& error_obj);
+    bool PropagateTimelineSignals(SignalsUpdate& signals_update);
 
     void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag, const LastSynchronizedPresent &last_synchronized_present,
                          const std::vector<ResourceUsageTag> &queue_sync_tags);
@@ -553,7 +553,7 @@ class SyncValidator : public vvl::DeviceProxy {
                                      uint64_t timeout, const RecordObject &record_obj) override;
     bool PreCallValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
                                         const ErrorObject &error_obj) const override;
-    bool ProcessSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo, const ErrorObject& error_obj);
+    bool ProcessSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo);
     bool PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
                                            const ErrorObject &error_obj) const override;
     void PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout,
