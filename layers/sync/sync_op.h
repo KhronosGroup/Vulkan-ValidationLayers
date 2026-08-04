@@ -32,9 +32,10 @@ namespace syncval {
 
 class CommandBufferAccessContext;
 class CommandExecutionContext;
+class QueueBatchContext;
 class RenderPassAccessContext;
-class ReplayState;
 class SyncValidator;
+struct ReplayState;
 
 struct SyncEventState {
     using EventPointer = std::shared_ptr<const vvl::Event>;
@@ -207,47 +208,36 @@ class SyncOpEndRenderPass : public SyncOpBase {
     void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
 };
 
-// Allow keep track of the exec contexts replay state
-class ReplayState {
-  public:
-    // A minimal subset of the functionality present in the RenderPassAccessContext. Since the accesses are recorded in the
-    // first_use information of the recorded access contexts, s.t. all we need to support is the barrier/resolve operations
-    struct RenderPassReplayState {
-        AccessContext* Begin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass& begin_op_,
-                             const AccessContext& external_context);
-        AccessContext* Next();
-        void End(AccessContext& external_context);
-        vvl::span<AccessContext> GetSubpassContexts();
+// A minimal subset of the functionality present in the RenderPassAccessContext. Since the accesses are recorded in the
+// first_use information of the recorded access contexts, s.t. all we need to support is the barrier/resolve operations
+struct RenderPassReplayState {
+    AccessContext* Begin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass& begin_op_, const AccessContext& external_context);
+    AccessContext* Next();
+    void End(AccessContext& external_context);
+    vvl::span<AccessContext> GetSubpassContexts();
 
-        const SyncOpBeginRenderPass* begin_op = nullptr;
-        const AccessContext* replay_context = nullptr;
-        uint32_t subpass = VK_SUBPASS_EXTERNAL;
-        std::unique_ptr<AccessContext[]> subpass_contexts;
-    };
+    const SyncOpBeginRenderPass* begin_op = nullptr;
+    const AccessContext* replay_context = nullptr;
+    uint32_t subpass = VK_SUBPASS_EXTERNAL;
+    std::unique_ptr<AccessContext[]> subpass_contexts;
+};
+
+// Allow keep track of the exec contexts replay state
+struct ReplayState {
+    ReplayState(QueueBatchContext& exec_context, const CommandBufferAccessContext& recorded_context, const Location& cb_loc,
+                ResourceUsageTag base_tag);
+    ReplayState(CommandBufferAccessContext& exec_context, const CommandBufferAccessContext& recorded_context,
+                const Location& cb_loc, ResourceUsageTag base_tag);
 
     bool ValidateFirstUse();
     bool DetectFirstUseHazard(const ResourceUsageRange& first_use_range) const;
 
-    ReplayState(CommandExecutionContext& exec_context, const CommandBufferAccessContext& recorded_context,
-                const ErrorObject& error_object, uint32_t index, ResourceUsageTag base_tag);
-
-    CommandExecutionContext& GetExecutionContext() const { return exec_context_; }
-    ResourceUsageTag GetBaseTag() const { return base_tag_; }
-
-    AccessContext* ReplayStateRenderPassBegin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass& begin_op,
-                                              const AccessContext& external_context);
-    AccessContext* ReplayStateRenderPassNext();
-    void ReplayStateRenderPassEnd(AccessContext& external_context);
-
-  protected:
-    const AccessContext* GetRecordedAccessContext() const;
-
-    CommandExecutionContext& exec_context_;
-    const CommandBufferAccessContext& recorded_context_;
-    const ErrorObject& error_obj_;
-    const uint32_t index_;
-    const ResourceUsageTag base_tag_;
-    RenderPassReplayState rp_replay_;
+    CommandExecutionContext& exec_context;
+    QueueBatchContext* batch_context = nullptr;
+    const CommandBufferAccessContext& recorded_context;
+    const Location& cb_loc;
+    const ResourceUsageTag base_tag;
+    RenderPassReplayState rp_replay;
 };
 
 }  // namespace syncval

@@ -405,19 +405,6 @@ void QueueBatchContext::OnResourceDestroyed(const AccessRange& resource_range) {
     access_context_.EraseIf([&resource_range](AccessMap::value_type& access) { return resource_range.includes(access.first); });
 }
 
-void QueueBatchContext::BeginRenderPassReplaySetup(ReplayState& replay, const SyncOpBeginRenderPass& begin_op) {
-    current_access_context_ = replay.ReplayStateRenderPassBegin(GetQueueFlags(), begin_op, access_context_);
-}
-
-void QueueBatchContext::NextSubpassReplaySetup(ReplayState& replay) {
-    current_access_context_ = replay.ReplayStateRenderPassNext();
-}
-
-void QueueBatchContext::EndRenderPassReplayCleanup(ReplayState& replay) {
-    replay.ReplayStateRenderPassEnd(access_context_);
-    current_access_context_ = &access_context_;
-}
-
 // Batch barrier ops don't modify in place, and thus don't need to hold pending state, and also are *never* layout transitions.
 struct BatchBarrierOp {
     SyncBarrier barrier;
@@ -729,7 +716,7 @@ std::vector<BatchContextPtr> QueueBatchContext::ResolveSubmitWaits(vvl::span<con
 
 bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>& command_buffers, uint64_t submit_index,
                                        uint32_t batch_index, std::vector<std::string>& current_label_stack,
-                                       const ErrorObject& error_obj) {
+                                       const Location& submit_loc) {
     bool skip = false;
 
     BatchAccessLog::BatchRecord batch{queue_state_, submit_index, batch_index};
@@ -740,12 +727,19 @@ bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>&
     }
     batch.base_tag = SetupBatchTags(tag_count);
 
-    for (size_t index = 0; index < command_buffers.size(); index++) {
+    for (uint32_t index = 0; index < (uint32_t)command_buffers.size(); index++) {
         const auto& cb = SubState(*command_buffers[index]);
-        // Validate and resolve command buffers that has tagged commands
         const CommandBufferAccessContext& access_context = cb.access_context;
+
+        // Validate and resolve command buffers that have tagged commands
         if (access_context.GetTagCount() > 0) {
-            skip |= ReplayState(*this, access_context, error_obj, uint32_t(index), batch.base_tag).ValidateFirstUse();
+            const Location submit_info_loc = submit_loc.dot(vvl::Field::pSubmits, batch_index);
+            const Location cb_loc = submit_loc.function == vvl::Func::vkQueueSubmit
+                                        ? submit_info_loc.dot(vvl::Field::pCommandBuffers, index)
+                                        : submit_info_loc.dot(vvl::Field::pCommandBufferInfos, index);
+
+            skip |= ReplayState(*this, access_context, cb_loc, batch.base_tag).ValidateFirstUse();
+
             // The barriers have already been applied in ValidatFirstUse
             batch_log_.Import(batch, access_context, current_label_stack);
             ResolveSubmittedCommandBuffer(access_context.GetCurrentAccessContext(), batch.base_tag);

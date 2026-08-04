@@ -162,8 +162,8 @@ class CommandExecutionContext {
     virtual const AccessContext& GetCurrentAccessContext() const = 0;
 
     virtual SyncEventsContext& GetEventsContext() = 0;
-
     virtual const SyncEventsContext& GetEventsContext() const = 0;
+
     virtual QueueId GetQueueId() const = 0;
     virtual VulkanTypedHandle Handle() const = 0;
     virtual ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const = 0;

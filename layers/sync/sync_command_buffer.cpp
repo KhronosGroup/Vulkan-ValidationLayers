@@ -1329,9 +1329,6 @@ ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(
 }
 
 ResourceUsageTag CommandBufferAccessContext::RecordNextSubpass(vvl::Func command) {
-    assert(current_renderpass_context_);
-    if (!current_renderpass_context_) return NextCommandTag(command);
-
     // At this point current subpass value has not updated yet to the index of "next subpass"
     const uint32_t previous_subpass = current_renderpass_context_->GetCurrentSubpass();
     const uint32_t this_subpass = previous_subpass + 1;
@@ -1348,9 +1345,6 @@ ResourceUsageTag CommandBufferAccessContext::RecordNextSubpass(vvl::Func command
 }
 
 ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(vvl::Func command) {
-    assert(current_renderpass_context_);
-    if (!current_renderpass_context_) return NextCommandTag(command);
-
     const uint32_t current_subpass = current_renderpass_context_->GetCurrentSubpass();
 
     auto store_tag = NextCommandTag(command, SubCommandType::kStoreOp, current_subpass);
@@ -2020,6 +2014,9 @@ void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo& subpass_
     if (!base.IsPrimary()) {
         return;  // [core validation check]: only primary command buffer can start next subpass
     }
+    if (!access_context.GetCurrentRenderPassContext()) {
+        return;  // [core validation check]: begin render pass was not called
+    }
     const ResourceUsageTag tag = access_context.RecordNextSubpass(loc.function);
     auto sync_op = std::make_shared<SyncOpNextSubpass>(loc.function);
     access_context.AddSyncOp(tag, std::move(sync_op));
@@ -2029,7 +2026,9 @@ void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo* subpass_
     if (!base.IsPrimary()) {
         return;  // [core validation check]: only primary command buffer can end render pass
     }
-    // Resolve the all subpass contexts to the command buffer contexts
+    if (!access_context.GetCurrentRenderPassContext()) {
+        return;  // [core validation check]: begin render pass was not called
+    }
     const ResourceUsageTag tag = access_context.RecordEndRenderPass(loc.function);
     auto sync_op = std::make_shared<SyncOpEndRenderPass>(loc.function);
     access_context.AddSyncOp(tag, std::move(sync_op));
