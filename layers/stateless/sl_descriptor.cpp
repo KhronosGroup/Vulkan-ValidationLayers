@@ -1336,7 +1336,7 @@ bool Device::manual_PreCallValidateGetDescriptorEXT(VkDevice device, const VkDes
     if (tensor_struct) {
         if (!enabled_features.nullDescriptor && tensor_struct->tensorView == VK_NULL_HANDLE) {
             skip |= LogError("VUID-VkDescriptorGetTensorInfoARM-nullDescriptor-09899", device,
-                             error_obj.location.dot(Field::pNext).dot(Field::tensorView),
+                             error_obj.location.pNext(Struct::VkDescriptorGetTensorInfoARM, Field::tensorView),
                              "is VK_NULL_HANDLE and the nullDescriptor feature is not enabled.");
         }
     }

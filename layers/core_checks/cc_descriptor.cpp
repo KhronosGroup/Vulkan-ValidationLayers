@@ -43,6 +43,7 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
+#include "state_tracker/tensor_state.h"
 #include "cc_buffer_address.h"
 #include "drawdispatch/descriptor_validator.h"
 #include "drawdispatch/drawdispatch_vuids.h"
@@ -2139,17 +2140,17 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureNV(const VkWriteDescrip
 bool CoreChecks::ValidateWriteUpdateTensor(const VkWriteDescriptorSet& update, const Location& write_loc) const {
     bool skip = false;
 
-    const auto* write_as = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(update.pNext);
-    if (!write_as) {
+    const auto* write_desc = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(update.pNext);
+    if (!write_desc) {
         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-09945", device, write_loc,
                          "is missing a VkWriteDescriptorSetTensorARM in the pNext chain");
         return skip;
     }
 
-    if (write_as->tensorViewCount != update.descriptorCount) {
+    if (write_desc->tensorViewCount != update.descriptorCount) {
         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-09945", device,
                          write_loc.pNext(Struct::VkWriteDescriptorSetTensorARM, Field::tensorViewCount),
-                         "(%" PRIu32 ") not equal to %s (%" PRIu32 ").", write_as->tensorViewCount,
+                         "(%" PRIu32 ") not equal to %s (%" PRIu32 ").", write_desc->tensorViewCount,
                          write_loc.dot(Field::descriptorCount).Fields().c_str(), update.descriptorCount);
     }
 
@@ -2463,11 +2464,25 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, co
             }
 
         } break;
-        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
         case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
-            // TODO
+        {
+            const auto *tensor_write_desc = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(update.pNext);
+            for (uint32_t di = 0; di < update.descriptorCount; ++di) {
+                const VkTensorViewARM view = tensor_write_desc->pTensorViews[di];
+                // nullDescriptor feature allows this to be VK_NULL_HANDLE
+                if (auto view_state = Get<vvl::TensorView>(view)) {
+                    auto tensor_state = view_state->tensor_state;
+                    ASSERT_AND_RETURN_SKIP(tensor_state);
+                    skip |= VerifyBoundMemoryIsValid(
+                        tensor_state->MemoryState(), LogObjectList(view), tensor_state->Handle(),
+                        write_loc.pNext(Struct::VkWriteDescriptorSetTensorARM, Field::pTensorViews, di),
+                        kVUIDUndefined);
+                }
+            }
             break;
+        }
         // KHR acceleration structures don't require memory to be bound manually to them.
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
         case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
         case VK_DESCRIPTOR_TYPE_MAX_ENUM:
