@@ -1596,23 +1596,32 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     bool skip = false;
 
     const vvl::TensorView* tensor_view_state = descriptor.GetTensorViewState();
-    ASSERT_AND_RETURN_SKIP(tensor_view_state);
-    if (tensor_view_state->Destroyed()) {
+    VkTensorViewARM tensor_view = descriptor.GetTensorViews()[index];
+
+    if ((!tensor_view_state && !dev_proxy.enabled_features.nullDescriptor) ||
+        (tensor_view_state && tensor_view_state->Destroyed())) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle());
         skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
-                         "the %s is using tensor view %s that is invalid or has been destroyed.%s",
-                         DescribeDescriptor(resource_variable, index, VK_DESCRIPTOR_TYPE_TENSOR_ARM).c_str(),
-                         FormatHandle(tensor_view_state->Handle()).c_str(), DescribeInstruction().c_str());
+                         "the %s is using tensorView %s that is invalid or has been destroyed.%s",
+                         DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(tensor_view).c_str(),
+                         DescribeInstruction().c_str());
+        return skip;  // early return if invalid
+    }
+
+    // TensorView could be null via nullDescriptor and accessing it is legal
+    if (tensor_view == VK_NULL_HANDLE) {
         return skip;
     }
+
     const vvl::Tensor* tensor_state = descriptor.GetTensorState();
-    ASSERT_AND_RETURN_SKIP(tensor_state);
-    if (tensor_state->Destroyed()) {
+    VkTensorARM tensor = tensor_state ? tensor_state->Handle().Cast<VkTensorARM>() : VK_NULL_HANDLE;
+
+    if (!tensor_state || tensor_state->Destroyed()) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle());
         skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
                          "the %s is using tensor %s that is invalid or has been destroyed.%s",
                          DescribeDescriptor(resource_variable, index, VK_DESCRIPTOR_TYPE_TENSOR_ARM).c_str(),
-                         FormatHandle(tensor_state->Handle()).c_str(), DescribeInstruction().c_str());
+                         FormatHandle(tensor).c_str(), DescribeInstruction().c_str());
         return skip;
     }
 
@@ -1635,13 +1644,13 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                              resource_variable.info.tensor_rank, DescribeInstruction().c_str());
         }
         if (resource_variable.info.vk_format != tensor_view_state->create_info.format) {
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), tensor_view_state->Handle());
+            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), tensor_view);
             skip |=
                 LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::SPIRV_OPTYPETENSORARM_09906), objlist, loc.Get(),
                          "the %s is using tensor %s that was created with %s but doesn't match the OpTypeTensorARM of type %s and "
                          "width %" PRIu32 " (equivalent to %s).%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                         FormatHandle(tensor_view_state->Handle()).c_str(), string_VkFormat(tensor_view_state->create_info.format),
+                         FormatHandle(tensor_view).c_str(), string_VkFormat(tensor_view_state->create_info.format),
                          spirv::string_NumericType(resource_variable.info.numeric_type), resource_variable.info.bit_width,
                          string_VkFormat(resource_variable.info.vk_format), DescribeInstruction().c_str());
         }

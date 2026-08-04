@@ -268,8 +268,35 @@ TEST_F(PositiveTensor, WriteDescriptorSetTensorInfoNullViewsNullDescriptor) {
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 }
 
-TEST_F(PositiveTensor, DescriptorTensorViewNull) {
-    TEST_DESCRIPTION("Descriptor buffer with null tensor views.");
+TEST_F(PositiveTensor, GetTensorDescriptor) {
+    TEST_DESCRIPTION("Get tensor descriptor.");
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    uint8_t buffer[128];
+
+    vkt::Tensor tensor(*m_device);
+    tensor.BindToMem();
+
+    VkTensorViewCreateInfoARM tensor_view_create_info = vku::InitStructHelper();
+    tensor_view_create_info.tensor = tensor;
+    tensor_view_create_info.format = tensor.Format();
+    vkt::TensorView tensor_view(*m_device, tensor_view_create_info);
+
+    VkDescriptorGetTensorInfoARM tensor_info = vku::InitStructHelper();
+    tensor_info.tensorView = tensor_view;
+
+    VkDescriptorGetInfoEXT dgi = vku::InitStructHelper(&tensor_info);
+    dgi.type = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
+
+    vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+}
+
+TEST_F(PositiveTensor, GetTensorDescriptorNullView) {
+    TEST_DESCRIPTION("Get tensor descriptor but tensor view is NULL. Allowed due to nullDescriptor feature.");
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
@@ -287,6 +314,43 @@ TEST_F(PositiveTensor, DescriptorTensorViewNull) {
     dgi.type = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
 
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+}
+
+TEST_F(PositiveTensor, DispatchShaderSpirvNullView) {
+    TEST_DESCRIPTION("Use a tensor in a Spir-V shader, passing NULL views. Allowed due to nullDescriptor feature.");
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    VkTensorDescriptionARM desc = TensorShaderDesc();
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    vkt::Tensor tensor(*m_device, info);
+    tensor.BindToMem();
+
+    vkt::Buffer buffer(*m_device, tensor.GetMemoryReqs().memoryRequirements.size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    CreateComputePipelineHelper pipe(*m_device);
+    const std::string spirv_source = vkt::dg::DataGraphPipelineHelper::GetSpirvBasicShader();
+    pipe.cs_ = VkShaderObj(*m_device, spirv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+
+    pipe.dsl_bindings_.resize(bindings.size());
+    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.CreateComputePipeline();
+    VkTensorViewARM null_view_array[1]{VK_NULL_HANDLE};  // pass an array of NULL view handles
+    pipe.descriptor_set_.WriteDescriptorTensorInfo(0, null_view_array);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
 }
 
 /* VK_ARM_tensor_controls */
