@@ -44,6 +44,16 @@ Program Options
 
 See the help text (update_deps.py --help) for a complete list of options.
 
+The "--config" option may be repeated (e.g. "--config Debug --config
+Release") to build a dependency for more than one configuration. This is
+required when "--generator" names a multi-config generator (Visual Studio,
+Xcode, Ninja Multi-Config): each dependency is configured once, then built
+and installed once per requested config, all into the same install
+directory, so that a single find_package() call in the consuming project
+resolves correctly no matter which config the IDE is currently building.
+Single-config generators (Ninja, Unix Makefiles, etc.) accept only one
+"--config" value.
+
 Program Operation
 -----------------
 
@@ -292,6 +302,16 @@ CONFIG_MAP = {
     'minsizerel': 'MinSizeRel'
 }
 
+# Generators that support more than one configuration in a single build tree
+# (the user/IDE picks the config at build time via --config, not at configure
+# time via CMAKE_BUILD_TYPE).
+MULTI_CONFIG_GENERATORS = {'Xcode', 'Ninja Multi-Config', 'Green Hills MULTI'}
+
+def is_multi_config_generator(generator):
+    if generator is None:
+        return False
+    return generator in MULTI_CONFIG_GENERATORS or generator.startswith('Visual Studio')
+
 # NOTE: CMake also uses the VERBOSE environment variable. This is intentional.
 VERBOSE = os.getenv("VERBOSE")
 
@@ -406,6 +426,8 @@ class GoodRepo(object):
         self.api = json['api'] if ('api' in json) else None
         self.url_format_map = json.get('url_format_map')
         self.build_architectures = json.get('build_architectures') if ('build_architectures' in json) else []
+
+        self.is_multi_config = is_multi_config_generator(self._args.generator)
 
         # Absolute paths for a repo's directories
         dir_top = os.path.abspath(args.dir)
@@ -558,7 +580,10 @@ class GoodRepo(object):
         return True
 
     def CustomPreProcess(self, cmd_str, repo_dict):
-        return cmd_str.format(repo_dict, self._args, CONFIG_MAP[self._args.config])
+        # NOTE: custom_build commands only ever see the first requested config.
+        # None of the entries in known_good.json currently vary by config, so
+        # this hasn't needed to be config-list-aware yet.
+        return cmd_str.format(repo_dict, self._args, CONFIG_MAP[self._args.configs[0]])
 
     def PreBuild(self):
         """Execute any prebuild steps from the repo root"""
@@ -614,8 +639,17 @@ class GoodRepo(object):
         for option in self.cmake_options:
             cmake_cmd.append(escape(option.format(**self.__dict__)))
 
-        # Set build config for single-configuration generators (this is a no-op on multi-config generators)
-        cmake_cmd.append(f'-D CMAKE_BUILD_TYPE={CONFIG_MAP[self._args.config]}')
+        if self.is_multi_config:
+            # CMAKE_BUILD_TYPE is meaningless for multi-config generators (Visual
+            # Studio, Xcode, Ninja Multi-Config): the config is picked at build
+            # time via --config, not at configure time. Restrict the generated
+            # project to just the configs we're going to build (CMakeBuild()
+            # builds/installs each of self._args.configs into this same tree),
+            # rather than relying on the generator's own default config list.
+            configs_str = ';'.join(CONFIG_MAP[c] for c in self._args.configs)
+            cmake_cmd.append(f'-D CMAKE_CONFIGURATION_TYPES={configs_str}')
+        else:
+            cmake_cmd.append(f'-D CMAKE_BUILD_TYPE={CONFIG_MAP[self._args.configs[0]]}')
 
         # Optionally build dependencies with ASAN enabled
         if self._args.asan:
@@ -656,17 +690,21 @@ class GoodRepo(object):
         run_cmake_command(cmake_cmd)
 
     def CMakeBuild(self):
-        """Build CMake command for the build phase and execute it"""
-        cmake_cmd = ['cmake', '--build', self.build_dir, '--target', 'install', '--config', CONFIG_MAP[self._args.config]]
-        if self._args.do_clean:
-            cmake_cmd.append('--clean-first')
+        """Build CMake command for the build phase and execute it, once per
+        requested config. All configs share the same build_dir (no need to
+        reconfigure between configs on multi-config generators) and the same
+        install_dir, so the combined install tree works for any of them."""
+        for config in self._args.configs:
+            cmake_cmd = ['cmake', '--build', self.build_dir, '--target', 'install', '--config', CONFIG_MAP[config]]
+            if self._args.do_clean:
+                cmake_cmd.append('--clean-first')
 
-        # Xcode / Ninja are parallel by default.
-        if self._args.generator != "Ninja" or self._args.generator != "Xcode":
-            cmake_cmd.append('--parallel')
-            cmake_cmd.append(format(multiprocessing.cpu_count()))
+            # Xcode / Ninja are parallel by default.
+            if self._args.generator != "Ninja" and self._args.generator != "Xcode":
+                cmake_cmd.append('--parallel')
+                cmake_cmd.append(format(multiprocessing.cpu_count()))
 
-        run_cmake_command(cmake_cmd)
+            run_cmake_command(cmake_cmd)
 
     def Build(self, repos, repo_dict):
         """Build the dependent repo and time how long it took"""
@@ -853,11 +891,13 @@ def main():
         default=GetDefaultArch())
     parser.add_argument(
         '--config',
-        dest='config',
+        dest='configs',
         choices=['debug', 'release', 'relwithdebinfo', 'minsizerel'],
         type=str.lower,
-        help="Set build files configuration",
-        default='debug')
+        action='append',
+        help="Set build files configuration. May be repeated (e.g. --config Debug --config Release) "
+             "when --generator is a multi-config generator (Visual Studio, Xcode, Ninja Multi-Config).",
+        default=None)
     parser.add_argument(
         '--api',
         dest='api',
@@ -896,6 +936,14 @@ def main():
         default=False)
 
     args = parser.parse_args()
+
+    if args.configs is None:
+        args.configs = ['debug']
+    elif len(args.configs) > 1 and not is_multi_config_generator(args.generator):
+        raise RuntimeError(
+            f'Cannot build multiple configs ({args.configs}) with the single-config generator "{args.generator}". '
+            'Pass a single --config, or use a multi-config generator (Visual Studio, Xcode, Ninja Multi-Config).')
+
     save_cwd = os.getcwd()
 
     # Create working "top" directory if needed

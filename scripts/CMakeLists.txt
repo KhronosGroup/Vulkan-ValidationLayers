@@ -32,18 +32,70 @@ if (UPDATE_DEPS)
         list(APPEND update_dep_command "${CMAKE_GENERATOR_PLATFORM}")
     endif()
 
-    if (NOT CMAKE_BUILD_TYPE)
-        message(WARNING "CMAKE_BUILD_TYPE not set. Using Debug for dependency build type")
-        set(_build_type Debug)
+    get_property(_is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+
+    if (_is_multi_config)
+        # CMAKE_BUILD_TYPE doesn't apply to multi-config generators (Visual
+        # Studio, Xcode, Ninja Multi-Config): the config is picked at build
+        # time, not configure time. Always prebuild dependencies for exactly
+        # Debug and Release (matching vcpkg's approach) regardless of
+        # CMAKE_CONFIGURATION_TYPES, so switching configs in the IDE without
+        # reconfiguring just works.
+        set(_update_deps_configs Debug Release)
+        set(UPDATE_DEPS_DIR_SUFFIX "multi-config")
+
+        # RelWithDebInfo/MinSizeRel don't get their own dependency binaries
+        # above, so tell CMake's imported-target resolution (used by every
+        # find_package() call in the root CMakeLists.txt and beyond,
+        # regardless of how each dependency's own CMakeLists.txt exports
+        # itself) to fall back to the Release binary for those configs.
+        # This is a plain (non-cache) variable, only read at the point a
+        # target is created, so it must reach the root scope before its
+        # find_package() calls run - hence PARENT_SCOPE, which propagates it
+        # up before add_subdirectory(scripts) returns.
+        #
+        # The trailing empty list entry is the load-bearing part, not a typo:
+        # per CMake's MAP_IMPORTED_CONFIG_<CONFIG> docs, an empty element in
+        # the list falls back to the imported target's plain (unsuffixed)
+        # IMPORTED_LOCATION. Without it, targets that only ever set a plain
+        # IMPORTED_LOCATION and no per-config one at all - e.g. Python3::Interpreter,
+        # found later via find_package(Python3) in layers/CMakeLists.txt - would
+        # have no Release-suffixed location to map to and get reported as
+        # "not found" for RelWithDebInfo/MinSizeRel, even though they never
+        # varied by config to begin with. vcpkg's own toolchain file
+        # (scripts/buildsystems/vcpkg.cmake) sets this same variable with the
+        # same trailing-empty-entry shape for exactly this reason.
+        #
+        # This must stay confined to the multi-config branch: setting
+        # MAP_IMPORTED_CONFIG_<CONFIG> doesn't merely fill in a gap when no
+        # direct match exists, it replaces CMake's config resolution
+        # entirely for that <CONFIG>. For single-config generators (the
+        # else() branch below), CMAKE_BUILD_TYPE may itself be
+        # RelWithDebInfo/MinSizeRel, which *does* get its own real
+        # dependency binary - setting the mapping there would silently
+        # discard that real binary in favor of Release.
+        if (NOT DEFINED CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO)
+            set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO "Release;" PARENT_SCOPE)
+        endif()
+        if (NOT DEFINED CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL)
+            set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL "Release;" PARENT_SCOPE)
+        endif()
     else()
-        set(_build_type ${CMAKE_BUILD_TYPE})
+        if (NOT CMAKE_BUILD_TYPE)
+            message(WARNING "CMAKE_BUILD_TYPE not set. Using Debug for dependency build type")
+            set(_update_deps_configs Debug)
+        else()
+            set(_update_deps_configs ${CMAKE_BUILD_TYPE})
+        endif()
+        set(UPDATE_DEPS_DIR_SUFFIX "${_update_deps_configs}")
     endif()
-    list(APPEND update_dep_command "--config")
-    list(APPEND update_dep_command "${_build_type}")
+
+    foreach(_config IN LISTS _update_deps_configs)
+        list(APPEND update_dep_command "--config" "${_config}")
+    endforeach()
     list(APPEND update_dep_command "--api")
     list(APPEND update_dep_command "${API_TYPE}")
 
-    set(UPDATE_DEPS_DIR_SUFFIX "${_build_type}")
     if (CMAKE_CROSSCOMPILING)
         set(UPDATE_DEPS_DIR_SUFFIX "${CMAKE_SYSTEM_NAME}/${UPDATE_DEPS_DIR_SUFFIX}/${CMAKE_SYSTEM_PROCESSOR}")
     else()
