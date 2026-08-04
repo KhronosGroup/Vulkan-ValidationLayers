@@ -2876,11 +2876,11 @@ std::string DeviceState::PrintDescriptorAllocation(const VkDescriptorSetAllocate
                     continue;
                 }
                 bool normal_message = true;
-                if (count_allocate_info && i < count_allocate_info->descriptorSetCount &&
+                if (count_allocate_info && set_layout_i < count_allocate_info->descriptorSetCount &&
                     (ds_layout_state->GetDescriptorBindingFlagsFromIndex(i) &
                      VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)) {
                     ss << "  pSetLayouts[" << set_layout_i << "]::pBindings[" << i
-                       << "].descriptorCount = " << count_allocate_info->pDescriptorCounts[i]
+                       << "].descriptorCount = " << count_allocate_info->pDescriptorCounts[set_layout_i]
                        << " (adjusted for VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)\n";
                     normal_message = false;
                 } else if (binding_layout->pImmutableSamplers != nullptr && type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER &&
