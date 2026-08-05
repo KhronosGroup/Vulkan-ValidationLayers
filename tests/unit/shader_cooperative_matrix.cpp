@@ -590,7 +590,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SameScope) {
 
     // SPIR-V code is expected to be bad after specialization, due to scopes are different
     // Need to ignore the spirv-val
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-StandaloneSpirv-Scope-12243");
 
     // Expect gl_ScopeInvocation will not be found in the implementation since it is not allowed in Vulkan
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163");

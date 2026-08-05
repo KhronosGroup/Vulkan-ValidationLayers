@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,15 @@
 #include <vulkan/vulkan_core.h>
 #include <spirv-tools/libspirv.hpp>
 
+namespace vvl {
+struct DeviceExtensionProperties;
+}
 struct DeviceFeatures;
 struct DeviceExtensions;
 class APIVersion;
 
 spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4);
 
-void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
-                            spv_target_env spirv_environment, spvtools::ValidatorOptions &out_options, uint32_t *out_hash,
-                            std::string &out_command);
+void AdjustValidatorOptions(const DeviceExtensions& device_extensions, const DeviceFeatures& enabled_features,
+                            const vvl::DeviceExtensionProperties& phys_dev_ext_props, spv_target_env spirv_environment,
+                            spvtools::ValidatorOptions& out_options, uint32_t* out_hash, std::string& out_command);

@@ -1917,6 +1917,39 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module& module_state, cons
     return skip;
 }
 
+struct SpirvValDiagInfo {
+    std::string vuid;
+    std::string error_msg;
+};
+
+// We want to search inside the spirv-val error message to see if there is VUID in it as it allows people to silence just that VUID
+// and not the whole spirv-val check
+static SpirvValDiagInfo ExtractSpirvValDiagnostic(spv_diagnostic diag, const char* fallback_vuid) {
+    SpirvValDiagInfo info;
+    info.vuid = fallback_vuid;
+    info.error_msg = (diag && diag->error) ? diag->error : "(no error text)";
+
+    // Note: Will always start with "[VUID-xxx-00000]" if there is one
+    if (diag && diag->error && std::strncmp(info.error_msg.c_str(), "[VUID", 5) == 0) {
+        const char* start = info.error_msg.c_str();
+        const char* bracket_end = std::strchr(start, ']');
+        const char* space_pos = std::strchr(start, ' ');
+
+        if (bracket_end && (!space_pos || bracket_end < space_pos)) {
+            const size_t vuid_len = bracket_end - start - 1;
+            info.vuid.assign(start + 1, vuid_len);
+
+            // Strip "] " from the beginning of the error message
+            size_t strip_pos = (bracket_end - start) + 1;
+            if (strip_pos < info.error_msg.length() && info.error_msg[strip_pos] == ' ') {
+                strip_pos++;
+            }
+            info.error_msg = info.error_msg.substr(strip_pos);
+        }
+    }
+    return info;
+}
+
 // Validate the VkPipelineShaderStageCreateInfo from the various pipeline types or a Shader Object
 bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const vvl::Pipeline* pipeline,
                                      const Location& loc) const {
@@ -2177,14 +2210,15 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
             spv_diagnostic diag = nullptr;
             auto const spv_valid = spvValidateWithOptions(ctx, spirv_val_options, &binary, &diag);
             if (spv_valid != SPV_SUCCESS) {
-                const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849"
-                                            : "VUID-VkShaderCreateInfoEXT-pCode-08460";
+                const char* fallback_vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849"
+                                                     : "VUID-VkShaderCreateInfoEXT-pCode-08460";
+                const auto diag_info = ExtractSpirvValDiagnostic(diag, fallback_vuid);
                 std::string name = pipeline ? FormatHandle(module_state_ptr->handle()) : "shader object";
-                skip |= LogError(vuid, device, loc,
+                skip |= LogError(diag_info.vuid.c_str(), device, loc,
                                  "after specialization was applied, %s produces a spirv-val error (stage %s):\n%s\nCommand to "
                                  "reproduce:\n\t%s\n",
-                                 name.c_str(), string_VkShaderStageFlagBits(stage),
-                                 diag && diag->error ? diag->error : "(no error text)", spirv_val_command.c_str());
+                                 name.c_str(), string_VkShaderStageFlagBits(stage), diag_info.error_msg.c_str(),
+                                 spirv_val_command.c_str());
             }
 
             // There is only 3 real ways to handle spec constants
@@ -2380,44 +2414,20 @@ bool CoreChecks::RunSpirvValidation(spv_const_binary_t& binary, const Location& 
     spv_diagnostic diag = nullptr;
     const spv_result_t spv_valid = spvValidateWithOptions(ctx, spirv_val_options, &binary, &diag);
     if (spv_valid != SPV_SUCCESS) {
-        const char* error_message = diag && diag->error ? diag->error : "(no error text)";
-
         // Umbrella VUID if we can't find one in spirv-val
-        const char* vuid = loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-pCode-08737"
-                                                                    : "VUID-VkShaderModuleCreateInfo-pCode-08737";
+        const char* fallback_vuid = loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-pCode-08737"
+                                                                             : "VUID-VkShaderModuleCreateInfo-pCode-08737";
 
-        // We want to search inside the spirv-val error message to see if there is VUID in it as it allows people to silence just
-        // that VUID and not the whole spirv-val check
-        char* spirv_val_vuid = nullptr;
-        if (diag && diag->error) {
-            // Note: Will always start with "[VUID-xxx-00000]" if there is one
-            if (std::strncmp(error_message, "[VUID", 5) == 0) {
-                const char* bracket_end = std::strchr(error_message, ']');
-                if (bracket_end) {
-                    const size_t vuid_len = bracket_end - error_message - 1;
-                    spirv_val_vuid = new char[vuid_len + 1];  // +1 for null-terminator
-                    std::strncpy(spirv_val_vuid, error_message + 1, vuid_len);
-                    spirv_val_vuid[vuid_len] = '\0';
-
-                    // Remove VUID from error message now
-                    error_message = bracket_end + 2;
-                }
-                vuid = spirv_val_vuid;
-            }
-        }
+        const auto diag_info = ExtractSpirvValDiagnostic(diag, fallback_vuid);
 
         if (spv_valid == SPV_WARNING) {
-            skip |= LogWarning(vuid, device, loc.dot(Field::pCode),
-                               "(spirv-val produced a warning):\n%s\nCommand to reproduce:\n\t%s\n", error_message,
+            skip |= LogWarning(diag_info.vuid.c_str(), device, loc.dot(Field::pCode),
+                               "(spirv-val produced a warning):\n%s\nCommand to reproduce:\n\t%s\n", diag_info.error_msg.c_str(),
                                spirv_val_command.c_str());
         } else {
-            skip |=
-                LogError(vuid, device, loc.dot(Field::pCode), "(spirv-val produced an error):\n%s\nCommand to reproduce:\n\t%s\n",
-                         error_message, spirv_val_command.c_str());
-        }
-
-        if (spirv_val_vuid) {
-            delete[] spirv_val_vuid;
+            skip |= LogError(diag_info.vuid.c_str(), device, loc.dot(Field::pCode),
+                             "(spirv-val produced an error):\n%s\nCommand to reproduce:\n\t%s\n", diag_info.error_msg.c_str(),
+                             spirv_val_command.c_str());
         }
     } else if (cache) {
         // No point to cache anything that is not valid, or it will get suppressed on the next run
