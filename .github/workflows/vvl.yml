@@ -288,6 +288,10 @@ jobs:
     strategy:
       matrix:
         arch: [ amd64 ]
+    env:
+      # Exercises the multi-config generator path (Visual Studio, Xcode, Ninja Multi-Config),
+      # where switching Debug/Release/RelWithDebInfo must work from a single configure.
+      CMAKE_GENERATOR: Ninja Multi-Config
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -309,17 +313,26 @@ jobs:
             ${{ github.workspace }}/external/Vulkan-Headers/build/install
             ${{ github.workspace }}/external/Vulkan-Utility-Libraries/build/install
             ${{ github.workspace }}/external/slang/install
-          key: windows-dependencies-${{ matrix.arch }}-${{ hashfiles('scripts/known_good.json') }}
-      - run: |
+          key: windows-dependencies-multi-config-${{ matrix.arch }}-${{ hashfiles('scripts/known_good.json') }}
+      - name: Configure (once, for every --config used below)
+        run: |
          cmake -S. -B build `
          -D BUILD_WERROR=ON `
          -D UPDATE_DEPS=ON `
-         -D CMAKE_BUILD_TYPE=Debug `
          -D BUILD_TESTS=ON `
          -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON `
          -D UPDATE_DEPS_DIR=${{ github.workspace }}/external
-      - run: cmake --build build
-      - run: cmake --install build --prefix ${{ github.workspace }}/install
+      - name: Build and install Debug, Release and RelWithDebInfo without reconfiguring
+        run: |
+         foreach ($config in "Debug", "Release", "RelWithDebInfo") {
+           # BUILD_WERROR's link_options(/WX) turns any link warning (e.g. LNK4098, mismatched
+           # Debug/Release runtimes) into a build failure, so a non-zero exit here already covers it.
+           cmake --build build --config $config
+           if ($LASTEXITCODE -ne 0) {
+             throw "cmake --build failed for config $config"
+           }
+           cmake --install build --config $config --prefix ${{ github.workspace }}/install/$config
+         }
 
   windowsUpload:
     needs: windows

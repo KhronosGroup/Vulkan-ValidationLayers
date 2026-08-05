@@ -32,18 +32,50 @@ if (UPDATE_DEPS)
         list(APPEND update_dep_command "${CMAKE_GENERATOR_PLATFORM}")
     endif()
 
-    if (NOT CMAKE_BUILD_TYPE)
-        message(WARNING "CMAKE_BUILD_TYPE not set. Using Debug for dependency build type")
-        set(_build_type Debug)
+    get_property(_is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+
+    if (_is_multi_config)
+        # CMAKE_BUILD_TYPE doesn't apply to multi-config generators (Visual
+        # Studio, Xcode, Ninja Multi-Config): the config is picked at build
+        # time, not configure time. Always prebuild dependencies for exactly
+        # Debug and Release into one shared install tree regardless of
+        # CMAKE_CONFIGURATION_TYPES, so switching configs in the IDE without
+        # reconfiguring just works. (See update_deps.py's CMAKE_DEBUG_POSTFIX
+        # handling for how Debug and Release avoid clobbering each other's
+        # binaries in that shared tree.)
+        set(_update_deps_configs Debug Release)
+        set(UPDATE_DEPS_DIR_SUFFIX "multi-config")
+
+        # RelWithDebInfo/MinSizeRel have no dependency binaries of their own,
+        # so map them onto the Release ones instead (PARENT_SCOPE so it's set
+        # before the root CMakeLists.txt's find_package() calls run). The
+        # trailing empty entry isn't a typo - it makes targets with only a
+        # plain (non-per-config) IMPORTED_LOCATION still resolve correctly.
+        # Must stay confined to this branch: for single-config generators,
+        # CMAKE_BUILD_TYPE can itself be RelWithDebInfo/MinSizeRel with a real
+        # dependency binary, which this mapping would otherwise discard.
+        if (NOT DEFINED CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO)
+            set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO "Release;" PARENT_SCOPE)
+        endif()
+        if (NOT DEFINED CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL)
+            set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL "Release;" PARENT_SCOPE)
+        endif()
     else()
-        set(_build_type ${CMAKE_BUILD_TYPE})
+        if (NOT CMAKE_BUILD_TYPE)
+            message(WARNING "CMAKE_BUILD_TYPE not set. Using Debug for dependency build type")
+            set(_update_deps_configs Debug)
+        else()
+            set(_update_deps_configs ${CMAKE_BUILD_TYPE})
+        endif()
+        set(UPDATE_DEPS_DIR_SUFFIX "${_update_deps_configs}")
     endif()
-    list(APPEND update_dep_command "--config")
-    list(APPEND update_dep_command "${_build_type}")
+
+    foreach(_config IN LISTS _update_deps_configs)
+        list(APPEND update_dep_command "--config" "${_config}")
+    endforeach()
     list(APPEND update_dep_command "--api")
     list(APPEND update_dep_command "${API_TYPE}")
 
-    set(UPDATE_DEPS_DIR_SUFFIX "${_build_type}")
     if (CMAKE_CROSSCOMPILING)
         set(UPDATE_DEPS_DIR_SUFFIX "${CMAKE_SYSTEM_NAME}/${UPDATE_DEPS_DIR_SUFFIX}/${CMAKE_SYSTEM_PROCESSOR}")
     else()
