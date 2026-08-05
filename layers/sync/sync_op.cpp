@@ -192,7 +192,7 @@ bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange& first_use_range
         return skip;
     }
     const AccessContext& recorded_access_context =
-        rp_replay.replay_context ? *rp_replay.replay_context : recorded_context.GetCurrentAccessContext();
+        rp_replay.replay_context ? *rp_replay.replay_context : recorded_context.GetCbAccessContext();
     const HazardResult hazard = recorded_access_context.DetectFirstUseHazard(exec_context.GetQueueId(), first_use_range,
                                                                              exec_context.GetCurrentAccessContext());
     if (hazard.IsHazard()) {

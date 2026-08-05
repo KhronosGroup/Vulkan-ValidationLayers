@@ -349,7 +349,7 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject& error
 
         const AttachmentAccess attachment_access = GetAttachmentAccess(attachment.GetOrdering(), AttachmentAccessType::LoadOp);
         ImageRangeGen range_gen = attachment.GetRangeGen(info.info.viewMask);
-        const HazardResult hazard = GetCurrentAccessContext().DetectAttachmentHazard(range_gen, load_index, attachment_access);
+        const HazardResult hazard = GetCbAccessContext().DetectAttachmentHazard(range_gen, load_index, attachment_access);
         if (hazard.IsHazard()) {
             LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
 
@@ -376,7 +376,7 @@ void CommandBufferAccessContext::RecordBeginRendering(BeginRenderingCmdState& cm
 
     const DynamicRenderingInfo& info = cmd_state.GetRenderingInfo();
     if ((info.info.flags & VK_RENDERING_RESUMING_BIT) == 0) {
-        AccessContext& access_context = GetCurrentAccessContext();
+        AccessContext& access_context = GetCbAccessContext();
         for (size_t i = 0; i < info.attachments.size(); i++) {
             const DynamicRenderingInfo::Attachment& attachment = info.attachments[i];
             const SyncAccessIndex load_index = attachment.GetLoadUsage();
@@ -488,7 +488,7 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject& record_o
     }
 
     auto store_tag = NextCommandTag(record_obj.location.function, SubCommandType::kStoreOp);
-    AccessContext& access_context = GetCurrentAccessContext();
+    AccessContext& access_context = GetCbAccessContext();
 
     for (const auto& attachment : dynamic_rendering_info_->attachments) {
         if (attachment.resolve_gen) {
@@ -951,7 +951,7 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
     if (!pipe || pipe->RasterizationDisabled()) return skip;
 
     const auto& list = pipe->fs_writable_output_location_list;
-    const AccessContext& access_context = GetCurrentAccessContext();
+    const AccessContext& access_context = GetCbAccessContext();
 
     const DynamicRenderingInfo& info = *dynamic_rendering_info_;
     for (const auto output_location : list) {
@@ -1020,7 +1020,7 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
     }
 
     const auto& list = pipe->fs_writable_output_location_list;
-    auto& access_context = GetCurrentAccessContext();
+    auto& access_context = GetCbAccessContext();
 
     const DynamicRenderingInfo& info = *dynamic_rendering_info_;
     for (const auto output_location : list) {
@@ -1362,7 +1362,7 @@ ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(vvl::Func comma
 void CommandBufferAccessContext::RecordDestroyEvent(vvl::Event* event_state) { GetEventsContext().Destroy(event_state); }
 
 void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBufferAccessContext& recorded_cb_context) {
-    const AccessContext& recorded_context = recorded_cb_context.GetCurrentAccessContext();
+    const AccessContext& recorded_context = recorded_cb_context.GetCbAccessContext();
 
     // Just run through the barriers ignoring the usage from the recorded context, as Resolve will overwrite outdated state
     const ResourceUsageTag base_tag = GetTagCount();
@@ -1565,7 +1565,7 @@ CommandBufferSubState::CommandBufferSubState(SyncValidator& dev, vvl::CommandBuf
 }
 
 void CommandBufferSubState::End() {
-    access_context.GetCurrentAccessContext().Finalize();
+    access_context.GetCbAccessContext().Finalize();
 
     // For threads that are dedicated to recording command buffers but do not submit themselves,
     // the end of recording is a logical point to update memory stats
@@ -1593,7 +1593,7 @@ void CommandBufferSubState::NotifyInvalidate(const vvl::StateObject::NodeList& i
 void CommandBufferSubState::RecordCopyBuffer(vvl::Buffer& src_buffer_state, vvl::Buffer& dst_buffer_state, uint32_t region_count,
                                              const VkBufferCopy* regions, const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     auto src_tag_ex = access_context.AddCommandHandle(tag, src_buffer_state.Handle());
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_buffer_state.Handle());
@@ -1610,7 +1610,7 @@ void CommandBufferSubState::RecordCopyBuffer(vvl::Buffer& src_buffer_state, vvl:
 void CommandBufferSubState::RecordCopyBuffer2(vvl::Buffer& src_buffer_state, vvl::Buffer& dst_buffer_state, uint32_t region_count,
                                               const VkBufferCopy2* regions, const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     auto src_tag_ex = access_context.AddCommandHandle(tag, src_buffer_state.Handle());
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_buffer_state.Handle());
@@ -1628,7 +1628,7 @@ void CommandBufferSubState::RecordCopyImage(vvl::Image& src_image_state, vvl::Im
                                             VkImageLayout src_image_layout, VkImageLayout dst_image_layout, uint32_t region_count,
                                             const VkImageCopy* regions, const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     auto src_tag_ex = access_context.AddCommandHandle(tag, src_image_state.Handle());
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
@@ -1645,7 +1645,7 @@ void CommandBufferSubState::RecordCopyImage2(vvl::Image& src_image_state, vvl::I
                                              VkImageLayout src_image_layout, VkImageLayout dst_image_layout, uint32_t region_count,
                                              const VkImageCopy2* regions, const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     auto src_tag_ex = access_context.AddCommandHandle(tag, src_image_state.Handle());
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
@@ -1661,7 +1661,7 @@ void CommandBufferSubState::RecordCopyImage2(vvl::Image& src_image_state, vvl::I
 void CommandBufferSubState::RecordCopyBufferToImage(vvl::Buffer& src_buffer_state, vvl::Image& dst_image_state, VkImageLayout,
                                                     uint32_t region_count, const VkBufferImageCopy* regions, const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     auto src_tag_ex = access_context.AddCommandHandle(tag, src_buffer_state.Handle());
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
@@ -1679,7 +1679,7 @@ void CommandBufferSubState::RecordCopyBufferToImage2(vvl::Buffer& src_buffer_sta
                                                      uint32_t region_count, const VkBufferImageCopy2* regions,
                                                      const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     auto src_tag_ex = access_context.AddCommandHandle(tag, src_buffer_state.Handle());
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
@@ -1697,7 +1697,7 @@ void CommandBufferSubState::RecordCopyImageToBuffer(vvl::Image& src_image_state,
                                                     VkImageLayout src_image_layout, uint32_t region_count,
                                                     const VkBufferImageCopy* regions, const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     auto src_tag_ex = access_context.AddCommandHandle(tag, src_image_state.Handle());
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_buffer_state.Handle());
@@ -1715,7 +1715,7 @@ void CommandBufferSubState::RecordCopyImageToBuffer2(vvl::Image& src_image_state
                                                      VkImageLayout src_image_layout, uint32_t region_count,
                                                      const VkBufferImageCopy2* regions, const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     auto src_tag_ex = access_context.AddCommandHandle(tag, src_image_state.Handle());
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_buffer_state.Handle());
@@ -1733,7 +1733,7 @@ void CommandBufferSubState::RecordBlitImage(vvl::Image& src_image_state, vvl::Im
                                             VkImageLayout src_image_layout, VkImageLayout dst_image_layout, uint32_t region_count,
                                             const VkImageBlit* regions, const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     auto src_tag_ex = access_context.AddCommandHandle(tag, src_image_state.Handle());
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
@@ -1763,7 +1763,7 @@ void CommandBufferSubState::RecordBlitImage2(vvl::Image& src_image_state, vvl::I
                                              VkImageLayout src_image_layout, VkImageLayout dst_image_layout, uint32_t region_count,
                                              const VkImageBlit2* regions, const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     auto src_tag_ex = access_context.AddCommandHandle(tag, src_image_state.Handle());
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
@@ -1792,7 +1792,7 @@ void CommandBufferSubState::RecordBlitImage2(vvl::Image& src_image_state, vvl::I
 void CommandBufferSubState::RecordResolveImage(vvl::Image& src_image_state, vvl::Image& dst_image_state, uint32_t region_count,
                                                const VkImageResolve* regions, const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     auto src_tag_ex = access_context.AddCommandHandle(tag, src_image_state.Handle());
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
@@ -1810,7 +1810,7 @@ void CommandBufferSubState::RecordResolveImage(vvl::Image& src_image_state, vvl:
 void CommandBufferSubState::RecordResolveImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state, uint32_t region_count,
                                                 const VkImageResolve2* regions, const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     auto src_tag_ex = access_context.AddCommandHandle(tag, src_image_state.Handle());
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
@@ -1829,7 +1829,7 @@ void CommandBufferSubState::RecordClearColorImage(vvl::Image& image_state, VkIma
                                                   uint32_t range_count, const VkImageSubresourceRange* ranges,
                                                   const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     access_context.AddCommandHandle(tag, image_state.Handle());
 
@@ -1843,7 +1843,7 @@ void CommandBufferSubState::RecordClearDepthStencilImage(vvl::Image& image_state
                                                          uint32_t range_count, const VkImageSubresourceRange* ranges,
                                                          const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     access_context.AddCommandHandle(tag, image_state.Handle());
 
@@ -1867,7 +1867,7 @@ void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, co
 void CommandBufferSubState::RecordFillBuffer(vvl::Buffer& buffer_state, VkDeviceSize offset, VkDeviceSize size,
                                              const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     const AccessRange range = MakeRange(buffer_state, offset, size);
     const ResourceUsageTagEx tag_ex = access_context.AddCommandHandle(tag, buffer_state.Handle());
@@ -1877,7 +1877,7 @@ void CommandBufferSubState::RecordFillBuffer(vvl::Buffer& buffer_state, VkDevice
 void CommandBufferSubState::RecordUpdateBuffer(vvl::Buffer& buffer_state, VkDeviceSize offset, VkDeviceSize size,
                                                const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     // VK_WHOLE_SIZE not allowed
     const AccessRange range = MakeRange(offset, size);
@@ -1888,7 +1888,7 @@ void CommandBufferSubState::RecordUpdateBuffer(vvl::Buffer& buffer_state, VkDevi
 void CommandBufferSubState::RecordDecodeVideo(vvl::VideoSession& vs_state, const VkVideoDecodeInfoKHR& decode_info,
                                               const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     if (auto src_buffer = base.dev_data.Get<vvl::Buffer>(decode_info.srcBuffer)) {
         const AccessRange src_range = MakeRange(*src_buffer, decode_info.srcBufferOffset, decode_info.srcBufferRange);
@@ -1922,7 +1922,7 @@ void CommandBufferSubState::RecordDecodeVideo(vvl::VideoSession& vs_state, const
 void CommandBufferSubState::RecordEncodeVideo(vvl::VideoSession& vs_state, const VkVideoEncodeInfoKHR& encode_info,
                                               const Location& loc) {
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     if (auto src_buffer = base.dev_data.Get<vvl::Buffer>(encode_info.dstBuffer)) {
         const AccessRange src_range = MakeRange(*src_buffer, encode_info.dstBufferOffset, encode_info.dstBufferRange);
@@ -1974,7 +1974,7 @@ void CommandBufferSubState::RecordCopyQueryPoolResults(vvl::QueryPool& pool_stat
         return;
     }
     const auto tag = access_context.NextCommandTag(loc.function);
-    AccessContext& context = access_context.GetCurrentAccessContext();
+    AccessContext& context = access_context.GetCbAccessContext();
 
     const uint32_t query_size = (flags & VK_QUERY_RESULT_64_BIT) ? 8 : 4;
     const VkDeviceSize range_size = (query_count - 1) * stride + query_size;
