@@ -216,6 +216,12 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     QueueId GetQueueId() const override;
 
+    // The command buffer's own access context. Subpass contexts exist only inside a vkCmdBeginRenderPass
+    // instance, so use this instead of GetCurrentAccessContext() anywhere else. Dynamic rendering has no
+    // subpass contexts, so this applies there too.
+    AccessContext& GetCbAccessContext() { return cb_access_context_; }
+    const AccessContext& GetCbAccessContext() const { return cb_access_context_; }
+
     RenderPassAccessContext *GetCurrentRenderPassContext() { return current_renderpass_context_; }
     const RenderPassAccessContext *GetCurrentRenderPassContext() const { return current_renderpass_context_; }
     uint32_t GetCurrentRenderPassInstanceId() const { return current_render_pass_instance_id_; }

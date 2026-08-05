@@ -296,7 +296,7 @@ void QueueBatchContext::Trim() {
 }
 
 void QueueBatchContext::ResolveSubmittedCommandBuffer(const AccessContext& recorded_context, ResourceUsageTag offset) {
-    GetCurrentAccessContext().ResolveFromContext(QueueTagOffsetBarrierAction(GetQueueId(), offset), recorded_context);
+    GetAccessContext().ResolveFromContext(QueueTagOffsetBarrierAction(GetQueueId(), offset), recorded_context);
 }
 
 VulkanTypedHandle QueueBatchContext::Handle() const { return queue_state_->GetQueue()->Handle(); }
@@ -632,7 +632,7 @@ std::vector<BatchContextPtr> QueueBatchContext::RegisterAsyncContexts(const std:
         }
 
         // The start of the asynchronous access range for a given queue is one more than the highest tagged reference
-        access_context_.AddAsyncContext(async_batch->GetCurrentAccessContext(), sync_tag, async_batch->GetQueueId());
+        access_context_.AddAsyncContext(async_batch->GetAccessContext(), sync_tag, async_batch->GetQueueId());
         // We need to snapshot the async log information for async hazard reporting
         batch_log_.Import(async_batch->batch_log_);
     }
@@ -742,7 +742,7 @@ bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>&
 
             // The barriers have already been applied in ValidatFirstUse
             batch_log_.Import(batch, access_context, current_label_stack);
-            ResolveSubmittedCommandBuffer(access_context.GetCurrentAccessContext(), batch.base_tag);
+            ResolveSubmittedCommandBuffer(access_context.GetCbAccessContext(), batch.base_tag);
             batch.base_tag += access_context.GetTagCount();
         }
         // Apply debug label commands

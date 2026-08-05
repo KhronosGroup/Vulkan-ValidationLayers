@@ -377,7 +377,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_context.GetCbAccessContext();
 
     // If we have no previous accesses, we have no hazards
     auto src_buffer = Get<vvl::Buffer>(srcBuffer);
@@ -416,7 +416,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_context.GetCbAccessContext();
 
     // If we have no previous accesses, we have no hazards
     auto src_buffer = Get<vvl::Buffer>(pCopyBufferInfo->srcBuffer);
@@ -464,7 +464,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_access_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_access_context.GetCbAccessContext();
 
     auto src_image = Get<vvl::Image>(srcImage);
     auto dst_image = Get<vvl::Image>(dstImage);
@@ -505,7 +505,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, 
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_access_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_access_context.GetCbAccessContext();
 
     auto src_image = Get<vvl::Image>(pCopyImageInfo->srcImage);
     auto dst_image = Get<vvl::Image>(pCopyImageInfo->dstImage);
@@ -767,7 +767,7 @@ bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const
     // TODO: investigate if using nullptr in InitFrom is safe (this just follows the initial implementation - it assumes
     // that array of subpass dependencies won't be indexed, but it's not obvious).
     temp_context.InitFrom(subpass_zero, cb_context.GetQueueFlags(), rp_state->subpass_dependency_infos, nullptr,
-                          cb_context.GetCurrentAccessContext());
+                          cb_context.GetCbAccessContext());
 
     // Validate attachment operations
     const uint32_t render_pass_instance_id = cb_context.GetCurrentRenderPassInstanceId();
@@ -931,7 +931,7 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_access_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_access_context.GetCbAccessContext();
 
     auto src_buffer = Get<vvl::Buffer>(srcBuffer);
     auto dst_image = Get<vvl::Image>(dstImage);
@@ -995,7 +995,7 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_access_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_access_context.GetCbAccessContext();
 
     auto src_image = Get<vvl::Image>(srcImage);
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
@@ -1055,7 +1055,7 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_access_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_access_context.GetCbAccessContext();
 
     auto src_image = Get<vvl::Image>(srcImage);
     auto dst_image = Get<vvl::Image>(dstImage);
@@ -1735,7 +1735,7 @@ bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_access_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_access_context.GetCbAccessContext();
 
     if (auto image_state = Get<vvl::Image>(image)) {
         for (const auto [range_index, range] : vvl::enumerate(pRanges, rangeCount)) {
@@ -1759,7 +1759,7 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_access_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_access_context.GetCbAccessContext();
 
     if (auto image_state = Get<vvl::Image>(image)) {
         for (const auto [range_index, range] : vvl::enumerate(pRanges, rangeCount)) {
@@ -1796,7 +1796,7 @@ bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer comma
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_access_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_access_context.GetCbAccessContext();
 
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
@@ -1824,7 +1824,7 @@ bool SyncValidator::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
 
-    const AccessContext& context = cb_access_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_access_context.GetCbAccessContext();
 
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
@@ -1848,7 +1848,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_access_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_access_context.GetCbAccessContext();
 
     auto src_image = Get<vvl::Image>(srcImage);
     auto dst_image = Get<vvl::Image>(dstImage);
@@ -1888,7 +1888,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_access_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_access_context.GetCbAccessContext();
 
     const Location image_info_loc = error_obj.location.dot(Field::pResolveImageInfo);
     auto src_image = Get<vvl::Image>(pResolveImageInfo->srcImage);
@@ -1938,7 +1938,7 @@ bool SyncValidator::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_access_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_access_context.GetCbAccessContext();
 
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
@@ -1998,7 +1998,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_access_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_access_context.GetCbAccessContext();
 
     const auto vs_state = cb_state->bound_video_session.get();
     if (!vs_state) return skip;
@@ -2086,7 +2086,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_access_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_access_context.GetCbAccessContext();
 
     const auto vs_state = cb_state->bound_video_session.get();
     if (!vs_state) return skip;
@@ -2296,7 +2296,7 @@ void SyncValidator::RecordCmdSetEvent(CommandBufferAccessContext& cb_context, st
     // of access history, the current access context (include barrier state for chaining)
     // won't necessarily contain the needed information at Wait or Submit time reference.
     auto src_access_context = std::make_shared<AccessContext>(*this);
-    src_access_context->InitFrom(cb_context.GetCurrentAccessContext());
+    src_access_context->InitFrom(cb_context.GetCbAccessContext());
 
     ApplySetEvent(cb_context, event, src_exec_scope, src_access_context, tag, loc.function);
 
@@ -2723,7 +2723,7 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
         // The barriers have already been applied in ValidatFirstUse
         proxy_cb_context.ImportRecordedAccessLog(recorded_cb_context);
-        proxy_cb_context.ResolveExecutedCommandBuffer(recorded_cb_context.GetCurrentAccessContext(), base_tag);
+        proxy_cb_context.ResolveExecutedCommandBuffer(recorded_cb_context.GetCbAccessContext(), base_tag);
     }
     proxy_label_commands.clear();
 
@@ -3389,7 +3389,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
     bool skip = false;
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_context.GetCbAccessContext();
 
     for (const auto [i, info] : vvl::enumerate(pInfos, infoCount)) {
         const Location info_loc = error_obj.location.dot(Field::pInfos, i);
@@ -3498,7 +3498,7 @@ void SyncValidator::PostCallRecordCmdBuildAccelerationStructuresKHR(
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    AccessContext& context = cb_context.GetCurrentAccessContext();
+    AccessContext& context = cb_context.GetCbAccessContext();
 
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
@@ -3587,7 +3587,7 @@ bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuff
     bool skip = false;
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_context.GetCbAccessContext();
 
     const Location info_loc = error_obj.location.dot(Field::pInfo);
 
@@ -3629,7 +3629,7 @@ void SyncValidator::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffe
                                                                   const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    AccessContext& context = cb_context.GetCurrentAccessContext();
+    AccessContext& context = cb_context.GetCbAccessContext();
 
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
@@ -3657,7 +3657,7 @@ bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkCom
     bool skip = false;
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_context.GetCbAccessContext();
 
     const Location info_loc = error_obj.location.dot(Field::pInfo);
 
@@ -3690,7 +3690,7 @@ void SyncValidator::PostCallRecordCmdCopyAccelerationStructureToMemoryKHR(VkComm
                                                                           const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    AccessContext& context = cb_context.GetCurrentAccessContext();
+    AccessContext& context = cb_context.GetCbAccessContext();
 
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
@@ -3710,7 +3710,7 @@ bool SyncValidator::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkCom
     bool skip = false;
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const AccessContext& context = cb_context.GetCurrentAccessContext();
+    const AccessContext& context = cb_context.GetCbAccessContext();
 
     const Location info_loc = error_obj.location.dot(Field::pInfo);
 
@@ -3743,7 +3743,7 @@ void SyncValidator::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkComm
                                                                           const RecordObject& record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    AccessContext& context = cb_context.GetCurrentAccessContext();
+    AccessContext& context = cb_context.GetCbAccessContext();
 
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
@@ -3771,7 +3771,7 @@ bool SyncValidator::ValidateSbtBuffer(const CommandBufferAccessContext& cb_conte
     const VkDeviceSize offset = p_sbt_address_region->deviceAddress - p_sbt_buffer->deviceAddress;
     const AccessRange sbt_range = MakeRange(*p_sbt_buffer, offset, p_sbt_address_region->size);
 
-    const AccessContext& access_context = cb_context.GetCurrentAccessContext();
+    const AccessContext& access_context = cb_context.GetCbAccessContext();
     auto hazard = access_context.DetectHazard(*p_sbt_buffer, SYNC_RAY_TRACING_SHADER_SHADER_BINDING_TABLE_READ, sbt_range);
     if (hazard.IsHazard()) {
         const LogObjectList objlist(cb_context.GetCBState().Handle(), p_sbt_buffer->Handle());
@@ -3796,7 +3796,7 @@ void SyncValidator::RecordSbtBuffer(CommandBufferAccessContext& cb_context,
     const AccessRange sbt_range = MakeRange(*p_sbt_buffer, offset, p_sbt_address_region->size);
 
     const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, p_sbt_buffer->Handle());
-    AccessContext& access_context = cb_context.GetCurrentAccessContext();
+    AccessContext& access_context = cb_context.GetCbAccessContext();
     access_context.UpdateAccessState(*p_sbt_buffer, SYNC_RAY_TRACING_SHADER_SHADER_BINDING_TABLE_READ, sbt_range, tag_ex);
 }
 
@@ -3846,7 +3846,7 @@ bool SyncValidator::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer comma
     bool skip = false;
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCurrentAccessContext();
+    const AccessContext& access_context = cb_context.GetCbAccessContext();
 
     skip |= cb_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
     skip |= ValidateSbtBuffer(cb_context, pRaygenShaderBindingTable, error_obj.location, "raygen");
@@ -3887,7 +3887,7 @@ bool SyncValidator::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer comm
     bool skip = false;
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferAccessContext& cb_context = GetAccessContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCurrentAccessContext();
+    const AccessContext& access_context = cb_context.GetCbAccessContext();
 
     skip |= cb_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
 
