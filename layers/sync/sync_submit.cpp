@@ -738,7 +738,7 @@ bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>&
                                         ? submit_info_loc.dot(vvl::Field::pCommandBuffers, index)
                                         : submit_info_loc.dot(vvl::Field::pCommandBufferInfos, index);
 
-            skip |= ReplayState(*this, access_context, cb_loc, batch.base_tag).ValidateFirstUse();
+            skip |= ReplayState(*this, access_context, batch.base_tag, cb_loc).ValidateFirstUse();
 
             // The barriers have already been applied in ValidatFirstUse
             batch_log_.Import(batch, access_context, current_label_stack);

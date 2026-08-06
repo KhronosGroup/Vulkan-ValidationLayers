@@ -222,22 +222,19 @@ struct RenderPassReplayState {
     std::unique_ptr<AccessContext[]> subpass_contexts;
 };
 
-// Allow keep track of the exec contexts replay state
 struct ReplayState {
-    ReplayState(QueueBatchContext& exec_context, const CommandBufferAccessContext& recorded_context, const Location& cb_loc,
-                ResourceUsageTag base_tag);
-    ReplayState(CommandBufferAccessContext& exec_context, const CommandBufferAccessContext& recorded_context,
-                const Location& cb_loc, ResourceUsageTag base_tag);
+    ReplayState(CommandExecutionContext& exec_context, const CommandBufferAccessContext& recorded_context,
+                ResourceUsageTag base_tag, const Location& cb_loc);
 
     bool ValidateFirstUse();
     bool DetectFirstUseHazard(const ResourceUsageRange& first_use_range) const;
+    QueueBatchContext& GetBatchContext();
 
     CommandExecutionContext& exec_context;
-    QueueBatchContext* batch_context = nullptr;
     const CommandBufferAccessContext& recorded_context;
-    const Location& cb_loc;
-    const ResourceUsageTag base_tag;
     RenderPassReplayState rp_replay;
+    const ResourceUsageTag base_tag;
+    const Location& cb_loc;
 };
 
 }  // namespace syncval
