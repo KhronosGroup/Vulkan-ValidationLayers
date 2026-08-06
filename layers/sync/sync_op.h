@@ -19,6 +19,7 @@
 #include "sync/sync_access_context.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include "error_message/error_location.h"
+#include <optional>
 
 struct DeviceExtensions;
 
@@ -208,17 +209,21 @@ class SyncOpEndRenderPass : public SyncOpBase {
     void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
 };
 
-// A minimal subset of the functionality present in the RenderPassAccessContext. Since the accesses are recorded in the
-// first_use information of the recorded access contexts, s.t. all we need to support is the barrier/resolve operations
+// Render pass state for submit-time replay. The accesses come from RenderPassAccessContext's
+// recorded subpass contexts, and the subpass dependencies are applied to the accesses in the
+// queue batch context (via subpass_contexts).
 struct RenderPassReplayState {
-    AccessContext* Begin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass& begin_op_, const AccessContext& external_context);
-    AccessContext* Next();
-    void End(AccessContext& external_context);
+    RenderPassReplayState(const RenderPassAccessContext* rp_context, const AccessContext& external_context,
+                          VkQueueFlags queue_flags);
+    AccessContext& GetCurrentReplayContext();
+    const AccessContext& GetCurrentRecordedContext() const;
     vvl::span<AccessContext> GetSubpassContexts();
 
-    const SyncOpBeginRenderPass* begin_op = nullptr;
-    const AccessContext* replay_context = nullptr;
-    uint32_t subpass = VK_SUBPASS_EXTERNAL;
+    const RenderPassAccessContext* rp_context = nullptr;
+    uint32_t current_subpass = 0;
+
+    // Per-subpass contexts for replay. Unlike RenderPassAccessContext::subpass_contexts_ these hold
+    // no recorded accesses (access maps are emtpy). All they store is the subpass dependencies
     std::unique_ptr<AccessContext[]> subpass_contexts;
 };
 
@@ -232,7 +237,7 @@ struct ReplayState {
 
     CommandExecutionContext& exec_context;
     const CommandBufferAccessContext& recorded_context;
-    RenderPassReplayState rp_replay;
+    std::optional<RenderPassReplayState> rp_replay;
     const ResourceUsageTag base_tag;
     const Location& cb_loc;
 };
