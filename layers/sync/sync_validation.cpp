@@ -2715,7 +2715,7 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
         const ResourceUsageTag base_tag = proxy_cb_context.GetTagCount();
         const Location cb_loc = error_obj.location.dot(vvl::Field::pCommandBuffers, cb_index);
-        skip |= ReplayState(proxy_cb_context, recorded_cb_context, cb_loc, base_tag).ValidateFirstUse();
+        skip |= ReplayState(proxy_cb_context, recorded_cb_context, base_tag, cb_loc).ValidateFirstUse();
 
         // Update proxy label commands so they can be used by ImportRecordedAccessLog
         const auto& recorded_label_commands = recorded_cb->GetLabelCommands();

@@ -113,9 +113,7 @@ SyncOpBeginRenderPass::SyncOpBeginRenderPass(std::shared_ptr<const vvl::RenderPa
     : SyncOpBase(loc.function), rp_state_(std::move(rp_state)), attachments_(std::move(attachments)), rp_context_(rp_context) {}
 
 bool SyncOpBeginRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
-    // Render pass ops are not allowed in secondary command buffers, so batch context is valid
-    QueueBatchContext& batch_context = *replay.batch_context;
-
+    QueueBatchContext& batch_context = replay.GetBatchContext();
     AccessContext* rp_access_context =
         replay.rp_replay.Begin(batch_context.GetQueueFlags(), *this, batch_context.GetAccessContext());
     batch_context.SetRenderPassAccessContext(*rp_access_context);
@@ -132,8 +130,7 @@ void SyncOpBeginRenderPass::ReplayRecord(CommandExecutionContext& exec_context, 
 SyncOpNextSubpass::SyncOpNextSubpass(const Location& loc) : SyncOpBase(loc.function) {}
 
 bool SyncOpNextSubpass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
-    // Render pass ops are not allowed in secondary command buffers, so batch context is valid
-    QueueBatchContext& batch_context = *replay.batch_context;
+    QueueBatchContext& batch_context = replay.GetBatchContext();
 
     // Any store/resolve operations happen before the NextSubpass tag so we can advance to the next subpass state
     AccessContext* rp_access_context = replay.rp_replay.Next();
@@ -158,9 +155,7 @@ bool SyncOpEndRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag r
     // Do a render pass cleanup. This also switches replay to command buffer context where we can
     // validate layout transition.
 
-    // Render pass ops are not allowed in secondary command buffers, so batch context is valid
-    QueueBatchContext& batch_context = *replay.batch_context;
-
+    QueueBatchContext& batch_context = replay.GetBatchContext();
     replay.rp_replay.End(batch_context.GetAccessContext());
     batch_context.SetOriginalAccessContext();
 
@@ -174,17 +169,9 @@ bool SyncOpEndRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag r
 
 void SyncOpEndRenderPass::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {}
 
-ReplayState::ReplayState(QueueBatchContext& exec_context, const CommandBufferAccessContext& recorded_context,
-                         const Location& cb_loc, ResourceUsageTag base_tag)
-    : exec_context(exec_context),
-      batch_context(&exec_context),
-      recorded_context(recorded_context),
-      cb_loc(cb_loc),
-      base_tag(base_tag) {}
-
-ReplayState::ReplayState(CommandBufferAccessContext& exec_context, const CommandBufferAccessContext& recorded_context,
-                         const Location& cb_loc, ResourceUsageTag base_tag)
-    : exec_context(exec_context), batch_context(nullptr), recorded_context(recorded_context), cb_loc(cb_loc), base_tag(base_tag) {}
+ReplayState::ReplayState(CommandExecutionContext& exec_context, const CommandBufferAccessContext& recorded_context,
+                         ResourceUsageTag base_tag, const Location& cb_loc)
+    : exec_context(exec_context), recorded_context(recorded_context), base_tag(base_tag), cb_loc(cb_loc) {}
 
 bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange& first_use_range) const {
     bool skip = false;
@@ -236,6 +223,13 @@ bool ReplayState::ValidateFirstUse() {
     first_use_range.end = ResourceUsageRecord::kMaxIndex;
     skip |= DetectFirstUseHazard(first_use_range);
     return skip;
+}
+
+QueueBatchContext& ReplayState::GetBatchContext() {
+    // This is called for render pass ops which are not allowed in secondary
+    // command buffers, so batch context is valid
+    assert(exec_context.Handle().type == kVulkanObjectTypeQueue);
+    return static_cast<QueueBatchContext&>(exec_context);
 }
 
 AccessContext* RenderPassReplayState::Begin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass& begin_op_,
