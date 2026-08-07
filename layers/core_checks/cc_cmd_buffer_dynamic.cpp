@@ -1255,31 +1255,90 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
                         ") set with vkCmdSetViewportShadingRatePaletteNV",
                         cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.shading_rate_palette_count);
                 }
+            } else if (enabled_features.shadingRateImage && last_bound_state.IsShadingRateImageEnable()) {
+                // The palette is not dynamic, so the pipeline supplies the per-viewport array and it has to be large enough
+                // for the viewport count that was set dynamically.
+                const uint32_t shading_rate_palette_count = last_bound_state.GetShadingRatePaletteCount();
+                if (shading_rate_palette_count < cb_state.dynamic_state_value.viewport_count) {
+                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PIPELINE_SHADING_RATE_PALETTE_04139),
+                                     cb_state.Handle(), loc,
+                                     "viewportCount (%" PRIu32
+                                     ") set with vkCmdSetViewportWithCount is greater than "
+                                     "VkPipelineViewportShadingRateImageStateCreateInfoNV::viewportCount (%" PRIu32 ")",
+                                     cb_state.dynamic_state_value.viewport_count, shading_rate_palette_count);
+                }
             }
         }
 
-        if (IsExtEnabled(extensions.vk_nv_viewport_swizzle) && last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV)) {
+        if (IsExtEnabled(extensions.vk_nv_viewport_swizzle)) {
             const uint32_t viewport_swizzle_count = last_bound_state.GetViewportSwizzleCount();
-            if (viewport_swizzle_count < cb_state.dynamic_state_value.viewport_count) {
-                vvl::ActionVUID vuid =
-                    has_pipeline ? vvl::ActionVUID::SET_VIEWPORT_SWIZZLE_07493 : vvl::ActionVUID::SET_VIEWPORT_SWIZZLE_09421;
-                skip |= LogError(CreateActionVuid(loc.function, vuid), cb_state.Handle(), loc,
-                                 "viewportCount (%" PRIu32
-                                 ") set with vkCmdSetViewportWithCount is greater than viewportCount (%" PRIu32 ") set with %s",
-                                 cb_state.dynamic_state_value.viewport_count, viewport_swizzle_count,
-                                 has_pipeline ? "VkPipelineViewportSwizzleStateCreateInfoNV" : "vkCmdSetViewportSwizzleNV");
+            if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV)) {
+                if (viewport_swizzle_count < cb_state.dynamic_state_value.viewport_count) {
+                    vvl::ActionVUID vuid =
+                        has_pipeline ? vvl::ActionVUID::SET_VIEWPORT_SWIZZLE_07493 : vvl::ActionVUID::SET_VIEWPORT_SWIZZLE_09421;
+                    skip |= LogError(CreateActionVuid(loc.function, vuid), cb_state.Handle(), loc,
+                                     "viewportCount (%" PRIu32
+                                     ") set with vkCmdSetViewportWithCount is greater than viewportCount (%" PRIu32 ") set with %s",
+                                     cb_state.dynamic_state_value.viewport_count, viewport_swizzle_count,
+                                     has_pipeline ? "VkPipelineViewportSwizzleStateCreateInfoNV" : "vkCmdSetViewportSwizzleNV");
+                }
+            } else if (auto viewport_state = last_bound_state.pipeline_state->ViewportState()) {
+                // Only applies when the pipeline actually chained the struct, otherwise there is no per-viewport swizzle array
+                // to run off the end of.
+                if (const auto* swizzle_state =
+                        vku::FindStructInPNextChain<VkPipelineViewportSwizzleStateCreateInfoNV>(viewport_state->pNext)) {
+                    if (swizzle_state->viewportCount < cb_state.dynamic_state_value.viewport_count) {
+                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PIPELINE_VIEWPORT_SWIZZLE_07492),
+                                         cb_state.Handle(), loc,
+                                         "viewportCount (%" PRIu32
+                                         ") set with vkCmdSetViewportWithCount is greater than "
+                                         "VkPipelineViewportSwizzleStateCreateInfoNV::viewportCount (%" PRIu32 ")",
+                                         cb_state.dynamic_state_value.viewport_count, swizzle_state->viewportCount);
+                    }
+                }
             }
         }
 
-        if (IsExtEnabled(extensions.vk_nv_clip_space_w_scaling) && last_bound_state.IsViewportWScalingEnable() &&
-            last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV)) {
-            // There is no pipeline equivalent of vkCmdSetViewportWScalingNV
-            if (cb_state.dynamic_state_value.viewport_w_scaling_count < cb_state.dynamic_state_value.viewport_count) {
-                skip |= LogError(
-                    CreateActionVuid(loc.function, vvl::ActionVUID::VIEWPORT_W_SCALING_08636), cb_state.Handle(), loc,
-                    "viewportCount (%" PRIu32 ") set with vkCmdSetViewportWithCount is greater than viewportCount (%" PRIu32
-                    ") set with vkCmdSetViewportWScalingNV",
-                    cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.viewport_w_scaling_count);
+        if (IsExtEnabled(extensions.vk_nv_clip_space_w_scaling) && last_bound_state.IsViewportWScalingEnable()) {
+            if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV)) {
+                // There is no pipeline equivalent of vkCmdSetViewportWScalingNV
+                if (cb_state.dynamic_state_value.viewport_w_scaling_count < cb_state.dynamic_state_value.viewport_count) {
+                    skip |= LogError(
+                        CreateActionVuid(loc.function, vvl::ActionVUID::VIEWPORT_W_SCALING_08636), cb_state.Handle(), loc,
+                        "viewportCount (%" PRIu32 ") set with vkCmdSetViewportWithCount is greater than viewportCount (%" PRIu32
+                        ") set with vkCmdSetViewportWScalingNV",
+                        cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.viewport_w_scaling_count);
+                }
+            } else {
+                const uint32_t viewport_w_scaling_count = last_bound_state.GetViewportWScalingCount();
+                if (viewport_w_scaling_count < cb_state.dynamic_state_value.viewport_count) {
+                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PIPELINE_VIEWPORT_W_SCALING_04137),
+                                     cb_state.Handle(), loc,
+                                     "viewportCount (%" PRIu32
+                                     ") set with vkCmdSetViewportWithCount is greater than "
+                                     "VkPipelineViewportWScalingStateCreateInfoNV::viewportCount (%" PRIu32 ")",
+                                     cb_state.dynamic_state_value.viewport_count, viewport_w_scaling_count);
+                }
+            }
+        }
+
+        if (IsExtEnabled(extensions.vk_nv_scissor_exclusive) &&
+            !last_bound_state.IsDynamic(CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV)) {
+            if (auto viewport_state = last_bound_state.pipeline_state->ViewportState()) {
+                // Only applies when the pipeline actually chained the struct, otherwise there is no per-viewport exclusive
+                // scissor array to run off the end of.
+                if (const auto* exclusive_scissor_state =
+                        vku::FindStructInPNextChain<VkPipelineViewportExclusiveScissorStateCreateInfoNV>(viewport_state->pNext)) {
+                    if (exclusive_scissor_state->exclusiveScissorCount < cb_state.dynamic_state_value.viewport_count) {
+                        skip |=
+                            LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PIPELINE_EXCLUSIVE_SCISSOR_04142),
+                                     cb_state.Handle(), loc,
+                                     "viewportCount (%" PRIu32
+                                     ") set with vkCmdSetViewportWithCount is greater than "
+                                     "VkPipelineViewportExclusiveScissorStateCreateInfoNV::exclusiveScissorCount (%" PRIu32 ")",
+                                     cb_state.dynamic_state_value.viewport_count, exclusive_scissor_state->exclusiveScissorCount);
+                    }
+                }
             }
         }
     }

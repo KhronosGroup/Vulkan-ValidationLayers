@@ -6441,3 +6441,178 @@ TEST_F(NegativeDynamicState, ColorWriteMaskUnusedAttachment) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDynamicState, PipelineViewportSwizzleCountWithDynamicViewportCount) {
+    TEST_DESCRIPTION(
+        "Set more viewports with vkCmdSetViewportWithCount than the pipeline's VkPipelineViewportSwizzleStateCreateInfoNV holds.");
+
+    AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const VkViewportSwizzleNV swizzle = {VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_X_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Y_NV,
+                                         VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Z_NV,
+                                         VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_W_NV};
+    VkPipelineViewportSwizzleStateCreateInfoNV swizzle_state = vku::InitStructHelper();
+    swizzle_state.viewportCount = 1;
+    swizzle_state.pViewportSwizzles = &swizzle;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+    pipe.vp_state_ci_.viewportCount = 0;
+    pipe.vp_state_ci_.scissorCount = 0;
+    pipe.vp_state_ci_.pNext = &swizzle_state;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    // The pipeline only supplies a swizzle for a single viewport, but two are set here.
+    const VkViewport viewports[2] = {{0, 0, 16, 16, 0, 1}, {0, 0, 16, 16, 0, 1}};
+    const VkRect2D scissors[2] = {{{0, 0}, {16, 16}}, {{0, 0}, {16, 16}}};
+    vk::CmdSetViewportWithCountEXT(m_command_buffer, 2, viewports);
+    vk::CmdSetScissorWithCountEXT(m_command_buffer, 2, scissors);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-07492");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicState, PipelineViewportWScalingCountWithDynamicViewportCount) {
+    TEST_DESCRIPTION(
+        "Set more viewports with vkCmdSetViewportWithCount than the pipeline's VkPipelineViewportWScalingStateCreateInfoNV "
+        "holds.");
+
+    AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const VkViewportWScalingNV scaling = {1.0f, 1.0f};
+    VkPipelineViewportWScalingStateCreateInfoNV w_scaling_state = vku::InitStructHelper();
+    w_scaling_state.viewportWScalingEnable = VK_TRUE;
+    w_scaling_state.viewportCount = 1;
+    w_scaling_state.pViewportWScalings = &scaling;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+    pipe.vp_state_ci_.viewportCount = 0;
+    pipe.vp_state_ci_.scissorCount = 0;
+    pipe.vp_state_ci_.pNext = &w_scaling_state;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    const VkViewport viewports[2] = {{0, 0, 16, 16, 0, 1}, {0, 0, 16, 16, 0, 1}};
+    const VkRect2D scissors[2] = {{{0, 0}, {16, 16}}, {{0, 0}, {16, 16}}};
+    vk::CmdSetViewportWithCountEXT(m_command_buffer, 2, viewports);
+    vk::CmdSetScissorWithCountEXT(m_command_buffer, 2, scissors);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-04137");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicState, PipelineShadingRatePaletteCountWithDynamicViewportCount) {
+    TEST_DESCRIPTION(
+        "Set more viewports with vkCmdSetViewportWithCount than the pipeline's "
+        "VkPipelineViewportShadingRateImageStateCreateInfoNV holds.");
+
+    AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    AddRequiredFeature(vkt::Feature::shadingRateImage);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const VkShadingRatePaletteEntryNV palette_entry = VK_SHADING_RATE_PALETTE_ENTRY_16_INVOCATIONS_PER_PIXEL_NV;
+    const VkShadingRatePaletteNV palette = {1, &palette_entry};
+    VkPipelineViewportShadingRateImageStateCreateInfoNV shading_rate_state = vku::InitStructHelper();
+    shading_rate_state.shadingRateImageEnable = VK_TRUE;
+    shading_rate_state.viewportCount = 1;
+    shading_rate_state.pShadingRatePalettes = &palette;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+    pipe.vp_state_ci_.viewportCount = 0;
+    pipe.vp_state_ci_.scissorCount = 0;
+    pipe.vp_state_ci_.pNext = &shading_rate_state;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    const VkViewport viewports[2] = {{0, 0, 16, 16, 0, 1}, {0, 0, 16, 16, 0, 1}};
+    const VkRect2D scissors[2] = {{{0, 0}, {16, 16}}, {{0, 0}, {16, 16}}};
+    vk::CmdSetViewportWithCountEXT(m_command_buffer, 2, viewports);
+    vk::CmdSetScissorWithCountEXT(m_command_buffer, 2, scissors);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-04139");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicState, PipelineExclusiveScissorCountWithDynamicViewportCount) {
+    TEST_DESCRIPTION(
+        "Set more viewports with vkCmdSetViewportWithCount than the pipeline's "
+        "VkPipelineViewportExclusiveScissorStateCreateInfoNV holds.");
+
+    AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    AddRequiredFeature(vkt::Feature::exclusiveScissor);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const VkRect2D exclusive_scissor = {{0, 0}, {16, 16}};
+    VkPipelineViewportExclusiveScissorStateCreateInfoNV exclusive_scissor_state = vku::InitStructHelper();
+    exclusive_scissor_state.exclusiveScissorCount = 1;
+    exclusive_scissor_state.pExclusiveScissors = &exclusive_scissor;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+    pipe.vp_state_ci_.viewportCount = 0;
+    pipe.vp_state_ci_.scissorCount = 0;
+    pipe.vp_state_ci_.pNext = &exclusive_scissor_state;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    const VkViewport viewports[2] = {{0, 0, 16, 16, 0, 1}, {0, 0, 16, 16, 0, 1}};
+    const VkRect2D scissors[2] = {{{0, 0}, {16, 16}}, {{0, 0}, {16, 16}}};
+    vk::CmdSetViewportWithCountEXT(m_command_buffer, 2, viewports);
+    vk::CmdSetScissorWithCountEXT(m_command_buffer, 2, scissors);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-VkPipelineVieportCreateInfo-04142");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}

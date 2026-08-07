@@ -626,6 +626,38 @@ uint32_t LastBound::GetViewportSwizzleCount() const {
     return 0;
 }
 
+uint32_t LastBound::GetViewportWScalingCount() const {
+    if (IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV)) {
+            return cb_state.dynamic_state_value.viewport_w_scaling_count;
+        }
+    } else {
+        if (auto viewport_state = pipeline_state->ViewportState()) {
+            if (const auto* viewport_w_scaling_state =
+                    vku::FindStructInPNextChain<VkPipelineViewportWScalingStateCreateInfoNV>(viewport_state->pNext)) {
+                return viewport_w_scaling_state->viewportCount;
+            }
+        }
+    }
+    return 0;
+}
+
+uint32_t LastBound::GetShadingRatePaletteCount() const {
+    if (IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV)) {
+            return cb_state.dynamic_state_value.shading_rate_palette_count;
+        }
+    } else {
+        if (auto viewport_state = pipeline_state->ViewportState()) {
+            if (const auto* shading_rate_image_state =
+                    vku::FindStructInPNextChain<VkPipelineViewportShadingRateImageStateCreateInfoNV>(viewport_state->pNext)) {
+                return shading_rate_image_state->viewportCount;
+            }
+        }
+    }
+    return 0;
+}
+
 VkPolygonMode LastBound::GetPolygonMode() const {
     if (IsDynamic(CB_DYNAMIC_STATE_POLYGON_MODE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_POLYGON_MODE_EXT)) {
