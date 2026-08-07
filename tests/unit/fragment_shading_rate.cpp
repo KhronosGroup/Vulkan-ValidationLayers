@@ -3001,16 +3001,17 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNVViewportCount) {
     VkDynamicState dynPalette = VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV;
     VkPipelineDynamicStateCreateInfo dyn = {VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0, 1, &dynPalette};
 
+    // The VU requires the palette array to be at least viewportCount entries, so the error is when it is too small.
     const auto break_vp = [&](CreatePipelineHelper& helper) {
-        helper.vp_state_ci_.viewportCount = 1;
+        helper.vp_state_ci_.viewportCount = 2;
         helper.vp_state_ci_.pViewports = viewports;
-        helper.vp_state_ci_.scissorCount = 1;
+        helper.vp_state_ci_.scissorCount = 2;
         helper.vp_state_ci_.pScissors = scissors;
         helper.vp_state_ci_.pNext = &vsrisci;
         helper.dyn_state_ci_ = dyn;
 
         vsrisci.shadingRateImageEnable = VK_TRUE;
-        vsrisci.viewportCount = 2;
+        vsrisci.viewportCount = 1;
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
                                       "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056");

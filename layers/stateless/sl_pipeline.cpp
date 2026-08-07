@@ -1413,21 +1413,23 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                     }
                 }
 
+                // The VU allows 0, otherwise the array only has to be large enough, so a larger array is valid.
                 if (exclusive_scissor_struct && exclusive_scissor_struct->exclusiveScissorCount != 0 &&
-                    exclusive_scissor_struct->exclusiveScissorCount != viewport_state.viewportCount) {
+                    exclusive_scissor_struct->exclusiveScissorCount < viewport_state.viewportCount) {
                     skip |= LogError("VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02029", device,
                                      viewport_loc.pNext(Struct::VkPipelineViewportExclusiveScissorStateCreateInfoNV,
                                                         Field::exclusiveScissorCount),
-                                     "is %" PRIu32 " and viewportCount is (%" PRIu32 ").",
+                                     "(%" PRIu32 ") is less than viewportCount (%" PRIu32 ").",
                                      exclusive_scissor_struct->exclusiveScissorCount, viewport_state.viewportCount);
                 }
 
+                // The VU requires the array to be large enough, so the error is when it is too small, not too large.
                 if (shading_rate_image_struct && shading_rate_image_struct->shadingRateImageEnable &&
-                    shading_rate_image_struct->viewportCount > viewport_state.viewportCount) {
+                    shading_rate_image_struct->viewportCount < viewport_state.viewportCount) {
                     skip |= LogError(
                         "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056", device,
                         viewport_loc.pNext(Struct::VkPipelineViewportShadingRateImageStateCreateInfoNV, Field::viewportCount),
-                        "(%" PRIu32 ") is greater than viewportCount (%" PRIu32 ").", shading_rate_image_struct->viewportCount,
+                        "(%" PRIu32 ") is less than viewportCount (%" PRIu32 ").", shading_rate_image_struct->viewportCount,
                         viewport_state.viewportCount);
                 }
 
@@ -1500,12 +1502,13 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 }
 
                 if (vp_w_scaling_struct && (vp_w_scaling_struct->viewportWScalingEnable == VK_TRUE)) {
-                    if (vp_w_scaling_struct->viewportCount != viewport_state.viewportCount) {
+                    // The VU only requires the array to be large enough, an array larger than viewportCount is valid.
+                    if (vp_w_scaling_struct->viewportCount < viewport_state.viewportCount) {
                         skip |=
                             LogError("VUID-VkPipelineViewportStateCreateInfo-viewportWScalingEnable-01726", device,
                                      viewport_loc.pNext(Struct::VkPipelineViewportWScalingStateCreateInfoNV, Field::viewportCount),
-                                     "(%" PRIu32 ") is not equal to viewportCount (%" PRIu32 ").",
-                                     vp_w_scaling_struct->viewportCount, viewport_state.viewportCount);
+                                     "(%" PRIu32 ") is less than viewportCount (%" PRIu32 ").", vp_w_scaling_struct->viewportCount,
+                                     viewport_state.viewportCount);
                     }
                     if (!has_dynamic_viewport_w_scaling_nv && !vp_w_scaling_struct->pViewportWScalings) {
                         skip |= LogError(

@@ -2544,3 +2544,63 @@ TEST_F(PositivePipeline, FramebufferMixedSamplesWithCoverageReductionTruncateNV)
 
     CreatePipelineHelper::OneshotTest(*this, break_samples, kErrorBit);
 }
+
+TEST_F(PositivePipeline, ViewportWScalingCountLargerThanViewportCount) {
+    TEST_DESCRIPTION("VkPipelineViewportWScalingStateCreateInfoNV::viewportCount may be larger than viewportCount.");
+
+    AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const VkViewportWScalingNV scalings[2] = {{1.0f, 1.0f}, {1.0f, 1.0f}};
+    VkPipelineViewportWScalingStateCreateInfoNV w_scaling_state = vku::InitStructHelper();
+    w_scaling_state.viewportWScalingEnable = VK_TRUE;
+    w_scaling_state.viewportCount = 2;
+    w_scaling_state.pViewportWScalings = scalings;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.vp_state_ci_.pNext = &w_scaling_state;
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositivePipeline, ShadingRatePaletteCountLargerThanViewportCount) {
+    TEST_DESCRIPTION("VkPipelineViewportShadingRateImageStateCreateInfoNV::viewportCount may be larger than viewportCount.");
+
+    AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    AddRequiredFeature(vkt::Feature::shadingRateImage);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const VkShadingRatePaletteEntryNV palette_entry = VK_SHADING_RATE_PALETTE_ENTRY_16_INVOCATIONS_PER_PIXEL_NV;
+    const VkShadingRatePaletteNV palettes[2] = {{1, &palette_entry}, {1, &palette_entry}};
+    VkPipelineViewportShadingRateImageStateCreateInfoNV shading_rate_state = vku::InitStructHelper();
+    shading_rate_state.shadingRateImageEnable = VK_TRUE;
+    shading_rate_state.viewportCount = 2;
+    shading_rate_state.pShadingRatePalettes = palettes;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.vp_state_ci_.pNext = &shading_rate_state;
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositivePipeline, ExclusiveScissorCountLargerThanViewportCount) {
+    TEST_DESCRIPTION(
+        "VkPipelineViewportExclusiveScissorStateCreateInfoNV::exclusiveScissorCount may be larger than viewportCount.");
+
+    AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    AddRequiredFeature(vkt::Feature::exclusiveScissor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const VkRect2D exclusive_scissors[2] = {{{0, 0}, {16, 16}}, {{0, 0}, {16, 16}}};
+    VkPipelineViewportExclusiveScissorStateCreateInfoNV exclusive_scissor_state = vku::InitStructHelper();
+    exclusive_scissor_state.exclusiveScissorCount = 2;
+    exclusive_scissor_state.pExclusiveScissors = exclusive_scissors;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.vp_state_ci_.pNext = &exclusive_scissor_state;
+    pipe.CreateGraphicsPipeline();
+}
