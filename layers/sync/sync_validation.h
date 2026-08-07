@@ -487,7 +487,7 @@ class SyncValidator : public vvl::DeviceProxy {
     void PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
                                       const RecordObject &record_obj) override;
 
-    bool ValidateCmdWaitEvents(const CommandExecutionContext& exec_context,
+    bool ValidateCmdWaitEvents(const CommandExecutionContext& exec_context, const AccessContext& access_context,
                                const std::vector<std::shared_ptr<const vvl::Event>>& events,
                                const vvl::span<const BarrierSet>& barrier_sets, const ResourceUsageTag base_tag,
                                const Location& loc) const;

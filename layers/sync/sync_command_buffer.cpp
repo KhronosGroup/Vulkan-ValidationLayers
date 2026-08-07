@@ -1369,7 +1369,7 @@ void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBuffer
     for (const auto& sync_op : recorded_cb_context.GetSyncOps()) {
         // we update the range to any include layout transition first use writes,
         // as they are stored along with the source scope (as effective barrier) when recorded
-        sync_op.sync_op->ReplayRecord(*this, base_tag + sync_op.tag);
+        sync_op.sync_op->ReplayRecord(*this, *current_context_, base_tag + sync_op.tag);
     }
 
     ImportRecordedAccessLog(recorded_cb_context);
@@ -1378,7 +1378,7 @@ void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBuffer
 
 void CommandBufferAccessContext::ResolveExecutedCommandBuffer(const AccessContext& recorded_context, ResourceUsageTag offset) {
     auto tag_offset = [offset](AccessState* access) { access->OffsetTag(offset); };
-    GetCurrentAccessContext().ResolveFromContext(tag_offset, recorded_context);
+    current_context_->ResolveFromContext(tag_offset, recorded_context);
 }
 
 void CommandBufferAccessContext::ImportRecordedAccessLog(const CommandBufferAccessContext& recorded_context) {

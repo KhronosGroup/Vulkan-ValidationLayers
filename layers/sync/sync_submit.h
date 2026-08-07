@@ -310,7 +310,7 @@ class QueueState {
     std::vector<UnresolvedBatch> unresolved_batches_;
 };
 
-class QueueBatchContext : public CommandExecutionContext, public std::enable_shared_from_this<QueueBatchContext> {
+class QueueBatchContext final : public CommandExecutionContext, public std::enable_shared_from_this<QueueBatchContext> {
   public:
     class PresentResourceRecord : public AlternateResourceUsage::RecordBase {
       public:
@@ -349,14 +349,8 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     QueueId GetQueueId() const override;
     ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const override;
 
-    AccessContext& GetCurrentAccessContext() override { return *current_access_context_; }
-    const AccessContext& GetCurrentAccessContext() const override { return *current_access_context_; }
-
     SyncEventsContext& GetEventsContext() override { return events_context_; }
     const SyncEventsContext& GetEventsContext() const override { return events_context_; }
-
-    void SetRenderPassAccessContext(AccessContext& rp_access_context) { current_access_context_ = &rp_access_context; }
-    void SetOriginalAccessContext() { current_access_context_ = &access_context_; }
 
     VkQueueFlags GetQueueFlags() const { return queue_state_->GetQueue()->GetQueueFlags(); }
 
@@ -416,7 +410,6 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     ResourceUsageRange tag_range_ = ResourceUsageRange(0, 0);  // Range of tags referenced by cbs_referenced
 
     AccessContext access_context_;
-    AccessContext *current_access_context_;
     SyncEventsContext events_context_;
     BatchAccessLog batch_log_;
 

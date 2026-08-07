@@ -378,11 +378,9 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, VkQueu
 // A single barrier can be applied more efficently (immidiately) compared to multiple barrier.
 // The latter are applied in two steps (collect and then apply)
 //
-static void ApplySingleBufferBarrier(CommandExecutionContext& exec_context, const SyncBufferBarrier& buffer_barrier,
-                                     const SyncBarrier& exec_dep_barrier) {
-    AccessContext& access_context = exec_context.GetCurrentAccessContext();
+static void ApplySingleBufferBarrier(CommandExecutionContext& exec_context, AccessContext& access_context,
+                                     const SyncBufferBarrier& buffer_barrier, const SyncBarrier& exec_dep_barrier) {
     const QueueId queue_id = exec_context.GetQueueId();
-
     if (SimpleBinding(*buffer_barrier.buffer)) {
         const BarrierScope barrier_scope(buffer_barrier.barrier, queue_id);
         ApplySingleBufferBarrierFunctor apply_barrier(access_context, barrier_scope, buffer_barrier.barrier);
@@ -395,11 +393,10 @@ static void ApplySingleBufferBarrier(CommandExecutionContext& exec_context, cons
     access_context.RegisterGlobalBarrier(exec_dep_barrier, queue_id);
 }
 
-static void ApplySingleImageBarrier(CommandExecutionContext& exec_context, const SyncImageBarrier& image_barrier,
-                                    const SyncBarrier& exec_dep_barrier, ResourceUsageTag tag) {
-    AccessContext& access_context = exec_context.GetCurrentAccessContext();
+static void ApplySingleImageBarrier(CommandExecutionContext& exec_context, AccessContext& access_context,
+                                    const SyncImageBarrier& image_barrier, const SyncBarrier& exec_dep_barrier,
+                                    ResourceUsageTag tag) {
     const QueueId queue_id = exec_context.GetQueueId();
-
     const BarrierScope barrier_scope(image_barrier.barrier, queue_id);
     ApplySingleImageBarrierFunctor apply_barrier(access_context, barrier_scope, image_barrier.barrier,
                                                  image_barrier.layout_transition, image_barrier.handle_index, tag);
@@ -413,8 +410,8 @@ static void ApplySingleImageBarrier(CommandExecutionContext& exec_context, const
     access_context.RegisterGlobalBarrier(exec_dep_barrier, queue_id);
 }
 
-static void ApplySingleMemoryBarrier(CommandExecutionContext& exec_context, const SyncBarrier& memory_barrier) {
-    AccessContext& access_context = exec_context.GetCurrentAccessContext();
+static void ApplySingleMemoryBarrier(CommandExecutionContext& exec_context, AccessContext& access_context,
+                                     const SyncBarrier& memory_barrier) {
     const QueueId queue_id = exec_context.GetQueueId();
     access_context.RegisterGlobalBarrier(memory_barrier, queue_id);
 }
@@ -422,8 +419,8 @@ static void ApplySingleMemoryBarrier(CommandExecutionContext& exec_context, cons
 // This handles all configurations where barriers cannot be applied immidiately and need to use
 // the PendingBarriers helper to ensure independent barrier application. All such configurations
 // use more than one barrier.
-static void ApplyMultipleBarriers(CommandExecutionContext& exec_context, const BarrierSet& barrier_set, ResourceUsageTag tag) {
-    AccessContext& access_context = exec_context.GetCurrentAccessContext();
+static void ApplyMultipleBarriers(CommandExecutionContext& exec_context, AccessContext& access_context,
+                                  const BarrierSet& barrier_set, ResourceUsageTag tag) {
     const QueueId queue_id = exec_context.GetQueueId();
 
     // Apply markup action.
@@ -500,7 +497,8 @@ static void ApplyMultipleBarriers(CommandExecutionContext& exec_context, const B
     }
 }
 
-void ApplyBarrier(CommandExecutionContext& exec_context, const BarrierSet& barrier_set, ResourceUsageTag tag) {
+void ApplyBarrier(CommandExecutionContext& exec_context, AccessContext& access_context, const BarrierSet& barrier_set,
+                  ResourceUsageTag tag) {
     const bool has_buffer_barriers = !barrier_set.buffer_barriers.empty();
     const bool has_image_barriers = !barrier_set.image_barriers.empty();
 
@@ -515,13 +513,13 @@ void ApplyBarrier(CommandExecutionContext& exec_context, const BarrierSet& barri
     const bool single_memory_barrier = barrier_set.memory_barriers.size() == 1 && !has_buffer_barriers && !has_image_barriers;
 
     if (single_buffer_barrier) {
-        ApplySingleBufferBarrier(exec_context, barrier_set.buffer_barriers[0], barrier_set.memory_barriers[0]);
+        ApplySingleBufferBarrier(exec_context, access_context, barrier_set.buffer_barriers[0], barrier_set.memory_barriers[0]);
     } else if (single_image_barrier) {
-        ApplySingleImageBarrier(exec_context, barrier_set.image_barriers[0], barrier_set.memory_barriers[0], tag);
+        ApplySingleImageBarrier(exec_context, access_context, barrier_set.image_barriers[0], barrier_set.memory_barriers[0], tag);
     } else if (single_memory_barrier) {
-        ApplySingleMemoryBarrier(exec_context, barrier_set.memory_barriers[0]);
+        ApplySingleMemoryBarrier(exec_context, access_context, barrier_set.memory_barriers[0]);
     } else {
-        ApplyMultipleBarriers(exec_context, barrier_set, tag);
+        ApplyMultipleBarriers(exec_context, access_context, barrier_set, tag);
     }
 
     SyncEventsContext& events_context = exec_context.GetEventsContext();

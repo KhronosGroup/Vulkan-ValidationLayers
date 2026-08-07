@@ -608,7 +608,7 @@ void SyncValidator::RecordCmdPipelineBarrier(CommandBufferAccessContext& cb_cont
             image_barrier.handle_index = tag_ex.handle_index;
         }
     }
-    ApplyBarrier(cb_context, barrier_set, tag);
+    ApplyBarrier(cb_context, cb_context.GetCurrentAccessContext(), barrier_set, tag);
     auto sync_op = std::make_shared<SyncOpPipelineBarrier>(std::move(barrier_set));
     cb_context.AddSyncOp(tag, std::move(sync_op));
 }
@@ -2447,7 +2447,7 @@ void SyncValidator::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, 
     RecordCmdResetEvent(cb_context, std::move(event_state), exec_scope, record_obj.location);
 }
 
-bool SyncValidator::ValidateCmdWaitEvents(const CommandExecutionContext& exec_context,
+bool SyncValidator::ValidateCmdWaitEvents(const CommandExecutionContext& exec_context, const AccessContext& access_context,
                                           const std::vector<std::shared_ptr<const vvl::Event>>& events,
                                           const vvl::span<const BarrierSet>& barrier_sets, const ResourceUsageTag base_tag,
                                           const Location& loc) const {
@@ -2516,14 +2516,13 @@ bool SyncValidator::ValidateCmdWaitEvents(const CommandExecutionContext& exec_co
         }
         if (barrier_set.image_barriers.size()) {
             const auto& image_memory_barriers = barrier_set.image_barriers;
-            const AccessContext& context = exec_context.GetCurrentAccessContext();
             for (const auto& image_memory_barrier : image_memory_barriers) {
                 if (!image_memory_barrier.layout_transition) continue;
                 const auto* image_state = image_memory_barrier.image.get();
                 if (!image_state) continue;
                 const auto& subresource_range = image_memory_barrier.subresource_range;
                 const auto& src_access_scope = image_memory_barrier.barrier.src_access_scope;
-                const auto hazard = context.DetectImageBarrierHazard(
+                const auto hazard = access_context.DetectImageBarrierHazard(
                     *image_state, subresource_range, sync_event->scope.exec_scope, src_access_scope, queue_id,
                     sync_event->FirstScope(), sync_event->first_scope_tag, AccessContext::DetectOptions::kDetectAll);
                 if (hazard.IsHazard()) {
@@ -2563,15 +2562,15 @@ bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
         events[i] = Get<vvl::Event>(pEvents[i]);
     }
 
-    return ValidateCmdWaitEvents(cb_context, events, vvl::make_span(&barrier_set, 1), ResourceUsageRecord::kMaxIndex,
-                                 error_obj.location);
+    return ValidateCmdWaitEvents(cb_context, cb_context.GetCurrentAccessContext(), events, vvl::make_span(&barrier_set, 1),
+                                 ResourceUsageRecord::kMaxIndex, error_obj.location);
 }
 
 void SyncValidator::RecordCmdWaitEvents(CommandBufferAccessContext& cb_context,
                                         std::vector<std::shared_ptr<const vvl::Event>>&& events,
                                         std::vector<BarrierSet>&& barrier_sets, const Location& loc) const {
     const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
-    ApplyWaitEvents(cb_context, events, barrier_sets, tag, loc.function);
+    ApplyWaitEvents(cb_context, cb_context.GetCurrentAccessContext(), events, barrier_sets, tag, loc.function);
     auto sync_op = std::make_shared<SyncOpWaitEvents>(std::move(events), std::move(barrier_sets), loc);
     cb_context.AddSyncOp(tag, std::move(sync_op));
 }
@@ -2630,7 +2629,8 @@ bool SyncValidator::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer,
     for (uint32_t i = 0; i < eventCount; i++) {
         barrier_sets[i] = BarrierSet(*this, queue_flags, pDependencyInfos[i]);
     }
-    return ValidateCmdWaitEvents(cb_context, events, barrier_sets, ResourceUsageRecord::kMaxIndex, error_obj.location);
+    return ValidateCmdWaitEvents(cb_context, cb_context.GetCurrentAccessContext(), events, barrier_sets,
+                                 ResourceUsageRecord::kMaxIndex, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,

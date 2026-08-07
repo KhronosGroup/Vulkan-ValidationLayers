@@ -186,13 +186,13 @@ static SyncBarrier RestrictToEvent(const SyncBarrier& barrier, const SyncEventSt
     return result;
 }
 
-void ApplyWaitEvents(CommandExecutionContext& exec_context, const std::vector<std::shared_ptr<const vvl::Event>>& events,
-                     vvl::span<const BarrierSet> barrier_sets, ResourceUsageTag tag, vvl::Func command) {
+void ApplyWaitEvents(CommandExecutionContext& exec_context, AccessContext& access_context,
+                     const std::vector<std::shared_ptr<const vvl::Event>>& events, vvl::span<const BarrierSet> barrier_sets,
+                     ResourceUsageTag tag, vvl::Func command) {
     // Unlike PipelineBarrier, WaitEvent is *not* limited to accesses within the current subpass (if any) and thus needs to import
     // all accesses. Can instead import for all first_scopes, or a union of them, if this becomes a performance/memory issue,
     // but with no idea of the performance of the union, nor of whether it even matters... take the simplest approach here,
 
-    AccessContext& access_context = exec_context.GetCurrentAccessContext();
     SyncEventsContext& events_context = exec_context.GetEventsContext();
     const QueueId queue_id = exec_context.GetQueueId();
 

@@ -36,8 +36,9 @@ namespace syncval {
 
 SyncOpPipelineBarrier::SyncOpPipelineBarrier(BarrierSet&& barrier_set) : barrier_set_(std::move(barrier_set)) {}
 
-void SyncOpPipelineBarrier::ReplayRecord(CommandExecutionContext& exec_context, const ResourceUsageTag exec_tag) const {
-    ApplyBarrier(exec_context, barrier_set_, exec_tag);
+void SyncOpPipelineBarrier::ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                                         const ResourceUsageTag exec_tag) const {
+    ApplyBarrier(exec_context, access_context, barrier_set_, exec_tag);
 }
 
 bool SyncOpPipelineBarrier::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
@@ -60,11 +61,11 @@ bool SyncOpSetEvent::ReplayValidate(ReplayState& replay, ResourceUsageTag record
     return validator.ValidateCmdSetEvent(exec_context, event_, src_exec_scope_, exec_tag, Location(command_));
 }
 
-void SyncOpSetEvent::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
+void SyncOpSetEvent::ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                                  ResourceUsageTag exec_tag) const {
     // Create a copy of the current context, and merge in the state snapshot at record set event time
     // Note: we mustn't change the recorded context copy, as a given CB could be submitted more than once (in generaL)
 
-    AccessContext& access_context = exec_context.GetCurrentAccessContext();
     const QueueId queue_id = exec_context.GetQueueId();
 
     // Note: merged_context is a copy of the access_context, combined with the recorded context
@@ -87,7 +88,8 @@ bool SyncOpResetEvent::ReplayValidate(ReplayState& replay, ResourceUsageTag reco
     return validator.ValidateCmdResetEvent(exec_context, event_, exec_scope_, exec_tag, Location(command_));
 }
 
-void SyncOpResetEvent::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
+void SyncOpResetEvent::ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                                    ResourceUsageTag exec_tag) const {
     const SyncValidator& validator = exec_context.GetSyncState();
     validator.ApplyResetEvent(exec_context, event_, exec_tag, command_);
 }
@@ -96,15 +98,17 @@ SyncOpWaitEvents::SyncOpWaitEvents(std::vector<std::shared_ptr<const vvl::Event>
                                    const Location& loc)
     : SyncOpBase(loc.function), events_(std::move(events)), barrier_sets_(std::move(barrier_sets)) {}
 
-void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
-    ApplyWaitEvents(exec_context, events_, barrier_sets_, exec_tag, command_);
+void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                                    ResourceUsageTag exec_tag) const {
+    ApplyWaitEvents(exec_context, access_context, events_, barrier_sets_, exec_tag, command_);
 }
 
 bool SyncOpWaitEvents::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     CommandExecutionContext& exec_context = replay.exec_context;
     const SyncValidator& validator = exec_context.GetSyncState();
     const ResourceUsageTag exec_tag = replay.base_tag + recorded_tag;
-    return validator.ValidateCmdWaitEvents(exec_context, events_, barrier_sets_, exec_tag, Location(command_));
+    return validator.ValidateCmdWaitEvents(exec_context, replay.GetReplayContext(), events_, barrier_sets_, exec_tag,
+                                           Location(command_));
 }
 
 SyncOpBeginRenderPass::SyncOpBeginRenderPass(std::shared_ptr<const vvl::RenderPass>&& rp_state,
@@ -115,14 +119,14 @@ SyncOpBeginRenderPass::SyncOpBeginRenderPass(std::shared_ptr<const vvl::RenderPa
 bool SyncOpBeginRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     QueueBatchContext& batch_context = replay.GetBatchContext();
     replay.rp_replay.emplace(rp_context_, batch_context.GetAccessContext(), batch_context.GetQueueFlags());
-    batch_context.SetRenderPassAccessContext(replay.rp_replay->GetCurrentReplayContext());
 
     // Only the layout transitions happen at the replay tag, loadOp's happen at a subsequent tag
     ResourceUsageRange first_use_range = {recorded_tag, recorded_tag + 1};
     return replay.DetectFirstUseHazard(first_use_range);
 }
 
-void SyncOpBeginRenderPass::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
+void SyncOpBeginRenderPass::ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                                         ResourceUsageTag exec_tag) const {
     // All the needed replay state changes (for the layout transition, and context update) have to happen in ReplayValidate
 }
 
@@ -134,10 +138,9 @@ bool SyncOpNextSubpass::ReplayValidate(ReplayState& replay, ResourceUsageTag rec
     if (replay.rp_replay->current_subpass + 1 >= subpass_count) {
         return skip;
     }
+
     // Any store/resolve operations happen before the NextSubpass tag so we can advance to the next subpass state
     replay.rp_replay->current_subpass++;
-    QueueBatchContext& batch_context = replay.GetBatchContext();
-    batch_context.SetRenderPassAccessContext(replay.rp_replay->GetCurrentReplayContext());
 
     // Only the layout transitions happen at the replay tag, loadOp's happen at a subsequent tag
     ResourceUsageRange first_use_range = {recorded_tag, recorded_tag + 1};
@@ -145,7 +148,8 @@ bool SyncOpNextSubpass::ReplayValidate(ReplayState& replay, ResourceUsageTag rec
     return skip;
 }
 
-void SyncOpNextSubpass::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
+void SyncOpNextSubpass::ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                                     ResourceUsageTag exec_tag) const {
     // All the needed replay state changes (for the layout transition, and context update) have to happen in ReplayValidate
 }
 
@@ -161,7 +165,6 @@ bool SyncOpEndRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag r
 
     QueueBatchContext& batch_context = replay.GetBatchContext();
     batch_context.GetAccessContext().ResolveChildContexts(replay.rp_replay->GetSubpassContexts());
-    batch_context.SetOriginalAccessContext();
     replay.rp_replay.reset();
 
     // Validate final layout transition
@@ -172,11 +175,24 @@ bool SyncOpEndRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag r
     return skip;
 }
 
-void SyncOpEndRenderPass::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {}
+void SyncOpEndRenderPass::ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                                       ResourceUsageTag exec_tag) const {}
 
-ReplayState::ReplayState(CommandExecutionContext& exec_context, const CommandBufferAccessContext& recorded_context,
+ReplayState::ReplayState(CommandBufferAccessContext& primary_cb_context, const CommandBufferAccessContext& recorded_context,
                          ResourceUsageTag base_tag, const Location& cb_loc)
-    : exec_context(exec_context), recorded_context(recorded_context), base_tag(base_tag), cb_loc(cb_loc) {}
+    : exec_context(primary_cb_context),
+      replay_context(primary_cb_context.GetCurrentAccessContext()),
+      recorded_context(recorded_context),
+      base_tag(base_tag),
+      cb_loc(cb_loc) {}
+
+ReplayState::ReplayState(QueueBatchContext& batch_context, const CommandBufferAccessContext& recorded_context,
+                         ResourceUsageTag base_tag, const Location& cb_loc)
+    : exec_context(batch_context),
+      replay_context(batch_context.GetAccessContext()),
+      recorded_context(recorded_context),
+      base_tag(base_tag),
+      cb_loc(cb_loc) {}
 
 bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange& first_use_range) const {
     bool skip = false;
@@ -185,8 +201,8 @@ bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange& first_use_range
     }
     const AccessContext& recorded_access_context =
         rp_replay ? rp_replay->GetCurrentRecordedContext() : recorded_context.GetCbAccessContext();
-    const HazardResult hazard = recorded_access_context.DetectFirstUseHazard(exec_context.GetQueueId(), first_use_range,
-                                                                             exec_context.GetCurrentAccessContext());
+    const HazardResult hazard =
+        recorded_access_context.DetectFirstUseHazard(exec_context.GetQueueId(), first_use_range, GetReplayContext());
     if (hazard.IsHazard()) {
         const SyncValidator& sync_state = exec_context.GetSyncState();
         LogObjectList objlist(exec_context.Handle(), recorded_context.Handle());
@@ -218,7 +234,7 @@ bool ReplayState::ValidateFirstUse() {
 
         // Validate and record sync_ops that make memory accesses (for example, image layout transition)
         skip |= sync_op.sync_op->ReplayValidate(*this, sync_op.tag);
-        sync_op.sync_op->ReplayRecord(exec_context, base_tag + sync_op.tag);
+        sync_op.sync_op->ReplayRecord(exec_context, GetReplayContext(), base_tag + sync_op.tag);
 
         // Advance past sync_op
         first_use_range.begin = sync_op.tag + 1;
@@ -237,6 +253,12 @@ QueueBatchContext& ReplayState::GetBatchContext() {
     return static_cast<QueueBatchContext&>(exec_context);
 }
 
+const AccessContext& ReplayState::GetReplayContext() const {
+    return rp_replay ? rp_replay->GetCurrentReplayContext() : replay_context;
+}
+
+AccessContext& ReplayState::GetReplayContext() { return rp_replay ? rp_replay->GetCurrentReplayContext() : replay_context; }
+
 RenderPassReplayState::RenderPassReplayState(const RenderPassAccessContext* rp_context, const AccessContext& external_context,
                                              VkQueueFlags queue_flags)
     : rp_context(rp_context), current_subpass(0) {
@@ -250,6 +272,7 @@ RenderPassReplayState::RenderPassReplayState(const RenderPassAccessContext* rp_c
 }
 
 AccessContext& RenderPassReplayState::GetCurrentReplayContext() { return GetSubpassContexts()[current_subpass]; }
+const AccessContext& RenderPassReplayState::GetCurrentReplayContext() const { return GetSubpassContexts()[current_subpass]; }
 
 const AccessContext& RenderPassReplayState::GetCurrentRecordedContext() const {
     return rp_context->GetSubpassContexts()[current_subpass];
@@ -257,6 +280,10 @@ const AccessContext& RenderPassReplayState::GetCurrentRecordedContext() const {
 
 vvl::span<AccessContext> RenderPassReplayState::GetSubpassContexts() {
     return vvl::make_span(subpass_contexts.get(), rp_context->GetRenderPassState()->create_info.subpassCount);
+}
+
+vvl::span<const AccessContext> RenderPassReplayState::GetSubpassContexts() const {
+    return vvl::make_span<const AccessContext>(subpass_contexts.get(), rp_context->GetRenderPassState()->create_info.subpassCount);
 }
 
 void SyncEventsContext::ApplyBarrier(const SyncExecScope& src, const SyncExecScope& dst, ResourceUsageTag tag) {

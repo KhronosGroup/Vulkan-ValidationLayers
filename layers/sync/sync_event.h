@@ -27,11 +27,13 @@ namespace vvl {
 class Event;
 }
 
-class CommandExecutionContext;
-
 namespace syncval {
 
-void ApplyWaitEvents(CommandExecutionContext& exec_context, const std::vector<std::shared_ptr<const vvl::Event>>& events,
-                     vvl::span<const BarrierSet> barrier_sets, ResourceUsageTag tag, vvl::Func command);
+class AccessContext;
+class CommandExecutionContext;
+
+void ApplyWaitEvents(CommandExecutionContext& exec_context, AccessContext& access_context,
+                     const std::vector<std::shared_ptr<const vvl::Event>>& events, vvl::span<const BarrierSet> barrier_sets,
+                     ResourceUsageTag tag, vvl::Func command);
 
 }  // namespace syncval
