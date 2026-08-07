@@ -158,6 +158,18 @@ endif()
 option(BUILD_WERROR "Treat compiler warnings as errors")
 if (BUILD_WERROR)
     add_compile_options("$<IF:$<CXX_COMPILER_ID:MSVC>,/WX,-Werror>")
+    # MSVC only: turns link.exe warnings (e.g. LNK4098, mismatched Debug/Release runtimes) into
+    # build failures too. There's no cross-platform link.exe/ld equivalent to add here.
+    # TODO: replace with CMAKE_LINK_WARNING_AS_ERROR once the minimum CMake version is >= 4.0.
+    #
+    # LNK4099 (PDB for a prebuilt dependency .lib not found) is ignored: it's a pre-existing,
+    # benign issue independent of this fix - our dependencies' static libraries don't carry
+    # their compiler-generated PDBs (CMake's COMPILE_PDB_NAME isn't installable for STATIC_LIBRARY
+    # targets via $<TARGET_PDB_FILE:...>), so the linker always falls back to no debug info for
+    # those objects. It was already happening before /WX was added to the linker; /WX would just
+    # newly turn it into a hard failure. Fixing it for real means installing each dependency's own
+    # PDB, which requires patching that dependency's CMakeLists.txt, not something to do here.
+    add_link_options("$<$<CXX_COMPILER_ID:MSVC>:/WX;/IGNORE:4099>")
 endif()
 
 option(VVL_ENABLE_ASAN "Use address sanitization")

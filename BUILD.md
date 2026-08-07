@@ -57,6 +57,11 @@ Misc Useful Information:
 
 - By default `UPDATE_DEPS` is `ON` and simply use `-D UPDATE_DEPS=OFF` if you don't want to use it
 - You can run `update_deps.py` manually but it isn't recommended for most users.
+- For multi-config generators (Visual Studio, Xcode, Ninja Multi-Config), dependencies are always
+  prebuilt for both `Debug` and `Release` (regardless of `CMAKE_CONFIGURATION_TYPES`), so switching
+  between those configs in the IDE works without having to reconfigure. `RelWithDebInfo` and
+  `MinSizeRel` builds transparently use the `Release` dependency binaries (matching what `vcpkg` does
+  for the same reason), so those configs work out of the box too, without a separate prebuild step.
 
 ### How to test new dependency versions
 
