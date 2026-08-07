@@ -2208,6 +2208,8 @@ TEST_F(NegativeCommand, ExclusiveScissorNV) {
             std::vector<std::string> vuids;
         };
 
+        // 02029 only requires exclusiveScissorCount to be 0 or at least viewportCount, so an exclusiveScissorCount
+        // larger than viewportCount does not violate it.
         std::vector<TestCase> test_cases = {
             {1,
              viewports,
@@ -2215,8 +2217,7 @@ TEST_F(NegativeCommand, ExclusiveScissorNV) {
              scissors,
              2,
              scissors,
-             {"VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02027",
-              "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02029"}},
+             {"VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02027"}},
             {1,
              viewports,
              1,
@@ -2224,8 +2225,7 @@ TEST_F(NegativeCommand, ExclusiveScissorNV) {
              100,
              scissors,
              {"VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02027",
-              "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02028",
-              "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02029"}},
+              "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02028"}},
             {1, viewports, 1, scissors, 1, nullptr, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04056"}},
         };
 
