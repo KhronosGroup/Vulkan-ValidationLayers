@@ -406,6 +406,9 @@ bool PreCallValidateGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormats
     const VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties,
     const VkDataGraphOpticalFlowImageFormatInfoARM* pOpticalFlowImageFormatInfo, uint32_t* pFormatCount,
     VkDataGraphOpticalFlowImageFormatPropertiesARM* pImageFormatProperties, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetPhysicalDeviceCooperativeMatrixProperties2EXT(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceCooperativeMatrixInfo2EXT* pCooperativeMatrixInfo,
+    uint32_t* pPropertyCount, VkCooperativeMatrixProperties2EXT* pProperties, const ErrorObject& error_obj) const override;
 #ifdef VK_USE_PLATFORM_UBM_SEC
 bool PreCallValidateCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,

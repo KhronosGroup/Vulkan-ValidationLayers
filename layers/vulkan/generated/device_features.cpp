@@ -2058,6 +2058,16 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->computeOccupancyPriority |= enabled->computeOccupancyPriority == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_MAINTENANCE_1_FEATURES_EXT: {
+                const VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT*>(pNext);
+                features->cooperativeMatrixProperties2 |= enabled->cooperativeMatrixProperties2 == VK_TRUE;
+                features->cooperativeMatrixReductions |= enabled->cooperativeMatrixReductions == VK_TRUE;
+                features->cooperativeMatrixConversions |= enabled->cooperativeMatrixConversions == VK_TRUE;
+                features->cooperativeMatrixPerElementOperations |= enabled->cooperativeMatrixPerElementOperations == VK_TRUE;
+                features->cooperativeMatrixGetCoordinate |= enabled->cooperativeMatrixGetCoordinate == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_PARTITIONED_FEATURES_EXT: {
                 const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT* enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT*>(pNext);

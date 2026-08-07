@@ -1879,6 +1879,8 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkDataGraphOpticalFlowImageUsageFlagsARM(value);
         case vvl::FlagBitmask::VkDataGraphOpticalFlowExecuteFlagBitsARM:
             return string_VkDataGraphOpticalFlowExecuteFlagsARM(value);
+        case vvl::FlagBitmask::VkCooperativeMatrixFlagBitsEXT:
+            return string_VkCooperativeMatrixFlagsEXT(value);
 
         default:
             std::ostringstream ss;

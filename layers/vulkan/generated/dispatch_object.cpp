@@ -9943,6 +9943,15 @@ void DispatchDevice::CmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuf
                                                       const VkComputeOccupancyPriorityParametersNV* pParameters) {
     device_dispatch_table.CmdSetComputeOccupancyPriorityNV(commandBuffer, pParameters);
 }
+
+VkResult DispatchInstance::GetPhysicalDeviceCooperativeMatrixProperties2EXT(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceCooperativeMatrixInfo2EXT* pCooperativeMatrixInfo,
+    uint32_t* pPropertyCount, VkCooperativeMatrixProperties2EXT* pProperties) {
+    VkResult result = instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixProperties2EXT(
+        physicalDevice, pCooperativeMatrixInfo, pPropertyCount, pProperties);
+
+    return result;
+}
 #ifdef VK_USE_PLATFORM_UBM_SEC
 
 VkResult DispatchInstance::CreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,

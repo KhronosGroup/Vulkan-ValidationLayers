@@ -669,6 +669,7 @@ const char* String(Func func) {
     {"vkGetPhysicalDeviceCalibrateableTimeDomainsEXT", 47},
     {"vkGetPhysicalDeviceCalibrateableTimeDomainsKHR", 47},
     {"vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV", 67},
+    {"vkGetPhysicalDeviceCooperativeMatrixProperties2EXT", 51},
     {"vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR", 50},
     {"vkGetPhysicalDeviceCooperativeMatrixPropertiesNV", 49},
     {"vkGetPhysicalDeviceCooperativeVectorPropertiesNV", 49},
@@ -1028,6 +1029,7 @@ const char* String(Struct structure) {
     {"VkConformanceVersion", 21},
     {"VkConvertCooperativeVectorMatrixInfoNV", 39},
     {"VkCooperativeMatrixFlexibleDimensionsPropertiesNV", 50},
+    {"VkCooperativeMatrixProperties2EXT", 34},
     {"VkCooperativeMatrixPropertiesKHR", 33},
     {"VkCooperativeMatrixPropertiesNV", 32},
     {"VkCooperativeVectorPropertiesNV", 32},
@@ -1516,6 +1518,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV", 56},
     {"VkPhysicalDeviceCooperativeMatrixFeaturesKHR", 45},
     {"VkPhysicalDeviceCooperativeMatrixFeaturesNV", 44},
+    {"VkPhysicalDeviceCooperativeMatrixInfo2EXT", 42},
+    {"VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT", 57},
     {"VkPhysicalDeviceCooperativeMatrixPropertiesKHR", 47},
     {"VkPhysicalDeviceCooperativeMatrixPropertiesNV", 46},
     {"VkPhysicalDeviceCooperativeVectorFeaturesNV", 44},
@@ -2611,7 +2615,9 @@ const char* String(Field field) {
     {"cooperativeMatrixDecodeVector", 30},
     {"cooperativeMatrixFlexibleDimensions", 36},
     {"cooperativeMatrixFlexibleDimensionsMaxDimension", 48},
+    {"cooperativeMatrixGetCoordinate", 31},
     {"cooperativeMatrixPerElementOperations", 38},
+    {"cooperativeMatrixProperties2", 29},
     {"cooperativeMatrixReductions", 28},
     {"cooperativeMatrixRobustBufferAccess", 36},
     {"cooperativeMatrixSupportedStages", 33},
@@ -3349,6 +3355,7 @@ const char* String(Field field) {
     {"intraRefreshMode", 17},
     {"intraRefreshModes", 18},
     {"invocationMask", 15},
+    {"invocations", 12},
     {"ioSurface", 10},
     {"isForeign", 10},
     {"isPreprocessed", 15},
@@ -4059,6 +4066,7 @@ const char* String(Field field) {
     {"pConnections", 13},
     {"pConstantData", 14},
     {"pConstants", 11},
+    {"pCooperativeMatrixInfo", 23},
     {"pCopyBufferInfo", 16},
     {"pCopyBufferToImageInfo", 23},
     {"pCopyDstLayouts", 16},
@@ -5919,6 +5927,7 @@ const char* String(FlagBitmask value) {
     {"VkCommandPoolResetFlagBits", 27},
     {"VkCompositeAlphaFlagBitsKHR", 28},
     {"VkConditionalRenderingFlagBitsEXT", 34},
+    {"VkCooperativeMatrixFlagBitsEXT", 31},
     {"VkCullModeFlagBits", 19},
     {"VkDataGraphOpticalFlowCreateFlagBitsARM", 40},
     {"VkDataGraphOpticalFlowExecuteFlagBitsARM", 41},
@@ -6135,6 +6144,7 @@ const char* String(Extension extension) {
     {"VK_EXT_color_write_enable", 26},
     {"VK_EXT_conditional_rendering", 29},
     {"VK_EXT_conservative_rasterization", 34},
+    {"VK_EXT_cooperative_matrix_maintenance1", 39},
     {"VK_EXT_custom_border_color", 27},
     {"VK_EXT_custom_resolve", 22},
     {"VK_EXT_debug_marker", 20},
@@ -6655,6 +6665,7 @@ bool IsFieldPointer(Field field) {
     case Field::pConnections:
     case Field::pConstantData:
     case Field::pConstants:
+    case Field::pCooperativeMatrixInfo:
     case Field::pCopyBufferInfo:
     case Field::pCopyBufferToImageInfo:
     case Field::pCopyDstLayouts:
@@ -9639,6 +9650,12 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkComputeOccupancyPriorityParametersNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_OCCUPANCY_PRIORITY_FEATURES_NV:
        return Struct::VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV;
+    case VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_2_EXT:
+       return Struct::VkCooperativeMatrixProperties2EXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_INFO_2_EXT:
+       return Struct::VkPhysicalDeviceCooperativeMatrixInfo2EXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_MAINTENANCE_1_FEATURES_EXT:
+       return Struct::VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_PARTITIONED_FEATURES_EXT:
        return Struct::VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT;
     case VK_STRUCTURE_TYPE_UBM_SURFACE_CREATE_INFO_SEC:

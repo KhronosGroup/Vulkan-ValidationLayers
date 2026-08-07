@@ -4957,6 +4957,14 @@ static inline void DispatchCmdSetComputeOccupancyPriorityNV(VkCommandBuffer comm
     auto dispatch = vvl::GetDispatchDevice(commandBuffer);
     dispatch->CmdSetComputeOccupancyPriorityNV(commandBuffer, pParameters);
 }
+
+static inline VkResult DispatchGetPhysicalDeviceCooperativeMatrixProperties2EXT(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceCooperativeMatrixInfo2EXT* pCooperativeMatrixInfo,
+    uint32_t* pPropertyCount, VkCooperativeMatrixProperties2EXT* pProperties) {
+    auto dispatch = vvl::GetDispatchInstance(physicalDevice);
+    return dispatch->GetPhysicalDeviceCooperativeMatrixProperties2EXT(physicalDevice, pCooperativeMatrixInfo, pPropertyCount,
+                                                                      pProperties);
+}
 #ifdef VK_USE_PLATFORM_UBM_SEC
 
 static inline VkResult DispatchCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,

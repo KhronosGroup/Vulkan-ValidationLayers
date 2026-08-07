@@ -1386,6 +1386,19 @@ ValidValue stateless::Context::IsValidEnumValue(VkComponentTypeKHR value) const 
 }
 
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkScopeKHR value) const {
+    switch (value) {
+        case VK_SCOPE_DEVICE_KHR:
+        case VK_SCOPE_WORKGROUP_KHR:
+        case VK_SCOPE_SUBGROUP_KHR:
+        case VK_SCOPE_QUEUE_FAMILY_KHR:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeAV1PredictionModeKHR value) const {
     switch (value) {
         case VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_INTRA_ONLY_KHR:
@@ -3579,6 +3592,15 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkComponentTypeKHR value) 
 template <>
 const char* stateless::Context::DescribeEnum(VkComponentTypeKHR value) const {
     return string_VkComponentTypeKHR(value);
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkScopeKHR value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkScopeKHR value) const {
+    return nullptr;
 }
 
 template <>

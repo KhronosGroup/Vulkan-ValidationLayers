@@ -947,6 +947,7 @@ PFN_vkCmdEndRendering2EXT CmdEndRendering2EXT;
 PFN_vkCmdBeginCustomResolveEXT CmdBeginCustomResolveEXT;
 PFN_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM;
 PFN_vkCmdSetComputeOccupancyPriorityNV CmdSetComputeOccupancyPriorityNV;
+PFN_vkGetPhysicalDeviceCooperativeMatrixProperties2EXT GetPhysicalDeviceCooperativeMatrixProperties2EXT;
 #ifdef VK_USE_PLATFORM_UBM_SEC
 PFN_vkCreateUbmSurfaceSEC CreateUbmSurfaceSEC;
 PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC GetPhysicalDeviceUbmPresentationSupportSEC;
@@ -2945,6 +2946,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_EXT_cooperative_matrix_maintenance1", [](VkInstance instance, VkDevice ) {
+                GetPhysicalDeviceCooperativeMatrixProperties2EXT = reinterpret_cast<PFN_vkGetPhysicalDeviceCooperativeMatrixProperties2EXT>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceCooperativeMatrixProperties2EXT"));
+            }
+        },
+        {
             "VK_EXT_primitive_restart_index", [](VkInstance , VkDevice device) {
                 CmdSetPrimitiveRestartIndexEXT = reinterpret_cast<PFN_vkCmdSetPrimitiveRestartIndexEXT>(GetDeviceProcAddr(device, "vkCmdSetPrimitiveRestartIndexEXT"));
             }
@@ -3631,6 +3637,7 @@ void ResetAllExtensions() {
     CmdBeginCustomResolveEXT = nullptr;
     GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM = nullptr;
     CmdSetComputeOccupancyPriorityNV = nullptr;
+    GetPhysicalDeviceCooperativeMatrixProperties2EXT = nullptr;
 #ifdef VK_USE_PLATFORM_UBM_SEC
     CreateUbmSurfaceSEC = nullptr;
     GetPhysicalDeviceUbmPresentationSupportSEC = nullptr;
