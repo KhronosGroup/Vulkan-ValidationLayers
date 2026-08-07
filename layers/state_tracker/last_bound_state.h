@@ -136,6 +136,8 @@ struct LastBound {
     bool IsAlphaToOneEnable() const;
     VkCoverageModulationModeNV GetCoverageModulationMode() const;
     uint32_t GetViewportSwizzleCount() const;
+    uint32_t GetViewportWScalingCount() const;
+    uint32_t GetShadingRatePaletteCount() const;
     VkPolygonMode GetPolygonMode() const;
 
     VkPrimitiveTopology GetVertexInputAssemblerTopology() const;
