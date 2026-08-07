@@ -2053,6 +2053,12 @@ void bp_state::Instance::PostCallRecordGetPhysicalDeviceQueueFamilyDataGraphOpti
     bp_state::LogResult(*this, physicalDevice, record_obj);
 }
 
+void bp_state::Instance::PostCallRecordGetPhysicalDeviceCooperativeMatrixProperties2EXT(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceCooperativeMatrixInfo2EXT* pCooperativeMatrixInfo,
+    uint32_t* pPropertyCount, VkCooperativeMatrixProperties2EXT* pProperties, const RecordObject& record_obj) {
+    bp_state::LogResult(*this, physicalDevice, record_obj);
+}
+
 #ifdef VK_USE_PLATFORM_UBM_SEC
 void bp_state::Instance::PostCallRecordCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,

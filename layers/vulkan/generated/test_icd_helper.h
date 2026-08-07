@@ -569,6 +569,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_SEC_PIPELINE_CACHE_INCREMENTAL_MODE_EXTENSION_NAME, VK_SEC_PIPELINE_CACHE_INCREMENTAL_MODE_SPEC_VERSION},
     {VK_EXT_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_EXTENSION_NAME, VK_EXT_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_SPEC_VERSION},
     {VK_NV_COMPUTE_OCCUPANCY_PRIORITY_EXTENSION_NAME, VK_NV_COMPUTE_OCCUPANCY_PRIORITY_SPEC_VERSION},
+    {VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_EXTENSION_NAME, VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_SPEC_VERSION},
     {VK_EXT_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME, VK_EXT_SHADER_SUBGROUP_PARTITIONED_SPEC_VERSION},
     {VK_EXT_SHADER_OCP_MICROSCALING_TYPES_EXTENSION_NAME, VK_EXT_SHADER_OCP_MICROSCALING_TYPES_SPEC_VERSION},
     {VK_VALVE_SHADER_MIXED_FLOAT_DOT_PRODUCT_EXTENSION_NAME, VK_VALVE_SHADER_MIXED_FLOAT_DOT_PRODUCT_SPEC_VERSION},
@@ -2351,6 +2352,9 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphOptic
     VkDataGraphOpticalFlowImageFormatPropertiesARM* pImageFormatProperties);
 static VKAPI_ATTR void VKAPI_CALL CmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
                                                                    const VkComputeOccupancyPriorityParametersNV* pParameters);
+static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixProperties2EXT(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceCooperativeMatrixInfo2EXT* pCooperativeMatrixInfo,
+    uint32_t* pPropertyCount, VkCooperativeMatrixProperties2EXT* pProperties);
 #ifdef VK_USE_PLATFORM_UBM_SEC
 static VKAPI_ATTR VkResult VKAPI_CALL CreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
@@ -3314,6 +3318,7 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM",
      (void*)GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM},
     {"vkCmdSetComputeOccupancyPriorityNV", (void*)CmdSetComputeOccupancyPriorityNV},
+    {"vkGetPhysicalDeviceCooperativeMatrixProperties2EXT", (void*)GetPhysicalDeviceCooperativeMatrixProperties2EXT},
 #ifdef VK_USE_PLATFORM_UBM_SEC
     {"vkCreateUbmSurfaceSEC", (void*)CreateUbmSurfaceSEC},
     {"vkGetPhysicalDeviceUbmPresentationSupportSEC", (void*)GetPhysicalDeviceUbmPresentationSupportSEC},
@@ -6447,6 +6452,12 @@ static VKAPI_ATTR void VKAPI_CALL CmdBeginCustomResolveEXT(VkCommandBuffer comma
 
 static VKAPI_ATTR void VKAPI_CALL CmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
                                                                    const VkComputeOccupancyPriorityParametersNV* pParameters) {}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixProperties2EXT(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceCooperativeMatrixInfo2EXT* pCooperativeMatrixInfo,
+    uint32_t* pPropertyCount, VkCooperativeMatrixProperties2EXT* pProperties) {
+    return VK_SUCCESS;
+}
 
 #ifdef VK_USE_PLATFORM_UBM_SEC
 static VKAPI_ATTR VkResult VKAPI_CALL CreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,

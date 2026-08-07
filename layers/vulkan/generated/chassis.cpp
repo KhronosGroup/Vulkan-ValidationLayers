@@ -37056,6 +37056,57 @@ VKAPI_ATTR void VKAPI_CALL CmdSetComputeOccupancyPriorityNV(VkCommandBuffer comm
     }
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixProperties2EXT(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceCooperativeMatrixInfo2EXT* pCooperativeMatrixInfo,
+    uint32_t* pPropertyCount, VkCooperativeMatrixProperties2EXT* pProperties) {
+    VVL_ZoneScoped;
+
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceCooperativeMatrixProperties2EXT,
+                          VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetPhysicalDeviceCooperativeMatrixProperties2EXT");
+        for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            skip |= vo->PreCallValidateGetPhysicalDeviceCooperativeMatrixProperties2EXT(physicalDevice, pCooperativeMatrixInfo,
+                                                                                        pPropertyCount, pProperties, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceCooperativeMatrixProperties2EXT);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetPhysicalDeviceCooperativeMatrixProperties2EXT");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PreCallRecordGetPhysicalDeviceCooperativeMatrixProperties2EXT(physicalDevice, pCooperativeMatrixInfo,
+                                                                              pPropertyCount, pProperties, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetPhysicalDeviceCooperativeMatrixProperties2EXT");
+        result = instance_dispatch->GetPhysicalDeviceCooperativeMatrixProperties2EXT(physicalDevice, pCooperativeMatrixInfo,
+                                                                                     pPropertyCount, pProperties);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetPhysicalDeviceCooperativeMatrixProperties2EXT");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PostCallRecordGetPhysicalDeviceCooperativeMatrixProperties2EXT(physicalDevice, pCooperativeMatrixInfo,
+                                                                               pPropertyCount, pProperties, record_obj);
+        }
+    }
+    return result;
+}
+
 #ifdef VK_USE_PLATFORM_UBM_SEC
 VKAPI_ATTR VkResult VKAPI_CALL CreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
@@ -39295,6 +39346,8 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM",
          {kFuncTypePdev, (void*)GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM}},
         {"vkCmdSetComputeOccupancyPriorityNV", {kFuncTypeDev, (void*)CmdSetComputeOccupancyPriorityNV}},
+        {"vkGetPhysicalDeviceCooperativeMatrixProperties2EXT",
+         {kFuncTypePdev, (void*)GetPhysicalDeviceCooperativeMatrixProperties2EXT}},
 #ifdef VK_USE_PLATFORM_UBM_SEC
         {"vkCreateUbmSurfaceSEC", {kFuncTypeInst, (void*)CreateUbmSurfaceSEC}},
         {"vkGetPhysicalDeviceUbmPresentationSupportSEC", {kFuncTypePdev, (void*)GetPhysicalDeviceUbmPresentationSupportSEC}},

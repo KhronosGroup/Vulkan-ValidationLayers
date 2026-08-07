@@ -587,6 +587,34 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_MAINTENANCE_1_FEATURES_EXT: {
+                VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT*>(current);
+                if (enabling->cooperativeMatrixProperties2 && !supported.cooperativeMatrixProperties2) {
+                    ss << "VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT::cooperativeMatrixProperties2 is not "
+                          "supported\n";
+                }
+                if (enabling->cooperativeMatrixReductions && !supported.cooperativeMatrixReductions) {
+                    ss << "VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT::cooperativeMatrixReductions is not "
+                          "supported\n";
+                }
+                if (enabling->cooperativeMatrixConversions && !supported.cooperativeMatrixConversions) {
+                    ss << "VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT::cooperativeMatrixConversions is not "
+                          "supported\n";
+                }
+                if (enabling->cooperativeMatrixPerElementOperations && !supported.cooperativeMatrixPerElementOperations) {
+                    ss << "VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT::cooperativeMatrixPerElementOperations is not "
+                          "supported\n";
+                }
+                if (enabling->cooperativeMatrixGetCoordinate && !supported.cooperativeMatrixGetCoordinate) {
+                    ss << "VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT::cooperativeMatrixGetCoordinate is not "
+                          "supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_FEATURES_NV: {
                 VkPhysicalDeviceCooperativeVectorFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

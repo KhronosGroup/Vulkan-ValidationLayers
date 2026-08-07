@@ -365,6 +365,10 @@ void PostCallRecordGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsA
     const VkDataGraphOpticalFlowImageFormatInfoARM* pOpticalFlowImageFormatInfo, uint32_t* pFormatCount,
     VkDataGraphOpticalFlowImageFormatPropertiesARM* pImageFormatProperties, const RecordObject& record_obj) override;
 
+void PostCallRecordGetPhysicalDeviceCooperativeMatrixProperties2EXT(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceCooperativeMatrixInfo2EXT* pCooperativeMatrixInfo,
+    uint32_t* pPropertyCount, VkCooperativeMatrixProperties2EXT* pProperties, const RecordObject& record_obj) override;
+
 #ifdef VK_USE_PLATFORM_UBM_SEC
 void PostCallRecordCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,

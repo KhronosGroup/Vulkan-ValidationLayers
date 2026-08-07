@@ -105,17 +105,17 @@ enum class Feature {
     // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
     cooperativeMatrixBlockLoads,
     // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
-    cooperativeMatrixConversions,
-    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
     cooperativeMatrixFlexibleDimensions,
-    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
-    cooperativeMatrixPerElementOperations,
-    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
-    cooperativeMatrixReductions,
     // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
     cooperativeMatrixTensorAddressing,
     // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
     cooperativeMatrixWorkgroupScope,
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV, VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT
+    cooperativeMatrixConversions,
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV, VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT
+    cooperativeMatrixPerElementOperations,
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV, VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT
+    cooperativeMatrixReductions,
     // VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM
     cooperativeMatrixConversion,
     // VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV
@@ -124,6 +124,10 @@ enum class Feature {
     cooperativeMatrix,
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV
     cooperativeMatrixRobustBufferAccess,
+    // VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT
+    cooperativeMatrixGetCoordinate,
+    // VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT
+    cooperativeMatrixProperties2,
     // VkPhysicalDeviceCooperativeVectorFeaturesNV
     cooperativeVector,
     // VkPhysicalDeviceCooperativeVectorFeaturesNV

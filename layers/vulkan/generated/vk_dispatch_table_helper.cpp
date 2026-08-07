@@ -1603,6 +1603,10 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceQueueFamilyDataGraphO
 }
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetComputeOccupancyPriorityNV(VkCommandBuffer,
                                                                        const VkComputeOccupancyPriorityParametersNV*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceCooperativeMatrixProperties2EXT(
+    VkPhysicalDevice, const VkPhysicalDeviceCooperativeMatrixInfo2EXT*, uint32_t*, VkCooperativeMatrixProperties2EXT*) {
+    return VK_SUCCESS;
+}
 #ifdef VK_USE_PLATFORM_UBM_SEC
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateUbmSurfaceSEC(VkInstance, const VkUbmSurfaceCreateInfoSEC*,
                                                               const VkAllocationCallbacks*, VkSurfaceKHR*) {
@@ -5805,6 +5809,12 @@ void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDisp
         table->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM =
             (PFN_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM)
                 StubGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM;
+    }
+    table->GetPhysicalDeviceCooperativeMatrixProperties2EXT =
+        (PFN_vkGetPhysicalDeviceCooperativeMatrixProperties2EXT)gpa(instance, "vkGetPhysicalDeviceCooperativeMatrixProperties2EXT");
+    if (table->GetPhysicalDeviceCooperativeMatrixProperties2EXT == nullptr) {
+        table->GetPhysicalDeviceCooperativeMatrixProperties2EXT =
+            (PFN_vkGetPhysicalDeviceCooperativeMatrixProperties2EXT)StubGetPhysicalDeviceCooperativeMatrixProperties2EXT;
     }
 #ifdef VK_USE_PLATFORM_UBM_SEC
     table->CreateUbmSurfaceSEC = (PFN_vkCreateUbmSurfaceSEC)gpa(instance, "vkCreateUbmSurfaceSEC");

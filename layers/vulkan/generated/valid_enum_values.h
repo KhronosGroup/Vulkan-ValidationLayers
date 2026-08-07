@@ -118,6 +118,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureTypeKHR v
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkComponentTypeKHR value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkScopeKHR value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeAV1PredictionModeKHR value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeAV1RateControlGroupKHR value) const;

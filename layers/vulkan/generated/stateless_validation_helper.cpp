@@ -3602,6 +3602,28 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_MAINTENANCE_1_FEATURES_EXT: {  // Covers
+                                                                                                 // VUID-VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT);
+                VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT* structure =
+                    (VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::cooperativeMatrixProperties2), structure->cooperativeMatrixProperties2);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::cooperativeMatrixReductions), structure->cooperativeMatrixReductions);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::cooperativeMatrixConversions), structure->cooperativeMatrixConversions);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::cooperativeMatrixPerElementOperations),
+                                       structure->cooperativeMatrixPerElementOperations);
+
+                skip |=
+                    ValidateBool32(pNext_loc.dot(Field::cooperativeMatrixGetCoordinate), structure->cooperativeMatrixGetCoordinate);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_PARTITIONED_FEATURES_EXT: {  // Covers
                                                                                             // VUID-VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT-sType-sType
@@ -9217,7 +9239,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 285> allowed_structs_VkDeviceCreateInfo = {
+        constexpr std::array<VkStructureType, 286> allowed_structs_VkDeviceCreateInfo = {
             VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
@@ -9253,6 +9275,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_DECODE_VECTOR_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_MAINTENANCE_1_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_NV,
@@ -30401,6 +30424,49 @@ bool Device::PreCallValidateCmdSetComputeOccupancyPriorityNV(VkCommandBuffer com
         [[maybe_unused]] const Location pParameters_loc = loc.dot(Field::pParameters);
         skip |= context.ValidateStructPnext(pParameters_loc, pParameters->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                             "VUID-VkComputeOccupancyPriorityParametersNV-pNext-pNext", kVUIDUndefined, true);
+    }
+    return skip;
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceCooperativeMatrixProperties2EXT(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceCooperativeMatrixInfo2EXT* pCooperativeMatrixInfo,
+    uint32_t* pPropertyCount, VkCooperativeMatrixProperties2EXT* pProperties, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
+    Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
+    [[maybe_unused]] const Location loc = error_obj.location;
+    skip |= context.ValidateStructType(loc.dot(Field::pCooperativeMatrixInfo), pCooperativeMatrixInfo,
+                                       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_INFO_2_EXT, true,
+                                       "VUID-vkGetPhysicalDeviceCooperativeMatrixProperties2EXT-pCooperativeMatrixInfo-parameter",
+                                       "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-sType-sType");
+    if (pCooperativeMatrixInfo != nullptr) {
+        [[maybe_unused]] const Location pCooperativeMatrixInfo_loc = loc.dot(Field::pCooperativeMatrixInfo);
+        skip |= context.ValidateStructPnext(pCooperativeMatrixInfo_loc, pCooperativeMatrixInfo->pNext, 0, nullptr,
+                                            GeneratedVulkanHeaderVersion,
+                                            "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateRangedEnum(pCooperativeMatrixInfo_loc.dot(Field::scope), vvl::Enum::VkScopeKHR,
+                                           pCooperativeMatrixInfo->scope,
+                                           "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-scope-parameter");
+
+        skip |=
+            context.ValidateFlags(pCooperativeMatrixInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkCooperativeMatrixFlagBitsEXT,
+                                  AllVkCooperativeMatrixFlagBitsEXT, pCooperativeMatrixInfo->flags, kOptionalFlags,
+                                  "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-flags-parameter", nullptr, false);
+    }
+    skip |= context.ValidateStructTypeArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount,
+                                            pProperties, VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_2_EXT, true, false, false,
+                                            "VUID-VkCooperativeMatrixProperties2EXT-sType-sType", kVUIDUndefined,
+                                            "VUID-vkGetPhysicalDeviceCooperativeMatrixProperties2EXT-pPropertyCount-parameter",
+                                            kVUIDUndefined);
+    if (pProperties != nullptr) {
+        for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
+            [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
+            skip |= context.ValidateStructPnext(pProperties_loc, pProperties[pPropertyIndex].pNext, 0, nullptr,
+                                                GeneratedVulkanHeaderVersion, "VUID-VkCooperativeMatrixProperties2EXT-pNext-pNext",
+                                                kVUIDUndefined, false);
+        }
     }
     return skip;
 }

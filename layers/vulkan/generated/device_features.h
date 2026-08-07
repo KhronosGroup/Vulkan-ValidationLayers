@@ -113,17 +113,17 @@ struct DeviceFeatures {
     // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
     bool cooperativeMatrixBlockLoads;
     // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
-    bool cooperativeMatrixConversions;
-    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
     bool cooperativeMatrixFlexibleDimensions;
-    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
-    bool cooperativeMatrixPerElementOperations;
-    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
-    bool cooperativeMatrixReductions;
     // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
     bool cooperativeMatrixTensorAddressing;
     // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
     bool cooperativeMatrixWorkgroupScope;
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV, VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT
+    bool cooperativeMatrixConversions;
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV, VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT
+    bool cooperativeMatrixPerElementOperations;
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV, VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT
+    bool cooperativeMatrixReductions;
     // VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM
     bool cooperativeMatrixConversion;
     // VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV
@@ -132,6 +132,10 @@ struct DeviceFeatures {
     bool cooperativeMatrix;
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV
     bool cooperativeMatrixRobustBufferAccess;
+    // VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT
+    bool cooperativeMatrixGetCoordinate;
+    // VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT
+    bool cooperativeMatrixProperties2;
     // VkPhysicalDeviceCooperativeVectorFeaturesNV
     bool cooperativeVector;
     // VkPhysicalDeviceCooperativeVectorFeaturesNV

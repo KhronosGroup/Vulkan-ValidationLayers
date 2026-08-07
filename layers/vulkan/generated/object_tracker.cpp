@@ -9125,6 +9125,9 @@ bool Device::PreCallValidateClearShaderInstrumentationMetricsARM(VkDevice device
 // vkCmdSetComputeOccupancyPriorityNV:
 // Checked by chassis: commandBuffer: "VUID-vkCmdSetComputeOccupancyPriorityNV-commandBuffer-parameter"
 
+// vkGetPhysicalDeviceCooperativeMatrixProperties2EXT:
+// Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceCooperativeMatrixProperties2EXT-physicalDevice-parameter"
+
 #ifdef VK_USE_PLATFORM_UBM_SEC
 
 // vkCreateUbmSurfaceSEC:
