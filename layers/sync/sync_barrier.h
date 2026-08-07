@@ -23,6 +23,7 @@ struct DeviceExtensions;
 
 namespace syncval {
 
+class AccessContext;
 class SyncValidator;
 class CommandExecutionContext;
 
@@ -161,6 +162,7 @@ struct SemaphoreScope : SyncExecScope {
     QueueId queue;
 };
 
-void ApplyBarrier(CommandExecutionContext& exec_context, const BarrierSet& barrier_set, ResourceUsageTag tag);
+void ApplyBarrier(CommandExecutionContext& exec_context, AccessContext& access_context, const BarrierSet& barrier_set,
+                  ResourceUsageTag tag);
 
 }  // namespace syncval

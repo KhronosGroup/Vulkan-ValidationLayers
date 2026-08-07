@@ -120,7 +120,8 @@ class SyncOpBase {
     SyncOpBase(vvl::Func command) : command_(command) {}
     virtual ~SyncOpBase() = default;
     virtual bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const = 0;
-    virtual void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const = 0;
+    virtual void ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                              ResourceUsageTag exec_tag) const = 0;
 
   protected:
     vvl::Func command_ = vvl::Func::Empty;
@@ -130,7 +131,8 @@ class SyncOpPipelineBarrier : public SyncOpBase {
   public:
     SyncOpPipelineBarrier(BarrierSet&& barrier_set);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
+    void ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                      ResourceUsageTag exec_tag) const override;
 
   private:
     BarrierSet barrier_set_;
@@ -141,7 +143,8 @@ class SyncOpSetEvent : public SyncOpBase {
     SyncOpSetEvent(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& src_exec_scope,
                    std::shared_ptr<const AccessContext>&& src_access_context, const Location& loc);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
+    void ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                      ResourceUsageTag exec_tag) const override;
 
   private:
     std::shared_ptr<const vvl::Event> event_;
@@ -154,7 +157,8 @@ class SyncOpResetEvent : public SyncOpBase {
   public:
     SyncOpResetEvent(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& exec_scope, const Location& loc);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
+    void ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                      ResourceUsageTag exec_tag) const override;
 
   private:
     std::shared_ptr<const vvl::Event> event_;
@@ -166,7 +170,8 @@ class SyncOpWaitEvents : public SyncOpBase {
     SyncOpWaitEvents(std::vector<std::shared_ptr<const vvl::Event>>&& events, std::vector<BarrierSet>&& barrier_sets,
                      const Location& loc);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
+    void ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                      ResourceUsageTag exec_tag) const override;
 
   private:
     // TODO PHASE2 This is the wrong thing to use for "replay".. as the event state will have moved on since the record
@@ -182,7 +187,8 @@ class SyncOpBeginRenderPass : public SyncOpBase {
                           std::vector<std::shared_ptr<const vvl::ImageView>>&& attachments,
                           const RenderPassAccessContext* rp_context, const Location& loc);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
+    void ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                      ResourceUsageTag exec_tag) const override;
     const RenderPassAccessContext* GetRenderPassAccessContext() const { return rp_context_; }
 
   protected:
@@ -199,14 +205,16 @@ class SyncOpNextSubpass : public SyncOpBase {
   public:
     SyncOpNextSubpass(const Location& loc);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
+    void ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                      ResourceUsageTag exec_tag) const override;
 };
 
 class SyncOpEndRenderPass : public SyncOpBase {
   public:
     SyncOpEndRenderPass(const Location& loc);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const override;
+    void ReplayRecord(CommandExecutionContext& exec_context, AccessContext& access_context,
+                      ResourceUsageTag exec_tag) const override;
 };
 
 // Render pass state for submit-time replay. The accesses come from RenderPassAccessContext's
@@ -216,8 +224,10 @@ struct RenderPassReplayState {
     RenderPassReplayState(const RenderPassAccessContext* rp_context, const AccessContext& external_context,
                           VkQueueFlags queue_flags);
     AccessContext& GetCurrentReplayContext();
+    const AccessContext& GetCurrentReplayContext() const;
     const AccessContext& GetCurrentRecordedContext() const;
     vvl::span<AccessContext> GetSubpassContexts();
+    vvl::span<const AccessContext> GetSubpassContexts() const;
 
     const RenderPassAccessContext* rp_context = nullptr;
     uint32_t current_subpass = 0;
@@ -228,14 +238,19 @@ struct RenderPassReplayState {
 };
 
 struct ReplayState {
-    ReplayState(CommandExecutionContext& exec_context, const CommandBufferAccessContext& recorded_context,
+    ReplayState(CommandBufferAccessContext& primary_cb_context, const CommandBufferAccessContext& recorded_context,
+                ResourceUsageTag base_tag, const Location& cb_loc);
+    ReplayState(QueueBatchContext& batch_context, const CommandBufferAccessContext& recorded_context,
                 ResourceUsageTag base_tag, const Location& cb_loc);
 
     bool ValidateFirstUse();
     bool DetectFirstUseHazard(const ResourceUsageRange& first_use_range) const;
     QueueBatchContext& GetBatchContext();
+    AccessContext& GetReplayContext();
+    const AccessContext& GetReplayContext() const;
 
     CommandExecutionContext& exec_context;
+    AccessContext& replay_context;
     const CommandBufferAccessContext& recorded_context;
     std::optional<RenderPassReplayState> rp_replay;
     const ResourceUsageTag base_tag;

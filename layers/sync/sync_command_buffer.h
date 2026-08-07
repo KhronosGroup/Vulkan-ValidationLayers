@@ -156,10 +156,6 @@ class CommandExecutionContext {
     using AccessLog = std::vector<ResourceUsageRecord>;
     using CommandBufferSet = std::vector<std::shared_ptr<const vvl::CommandBuffer>>;
     CommandExecutionContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags);
-    virtual ~CommandExecutionContext() = default;
-
-    virtual AccessContext& GetCurrentAccessContext() = 0;
-    virtual const AccessContext& GetCurrentAccessContext() const = 0;
 
     virtual SyncEventsContext& GetEventsContext() = 0;
     virtual const SyncEventsContext& GetEventsContext() const = 0;
@@ -177,7 +173,7 @@ class CommandExecutionContext {
     const VkQueueFlags queue_flags_;
 };
 
-class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProvider {
+class CommandBufferAccessContext final : public CommandExecutionContext, DebugNameProvider {
   public:
     struct SyncOpEntry {
         ResourceUsageTag tag;
@@ -192,7 +188,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     struct AsProxyContext {};
     CommandBufferAccessContext(const CommandBufferAccessContext &real_context, AsProxyContext dummy);
 
-    ~CommandBufferAccessContext() override;
+    ~CommandBufferAccessContext();
 
     // NOTE: because this class is encapsulated in syncval::CommandBuffer, it isn't safe
     // to use shared_from_this from the constructor.
@@ -208,8 +204,8 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const override;
 
-    AccessContext& GetCurrentAccessContext() override { return *current_context_; }
-    const AccessContext& GetCurrentAccessContext() const override { return *current_context_; }
+    AccessContext& GetCurrentAccessContext() { return *current_context_; }
+    const AccessContext& GetCurrentAccessContext() const { return *current_context_; }
 
     SyncEventsContext& GetEventsContext() override { return events_context_; }
     const SyncEventsContext& GetEventsContext() const override { return events_context_; }
