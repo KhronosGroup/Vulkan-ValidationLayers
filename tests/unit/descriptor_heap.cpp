@@ -6153,3 +6153,24 @@ TEST_F(NegativeDescriptorHeap, SamplerMappingWarning) {
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptorHeap, EmbeddedSamplerResourceTypeAll) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 2, VK_SPIRV_RESOURCE_TYPE_ALL_EXT);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+
+    VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
+    mapping.sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.LateBindPipelineInfo();
+    pipe.cp_ci_.stage.pNext = &mapping_info;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11389");
+    pipe.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+}
