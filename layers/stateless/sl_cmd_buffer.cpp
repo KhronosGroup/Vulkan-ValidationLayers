@@ -77,15 +77,15 @@ bool Device::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandB
     bool skip = false;
     const auto& error_obj = context.error_obj;
 
-    if (firstBinding > phys_dev_props.limits.maxVertexInputBindings) {
-        skip |= LogError("VUID-vkCmdBindVertexBuffers-firstBinding-00624", commandBuffer, error_obj.location,
-                         "firstBinding (%" PRIu32 ") must be less than maxVertexInputBindings (%" PRIu32 ").", firstBinding,
-                         phys_dev_props.limits.maxVertexInputBindings);
+    if (firstBinding >= phys_dev_props.limits.maxVertexInputBindings) {
+        skip |=
+            LogError("VUID-vkCmdBindVertexBuffers-firstBinding-00624", commandBuffer, error_obj.location.dot(Field::firstBinding),
+                     "(%" PRIu32 ") must be less than maxVertexInputBindings (%" PRIu32 ").", firstBinding,
+                     phys_dev_props.limits.maxVertexInputBindings);
     } else if ((firstBinding + bindingCount) > phys_dev_props.limits.maxVertexInputBindings) {
         skip |= LogError("VUID-vkCmdBindVertexBuffers-firstBinding-00625", commandBuffer, error_obj.location,
                          "sum of firstBinding (%" PRIu32 ") and bindingCount (%" PRIu32
-                         ") must be less than "
-                         "maxVertexInputBindings (%" PRIu32 ").",
+                         ") must be less than maxVertexInputBindings (%" PRIu32 ").",
                          firstBinding, bindingCount, phys_dev_props.limits.maxVertexInputBindings);
     }
 
