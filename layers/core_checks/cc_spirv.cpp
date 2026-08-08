@@ -45,6 +45,7 @@
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "utils/assert_utils.h"
+#include "utils/cast_utils.h"
 #include "utils/shader_utils.h"
 #include "utils/hash_util.h"
 #include "utils/descriptor_utils.h"
@@ -1102,6 +1103,74 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module& module_state, co
                 break;
         }
     }
+    return skip;
+}
+
+static bool GetSpirvArrayLength(const spirv::Module& module_state, uint32_t type_id, uint32_t& array_length) {
+    const spirv::Instruction* type_insn = module_state.FindDef(type_id);
+    if (!type_insn || type_insn->Opcode() != spv::OpTypeArray) {
+        return false;
+    }
+
+    const spirv::Instruction* length_insn = module_state.FindDef(type_insn->Operand(1));
+    if (!length_insn || length_insn->IsSpecConstant()) {
+        return false;
+    }
+
+    return module_state.GetInt32IfConstant(*length_insn, &array_length);
+}
+
+bool CoreChecks::ValidateCooperativeExtractSubArray(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                    const Location& loc) const {
+    bool skip = false;
+
+    if (module_state.static_data_.extract_sub_array_inst.empty()) {
+        return skip;
+    }
+
+    vvl::unordered_set<uint32_t> allowed_n_sizes{};
+    vvl::unordered_set<uint32_t> allowed_k_sizes{};
+    for (size_t index = 0; index < device_state->cooperative_matrix_properties_khr.size(); ++index) {
+        allowed_n_sizes.emplace(device_state->cooperative_matrix_properties_khr[index].NSize);
+        allowed_k_sizes.emplace(device_state->cooperative_matrix_properties_khr[index].KSize);
+    }
+
+    for (const spirv::Instruction* extract_sub_array_inst : module_state.static_data_.extract_sub_array_inst) {
+        uint32_t result_length = 0;
+        uint32_t src_array_length = 0;
+        if (GetSpirvArrayLength(module_state, extract_sub_array_inst->TypeId(), result_length) &&
+            !allowed_k_sizes.count(result_length)) {
+            skip |= LogError("VUID-RuntimeSpirv-KSize-12353", module_state.handle(), loc,
+                             "shader %s has\n%s\nbut Result Type operand length (%" PRIu32
+                             ") doesn't match any supported VkCooperativeMatrixPropertiesKHR::KSize.",
+                             entrypoint.Describe().c_str(), extract_sub_array_inst->Describe().c_str(), result_length);
+        }
+
+        const spirv::Instruction* source_array = module_state.FindDef(extract_sub_array_inst->Operand(0));
+        if (source_array && GetSpirvArrayLength(module_state, source_array->TypeId(), src_array_length) &&
+            !allowed_n_sizes.count(src_array_length)) {
+            skip |= LogError("VUID-RuntimeSpirv-NSize-12352", module_state.handle(), loc,
+                             "shader %s has\n%s\nbut Source Array operand length (%" PRIu32
+                             ") doesn't match any supported VkCooperativeMatrixPropertiesKHR::NSize.",
+                             entrypoint.Describe().c_str(), extract_sub_array_inst->Describe().c_str(), src_array_length);
+        }
+
+        // Note: Start index can be validated on the CPU side if it is a constant; otherwise, it requires GPU-AV.
+        uint32_t start_index_word = 0;
+        const spirv::Instruction* index_insn = module_state.FindDef(extract_sub_array_inst->Operand(1));
+        if (result_length != 0 && index_insn && !index_insn->IsSpecConstant() &&
+            module_state.GetInt32IfConstant(*index_insn, &start_index_word)) {
+            const int32_t start_index = vvl_bit_cast<int32_t>(start_index_word);
+            if (start_index % static_cast<int32_t>(result_length) != 0) {
+                skip |= LogError("VUID-RuntimeSpirv-OpExtractSubArrayQCOM-12354", module_state.handle(), loc,
+                                 "shader %s has\n%s\nbut Start Index operand value (%" PRId32
+                                 ") is not a multiple of Result Type operand length (%" PRIu32 ").",
+                                 entrypoint.Describe().c_str(), extract_sub_array_inst->Describe().c_str(), start_index,
+                                 result_length);
+            }
+        }
+    }
+
     return skip;
 }
 
@@ -2239,6 +2308,9 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
     }
     if (enabled_features.cooperativeVector) {
         skip |= ValidateCooperativeVector(module_state, entrypoint, loc);
+    }
+    if (enabled_features.cooperativeMatrixConversion) {
+        skip |= ValidateCooperativeExtractSubArray(module_state, entrypoint, loc);
     }
     skip |= ValidateShader64BitIndexing(module_state, entrypoint, stage_state, pipeline, loc);
     skip |= ValidateVectorTypes(module_state, entrypoint, loc);

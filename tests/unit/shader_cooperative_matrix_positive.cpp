@@ -444,3 +444,123 @@ TEST_F(PositiveShaderCooperativeMatrix, WorkgroupScopeLocalSizeIdSpecConstant) {
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(PositiveShaderCooperativeMatrix, OpExtractSubArrayQCOM) {
+    TEST_DESCRIPTION("Correct OpExtractSubArrayQCOM instruction usage.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_COOPERATIVE_MATRIX_CONVERSION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixConversion);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+
+    struct MatrixTileInfo {
+        uint32_t tile_m = 0;
+        uint32_t tile_n = 0;
+        uint32_t tile_k = 0;
+    } tile_info;
+
+    uint32_t props_count = 0;
+    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, nullptr);
+    std::vector<VkCooperativeMatrixPropertiesKHR> cooperative_matrix_props{};
+    cooperative_matrix_props.resize(props_count, vku::InitStructHelper());
+    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, cooperative_matrix_props.data());
+
+    bool found_target_tile = false;
+    for (const auto& cooperative_matrix_prop : cooperative_matrix_props) {
+        if (cooperative_matrix_prop.scope == VK_SCOPE_SUBGROUP_KHR && cooperative_matrix_prop.MSize == 64 &&
+            cooperative_matrix_prop.NSize == 32 && cooperative_matrix_prop.KSize == 16 &&
+            cooperative_matrix_prop.AType == VK_COMPONENT_TYPE_FLOAT16_KHR &&
+            cooperative_matrix_prop.BType == VK_COMPONENT_TYPE_FLOAT16_KHR &&
+            cooperative_matrix_prop.CType == VK_COMPONENT_TYPE_FLOAT16_KHR &&
+            cooperative_matrix_prop.ResultType == VK_COMPONENT_TYPE_FLOAT16_KHR &&
+            cooperative_matrix_prop.saturatingAccumulation == VK_FALSE) {
+            tile_info = {64, 32, 16};
+            found_target_tile = true;
+            break;
+        }
+    }
+
+    if (!found_target_tile) {
+        GTEST_SKIP() << "Failed to find the expected TILE from all enumerated VkCooperativeMatrixPropertiesKHR, skipping test.";
+    }
+
+    const char* cs_source = R"glsl(
+        #version 460 core
+
+        #pragma use_vulkan_memory_model
+        #extension GL_KHR_shader_subgroup_basic : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_QCOM_cooperative_matrix_conversion : enable
+
+        layout(set = 0, binding = 0) coherent readonly buffer InputBufA { float16_t input_data[]; } input_buf_a;
+        layout(set = 0, binding = 1) coherent readonly buffer InputBufB { float16_t input_data[]; } input_buf_b;
+        layout(constant_id = 0) const uint TILE_M = 64;
+        layout(constant_id = 1) const uint TILE_N = 32;
+        layout(constant_id = 2) const uint TILE_K = 16;
+        layout(constant_id = 3) const uint START_INDEX = 0;
+        layout(constant_id = 4) const uint STRIDE_A = 16;
+        layout(constant_id = 5) const uint STRIDE_B = 32;
+
+        layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+        void main() {
+            if (gl_SubgroupSize != TILE_M) {
+                return;
+            }
+
+            coopmat<float16_t, gl_ScopeSubgroup, TILE_M, TILE_K, gl_MatrixUseA> mat_a;
+            coopmat<float16_t, gl_ScopeSubgroup, TILE_K, TILE_N, gl_MatrixUseB> mat_b;
+            coopmat<float16_t, gl_ScopeSubgroup, TILE_M, TILE_N, gl_MatrixUseAccumulator> mat_c;
+
+            coopmat<float16_t, gl_ScopeSubgroup, TILE_M, TILE_K, gl_MatrixUseA> mat_c2a;
+
+            mat_c = coopmat<float16_t, gl_ScopeSubgroup, TILE_M, TILE_N, gl_MatrixUseAccumulator>(0.0);
+
+            coopMatLoad(mat_a, input_buf_a.input_data, 0, STRIDE_A, gl_CooperativeMatrixLayoutRowMajor);
+            coopMatLoad(mat_b, input_buf_b.input_data, 0, STRIDE_B, gl_CooperativeMatrixLayoutRowMajor);
+            mat_c = coopMatMulAdd(mat_a, mat_b, mat_c);
+
+            float16_t vec_c[TILE_N];
+            coopmatToVectorQCOM(mat_c, vec_c);
+
+            float16_t vec_k[TILE_K];
+            extractSubArrayQCOM(vec_c, START_INDEX, vec_k);
+
+            vectorToCoopmatQCOM(vec_k, mat_c2a);
+        }
+    )glsl";
+
+    constexpr std::array<VkSpecializationMapEntry, 6> entries{
+        VkSpecializationMapEntry{0, 0, sizeof(uint32_t)},
+        VkSpecializationMapEntry{1, sizeof(uint32_t) * 1, sizeof(uint32_t)},
+        VkSpecializationMapEntry{2, sizeof(uint32_t) * 2, sizeof(uint32_t)},
+        VkSpecializationMapEntry{3, sizeof(uint32_t) * 3, sizeof(uint32_t)},
+        VkSpecializationMapEntry{4, sizeof(uint32_t) * 4, sizeof(uint32_t)},
+        VkSpecializationMapEntry{5, sizeof(uint32_t) * 5, sizeof(uint32_t)},
+    };
+    const std::array<uint32_t, 6> spec_data{
+        tile_info.tile_m,
+        tile_info.tile_n,
+        tile_info.tile_k,
+        0,
+        tile_info.tile_k,
+        tile_info.tile_n,
+    };
+    const VkSpecializationInfo spec_info{
+        entries.size(),
+        entries.data(),
+        sizeof(spec_data),
+        spec_data.data(),
+    };
+
+    CreateComputePipelineHelper compute_pipe{*this};
+    compute_pipe.cs_ = VkShaderObj{*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &spec_info};
+    compute_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    compute_pipe.CreateComputePipeline();
+}
