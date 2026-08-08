@@ -4299,3 +4299,34 @@ TEST_F(NegativePipeline, AllGraphicsFlag) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+TEST_F(NegativePipeline, ExclusiveScissorCountLessThanViewportCount) {
+    TEST_DESCRIPTION("VkPipelineViewportExclusiveScissorStateCreateInfoNV::exclusiveScissorCount is less than viewportCount.");
+
+    AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    AddRequiredFeature(vkt::Feature::exclusiveScissor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    if (m_device->Physical().limits_.maxViewports <= 1) {
+        GTEST_SKIP() << "Device doesn't support multiple viewports";
+    }
+
+    const VkViewport viewports[2] = {{0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f}};
+    const VkRect2D scissors[2] = {{{0, 0}, {64, 64}}, {{0, 0}, {64, 64}}};
+    const VkRect2D exclusive_scissor = {{0, 0}, {64, 64}};
+
+    VkPipelineViewportExclusiveScissorStateCreateInfoNV exclusive_scissor_state = vku::InitStructHelper();
+    exclusive_scissor_state.exclusiveScissorCount = 1;
+    exclusive_scissor_state.pExclusiveScissors = &exclusive_scissor;
+
+    const auto break_vp = [&](CreatePipelineHelper& helper) {
+        helper.vp_state_ci_.viewportCount = 2;
+        helper.vp_state_ci_.pViewports = viewports;
+        helper.vp_state_ci_.scissorCount = 2;
+        helper.vp_state_ci_.pScissors = scissors;
+        helper.vp_state_ci_.pNext = &exclusive_scissor_state;
+    };
+    CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
+                                      "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02029");
+}
