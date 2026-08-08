@@ -481,77 +481,77 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                                  string_VkSpirvResourceTypeFlagsEXT(mapping.resourceMask).c_str(),
                                  string_VkDescriptorMappingSourceEXT(mapping.source));
             }
-            if (IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT,
-                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
-                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT,
-                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
-                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT})) {
-                const VkSamplerCreateInfo* embedded_sampler = GetEmbeddedSampler(mapping);
-                if (embedded_sampler) {
-                    const vvl::Field source_field = vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source);
-                    if (mapping.bindingCount != 1) {
-                        skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11389", device,
-                                         map_loc.dot(source_field).dot(Field::pEmbeddedSampler),
-                                         "is not NULL (0x%p).\nVkDescriptorSetAndBindingMappingEXT::source = %s.", embedded_sampler,
-                                         string_VkDescriptorMappingSourceEXT(mapping.source));
-                    }
-                    const auto* object_name = vku::FindStructInPNextChain<VkDebugUtilsObjectNameInfoEXT>(embedded_sampler->pNext);
-                    if (object_name && object_name->objectType != VK_OBJECT_TYPE_UNKNOWN) {
-                        const auto vuid = (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-11415"
-                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-11415"
-                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-11415"
-                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11415"
-                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-11415"
-                                              : kVUIDUndefined;
-                        skip |= LogError(vuid, device, map_loc.dot(source_field).dot(Field::pEmbeddedSampler),
-                                         "contains VkDebugUtilsObjectNameInfoEXT structure with objectType "
-                                         "%s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
-                                         string_VkObjectType(object_name->objectType),
-                                         string_VkDescriptorMappingSourceEXT(mapping.source));
-                    }
-                    if (embedded_sampler->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT ||
-                        embedded_sampler->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT) {
-                        const auto vuid = (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-11445"
-                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-11445"
-                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-11445"
-                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11445"
-                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-11445"
-                                              : kVUIDUndefined;
-                        skip |=
-                            LogError(vuid, device, map_loc.dot(source_field).dot(Field::pEmbeddedSampler).dot(Field::borderColor),
+        }
+
+        if (IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT,
+                                       VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
+                                       VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT,
+                                       VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
+                                       VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT})) {
+            const VkSamplerCreateInfo* embedded_sampler = GetEmbeddedSampler(mapping);
+            if (embedded_sampler) {
+                const vvl::Field source_field = vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source);
+                if (mapping.bindingCount != 1) {
+                    skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11389", device,
+                                     map_loc.dot(source_field).dot(Field::pEmbeddedSampler),
+                                     "is not NULL (0x%p).\nVkDescriptorSetAndBindingMappingEXT::source = %s.", embedded_sampler,
+                                     string_VkDescriptorMappingSourceEXT(mapping.source));
+                }
+                const auto* object_name = vku::FindStructInPNextChain<VkDebugUtilsObjectNameInfoEXT>(embedded_sampler->pNext);
+                if (object_name && object_name->objectType != VK_OBJECT_TYPE_UNKNOWN) {
+                    const auto vuid = (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT)
+                                          ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-11415"
+                                      : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT)
+                                          ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-11415"
+                                      : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT)
+                                          ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-11415"
+                                      : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT)
+                                          ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11415"
+                                      : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT)
+                                          ? "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-11415"
+                                          : kVUIDUndefined;
+                    skip |=
+                        LogError(vuid, device, map_loc.dot(source_field).dot(Field::pEmbeddedSampler),
+                                 "contains VkDebugUtilsObjectNameInfoEXT structure with objectType "
+                                 "%s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
+                                 string_VkObjectType(object_name->objectType), string_VkDescriptorMappingSourceEXT(mapping.source));
+                }
+                if (embedded_sampler->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT ||
+                    embedded_sampler->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT) {
+                    const auto vuid = (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT)
+                                          ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-11445"
+                                      : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT)
+                                          ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-11445"
+                                      : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT)
+                                          ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-11445"
+                                      : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT)
+                                          ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11445"
+                                      : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT)
+                                          ? "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-11445"
+                                          : kVUIDUndefined;
+                    skip |= LogError(vuid, device, map_loc.dot(source_field).dot(Field::pEmbeddedSampler).dot(Field::borderColor),
                                      "is %s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
                                      string_VkBorderColor(embedded_sampler->borderColor),
                                      string_VkDescriptorMappingSourceEXT(mapping.source));
-                    }
-                    if (vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(embedded_sampler->pNext)) {
-                        const auto vuid = (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-12432"
-                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-12432"
-                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-12432"
-                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-12432"
-                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT)
-                                              ? "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-12432"
-                                              : kVUIDUndefined;
-                        skip |= LogError(
-                            vuid, device, map_loc.dot(source_field).dot(Field::pEmbeddedSampler).dot(Field::pNext),
-                            "contains VkOpaqueCaptureDescriptorDataCreateInfoEXT\nVkDescriptorSetAndBindingMappingEXT::source = "
-                            "%s\n%s",
-                            string_VkDescriptorMappingSourceEXT(mapping.source),
-                            PrintPNextChain(Struct::VkSamplerCreateInfo, embedded_sampler->pNext).c_str());
-                    }
+                }
+                if (vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(embedded_sampler->pNext)) {
+                    const auto vuid = (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT)
+                                          ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-12432"
+                                      : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT)
+                                          ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-12432"
+                                      : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT)
+                                          ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-12432"
+                                      : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT)
+                                          ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-12432"
+                                      : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT)
+                                          ? "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-12432"
+                                          : kVUIDUndefined;
+                    skip |= LogError(
+                        vuid, device, map_loc.dot(source_field).dot(Field::pEmbeddedSampler).dot(Field::pNext),
+                        "contains VkOpaqueCaptureDescriptorDataCreateInfoEXT\nVkDescriptorSetAndBindingMappingEXT::source = "
+                        "%s\n%s",
+                        string_VkDescriptorMappingSourceEXT(mapping.source),
+                        PrintPNextChain(Struct::VkSamplerCreateInfo, embedded_sampler->pNext).c_str());
                 }
             }
         }
