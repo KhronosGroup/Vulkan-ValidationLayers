@@ -480,13 +480,15 @@ TEST_F(NegativeBuffer, VertexBufferOffset) {
 
     // firstBinding set over limit
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers-firstBinding-00624");
-    vk::CmdBindVertexBuffers(m_command_buffer, maxVertexInputBindings + 1, 1, &vbo.handle(), &kZeroDeviceSize);
+    vk::CmdBindVertexBuffers(m_command_buffer, maxVertexInputBindings, 1, &vbo.handle(), &kZeroDeviceSize);
     m_errorMonitor->VerifyFound();
 
     // sum of firstBinding and bindingCount set over limit
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers-firstBinding-00625");
     // bindingCount of 1 puts it over limit
-    vk::CmdBindVertexBuffers(m_command_buffer, maxVertexInputBindings, 1, &vbo.handle(), &kZeroDeviceSize);
+    VkBuffer bindings[2] = {vbo.handle(), vbo.handle()};
+    VkDeviceSize offsets[2] = {kZeroDeviceSize, kZeroDeviceSize};
+    vk::CmdBindVertexBuffers(m_command_buffer, maxVertexInputBindings - 1, 2, bindings, offsets);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();

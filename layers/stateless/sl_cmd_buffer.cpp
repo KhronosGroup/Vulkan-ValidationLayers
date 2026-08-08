@@ -85,7 +85,7 @@ bool Device::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandB
     } else if ((firstBinding + bindingCount) > phys_dev_props.limits.maxVertexInputBindings) {
         skip |= LogError("VUID-vkCmdBindVertexBuffers-firstBinding-00625", commandBuffer, error_obj.location,
                          "sum of firstBinding (%" PRIu32 ") and bindingCount (%" PRIu32
-                         ") must be less than maxVertexInputBindings (%" PRIu32 ").",
+                         ") must not be greater than maxVertexInputBindings (%" PRIu32 ").",
                          firstBinding, bindingCount, phys_dev_props.limits.maxVertexInputBindings);
     }
 
