@@ -2959,8 +2959,8 @@ bool CoreChecks::ValidateDataGraphResourceVariables(const spirv::Module& module_
             // "its arrayElement member must be zero if OpVariable is not a OpTypeArray or if OpVariable is a OpTypeArray of
             // OpTypeTensorARM with Shape present"
             if (resource.arrayElement != 0) {
-                LogError("VUID-RuntimeSpirv-pNext-09923", device, resource_loc.dot(Field::arrayElement),
-                         "(%" PRIu32 ") is not zero.\n%s", resource.arrayElement, variable.DescribeDescriptor().c_str());
+                skip |= LogError("VUID-RuntimeSpirv-pNext-09923", device, resource_loc.dot(Field::arrayElement),
+                                 "(%" PRIu32 ") is not zero.\n%s", resource.arrayElement, variable.DescribeDescriptor().c_str());
             }
 
             if (auto* tensor_desc = vku::FindStructInPNextChain<VkTensorDescriptionARM>(resource.pNext)) {

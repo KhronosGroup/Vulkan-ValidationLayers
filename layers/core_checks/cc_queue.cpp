@@ -767,9 +767,9 @@ bool CoreChecks::ProcessSubmissionBatch(const vvl::SubmitTimeTracker& tracker,
         if (invlid_signal_value) {
             const Location signal_semaphore_loc = GetSignaledSemaphoreLocation(submit_loc, i);
             const auto& vuid = GetQueueSubmitVUID(signal_semaphore_loc, vvl::SubmitError::kTimelineSemSmallValue);
-            LogError(vuid, semaphore, signal_semaphore_loc,
-                     "(%s) signaled with value %" PRIu64 " which is smaller than the current value %" PRIu64,
-                     FormatHandle(semaphore).c_str(), signal_value, *current_value);
+            skip |= LogError(vuid, semaphore, signal_semaphore_loc,
+                             "(%s) signaled with value %" PRIu64 " which is smaller than the current value %" PRIu64,
+                             FormatHandle(semaphore).c_str(), signal_value, *current_value);
         }
     }
     // Queue family ownership transfer (QFOT) validation
