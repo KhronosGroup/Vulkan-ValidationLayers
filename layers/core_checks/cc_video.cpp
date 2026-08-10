@@ -5688,7 +5688,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                     } else if (pDecodeInfo->pReferenceSlots[i].slotIndex >= 0 &&
                                pDecodeInfo->pReferenceSlots[i].slotIndex != it->second) {
                         skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07151", commandBuffer, error_obj.location,
-                                         "the bound video picture resource specified  in "
+                                         "the bound video picture resource specified in "
                                          "pDecodeInfo->pReferenceSlots[%" PRIu32
                                          "].pPictureResource is not currently "
                                          "associated with the DPB slot index specifed in "

@@ -1397,7 +1397,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
 
     if (settings_data->enabled[gpu_validation] && !settings_data->disabled[core_checks]) {
         setting_warnings.emplace_back(
-            "Both GPU Assisted Validation and Normal Core Check Validation are enabled, this is not recommend as it  will be very "
+            "Both GPU Assisted Validation and Normal Core Check Validation are enabled, this is not recommend as it will be very "
             "slow. Once all "
             "errors in Core Check are solved, please disable, then only use GPU-AV for best performance.");
     }

@@ -1242,9 +1242,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
 
         if (subresource_range.levelCount != 1) {
             skip |= LogError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03218", objlist, attachment_loc,
-                             "was created with mip levelCount %s but only a single mip level (levelCount ==  1) is allowed.",
-                              string_LevelCount(image_state->GetMipLevels(), image_view_create_info->subresourceRange).c_str());
-
+                             "was created with mip levelCount %s but only a single mip level (levelCount == 1) is allowed.",
+                             string_LevelCount(image_state->GetMipLevels(), image_view_create_info->subresourceRange).c_str());
         }
 
         if (IsIdentitySwizzle(image_view_create_info->components) == false) {
@@ -1893,7 +1892,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                                 skip |= LogError(
                                     "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06876", device,
                                     subpass_loc.pNext(Struct::VkSubpassDescriptionDepthStencilResolve, Field::depthResolveMode),
-                                    "(%s) is different from  stencilResolveMode (%s), and %s is %s, and "
+                                    "(%s) is different from stencilResolveMode (%s), and %s is %s, and "
                                     "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampled was set to "
                                     "VK_TRUE.",
                                     string_VkResolveModeFlagBits(subpass_depth_stencil_resolve->stencilResolveMode),
@@ -1909,7 +1908,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                                 skip |= LogError(
                                     "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06877", device,
                                     subpass_loc.pNext(Struct::VkSubpassDescriptionDepthStencilResolve, Field::depthResolveMode),
-                                    "(%s) is different from  stencilResolveMode (%s), and %s is %s, and "
+                                    "(%s) is different from stencilResolveMode (%s), and %s is %s, and "
                                     "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampled was set to "
                                     "VK_TRUE.",
                                     string_VkResolveModeFlagBits(subpass_depth_stencil_resolve->stencilResolveMode),
@@ -3015,8 +3014,10 @@ bool CoreChecks::ValidateRenderingInfoAttachment(const vvl::ImageView& image_vie
 
     if (image_view_state.normalized_subresource_range.levelCount != 1) {
         // VU being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8439
-        skip |= LogError("UNASSIGNED-VkRenderPassAttachmentBeginInfo-mipLevelCount", objlist, attachment_loc.dot(Field::imageView),
-                            "was created with mip levelCount %s but only a single mip level (levelCount ==  1) is allowed.", string_LevelCount(image_view_state.image_state->GetMipLevels(), image_view_state.create_info.subresourceRange).c_str());
+        skip |= LogError(
+            "UNASSIGNED-VkRenderPassAttachmentBeginInfo-mipLevelCount", objlist, attachment_loc.dot(Field::imageView),
+            "was created with mip levelCount %s but only a single mip level (levelCount == 1) is allowed.",
+            string_LevelCount(image_view_state.image_state->GetMipLevels(), image_view_state.create_info.subresourceRange).c_str());
     }
 
     auto device_group_render_pass_begin_info = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(rendering_info.pNext);
@@ -3476,7 +3477,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
                 skip |= LogError(
                     "VUID-VkRenderingInfo-pNext-06112", objlist,
                     rendering_info_loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView),
-                    "width  (%" PRIu32 ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRId32
+                    "width (%" PRIu32 ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRId32
                     ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
                     ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.width (%" PRIu32 ").",
                     fdm_image_state->GetExtent().width, render_area.offset.x, render_area.extent.width,
@@ -5122,9 +5123,10 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& c
         // Verify that view only has a single mip level
         if (subresource_range.levelCount != 1) {
             LogObjectList objlist(create_info.renderPass, image_views[i], ivci.image);
-            skip |= LogError("VUID-VkFramebufferCreateInfo-pAttachments-00883", objlist, attachment_loc,
-                             "has mip levelCount of %s but only a single mip level (levelCount ==  1) is allowed when creating a Framebuffer.",
-                              string_LevelCount(image_state->GetMipLevels(), view_state->create_info.subresourceRange).c_str());
+            skip |= LogError(
+                "VUID-VkFramebufferCreateInfo-pAttachments-00883", objlist, attachment_loc,
+                "has mip levelCount of %s but only a single mip level (levelCount == 1) is allowed when creating a Framebuffer.",
+                string_LevelCount(image_state->GetMipLevels(), view_state->create_info.subresourceRange).c_str());
         }
         const uint32_t mip_level = subresource_range.baseMipLevel;
         uint32_t mip_width = std::max(1u, image_state->GetExtent().width >> mip_level);
