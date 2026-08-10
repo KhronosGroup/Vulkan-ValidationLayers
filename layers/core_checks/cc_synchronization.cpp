@@ -727,7 +727,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState& state, const 
                 if (wait_info.semaphore == sig_info.semaphore && wait_info.value >= sig_info.value) {
                     Location sig_loc = submit_loc.dot(Field::pSignalSemaphoreInfos, sig_index);
                     skip |= LogError("VUID-VkSubmitInfo2-semaphore-03881", objlist, wait_info_loc.dot(Field::value),
-                                     "(%" PRIu64 ") is less or equal to %s (%" PRIu64 ").", wait_info.value,
+                                     "(%" PRIu64 ") is not less than %s (%" PRIu64 ").", wait_info.value,
                                      sig_loc.dot(Field::value).Fields().c_str(), sig_info.value);
                 }
             }
