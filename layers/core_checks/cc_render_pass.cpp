@@ -3230,10 +3230,11 @@ bool CoreChecks::ValidateRenderingAttachmentInfoMultisampledResolveMode(VkComman
 
     if (is_multisampled_resolve) {
         if (image_view_state.samples == VK_SAMPLE_COUNT_1_BIT) {
-            if (attachment_info.resolveMode == VK_RESOLVE_MODE_NONE) {
+            if (attachment_info.resolveMode == VK_RESOLVE_MODE_NONE && attachment_info.storeOp == VK_ATTACHMENT_STORE_OP_STORE) {
                 const LogObjectList objlist(commandBuffer, attachment_info.imageView);
                 skip |= LogError("VUID-VkRenderingAttachmentInfo-None-12256", commandBuffer, attachment_loc.dot(Field::resolveMode),
-                                 "is VK_RESOLVE_MODE_NONE but imageView is VK_SAMPLE_COUNT_1_BIT and "
+                                 "is VK_RESOLVE_MODE_NONE but storeOp is VK_ATTACHMENT_STORE_OP_STORE, imageView is "
+                                 "VK_SAMPLE_COUNT_1_BIT, and "
                                  "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampledEnable is VK_TRUE");
             }
             if (attachment_info.resolveImageView != VK_NULL_HANDLE) {
