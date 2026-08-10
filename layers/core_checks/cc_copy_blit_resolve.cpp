@@ -4425,9 +4425,9 @@ bool CoreChecks::ValidateCmdCopyMemoryToImage(VkCommandBuffer command_buffer,
             vvl::range<VkDeviceAddress> other_region_range{other_region.addressRange.address,
                                                            other_region.addressRange.address + other_region.addressRange.size};
             if (region_range.intersects(other_region_range)) {
-                skip |= LogError("VUID-VkCopyDeviceMemoryImageInfoKHR-addressRange-13026", objlist,
-                                 region_loc.dot(Field::addressRange), "%s overlaps with pRegions[%" PRIu32 "].addressRange %s",
-                                 string_range_hex(region_range).c_str(), j, string_range_hex(other_region_range).c_str());
+                skip |= LogError("VUID-VkCopyDeviceMemoryImageInfoKHR-pRegions-12473", objlist, region_loc.dot(Field::addressRange),
+                                 "%s overlaps with pRegions[%" PRIu32 "].addressRange %s", string_range_hex(region_range).c_str(),
+                                 j, string_range_hex(other_region_range).c_str());
             }
         }
 
