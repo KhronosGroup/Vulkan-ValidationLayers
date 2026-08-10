@@ -732,6 +732,13 @@
                     "cooperativeMatrixTensorAddressing": true,
                     "cooperativeMatrixBlockLoads": true
                 },
+                "VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT": {
+                    "cooperativeMatrixProperties2": true,
+                    "cooperativeMatrixReductions": true,
+                    "cooperativeMatrixConversions": true,
+                    "cooperativeMatrixPerElementOperations": true,
+                    "cooperativeMatrixGetCoordinate": true
+                },
                 "VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV": {
                     "partitionedAccelerationStructure": true
                 },
@@ -1616,6 +1623,28 @@
                     ],
                     "quadOperationsInAllStages": true
                 },
+                "VkPhysicalDeviceSubgroupSizeControlProperties": {
+                    "minSubgroupSize" : 16,
+                    "maxSubgroupSize" : 64,
+                    "maxComputeWorkgroupSubgroups": 128,
+                    "requiredSubgroupSizeStages": [
+                        "VK_SHADER_STAGE_VERTEX_BIT",
+                        "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT",
+                        "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT",
+                        "VK_SHADER_STAGE_GEOMETRY_BIT",
+                        "VK_SHADER_STAGE_FRAGMENT_BIT",
+                        "VK_SHADER_STAGE_COMPUTE_BIT",
+                        "VK_SHADER_STAGE_RAYGEN_BIT_KHR",
+                        "VK_SHADER_STAGE_ANY_HIT_BIT_KHR",
+                        "VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR",
+                        "VK_SHADER_STAGE_MISS_BIT_KHR",
+                        "VK_SHADER_STAGE_INTERSECTION_BIT_KHR",
+                        "VK_SHADER_STAGE_CALLABLE_BIT_KHR",
+                        "VK_SHADER_STAGE_TASK_BIT_EXT",
+                        "VK_SHADER_STAGE_MESH_BIT_EXT",
+                        "VK_SHADER_STAGE_SUBPASS_SHADING_BIT_HUAWEI"
+                    ]
+                },
                 "VkPhysicalDevicePointClippingProperties": {},
                 "VkPhysicalDeviceProtectedMemoryProperties": {
                     "protectedNoFault": false
@@ -1809,7 +1838,7 @@
                 "VkPhysicalDeviceCooperativeMatrix2PropertiesNV": {
                     "cooperativeMatrixWorkgroupScopeMaxWorkgroupSize": 64,
                     "cooperativeMatrixFlexibleDimensionsMaxDimension": 256,
-                    "cooperativeMatrixWorkgroupScopeReservedSharedMemory": 24576
+                    "cooperativeMatrixWorkgroupScopeReservedSharedMemory": 8192
                 },
                 "VkPhysicalDeviceExternalComputeQueuePropertiesNV": {
                     "externalDataSize": 64,
@@ -2100,7 +2129,7 @@
                 "VkPhysicalDeviceVulkan13Properties": {
                     "minSubgroupSize": 16,
                     "maxSubgroupSize": 64,
-                    "maxComputeWorkgroupSubgroups": 2097152,
+                    "maxComputeWorkgroupSubgroups": 128,
                     "requiredSubgroupSizeStages": [
                         "VK_SHADER_STAGE_VERTEX_BIT",
                         "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT",
@@ -2468,6 +2497,7 @@
                 "VK_EXT_color_write_enable": 1,
                 "VK_EXT_conditional_rendering": 1,
                 "VK_EXT_conservative_rasterization": 1,
+                "VK_EXT_cooperative_matrix_maintenance1": 1,
                 "VK_EXT_custom_border_color": 1,
                 "VK_EXT_custom_resolve": 1,
                 "VK_EXT_debug_marker": 1,

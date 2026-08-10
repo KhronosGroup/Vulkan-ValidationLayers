@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <spirv/unified1/spirv.hpp>
 #include <vulkan/vulkan_core.h>
 #include <algorithm>
 #include "layer_validation_tests.h"
@@ -20,7 +21,15 @@
 #include "cooperative_matrix_helper.h"
 #include "shader_helper.h"
 
-class NegativeShaderCooperativeMatrix : public CooperativeMatrixTest {};
+class NegativeShaderCooperativeMatrix : public CooperativeMatrixTest {
+  protected:
+    void ExpectProperties2Error(const VkPhysicalDeviceCooperativeMatrixInfo2EXT& info, const char* vuid) {
+        uint32_t count = 0;
+        m_errorMonitor->SetDesiredError(vuid);
+        vk::GetPhysicalDeviceCooperativeMatrixProperties2EXT(Gpu(), &info, &count, nullptr);
+        m_errorMonitor->VerifyFound();
+    }
+};
 
 TEST_F(NegativeShaderCooperativeMatrix, SpecInfo) {
     TEST_DESCRIPTION("Test VK_KHR_cooperative_matrix.");
@@ -970,4 +979,333 @@ TEST_F(NegativeShaderCooperativeMatrix, RequiredVulkanVersionShaderObject) {
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10771");
     const vkt::Shader comp_shader(*m_device, shader_ci);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, Properties2FeatureNotSupported) {
+    AddRequiredExtensions(VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT maintenance1_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(maintenance1_features);
+    if (maintenance1_features.cooperativeMatrixProperties2) {
+        GTEST_SKIP() << "cooperativeMatrixProperties2 is supported";
+    }
+
+    VkPhysicalDeviceCooperativeMatrixInfo2EXT info = vku::InitStructHelper();
+    info.scope = VK_SCOPE_SUBGROUP_KHR;
+    ExpectProperties2Error(info, "VUID-vkGetPhysicalDeviceCooperativeMatrixProperties2EXT-cooperativeMatrixProperties2-13371");
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, Properties2InvalidScope) {
+    AddRequiredExtensions(VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixProperties2);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceCooperativeMatrixInfo2EXT info = vku::InitStructHelper();
+    info.scope = VK_SCOPE_DEVICE_KHR;
+    ExpectProperties2Error(info, "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-scope-13372");
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, Properties2WorkgroupScopeNotSupported) {
+    AddRequiredExtensions(VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixProperties2);
+    RETURN_IF_SKIP(Init());
+
+    if (DeviceExtensionSupported(Gpu(), nullptr, VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME)) {
+        VkPhysicalDeviceCooperativeMatrix2FeaturesNV cooperative_matrix2_features = vku::InitStructHelper();
+        GetPhysicalDeviceFeatures2(cooperative_matrix2_features);
+        if (cooperative_matrix2_features.cooperativeMatrixWorkgroupScope) {
+            GTEST_SKIP() << "cooperativeMatrixWorkgroupScope is supported";
+        }
+    }
+
+    VkPhysicalDeviceCooperativeMatrixInfo2EXT info = vku::InitStructHelper();
+    info.scope = VK_SCOPE_WORKGROUP_KHR;
+    info.invocations = 1;
+    ExpectProperties2Error(info, "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-cooperativeMatrixWorkgroupScope-13373");
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, Properties2SubgroupSizeNotPowerOfTwo) {
+    AddRequiredExtensions(VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixProperties2);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceCooperativeMatrixInfo2EXT info = vku::InitStructHelper();
+    info.scope = VK_SCOPE_SUBGROUP_KHR;
+    info.subgroupSize = 3;
+    VkPhysicalDeviceSubgroupSizeControlFeatures subgroup_size_control_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(subgroup_size_control_features);
+    if (subgroup_size_control_features.subgroupSizeControl) {
+        VkPhysicalDeviceSubgroupSizeControlProperties subgroup_size_control_props = vku::InitStructHelper();
+        GetPhysicalDeviceProperties2(subgroup_size_control_props);
+        if (info.subgroupSize < subgroup_size_control_props.minSubgroupSize) {
+            m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-scope-13375");
+        }
+        if (info.subgroupSize > subgroup_size_control_props.maxSubgroupSize) {
+            m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-scope-13376");
+        }
+    } else {
+        VkPhysicalDeviceSubgroupProperties subgroup_props = vku::InitStructHelper();
+        GetPhysicalDeviceProperties2(subgroup_props);
+        if (info.subgroupSize != subgroup_props.subgroupSize) {
+            m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-scope-13377");
+        }
+    }
+    ExpectProperties2Error(info, "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-subgroupSize-13374");
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, Properties2SubgroupSize) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixProperties2);
+    AddRequiredFeature(vkt::Feature::subgroupSizeControl);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceSubgroupSizeControlProperties subgroup_size_control_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(subgroup_size_control_props);
+    if (subgroup_size_control_props.minSubgroupSize <= 1) {
+        GTEST_SKIP() << "minSubgroupSize is 1";
+    } else if (subgroup_size_control_props.maxSubgroupSize > UINT32_MAX / 2) {
+        GTEST_SKIP() << "maxSubgroupSize cannot be doubled";
+    }
+
+    VkPhysicalDeviceCooperativeMatrixInfo2EXT info = vku::InitStructHelper();
+    info.scope = VK_SCOPE_SUBGROUP_KHR;
+    info.subgroupSize = 1;
+    ExpectProperties2Error(info, "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-scope-13375");
+
+    info.subgroupSize = subgroup_size_control_props.maxSubgroupSize * 2;
+    ExpectProperties2Error(info, "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-scope-13376");
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, Properties2SubgroupSizeWithoutSizeControl) {
+    AddRequiredExtensions(VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixProperties2);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceSubgroupSizeControlFeatures subgroup_size_control_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(subgroup_size_control_features);
+    if (subgroup_size_control_features.subgroupSizeControl) {
+        GTEST_SKIP() << "subgroupSizeControl is supported";
+    }
+
+    VkPhysicalDeviceSubgroupProperties subgroup_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(subgroup_props);
+    if (subgroup_props.subgroupSize > UINT32_MAX / 2) {
+        GTEST_SKIP() << "subgroupSize cannot be doubled";
+    }
+
+    VkPhysicalDeviceCooperativeMatrixInfo2EXT info = vku::InitStructHelper();
+    info.scope = VK_SCOPE_SUBGROUP_KHR;
+    info.subgroupSize = subgroup_props.subgroupSize * 2;
+    ExpectProperties2Error(info, "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-scope-13377");
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, Properties2WorkgroupInvocations) {
+    AddRequiredExtensions(VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixProperties2);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixWorkgroupScope);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceCooperativeMatrixInfo2EXT info = vku::InitStructHelper();
+    info.scope = VK_SCOPE_WORKGROUP_KHR;
+    info.invocations = 3;
+    ExpectProperties2Error(info, "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-invocations-13378");
+
+    info.invocations = 1;
+    info.subgroupSize = 2;
+    ExpectProperties2Error(info, "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-subgroupSize-13379");
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, Properties2WorkgroupInvocationsTooLarge) {
+    AddRequiredExtensions(VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixProperties2);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixWorkgroupScope);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceCooperativeMatrix2PropertiesNV cooperative_matrix2_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(cooperative_matrix2_props);
+    uint32_t invocations = 1;
+    while (invocations <= cooperative_matrix2_props.cooperativeMatrixWorkgroupScopeMaxWorkgroupSize &&
+           invocations <= UINT32_MAX / 2) {
+        invocations *= 2;
+    }
+    if (invocations <= cooperative_matrix2_props.cooperativeMatrixWorkgroupScopeMaxWorkgroupSize) {
+        GTEST_SKIP() << "maximum workgroup size is too large to construct a failing power-of-two value";
+    }
+
+    VkPhysicalDeviceCooperativeMatrixInfo2EXT info = vku::InitStructHelper();
+    info.scope = VK_SCOPE_WORKGROUP_KHR;
+    info.invocations = invocations;
+    ExpectProperties2Error(info, "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-scope-13380");
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, Properties2InvocationsNotZeroForSubgroup) {
+    AddRequiredExtensions(VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixProperties2);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceCooperativeMatrixInfo2EXT info = vku::InitStructHelper();
+    info.scope = VK_SCOPE_SUBGROUP_KHR;
+    info.invocations = 1;
+    ExpectProperties2Error(info, "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-invocations-13381");
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, Properties2OpTypeNotSupported) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixProperties2);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
+    if (helper.HasSupportedMatrixUse(VK_SCOPE_SUBGROUP_KHR, 3, 5, VK_COMPONENT_TYPE_FLOAT16_KHR,
+                                     spv::CooperativeMatrixUseMatrixAccumulatorKHR)) {
+        GTEST_SKIP() << "The fixed cooperative-matrix properties support an FP16 3x5 accumulator";
+    }
+
+    VkPhysicalDeviceCooperativeMatrixInfo2EXT info = vku::InitStructHelper();
+    info.scope = VK_SCOPE_SUBGROUP_KHR;
+    const auto properties = QueryCooperativeMatrixProperties2(Gpu(), info);
+    ASSERT_TRUE(properties.has_value());
+    info.flags = VK_COOPERATIVE_MATRIX_SATURATING_ACCUMULATION_BIT_EXT;
+    const auto saturating_properties = QueryCooperativeMatrixProperties2(Gpu(), info);
+    ASSERT_TRUE(saturating_properties.has_value());
+
+    const auto supports_type = [](const std::vector<VkCooperativeMatrixProperties2EXT>& properties) {
+        return std::any_of(properties.begin(), properties.end(), [](const VkCooperativeMatrixProperties2EXT& property) {
+            return property.MGranularity == 3 && property.NGranularity == 5 &&
+                   (property.CType == VK_COMPONENT_TYPE_FLOAT16_KHR || property.ResultType == VK_COMPONENT_TYPE_FLOAT16_KHR);
+        });
+    };
+    // OpTypeCooperativeMatrixKHR has no saturating operand, so either Properties2 table can support it.
+    if (supports_type(*properties) || supports_type(*saturating_properties)) {
+        GTEST_SKIP() << "The Properties2 query supports an FP16 3x5 accumulator";
+    }
+
+    VkPhysicalDeviceVulkan11Properties properties11 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(properties11);
+
+    std::string cs_source = R"glsl(
+        #version 450
+        #pragma use_vulkan_memory_model
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        layout(local_size_x = %SUBGROUP_SIZE%) in;
+        void main() {
+            coopmat<float16_t, gl_ScopeSubgroup, 3, 5, gl_MatrixUseAccumulator> bad_size =
+                coopmat<float16_t, gl_ScopeSubgroup, 3, 5, gl_MatrixUseAccumulator>(float16_t(0.0));
+        }
+    )glsl";
+
+    const auto subgroup_size_pos = cs_source.find("%SUBGROUP_SIZE%");
+    ASSERT_NE(subgroup_size_pos, std::string::npos);
+    cs_source.replace(subgroup_size_pos, sizeof("%SUBGROUP_SIZE%") - 1, std::to_string(properties11.subgroupSize));
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixProperties2-13382");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, Properties2MulAddNotSupported) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixProperties2);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
+    VkPhysicalDeviceCooperativeMatrixInfo2EXT info = vku::InitStructHelper();
+    info.scope = VK_SCOPE_SUBGROUP_KHR;
+    const auto properties = QueryCooperativeMatrixProperties2(Gpu(), info);
+    ASSERT_TRUE(properties.has_value());
+    info.flags = VK_COOPERATIVE_MATRIX_SATURATING_ACCUMULATION_BIT_EXT;
+    const auto saturating_properties = QueryCooperativeMatrixProperties2(Gpu(), info);
+    ASSERT_TRUE(saturating_properties.has_value());
+
+    const auto properties2_support_use = [](const std::vector<VkCooperativeMatrixProperties2EXT>& properties, uint32_t use) {
+        return std::any_of(properties.begin(), properties.end(), [use](const VkCooperativeMatrixProperties2EXT& property) {
+            if (use == spv::CooperativeMatrixUseMatrixAKHR) {
+                return property.MGranularity == 16 && property.KGranularity == 16 &&
+                       property.AType == VK_COMPONENT_TYPE_FLOAT16_KHR;
+            }
+            if (use == spv::CooperativeMatrixUseMatrixBKHR) {
+                return property.KGranularity == 16 && property.NGranularity == 16 &&
+                       property.BType == VK_COMPONENT_TYPE_FLOAT16_KHR;
+            }
+            return property.MGranularity == 16 && property.NGranularity == 16 &&
+                   (property.CType == VK_COMPONENT_TYPE_FLOAT16_KHR || property.ResultType == VK_COMPONENT_TYPE_FLOAT16_KHR);
+        });
+    };
+    const auto supports_type = [&helper, &properties, &saturating_properties, &properties2_support_use](uint32_t use) {
+        return helper.HasSupportedMatrixUse(VK_SCOPE_SUBGROUP_KHR, 16, 16, VK_COMPONENT_TYPE_FLOAT16_KHR, use) ||
+               properties2_support_use(*properties, use) || properties2_support_use(*saturating_properties, use);
+    };
+    if (!supports_type(spv::CooperativeMatrixUseMatrixAKHR) || !supports_type(spv::CooperativeMatrixUseMatrixBKHR) ||
+        !supports_type(spv::CooperativeMatrixUseMatrixAccumulatorKHR)) {
+        GTEST_SKIP() << "The advertised properties do not support all FP16 16x16 cooperative-matrix types";
+    }
+
+    const bool fixed_saturating_mul_add =
+        std::any_of(helper.coop_matrix_props.begin(), helper.coop_matrix_props.end(), [](const auto& property) {
+            return property.scope == VK_SCOPE_SUBGROUP_KHR && property.MSize == 16 && property.NSize == 16 &&
+                   property.KSize == 16 && property.AType == VK_COMPONENT_TYPE_FLOAT16_KHR &&
+                   property.BType == VK_COMPONENT_TYPE_FLOAT16_KHR && property.CType == VK_COMPONENT_TYPE_FLOAT16_KHR &&
+                   property.ResultType == VK_COMPONENT_TYPE_FLOAT16_KHR && property.saturatingAccumulation;
+        });
+    const bool properties2_saturating_mul_add = std::any_of(
+        saturating_properties->begin(), saturating_properties->end(), [](const VkCooperativeMatrixProperties2EXT& property) {
+            return property.MGranularity == 16 && property.NGranularity == 16 && property.KGranularity == 16 &&
+                   property.AType == VK_COMPONENT_TYPE_FLOAT16_KHR && property.BType == VK_COMPONENT_TYPE_FLOAT16_KHR &&
+                   property.CType == VK_COMPONENT_TYPE_FLOAT16_KHR && property.ResultType == VK_COMPONENT_TYPE_FLOAT16_KHR;
+        });
+
+    VkPhysicalDeviceVulkan11Properties properties11 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(properties11);
+
+    std::string cs_source = R"glsl(
+        #version 450
+        #pragma use_vulkan_memory_model
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+
+        layout(local_size_x = %SUBGROUP_SIZE%) in;
+        void main() {
+            coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> a;
+            coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseB> b;
+            coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> c;
+            coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> result =
+                coopMatMulAdd(a, b, c, gl_MatrixOperandsSaturatingAccumulation);
+        }
+    )glsl";
+
+    const auto subgroup_size_pos = cs_source.find("%SUBGROUP_SIZE%");
+    ASSERT_NE(subgroup_size_pos, std::string::npos);
+    cs_source.replace(subgroup_size_pos, sizeof("%SUBGROUP_SIZE%") - 1, std::to_string(properties11.subgroupSize));
+
+    const auto create_invalid_pipeline = [this](const char* source) {
+        CreateComputePipelineHelper pipe(*this);
+        pipe.cs_ = VkShaderObj(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+        m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixProperties2-13383");
+        pipe.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    };
+    // Only expect the saturating case to fail when neither property API advertises it.
+    if (!fixed_saturating_mul_add && !properties2_saturating_mul_add) {
+        create_invalid_pipeline(cs_source.c_str());
+    }
+
+    std::string signed_components_source = cs_source;
+    const auto flags_pos = signed_components_source.find("gl_MatrixOperandsSaturatingAccumulation");
+    ASSERT_NE(flags_pos, std::string::npos);
+    // GLSL has no named constant for the signed-component bits; bit zero is MatrixASignedComponentsKHR.
+    // A signed-component flag cannot match an FP16 property, so this case is invalid on every implementation.
+    signed_components_source.replace(flags_pos, sizeof("gl_MatrixOperandsSaturatingAccumulation") - 1, "1");
+    create_invalid_pipeline(signed_components_source.c_str());
 }

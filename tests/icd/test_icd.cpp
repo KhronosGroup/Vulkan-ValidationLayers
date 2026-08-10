@@ -2001,6 +2001,77 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixFlexible
     return VK_SUCCESS;
 }
 
+static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixProperties2EXT(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceCooperativeMatrixInfo2EXT* pCooperativeMatrixInfo,
+    uint32_t* pPropertyCount, VkCooperativeMatrixProperties2EXT* pProperties) {
+    const bool saturating = (pCooperativeMatrixInfo->flags & VK_COOPERATIVE_MATRIX_SATURATING_ACCUMULATION_BIT_EXT) != 0;
+    // Give each selector a distinct, realistic tile so tests can detect a query made with the wrong selector.
+    struct TileDimensions {
+        uint32_t m;
+        uint32_t n;
+        uint32_t k;
+    } selector_granularity{};
+    if (pCooperativeMatrixInfo->scope == VK_SCOPE_SUBGROUP_KHR) {
+        switch (pCooperativeMatrixInfo->subgroupSize) {
+            case 0:
+                selector_granularity = {16, 16, 32};
+                break;
+            case 16:
+                selector_granularity = {16, 32, 16};
+                break;
+            case 32:
+                selector_granularity = {32, 16, 16};
+                break;
+            case 64:
+                selector_granularity = {32, 32, 32};
+                break;
+            default:
+                break;
+        }
+    } else if (pCooperativeMatrixInfo->scope == VK_SCOPE_WORKGROUP_KHR && pCooperativeMatrixInfo->invocations == 64 &&
+               pCooperativeMatrixInfo->subgroupSize == 0) {
+        selector_granularity = {32, 16, 32};
+    }
+
+    const bool has_selector_property = selector_granularity.m != 0;
+    constexpr uint32_t required_property_count = 3;
+    const uint32_t available_count = saturating ? 0 : required_property_count + (has_selector_property ? 1 : 0);
+    if (!pProperties) {
+        *pPropertyCount = available_count;
+        return VK_SUCCESS;
+    }
+
+    const uint32_t write_count = std::min(*pPropertyCount, available_count);
+    const auto set_property = [](VkCooperativeMatrixProperties2EXT& property, uint32_t m, uint32_t n, uint32_t k,
+                                 VkComponentTypeKHR ab_type, VkComponentTypeKHR accumulator_type) {
+        property.MGranularity = m;
+        property.NGranularity = n;
+        property.KGranularity = k;
+        property.AType = ab_type;
+        property.BType = ab_type;
+        property.CType = accumulator_type;
+        property.ResultType = accumulator_type;
+    };
+    if (write_count >= 1) {
+        // A realistic FP16 16x16x16 matrix-multiply tile.
+        set_property(pProperties[0], 16, 16, 16, VK_COMPONENT_TYPE_FLOAT16_KHR, VK_COMPONENT_TYPE_FLOAT16_KHR);
+    }
+    if (write_count >= 2) {
+        // Non-saturating required queries must cover FP16, UINT8, and SINT8 input combinations.
+        set_property(pProperties[1], 16, 16, 16, VK_COMPONENT_TYPE_UINT8_KHR, VK_COMPONENT_TYPE_UINT32_KHR);
+    }
+    if (write_count >= 3) {
+        set_property(pProperties[2], 16, 16, 16, VK_COMPONENT_TYPE_SINT8_KHR, VK_COMPONENT_TYPE_SINT32_KHR);
+    }
+    if (write_count >= 4) {
+        // A selector-dependent property used to verify the query parameters chosen by runtime validation.
+        set_property(pProperties[3], selector_granularity.m, selector_granularity.n, selector_granularity.k,
+                     VK_COMPONENT_TYPE_FLOAT16_KHR, VK_COMPONENT_TYPE_FLOAT16_KHR);
+    }
+    *pPropertyCount = write_count;
+    return write_count < available_count ? VK_INCOMPLETE : VK_SUCCESS;
+}
+
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice,
                                                                                      uint32_t* pPropertyCount,
                                                                                      VkCooperativeVectorPropertiesNV* pProperties) {

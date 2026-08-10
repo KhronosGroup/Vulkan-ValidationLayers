@@ -18,6 +18,45 @@
 #include "containers/container_utils.h"
 #include "layer_validation_tests.h"
 
+std::optional<std::vector<VkCooperativeMatrixProperties2EXT>> QueryCooperativeMatrixProperties2(
+    VkPhysicalDevice physical_device, const VkPhysicalDeviceCooperativeMatrixInfo2EXT& info) {
+    uint32_t count = 0;
+    if (vk::GetPhysicalDeviceCooperativeMatrixProperties2EXT(physical_device, &info, &count, nullptr) != VK_SUCCESS) {
+        return std::nullopt;
+    }
+
+    std::vector<VkCooperativeMatrixProperties2EXT> properties(count, vku::InitStruct<VkCooperativeMatrixProperties2EXT>());
+    if (count == 0) {
+        return properties;
+    }
+
+    if (vk::GetPhysicalDeviceCooperativeMatrixProperties2EXT(physical_device, &info, &count, properties.data()) != VK_SUCCESS) {
+        return std::nullopt;
+    }
+    properties.resize(count);
+    return properties;
+}
+
+std::string MakeCooperativeMatrixCapabilitySpirv(const char* capability, const char* extension) {
+    std::string source = R"asm(
+               OpCapability Shader
+               OpCapability %CAPABILITY%
+               OpExtension "%EXTENSION%"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+       %main = OpFunction %void None %func
+      %entry = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )asm";
+    source.replace(source.find("%CAPABILITY%"), sizeof("%CAPABILITY%") - 1, capability);
+    source.replace(source.find("%EXTENSION%"), sizeof("%EXTENSION%") - 1, extension);
+    return source;
+}
+
 CooperativeMatrixHelper::CooperativeMatrixHelper(VkLayerTest& layer_test) : layer_test(layer_test) {
     const VkPhysicalDevice gpu = layer_test.Gpu();
     uint32_t props_count = 0;

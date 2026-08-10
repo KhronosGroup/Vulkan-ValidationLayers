@@ -18,11 +18,13 @@
 
 #include <sstream>
 #include "generated/vk_extension_helper.h"
+#include "generated/pnext_chain_extraction.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
 #include "containers/container_utils.h"
 #include "utils/image_utils.h"
+#include "utils/math_utils.h"
 
 namespace stateless {
 // Traits objects to allow string_join to operate on collections of const char *
@@ -1129,6 +1131,110 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceFormatProperties2(VkPhysic
                                                                         VkFormatProperties2* pFormatProperties,
                                                                         const Context& context) const {
     return ValidateGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties, context);
+}
+
+bool Instance::manual_PreCallValidateGetPhysicalDeviceCooperativeMatrixProperties2EXT(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceCooperativeMatrixInfo2EXT* pCooperativeMatrixInfo,
+    uint32_t* pPropertyCount, VkCooperativeMatrixProperties2EXT* pProperties, const Context& context) const {
+    bool skip = false;
+    const auto& error_obj = context.error_obj;
+    const Location info_loc = error_obj.location.dot(Field::pCooperativeMatrixInfo);
+
+    // We can't use SpecialSupported because this is at Instance level
+    // This makes a bit of hard assumption VK_KHR_maintenance5 is supported for anyone who supports this CoopMat extension such that
+    // we can query these features here
+    VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT cooperative_matrix_maintenance1 = vku::InitStructHelper();
+    VkPhysicalDeviceCooperativeMatrix2FeaturesNV cooperative_matrix2 = vku::InitStructHelper(&cooperative_matrix_maintenance1);
+    VkPhysicalDeviceSubgroupSizeControlFeatures subgroup_size_control = vku::InitStructHelper(&cooperative_matrix2);
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&subgroup_size_control);
+    DispatchGetPhysicalDeviceFeatures2Helper(api_version, physicalDevice, &features2);
+
+    if (!cooperative_matrix_maintenance1.cooperativeMatrixProperties2) {
+        return LogError("VUID-vkGetPhysicalDeviceCooperativeMatrixProperties2EXT-cooperativeMatrixProperties2-13371",
+                        physicalDevice, error_obj.location, "cooperativeMatrixProperties2 is not supported by physicalDevice.");
+    }
+
+    const VkScopeKHR scope = pCooperativeMatrixInfo->scope;
+    const uint32_t invocations = pCooperativeMatrixInfo->invocations;
+    const uint32_t subgroup_size = pCooperativeMatrixInfo->subgroupSize;
+
+    if (scope != VK_SCOPE_SUBGROUP_KHR && scope != VK_SCOPE_WORKGROUP_KHR) {
+        skip |= LogError("VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-scope-13372", physicalDevice, info_loc.dot(Field::scope),
+                         "is %s, but must be VK_SCOPE_SUBGROUP_KHR or VK_SCOPE_WORKGROUP_KHR.", string_VkScopeKHR(scope));
+    }
+
+    if (subgroup_size != 0 && !IsPowerOfTwo(subgroup_size)) {
+        skip |= LogError("VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-subgroupSize-13374", physicalDevice,
+                         info_loc.dot(Field::subgroupSize), "is %" PRIu32 ", which is not a power of two.", subgroup_size);
+    }
+
+    if (scope == VK_SCOPE_SUBGROUP_KHR && subgroup_size != 0) {
+        if (subgroup_size_control.subgroupSizeControl) {
+            VkPhysicalDeviceSubgroupSizeControlProperties subgroup_size_control_props = vku::InitStructHelper();
+            VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&subgroup_size_control_props);
+            DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &props2);
+
+            if (subgroup_size < subgroup_size_control_props.minSubgroupSize) {
+                skip |=
+                    LogError("VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-scope-13375", physicalDevice,
+                             info_loc.dot(Field::subgroupSize), "is %" PRIu32 ", which is less than minSubgroupSize (%" PRIu32 ").",
+                             subgroup_size, subgroup_size_control_props.minSubgroupSize);
+            }
+            if (subgroup_size > subgroup_size_control_props.maxSubgroupSize) {
+                skip |= LogError("VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-scope-13376", physicalDevice,
+                                 info_loc.dot(Field::subgroupSize),
+                                 "is %" PRIu32 ", which is greater than maxSubgroupSize (%" PRIu32 ").", subgroup_size,
+                                 subgroup_size_control_props.maxSubgroupSize);
+            }
+        } else {
+            VkPhysicalDeviceSubgroupProperties subgroup_props = vku::InitStructHelper();
+            VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&subgroup_props);
+            DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &props2);
+
+            if (subgroup_size != subgroup_props.subgroupSize) {
+                skip |= LogError("VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-scope-13377", physicalDevice,
+                                 info_loc.dot(Field::subgroupSize),
+                                 "is %" PRIu32 ", but subgroupSizeControl is not supported and subgroupSize is %" PRIu32 ".",
+                                 subgroup_size, subgroup_props.subgroupSize);
+            }
+        }
+    }
+
+    if (scope == VK_SCOPE_WORKGROUP_KHR) {
+        if (!cooperative_matrix2.cooperativeMatrixWorkgroupScope) {
+            skip |= LogError("VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-cooperativeMatrixWorkgroupScope-13373", physicalDevice,
+                             info_loc.dot(Field::scope),
+                             "is VK_SCOPE_WORKGROUP_KHR, but cooperativeMatrixWorkgroupScope is not supported.\nWith "
+                             "VK_EXT_cooperative_matrix_maintenance1 alone, scope must be VK_SCOPE_SUBGROUP_KHR.");
+        } else {
+            VkPhysicalDeviceCooperativeMatrix2PropertiesNV cooperative_matrix2_props = vku::InitStructHelper();
+            VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&cooperative_matrix2_props);
+            DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &props2);
+
+            if (invocations > cooperative_matrix2_props.cooperativeMatrixWorkgroupScopeMaxWorkgroupSize) {
+                skip |= LogError(
+                    "VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-scope-13380", physicalDevice, info_loc.dot(Field::invocations),
+                    "is %" PRIu32 ", which is greater than cooperativeMatrixWorkgroupScopeMaxWorkgroupSize (%" PRIu32 ").",
+                    invocations, cooperative_matrix2_props.cooperativeMatrixWorkgroupScopeMaxWorkgroupSize);
+            }
+        }
+        if (!IsPowerOfTwo(invocations)) {
+            skip |= LogError("VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-invocations-13378", physicalDevice,
+                             info_loc.dot(Field::invocations), "is %" PRIu32 ", which is not a power of two.", invocations);
+        }
+        if (subgroup_size != 0 && (invocations % subgroup_size) != 0) {
+            skip |= LogError("VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-subgroupSize-13379", physicalDevice,
+                             info_loc.dot(Field::invocations),
+                             "is %" PRIu32 ", which is not a multiple of subgroupSize (%" PRIu32 ").", invocations, subgroup_size);
+        }
+
+    } else if (invocations != 0) {
+        skip |= LogError("VUID-VkPhysicalDeviceCooperativeMatrixInfo2EXT-invocations-13381", physicalDevice,
+                         info_loc.dot(Field::invocations), "is %" PRIu32 ", but scope is %s, so invocations must be zero.",
+                         invocations, string_VkScopeKHR(scope));
+    }
+
+    return skip;
 }
 
 }  // namespace stateless

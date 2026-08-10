@@ -30466,6 +30466,9 @@ bool Instance::PreCallValidateGetPhysicalDeviceCooperativeMatrixProperties2EXT(
                                                 kVUIDUndefined, false);
         }
     }
+    if (!skip)
+        skip |= manual_PreCallValidateGetPhysicalDeviceCooperativeMatrixProperties2EXT(physicalDevice, pCooperativeMatrixInfo,
+                                                                                       pPropertyCount, pProperties, context);
     return skip;
 }
 

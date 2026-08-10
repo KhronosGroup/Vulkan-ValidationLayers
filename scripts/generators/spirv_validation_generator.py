@@ -43,6 +43,16 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
                         self.provisionalList.append(enum['enumerant'])
                 break
 
+        # Cases where alias are not 1:1 between extensions and want to skip the alias
+        self.capabilitySkipList = [
+            'CooperativeMatrixReductionsNV',
+            'CooperativeMatrixPerElementOperationsNV',
+        ]
+
+        self.featureNameSuffix = {
+            'VK_NV_cooperative_matrix2' : 'NV'
+        }
+
         # Promoted features structure in state_tracker.cpp are put in the VkPhysicalDeviceVulkan*Features structs
         # but the XML can still list them. This list all promoted structs to ignore since they are aliased.
         # Tried to generate these, but no reliable way from vk.xml
@@ -93,7 +103,8 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
                 version = 'VK_API_VERSION_1_0'
             out.append(f'{{{version}, nullptr, nullptr, ""}}')
         elif enable.feature is not None:
-            out.append(f'{{0, &DeviceFeatures::{enable.feature}, nullptr, ""}}')
+            suffix = '' if enable.requires not in self.featureNameSuffix else self.featureNameSuffix[enable.requires]
+            out.append(f'{{0, &DeviceFeatures::{enable.feature}{suffix}, nullptr, ""}}')
         elif enable.extension is not None:
             # All fields in DeviceExtensions should just be the extension name lowercase
             out.append(f'{{0, nullptr, &DeviceExtensions::{enable.extension.lower()}, ""}}')
@@ -146,6 +157,14 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         # Temp hack until the KHR heaps comes out
         for spirv in [x for x in self.vk.spirv if x.name == 'DescriptorHeapEXT']:
             spirv.enable[0].feature = 'descriptorHeapEXT'
+
+        # Temp fix until 1.4.361 comes out with
+        # https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8491
+        spirv = [item for item in self.vk.spirv if item.name != "CooperativeMatrixReductionsNV" and item.name != "CooperativeMatrixPerElementOperationsNV"]
+        for spirv in [x for x in self.vk.spirv if x.name == 'CooperativeMatrixReductionsEXT' or x.name == 'CooperativeMatrixPerElementOperationsEXT']:
+            if (len(spirv.enable) == 1):
+                new_enable = SpirvEnables(feature=spirv.enable[0].feature, struct='VkPhysicalDeviceCooperativeMatrix2FeaturesNV', requires='VK_NV_cooperative_matrix2', version=None, extension=None, property=None, member=None, value=None)
+                spirv.enable.append(new_enable)
 
         if self.filename == 'spirv_validation_helper.h':
             self.generateHeader()
@@ -222,7 +241,9 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         out.append('    static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirv_capabilities = {')
         for spirv in [x for x in self.vk.spirv if x.capability]:
             for enable in [x for x in spirv.enable if x.struct is None or x.struct not in self.promotedFeatures]:
-                if spirv.name not in self.capabilityList:
+                if spirv.name in self.capabilitySkipList:
+                    continue
+                elif spirv.name not in self.capabilityList:
                     out.append('\n        // Not found in current SPIR-V Headers\n        // ')
                 elif spirv.name in self.provisionalList:
                     out.append('\n#ifdef VK_ENABLE_BETA_EXTENSIONS\n        ')
