@@ -423,6 +423,7 @@ const char* unimplementable_validation[] = {
     "VUID-vkEnumerateDeviceLayerProperties-pProperties-parameter",
     "VUID-vkEnumerateInstanceExtensionProperties-pProperties-parameter",
     "VUID-vkEnumerateInstanceLayerProperties-pProperties-parameter",
+    "VUID-vkGetPhysicalDeviceCooperativeMatrixProperties2EXT-pProperties-parameter",
     // Checking for null-terminated UTF-8 string
     "VUID-VkApplicationInfo-pApplicationName-parameter",
     "VUID-VkApplicationInfo-pEngineName-parameter",
