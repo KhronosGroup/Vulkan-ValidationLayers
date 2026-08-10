@@ -1284,6 +1284,12 @@ VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer,
 
 // Handle tooling queries manually as this is a request for layer information
 static const VkPhysicalDeviceToolPropertiesEXT khronos_layer_tool_props = {
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4924
+    // We currently override the sType/pNext here but due to
+    //    VUID-VkPhysicalDeviceToolProperties-sType-sType
+    // and
+    //   VUID-VkPhysicalDeviceToolProperties-pNext-pNext
+    // we assume it is safe to just override as nothing extend these (and its simpler logic for us)
     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT,
     nullptr,
     "Khronos Validation Layer",
