@@ -4418,16 +4418,23 @@ bool CoreChecks::ValidateCmdCopyMemoryToImage(VkCommandBuffer command_buffer,
                                                region.imageExtent.depth, region.imageLayout, region_loc.dot(Field::imageLayout),
                                                "VUID-VkCopyDeviceMemoryImageInfoKHR-imageLayout-13028");
 
-        vvl::range<VkDeviceAddress> region_range{region.addressRange.address,
-                                                 region.addressRange.address + region.addressRange.size};
-        for (uint32_t j = i + 1; j < copy_memory_info.regionCount; ++j) {
-            const VkDeviceMemoryImageCopyKHR& other_region = copy_memory_info.pRegions[j];
-            vvl::range<VkDeviceAddress> other_region_range{other_region.addressRange.address,
-                                                           other_region.addressRange.address + other_region.addressRange.size};
-            if (region_range.intersects(other_region_range)) {
-                skip |= LogError("VUID-VkCopyDeviceMemoryImageInfoKHR-pRegions-12473", objlist, region_loc.dot(Field::addressRange),
-                                 "%s overlaps with pRegions[%" PRIu32 "].addressRange %s", string_range_hex(region_range).c_str(),
-                                 j, string_range_hex(other_region_range).c_str());
+        // only the dst can't overlap, the src can (no such thing as a read-after-read hazard)
+        // the image as a dst is a TODO tracked in https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10125
+        if (!is_memory_to_image) {
+            vvl::range<VkDeviceAddress> region_range{region.addressRange.address,
+                                                     region.addressRange.address + region.addressRange.size};
+            for (uint32_t j = i + 1; j < copy_memory_info.regionCount; ++j) {
+                const VkDeviceMemoryImageCopyKHR& other_region = copy_memory_info.pRegions[j];
+                vvl::range<VkDeviceAddress> other_region_range{other_region.addressRange.address,
+                                                               other_region.addressRange.address + other_region.addressRange.size};
+                if (region_range.intersects(other_region_range)) {
+                    skip |=
+                        LogError("VUID-VkCopyDeviceMemoryImageInfoKHR-pRegions-12473", objlist, region_loc.dot(Field::addressRange),
+                                 "%s overlaps with pRegions[%" PRIu32
+                                 "].addressRange %s\nThis will cause a write-after-write memory hazard for buffers:\n%s",
+                                 string_range_hex(region_range).c_str(), j, string_range_hex(other_region_range).c_str(),
+                                 string_BuffersFromAddress(*device_state, region.addressRange.address).c_str());
+                }
             }
         }
 
