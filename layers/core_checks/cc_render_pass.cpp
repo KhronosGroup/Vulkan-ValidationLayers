@@ -3013,9 +3013,8 @@ bool CoreChecks::ValidateRenderingInfoAttachment(const vvl::ImageView& image_vie
     }
 
     if (image_view_state.normalized_subresource_range.levelCount != 1) {
-        // VU being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8439
         skip |= LogError(
-            "UNASSIGNED-VkRenderPassAttachmentBeginInfo-mipLevelCount", objlist, attachment_loc.dot(Field::imageView),
+            "VUID-VkRenderingAttachmentInfo-imageView-12486", objlist, attachment_loc.dot(Field::imageView),
             "was created with mip levelCount %s but only a single mip level (levelCount == 1) is allowed.",
             string_LevelCount(image_view_state.image_state->GetMipLevels(), image_view_state.create_info.subresourceRange).c_str());
     }
@@ -3106,7 +3105,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer comm
                                                             const Location& attachment_loc) const {
     bool skip = false;
 
-    // First validate things when resolve mode can be NONE
+    // First validate things when resolve mode can be NONE (or resolveImageView is null)
     const VkFormat image_view_format = image_view_state.create_info.format;
     if ((!vkuFormatIsSINT(image_view_format) && !vkuFormatIsUINT(image_view_format)) && vkuFormatIsColor(image_view_format) &&
         !IsValueIn(attachment_info.resolveMode,
@@ -3126,44 +3125,46 @@ bool CoreChecks::ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer comm
                          string_VkResolveModeFlagBits(attachment_info.resolveMode), string_VkFormat(image_view_format));
     }
 
-    if (attachment_info.resolveMode == VK_RESOLVE_MODE_NONE) {
+    // We can just check |resolveImageView| instead of |resolveMode|
+    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8445
+    // The checks below that don't use |resolve_view_state| are still ignored if there is resolve occuring
+    auto resolve_view_state = Get<vvl::ImageView>(attachment_info.resolveImageView);
+    if (!resolve_view_state) {
         return skip;
     }
 
-    if (auto resolve_view_state = Get<vvl::ImageView>(attachment_info.resolveImageView)) {
-        if (resolve_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
-            const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView);
-            skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06864", commandBuffer,
-                             attachment_loc.dot(Field::resolveMode), "%s but resolveImageView has a sample count of %s",
-                             string_VkResolveModeFlagBits(attachment_info.resolveMode),
-                             string_VkSampleCountFlagBits(resolve_view_state->samples));
-        }
-        if (resolve_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_3D) {
-            const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView);
-            skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveImageView-12471", objlist,
-                             attachment_loc.dot(Field::resolveImageView), "was created with VK_IMAGE_VIEW_TYPE_3D");
-        }
+    if (resolve_view_state->samples != VK_SAMPLE_COUNT_1_BIT && attachment_info.resolveMode != VK_RESOLVE_MODE_NONE) {
+        const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView);
+        skip |=
+            LogError("VUID-VkRenderingAttachmentInfo-imageView-06864", commandBuffer, attachment_loc.dot(Field::resolveMode),
+                     "%s but resolveImageView has a sample count of %s", string_VkResolveModeFlagBits(attachment_info.resolveMode),
+                     string_VkSampleCountFlagBits(resolve_view_state->samples));
+    }
+    if (resolve_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_3D) {
+        const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView);
+        skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveImageView-12471", objlist,
+                         attachment_loc.dot(Field::resolveImageView), "was created with VK_IMAGE_VIEW_TYPE_3D");
+    }
 
-        if (attachment_info.resolveMode != VK_RESOLVE_MODE_CUSTOM_BIT_EXT &&
-            (image_view_format != resolve_view_state->create_info.format)) {
-            const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView, image_view_state.Handle());
-            skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06865", objlist, attachment_loc.dot(Field::resolveImageView),
-                             "format (%s) and %s format (%s) are different (resolveMode is %s).",
-                             string_VkFormat(resolve_view_state->create_info.format),
-                             attachment_loc.dot(Field::imageView).Fields().c_str(), string_VkFormat(image_view_format),
-                             string_VkResolveModeFlagBits(attachment_info.resolveMode));
-        }
+    if (attachment_info.resolveMode != VK_RESOLVE_MODE_CUSTOM_BIT_EXT && attachment_info.resolveMode != VK_RESOLVE_MODE_NONE &&
+        (image_view_format != resolve_view_state->create_info.format)) {
+        const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView, image_view_state.Handle());
+        skip |=
+            LogError("VUID-VkRenderingAttachmentInfo-imageView-06865", objlist, attachment_loc.dot(Field::resolveImageView),
+                     "format (%s) and %s format (%s) are different (resolveMode is %s).",
+                     string_VkFormat(resolve_view_state->create_info.format), attachment_loc.dot(Field::imageView).Fields().c_str(),
+                     string_VkFormat(image_view_format), string_VkResolveModeFlagBits(attachment_info.resolveMode));
+    }
 
-        if (enabled_features.tileMemoryHeap && !resolve_view_state->image_state->GetBoundMemoryStates().empty()) {
-            for (const auto& bound_memory : resolve_view_state->image_state->GetBoundMemoryStates()) {
-                if (bound_memory && HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex)) {
-                    const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView, bound_memory->VkHandle());
-                    skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveImageView-10728", objlist, attachment_loc,
-                                     "was created with %s which is bound to %s created from a VkMemoryHeap with"
-                                     " VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM",
-                                     FormatHandle(resolve_view_state->image_state->VkHandle()).c_str(),
-                                     FormatHandle(bound_memory->VkHandle()).c_str());
-                }
+    if (enabled_features.tileMemoryHeap && !resolve_view_state->image_state->GetBoundMemoryStates().empty()) {
+        for (const auto& bound_memory : resolve_view_state->image_state->GetBoundMemoryStates()) {
+            if (bound_memory && HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex)) {
+                const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView, bound_memory->VkHandle());
+                skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveImageView-10728", objlist, attachment_loc,
+                                 "was created with %s which is bound to %s created from a VkMemoryHeap with"
+                                 " VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM",
+                                 FormatHandle(resolve_view_state->image_state->VkHandle()).c_str(),
+                                 FormatHandle(bound_memory->VkHandle()).c_str());
             }
         }
     }
@@ -4255,6 +4256,16 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer&
                                  ") greater than the most significant bit index (%d) in viewMask (0x%" PRIx32 ")",
                                  resolve_view_state->normalized_subresource_range.layerCount,
                                  MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
+            }
+
+            if (resolve_view_state->normalized_subresource_range.levelCount != 1) {
+                const LogObjectList objlist(commandBuffer, color_attachment.resolveImageView);
+                skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveImageView-12487", objlist,
+                                 color_attachment_loc.dot(Field::resolveImageView),
+                                 "was created with mip levelCount %s but only a single mip level (levelCount ==  1) is allowed.",
+                                 string_LevelCount(resolve_view_state->image_state->GetMipLevels(),
+                                                   resolve_view_state->create_info.subresourceRange)
+                                     .c_str());
             }
         }
 

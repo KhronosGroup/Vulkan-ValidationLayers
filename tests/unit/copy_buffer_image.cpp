@@ -2687,7 +2687,7 @@ TEST_F(NegativeCopyBufferImage, BufferToCompressedImage) {
     depth_image_create_info.arrayLayers = 1;
     depth_image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     depth_image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    depth_image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    depth_image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     depth_image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
     vkt::Image depth_image(*m_device, depth_image_create_info, vkt::no_mem);

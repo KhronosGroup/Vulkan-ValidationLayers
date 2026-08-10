@@ -244,6 +244,8 @@ TEST_F(NegativeWsi, SwapchainImage) {
     // initialLayout
     image_create_info = good_create_info;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    // Extra error because chose PREINITIALIZED
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-initialLayout-12478");
     CreateImageTest(image_create_info, vuid);
 
     // flags

@@ -1532,7 +1532,7 @@ TEST_F(NegativeExternalMemorySync, MemoryImageLayout) {
     ici.mipLevels = 1;
     ici.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
-    ici.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ici.tiling = VK_IMAGE_TILING_LINEAR;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
     const auto supported_types = FindSupportedExternalMemoryHandleTypes(Gpu(), ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
