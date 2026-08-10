@@ -150,30 +150,26 @@ struct DebugNameProvider {
     virtual std::string GetDebugRegionName(const ResourceUsageRecord &record) const = 0;
 };
 
-// Command execution context is the base class for command buffer and queue contexts
-class CommandExecutionContext {
-  public:
-    using AccessLog = std::vector<ResourceUsageRecord>;
-    using CommandBufferSet = std::vector<std::shared_ptr<const vvl::CommandBuffer>>;
-    CommandExecutionContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags);
-
-    virtual SyncEventsContext& GetEventsContext() = 0;
-    virtual const SyncEventsContext& GetEventsContext() const = 0;
-
-    virtual QueueId GetQueueId() const = 0;
-    virtual VulkanTypedHandle Handle() const = 0;
+struct ResourceUsageInfoProvider {
     virtual ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const = 0;
-
-    const SyncValidator &GetSyncState() const { return sync_state_; }
-    VkQueueFlags GetQueueFlags() const { return queue_flags_; }
-
-  protected:
-    const SyncValidator &sync_state_;
-    const syncval::ErrorMessages &error_messages_;
-    const VkQueueFlags queue_flags_;
 };
 
-class CommandBufferAccessContext final : public CommandExecutionContext, DebugNameProvider {
+using AccessLog = std::vector<ResourceUsageRecord>;
+using CommandBufferSet = std::vector<std::shared_ptr<const vvl::CommandBuffer>>;
+
+struct ExecutionContext {
+    ExecutionContext(const SyncValidator& validator, VkQueueFlags queue_flags, QueueId queue_id, VulkanTypedHandle handle,
+                     SyncEventsContext& events_context, const ResourceUsageInfoProvider& usage_info_provider);
+
+    const SyncValidator& validator;
+    const VkQueueFlags queue_flags;
+    const QueueId queue_id;
+    const VulkanTypedHandle handle;
+    SyncEventsContext& events_context;
+    const ResourceUsageInfoProvider& usage_info_provider;
+};
+
+class CommandBufferAccessContext final : public ResourceUsageInfoProvider, public DebugNameProvider {
   public:
     struct SyncOpEntry {
         ResourceUsageTag tag;
@@ -202,15 +198,16 @@ class CommandBufferAccessContext final : public CommandExecutionContext, DebugNa
 
     void Reset();
 
+    const SyncValidator& GetSyncState() const { return sync_state_; }
+
     ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const override;
 
     AccessContext& GetCurrentAccessContext() { return *current_context_; }
     const AccessContext& GetCurrentAccessContext() const { return *current_context_; }
+    QueueId GetQueueId() const ;
 
-    SyncEventsContext& GetEventsContext() override { return events_context_; }
-    const SyncEventsContext& GetEventsContext() const override { return events_context_; }
-
-    QueueId GetQueueId() const override;
+    ExecutionContext& GetExecutionContext() { return execution_context_; }
+    const ExecutionContext& GetExecutionContext() const { return execution_context_; }
 
     // The command buffer's own access context. Subpass contexts exist only inside a vkCmdBeginRenderPass
     // instance, so use this instead of GetCurrentAccessContext() anywhere else. Dynamic rendering has no
@@ -250,12 +247,6 @@ class CommandBufferAccessContext final : public CommandExecutionContext, DebugNa
     void ResolveExecutedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 
     size_t GetTagCount() const { return access_log_->size(); }
-    VulkanTypedHandle Handle() const override {
-        if (cb_state_) {
-            return cb_state_->Handle();
-        }
-        return VulkanTypedHandle(static_cast<VkCommandBuffer>(VK_NULL_HANDLE), kVulkanObjectTypeCommandBuffer);
-    }
 
     ResourceUsageTag NextCommandTag(vvl::Func command, SubCommandType subcommand = SubCommandType::kNone,
                                     uint32_t subpass = vvl::kNoIndex32);
@@ -273,11 +264,7 @@ class CommandBufferAccessContext final : public CommandExecutionContext, DebugNa
     const std::vector<HandleRecord> &GetHandleRecords() const { return handles_; }
 
     std::shared_ptr<const vvl::CommandBuffer> GetCBStateShared() const { return cb_state_->shared_from_this(); }
-
-    const vvl::CommandBuffer &GetCBState() const {
-        assert(cb_state_);
-        return *cb_state_;
-    }
+    const vvl::CommandBuffer& GetCBState() const { return *cb_state_; }
 
     std::shared_ptr<AccessLog> GetAccessLogShared() const { return access_log_; }
     std::shared_ptr<CommandBufferSet> GetCBReferencesShared() const { return cbs_referenced_; }
@@ -292,7 +279,7 @@ class CommandBufferAccessContext final : public CommandExecutionContext, DebugNa
     void UpdateStats(AccessStats &access_stats) const;
 
   private:
-    CommandBufferAccessContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags);
+    CommandBufferAccessContext(const SyncValidator& sync_validator, VkQueueFlags queue_flags, VulkanTypedHandle handle);
 
     uint32_t AddHandle(const VulkanTypedHandle &typed_handle, uint32_t index);
     AttachmentAccess GetAttachmentAccess(SyncOrdering ordering, AttachmentAccessType type = AttachmentAccessType::Access) const;
@@ -312,9 +299,12 @@ class CommandBufferAccessContext final : public CommandExecutionContext, DebugNa
     void CheckCommandTagDebugCheckpoint();
 
   private:
+    const SyncValidator& sync_state_;
+    const ErrorMessages& error_messages_;
+
     // Note: since every CommandBufferAccessContext is encapsulated in its CommandBuffer object,
     // a reference count is not needed here.
-    vvl::CommandBuffer *cb_state_;
+    vvl::CommandBuffer *cb_state_ = nullptr;
 
     std::shared_ptr<AccessLog> access_log_;
     std::shared_ptr<CommandBufferSet> cbs_referenced_;
@@ -331,6 +321,8 @@ class CommandBufferAccessContext final : public CommandExecutionContext, DebugNa
     AccessContext cb_access_context_;
     AccessContext *current_context_;
     SyncEventsContext events_context_;
+
+    ExecutionContext execution_context_;
 
     // Don't need the following for an active proxy cb context
     std::vector<std::unique_ptr<RenderPassAccessContext>> render_pass_contexts_;

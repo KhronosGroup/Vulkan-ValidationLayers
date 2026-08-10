@@ -24,7 +24,7 @@ class Logger;
 
 namespace syncval {
 
-class CommandExecutionContext;
+struct ExecutionContext;
 class HazardResult;
 class SyncValidator;
 
@@ -63,11 +63,11 @@ struct AdditionalMessageInfo {
     std::string message_end_text;
 };
 
-ReportProperties GetErrorMessageProperties(const HazardResult &hazard, const CommandExecutionContext &context, vvl::Func command,
-                                           const char *message_type, const AdditionalMessageInfo &additional_info);
+ReportProperties GetErrorMessageProperties(const HazardResult& hazard, const ExecutionContext& context, vvl::Func command,
+                                           const char* message_type, const AdditionalMessageInfo& additional_info);
 
-std::string FormatErrorMessage(const HazardResult &hazard, const CommandExecutionContext &context, vvl::Func command,
-                               const std::string &resouce_description, const AdditionalMessageInfo &additional_info);
+std::string FormatErrorMessage(const HazardResult& hazard, const ExecutionContext& context, vvl::Func command,
+                               const std::string& resouce_description, const AdditionalMessageInfo& additional_info);
 
 std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, const SyncValidator &device, VkQueueFlags allowed_queue_flags,
                                bool format_as_extra_property);

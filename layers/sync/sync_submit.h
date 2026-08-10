@@ -205,10 +205,9 @@ class BatchAccessLog {
         CBSubmitLog(CBSubmitLog &&other) = default;
         CBSubmitLog &operator=(const CBSubmitLog &other) = default;
         CBSubmitLog &operator=(CBSubmitLog &&other) = default;
-        CBSubmitLog(const BatchRecord &batch, std::shared_ptr<const CommandExecutionContext::CommandBufferSet> cbs,
-                    std::shared_ptr<const CommandExecutionContext::AccessLog> log);
-        CBSubmitLog(const BatchRecord &batch, const CommandBufferAccessContext &cb,
-                    const std::vector<std::string> &initial_label_stack);
+        CBSubmitLog(const BatchRecord& batch, std::shared_ptr<const CommandBufferSet> cbs, std::shared_ptr<const AccessLog> log);
+        CBSubmitLog(const BatchRecord& batch, const CommandBufferAccessContext& cb,
+                    const std::vector<std::string>& initial_label_stack);
         size_t Size() const { return log_->size(); }
         AccessRecord GetAccessRecord(ResourceUsageTag tag) const;
 
@@ -217,8 +216,8 @@ class BatchAccessLog {
 
       private:
         BatchRecord batch_;
-        std::shared_ptr<const CommandExecutionContext::CommandBufferSet> cbs_;
-        std::shared_ptr<const CommandExecutionContext::AccessLog> log_;
+        std::shared_ptr<const CommandBufferSet> cbs_;
+        std::shared_ptr<const AccessLog> log_;
         // label stack at the point when command buffer is submitted to the queue
         std::vector<std::string> initial_label_stack_;
     };
@@ -226,8 +225,7 @@ class BatchAccessLog {
     void Import(const BatchRecord &batch, const CommandBufferAccessContext &cb_access,
                 const std::vector<std::string> &initial_label_stack);
     void Import(const BatchAccessLog &other);
-    void Insert(const BatchRecord &batch, const ResourceUsageRange &range,
-                std::shared_ptr<const CommandExecutionContext::AccessLog> log);
+    void Insert(const BatchRecord& batch, const ResourceUsageRange& range, std::shared_ptr<const AccessLog> log);
 
     void Trim(const ResourceUsageTagSet &used);
     // AccessRecord lookup is based on global tags
@@ -310,7 +308,7 @@ class QueueState {
     std::vector<UnresolvedBatch> unresolved_batches_;
 };
 
-class QueueBatchContext final : public CommandExecutionContext, public std::enable_shared_from_this<QueueBatchContext> {
+class QueueBatchContext final : public ResourceUsageInfoProvider, public std::enable_shared_from_this<QueueBatchContext> {
   public:
     class PresentResourceRecord : public AlternateResourceUsage::RecordBase {
       public:
@@ -346,13 +344,13 @@ class QueueBatchContext final : public CommandExecutionContext, public std::enab
     ~QueueBatchContext();
     void Trim();
 
-    QueueId GetQueueId() const override;
     ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const override;
 
-    SyncEventsContext& GetEventsContext() override { return events_context_; }
-    const SyncEventsContext& GetEventsContext() const override { return events_context_; }
-
     VkQueueFlags GetQueueFlags() const { return queue_state_->GetQueue()->GetQueueFlags(); }
+    QueueId GetQueueId() const;
+    ExecutionContext& GetExecutionContext() { return execution_context_; }
+    const ExecutionContext& GetExecutionContext() const { return execution_context_; }
+    SyncEventsContext& GetEventsContext() { return events_context_; }
 
     ResourceUsageRange GetTagRange() const { return tag_range_; }
     const std::vector<ResourceUsageTag> &GetQueueSyncTags() const { return queue_sync_tag_; }
@@ -401,16 +399,18 @@ class QueueBatchContext final : public CommandExecutionContext, public std::enab
     LastSynchronizedPresent last_synchronized_present;
 
   private:
-    VulkanTypedHandle Handle() const override;
     const QueueState* GetQueueState() const { return queue_state_; }
     void ResolvePresentSemaphoreWait(const SignalInfo& signal_info, const PresentedImages& presented_images);
 
   private:
+    const SyncValidator& sync_state_;
     const QueueState *queue_state_ = nullptr;
     ResourceUsageRange tag_range_ = ResourceUsageRange(0, 0);  // Range of tags referenced by cbs_referenced
 
     AccessContext access_context_;
     SyncEventsContext events_context_;
+    ExecutionContext execution_context_;
+
     BatchAccessLog batch_log_;
 
     // Indexed by queue id. Each element stores the tag location of the last synchronization

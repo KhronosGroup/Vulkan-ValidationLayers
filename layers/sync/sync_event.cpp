@@ -186,15 +186,14 @@ static SyncBarrier RestrictToEvent(const SyncBarrier& barrier, const SyncEventSt
     return result;
 }
 
-void ApplyWaitEvents(CommandExecutionContext& exec_context, AccessContext& access_context,
+void ApplyWaitEvents(ExecutionContext& exec_context, AccessContext& access_context,
                      const std::vector<std::shared_ptr<const vvl::Event>>& events, vvl::span<const BarrierSet> barrier_sets,
                      ResourceUsageTag tag, vvl::Func command) {
     // Unlike PipelineBarrier, WaitEvent is *not* limited to accesses within the current subpass (if any) and thus needs to import
     // all accesses. Can instead import for all first_scopes, or a union of them, if this becomes a performance/memory issue,
     // but with no idea of the performance of the union, nor of whether it even matters... take the simplest approach here,
 
-    SyncEventsContext& events_context = exec_context.GetEventsContext();
-    const QueueId queue_id = exec_context.GetQueueId();
+    const QueueId queue_id = exec_context.queue_id;
 
     access_context.ResolveAllSubpassDependencies();
 
@@ -216,7 +215,7 @@ void ApplyWaitEvents(CommandExecutionContext& exec_context, AccessContext& acces
         if (!event_shared) {
             continue;
         }
-        auto* sync_event = events_context.GetFromShared(event_shared);
+        auto* sync_event = exec_context.events_context.GetFromShared(event_shared);
         if (!sync_event->first_scope) {
             continue;  // [core validation check]
         }
@@ -237,7 +236,7 @@ void ApplyWaitEvents(CommandExecutionContext& exec_context, AccessContext& acces
         for (const SyncImageBarrier& barrier : barrier_set.image_barriers) {
             const auto& sub_state = SubState(*barrier.image);
             const bool can_transition_depth_slices = CanTransitionDepthSlices(
-                exec_context.GetSyncState().extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
+                exec_context.validator.extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
             ImageRangeGen range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
             EventImageRangeGenerator filtered_range_gen(sync_event->FirstScope(), range_gen);
             ApplyMarkupFunctor markup_action(barrier.layout_transition);
@@ -257,7 +256,7 @@ void ApplyWaitEvents(CommandExecutionContext& exec_context, AccessContext& acces
         if (!event_shared.get()) {
             continue;
         }
-        auto* sync_event = events_context.GetFromShared(event_shared);
+        auto* sync_event = exec_context.events_context.GetFromShared(event_shared);
         if (!sync_event->first_scope) {
             continue;  // [core validation check]
         }
@@ -291,7 +290,7 @@ void ApplyWaitEvents(CommandExecutionContext& exec_context, AccessContext& acces
 
             const auto& sub_state = SubState(*barrier.image);
             const bool can_transition_depth_slices = CanTransitionDepthSlices(
-                exec_context.GetSyncState().extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
+                exec_context.validator.extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
             ImageRangeGen range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
             EventImageRangeGenerator filtered_range_gen(sync_event->FirstScope(), range_gen);
 

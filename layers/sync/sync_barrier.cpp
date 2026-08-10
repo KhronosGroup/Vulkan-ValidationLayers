@@ -378,9 +378,9 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, VkQueu
 // A single barrier can be applied more efficently (immidiately) compared to multiple barrier.
 // The latter are applied in two steps (collect and then apply)
 //
-static void ApplySingleBufferBarrier(CommandExecutionContext& exec_context, AccessContext& access_context,
+static void ApplySingleBufferBarrier(ExecutionContext& exec_context, AccessContext& access_context,
                                      const SyncBufferBarrier& buffer_barrier, const SyncBarrier& exec_dep_barrier) {
-    const QueueId queue_id = exec_context.GetQueueId();
+    const QueueId queue_id = exec_context.queue_id;
     if (SimpleBinding(*buffer_barrier.buffer)) {
         const BarrierScope barrier_scope(buffer_barrier.barrier, queue_id);
         ApplySingleBufferBarrierFunctor apply_barrier(access_context, barrier_scope, buffer_barrier.barrier);
@@ -393,35 +393,34 @@ static void ApplySingleBufferBarrier(CommandExecutionContext& exec_context, Acce
     access_context.RegisterGlobalBarrier(exec_dep_barrier, queue_id);
 }
 
-static void ApplySingleImageBarrier(CommandExecutionContext& exec_context, AccessContext& access_context,
+static void ApplySingleImageBarrier(ExecutionContext& exec_context, AccessContext& access_context,
                                     const SyncImageBarrier& image_barrier, const SyncBarrier& exec_dep_barrier,
                                     ResourceUsageTag tag) {
-    const QueueId queue_id = exec_context.GetQueueId();
+    const QueueId queue_id = exec_context.queue_id;
     const BarrierScope barrier_scope(image_barrier.barrier, queue_id);
     ApplySingleImageBarrierFunctor apply_barrier(access_context, barrier_scope, image_barrier.barrier,
                                                  image_barrier.layout_transition, image_barrier.handle_index, tag);
 
     const auto& sub_state = SubState(*image_barrier.image);
-    const bool can_transition_depth_slices = CanTransitionDepthSlices(exec_context.GetSyncState().extensions,
-                                                                      sub_state.base.GetImageType(), sub_state.base.create_flags);
+    const bool can_transition_depth_slices =
+        CanTransitionDepthSlices(exec_context.validator.extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
     auto range_gen = sub_state.MakeImageRangeGen(image_barrier.subresource_range, can_transition_depth_slices);
 
     access_context.UpdateMemoryAccessState(apply_barrier, range_gen);
     access_context.RegisterGlobalBarrier(exec_dep_barrier, queue_id);
 }
 
-static void ApplySingleMemoryBarrier(CommandExecutionContext& exec_context, AccessContext& access_context,
+static void ApplySingleMemoryBarrier(ExecutionContext& exec_context, AccessContext& access_context,
                                      const SyncBarrier& memory_barrier) {
-    const QueueId queue_id = exec_context.GetQueueId();
-    access_context.RegisterGlobalBarrier(memory_barrier, queue_id);
+    access_context.RegisterGlobalBarrier(memory_barrier, exec_context.queue_id);
 }
 
 // This handles all configurations where barriers cannot be applied immidiately and need to use
 // the PendingBarriers helper to ensure independent barrier application. All such configurations
 // use more than one barrier.
-static void ApplyMultipleBarriers(CommandExecutionContext& exec_context, AccessContext& access_context,
-                                  const BarrierSet& barrier_set, ResourceUsageTag tag) {
-    const QueueId queue_id = exec_context.GetQueueId();
+static void ApplyMultipleBarriers(ExecutionContext& exec_context, AccessContext& access_context, const BarrierSet& barrier_set,
+                                  ResourceUsageTag tag) {
+    const QueueId queue_id = exec_context.queue_id;
 
     // Apply markup action.
     // The markup action does not change any access state but it can trim the access map according to the
@@ -442,8 +441,8 @@ static void ApplyMultipleBarriers(CommandExecutionContext& exec_context, AccessC
     }
     for (const SyncImageBarrier& barrier : barrier_set.image_barriers) {
         const auto& sub_state = SubState(*barrier.image);
-        const bool can_transition_depth_slices = CanTransitionDepthSlices(
-            exec_context.GetSyncState().extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
+        const bool can_transition_depth_slices =
+            CanTransitionDepthSlices(exec_context.validator.extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
         auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
         // TODO: check if we need: barrier.layout_transition && (queue_id == kQueueIdInvalid)
         ApplyMarkupFunctor markup_action(barrier.layout_transition);
@@ -470,8 +469,8 @@ static void ApplyMultipleBarriers(CommandExecutionContext& exec_context, AccessC
                                                 barrier.handle_index, pending_barriers);
 
         const auto& sub_state = SubState(*barrier.image);
-        const bool can_transition_depth_slices = CanTransitionDepthSlices(
-            exec_context.GetSyncState().extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
+        const bool can_transition_depth_slices =
+            CanTransitionDepthSlices(exec_context.validator.extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
         auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
 
         access_context.UpdateMemoryAccessState(collect_barriers, range_gen);
@@ -497,7 +496,7 @@ static void ApplyMultipleBarriers(CommandExecutionContext& exec_context, AccessC
     }
 }
 
-void ApplyBarrier(CommandExecutionContext& exec_context, AccessContext& access_context, const BarrierSet& barrier_set,
+void ApplyBarrier(ExecutionContext& exec_context, AccessContext& access_context, const BarrierSet& barrier_set,
                   ResourceUsageTag tag) {
     const bool has_buffer_barriers = !barrier_set.buffer_barriers.empty();
     const bool has_image_barriers = !barrier_set.image_barriers.empty();
@@ -522,12 +521,11 @@ void ApplyBarrier(CommandExecutionContext& exec_context, AccessContext& access_c
         ApplyMultipleBarriers(exec_context, access_context, barrier_set, tag);
     }
 
-    SyncEventsContext& events_context = exec_context.GetEventsContext();
     if (barrier_set.single_exec_scope) {
-        events_context.ApplyBarrier(barrier_set.src_exec_scope, barrier_set.dst_exec_scope, tag);
+        exec_context.events_context.ApplyBarrier(barrier_set.src_exec_scope, barrier_set.dst_exec_scope, tag);
     } else {
         for (const auto& barrier : barrier_set.memory_barriers) {
-            events_context.ApplyBarrier(barrier.src_exec_scope, barrier.dst_exec_scope, tag);
+            exec_context.events_context.ApplyBarrier(barrier.src_exec_scope, barrier.dst_exec_scope, tag);
         }
     }
 }

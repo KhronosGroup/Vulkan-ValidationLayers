@@ -25,7 +25,7 @@ namespace syncval {
 
 class AccessContext;
 class SyncValidator;
-class CommandExecutionContext;
+struct ExecutionContext;
 
 struct SyncExecScope {
     // The xxxStageMask parameter passed by the caller
@@ -162,7 +162,7 @@ struct SemaphoreScope : SyncExecScope {
     QueueId queue;
 };
 
-void ApplyBarrier(CommandExecutionContext& exec_context, AccessContext& access_context, const BarrierSet& barrier_set,
+void ApplyBarrier(ExecutionContext& exec_context, AccessContext& access_context, const BarrierSet& barrier_set,
                   ResourceUsageTag tag);
 
 }  // namespace syncval

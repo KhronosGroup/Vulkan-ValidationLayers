@@ -261,18 +261,21 @@ void LastSynchronizedPresent::OnDestroySwapchain(VkSwapchainKHR swapchain) {
 }
 
 QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state, const QueueState& queue_state)
-    : CommandExecutionContext(sync_state, queue_state.GetQueue()->GetQueueFlags()),
+    : sync_state_(sync_state),
       queue_state_(&queue_state),
       tag_range_(0, 0),
       access_context_(sync_state),
+      execution_context_(sync_state, queue_state.GetQueue()->GetQueueFlags(), queue_state.GetQueueId(),
+                         queue_state.GetQueue()->Handle(), events_context_, *this),
       queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {
     sync_state_.stats.AddQueueBatchContext();
 }
 
 QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state)
-    : CommandExecutionContext(sync_state, 0),
+    : sync_state_(sync_state),
       tag_range_(0, 0),
       access_context_(sync_state),
+      execution_context_(sync_state, 0, kQueueIdInvalid, NullVulkanTypedHandle, events_context_, *this),
       queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {
     sync_state_.stats.AddQueueBatchContext();
 }
@@ -296,8 +299,6 @@ void QueueBatchContext::Trim() {
 void QueueBatchContext::ResolveSubmittedCommandBuffer(const AccessContext& recorded_context, ResourceUsageTag offset) {
     GetAccessContext().ResolveFromContext(QueueTagOffsetBarrierAction(GetQueueId(), offset), recorded_context);
 }
-
-VulkanTypedHandle QueueBatchContext::Handle() const { return queue_state_->GetQueue()->Handle(); }
 
 template <typename Predicate>
 void QueueBatchContext::ApplyPredicatedWait(Predicate& predicate, const LastSynchronizedPresent& last_synchronized_present) {
@@ -807,8 +808,7 @@ void BatchAccessLog::Import(const BatchAccessLog& other) {
     }
 }
 
-void BatchAccessLog::Insert(const BatchRecord& batch, const ResourceUsageRange& range,
-                            std::shared_ptr<const CommandExecutionContext::AccessLog> log) {
+void BatchAccessLog::Insert(const BatchRecord& batch, const ResourceUsageRange& range, std::shared_ptr<const AccessLog> log) {
     log_map_.insert(std::make_pair(range, CBSubmitLog(batch, nullptr, std::move(log))));
 }
 
@@ -892,9 +892,8 @@ BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::GetAccessRecord(Resour
     return AccessRecord{&batch_, record, debug_name_provider};
 }
 
-BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch,
-                                         std::shared_ptr<const CommandExecutionContext::CommandBufferSet> cbs,
-                                         std::shared_ptr<const CommandExecutionContext::AccessLog> log)
+BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, std::shared_ptr<const CommandBufferSet> cbs,
+                                         std::shared_ptr<const AccessLog> log)
     : batch_(batch), cbs_(cbs), log_(log) {}
 
 BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const CommandBufferAccessContext& cb,
