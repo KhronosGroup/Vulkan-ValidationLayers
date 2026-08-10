@@ -315,9 +315,9 @@ static std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSync
 // by the synchronization. If applied synchronization covers at least stage or access component
 // then we can provide more precise message by focusing on the other component.
 static std::pair<bool, bool> GetPartialProtectedInfo(const SyncAccessInfo& access, const SyncAccessFlags& write_barriers,
-                                                     const CommandExecutionContext& context) {
+                                                     const ExecutionContext& context) {
     const auto protected_stage_access_pairs =
-        ConvertSyncAccessesToCompactVkForm(write_barriers, context.GetSyncState(), context.GetQueueFlags());
+        ConvertSyncAccessesToCompactVkForm(write_barriers, context.validator, context.queue_flags);
     bool is_stage_protected = false;
     bool is_access_protected = false;
     for (const auto& protected_stage_access : protected_stage_access_pairs) {
@@ -387,17 +387,17 @@ std::string ReportProperties::FormatExtraPropertiesSection() const {
     return ss.str();
 }
 
-ReportProperties GetErrorMessageProperties(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
+ReportProperties GetErrorMessageProperties(const HazardResult& hazard, const ExecutionContext& context, vvl::Func command,
                                            const char* message_type, const AdditionalMessageInfo& additional_info) {
     ReportProperties properties;
     properties.Add(kPropertyMessageType, message_type);
     properties.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
     properties.Add(kPropertyCommand, vvl::String(command));
 
-    GetAccessProperties(hazard, context.GetSyncState(), context.GetQueueFlags(), properties);
+    GetAccessProperties(hazard, context.validator, context.queue_flags, properties);
 
     if (hazard.Tag() != kInvalidTag) {
-        ResourceUsageInfo prior_usage_info = context.GetResourceUsageInfo(hazard.TagEx());
+        ResourceUsageInfo prior_usage_info = context.usage_info_provider.GetResourceUsageInfo(hazard.TagEx());
         GetPriorUsageProperties(prior_usage_info, properties);
     }
     for (const auto& property : additional_info.properties.name_values) {
@@ -406,7 +406,7 @@ ReportProperties GetErrorMessageProperties(const HazardResult& hazard, const Com
     return properties;
 }
 
-std::string FormatErrorMessage(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
+std::string FormatErrorMessage(const HazardResult& hazard, const ExecutionContext& context, vvl::Func command,
                                const std::string& resouce_description, const AdditionalMessageInfo& additional_info) {
     const SyncHazard hazard_type = hazard.Hazard();
     const SyncHazardInfo hazard_info = GetSyncHazardInfo(hazard_type);
@@ -458,7 +458,7 @@ std::string FormatErrorMessage(const HazardResult& hazard, const CommandExecutio
         // resolve before ILT or ILT after storeOp.
         ss << "by the same command";
     } else {
-        const ResourceUsageInfo prior_usage_info = context.GetResourceUsageInfo(hazard.TagEx());
+        const ResourceUsageInfo prior_usage_info = context.usage_info_provider.GetResourceUsageInfo(hazard.TagEx());
         const vvl::Func prior_command = prior_usage_info.command;
         if (prior_usage_info.sub_command_type == SubCommandType::kLoadOp) {
             if (prior_usage_info.subpass != vvl::kNoIndex32) {
@@ -507,7 +507,7 @@ std::string FormatErrorMessage(const HazardResult& hazard, const CommandExecutio
     }
 
     // Synchronization information
-    const bool cross_queue_racing_hazard = hazard_info.IsRacingHazard() && context.GetQueueId() != kQueueIdInvalid;
+    const bool cross_queue_racing_hazard = hazard_info.IsRacingHazard() && context.queue_id != kQueueIdInvalid;
     ss << "\n";
     if (cross_queue_racing_hazard) {
         ss << "The RACING hazard means the two submissions on different queues are not synchronized with each other, so the order "
@@ -561,7 +561,7 @@ std::string FormatErrorMessage(const HazardResult& hazard, const CommandExecutio
         ss << ".";
     } else if (hazard_info.IsPriorWrite()) {  // RAW/WAW hazards
         ss << "The current synchronization allows ";
-        ss << FormatSyncAccesses(write_barriers, context.GetSyncState(), context.GetQueueFlags(), false);
+        ss << FormatSyncAccesses(write_barriers, context.validator, context.queue_flags, false);
         auto [is_stage_protected, is_access_protected] = GetPartialProtectedInfo(access, write_barriers, context);
         if (is_access_protected) {
             ss << ", but to prevent this hazard, it must allow these accesses at ";

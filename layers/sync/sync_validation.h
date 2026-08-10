@@ -446,12 +446,12 @@ class SyncValidator : public vvl::DeviceProxy {
     void PostCallRecordResetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) override;
 
 
-    bool ValidateCmdSetEvent(const CommandExecutionContext& exec_context, const std::shared_ptr<const vvl::Event>& event,
+    bool ValidateCmdSetEvent(const ExecutionContext& exec_context, const std::shared_ptr<const vvl::Event>& event,
                              const SyncExecScope& src_exec_scope, ResourceUsageTag base_tag, const Location& loc) const;
     bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                    const ErrorObject &error_obj) const override;
+                                    const ErrorObject& error_obj) const override;
 
-    void ApplySetEvent(CommandExecutionContext& exec_context, const std::shared_ptr<const vvl::Event>& event,
+    void ApplySetEvent(ExecutionContext& exec_context, const std::shared_ptr<const vvl::Event>& event,
                        const SyncExecScope& src_exec_scope, const std::shared_ptr<const AccessContext>& src_access_context,
                        ResourceUsageTag tag, vvl::Func command) const;
     void RecordCmdSetEvent(CommandBufferAccessContext& cb_context, std::shared_ptr<const vvl::Event>&& event,
@@ -467,13 +467,13 @@ class SyncValidator : public vvl::DeviceProxy {
     void PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo *pDependencyInfo,
                                     const RecordObject &record_obj) override;
 
-    bool ValidateCmdResetEvent(const CommandExecutionContext& exec_context, const std::shared_ptr<const vvl::Event>& event,
+    bool ValidateCmdResetEvent(const ExecutionContext& exec_context, const std::shared_ptr<const vvl::Event>& event,
                                const SyncExecScope& exec_scope, ResourceUsageTag base_tag, const Location& loc) const;
     bool PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                      const ErrorObject &error_obj) const override;
+                                      const ErrorObject& error_obj) const override;
 
-    void ApplyResetEvent(CommandExecutionContext& exec_context, const std::shared_ptr<const vvl::Event>& event,
-                         ResourceUsageTag tag, vvl::Func command) const;
+    void ApplyResetEvent(ExecutionContext& exec_context, const std::shared_ptr<const vvl::Event>& event, ResourceUsageTag tag,
+                         vvl::Func command) const;
     void RecordCmdResetEvent(CommandBufferAccessContext& cb_context, std::shared_ptr<const vvl::Event>&& event,
                              const SyncExecScope& exec_scope, const Location& loc) const;
     void PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
@@ -487,7 +487,7 @@ class SyncValidator : public vvl::DeviceProxy {
     void PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
                                       const RecordObject &record_obj) override;
 
-    bool ValidateCmdWaitEvents(const CommandExecutionContext& exec_context, const AccessContext& access_context,
+    bool ValidateCmdWaitEvents(const ExecutionContext& exec_context, const AccessContext& access_context,
                                const std::vector<std::shared_ptr<const vvl::Event>>& events,
                                const vvl::span<const BarrierSet>& barrier_sets, const ResourceUsageTag base_tag,
                                const Location& loc) const;

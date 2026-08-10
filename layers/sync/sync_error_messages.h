@@ -32,7 +32,7 @@ class Pipeline;
 namespace syncval {
 
 class CommandBufferAccessContext;
-class CommandExecutionContext;
+struct ExecutionContext;
 class HazardResult;
 class QueueBatchContext;
 class SyncValidator;
@@ -42,7 +42,7 @@ class ErrorMessages {
   public:
     explicit ErrorMessages(SyncValidator& validator);
 
-    std::string Error(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
+    std::string Error(const HazardResult& hazard, const ExecutionContext& context, vvl::Func command,
                       const std::string& resource_description, const char* message_type,
                       const AdditionalMessageInfo& additional_info = {}) const;
 
@@ -128,10 +128,10 @@ class ErrorMessages {
                                                                      VkImageLayout old_layout, VkImageLayout new_layout,
                                                                      uint32_t store_resolve_subpass) const;
 
-    std::string ImageBarrierError(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
+    std::string ImageBarrierError(const HazardResult& hazard, const ExecutionContext& context, vvl::Func command,
                                   const std::string& resource_description, const SyncImageBarrier& barrier) const;
 
-    std::string FirstUseError(const HazardResult& hazard, const CommandExecutionContext& exec_context,
+    std::string FirstUseError(const HazardResult& hazard, const ExecutionContext& exec_context,
                               const CommandBufferAccessContext& recorded_context, uint32_t command_buffer_index) const;
 
     std::string PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, vvl::Func command,

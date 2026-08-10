@@ -30,9 +30,9 @@ class Event;
 namespace syncval {
 
 class AccessContext;
-class CommandExecutionContext;
+struct ExecutionContext;
 
-void ApplyWaitEvents(CommandExecutionContext& exec_context, AccessContext& access_context,
+void ApplyWaitEvents(ExecutionContext& exec_context, AccessContext& access_context,
                      const std::vector<std::shared_ptr<const vvl::Event>>& events, vvl::span<const BarrierSet> barrier_sets,
                      ResourceUsageTag tag, vvl::Func command);
 
