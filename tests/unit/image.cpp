@@ -5833,7 +5833,7 @@ TEST_F(NegativeImage, ImageTilingControlFeature) {
 
     VkImageCreateInfo image_create_info = DefaultImageInfo();
     image_create_info.pNext = &tiling_control;
-    m_errorMonitor->SetDesiredError("VUID-VkImageTilingControlCreateInfoEXT-imageTilingControl-12481");
+    m_errorMonitor->SetDesiredError("VUID-VkImageTilingControlCreateInfoEXT-imageTiling-12481");
     vkt::Image image(*m_device, image_create_info);
     m_errorMonitor->VerifyFound();
 }
@@ -5850,7 +5850,7 @@ TEST_F(NegativeImage, ImageTilingControlLinear) {
     VkImageCreateInfo image_create_info = DefaultImageInfo();
     image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
     image_create_info.pNext = &tiling_control;
-    m_errorMonitor->SetDesiredError("VUID-VkImageTilingControlCreateInfoEXT-imageTilingControl-12479");
+    m_errorMonitor->SetDesiredError("VUID-VkImageTilingControlCreateInfoEXT-imageTiling-12479");
     vkt::Image image(*m_device, image_create_info);
     m_errorMonitor->VerifyFound();
 }
