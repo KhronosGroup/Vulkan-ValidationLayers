@@ -570,11 +570,8 @@ void CommandBufferSubState::DumpDescriptorHeapConstantOffset(std::ostringstream&
                << string_range_hex(final_index_range);
             warn.IndexOOB(max_index);
         } else if (dump.is_runtime_array) {
-            const VkDeviceSize final_array_offset = (max_index * map_data.heapArrayStride);
-            vvl::range<VkDeviceAddress> final_index_range{index_zero_address + final_array_offset,
-                                                          index_zero_address + final_array_offset + dump.descriptor_size};
-            ss << new_sub_line << "The final descriptor index at [" << std::dec << max_index
-               << "] is the last index in bounds of the heap buffer and will access " << string_range_hex(final_index_range);
+            ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap at index [" << std::dec
+               << max_index + 1 << "]";
         }
 
         if (!dump.heap_reserved.empty()) {
@@ -640,13 +637,8 @@ void CommandBufferSubState::DumpDescriptorHeapConstantOffset(std::ostringstream&
                    << string_range_hex(final_index_range);
                 warn.IndexOOB(max_index);
             } else if (dump.is_runtime_array) {
-                const VkDeviceSize final_array_offset =
-                    (map_data.samplerHeapOffset + (max_index * map_data.samplerHeapArrayStride));
-                vvl::range<VkDeviceAddress> final_index_range{
-                    index_zero_address + final_array_offset,
-                    index_zero_address + final_array_offset + dump.sampler_descriptor_size};
-                ss << new_sub_line << "The final descriptor index at [" << std::dec << max_index
-                   << "] is the last index in bounds of the heap buffer and will access " << string_range_hex(final_index_range);
+                ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap at index [" << std::dec
+                   << max_index + 1 << "]";
             }
 
             if (!dump.sampler_reserved.empty() && warn.reserved_range_start == vvl::kNoIndex32) {
@@ -721,11 +713,8 @@ void CommandBufferSubState::DumpDescriptorHeapPushIndex(std::ostringstream& ss, 
                << string_range_hex(final_index_range);
             warn.IndexOOB(max_index);
         } else if (dump.is_runtime_array) {
-            const VkDeviceSize final_array_offset = max_index * map_data.heapArrayStride;
-            vvl::range<VkDeviceAddress> final_index_range{index_zero_address + final_array_offset,
-                                                          index_zero_address + final_array_offset + dump.descriptor_size};
-            ss << new_sub_line << "The final descriptor index at [" << std::dec << max_index
-               << "] is the last index in bounds of the heap buffer and will access " << string_range_hex(final_index_range);
+            ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap at index [" << std::dec
+               << max_index + 1 << "]";
         }
 
         if (!dump.heap_reserved.empty()) {
@@ -804,12 +793,8 @@ void CommandBufferSubState::DumpDescriptorHeapPushIndex(std::ostringstream& ss, 
                    << string_range_hex(final_index_range);
                 warn.IndexOOB(max_index);
             } else if (dump.is_runtime_array) {
-                const VkDeviceSize final_array_offset = max_index * map_data.samplerHeapArrayStride;
-                vvl::range<VkDeviceAddress> final_index_range{
-                    index_zero_address + final_array_offset,
-                    index_zero_address + final_array_offset + dump.sampler_descriptor_size};
-                ss << new_sub_line << "The final descriptor index at [" << std::dec << max_index
-                   << "] is the last index in bounds of the heap buffer and will access " << string_range_hex(final_index_range);
+                ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap at index [" << std::dec
+                   << max_index + 1 << "]";
             }
 
             if (!dump.sampler_reserved.empty() && warn.reserved_range_start == vvl::kNoIndex32) {
@@ -904,11 +889,8 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
                    << string_range_hex(final_index_range);
                 warn.IndexOOB(max_index);
             } else if (dump.is_runtime_array) {
-                const VkDeviceSize final_array_offset = max_index * map_data.heapArrayStride;
-                vvl::range<VkDeviceAddress> final_index_range{index_zero_address + final_array_offset,
-                                                              index_zero_address + final_array_offset + dump.descriptor_size};
-                ss << new_sub_line << "The final descriptor index at [" << std::dec << max_index
-                   << "] is the last index in bounds of the heap buffer and will access " << string_range_hex(final_index_range);
+                ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap at index [" << std::dec
+                   << max_index + 1 << "]";
             }
 
             if (!dump.heap_reserved.empty()) {
@@ -1017,13 +999,8 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
                        << string_range_hex(final_index_range);
                     warn.IndexOOB(max_index);
                 } else if (dump.is_runtime_array) {
-                    const VkDeviceSize final_array_offset = max_index * map_data.samplerHeapArrayStride;
-                    vvl::range<VkDeviceAddress> final_index_range{
-                        index_zero_address + final_array_offset,
-                        index_zero_address + final_array_offset + dump.sampler_descriptor_size};
-                    ss << new_sub_line << "The final descriptor index at [" << std::dec << max_index
-                       << "] is the last index in bounds of the heap buffer and will access "
-                       << string_range_hex(final_index_range);
+                    ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap at index [" << std::dec
+                       << max_index + 1 << "]";
                 }
 
                 if (!dump.sampler_reserved.empty() && warn.reserved_range_start == vvl::kNoIndex32) {
