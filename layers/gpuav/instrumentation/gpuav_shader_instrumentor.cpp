@@ -2082,7 +2082,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer comm
         ss << "[Internal Error] - Unable to locate shader/pipeline handles used in command buffer "
            << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(commandBuffer)) << "(" << HandleToUint64(commandBuffer)
            << ")\n";
-        assert(true);
+        assert(false);
     } else {
         std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
         ss << "Command buffer " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(commandBuffer)) << "("
