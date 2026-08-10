@@ -2885,28 +2885,31 @@ TEST_F(NegativeDeviceAddressCommands, CopyImageLayout) {
 TEST_F(NegativeDeviceAddressCommands, CopyAddressRangeOverlap) {
     RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
 
-    vkt::Buffer buffer(*m_device, 32u * 32u * 4u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, vkt::device_address);
-    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, 32u * 32u * 4u, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+
+    VkDeviceAddressRangeEXT range_0 = {buffer.Address(), 64};
+    VkDeviceAddressRangeEXT range_1 = {buffer.Address() + 32, 64};
 
     VkDeviceMemoryImageCopyKHR regions[2];
     regions[0] = vku::InitStructHelper();
-    regions[0].addressRange = buffer.AddressRange();
+    regions[0].addressRange = range_0;
     regions[0].addressFlags = 0u;
     regions[0].addressRowLength = 0u;
     regions[0].addressImageHeight = 0u;
     regions[0].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
     regions[0].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     regions[0].imageOffset = {0, 0, 0};
-    regions[0].imageExtent = {32u, 4u, 1u};
+    regions[0].imageExtent = {2u, 2u, 1u};
     regions[1] = vku::InitStructHelper();
-    regions[1].addressRange = buffer.AddressRange();
+    regions[1].addressRange = range_1;
     regions[1].addressFlags = 0u;
     regions[1].addressRowLength = 0u;
     regions[1].addressImageHeight = 0u;
     regions[1].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
     regions[1].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    regions[1].imageOffset = {0, 4, 0};
-    regions[1].imageExtent = {32u, 4u, 1u};
+    regions[1].imageOffset = {4, 4, 0};
+    regions[1].imageExtent = {2u, 2u, 1u};
 
     VkCopyDeviceMemoryImageInfoKHR copy_memory_info = vku::InitStructHelper();
     copy_memory_info.image = image;
@@ -2915,7 +2918,7 @@ TEST_F(NegativeDeviceAddressCommands, CopyAddressRangeOverlap) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkCopyDeviceMemoryImageInfoKHR-pRegions-12473");
-    vk::CmdCopyMemoryToImageKHR(m_command_buffer, &copy_memory_info);
+    vk::CmdCopyImageToMemoryKHR(m_command_buffer, &copy_memory_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }

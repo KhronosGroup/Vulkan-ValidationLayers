@@ -227,6 +227,43 @@ TEST_F(PositiveDeviceAddressCommands, BindVertexBuffers3Stride) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveDeviceAddressCommands, CopyAddressRangeOverlap) {
+    TEST_DESCRIPTION("the src memory can overlap so this is valid");
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+
+    vkt::Buffer buffer(*m_device, 32u * 32u * 4u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, vkt::device_address);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkDeviceMemoryImageCopyKHR regions[2];
+    regions[0] = vku::InitStructHelper();
+    regions[0].addressRange = buffer.AddressRange();
+    regions[0].addressFlags = 0u;
+    regions[0].addressRowLength = 0u;
+    regions[0].addressImageHeight = 0u;
+    regions[0].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    regions[0].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    regions[0].imageOffset = {0, 0, 0};
+    regions[0].imageExtent = {32u, 4u, 1u};
+    regions[1] = vku::InitStructHelper();
+    regions[1].addressRange = buffer.AddressRange();
+    regions[1].addressFlags = 0u;
+    regions[1].addressRowLength = 0u;
+    regions[1].addressImageHeight = 0u;
+    regions[1].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    regions[1].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    regions[1].imageOffset = {0, 4, 0};
+    regions[1].imageExtent = {32u, 4u, 1u};
+
+    VkCopyDeviceMemoryImageInfoKHR copy_memory_info = vku::InitStructHelper();
+    copy_memory_info.image = image;
+    copy_memory_info.regionCount = 2u;
+    copy_memory_info.pRegions = regions;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyMemoryToImageKHR(m_command_buffer, &copy_memory_info);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveDeviceAddressCommands, MultipleRegions) {
     RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
 
