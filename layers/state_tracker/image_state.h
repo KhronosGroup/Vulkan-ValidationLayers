@@ -154,6 +154,7 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     VkImageLayout GetInitialLayout() const { return create_info.initialLayout; }
 
     VkPhysicalDeviceImageFormatInfo2 GetImageFormatInfo2(void* pNext = nullptr) const;
+    VkImageUsageFlags2KHR GetInheritedUsage(const VkImageViewCreateInfo& ci) const;
 
     bool HasAHBFormat() const { return ahb_format != 0; }
     bool IsCompatibleAliasing(const Image *other_image_state) const;

@@ -376,6 +376,29 @@ VkPhysicalDeviceImageFormatInfo2 Image::GetImageFormatInfo2(void* pNext) const {
     return image_format_info;
 }
 
+// We print how we get this info in ImageView::DescribeImageUsage()
+VkImageUsageFlags2KHR Image::GetInheritedUsage(const VkImageViewCreateInfo& ci) const {
+    if (const auto usage_create_info_2 = vku::FindStructInPNextChain<VkImageViewUsage2CreateInfoKHR>(ci.pNext)) {
+        return usage_create_info_2->usage;
+    } else if (const auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(ci.pNext)) {
+        return usage_create_info->usage;
+    }
+
+    VkImageUsageFlags2KHR inherited_usage = usage;
+
+    // We can't apply the stencil usage until we get the aspectMask to know how to appply it
+    if (stencil_usage.has_value()) {
+        const bool stencil_aspect = (ci.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
+        const bool depth_aspect = (ci.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
+        if (stencil_aspect && !depth_aspect) {
+            inherited_usage = stencil_usage.value();
+        } else if (stencil_aspect && depth_aspect) {
+            inherited_usage &= stencil_usage.value();
+        }
+    }
+    return inherited_usage;
+}
+
 VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceLayers& sub) const {
     return GetEffectiveSubresourceExtent(sub.aspectMask, sub.mipLevel);
 }
@@ -547,29 +570,6 @@ static VkSamplerYcbcrConversion GetSamplerConversion(const VkImageViewCreateInfo
     return conversion_info ? conversion_info->conversion : VK_NULL_HANDLE;
 }
 
-// We print how we get this info in ImageView::DescribeImageUsage()
-static VkImageUsageFlags2KHR GetInheritedUsage(const VkImageViewCreateInfo& ci, const vvl::Image& image_state) {
-    if (const auto usage_create_info_2 = vku::FindStructInPNextChain<VkImageViewUsage2CreateInfoKHR>(ci.pNext)) {
-        return usage_create_info_2->usage;
-    } else if (const auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(ci.pNext)) {
-        return usage_create_info->usage;
-    }
-
-    VkImageUsageFlags2KHR usage = image_state.usage;
-
-    // We can't apply the stencil usage until we get the aspectMask to know how to appply it
-    if (image_state.stencil_usage.has_value()) {
-        const bool stencil_aspect = (ci.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
-        const bool depth_aspect = (ci.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
-        if (stencil_aspect && !depth_aspect) {
-            usage = image_state.stencil_usage.value();
-        } else if (stencil_aspect && depth_aspect) {
-            usage &= image_state.stencil_usage.value();
-        }
-    }
-    return usage;
-}
-
 static float GetImageViewMinLod(const VkImageViewCreateInfo& ci) {
     auto image_view_min_lod = vku::FindStructInPNextChain<VkImageViewMinLodCreateInfoEXT>(ci.pNext);
     return (image_view_min_lod) ? image_view_min_lod->minLod : 0.0f;
@@ -610,7 +610,7 @@ ImageView::ImageView(const DeviceState& device_state, const std::shared_ptr<vvl:
       filter_cubic_props(cubic_props),
       min_lod(GetImageViewMinLod(create_info)),
       format_features(ff),
-      inherited_usage(GetInheritedUsage(create_info, *image_state)) {
+      inherited_usage(image_state->GetInheritedUsage(create_info)) {
 }
 
 void ImageView::NotifyInvalidate(const StateObject::NodeList& invalid_nodes, bool unlink) {
