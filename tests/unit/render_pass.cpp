@@ -2997,6 +2997,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled3) {
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 
     ms_render_to_ss.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper(&ms_render_to_ss);
