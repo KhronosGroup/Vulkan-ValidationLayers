@@ -5536,18 +5536,18 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
             if (IsValueIn(resource.type, {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                           VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT})) {
                 const VkImageUsageFlags2KHR usage = resource.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE ? VK_IMAGE_USAGE_SAMPLED_BIT
-                                                : resource.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-                                                    ? VK_IMAGE_USAGE_STORAGE_BIT
-                                                    : VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-                if ((image_state->usage & usage) == 0) {
+                                                    : resource.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+                                                        ? VK_IMAGE_USAGE_STORAGE_BIT
+                                                        : VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+                const VkImageUsageFlags2KHR image_usage = image_state->GetInheritedUsage(image_view_ci);
+                if ((image_usage & usage) == 0) {
                     const char* vuid =
                         resource.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE   ? "VUID-VkResourceDescriptorInfoEXT-type-11458"
                         : resource.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ? "VUID-VkResourceDescriptorInfoEXT-type-11459"
                                                                             : "VUID-VkResourceDescriptorInfoEXT-type-11460";
-                    skip |= LogError(vuid, image_state->VkHandle(), data_loc.dot(Field::pImage).dot(Field::pView).dot(Field::image),
-                                     "was created with usages %s, but required %s is missing.\npResources[%" PRIu32 "].type = %s",
-                                     string_VkImageUsageFlags2KHR(image_state->usage).c_str(),
-                                     string_VkImageUsageFlags2KHR(usage).c_str(),
+                    skip |= LogError(vuid, image_state->VkHandle(), data_loc.dot(Field::pImage).dot(Field::pView),
+                                     "has usages %s, but required %s is missing.\npResources[%" PRIu32 "].type = %s",
+                                     string_VkImageUsageFlags2KHR(image_usage).c_str(), string_VkImageUsageFlags2KHR(usage).c_str(),
                                      i, string_VkDescriptorType(resource.type));
                 }
             }
