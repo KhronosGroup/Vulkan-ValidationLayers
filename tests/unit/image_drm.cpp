@@ -633,3 +633,34 @@ TEST_F(NegativeImageDrm, DisjointPlaneAspect) {
     vk::GetDeviceImageMemoryRequirements(device(), &image_mem_reqs, &mem_reqs_2);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeImageDrm, ImageTilingControl) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_IMAGE_TILING_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imageTilingControl);
+    AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkSubresourceLayout fake_plane_layout = {0, 0, 0, 0, 0};
+    VkImageDrmFormatModifierExplicitCreateInfoEXT format_modifier_explicit = vku::InitStructHelper();
+    format_modifier_explicit.drmFormatModifierPlaneCount = 1;
+    format_modifier_explicit.pPlaneLayouts = &fake_plane_layout;
+
+    VkImageTilingControlCreateInfoEXT tiling_control = vku::InitStructHelper(&format_modifier_explicit);
+    tiling_control.tilingControl = VK_IMAGE_TILING_CONTROL_DEFAULT_EXT;
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+    image_create_info.pNext = &tiling_control;
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-pNext-12480");
+    vkt::Image image(*m_device, image_create_info);
+    m_errorMonitor->VerifyFound();
+}

@@ -979,6 +979,9 @@
                 "VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT": {
                     "imageCompressionControlSwapchain": true
                 },
+                "VkPhysicalDeviceImageTilingControlFeaturesEXT": {
+                    "imageTilingControl": true
+                },
                 "VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT": {
                     "subpassMergeFeedback": true
                 },
@@ -2513,6 +2516,7 @@
                 "VK_EXT_image_compression_control_swapchain": 1,
                 "VK_EXT_image_drm_format_modifier": 1,
                 "VK_EXT_image_robustness": 1,
+                "VK_EXT_image_tiling_control": 1,
                 "VK_EXT_image_view_min_lod": 1,
                 "VK_EXT_index_type_uint8": 1,
                 "VK_KHR_index_type_uint8": 1,

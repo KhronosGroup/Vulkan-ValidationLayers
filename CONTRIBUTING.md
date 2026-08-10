@@ -12,15 +12,15 @@ We enjoy external contributions, we often see them in the form of:
 
 - Make sure you run `clang-format` on any C++ code. (We currently use [clang-format 22.1.x](https://github.com/llvm/llvm-project/releases/tag/llvmorg-22.1.1) for CI)
 - If fixing a bug, we would like a [positive test](./tests/README.md#different-categories-of-tests).
-- If addinga a new VU, we **need** a [negative test](./tests/README.md#different-categories-of-tests).
+- If adding a new VU, we **need** a [negative test](./tests/README.md#different-categories-of-tests).
 - Try to match the code style around the code as best as possible.
 - If dealing with generated code, we have docs [here](./docs/generated_code.md) and [here](./docs/python_scripts_code_style.md).
 - Run `scripts/check_code_format.py` after you commit and before you make the PR to see if things pass locally.
 
 ## Coding Conventions and Formatting
 
-We are reasonable developers, we don't want to bikeshed on code style, but highly encourge to look at the nearby code.
-As maintainer, if we find the style is incredibly different, we will ask you kindly to fix it.
+We are reasonable developers, we don't want to bikeshed on code style, but highly encourage to look at the nearby code.
+As maintainers, if we find the style is incredibly different, we will ask you kindly to fix it.
 
 our CI will run **clang-format** (version 22.1.x) **FOR EVERY COMMIT**, so make sure your change has been ran with it.
 
@@ -62,7 +62,7 @@ We will be strict to enforce any new VUs added have a good, well written error m
 - [Overview for creating tests](docs/creating_tests.md).
 - When updating the [layer settings](./layers/VkLayer_khronos_validation.json.in), the [layer settings schema](https://github.com/LunarG/VulkanTools/blob/main/vkconfig_core/layers/layers_schema.json) can be used to validate the changes.
 
-> Tip - If you make a fork and push to it, it will run CI there before your make a PR!
+> Tip - If you make a fork and push to it, it will run CI there before you make a PR!
 
 ### Contributor License Agreement (CLA)
 
