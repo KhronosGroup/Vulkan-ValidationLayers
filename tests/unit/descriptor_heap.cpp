@@ -6174,3 +6174,33 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerResourceTypeAll) {
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptorHeap, ImageViewUsage) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    std::vector<uint8_t> data(static_cast<size_t>(heap_props.imageDescriptorSize));
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    VkResourceDescriptorInfoEXT resource_desc_info = vku::InitStructHelper();
+    resource_desc_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+
+    VkImageViewUsageCreateInfo image_view_usage_ci = vku::InitStructHelper();
+    image_view_usage_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper(&image_view_usage_ci);
+    image_view_ci.image = image;
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = image.CreateInfo().format;
+    image_view_ci.components = {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A};
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
+    image_info.pView = &image_view_ci;
+    image_info.layout = VK_IMAGE_LAYOUT_GENERAL;
+    resource_desc_info.data.pImage = &image_info;
+
+    VkHostAddressRangeEXT descriptors = {data.data(), data.size()};
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11458");
+    vk::WriteResourceDescriptorsEXT(device(), 1u, &resource_desc_info, &descriptors);
+    m_errorMonitor->VerifyFound();
+}
