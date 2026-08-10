@@ -2761,12 +2761,12 @@ TEST_F(NegativeDynamicRendering, RenderAreaMipLevel) {
 
     attachment_info.imageView = view_mip12;
     rendering_info.renderArea.extent = {320, 171};
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkRenderPassAttachmentBeginInfo-mipLevelCount");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-12486");
     vk::CmdBeginRendering(m_command_buffer, &rendering_info);
     m_errorMonitor->VerifyFound();
 
     attachment_info.imageView = view_mip_all;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkRenderPassAttachmentBeginInfo-mipLevelCount");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-12486");
     vk::CmdBeginRendering(m_command_buffer, &rendering_info);
     m_errorMonitor->VerifyFound();
 
@@ -4061,6 +4061,7 @@ TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachment) {
     color_attachment.imageView = invalid_image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.resolveImageView = resolve_image_view;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
@@ -4071,6 +4072,7 @@ TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachment) {
     m_command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-colorAttachmentCount-06087");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06136");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
@@ -4155,6 +4157,7 @@ TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachmentInheritedUsage) {
     color_attachment.imageView = color_image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.resolveImageView = resolve_image_view;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
@@ -4165,6 +4168,7 @@ TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachmentInheritedUsage) {
     m_command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-colorAttachmentCount-06087");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06136");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 }
