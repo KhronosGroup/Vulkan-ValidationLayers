@@ -89,6 +89,12 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
         }
     }
 
+    if (pCreateInfo->initialLayout == VK_IMAGE_LAYOUT_PREINITIALIZED && pCreateInfo->tiling != VK_IMAGE_TILING_LINEAR) {
+        skip |=
+            LogError("VUID-VkImageCreateInfo-initialLayout-12478", device, create_info_loc.dot(Field::initialLayout),
+                     "is VK_IMAGE_LAYOUT_PREINITIALIZED but tiling is %s (not LINEAR).", string_VkImageTiling(pCreateInfo->tiling));
+    }
+
     if ((pCreateInfo->imageType == VK_IMAGE_TYPE_1D) && ((pCreateInfo->extent.height != 1) || (pCreateInfo->extent.depth != 1))) {
         skip |= LogError("VUID-VkImageCreateInfo-imageType-00956", device, create_info_loc.dot(Field::imageType),
                          "is VK_IMAGE_TYPE_1D but extent.height (%" PRIu32 ") and extent.depth (%" PRIu32 ") must both be 1.",
