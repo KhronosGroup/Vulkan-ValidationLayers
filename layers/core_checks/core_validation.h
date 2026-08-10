@@ -1047,7 +1047,10 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateImageFormatFeatures(const VkImageCreateInfo& create_info, const Location& loc,
                                      const VkImageCreateFlags2KHR create_flags, const VkImageUsageFlags2KHR usage) const;
-    bool ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo& create_info, const Location& create_info_loc) const;
+    bool ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                                 const VkImageAlignmentControlCreateInfoMESA& alignment_control_create_info) const;
+    bool ValidateImageTilingControlCreateInfo(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                              const VkImageTilingControlCreateInfoEXT& tiling_control_create_info) const;
     bool ValidateImageVideo(const VkImageCreateInfo& create_info, const Location& create_info_loc,
                             const VkImageCreateFlags2KHR create_flags, const Location& flags_loc, const VkImageUsageFlags2KHR usage,
                             const Location& usage_loc, const ErrorObject& error_obj) const;

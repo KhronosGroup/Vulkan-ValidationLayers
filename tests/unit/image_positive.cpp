@@ -1441,6 +1441,21 @@ TEST_F(PositiveImage, ImageBlockMatchWindowWithClampToEdge) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveImage, ImageTilingControl) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_IMAGE_TILING_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imageTilingControl);
+    RETURN_IF_SKIP(Init());
+
+    VkImageTilingControlCreateInfoEXT tiling_control = vku::InitStructHelper();
+    tiling_control.tilingControl = VK_IMAGE_TILING_CONTROL_MIN_SIZE_EXT;
+
+    VkImageCreateInfo image_create_info = DefaultImageInfo();
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.pNext = &tiling_control;
+    vkt::Image image(*m_device, image_create_info);
+}
+
 TEST_F(PositiveImage, ImageBlockMatchWindowInstruction) {
     TEST_DESCRIPTION("Launch a compute pass with an opImageBlockMatchWindowSSDQCOM instruction and "
                      "an opImageBlockMatchGatherSADQCOM instruction.");

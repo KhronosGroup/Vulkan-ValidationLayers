@@ -5824,6 +5824,37 @@ TEST_F(NegativeImage, ImageBlockMatchWindowWithAsymmetricClampToEdge) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeImage, ImageTilingControlFeature) {
+    AddRequiredExtensions(VK_EXT_IMAGE_TILING_CONTROL_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkImageTilingControlCreateInfoEXT tiling_control = vku::InitStructHelper();
+    tiling_control.tilingControl = VK_IMAGE_TILING_CONTROL_MIN_SIZE_EXT;
+
+    VkImageCreateInfo image_create_info = DefaultImageInfo();
+    image_create_info.pNext = &tiling_control;
+    m_errorMonitor->SetDesiredError("VUID-VkImageTilingControlCreateInfoEXT-imageTilingControl-12481");
+    vkt::Image image(*m_device, image_create_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImage, ImageTilingControlLinear) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_IMAGE_TILING_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imageTilingControl);
+    RETURN_IF_SKIP(Init());
+
+    VkImageTilingControlCreateInfoEXT tiling_control = vku::InitStructHelper();
+    tiling_control.tilingControl = VK_IMAGE_TILING_CONTROL_MAX_PERFORMANCE_EXT;
+
+    VkImageCreateInfo image_create_info = DefaultImageInfo();
+    image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
+    image_create_info.pNext = &tiling_control;
+    m_errorMonitor->SetDesiredError("VUID-VkImageTilingControlCreateInfoEXT-imageTilingControl-12479");
+    vkt::Image image(*m_device, image_create_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeImage, DuplicatedImageViewUsage) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTENDED_FLAGS_EXTENSION_NAME);

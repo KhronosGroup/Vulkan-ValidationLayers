@@ -136,14 +136,10 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo& create_inf
     return skip;
 }
 
-bool CoreChecks::ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo& create_info,
-                                                         const Location& create_info_loc) const {
+bool CoreChecks::ValidateImageAlignmentControlCreateInfo(
+    const VkImageCreateInfo& create_info, const Location& create_info_loc,
+    const VkImageAlignmentControlCreateInfoMESA& alignment_control_create_info) const {
     bool skip = false;
-    const auto alignment_control_create_info =
-        vku::FindStructInPNextChain<VkImageAlignmentControlCreateInfoMESA>(create_info.pNext);
-    if (!alignment_control_create_info) {
-        return skip;
-    }
 
     if (!enabled_features.imageAlignmentControl) {
         skip |= LogError(
@@ -163,19 +159,51 @@ bool CoreChecks::ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo
                          "is %s but needs to be VK_IMAGE_TILING_OPTIMAL", string_VkImageTiling(create_info.tiling));
     }
 
-    if (alignment_control_create_info->maximumRequestedAlignment != 0) {
-        if (!IsPowerOfTwo(alignment_control_create_info->maximumRequestedAlignment)) {
+    if (alignment_control_create_info.maximumRequestedAlignment != 0) {
+        if (!IsPowerOfTwo(alignment_control_create_info.maximumRequestedAlignment)) {
             skip |= LogError("VUID-VkImageAlignmentControlCreateInfoMESA-maximumRequestedAlignment-09655", device,
                              create_info_loc.pNext(Struct::VkImageAlignmentControlCreateInfoMESA, Field::maximumRequestedAlignment),
-                             "(%" PRIu32 ") must be a power of two.", alignment_control_create_info->maximumRequestedAlignment);
-        } else if ((alignment_control_create_info->maximumRequestedAlignment &
+                             "(%" PRIu32 ") must be a power of two.", alignment_control_create_info.maximumRequestedAlignment);
+        } else if ((alignment_control_create_info.maximumRequestedAlignment &
                     phys_dev_ext_props.image_alignment_control_props.supportedImageAlignmentMask) == 0) {
             skip |= LogError("VUID-VkImageAlignmentControlCreateInfoMESA-maximumRequestedAlignment-09656", device,
                              create_info_loc.pNext(Struct::VkImageAlignmentControlCreateInfoMESA, Field::maximumRequestedAlignment),
                              "(0x%" PRIx32 ") and supportedImageAlignmentMask (0x%" PRIx32 ") don't share any bits.",
-                             alignment_control_create_info->maximumRequestedAlignment,
+                             alignment_control_create_info.maximumRequestedAlignment,
                              phys_dev_ext_props.image_alignment_control_props.supportedImageAlignmentMask);
         }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateImageTilingControlCreateInfo(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                                      const VkImageTilingControlCreateInfoEXT& tiling_control_create_info) const {
+    bool skip = false;
+
+    if (tiling_control_create_info.tilingControl != VK_IMAGE_TILING_CONTROL_DEFAULT_EXT) {
+        if (!enabled_features.imageTilingControl) {
+            skip |= LogError("VUID-VkImageTilingControlCreateInfoEXT-imageTilingControl-12481", device,
+                             create_info_loc.pNext(Struct::VkImageTilingControlCreateInfoEXT, Field::tilingControl),
+                             "is %s (not VK_IMAGE_TILING_CONTROL_DEFAULT_EXT) but the imageTilingControl feature was not enabled.",
+                             string_VkImageTilingControlEXT(tiling_control_create_info.tilingControl));
+        }
+
+        if (create_info.tiling == VK_IMAGE_TILING_LINEAR) {
+            skip |= LogError(
+                "VUID-VkImageTilingControlCreateInfoEXT-imageTilingControl-12479", device,
+                create_info_loc.pNext(Struct::VkImageTilingControlCreateInfoEXT, Field::tilingControl),
+                "is %s (not VK_IMAGE_TILING_CONTROL_DEFAULT_EXT) but the tiling is VK_IMAGE_TILING_LINEAR.\nHint: The goal of "
+                "VK_EXT_image_tiling_control is to control the speed/memory trade off when using VK_IMAGE_TILING_OPTIMAL",
+                string_VkImageTilingControlEXT(tiling_control_create_info.tilingControl));
+        }
+    }
+
+    if (vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(create_info.pNext)) {
+        skip |=
+            LogError("VUID-VkImageCreateInfo-pNext-12480", device, create_info_loc.dot(Field::pNext),
+                     "contains both a VkImageTilingControlCreateInfoEXT and a VkImageDrmFormatModifierExplicitCreateInfoEXT struct "
+                     "(VK_EXT_image_tiling_control is not designed to be used with VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT).\n%s",
+                     PrintPNextChain(Struct::VkImageCreateInfo, create_info.pNext).c_str());
     }
     return skip;
 }
@@ -848,7 +876,14 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     }
 
     skip |= ValidateImageFormatFeatures(*pCreateInfo, create_info_loc, create_flags, usage);
-    skip |= ValidateImageAlignmentControlCreateInfo(*pCreateInfo, create_info_loc);
+    if (const auto alignment_control_create_info =
+            vku::FindStructInPNextChain<VkImageAlignmentControlCreateInfoMESA>(pCreateInfo->pNext)) {
+        skip |= ValidateImageAlignmentControlCreateInfo(*pCreateInfo, create_info_loc, *alignment_control_create_info);
+    }
+    if (const auto tiling_control_create_info =
+            vku::FindStructInPNextChain<VkImageTilingControlCreateInfoEXT>(pCreateInfo->pNext)) {
+        skip |= ValidateImageTilingControlCreateInfo(*pCreateInfo, create_info_loc, *tiling_control_create_info);
+    }
     skip |= ValidateImageVideo(*pCreateInfo, create_info_loc, create_flags, create_flags_loc, usage, usage_loc, error_obj);
     skip |= ValidateImageSwapchain(*pCreateInfo, create_info_loc, create_flags, usage);
     skip |= ValidateImageExternalMemory(*pCreateInfo, create_info_loc, image_format_info);
