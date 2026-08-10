@@ -257,6 +257,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkRegisterCustomBorderColorEXT',
             'vkUnregisterCustomBorderColorEXT',
             'vkGetPhysicalDeviceDescriptorSizeEXT',
+            'vkGetPhysicalDeviceCooperativeMatrixProperties2EXT',
             'vkCmdBindSamplerHeapEXT',
             'vkCmdBindResourceHeapEXT',
             'vkCmdFillMemoryKHR',

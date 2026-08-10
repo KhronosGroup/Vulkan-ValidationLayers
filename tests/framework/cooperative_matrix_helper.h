@@ -13,9 +13,17 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
+#include <optional>
+#include <string>
 #include <vector>
 
 class VkLayerTest;
+
+// An empty vector is a successful query with no properties; nullopt is a query failure.
+std::optional<std::vector<VkCooperativeMatrixProperties2EXT>> QueryCooperativeMatrixProperties2(
+    VkPhysicalDevice physical_device, const VkPhysicalDeviceCooperativeMatrixInfo2EXT &info);
+// Capability-only modules keep feature mapping tests independent of individual cooperative-matrix instructions.
+std::string MakeCooperativeMatrixCapabilitySpirv(const char *capability, const char *extension);
 
 // Single spot to handle all the things around properties
 class CooperativeMatrixHelper {

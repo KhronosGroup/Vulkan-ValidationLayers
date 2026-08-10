@@ -432,6 +432,10 @@ class Instance : public vvl::BaseInstance {
     bool manual_PreCallValidateGetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice, VkDescriptorType descriptorType,
                                                                   const Context& context) const;
 
+    bool manual_PreCallValidateGetPhysicalDeviceCooperativeMatrixProperties2EXT(
+        VkPhysicalDevice physicalDevice, const VkPhysicalDeviceCooperativeMatrixInfo2EXT *pCooperativeMatrixInfo,
+        uint32_t *pPropertyCount, VkCooperativeMatrixProperties2EXT *pProperties, const Context &context) const;
+
     bool ValidateGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
                                                     VkFormatProperties2 *pFormatProperties, const Context &context) const;
     bool manual_PreCallValidateGetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,

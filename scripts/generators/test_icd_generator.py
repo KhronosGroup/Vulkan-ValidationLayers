@@ -117,6 +117,7 @@ class TestIcdGenerator(BaseGenerator):
             'vkGetVideoSessionMemoryRequirementsKHR',
             'vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR',
             'vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV',
+            'vkGetPhysicalDeviceCooperativeMatrixProperties2EXT',
             'vkGetPhysicalDeviceCooperativeVectorPropertiesNV',
             'vkGetPhysicalDeviceVideoCapabilitiesKHR',
             'vkGetPhysicalDeviceVideoFormatPropertiesKHR',
