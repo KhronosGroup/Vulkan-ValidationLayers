@@ -483,8 +483,8 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                             "VUID-VkExportMetalObjectsInfoEXT-pNext-06798", device, error_obj.location,
                             "pNext chain contains a VkExportMetalTextureInfoEXT structure with "
                             "image = %s and imageView = "
-                            "%s, but plane = %s which is not one of  VK_IMAGE_ASPECT_PLANE_0_BIT,  VK_IMAGE_ASPECT_PLANE_1_BIT, "
-                            "or  VK_IMAGE_ASPECT_PLANE_2_BIT",
+                            "%s, but plane = %s which is not one of VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, "
+                            "or VK_IMAGE_ASPECT_PLANE_2_BIT",
                             FormatHandle(metal_texture_ptr->image).c_str(), FormatHandle(metal_texture_ptr->imageView).c_str(),
                             string_VkImageAspectFlags(metal_texture_ptr->plane).c_str());
                     }

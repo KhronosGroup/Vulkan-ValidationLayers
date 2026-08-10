@@ -1105,7 +1105,7 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module& m
             if (total_output_components >= limits.maxVertexOutputComponents) {
                 skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
                                  "shader %s output interface variable (%s) along with %" PRIu32
-                                 " built-in components,  "
+                                 " built-in components, "
                                  "exceeds component limit maxVertexOutputComponents (%" PRIu32 ").",
                                  entrypoint.Describe().c_str(), max_output_slot.Describe().c_str(),
                                  entrypoint.built_in_output_components, limits.maxVertexOutputComponents);
@@ -1179,7 +1179,7 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module& m
             if (total_input_components >= limits.maxGeometryInputComponents) {
                 skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
                                  "shader %s input interface variable (%s) along with %" PRIu32
-                                 " built-in components,  "
+                                 " built-in components, "
                                  "exceeds component limit maxGeometryInputComponents (%" PRIu32 ").",
                                  entrypoint.Describe().c_str(), max_input_slot.Describe().c_str(),
                                  entrypoint.built_in_input_components, limits.maxGeometryInputComponents);
@@ -1187,7 +1187,7 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module& m
             if (total_output_components >= limits.maxGeometryOutputComponents) {
                 skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
                                  "shader %s output interface variable (%s) along with %" PRIu32
-                                 " built-in components,  "
+                                 " built-in components, "
                                  "exceeds component limit maxGeometryOutputComponents (%" PRIu32 ").",
                                  entrypoint.Describe().c_str(), max_output_slot.Describe().c_str(),
                                  entrypoint.built_in_output_components, limits.maxGeometryOutputComponents);
@@ -1198,7 +1198,7 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module& m
             if (total_input_components >= limits.maxFragmentInputComponents) {
                 skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
                                  "shader %s input interface variable (%s) along with %" PRIu32
-                                 " built-in components,  "
+                                 " built-in components, "
                                  "exceeds component limit maxFragmentInputComponents (%" PRIu32 ").",
                                  entrypoint.Describe().c_str(), max_input_slot.Describe().c_str(),
                                  entrypoint.built_in_input_components, limits.maxFragmentInputComponents);

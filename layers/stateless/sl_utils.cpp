@@ -245,7 +245,7 @@ bool Context::ValidateStructPnext(const Location& loc, const void* next, size_t 
         vvl::unordered_set<VkStructureType, vvl::hash<int>> unique_stype_check;
         const char* disclaimer =
             "This error is based on the Valid Usage documentation for version %" PRIu32
-            " of the Vulkan header.  It is possible that "
+            " of the Vulkan header.\nIt is possible that "
             "you are using a struct from a private extension or an extension that was added to a later version of the Vulkan "
             "header, in which case the use of %s is undefined and may not work correctly with validation enabled";
 

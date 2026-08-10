@@ -587,7 +587,7 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
         const LogObjectList objlist(commandBuffer, cmd_pool);
         skip |=
             LogError("VUID-vkResetCommandBuffer-commandBuffer-00046", objlist, error_obj.location,
-                     "%s was created from %s  which was created with %s.", FormatHandle(commandBuffer).c_str(),
+                     "%s was created from %s which was created with %s.", FormatHandle(commandBuffer).c_str(),
                      FormatHandle(cmd_pool).c_str(), string_VkCommandPoolCreateFlags(cb_state->command_pool.createFlags).c_str());
     }
 

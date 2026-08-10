@@ -643,7 +643,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
                                                                          attachment_access, subpass.viewMask);
             if (hazard.IsHazard()) {
                 std::ostringstream ss;
-                ss << "depth aspect of depth-stencil attachment  in subpass " << cmd_buffer.GetActiveSubpass();
+                ss << "depth aspect of depth-stencil attachment in subpass " << cmd_buffer.GetActiveSubpass();
                 const std::string attachment_description = ss.str();
                 skip |= report_atachment_hazard(hazard, view_state, attachment_description);
             }
@@ -655,7 +655,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
                                                                          attachment_access, subpass.viewMask);
             if (hazard.IsHazard()) {
                 std::ostringstream ss;
-                ss << "stencil aspect of depth-stencil attachment  in subpass " << cmd_buffer.GetActiveSubpass();
+                ss << "stencil aspect of depth-stencil attachment in subpass " << cmd_buffer.GetActiveSubpass();
                 const std::string attachment_description = ss.str();
                 skip |= report_atachment_hazard(hazard, view_state, attachment_description);
             }

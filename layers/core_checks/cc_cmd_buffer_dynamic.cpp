@@ -1485,7 +1485,7 @@ bool CoreChecks::ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bo
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(
                 CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_STATE_ALL_SET_08608), objlist, loc,
-                "%s doesn't set up VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR,  but since the vkCmdBindPipeline, the "
+                "%s doesn't set up VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR, but since the vkCmdBindPipeline, the "
                 "related dynamic state commands (vkCmdSetRayTracingPipelineStackSizeKHR) have been called in this command buffer.",
                 FormatHandle(pipeline).c_str());
         }

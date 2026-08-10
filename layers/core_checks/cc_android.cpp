@@ -335,7 +335,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
                 (image_state->GetArrayLayers() != ahb_desc.layers)) {
                 skip |=
                     LogError("VUID-VkMemoryAllocateInfo-pNext-02388", mem_ded_alloc_info->image, dedicated_image_loc,
-                             "was created with width (%" PRId32 "),  height (%" PRId32 "), and arrayLayers (%" PRId32
+                             "was created with width (%" PRId32 "), height (%" PRId32 "), and arrayLayers (%" PRId32
                              ") which not match those of the %s AHardwareBuffer (%" PRId32 " %" PRId32 " %" PRId32 "). (AHB = %p).",
                              image_state->GetExtent().width, image_state->GetExtent().height, image_state->GetArrayLayers(),
                              ahb_loc.Fields().c_str(), ahb_desc.width, ahb_desc.height, ahb_desc.layers, import_ahb_info->buffer);
