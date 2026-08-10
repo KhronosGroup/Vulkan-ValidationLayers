@@ -15,6 +15,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
+#include "shader_object_helper.h"
 #include "utils/cast_utils.h"
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
@@ -2270,6 +2271,70 @@ TEST_F(NegativeDescriptorBuffer, NoCmdSetDescriptorBufferOffsets) {
     m_errorMonitor->SetDesiredWarning("WARNING-Missing-vkCmdSetDescriptorBufferOffsets");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+// See https://gitlab.khronos.org/vulkan/vulkan/-/issues/4848
+TEST_F(NegativeDescriptorBuffer, IndependentSetMixShaderObject) {
+    TEST_DESCRIPTION("From Zink with dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.29");
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    InitDynamicRenderTarget();
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
+    const vkt::DescriptorSetLayout set_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout});
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+    VkDescriptorBufferBindingInfoEXT buffer_binding_info = vku::InitStructHelper();
+    buffer_binding_info.address = buffer.Address();
+    buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    // Shader object have INDEPENDENT_SETS but have no descriptors actually
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    const vkt::Shader vert_shader(*m_device, create_info);
+
+    const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    create_info = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    const vkt::Shader frag_shader(*m_device, create_info);
+
+    VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    const uint32_t index = 0;
+    const VkDeviceSize offset = 0;
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+
+    SetDefaultDynamicStatesExclude();
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    VkShaderEXT shaders[] = {vert_shader, frag_shader};
+    vk::CmdBindShadersEXT(m_command_buffer, 2u, stages, shaders);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-flags-13362");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
 

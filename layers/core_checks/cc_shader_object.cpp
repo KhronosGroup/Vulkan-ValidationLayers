@@ -745,20 +745,20 @@ bool CoreChecks::ValidateDrawShaderObjectFlags(const LastBound& last_bound_state
     }
 
     if (shader_with_independent_sets && last_bound_state.desc_set_pipeline_layout) {
-        // TODO - figure out if this is correct or not
-        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4848
-        const bool uses_descriptor = !shader_with_independent_sets->active_slots.empty();
-
-        if (uses_descriptor &&
-            !(last_bound_state.desc_set_pipeline_layout->create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT)) {
+        if (!(last_bound_state.desc_set_pipeline_layout->create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT)) {
             const LogObjectList objlist(last_bound_state.cb_state.Handle(), last_bound_state.desc_set_pipeline_layout->VkHandle(),
                                         shader_with_independent_sets->VkHandle());
+            // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4848
+            const bool uses_descriptor = !shader_with_independent_sets->active_slots.empty();
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::INDEPENDENT_SETS_13362), objlist, loc,
                              "Shader object bound at stage %s has flag VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR but the "
                              "VkPipelineLayout (bound with %s) "
-                             "was created without the VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT flag\nCreate flags: %s.",
+                             "was created without the VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT flag%s\nCreate flags: %s.",
                              string_VkShaderStageFlagBits(shader_with_independent_sets->safe_create_info.stage),
                              vvl::String(last_bound_state.GetDescriptorModeFunc()),
+                             uses_descriptor ? ""
+                                             : "\nNote: Even though the shader doesn't use any descriptors, some drivers use the "
+                                               "INDEPENDENT_SETS to adjust various data layouts, not limited to descriptors.",
                              string_VkPipelineLayoutCreateFlags(last_bound_state.desc_set_pipeline_layout->create_flags).c_str());
         }
 
