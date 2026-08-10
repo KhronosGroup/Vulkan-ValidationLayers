@@ -2914,7 +2914,7 @@ TEST_F(NegativeDeviceAddressCommands, CopyAddressRangeOverlap) {
     copy_memory_info.pRegions = regions;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-VkCopyDeviceMemoryImageInfoKHR-addressRange-13026");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDeviceMemoryImageInfoKHR-pRegions-12473");
     vk::CmdCopyMemoryToImageKHR(m_command_buffer, &copy_memory_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
