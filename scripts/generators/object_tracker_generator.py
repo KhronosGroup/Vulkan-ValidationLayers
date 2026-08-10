@@ -876,6 +876,8 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
             return '"UNASSIGNED-VkCopyDeviceMemoryImageInfoKHR-image-parent"'
         if structName == 'VkGpaSessionCreateInfoAMD' and memberName == 'secondaryCopySource':
             return '"UNASSIGNED-VkGpaSessionCreateInfoAMD-secondaryCopySource-parent"'
+        if structName == 'VkImageViewCreateInfo' and memberName == 'image':
+            return '"UNASSIGNED-VkImageViewCreateInfo-image-parent"'
 
         # Common parents because the structs have more then one handle that needs to be check
         if (structName == 'VkBufferMemoryBarrier' and memberName == 'buffer') or (structName == 'VkImageMemoryBarrier' and memberName == 'image'):
