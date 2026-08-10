@@ -2234,6 +2234,13 @@ TEST_F(NegativeImage, ImageMisc) {
         CreateImageTest(image_ci, "VUID-VkImageCreateInfo-initialLayout-00993");
     }
 
+    {
+        VkImageCreateInfo image_ci = safe_image_ci;
+        image_ci.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+        image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+        CreateImageTest(image_ci, "VUID-VkImageCreateInfo-initialLayout-12478");
+    }
+
     // Storage usage can't be multisample if feature not set
     {
         // Feature should not have been set for these tests
