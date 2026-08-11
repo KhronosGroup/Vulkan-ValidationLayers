@@ -199,11 +199,12 @@ bool CoreChecks::ValidateImageTilingControlCreateInfo(const VkImageCreateInfo& c
     }
 
     if (vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(create_info.pNext)) {
-        skip |=
-            LogError("VUID-VkImageCreateInfo-pNext-12480", device, create_info_loc.dot(Field::pNext),
-                     "contains both a VkImageTilingControlCreateInfoEXT and a VkImageDrmFormatModifierExplicitCreateInfoEXT struct "
-                     "(VK_EXT_image_tiling_control is not designed to be used with VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT).\n%s",
-                     PrintPNextChain(Struct::VkImageCreateInfo, create_info.pNext).c_str());
+        skip |= LogError(
+            "VUID-VkImageCreateInfo-pNext-12480", device, create_info_loc.dot(Field::pNext),
+            "contains both a VkImageTilingControlCreateInfoEXT and a VkImageDrmFormatModifierExplicitCreateInfoEXT struct\n%s\n"
+            "Hint: VK_EXT_image_tiling_control with VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT only works for "
+            "VkImageDrmFormatModifierListCreateInfoEXT",
+            PrintPNextChain(Struct::VkImageCreateInfo, create_info.pNext).c_str());
     }
     return skip;
 }
