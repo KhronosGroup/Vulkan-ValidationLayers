@@ -510,7 +510,8 @@ void QueueBatchContext::ResolveLastBatch(const BatchContextPtr& last_batch) {
     events_context_.DeepCopy(last_batch->events_context_);
 
     // If there are no semaphores to the previous batch, make sure a "submit order" non-barriered import is done
-    access_context_.ResolveFromContext(last_batch->access_context_);
+    auto noop_action = [](AccessState* access) {};
+    access_context_.ResolveFromContext(noop_action, last_batch->access_context_);
     ImportTags(*last_batch);
 
     last_synchronized_present.Merge(last_batch->last_synchronized_present);
@@ -611,7 +612,8 @@ void QueueBatchContext::LogAcquireOperation(const PresentedImage& presented, vvl
 
 void QueueBatchContext::SetupAccessContext(const PresentedImage& presented) {
     if (presented.batch) {
-        access_context_.ResolveFromContext(presented.batch->access_context_);
+        auto noop_action = [](AccessState* access) {};
+        access_context_.ResolveFromContext(noop_action, presented.batch->access_context_);
         ImportTags(*presented.batch);
     }
 }

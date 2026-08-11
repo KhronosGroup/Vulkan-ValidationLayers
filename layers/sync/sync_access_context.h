@@ -252,22 +252,24 @@ class AccessContext {
         kDetectAll = (kDetectPrevious | kDetectAsync)
     };
 
-    void ResolveFromContext(const AccessContext &from);
+    template <typename ResolveOp>
+    void ResolveFromContext(ResolveOp&& resolve_op, const AccessContext& from_context);
+
+    template <typename ResolveOp>
+    void ResolveFromContext(ResolveOp&& resolve_op, const AccessContext& from_context,
+                            subresource_adapter::ImageRangeGenerator range_gen);
+
+    void ResolveFromContextRecursePrev(const AccessContext& from);
 
     // Resolves this subpass context from the subpass context defined by the layout transition dependency
-    void ResolveFromSubpassContext(const ApplySubpassTransitionBarrierAction &subpass_transition_action,
-                                   const AccessContext &from_context,
+    void ResolveFromSubpassContext(const ApplySubpassTransitionBarrierAction& subpass_transition_action,
+                                   const AccessContext& from_context,
                                    subresource_adapter::ImageRangeGenerator attachment_range_gen);
 
     // Import accesses from all subpass dependencies (including src external dependency)
     void ResolveAllSubpassDependencies();
 
-    template <typename ResolveOp>
-    void ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context);
-
-    template <typename ResolveOp>
-    void ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context,
-                            subresource_adapter::ImageRangeGenerator range_gen);
+    void ResolveChildContexts(vvl::span<AccessContext> subpass_contexts);
 
     void UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, const AccessRange &range,
                            ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
@@ -277,8 +279,6 @@ class AccessContext {
     void UpdateAttachmentAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
                                      SyncAccessIndex current_usage, const AttachmentAccess &attachment_access,
                                      ResourceUsageTagEx tag_ex, uint32_t view_mask = 0);
-
-    void ResolveChildContexts(vvl::span<AccessContext> subpass_contexts);
 
     void ImportAsyncContexts(const AccessContext &from);
     void ClearAsyncContexts() { async_.clear(); }
