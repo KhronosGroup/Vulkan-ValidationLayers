@@ -58,6 +58,7 @@ struct LocalSize;
 
 namespace core {
 class CommandBufferSubState;
+struct RenderingAttachment;
 }  // namespace core
 
 struct SemaphoreSubmitState;
@@ -1762,23 +1763,12 @@ class CoreChecks : public vvl::DeviceProxy {
                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
                                           const ErrorObject& error_obj) const override;
-    bool ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
-                                         const VkRenderingAttachmentInfo& attachment_info, const Location& attachment_loc) const;
-    bool ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
-                                                    const VkRenderingAttachmentInfo& attachment_info,
-                                                    const vvl::ImageView& image_view_state, const Location& attachment_loc) const;
-    bool ValidateRenderingAttachmentInfoMultisampledResolveMode(VkCommandBuffer commandBuffer,
-                                                                const VkRenderingInfo& rendering_info,
-                                                                const VkRenderingAttachmentInfo& attachment_info,
-                                                                const vvl::ImageView& image_view_state,
-                                                                const Location& attachment_loc) const;
-    bool ValidateRenderingAttachmentInfoFeedbackLoop(VkCommandBuffer commandBuffer,
-                                                     const VkRenderingAttachmentInfo& attachment_info,
-                                                     const vvl::ImageView& image_view_state, const Location& attachment_loc) const;
-    bool ValidateRenderingAttachmentFlagsInfo(VkCommandBuffer commandBuffer, const VkRenderingAttachmentInfo& attachment_info,
-                                              const vvl::ImageView& image_view_state, const Location& attachment_loc) const;
-    bool ValidateRenderingAttachmentCurrentLayout(const vvl::CommandBuffer& cb_state,
-                                                  const VkRenderingAttachmentInfo& attachment_info, const Location& loc) const;
+    bool ValidateRenderingAttachmentInfo(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateRenderingAttachmentInfoResolveMode(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateRenderingAttachmentInfoMultisampledResolveMode(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateRenderingAttachmentInfoFeedbackLoop(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateRenderingAttachmentFlagsInfo(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateRenderingAttachmentCurrentLayout(const core::RenderingAttachment& vvl_attachment) const;
     bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
     bool ValidateCmdEndRendering(const vvl::CommandBuffer& cb_state, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;

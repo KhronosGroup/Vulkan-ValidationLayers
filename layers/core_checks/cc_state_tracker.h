@@ -257,4 +257,38 @@ class QueueSubState : public vvl::QueueSubState {
     vvl::SubmitTimeTracker* submit_time_tracker = nullptr;
 };
 
+// When validating vkCmdBeginRendering we need to loop the Color attachments, depth, stencil and their resolve attachments as well
+// The goal is to have a single object so we only need to walk these attachments once and then all the various checks can use the
+// same data
+struct RenderingAttachment {
+    enum class Type {
+        Empty = 0,
+        Input,
+        Color,
+        Depth,
+        Stencil,
+        FragmentDensityMap,
+        FragmentShadingRate,
+    };
+
+    RenderingAttachment(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
+                        const VkRenderingAttachmentInfo& info, const Location& loc, Type type);
+
+    const vvl::CommandBuffer& cb_state;
+    const VkRenderingInfo& rendering_info;
+
+    const VkRenderingAttachmentInfo& info;
+    const Location& loc;
+    const Type type;
+
+    std::shared_ptr<const vvl::ImageView> image_view_state;
+    std::shared_ptr<const vvl::ImageView> resolve_view_state;
+
+    LogObjectList GetObjectList() const;
+
+    bool IsColor() const { return type == Type::Color; }
+    bool IsDepth() const { return type == Type::Depth; }
+    bool IsStencil() const { return type == Type::Stencil; }
+};
+
 }  // namespace core

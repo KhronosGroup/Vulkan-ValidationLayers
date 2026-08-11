@@ -1422,4 +1422,22 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
     }
 }
 
+RenderingAttachment::RenderingAttachment(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
+                                         const VkRenderingAttachmentInfo& info, const Location& loc, RenderingAttachment::Type type)
+    : cb_state(cb_state), rendering_info(rendering_info), info(info), loc(loc), type(type) {
+    image_view_state = cb_state.dev_data.Get<vvl::ImageView>(info.imageView);
+    resolve_view_state = cb_state.dev_data.Get<vvl::ImageView>(info.resolveImageView);
+}
+
+LogObjectList RenderingAttachment::GetObjectList() const {
+    LogObjectList objlist(cb_state.Handle());
+    if (image_view_state) {
+        objlist.add(image_view_state->Handle(), image_view_state->image_state->Handle());
+    }
+    if (resolve_view_state) {
+        objlist.add(resolve_view_state->Handle(), resolve_view_state->image_state->Handle());
+    }
+    return objlist;
+}
+
 }  // namespace core
