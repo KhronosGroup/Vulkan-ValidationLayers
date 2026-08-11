@@ -302,7 +302,7 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
     const AccessContext& from_context = from.GetCurrentAccessContext();
 
     // Construct a fully resolved single access context out of from
-    cb_access_context_.ResolveFromContext(from_context);
+    cb_access_context_.ResolveFromContextRecursePrev(from_context);
     // The proxy has flatten the current render pass context (if any), but the async contexts are needed for hazard detection
     cb_access_context_.ImportAsyncContexts(from_context);
 

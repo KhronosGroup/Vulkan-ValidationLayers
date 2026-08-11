@@ -272,7 +272,7 @@ const SubpassBarrier& AccessContext::GetSubpassBarrier(uint32_t src_subpass) con
     }
 }
 
-void AccessContext::ResolveFromContext(const AccessContext& from) {
+void AccessContext::ResolveFromContextRecursePrev(const AccessContext& from) {
     assert(!finalized_);
     auto noop_action = [](AccessState* access) {};
     from.ResolveAccessRangeRecursePrev(kFullRange, noop_action, *this, false);
@@ -290,6 +290,15 @@ void AccessContext::ResolveFromSubpassContext(const ApplySubpassTransitionBarrie
 void AccessContext::ResolveAllSubpassDependencies() {
     assert(!finalized_);
     ResolveSubpassDependencies(kFullRange, *this, true);
+}
+
+void AccessContext::ResolveChildContexts(vvl::span<AccessContext> subpass_contexts) {
+    assert(!finalized_);
+
+    for (AccessContext& context : subpass_contexts) {
+        ApplySubpassBarrierAction barrier_action(context.GetDstExternalSubpassBarrier());
+        context.ResolveAccessRange(kFullRange, barrier_action, *this);
+    }
 }
 
 void AccessContext::ResolveSubpassDependencies(const AccessRange& range, AccessContext& resolve_context, bool infill,
@@ -590,15 +599,6 @@ void AccessContext::UpdateAttachmentAccessState(const AttachmentViewGen& view_ge
             view_mask >>= 1;
             view_index++;
         }
-    }
-}
-
-void AccessContext::ResolveChildContexts(vvl::span<AccessContext> subpass_contexts) {
-    assert(!finalized_);
-
-    for (AccessContext& context : subpass_contexts) {
-        ApplySubpassBarrierAction barrier_action(context.GetDstExternalSubpassBarrier());
-        context.ResolveAccessRange(kFullRange, barrier_action, *this);
     }
 }
 
