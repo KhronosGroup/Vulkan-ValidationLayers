@@ -616,8 +616,12 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     const Location create_flags_loc = GetFlagsLocation(*pCreateInfo, create_info_loc);
     const Location usage_loc = GetUsageLocation(*pCreateInfo, create_info_loc);
+    // NOTE - This is a landmine and you need to be careful
+    // With VK_KHR_extended_flags we now can't blindly just use the createInfo struct and check the pNext
+    // Once we create a vvl::Image object this is guarded, but for this function we manually have to use the correct fields
     const VkImageCreateFlags2KHR create_flags = GetImageCreateFlags(*pCreateInfo);
     const VkImageUsageFlags2KHR usage = GetImageUsageFlags(*pCreateInfo);
+
     if (IsExtEnabled(extensions.vk_android_external_memory_android_hardware_buffer)) {
         skip |= ValidateCreateImageANDROID(*pCreateInfo, create_info_loc, create_flags, usage);
     } else {  // These checks are omitted or replaced when Android HW Buffer extension is active
