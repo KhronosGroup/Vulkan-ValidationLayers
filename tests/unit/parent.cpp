@@ -910,7 +910,7 @@ TEST_F(NegativeParent, CmdPipelineBarrier2) {
 
 TEST_F(NegativeParent, ShaderObjectDescriptorSetLayout) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(Init());
     auto features = m_device->Physical().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features);

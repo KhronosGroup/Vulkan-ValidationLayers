@@ -143,6 +143,10 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
             ''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
+        # Temp hack until the KHR heaps comes out
+        for spirv in [x for x in self.vk.spirv if x.name == 'DescriptorHeapEXT']:
+            spirv.enable[0].feature = 'descriptorHeapEXT'
+
         if self.filename == 'spirv_validation_helper.h':
             self.generateHeader()
         elif self.filename == 'spirv_validation_helper.cpp':

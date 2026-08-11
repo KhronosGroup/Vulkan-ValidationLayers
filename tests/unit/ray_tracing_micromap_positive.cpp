@@ -65,23 +65,13 @@ TEST_F(PositiveRayTracingMicromap, BasicEXT) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::micromapEXT);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
-    VkPhysicalDeviceOpacityMicromapFeaturesEXT ext_features = vku::InitStructHelper();
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR pipeline_features = vku::InitStructHelper(&ext_features);
-    VkPhysicalDeviceSynchronization2Features sync_features = vku::InitStructHelper(&pipeline_features);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper(&sync_features);
-    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&buffer_features);
-    vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
-    if (!ext_features.micromap) {
-        GTEST_SKIP() << "micromap feature not supported";
-    }
-    ext_features.micromap = VK_TRUE;
-    pipeline_features.rayTracingPipeline = VK_TRUE;
-    sync_features.synchronization2 = VK_TRUE;
-    accel_features.accelerationStructure = VK_TRUE;
-    buffer_features.bufferDeviceAddress = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState());
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
@@ -745,19 +735,11 @@ TEST_F(PositiveRayTracingMicromap, WriteMicromapsProperties) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::micromapEXT);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
-    VkPhysicalDeviceOpacityMicromapFeaturesEXT ext_features = vku::InitStructHelper();
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper(&ext_features);
-    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&buffer_features);
-    vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
-    if (!ext_features.micromap) {
-        GTEST_SKIP() << "micromap feature not supported";
-    }
-    ext_features.micromap = VK_TRUE;
-    accel_features.accelerationStructure = VK_TRUE;
-    buffer_features.bufferDeviceAddress = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(InitState());
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";

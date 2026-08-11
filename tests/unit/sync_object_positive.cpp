@@ -1706,21 +1706,12 @@ TEST_F(PositiveSyncObject, BarrierASCopy) {
 
 TEST_F(PositiveSyncObject, BarrierAccessSyncMicroMap) {
     TEST_DESCRIPTION("Test VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT can be used with VK_ACCESS_2_SHADER_READ_BIT.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
-    VkPhysicalDeviceOpacityMicromapFeaturesEXT ext_features = vku::InitStructHelper();
-    VkPhysicalDeviceSynchronization2Features sync_features = vku::InitStructHelper(&ext_features);
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&sync_features);
-    RETURN_IF_SKIP(InitFramework());
-    vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
-    if (!ext_features.micromap) {
-        GTEST_SKIP() << "micromap feature not supported";
-    }
-    ext_features.micromap = VK_TRUE;
-    sync_features.synchronization2 = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::micromapEXT);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
     mem_barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;

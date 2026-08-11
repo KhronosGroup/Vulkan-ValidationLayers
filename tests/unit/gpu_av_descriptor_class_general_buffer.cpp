@@ -313,7 +313,7 @@ void NegativeGpuAVDescriptorClassGeneralBuffer::ShaderBufferSizeTest(VkDeviceSiz
 
     if (shader_objects) {
         AddRequiredFeature(vkt::Feature::dynamicRendering);
-        AddRequiredFeature(vkt::Feature::shaderObject);
+        AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     }
     RETURN_IF_SKIP(InitState());
     if (shader_objects) {

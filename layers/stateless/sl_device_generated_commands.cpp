@@ -143,7 +143,7 @@ bool Device::manual_PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device
                                                              info_loc.dot(Field::pPipelineInfo));
         }
     } else if (pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT) {
-        if (!enabled_features.shaderObject) {
+        if (!enabled_features.shaderObjectEXT) {
             skip |=
                 LogError("VUID-VkIndirectExecutionSetCreateInfoEXT-maxIndirectShaderObjectCount-11014", device,
                          create_info_loc.dot(Field::type),
@@ -327,7 +327,7 @@ bool Device::ValidateIndirectCommandsLayoutToken(const Context& context, const V
                          "is VK_INDIRECT_COMMANDS_TOKEN_TYPE_TRACE_RAYS2_EXT but rayTracingMaintenance1 was not enabled.");
     } else if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_EXT ||
                token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT) {
-        if (!enabled_features.descriptorHeap) {
+        if (!enabled_features.descriptorHeapEXT) {
             skip |=
                 LogError("VUID-VkIndirectCommandsLayoutTokenEXT-descriptorHeap-11332", device, token_loc.dot(Field::type),
                          "is %s but descriptorHeap feature was not enabled.", string_VkIndirectCommandsTokenTypeEXT(token.type));
@@ -477,7 +477,7 @@ bool Device::manual_PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice devi
         } else if (has_stage_mesh && ((shader_stages | all_mesh_stages) != all_mesh_stages)) {
             valid_stages = false;
         }
-        if (!valid_stages && shader_stages == VK_SHADER_STAGE_ALL && enabled_features.descriptorHeap) {
+        if (!valid_stages && shader_stages == VK_SHADER_STAGE_ALL && enabled_features.descriptorHeapEXT) {
             valid_stages = true;
         }
         if (!valid_stages) {

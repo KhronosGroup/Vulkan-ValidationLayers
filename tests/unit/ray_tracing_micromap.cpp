@@ -120,18 +120,9 @@ TEST_F(NegativeRayTracingMicromap, CaptureReplayFeatureDisableEXT) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
-    VkPhysicalDeviceOpacityMicromapFeaturesEXT ext_features = vku::InitStructHelper();
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper(&ext_features);
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&accel_features);
-    RETURN_IF_SKIP(InitFramework());
-    vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
-    if (!ext_features.micromap) {
-        GTEST_SKIP() << "micromap feature not supported";
-    }
-    ext_features.micromap = VK_TRUE;
-    ext_features.micromapCaptureReplay = VK_FALSE;
-    accel_features.accelerationStructure = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::micromapEXT);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(Init());
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT);
 
@@ -288,23 +279,12 @@ TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureInvalidFlagsEXT)
     AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_OPACITY_MICROMAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
-    VkPhysicalDeviceOpacityMicromapFeaturesEXT ext_features = vku::InitStructHelper();
-    VkPhysicalDeviceOpacityMicromapFeaturesKHR khr_features = vku::InitStructHelper(&ext_features);
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper(&khr_features);
-    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR device_addr_features = vku::InitStructHelper(&buffer_features);
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&device_addr_features);
-    RETURN_IF_SKIP(InitFramework());
-    vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
-    if (!ext_features.micromap) {
-        GTEST_SKIP() << "micromap feature not supported";
-    }
-    ext_features.micromap = VK_TRUE;
-    khr_features.micromap = VK_TRUE;
-    accel_features.accelerationStructure = VK_TRUE;
-    buffer_features.bufferDeviceAddress = VK_TRUE;
-    device_addr_features.deviceAddressCommands = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::micromapEXT);
+    AddRequiredFeature(vkt::Feature::micromap);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
 
     auto micromap_as = vkt::as::blueprint::AccelStructSimpleOnDeviceMicromap(*m_device, 4096);
     micromap_as->Create();
@@ -2374,17 +2354,9 @@ TEST_F(NegativeRayTracingMicromap, MicromapBuildInfoInvalidFormat) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
-    VkPhysicalDeviceOpacityMicromapFeaturesEXT ext_features = vku::InitStructHelper();
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper(&ext_features);
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&accel_features);
-    RETURN_IF_SKIP(InitFramework());
-    vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
-    if (!ext_features.micromap) {
-        GTEST_SKIP() << "micromap feature not supported";
-    }
-    ext_features.micromap = VK_TRUE;
-    accel_features.accelerationStructure = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::micromapEXT);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(Init());
 
     VkMicromapUsageEXT usage = {};
     usage.count = 1;
@@ -2410,21 +2382,11 @@ TEST_F(NegativeRayTracingMicromap, TrianglesOpacityMicromapEXTInvalidFormat) {
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
-    VkPhysicalDeviceOpacityMicromapFeaturesEXT ext_features = vku::InitStructHelper();
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_features = vku::InitStructHelper(&ext_features);
-    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_features = vku::InitStructHelper(&accel_features);
-    VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR dac_features = vku::InitStructHelper(&buffer_features);
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&dac_features);
-    RETURN_IF_SKIP(InitFramework());
-    vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
-    if (!ext_features.micromap) {
-        GTEST_SKIP() << "micromap feature not supported";
-    }
-    ext_features.micromap = VK_TRUE;
-    accel_features.accelerationStructure = VK_TRUE;
-    buffer_features.bufferDeviceAddress = VK_TRUE;
-    dac_features.deviceAddressCommands = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::micromapEXT);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
 
     vkt::Buffer micromap_storage_buffer(*m_device, 4096, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT);
     VkMicromapCreateInfoEXT mm_ci = vku::InitStructHelper();
@@ -2528,15 +2490,8 @@ TEST_F(NegativeRayTracingMicromap, WriteMicromapsPropertiesQueryNotReset) {
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
-    VkPhysicalDeviceOpacityMicromapFeaturesEXT ext_features = vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&ext_features);
-    RETURN_IF_SKIP(InitFramework());
-    vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
-    if (!ext_features.micromap) {
-        GTEST_SKIP() << "micromap feature not supported";
-    }
-    ext_features.micromap = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::micromapEXT);
+    RETURN_IF_SKIP(Init());
 
     vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT);
 

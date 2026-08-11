@@ -209,9 +209,9 @@ struct DeviceFeatures {
     // VkPhysicalDeviceDescriptorBufferTensorFeaturesARM
     bool descriptorBufferTensorDescriptors;
     // VkPhysicalDeviceDescriptorHeapFeaturesEXT
-    bool descriptorHeap;
+    bool descriptorHeapCaptureReplayEXT;
     // VkPhysicalDeviceDescriptorHeapFeaturesEXT
-    bool descriptorHeapCaptureReplay;
+    bool descriptorHeapEXT;
     // VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceVulkan12Features
     bool descriptorBindingPartiallyBound;
     // VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceVulkan12Features
@@ -977,7 +977,7 @@ struct DeviceFeatures {
     // VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT
     bool shaderMXInt8;
     // VkPhysicalDeviceShaderObjectFeaturesEXT
-    bool shaderObject;
+    bool shaderObjectEXT;
     // VkPhysicalDeviceShaderQuadControlFeaturesKHR
     bool shaderQuadControl;
     // VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR

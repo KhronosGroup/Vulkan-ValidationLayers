@@ -2410,7 +2410,7 @@ TEST_F(PositiveShaderSpirv, PushConstantBank) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_PUSH_CONSTANT_BANK_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     AddRequiredFeature(vkt::Feature::pushConstantBank);
     RETURN_IF_SKIP(Init());
 

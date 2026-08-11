@@ -81,7 +81,7 @@ TEST_F(PositiveDeviceGeneratedCommands, CreateIndirectExecutionSetPipeline) {
 
 TEST_F(PositiveDeviceGeneratedCommands, CreateIndirectExecutionSetShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -183,7 +183,7 @@ TEST_F(PositiveDeviceGeneratedCommands, PushConstant) {
 
 TEST_F(PositiveDeviceGeneratedCommands, PushData) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
 
     VkIndirectCommandsPushConstantTokenEXT pc_token;
@@ -320,7 +320,7 @@ TEST_F(PositiveDeviceGeneratedCommands, UpdateIndirectExecutionSetPipelineDestor
 
 TEST_F(PositiveDeviceGeneratedCommands, UpdateIndirectExecutionSetShader) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -351,7 +351,7 @@ TEST_F(PositiveDeviceGeneratedCommands, UpdateIndirectExecutionSetShader) {
 TEST_F(PositiveDeviceGeneratedCommands, UpdateIndirectExecutionSetShaderDestroye) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12052");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -446,7 +446,7 @@ TEST_F(PositiveDeviceGeneratedCommands, CmdExecuteGeneratedCommandsCompute) {
 TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectVertex) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
@@ -519,7 +519,7 @@ TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectMesh) {
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::meshShader);
     AddRequiredFeature(vkt::Feature::taskShader);
@@ -580,7 +580,7 @@ TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectMesh) {
 
 TEST_F(PositiveDeviceGeneratedCommands, IndirectExecutionSetNullLayout) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -681,7 +681,7 @@ TEST_F(PositiveDeviceGeneratedCommands, PushConstantMultipleRanges) {
 
 TEST_F(PositiveDeviceGeneratedCommands, IndirectCommandsLayoutDescriptorHeap) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
 
     VkIndirectCommandsPushConstantTokenEXT pc_token;
@@ -711,7 +711,7 @@ TEST_F(PositiveDeviceGeneratedCommands, ShaderObjectQuery) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12284.");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());

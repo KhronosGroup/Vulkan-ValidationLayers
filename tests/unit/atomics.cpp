@@ -149,7 +149,7 @@ TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisableShaderObject) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     AddRequiredFeature(vkt::Feature::shaderImageFloat32Atomics);
 
     RETURN_IF_SKIP(Init());

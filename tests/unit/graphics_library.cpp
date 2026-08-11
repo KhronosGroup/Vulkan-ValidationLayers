@@ -3698,7 +3698,7 @@ TEST_F(NegativeGraphicsLibrary, StatelessSpirvValidation) {
 TEST_F(NegativeGraphicsLibrary, DescriptorFlagsMismatch1) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
@@ -3746,7 +3746,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorFlagsMismatch1) {
 TEST_F(NegativeGraphicsLibrary, DescriptorFlagsMismatch2) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 

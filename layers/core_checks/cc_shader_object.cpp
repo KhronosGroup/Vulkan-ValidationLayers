@@ -425,7 +425,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
                                                  VkShaderEXT* pShaders, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    if (enabled_features.shaderObject == VK_FALSE) {
+    if (!enabled_features.shaderObjectEXT) {
         skip |=
             LogError("VUID-vkCreateShadersEXT-None-08400", device, error_obj.location, "the shaderObject feature was not enabled.");
     }
@@ -453,7 +453,7 @@ bool CoreChecks::PreCallValidateDestroyShaderEXT(VkDevice device, VkShaderEXT sh
                                                  const ErrorObject& error_obj) const {
     bool skip = false;
 
-    if (enabled_features.shaderObject == VK_FALSE) {
+    if (!enabled_features.shaderObjectEXT) {
         skip |=
             LogError("VUID-vkDestroyShaderEXT-None-08481", device, error_obj.location, "the shaderObject feature was not enabled.");
     }
@@ -473,7 +473,7 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
     const auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
-    if (enabled_features.shaderObject == VK_FALSE) {
+    if (!enabled_features.shaderObjectEXT) {
         skip |= LogError("VUID-vkCmdBindShadersEXT-None-08462", commandBuffer, error_obj.location,
                          "the shaderObject feature was not enabled.");
     }
@@ -588,7 +588,7 @@ bool CoreChecks::PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShader
                                                        const ErrorObject& error_obj) const {
     bool skip = false;
 
-    if (enabled_features.shaderObject == VK_FALSE) {
+    if (!enabled_features.shaderObjectEXT) {
         skip |= LogError("VUID-vkGetShaderBinaryDataEXT-None-08461", shader, error_obj.location,
                          "the shaderObject feature was not enabled.");
     }

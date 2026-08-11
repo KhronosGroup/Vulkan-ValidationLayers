@@ -124,7 +124,7 @@ TEST_F(NegativeShaderPushConstants, PipelineRange) {
 TEST_F(NegativeShaderPushConstants, PipelineRangeShaderObject) {
     TEST_DESCRIPTION("Invalid use of VkPushConstantRange structs.");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(Init());
 
     vkt::Shader shader;
