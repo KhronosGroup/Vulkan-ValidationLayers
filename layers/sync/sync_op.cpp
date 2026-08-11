@@ -56,7 +56,7 @@ SyncOpSetEvent::SyncOpSetEvent(std::shared_ptr<const vvl::Event>&& event, const 
 
 bool SyncOpSetEvent::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     const ResourceUsageTag exec_tag = replay.base_tag + recorded_tag;
-    return replay.env.validator.ValidateCmdSetEvent(replay.env, event_, src_exec_scope_, exec_tag, Location(command_));
+    return ValidateCmdSetEvent(replay.env, event_, src_exec_scope_, exec_tag, Location(command_));
 }
 
 void SyncOpSetEvent::ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const {
@@ -69,7 +69,7 @@ void SyncOpSetEvent::ReplayRecord(SyncEnvironment& env, AccessContext& access_co
     merged_context->ResolveFromContext(QueueTagOffsetBarrierAction(env.queue_id, exec_tag), *recorded_context_);
     merged_context->TrimAndClearFirstAccess();  // Ensure the copy is minimal and normalized
 
-    env.validator.ApplySetEvent(env, event_, src_exec_scope_, merged_context, exec_tag, command_);
+    ApplyCmdSetEvent(env, event_, src_exec_scope_, merged_context, exec_tag, command_);
 }
 
 SyncOpResetEvent::SyncOpResetEvent(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& exec_scope, const Location& loc)
@@ -77,11 +77,11 @@ SyncOpResetEvent::SyncOpResetEvent(std::shared_ptr<const vvl::Event>&& event, co
 
 bool SyncOpResetEvent::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     const ResourceUsageTag exec_tag = replay.base_tag + recorded_tag;
-    return replay.env.validator.ValidateCmdResetEvent(replay.env, event_, exec_scope_, exec_tag, Location(command_));
+    return ValidateCmdResetEvent(replay.env, event_, exec_scope_, exec_tag, Location(command_));
 }
 
 void SyncOpResetEvent::ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const {
-    env.validator.ApplyResetEvent(env, event_, exec_tag, command_);
+    ApplyCmdResetEvent(env, event_, exec_tag, command_);
 }
 
 SyncOpWaitEvents::SyncOpWaitEvents(std::vector<std::shared_ptr<const vvl::Event>>&& events, std::vector<BarrierSet>&& barrier_sets,
@@ -89,13 +89,12 @@ SyncOpWaitEvents::SyncOpWaitEvents(std::vector<std::shared_ptr<const vvl::Event>
     : SyncOpBase(loc.function), events_(std::move(events)), barrier_sets_(std::move(barrier_sets)) {}
 
 void SyncOpWaitEvents::ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const {
-    ApplyWaitEvents(env, access_context, events_, barrier_sets_, exec_tag, command_);
+    ApplyCmdWaitEvents(env, access_context, events_, barrier_sets_, exec_tag, command_);
 }
 
 bool SyncOpWaitEvents::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     const ResourceUsageTag exec_tag = replay.base_tag + recorded_tag;
-    return replay.env.validator.ValidateCmdWaitEvents(replay.env, replay.GetReplayContext(), events_, barrier_sets_, exec_tag,
-                                                      Location(command_));
+    return ValidateCmdWaitEvents(replay.env, replay.GetReplayContext(), events_, barrier_sets_, exec_tag, Location(command_));
 }
 
 SyncOpBeginRenderPass::SyncOpBeginRenderPass(std::shared_ptr<const vvl::RenderPass>&& rp_state,
