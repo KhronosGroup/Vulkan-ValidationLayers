@@ -265,8 +265,8 @@ QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state, const Queu
       queue_state_(&queue_state),
       tag_range_(0, 0),
       access_context_(sync_state),
-      execution_context_(sync_state, queue_state.GetQueue()->GetQueueFlags(), queue_state.GetQueueId(),
-                         queue_state.GetQueue()->Handle(), events_context_, *this),
+      environment_(sync_state, queue_state.GetQueue()->GetQueueFlags(), queue_state.GetQueueId(), queue_state.GetQueue()->Handle(),
+                   events_context_, *this),
       queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {
     sync_state_.stats.AddQueueBatchContext();
 }
@@ -275,7 +275,7 @@ QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state)
     : sync_state_(sync_state),
       tag_range_(0, 0),
       access_context_(sync_state),
-      execution_context_(sync_state, 0, kQueueIdInvalid, NullVulkanTypedHandle, events_context_, *this),
+      environment_(sync_state, 0, kQueueIdInvalid, NullVulkanTypedHandle, events_context_, *this),
       queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {
     sync_state_.stats.AddQueueBatchContext();
 }

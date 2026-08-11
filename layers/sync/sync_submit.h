@@ -348,8 +348,8 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
 
     VkQueueFlags GetQueueFlags() const { return queue_state_->GetQueue()->GetQueueFlags(); }
     QueueId GetQueueId() const;
-    ExecutionContext& GetExecutionContext() { return execution_context_; }
-    const ExecutionContext& GetExecutionContext() const { return execution_context_; }
+    SyncEnvironment& GetSyncEnvironment() { return environment_; }
+    const SyncEnvironment& GetSyncEnvironment() const { return environment_; }
     SyncEventsContext& GetEventsContext() { return events_context_; }
 
     ResourceUsageRange GetTagRange() const { return tag_range_; }
@@ -409,7 +409,7 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
 
     AccessContext access_context_;
     SyncEventsContext events_context_;
-    ExecutionContext execution_context_;
+    SyncEnvironment environment_;
 
     BatchAccessLog batch_log_;
 

@@ -157,9 +157,9 @@ struct ResourceUsageInfoProvider {
 using AccessLog = std::vector<ResourceUsageRecord>;
 using CommandBufferSet = std::vector<std::shared_ptr<const vvl::CommandBuffer>>;
 
-struct ExecutionContext {
-    ExecutionContext(const SyncValidator& validator, VkQueueFlags queue_flags, QueueId queue_id, VulkanTypedHandle handle,
-                     SyncEventsContext& events_context, const ResourceUsageInfoProvider& usage_info_provider);
+struct SyncEnvironment {
+    SyncEnvironment(const SyncValidator& validator, VkQueueFlags queue_flags, QueueId queue_id, VulkanTypedHandle handle,
+                    SyncEventsContext& events_context, const ResourceUsageInfoProvider& usage_info_provider);
 
     const SyncValidator& validator;
     const VkQueueFlags queue_flags;
@@ -206,8 +206,8 @@ class CommandBufferAccessContext final : public ResourceUsageInfoProvider, publi
     const AccessContext& GetCurrentAccessContext() const { return *current_context_; }
     QueueId GetQueueId() const ;
 
-    ExecutionContext& GetExecutionContext() { return execution_context_; }
-    const ExecutionContext& GetExecutionContext() const { return execution_context_; }
+    SyncEnvironment& GetSyncEnvironment() { return environment_; }
+    const SyncEnvironment& GetSyncEnvironment() const { return environment_; }
 
     // The command buffer's own access context. Subpass contexts exist only inside a vkCmdBeginRenderPass
     // instance, so use this instead of GetCurrentAccessContext() anywhere else. Dynamic rendering has no
@@ -322,7 +322,7 @@ class CommandBufferAccessContext final : public ResourceUsageInfoProvider, publi
     AccessContext *current_context_;
     SyncEventsContext events_context_;
 
-    ExecutionContext execution_context_;
+    SyncEnvironment environment_;
 
     // Don't need the following for an active proxy cb context
     std::vector<std::unique_ptr<RenderPassAccessContext>> render_pass_contexts_;
