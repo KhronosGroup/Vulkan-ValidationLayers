@@ -797,64 +797,54 @@ bool CoreChecks::ValidateFramebufferAndRenderPassLayouts(const vvl::CommandBuffe
     return skip;
 }
 
-bool CoreChecks::ValidateRenderingAttachmentCurrentLayout(const vvl::CommandBuffer& cb_state,
-                                                          const VkRenderingAttachmentInfo& attachment_info,
-                                                          const Location& attachment_loc) const {
+bool CoreChecks::ValidateRenderingAttachmentCurrentLayout(const core::RenderingAttachment& vvl_attachment) const {
     bool skip = false;
     if (disabled[image_layout_validation]) {
         return skip;
     }
 
     for (const bool resolve : {false, true}) {
-        if (resolve && attachment_info.resolveMode == VK_RESOLVE_MODE_NONE) {
+        if (resolve && vvl_attachment.info.resolveMode == VK_RESOLVE_MODE_NONE) {
             continue;
         }
-        const auto image_view_state = Get<vvl::ImageView>(resolve ? attachment_info.resolveImageView : attachment_info.imageView);
+        const auto image_view_state = resolve ? vvl_attachment.resolve_view_state : vvl_attachment.image_view_state;
         if (!image_view_state) {
             continue;
         }
         const vvl::Image& image_state = *image_view_state->image_state;
-        const auto image_layout_map = cb_state.GetImageLayoutMap(image_state.VkHandle());
+        const auto image_layout_map = vvl_attachment.cb_state.GetImageLayoutMap(image_state.VkHandle());
         if (!image_layout_map) {
             continue;
         };
 
         const char* vuid = nullptr;
         VkImageAspectFlags aspect_mask = 0;
-        switch (attachment_loc.field) {
-            case Field::pDepthAttachment:
-                vuid = resolve ? "VUID-vkCmdBeginRendering-pRenderingInfo-09589" : "VUID-vkCmdBeginRendering-pRenderingInfo-09588";
-                aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                break;
-
-            case Field::pStencilAttachment:
-                vuid = resolve ? "VUID-vkCmdBeginRendering-pRenderingInfo-09591" : "VUID-vkCmdBeginRendering-pRenderingInfo-09590";
-                aspect_mask = VK_IMAGE_ASPECT_STENCIL_BIT;
-                break;
-
-            default:
-                vuid = resolve ? "VUID-vkCmdBeginRendering-pRenderingInfo-09593" : "VUID-vkCmdBeginRendering-pRenderingInfo-09592";
-                aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT;
-                break;
+        if (vvl_attachment.IsDepth()) {
+            vuid = resolve ? "VUID-vkCmdBeginRendering-pRenderingInfo-09589" : "VUID-vkCmdBeginRendering-pRenderingInfo-09588";
+            aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        } else if (vvl_attachment.IsStencil()) {
+            vuid = resolve ? "VUID-vkCmdBeginRendering-pRenderingInfo-09591" : "VUID-vkCmdBeginRendering-pRenderingInfo-09590";
+            aspect_mask = VK_IMAGE_ASPECT_STENCIL_BIT;
+        } else {
+            vuid = resolve ? "VUID-vkCmdBeginRendering-pRenderingInfo-09593" : "VUID-vkCmdBeginRendering-pRenderingInfo-09592";
+            aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT;
         }
 
         // Cannot use view_state->range_generator directly since we need to modify aspectMask
         VkImageSubresourceRange image_layout_range = image_view_state->GetRangeGeneratorRange(device_state->extensions);
         image_layout_range.aspectMask = aspect_mask;
 
-        LayoutUseCheckAndMessage layout_check(resolve ? attachment_info.resolveImageLayout : attachment_info.imageLayout,
+        LayoutUseCheckAndMessage layout_check(resolve ? vvl_attachment.info.resolveImageLayout : vvl_attachment.info.imageLayout,
                                               aspect_mask);
 
         skip |= ForEachMatchingLayoutMapRange(
             *image_layout_map, RangeGenerator(image_view_state->image_state->subresource_encoder, image_layout_range),
-            [this, &cb_state, &image_state, &image_view_state, &layout_check, vuid, attachment_loc](const LayoutRange& range,
-                                                                                                    const ImageLayoutState& state) {
+            [this, &vvl_attachment, &image_state, &layout_check, vuid](const LayoutRange& range, const ImageLayoutState& state) {
                 bool local_skip = false;
                 if (!layout_check.Check(state)) {
                     const subresource_adapter::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
-                    const LogObjectList objlist(cb_state.Handle(), image_state.Handle(), image_view_state->Handle());
                     local_skip |=
-                        LogError(vuid, objlist, attachment_loc,
+                        LogError(vuid, vvl_attachment.GetObjectList(), vvl_attachment.loc,
                                  "(%s, layer %" PRIu32 ", mip %" PRIu32 ") is expected to have layout %s but %s layout is %s.",
                                  FormatHandle(image_state).c_str(), subresource.arrayLayer, subresource.mipLevel,
                                  string_VkImageLayout(layout_check.expected_layout), layout_check.message,
