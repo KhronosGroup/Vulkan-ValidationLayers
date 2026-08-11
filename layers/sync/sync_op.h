@@ -31,7 +31,7 @@ class RenderPass;
 
 namespace syncval {
 
-class CommandBufferAccessContext;
+class CommandBufferContext;
 struct SyncEnvironment;
 class QueueBatchContext;
 class RenderPassAccessContext;
@@ -228,9 +228,9 @@ struct RenderPassReplayState {
 };
 
 struct ReplayState {
-    ReplayState(CommandBufferAccessContext& proxy_primary_cb_context, const CommandBufferAccessContext& recorded_cb_context,
+    ReplayState(CommandBufferContext& proxy_primary_cb_context, const CommandBufferContext& recorded_cb_context,
                 ResourceUsageTag base_tag, const Location& cb_loc);
-    ReplayState(QueueBatchContext& batch_context, const CommandBufferAccessContext& recorded_cb_context, ResourceUsageTag base_tag,
+    ReplayState(QueueBatchContext& batch_context, const CommandBufferContext& recorded_cb_context, ResourceUsageTag base_tag,
                 const Location& cb_loc);
 
     bool ValidateFirstUse();
@@ -242,7 +242,7 @@ struct ReplayState {
 
     SyncEnvironment& env;
     AccessContext& destination_context;
-    const CommandBufferAccessContext& recorded_cb_context;
+    const CommandBufferContext& recorded_cb_context;
     std::optional<RenderPassReplayState> rp_replay;
     const ResourceUsageTag base_tag;
     const Location& cb_loc;

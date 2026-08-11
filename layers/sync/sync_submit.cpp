@@ -724,27 +724,27 @@ bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>&
     uint32_t tag_count = 0;
     for (const auto& cb : command_buffers) {
         if (!cb) continue;
-        tag_count += static_cast<uint32_t>(SubState(*cb).access_context.GetTagCount());
+        tag_count += static_cast<uint32_t>(SubState(*cb).cb_context.GetTagCount());
     }
     batch.base_tag = SetupBatchTags(tag_count);
 
     for (uint32_t index = 0; index < (uint32_t)command_buffers.size(); index++) {
         const auto& cb = SubState(*command_buffers[index]);
-        const CommandBufferAccessContext& access_context = cb.access_context;
+        const CommandBufferContext& cb_context = cb.cb_context;
 
         // Validate and resolve command buffers that have tagged commands
-        if (access_context.GetTagCount() > 0) {
+        if (cb_context.GetTagCount() > 0) {
             const Location submit_info_loc = submit_loc.dot(vvl::Field::pSubmits, batch_index);
             const Location cb_loc = submit_loc.function == vvl::Func::vkQueueSubmit
                                         ? submit_info_loc.dot(vvl::Field::pCommandBuffers, index)
                                         : submit_info_loc.dot(vvl::Field::pCommandBufferInfos, index);
 
-            skip |= ReplayState(*this, access_context, batch.base_tag, cb_loc).ValidateFirstUse();
+            skip |= ReplayState(*this, cb_context, batch.base_tag, cb_loc).ValidateFirstUse();
 
             // The barriers have already been applied in ValidatFirstUse
-            batch_log_.Import(batch, access_context, current_label_stack);
-            ResolveSubmittedCommandBuffer(access_context.GetCbAccessContext(), batch.base_tag);
-            batch.base_tag += access_context.GetTagCount();
+            batch_log_.Import(batch, cb_context, current_label_stack);
+            ResolveSubmittedCommandBuffer(cb_context.GetCbAccessContext(), batch.base_tag);
+            batch.base_tag += cb_context.GetTagCount();
         }
         // Apply debug label commands
         vvl::CommandBuffer::ReplayLabelCommands(cb.base.GetLabelCommands(), current_label_stack);
@@ -798,10 +798,10 @@ void QueueState::SetLastBatch(BatchContextPtr&& last) {
     }
 }
 
-void BatchAccessLog::Import(const BatchRecord& batch, const CommandBufferAccessContext& cb_access,
+void BatchAccessLog::Import(const BatchRecord& batch, const CommandBufferContext& cb_context,
                             const std::vector<std::string>& initial_label_stack) {
-    ResourceUsageRange import_range = {batch.base_tag, batch.base_tag + cb_access.GetTagCount()};
-    log_map_.insert(std::make_pair(import_range, CBSubmitLog(batch, cb_access, initial_label_stack)));
+    ResourceUsageRange import_range = {batch.base_tag, batch.base_tag + cb_context.GetTagCount()};
+    log_map_.insert(std::make_pair(import_range, CBSubmitLog(batch, cb_context, initial_label_stack)));
 }
 
 void BatchAccessLog::Import(const BatchAccessLog& other) {
@@ -898,7 +898,7 @@ BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, std::shared_p
                                          std::shared_ptr<const AccessLog> log)
     : batch_(batch), cbs_(cbs), log_(log) {}
 
-BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const CommandBufferAccessContext& cb,
+BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const CommandBufferContext& cb,
                                          const std::vector<std::string>& initial_label_stack)
     : batch_(batch), cbs_(cb.GetCBReferencesShared()), log_(cb.GetAccessLogShared()), initial_label_stack_(initial_label_stack) {}
 

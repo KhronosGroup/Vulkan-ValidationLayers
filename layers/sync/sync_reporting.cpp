@@ -676,7 +676,7 @@ static ResourceUsageInfo GetResourceUsageInfoFromRecord(ResourceUsageTagEx tag_e
         // Associated resource
         if (tag_ex.handle_index != vvl::kNoIndex32) {
             auto& cb_context = SubState(*record.cb_state);
-            const auto& handle_records = cb_context.access_context.GetHandleRecords();
+            const auto& handle_records = cb_context.cb_context.GetHandleRecords();
 
             // Command buffer can be in inconsistent state due to unhandled core validation error (core validation is disabled).
             // In this case the goal is not to crash, no guarantees that reported information (handle index) makes sense.
@@ -695,7 +695,7 @@ static ResourceUsageInfo GetResourceUsageInfoFromRecord(ResourceUsageTagEx tag_e
     return info;
 }
 
-ResourceUsageInfo CommandBufferAccessContext::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
+ResourceUsageInfo CommandBufferContext::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
     const ResourceUsageRecord& record = (*access_log_)[tag_ex.tag];
     const auto debug_name_provider = (record.label_command_index == vvl::kNoIndex32) ? nullptr : this;
     return GetResourceUsageInfoFromRecord(tag_ex, record, debug_name_provider);

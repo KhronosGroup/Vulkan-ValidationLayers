@@ -206,8 +206,7 @@ class BatchAccessLog {
         CBSubmitLog &operator=(const CBSubmitLog &other) = default;
         CBSubmitLog &operator=(CBSubmitLog &&other) = default;
         CBSubmitLog(const BatchRecord& batch, std::shared_ptr<const CommandBufferSet> cbs, std::shared_ptr<const AccessLog> log);
-        CBSubmitLog(const BatchRecord& batch, const CommandBufferAccessContext& cb,
-                    const std::vector<std::string>& initial_label_stack);
+        CBSubmitLog(const BatchRecord& batch, const CommandBufferContext& cb, const std::vector<std::string>& initial_label_stack);
         size_t Size() const { return log_->size(); }
         AccessRecord GetAccessRecord(ResourceUsageTag tag) const;
 
@@ -222,9 +221,9 @@ class BatchAccessLog {
         std::vector<std::string> initial_label_stack_;
     };
 
-    void Import(const BatchRecord &batch, const CommandBufferAccessContext &cb_access,
-                const std::vector<std::string> &initial_label_stack);
-    void Import(const BatchAccessLog &other);
+    void Import(const BatchRecord& batch, const CommandBufferContext& cb_context,
+                const std::vector<std::string>& initial_label_stack);
+    void Import(const BatchAccessLog& other);
     void Insert(const BatchRecord& batch, const ResourceUsageRange& range, std::shared_ptr<const AccessLog> log);
 
     void Trim(const ResourceUsageTagSet &used);
