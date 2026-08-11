@@ -28,7 +28,7 @@ void DescriptorHeapTest::InitUntypedDescriptorHeap() {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(Init());
     heap_props.pNext = &tensor_heap_props;
     GetPhysicalDeviceProperties2(heap_props);

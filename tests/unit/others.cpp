@@ -1305,10 +1305,8 @@ TEST_F(NegativeOther, DISABLED_DisplayApplicationName) {
 
 TEST_F(NegativeOther, GetDeviceFaultInfoEXT) {
     AddRequiredExtensions(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceFaultFeaturesEXT ext_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(ext_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::deviceFaultEXT);
+    RETURN_IF_SKIP(Init());
     VkDeviceFaultCountsEXT fault_count = vku::InitStructHelper();
     VkDeviceFaultInfoEXT fault_info = vku::InitStructHelper();
     m_errorMonitor->SetDesiredError("VUID-vkGetDeviceFaultInfoEXT-device-07336");
@@ -1446,7 +1444,7 @@ TEST_F(NegativeOther, AppendingPipelineCreateFlags2) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(Init());
 
     VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();

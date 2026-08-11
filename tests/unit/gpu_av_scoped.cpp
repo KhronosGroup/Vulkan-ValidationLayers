@@ -822,7 +822,7 @@ TEST_F(NegativeGpuAVScoped, SelectInstrumentedShadersShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
 
     std::vector<VkLayerSettingEXT> layer_settings = {
@@ -886,7 +886,7 @@ TEST_F(NegativeGpuAVScoped, SelectInstrumentedShadersShaderObjectDrawIndexedIndi
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::deviceAddressCommands);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);

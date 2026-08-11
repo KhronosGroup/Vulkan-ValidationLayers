@@ -5632,7 +5632,7 @@ bool CoreChecks::PreCallValidateGetImageOpaqueCaptureDataEXT(VkDevice device, ui
                                                              VkHostAddressRangeEXT* pDatas, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    if (!enabled_features.descriptorHeapCaptureReplay) {
+    if (!enabled_features.descriptorHeapCaptureReplayEXT) {
         skip |= LogError("VUID-vkGetImageOpaqueCaptureDataEXT-descriptorHeapCaptureReplay-11282", device, error_obj.location,
                          "descriptorHeapCaptureReplay feature was not enabled.");
     }

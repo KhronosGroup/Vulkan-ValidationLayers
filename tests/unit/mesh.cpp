@@ -1196,7 +1196,7 @@ TEST_F(NegativeMesh, DrawIndexMesh) {
 TEST_F(NegativeMesh, DrawIndexMeshShaderObject) {
     TEST_DESCRIPTION("use DrawIndex in Mesh shader but there is a Task Shader.");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     AddRequiredFeature(vkt::Feature::shaderDrawParameters);
     RETURN_IF_SKIP(InitBasicMeshAndTask());
     InitRenderTarget();

@@ -35,6 +35,8 @@ class DeviceFeaturesOutputGenerator(BaseGenerator):
             'VkPhysicalDeviceBufferDeviceAddressFeaturesEXT': 'EXT',
             'VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV': 'NV',
             'VkPhysicalDeviceOpacityMicromapFeaturesEXT': 'EXT',
+            'VkPhysicalDeviceShaderObjectFeaturesEXT': 'EXT',
+            'VkPhysicalDeviceDescriptorHeapFeaturesEXT': 'EXT',
         }
 
     def generate(self):

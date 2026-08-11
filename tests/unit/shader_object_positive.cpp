@@ -22,7 +22,7 @@ void ShaderObjectTest::InitBasicShaderObject(void* instance_pnext) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(Init(nullptr, nullptr, instance_pnext));
 }
 
@@ -32,7 +32,7 @@ void ShaderObjectTest::InitBasicMeshShaderObject(APIVersion target_api_version) 
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::meshShader);
@@ -788,7 +788,7 @@ TEST_F(PositiveShaderObject, DescriptorBuffer) {
     AddRequiredFeature(vkt::Feature::descriptorBuffer);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
 
@@ -1640,7 +1640,7 @@ TEST_F(PositiveShaderObject, MultiCreateGraphicsCompute) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
 
@@ -1680,7 +1680,7 @@ TEST_F(PositiveShaderObject, CustomResolve) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     AddRequiredFeature(vkt::Feature::customResolve);
     RETURN_IF_SKIP(Init());
     CreateMinimalShaders();
@@ -1726,7 +1726,7 @@ TEST_F(PositiveShaderObject, DisableShaderValidation) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse};
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
@@ -1746,7 +1746,7 @@ TEST_F(PositiveShaderObject, DisableShaderValidation) {
 TEST_F(PositiveShaderObject, DescriptorHeapPushConstant) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitRenderTarget();
 
@@ -1766,7 +1766,7 @@ TEST_F(PositiveShaderObject, DescriptorHeapPushConstant) {
 TEST_F(PositiveShaderObject, DescriptorHeapStorageBuffer) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char comp_src[] = R"glsl(
@@ -1798,7 +1798,7 @@ TEST_F(PositiveShaderObject, DescriptorHeapStorageBuffer) {
 TEST_F(PositiveShaderObject, HeapFlags) {
     TEST_DESCRIPTION("Create a linked shaders with mismatched heap flags.");
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
@@ -1816,7 +1816,7 @@ TEST_F(PositiveShaderObject, HeapFlags) {
 
 TEST_F(PositiveShaderObject, DrawWithHeap) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicShaderObject());

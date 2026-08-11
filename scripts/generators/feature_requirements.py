@@ -42,11 +42,16 @@ class FeatureRequirementsGenerator(BaseGenerator):
         #     auto features2 = GetPhysicalDeviceFeatures2(ext_features);
         #     RETURN_IF_SKIP(InitState(nullptr, &features2));
         #
-        self.identical_but_different_features = {
-            "VkPhysicalDeviceFaultFeaturesEXT",
-            'VkPhysicalDeviceBufferDeviceAddressFeaturesEXT',
-            'VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV',
-            'VkPhysicalDeviceOpacityMicromapFeaturesEXT',
+        self.feature_renames = {
+            ('VkPhysicalDeviceFaultFeaturesEXT', 'deviceFault'): 'deviceFaultEXT',
+            ('VkPhysicalDeviceBufferDeviceAddressFeaturesEXT', 'bufferDeviceAddress'): 'bufferDeviceAddressEXT',
+            ('VkPhysicalDeviceBufferDeviceAddressFeaturesEXT', 'bufferDeviceAddressCaptureReplay'): 'bufferDeviceAddressCaptureReplayEXT',
+            ('VkPhysicalDeviceBufferDeviceAddressFeaturesEXT', 'bufferDeviceAddressMultiDevice'): 'bufferDeviceAddressMultiDeviceEXT',
+            ('VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV', 'deviceGeneratedCommands'): 'deviceGeneratedCommandsNV',
+            ('VkPhysicalDeviceOpacityMicromapFeaturesEXT', 'micromap'): 'micromapEXT',
+            ('VkPhysicalDeviceShaderObjectFeaturesEXT', 'shaderObject'): 'shaderObjectEXT',
+            ('VkPhysicalDeviceDescriptorHeapFeaturesEXT', 'descriptorHeap'): 'descriptorHeapEXT',
+            ('VkPhysicalDeviceDescriptorHeapFeaturesEXT', 'descriptorHeapCaptureReplay'): 'descriptorHeapCaptureReplayEXT',
         }
 
     def generate(self):
@@ -90,20 +95,19 @@ class FeatureRequirementsGenerator(BaseGenerator):
         feature_structs = self.vk.structs['VkPhysicalDeviceFeatures2'].extendedBy
         feature_structs.append('VkPhysicalDeviceFeatures')
         for extending_struct_name in feature_structs:
-            if extending_struct_name in self.identical_but_different_features:
-                continue
             extending_struct = self.vk.structs[extending_struct_name]
 
             for feature in extending_struct.members:
                 if feature.type == 'VkBool32':
-                    if feature.name not in featureMap:
-                        featureMap[feature.name] = set()
-                    featureMap[feature.name].add(extending_struct_name)
+                    enum_name = self.feature_renames.get((extending_struct_name, feature.name), feature.name)
+                    if enum_name not in featureMap:
+                        featureMap[enum_name] = dict()
+                    featureMap[enum_name][extending_struct_name] = feature.name
 
         # Generate a comment for every feature regarding where it may be coming from, then sort the
-        # features by that comment.  That ensures features of the same struct end up together.
-        featuresAndOrigins = sorted([(sorted(structs), feature)
-                                     for feature, structs in featureMap.items()])
+        # features by that comment. That ensures features of the same struct end up together.
+        featuresAndOrigins = sorted([(sorted(structs.keys()), enum_name, structs)
+                                     for enum_name, structs in featureMap.items()])
 
         return featuresAndOrigins
 
@@ -119,7 +123,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
 
         # Physical device features enum
         out.append('enum class Feature {\n')
-        for origins, feature in self.getFeaturesAndOrigins():
+        for origins, feature, _ in self.getFeaturesAndOrigins():
             out.append(f'// {", ".join(origins)}\n')
             out.append(f'{feature},\n')
         out.append('};\n')
@@ -163,7 +167,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
         guard_helper = PlatformGuardHelper()
         out.append('FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **inout_pnext_chain) {\n')
         out.append('switch(feature) {\n')
-        for origins, feature in self.getFeaturesAndOrigins():
+        for origins, feature, member_map in self.getFeaturesAndOrigins():
             # Skip VkPhysicalDeviceFeatures, handled by hand
             if len(origins) == 1 and origins[0] == 'VkPhysicalDeviceFeatures':
                 continue
@@ -174,6 +178,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
                     break
             if len(origins) == 1 or vulkan_feature_struct_i == -1:
                     feature_struct_name = origins[0]
+                    member_name = member_map[feature_struct_name]
                     out.extend(guard_helper.add_guard(self.vk.structs[feature_struct_name].protect))
                     out.append(f'''
                         case Feature::{feature}: {{
@@ -187,14 +192,20 @@ class FeatureRequirementsGenerator(BaseGenerator):
                                 *inout_pnext_chain = vk_struct;
                             }}
                         }}
-                        return {{&vk_struct->{feature}, "{feature_struct_name}::{feature}"}};
+                        return {{&vk_struct->{member_name}, "{feature_struct_name}::{member_name}"}};
                         }}
                         ''')
                     out.extend(guard_helper.add_guard(None))
             else:
+                if (len(origins) != 2):
+                    print(origins)
+                    print(feature)
+                    print(member_map)
                 assert len(origins) == 2
                 api_struct_name = origins[vulkan_feature_struct_i]
                 feature_struct_name = origins[1 - vulkan_feature_struct_i]
+                api_member_name = member_map[api_struct_name]
+                feature_member_name = member_map[feature_struct_name]
                 ref_api_version = self.getApiVersion(api_struct_name)
                 out.extend(guard_helper.add_guard(self.vk.structs[feature_struct_name].protect))
                 out.append(f'''
@@ -210,7 +221,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
                                     *inout_pnext_chain = vk_struct;
                                 }}
                             }}
-                            return {{&vk_struct->{feature}, "{api_struct_name}::{feature}"}};
+                            return {{&vk_struct->{api_member_name}, "{api_struct_name}::{api_member_name}"}};
                         }} else {{
                             auto vk_struct = const_cast<{feature_struct_name} *>(vku::FindStructInPNextChain<{feature_struct_name}>(*inout_pnext_chain));
                             if (!vk_struct) {{
@@ -222,7 +233,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
                                     *inout_pnext_chain = vk_struct;
                                 }}
                             }}
-                            return {{&vk_struct->{feature}, "{feature_struct_name}::{feature}"}};
+                            return {{&vk_struct->{feature_member_name}, "{feature_struct_name}::{feature_member_name}"}};
                         }}''')
                 out.extend(guard_helper.add_guard(None))
 

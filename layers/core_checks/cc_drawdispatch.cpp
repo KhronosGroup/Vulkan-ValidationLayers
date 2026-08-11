@@ -1606,7 +1606,7 @@ bool CoreChecks::ValidateActionState(const LastBound& last_bound_state, const Lo
     skip |= ValidateCmd(cb_state, loc);
 
     // Quick verify that if there is no pipeline, the shader object is being used
-    if (!pipeline && !enabled_features.shaderObject) {
+    if (!pipeline && !enabled_features.shaderObjectEXT) {
         return LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PIPELINE_BOUND_08606), cb_state.GetObjectList(bind_point),
                         loc, "A valid %s pipeline must be bound with vkCmdBindPipeline before calling this command.",
                         string_VkPipelineBindPoint(bind_point));

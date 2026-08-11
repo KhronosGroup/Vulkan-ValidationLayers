@@ -80,6 +80,12 @@ enum class Feature {
     bufferDeviceAddressCaptureReplay,
     // VkPhysicalDeviceBufferDeviceAddressFeatures, VkPhysicalDeviceVulkan12Features
     bufferDeviceAddressMultiDevice,
+    // VkPhysicalDeviceBufferDeviceAddressFeaturesEXT
+    bufferDeviceAddressCaptureReplayEXT,
+    // VkPhysicalDeviceBufferDeviceAddressFeaturesEXT
+    bufferDeviceAddressEXT,
+    // VkPhysicalDeviceBufferDeviceAddressFeaturesEXT
+    bufferDeviceAddressMultiDeviceEXT,
     // VkPhysicalDeviceClusterAccelerationStructureFeaturesNV
     clusterAccelerationStructure,
     // VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI
@@ -201,9 +207,9 @@ enum class Feature {
     // VkPhysicalDeviceDescriptorBufferTensorFeaturesARM
     descriptorBufferTensorDescriptors,
     // VkPhysicalDeviceDescriptorHeapFeaturesEXT
-    descriptorHeap,
+    descriptorHeapCaptureReplayEXT,
     // VkPhysicalDeviceDescriptorHeapFeaturesEXT
-    descriptorHeapCaptureReplay,
+    descriptorHeapEXT,
     // VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceVulkan12Features
     descriptorBindingPartiallyBound,
     // VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceVulkan12Features
@@ -260,6 +266,8 @@ enum class Feature {
     deviceGeneratedCommands,
     // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT
     dynamicGeneratedPipelineLayout,
+    // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV
+    deviceGeneratedCommandsNV,
     // VkPhysicalDeviceDeviceMemoryReportFeaturesEXT
     deviceMemoryReport,
     // VkPhysicalDeviceDiagnosticsConfigFeaturesNV
@@ -356,14 +364,16 @@ enum class Feature {
     externalMemoryRDMA,
     // VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX
     screenBufferImport,
+    // VkPhysicalDeviceFaultFeaturesEXT
+    deviceFaultEXT,
+    // VkPhysicalDeviceFaultFeaturesEXT, VkPhysicalDeviceFaultFeaturesKHR
+    deviceFaultVendorBinary,
     // VkPhysicalDeviceFaultFeaturesKHR
     deviceFault,
     // VkPhysicalDeviceFaultFeaturesKHR
     deviceFaultDeviceLostOnMasked,
     // VkPhysicalDeviceFaultFeaturesKHR
     deviceFaultReportMasked,
-    // VkPhysicalDeviceFaultFeaturesKHR
-    deviceFaultVendorBinary,
     // VkPhysicalDeviceFeatures
     alphaToOne,
     // VkPhysicalDeviceFeatures
@@ -654,6 +664,12 @@ enum class Feature {
     nestedCommandBufferSimultaneousUse,
     // VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT
     nonSeamlessCubeMap,
+    // VkPhysicalDeviceOpacityMicromapFeaturesEXT
+    micromapCaptureReplay,
+    // VkPhysicalDeviceOpacityMicromapFeaturesEXT
+    micromapEXT,
+    // VkPhysicalDeviceOpacityMicromapFeaturesEXT
+    micromapHostCommands,
     // VkPhysicalDeviceOpacityMicromapFeaturesKHR
     micromap,
     // VkPhysicalDeviceOpticalFlowFeaturesNV
@@ -961,7 +977,7 @@ enum class Feature {
     // VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT
     shaderMXInt8,
     // VkPhysicalDeviceShaderObjectFeaturesEXT
-    shaderObject,
+    shaderObjectEXT,
     // VkPhysicalDeviceShaderQuadControlFeaturesKHR
     shaderQuadControl,
     // VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR

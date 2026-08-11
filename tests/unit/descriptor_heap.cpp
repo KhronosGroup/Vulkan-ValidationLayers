@@ -778,7 +778,7 @@ TEST_F(NegativeDescriptorHeap, MinTexelBufferOffsetAlignment) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(Init());
 
     GetPhysicalDeviceProperties2(heap_props);
@@ -1916,7 +1916,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorSetAndBindingMappingPipeline) {
 TEST_F(NegativeDescriptorHeap, DescriptorSetAndBindingMappingShaderObject) {
     TEST_DESCRIPTION("Validate VkDescriptorSetAndBindingMappingEXT structure using shader object");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mapping = {};
@@ -2411,7 +2411,7 @@ TEST_F(NegativeDescriptorHeap, OpaqueCaptureDataCreateInfo) {
 }
 
 TEST_F(NegativeDescriptorHeap, OpaqueCaptureDataCreateInfoSize) {
-    AddRequiredFeature(vkt::Feature::descriptorHeapCaptureReplay);
+    AddRequiredFeature(vkt::Feature::descriptorHeapCaptureReplayEXT);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     std::vector<uint8_t> data(heap_props.imageCaptureReplayOpaqueDataSize + 1);
@@ -2440,7 +2440,7 @@ TEST_F(NegativeDescriptorHeap, OpaqueCaptureDataCreateInfoSize) {
 
 TEST_F(NegativeDescriptorHeap, GetImageOpaqueCaptureData) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredFeature(vkt::Feature::descriptorHeapCaptureReplay);
+    AddRequiredFeature(vkt::Feature::descriptorHeapCaptureReplayEXT);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddressCaptureReplay);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -2475,7 +2475,7 @@ TEST_F(NegativeDescriptorHeap, GetImageOpaqueCaptureData) {
 
 TEST_F(NegativeDescriptorHeap, GetImageOpaqueCaptureDataMissingFlag) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredFeature(vkt::Feature::descriptorHeapCaptureReplay);
+    AddRequiredFeature(vkt::Feature::descriptorHeapCaptureReplayEXT);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddressCaptureReplay);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -2626,7 +2626,7 @@ TEST_F(NegativeDescriptorHeap, IndirectExecutionSetShaderInfoInitialShaderFlagSa
     AddRequiredExtensions(VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::deviceGeneratedCommands);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT dgc_props = vku::InitStructHelper();
@@ -2680,7 +2680,7 @@ TEST_F(NegativeDescriptorHeap, IndirectExecutionSetShaderInfoSetLayoutNull) {
     AddRequiredExtensions(VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::deviceGeneratedCommands);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT dgc_props = vku::InitStructHelper();
@@ -2719,7 +2719,7 @@ TEST_F(NegativeDescriptorHeap, IndirectExecutionSetShaderInfoSetLayoutNull) {
 
 TEST_F(NegativeDescriptorHeap, ShaderCreateInfoPushConstant) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     {
@@ -3225,7 +3225,7 @@ TEST_F(NegativeDescriptorHeap, MappedStructLessThanMaxPushDataSize) {
 TEST_F(NegativeDescriptorHeap, MaxPushDataSizeShaderObject) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     AddRequiredFeature(vkt::Feature::scalarBlockLayout);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -3573,7 +3573,7 @@ TEST_F(NegativeDescriptorHeap, MappingWithoutFlag) {
 TEST_F(NegativeDescriptorHeap, NoMappingShaderObject) {
     TEST_DESCRIPTION("Check that descriptor set bindings have a mappings when using VkShaderCreateFlagsEXT");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     char const* cs_source = R"glsl(
@@ -4092,7 +4092,7 @@ TEST_F(NegativeDescriptorHeap, PushDataAssignedShaderObject) {
     TEST_DESCRIPTION("Check that push data used in shader code has been set using shader object");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     static const char cs_source[] = R"glsl(
@@ -4225,7 +4225,7 @@ TEST_F(NegativeDescriptorHeap, DuplicatedPushDataSequenceIndex) {
 
 TEST_F(NegativeDescriptorHeap, CaptureReplayBit) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredFeature(vkt::Feature::descriptorHeapCaptureReplay);
+    AddRequiredFeature(vkt::Feature::descriptorHeapCaptureReplayEXT);
 
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -4898,7 +4898,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountPipeline) {
 
 TEST_F(NegativeDescriptorHeap, SamplerAllocationCountShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const uint32_t max_samplers = m_device->Physical().limits_.maxSamplerAllocationCount;
@@ -4985,7 +4985,7 @@ TEST_F(NegativeDescriptorHeap, MaxEmbeddedSamplers) {
 
 TEST_F(NegativeDescriptorHeap, SamplerAllocationTotalCountShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     // Creating this many emedded samplers is really slow on many drivers

@@ -55,7 +55,7 @@ void NegativeGpuDump::InitDescriptorHeap(VkLayerSettingsCreateInfoEXT* custom_se
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitFramework(custom_setting ? custom_setting : &kAllDumpSettingCi));
     RETURN_IF_SKIP(InitState());

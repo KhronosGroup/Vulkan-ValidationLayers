@@ -1491,20 +1491,13 @@ TEST_F(PositivePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     create_pipe_with_depth_bias_representation(depth_bias_representation);
 }
 
-TEST_F(PositivePipeline, DeviceGeneratedCommands) {
+TEST_F(PositivePipeline, DeviceGeneratedCommandsNV) {
     TEST_DESCRIPTION("Test creating pipeline with device generated commands");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV dgc_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(dgc_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::deviceGeneratedCommandsNV);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
-    if (!dgc_features.deviceGeneratedCommands) {
-        GTEST_SKIP() << "deviceGeneratedCommands not supported";
-    }
 
     VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);

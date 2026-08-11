@@ -232,7 +232,7 @@ TEST_F(NegativeDeviceGeneratedCommands, IndirectCommandsNonGraphics) {
 
 TEST_F(NegativeDeviceGeneratedCommands, IndirectCommandsNonGraphicsDescriptorHeap) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
 
     VkIndirectCommandsVertexBufferTokenEXT vertex_buffer_token = {0};
@@ -666,7 +666,7 @@ TEST_F(NegativeDeviceGeneratedCommands, PushConstantSequenceIndex) {
 
 TEST_F(NegativeDeviceGeneratedCommands, PushData) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
 
     VkIndirectCommandsPushConstantTokenEXT pc_token_0;
@@ -1062,7 +1062,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineCompatible) {
 
 TEST_F(NegativeDeviceGeneratedCommands, UpdateIESMixShaderObjectPipeline) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -1107,7 +1107,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESMixShaderObjectPipeline) {
 
 TEST_F(NegativeDeviceGeneratedCommands, UpdateIESShaderObjectFlags) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -1131,7 +1131,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESShaderObjectFlags) {
 
 TEST_F(NegativeDeviceGeneratedCommands, UpdateIESShaderObjectWriteCount) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -1167,7 +1167,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESShaderObjectWriteCount) {
 
 TEST_F(NegativeDeviceGeneratedCommands, UpdateIESShaderObjectDuplicateIndex) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -1203,7 +1203,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESShaderObjectDuplicateIndex) {
 
 TEST_F(NegativeDeviceGeneratedCommands, UpdateIESShaderObjectInitialShaders) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -1241,7 +1241,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESShaderObjectInitialShaders) {
 
 TEST_F(NegativeDeviceGeneratedCommands, UpdateIESShaderObjectFragmentOutput) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     AddRequiredExtensions(VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
@@ -1360,7 +1360,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESShaderObjectFragmentOutput) {
 
 TEST_F(NegativeDeviceGeneratedCommands, IESShaderObjectUniqueShaders) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -1389,7 +1389,7 @@ TEST_F(NegativeDeviceGeneratedCommands, IESShaderObjectUniqueShaders) {
 
 TEST_F(NegativeDeviceGeneratedCommands, IESShaderObjectMaxShaderCount) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -1425,7 +1425,7 @@ TEST_F(NegativeDeviceGeneratedCommands, IESShaderObjectMaxShaderCount) {
 
 TEST_F(NegativeDeviceGeneratedCommands, IESShaderObjectMaxShaderCount2) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -1680,7 +1680,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteNoBoundPipeline) {
 
 TEST_F(NegativeDeviceGeneratedCommands, ExecuteNoBoundShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -2338,7 +2338,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteSequenceCountBufferUsage) {
 TEST_F(NegativeDeviceGeneratedCommands, ExecuteShaderObjectStages) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
@@ -2442,7 +2442,7 @@ TEST_F(NegativeDeviceGeneratedCommands, NullIndirectExecutionSetEXT) {
 
 TEST_F(NegativeDeviceGeneratedCommands, InitialShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -2691,7 +2691,7 @@ TEST_F(NegativeDeviceGeneratedCommands, DescriptorHeapShaderStageAll) {
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(Init());
 
     VkIndirectCommandsPushConstantTokenEXT pc_token_0;
@@ -2757,7 +2757,7 @@ TEST_F(NegativeDeviceGeneratedCommands, DescriptorHeapDisabled) {
 
 TEST_F(NegativeDeviceGeneratedCommands, DescriptorHeapUpdateIESPipeline) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
 
     for (int i = 0; i < 2; i++) {
@@ -2790,9 +2790,9 @@ TEST_F(NegativeDeviceGeneratedCommands, DescriptorHeapUpdateIESPipeline) {
 
 TEST_F(NegativeDeviceGeneratedCommands, DescriptorHeapUpdateIESShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
 
     for (int i = 0; i < 2; i++) {
@@ -2831,7 +2831,7 @@ TEST_F(NegativeDeviceGeneratedCommands, DescriptorHeapUpdateIESShaderObject) {
 
 TEST_F(NegativeDeviceGeneratedCommands, IndirectCommandPushData) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -2857,7 +2857,7 @@ TEST_F(NegativeDeviceGeneratedCommands, IndirectCommandPushData) {
 
 TEST_F(NegativeDeviceGeneratedCommands, NoLayoutOrHeapFlag) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -2913,7 +2913,7 @@ TEST_F(NegativeDeviceGeneratedCommands, NoLayoutOrHeapFlag) {
 
 TEST_F(NegativeDeviceGeneratedCommands, NoLayoutOrHeapFlag2) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -2978,7 +2978,7 @@ TEST_F(NegativeDeviceGeneratedCommands, NoLayoutOrHeapFlag2) {
 
 TEST_F(NegativeDeviceGeneratedCommands, LayoutAndHeapFlag) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -3040,8 +3040,8 @@ TEST_F(NegativeDeviceGeneratedCommands, LayoutAndHeapFlag) {
 TEST_F(NegativeDeviceGeneratedCommands, NoLayoutOrShaderObjectHeapFlag) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -3104,8 +3104,8 @@ TEST_F(NegativeDeviceGeneratedCommands, NoLayoutOrShaderObjectHeapFlag) {
 TEST_F(NegativeDeviceGeneratedCommands, LayoutAndShaderObjectHeapFlag) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
@@ -3170,7 +3170,7 @@ TEST_F(NegativeDeviceGeneratedCommands, LayoutAndShaderObjectHeapFlag) {
 
 TEST_F(NegativeDeviceGeneratedCommands, GeneratedCommandsShaderInfo) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 

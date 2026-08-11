@@ -26,7 +26,7 @@ void GpuAVDescriptorHeap::InitGpuAVDescriptorHeap(std::vector<VkLayerSettingEXT>
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
     RETURN_IF_SKIP(InitGpuAvFramework(layer_settings, safe_mode));
     RETURN_IF_SKIP(InitState());
     GetPhysicalDeviceProperties2(heap_props);
