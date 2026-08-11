@@ -119,7 +119,7 @@ static std::string FormatAccessProperty(const SyncAccessInfo& access) {
     return ss.str();
 }
 
-static void GetAccessProperties(const HazardResult& hazard_result, const SyncValidator& device, VkQueueFlags allowed_queue_flags,
+static void GetAccessProperties(const SyncValidator& validator, const HazardResult& hazard_result, VkQueueFlags allowed_queue_flags,
                                 ReportProperties& properties) {
     const HazardResult::HazardState& hazard = hazard_result.State();
     const SyncAccessInfo& access_info = GetAccessInfo(hazard.access_index);
@@ -136,7 +136,7 @@ static void GetAccessProperties(const HazardResult& hazard_result, const SyncVal
         properties.Add(kPropertyReadBarriers, barriers ? barriers_str : "0");
     } else {
         const SyncAccessFlags barriers = hazard.access_state->GetWriteBarriers();
-        const std::string property_barriers_str = FormatSyncAccesses(barriers, device, allowed_queue_flags, true);
+        const std::string property_barriers_str = FormatSyncAccesses(validator, barriers, allowed_queue_flags, true);
         properties.Add(kPropertyWriteBarriers, property_barriers_str);
     }
 }
@@ -212,15 +212,16 @@ static void ReplaceExpandBitsWithMetaMask(VkFlags64& mask, VkFlags64 expand_bits
 }
 
 static std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccessesToCompactVkForm(
-    const SyncAccessFlags& sync_accesses, const SyncValidator& device, VkQueueFlags allowed_queue_flags) {
+    const SyncValidator& validator, const SyncAccessFlags& sync_accesses, VkQueueFlags allowed_queue_flags) {
     if (sync_accesses.none()) {
         return {};
     }
 
-    const VkPipelineStageFlags2 disabled_stages = sync_utils::DisabledPipelineStages(device.enabled_features, device.extensions);
+    const VkPipelineStageFlags2 disabled_stages =
+        sync_utils::DisabledPipelineStages(validator.enabled_features, validator.extensions);
     const VkPipelineStageFlags2 all_transfer_expand_bits = kAllTransferExpandBits & ~disabled_stages;
 
-    const VkAccessFlags2 disabled_accesses = sync_utils::DisabledAccesses(device.extensions);
+    const VkAccessFlags2 disabled_accesses = sync_utils::DisabledAccesses(validator.extensions);
     const VkAccessFlags2 all_shader_read_bits = kShaderReadExpandBits & ~disabled_accesses;
 
     // Build stage -> accesses mapping. OR-merge accesses that happen on the same stage.
@@ -279,7 +280,7 @@ static std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSync
             all_accesses_supported_by_stages &= ~VK_ACCESS_2_SHADER_WRITE_BIT;
             // Remove unsupported accesses, otherwise the access mask won't be detected as the one that covers ALL accesses
             // TODO: ideally this should be integrated into utilities logic (need to revisit all use cases)
-            if (!IsExtEnabled(device.extensions.vk_ext_blend_operation_advanced)) {
+            if (!IsExtEnabled(validator.extensions.vk_ext_blend_operation_advanced)) {
                 all_accesses_supported_by_stages &= ~VK_ACCESS_2_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT;
             }
         }
@@ -314,10 +315,9 @@ static std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSync
 // Given that access is hazardous, we check if at least stage or access part of it is covered
 // by the synchronization. If applied synchronization covers at least stage or access component
 // then we can provide more precise message by focusing on the other component.
-static std::pair<bool, bool> GetPartialProtectedInfo(const SyncAccessInfo& access, const SyncAccessFlags& write_barriers,
-                                                     const ExecutionContext& context) {
-    const auto protected_stage_access_pairs =
-        ConvertSyncAccessesToCompactVkForm(write_barriers, context.validator, context.queue_flags);
+static std::pair<bool, bool> GetPartialProtectedInfo(const SyncEnvironment& env, const SyncAccessInfo& access,
+                                                     const SyncAccessFlags& write_barriers) {
+    const auto protected_stage_access_pairs = ConvertSyncAccessesToCompactVkForm(env.validator, write_barriers, env.queue_flags);
     bool is_stage_protected = false;
     bool is_access_protected = false;
     for (const auto& protected_stage_access : protected_stage_access_pairs) {
@@ -387,17 +387,17 @@ std::string ReportProperties::FormatExtraPropertiesSection() const {
     return ss.str();
 }
 
-ReportProperties GetErrorMessageProperties(const HazardResult& hazard, const ExecutionContext& context, vvl::Func command,
+ReportProperties GetErrorMessageProperties(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,
                                            const char* message_type, const AdditionalMessageInfo& additional_info) {
     ReportProperties properties;
     properties.Add(kPropertyMessageType, message_type);
     properties.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
     properties.Add(kPropertyCommand, vvl::String(command));
 
-    GetAccessProperties(hazard, context.validator, context.queue_flags, properties);
+    GetAccessProperties(env.validator, hazard, env.queue_flags, properties);
 
     if (hazard.Tag() != kInvalidTag) {
-        ResourceUsageInfo prior_usage_info = context.usage_info_provider.GetResourceUsageInfo(hazard.TagEx());
+        ResourceUsageInfo prior_usage_info = env.usage_info_provider.GetResourceUsageInfo(hazard.TagEx());
         GetPriorUsageProperties(prior_usage_info, properties);
     }
     for (const auto& property : additional_info.properties.name_values) {
@@ -406,7 +406,7 @@ ReportProperties GetErrorMessageProperties(const HazardResult& hazard, const Exe
     return properties;
 }
 
-std::string FormatErrorMessage(const HazardResult& hazard, const ExecutionContext& context, vvl::Func command,
+std::string FormatErrorMessage(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,
                                const std::string& resouce_description, const AdditionalMessageInfo& additional_info) {
     const SyncHazard hazard_type = hazard.Hazard();
     const SyncHazardInfo hazard_info = GetSyncHazardInfo(hazard_type);
@@ -458,7 +458,7 @@ std::string FormatErrorMessage(const HazardResult& hazard, const ExecutionContex
         // resolve before ILT or ILT after storeOp.
         ss << "by the same command";
     } else {
-        const ResourceUsageInfo prior_usage_info = context.usage_info_provider.GetResourceUsageInfo(hazard.TagEx());
+        const ResourceUsageInfo prior_usage_info = env.usage_info_provider.GetResourceUsageInfo(hazard.TagEx());
         const vvl::Func prior_command = prior_usage_info.command;
         if (prior_usage_info.sub_command_type == SubCommandType::kLoadOp) {
             if (prior_usage_info.subpass != vvl::kNoIndex32) {
@@ -507,7 +507,7 @@ std::string FormatErrorMessage(const HazardResult& hazard, const ExecutionContex
     }
 
     // Synchronization information
-    const bool cross_queue_racing_hazard = hazard_info.IsRacingHazard() && context.queue_id != kQueueIdInvalid;
+    const bool cross_queue_racing_hazard = hazard_info.IsRacingHazard() && env.queue_id != kQueueIdInvalid;
     ss << "\n";
     if (cross_queue_racing_hazard) {
         ss << "The RACING hazard means the two submissions on different queues are not synchronized with each other, so the order "
@@ -561,8 +561,8 @@ std::string FormatErrorMessage(const HazardResult& hazard, const ExecutionContex
         ss << ".";
     } else if (hazard_info.IsPriorWrite()) {  // RAW/WAW hazards
         ss << "The current synchronization allows ";
-        ss << FormatSyncAccesses(write_barriers, context.validator, context.queue_flags, false);
-        auto [is_stage_protected, is_access_protected] = GetPartialProtectedInfo(access, write_barriers, context);
+        ss << FormatSyncAccesses(env.validator, write_barriers, env.queue_flags, false);
+        auto [is_stage_protected, is_access_protected] = GetPartialProtectedInfo(env, access, write_barriers);
         if (is_access_protected) {
             ss << ", but to prevent this hazard, it must allow these accesses at ";
             ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
@@ -614,9 +614,9 @@ std::string FormatErrorMessage(const HazardResult& hazard, const ExecutionContex
     return ss.str();
 }
 
-std::string FormatSyncAccesses(const SyncAccessFlags& sync_accesses, const SyncValidator& device, VkQueueFlags allowed_queue_flags,
-                               bool format_as_extra_property) {
-    const auto report_accesses = ConvertSyncAccessesToCompactVkForm(sync_accesses, device, allowed_queue_flags);
+std::string FormatSyncAccesses(const SyncValidator& validator, const SyncAccessFlags& sync_accesses,
+                               VkQueueFlags allowed_queue_flags, bool format_as_extra_property) {
+    const auto report_accesses = ConvertSyncAccessesToCompactVkForm(validator, sync_accesses, allowed_queue_flags);
     if (report_accesses.empty()) {
         return "0";
     }

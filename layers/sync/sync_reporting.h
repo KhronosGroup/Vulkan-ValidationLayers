@@ -24,7 +24,7 @@ class Logger;
 
 namespace syncval {
 
-struct ExecutionContext;
+struct SyncEnvironment;
 class HazardResult;
 class SyncValidator;
 
@@ -63,14 +63,14 @@ struct AdditionalMessageInfo {
     std::string message_end_text;
 };
 
-ReportProperties GetErrorMessageProperties(const HazardResult& hazard, const ExecutionContext& context, vvl::Func command,
+ReportProperties GetErrorMessageProperties(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,
                                            const char* message_type, const AdditionalMessageInfo& additional_info);
 
-std::string FormatErrorMessage(const HazardResult& hazard, const ExecutionContext& context, vvl::Func command,
+std::string FormatErrorMessage(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,
                                const std::string& resouce_description, const AdditionalMessageInfo& additional_info);
 
-std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, const SyncValidator &device, VkQueueFlags allowed_queue_flags,
-                               bool format_as_extra_property);
+std::string FormatSyncAccesses(const SyncValidator& validator, const SyncAccessFlags& sync_accesses,
+                               VkQueueFlags allowed_queue_flags, bool format_as_extra_property);
 
 void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::ostringstream &ss);
 void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantizationMapInfoKHR &quantization_map,

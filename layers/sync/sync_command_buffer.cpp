@@ -255,9 +255,9 @@ static void UpdateVideoAccessState(AccessContext& access_context, const vvl::Vid
     access_context.UpdateAccessState(range_gen, current_usage, ResourceUsageTagEx{tag});
 }
 
-ExecutionContext::ExecutionContext(const SyncValidator& validator, VkQueueFlags queue_flags, QueueId queue_id,
-                                   VulkanTypedHandle handle, SyncEventsContext& events_context,
-                                   const ResourceUsageInfoProvider& usage_info_provider)
+SyncEnvironment::SyncEnvironment(const SyncValidator& validator, VkQueueFlags queue_flags, QueueId queue_id,
+                                 VulkanTypedHandle handle, SyncEventsContext& events_context,
+                                 const ResourceUsageInfoProvider& usage_info_provider)
     : validator(validator),
       queue_flags(queue_flags),
       queue_id(queue_id),
@@ -276,7 +276,7 @@ CommandBufferAccessContext::CommandBufferAccessContext(const SyncValidator& sync
       cb_access_context_(sync_validator),
       current_context_(&cb_access_context_),
       events_context_(),
-      execution_context_(sync_validator, queue_flags, kQueueIdInvalid, handle, events_context_, *this),
+      environment_(sync_validator, queue_flags, kQueueIdInvalid, handle, events_context_, *this),
       render_pass_contexts_(),
       current_renderpass_context_(),
       sync_ops_() {}
@@ -980,7 +980,7 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
             LogObjectList obj_list(cb_state_->Handle(), attachment.view->Handle());
             Location loc = attachment.GetLocation(location, output_location);
             const std::string error =
-                error_messages_.Error(hazard, execution_context_, location.function, sync_state_.FormatHandle(*attachment.view),
+                error_messages_.Error(environment_, hazard, location.function, sync_state_.FormatHandle(*attachment.view),
                                       "DynamicRenderingAttachmentError");
             skip |= sync_state_.SyncError(hazard.Hazard(), obj_list, loc.dot(vvl::Field::imageView), error);
         }
@@ -1004,7 +1004,7 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
                 LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
                 Location loc = attachment.GetLocation(location);
                 const std::string error =
-                    error_messages_.Error(hazard, execution_context_, location.function, sync_state_.FormatHandle(*attachment.view),
+                    error_messages_.Error(environment_, hazard, location.function, sync_state_.FormatHandle(*attachment.view),
                                           "DynamicRenderingAttachmentError");
                 skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc.dot(vvl::Field::imageView), error);
             }
@@ -1330,9 +1330,8 @@ ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(
     const auto barrier_tag = NextCommandTag(command, SubCommandType::kSubpassTransition, 0);
     AddCommandHandle(barrier_tag, rp_state.Handle());
     const auto load_tag = NextSubCommandTag(command, SubCommandType::kLoadOp, 0);
-    render_pass_contexts_.emplace_back(
-        std::make_unique<RenderPassAccessContext>(rp_state, render_area, execution_context_.queue_flags, attachment_views,
-                                                  cb_access_context_, current_render_pass_instance_id_));
+    render_pass_contexts_.emplace_back(std::make_unique<RenderPassAccessContext>(
+        rp_state, render_area, environment_.queue_flags, attachment_views, cb_access_context_, current_render_pass_instance_id_));
     current_renderpass_context_ = render_pass_contexts_.back().get();
     current_renderpass_context_->RecordBeginRenderPass(barrier_tag, load_tag);
     current_context_ = &current_renderpass_context_->CurrentContext();
@@ -1380,7 +1379,7 @@ void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBuffer
     for (const auto& sync_op : recorded_cb_context.GetSyncOps()) {
         // we update the range to any include layout transition first use writes,
         // as they are stored along with the source scope (as effective barrier) when recorded
-        sync_op.sync_op->ReplayRecord(execution_context_, *current_context_, base_tag + sync_op.tag);
+        sync_op.sync_op->ReplayRecord(environment_, *current_context_, base_tag + sync_op.tag);
     }
 
     ImportRecordedAccessLog(recorded_cb_context);
@@ -1580,7 +1579,7 @@ void CommandBufferSubState::End() {
 
     // For threads that are dedicated to recording command buffers but do not submit themselves,
     // the end of recording is a logical point to update memory stats
-    access_context.GetExecutionContext().validator.stats.UpdateMemoryStats();
+    access_context.GetSyncState().stats.UpdateMemoryStats();
 }
 
 void CommandBufferSubState::Destroy() {
@@ -1907,7 +1906,7 @@ void CommandBufferSubState::RecordDecodeVideo(vvl::VideoSession& vs_state, const
         context.UpdateAccessState(*src_buffer, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, src_range, src_tag_ex);
     }
 
-    const vvl::DeviceState* device_state = access_context.GetExecutionContext().validator.device_state;
+    const vvl::DeviceState* device_state = access_context.GetSyncState().device_state;
     auto dst_resource = vvl::VideoPictureResource(*device_state, decode_info.dstPictureResource);
     if (dst_resource) {
         UpdateVideoAccessState(context, vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE, tag);
@@ -1941,7 +1940,7 @@ void CommandBufferSubState::RecordEncodeVideo(vvl::VideoSession& vs_state, const
         context.UpdateAccessState(*src_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, src_range, src_tag_ex);
     }
 
-    const vvl::DeviceState* device_state = access_context.GetExecutionContext().validator.device_state;
+    const vvl::DeviceState* device_state = access_context.GetSyncState().device_state;
     auto src_resource = vvl::VideoPictureResource(*device_state, encode_info.srcPictureResource);
     if (src_resource) {
         UpdateVideoAccessState(context, vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, tag);
@@ -2002,7 +2001,7 @@ void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& r
         return;  // [core validation check]: only primary command buffer can begin render pass
     }
 
-    const SyncValidator& validator = access_context.GetExecutionContext().validator;
+    const SyncValidator& validator = access_context.GetSyncState();
     auto rp_state = validator.Get<vvl::RenderPass>(render_pass_begin.renderPass);
     if (!rp_state) {
         return;
