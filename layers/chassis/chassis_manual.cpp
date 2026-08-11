@@ -93,7 +93,7 @@ void OutputLayerStatusInfo(vvl::DispatchInstance* context, const Location& loc) 
 
     std::ostringstream ss;
     const auto& settings = context->settings;
-    ss << "Current Validaiton Enabled:\n";
+    ss << "Current Validation Enabled:\n";
 
     // Match the order in vkconfig
     // The goal here is to not print ALL the settings, just which parts of validation are turned on
