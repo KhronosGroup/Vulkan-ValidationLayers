@@ -383,8 +383,8 @@ class AccessContext {
 
     HazardResult DetectSubpassTransitionHazard(const SubpassBarrier &subpass_barrier, const AttachmentViewGen &attach_view) const;
 
-    HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
-                                      const AccessContext &access_context) const;
+    HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange& tag_range,
+                                      const AccessContext& destination_context) const;
 
     HazardResult DetectVideoHazard(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
                                    SyncAccessIndex current_usage) const;

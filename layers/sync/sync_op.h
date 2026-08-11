@@ -215,34 +215,34 @@ class SyncOpEndRenderPass : public SyncOpBase {
 struct RenderPassReplayState {
     RenderPassReplayState(const RenderPassAccessContext* rp_context, const AccessContext& external_context,
                           VkQueueFlags queue_flags);
-    AccessContext& GetCurrentReplayContext();
-    const AccessContext& GetCurrentReplayContext() const;
+    AccessContext& GetCurrentDestinationContext();
+    const AccessContext& GetCurrentDestinationContext() const;
     const AccessContext& GetCurrentRecordedContext() const;
-    vvl::span<AccessContext> GetSubpassContexts();
-    vvl::span<const AccessContext> GetSubpassContexts() const;
 
     const RenderPassAccessContext* rp_context = nullptr;
     uint32_t current_subpass = 0;
 
     // Per-subpass contexts for replay. Unlike RenderPassAccessContext::subpass_contexts_ these hold
     // no recorded accesses (access maps are emtpy). All they store is the subpass dependencies
-    std::unique_ptr<AccessContext[]> subpass_contexts;
+    std::unique_ptr<AccessContext[]> destination_subpass_contexts;
 };
 
 struct ReplayState {
-    ReplayState(CommandBufferAccessContext& primary_cb_context, const CommandBufferAccessContext& recorded_context,
+    ReplayState(CommandBufferAccessContext& proxy_primary_cb_context, const CommandBufferAccessContext& recorded_cb_context,
                 ResourceUsageTag base_tag, const Location& cb_loc);
-    ReplayState(QueueBatchContext& batch_context, const CommandBufferAccessContext& recorded_context,
-                ResourceUsageTag base_tag, const Location& cb_loc);
+    ReplayState(QueueBatchContext& batch_context, const CommandBufferAccessContext& recorded_cb_context, ResourceUsageTag base_tag,
+                const Location& cb_loc);
 
     bool ValidateFirstUse();
     bool DetectFirstUseHazard(const ResourceUsageRange& first_use_range) const;
-    AccessContext& GetReplayContext();
-    const AccessContext& GetReplayContext() const;
+
+    AccessContext& GetCurrentDestinationContext();
+    const AccessContext& GetCurrentDestinationContext() const;
+    const AccessContext& GetCurrentRecordedContext() const;
 
     SyncEnvironment& env;
-    AccessContext& replay_context;
-    const CommandBufferAccessContext& recorded_context;
+    AccessContext& destination_context;
+    const CommandBufferAccessContext& recorded_cb_context;
     std::optional<RenderPassReplayState> rp_replay;
     const ResourceUsageTag base_tag;
     const Location& cb_loc;
