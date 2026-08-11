@@ -295,9 +295,9 @@ void AccessContext::ResolveAllSubpassDependencies() {
 void AccessContext::ResolveChildContexts(vvl::span<AccessContext> subpass_contexts) {
     assert(!finalized_);
 
-    for (AccessContext& context : subpass_contexts) {
-        ApplySubpassBarrierAction barrier_action(context.GetDstExternalSubpassBarrier());
-        context.ResolveAccessRange(kFullRange, barrier_action, *this);
+    for (AccessContext& access_context : subpass_contexts) {
+        ApplySubpassBarrierAction barrier_action(access_context.GetDstExternalSubpassBarrier());
+        access_context.ResolveAccessRange(kFullRange, barrier_action, *this);
     }
 }
 
@@ -607,8 +607,8 @@ void AccessContext::ImportAsyncContexts(const AccessContext& from) {
     async_.insert(async_.end(), from.async_.begin(), from.async_.end());
 }
 
-void AccessContext::AddAsyncContext(const AccessContext& context, ResourceUsageTag tag, QueueId queue_id) {
-    async_.emplace_back(context, tag, queue_id);
+void AccessContext::AddAsyncContext(const AccessContext& access_context, ResourceUsageTag tag, QueueId queue_id) {
+    async_.emplace_back(access_context, tag, queue_id);
 }
 
 void SortedFirstAccesses::Init(const AccessMap& finalized_access_map) {

@@ -33,56 +33,56 @@ class RenderPass;
 
 namespace syncval {
 
-class CommandBufferAccessContext;
+class CommandBufferContext;
 
 enum class AttachmentType { kColor, kDepth, kStencil };
 
 struct DynamicRenderingInfo {
     struct Attachment {
-        const vku::safe_VkRenderingAttachmentInfo &info;
+        const vku::safe_VkRenderingAttachmentInfo& info;
         std::shared_ptr<const vvl::ImageView> view;
         std::shared_ptr<const vvl::ImageView> resolve_view;
         ImageRangeGen view_gen;
         std::optional<ImageRangeGen> resolve_gen;
         AttachmentType type;
 
-        Attachment(const SyncValidator &state, const vku::safe_VkRenderingAttachmentInfo &info, const AttachmentType type_,
-                   const VkOffset3D &offset, const VkExtent3D &extent);
+        Attachment(const SyncValidator& state, const vku::safe_VkRenderingAttachmentInfo& info, const AttachmentType type_,
+                   const VkOffset3D& offset, const VkExtent3D& extent);
 
         ImageRangeGen GetRangeGen(uint32_t view_mask = 0) const;
 
         SyncAccessIndex GetLoadUsage() const;
         SyncAccessIndex GetStoreUsage() const;
         SyncOrdering GetOrdering() const;
-        Location GetLocation(const Location &loc, uint32_t index = 0) const;
-        bool IsWriteable(const LastBound &last_bound_state) const;
+        Location GetLocation(const Location& loc, uint32_t index = 0) const;
+        bool IsWriteable(const LastBound& last_bound_state) const;
         bool IsValid() const { return view.get(); }
     };
 
     // attachments store references to this info, so make sure this doesn't get moved around.
-    DynamicRenderingInfo(const DynamicRenderingInfo &) = delete;
-    DynamicRenderingInfo(DynamicRenderingInfo &&) = delete;
-    DynamicRenderingInfo &operator=(const DynamicRenderingInfo &) = delete;
-    DynamicRenderingInfo &operator=(DynamicRenderingInfo &&) = delete;
+    DynamicRenderingInfo(const DynamicRenderingInfo&) = delete;
+    DynamicRenderingInfo(DynamicRenderingInfo&&) = delete;
+    DynamicRenderingInfo& operator=(const DynamicRenderingInfo&) = delete;
+    DynamicRenderingInfo& operator=(DynamicRenderingInfo&&) = delete;
 
-    DynamicRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info);
+    DynamicRenderingInfo(const SyncValidator& state, const VkRenderingInfo& rendering_info);
 
-    const vvl::ImageView *GetClearAttachmentView(const VkClearAttachment &clear_attachment) const;
+    const vvl::ImageView* GetClearAttachmentView(const VkClearAttachment& clear_attachment) const;
 
     vku::safe_VkRenderingInfo info;
     std::vector<Attachment> attachments;  // All attachments (with internal typing)
 };
 
 struct BeginRenderingCmdState {
-    BeginRenderingCmdState(std::shared_ptr<const vvl::CommandBuffer> &&cb_state_) : cb_state(std::move(cb_state_)) {}
-    void AddRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info);
-    const DynamicRenderingInfo &GetRenderingInfo() const;
+    BeginRenderingCmdState(std::shared_ptr<const vvl::CommandBuffer>&& cb_state_) : cb_state(std::move(cb_state_)) {}
+    void AddRenderingInfo(const SyncValidator& state, const VkRenderingInfo& rendering_info);
+    const DynamicRenderingInfo& GetRenderingInfo() const;
     std::shared_ptr<const vvl::CommandBuffer> cb_state;
     std::unique_ptr<DynamicRenderingInfo> info;
 };
 
-std::unique_ptr<AccessContext[]> InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_state,
-                                                     const AccessContext &external_context);
+std::unique_ptr<AccessContext[]> InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass& rp_state,
+                                                     const AccessContext& external_context);
 
 using AttachmentViewGenVector = std::vector<AttachmentViewGen>;
 
@@ -96,58 +96,58 @@ class RenderPassAccessContext {
                             const std::vector<std::shared_ptr<const vvl::ImageView>>& attachment_views,
                             const AccessContext& external_context, uint32_t render_pass_instance_id);
 
-    static bool ValidateLayoutTransitions(const CommandBufferAccessContext& cb_context, const AccessContext& access_context,
+    static bool ValidateLayoutTransitions(const CommandBufferContext& cb_context, const AccessContext& access_context,
                                           const vvl::RenderPass& rp_state, uint32_t render_pass_instance_id, uint32_t subpass,
                                           uint32_t view_mask, const AttachmentViewGenVector& attachment_views, vvl::Func command);
 
-    static bool ValidateLoadOperation(const CommandBufferAccessContext& cb_context, const AccessContext& access_context,
+    static bool ValidateLoadOperation(const CommandBufferContext& cb_context, const AccessContext& access_context,
                                       const vvl::RenderPass& rp_state, uint32_t render_pass_instance_id, uint32_t subpass,
                                       uint32_t view_mask, const AttachmentViewGenVector& attachment_views, vvl::Func command);
 
-    bool ValidateStoreOperation(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
-    bool ValidateResolveOperations(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
+    bool ValidateStoreOperation(const CommandBufferContext& cb_context, vvl::Func command) const;
+    bool ValidateResolveOperations(const CommandBufferContext& cb_context, vvl::Func command) const;
 
-    static void UpdateAttachmentResolveAccess(const vvl::RenderPass &rp_state, const AttachmentViewGenVector &attachment_views,
+    static void UpdateAttachmentResolveAccess(const vvl::RenderPass& rp_state, const AttachmentViewGenVector& attachment_views,
                                               uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
-                                              const ResourceUsageTag tag, AccessContext &access_context);
+                                              const ResourceUsageTag tag, AccessContext& access_context);
 
-    static void UpdateAttachmentStoreAccess(const vvl::RenderPass &rp_state, const AttachmentViewGenVector &attachment_views,
+    static void UpdateAttachmentStoreAccess(const vvl::RenderPass& rp_state, const AttachmentViewGenVector& attachment_views,
                                             uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
-                                            const ResourceUsageTag tag, AccessContext &access_context);
+                                            const ResourceUsageTag tag, AccessContext& access_context);
 
-    static void RecordLayoutTransitions(const vvl::RenderPass &rp_state, uint32_t subpass,
-                                        const AttachmentViewGenVector &attachment_views, const ResourceUsageTag tag,
-                                        AccessContext &access_context);
+    static void RecordLayoutTransitions(const vvl::RenderPass& rp_state, uint32_t subpass,
+                                        const AttachmentViewGenVector& attachment_views, const ResourceUsageTag tag,
+                                        AccessContext& access_context);
 
-    bool ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
-    void RecordDrawSubpassAttachment(const vvl::CommandBuffer &cmd_buffer, ResourceUsageTag tag);
+    bool ValidateDrawSubpassAttachment(const CommandBufferContext& cb_context, vvl::Func command) const;
+    void RecordDrawSubpassAttachment(const vvl::CommandBuffer& cmd_buffer, ResourceUsageTag tag);
 
-    const vvl::ImageView *GetClearAttachmentView(const VkClearAttachment &clear_attachment) const;
+    const vvl::ImageView* GetClearAttachmentView(const VkClearAttachment& clear_attachment) const;
 
-    bool ValidateNextSubpass(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
-    bool ValidateEndRenderPass(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
-    bool ValidateFinalSubpassLayoutTransitions(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
+    bool ValidateNextSubpass(const CommandBufferContext& cb_context, vvl::Func command) const;
+    bool ValidateEndRenderPass(const CommandBufferContext& cb_context, vvl::Func command) const;
+    bool ValidateFinalSubpassLayoutTransitions(const CommandBufferContext& cb_context, vvl::Func command) const;
 
     void RecordLayoutTransitions(ResourceUsageTag tag);
     void RecordLoadOperations(ResourceUsageTag tag);
     void RecordBeginRenderPass(ResourceUsageTag tag, ResourceUsageTag load_tag);
     void RecordNextSubpass(ResourceUsageTag resolve_tag, ResourceUsageTag store_tag, ResourceUsageTag transition_tag,
                            ResourceUsageTag load_tag);
-    void RecordEndRenderPass(AccessContext *external_context, ResourceUsageTag store_tag, ResourceUsageTag transition_tag);
+    void RecordEndRenderPass(AccessContext* external_context, ResourceUsageTag store_tag, ResourceUsageTag transition_tag);
 
     uint32_t GetCurrentSubpass() const { return current_subpass_; }
-    AccessContext &CurrentContext();
-    const AccessContext &CurrentContext() const;
+    AccessContext& CurrentContext();
+    const AccessContext& CurrentContext() const;
     vvl::span<const AccessContext> GetSubpassContexts() const;
     vvl::span<AccessContext> GetSubpassContexts();
-    const vvl::RenderPass *GetRenderPassState() const { return rp_state_; }
-    AccessContext *CreateStoreResolveProxy() const;
+    const vvl::RenderPass* GetRenderPassState() const { return rp_state_; }
+    AccessContext* CreateStoreResolveProxy() const;
 
-private:
+  private:
     AttachmentAccess GetAttachmentAccess(SyncOrdering ordering, AttachmentAccessType type = AttachmentAccessType::Access) const;
 
   private:
-    const vvl::RenderPass *rp_state_;
+    const vvl::RenderPass* rp_state_;
     const AttachmentViewGenVector attachment_views_;
     const AccessContext* external_context_;
     const std::unique_ptr<AccessContext[]> subpass_contexts_;

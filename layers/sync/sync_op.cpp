@@ -162,15 +162,15 @@ bool SyncOpEndRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag r
 
 void SyncOpEndRenderPass::ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const {}
 
-ReplayState::ReplayState(CommandBufferAccessContext& proxy_primary_cb_context,
-                         const CommandBufferAccessContext& recorded_cb_context, ResourceUsageTag base_tag, const Location& cb_loc)
+ReplayState::ReplayState(CommandBufferContext& proxy_primary_cb_context, const CommandBufferContext& recorded_cb_context,
+                         ResourceUsageTag base_tag, const Location& cb_loc)
     : env(proxy_primary_cb_context.GetSyncEnvironment()),
       destination_context(proxy_primary_cb_context.GetCbAccessContext()),
       recorded_cb_context(recorded_cb_context),
       base_tag(base_tag),
       cb_loc(cb_loc) {}
 
-ReplayState::ReplayState(QueueBatchContext& batch_context, const CommandBufferAccessContext& recorded_cb_context,
+ReplayState::ReplayState(QueueBatchContext& batch_context, const CommandBufferContext& recorded_cb_context,
                          ResourceUsageTag base_tag, const Location& cb_loc)
     : env(batch_context.GetSyncEnvironment()),
       destination_context(batch_context.GetAccessContext()),

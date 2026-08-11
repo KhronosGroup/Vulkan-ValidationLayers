@@ -28,12 +28,12 @@ namespace syncval {
 
 class ValidateResolveAction {
   public:
-    ValidateResolveAction(VkRenderPass render_pass, uint32_t subpass, uint32_t view_mask, const AccessContext& context,
-                          const CommandBufferAccessContext& cb_context, vvl::Func command)
+    ValidateResolveAction(VkRenderPass render_pass, uint32_t subpass, uint32_t view_mask, const AccessContext& access_context,
+                          const CommandBufferContext& cb_context, vvl::Func command)
         : render_pass_(render_pass),
           subpass_(subpass),
           view_mask_(view_mask),
-          context_(context),
+          context_(access_context),
           cb_context_(cb_context),
           command_(command),
           skip_(false) {}
@@ -66,7 +66,7 @@ class ValidateResolveAction {
     const uint32_t subpass_;
     const uint32_t view_mask_;
     const AccessContext& context_;
-    const CommandBufferAccessContext& cb_context_;
+    const CommandBufferContext& cb_context_;
     vvl::Func command_;
     bool skip_;
 };
@@ -163,9 +163,9 @@ static AccessContext* CreateStoreResolveProxyContext(const AccessContext& contex
 }
 
 // Layout transitions are handled as if the were occuring in the beginning of the next subpass
-bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAccessContext& cb_context,
-                                                        const AccessContext& access_context, const vvl::RenderPass& rp_state,
-                                                        uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
+bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferContext& cb_context, const AccessContext& access_context,
+                                                        const vvl::RenderPass& rp_state, uint32_t render_pass_instance_id,
+                                                        uint32_t subpass, uint32_t view_mask,
                                                         const AttachmentViewGenVector& attachment_views, vvl::Func command) {
     bool skip = false;
     // As validation methods are const and precede the record/update phase, for any tranistions from the immediately
@@ -229,9 +229,9 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAcces
     return skip;
 }
 
-bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessContext& cb_context,
-                                                    const AccessContext& access_context, const vvl::RenderPass& rp_state,
-                                                    uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
+bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferContext& cb_context, const AccessContext& access_context,
+                                                    const vvl::RenderPass& rp_state, uint32_t render_pass_instance_id,
+                                                    uint32_t subpass, uint32_t view_mask,
                                                     const AttachmentViewGenVector& attachment_views, vvl::Func command) {
     bool skip = false;
 
@@ -315,7 +315,7 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
 // because of the ordering guarantees w.r.t. sample access and that the resolve validation hasn't altered the state, because
 // store is part of the same Next/End operation.
 // The latter is handled in layout transistion validation directly
-bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessContext& cb_context, vvl::Func command) const {
+bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferContext& cb_context, vvl::Func command) const {
     bool skip = false;
 
     const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kRaster, AttachmentAccessType::StoreOp);
@@ -493,7 +493,7 @@ void ResolveOperation(Action& action, const vvl::RenderPass& rp_state, const Att
     }
 }
 
-bool RenderPassAccessContext::ValidateResolveOperations(const CommandBufferAccessContext& cb_context, vvl::Func command) const {
+bool RenderPassAccessContext::ValidateResolveOperations(const CommandBufferContext& cb_context, vvl::Func command) const {
     const uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
     ValidateResolveAction validate_action(rp_state_->VkHandle(), current_subpass_, view_mask, CurrentContext(), cb_context,
                                           command);
@@ -571,7 +571,7 @@ static uint32_t GetSubpassDepthStencilAttachmentIndex(const vku::safe_VkPipeline
     return (pipe_ds_ci && depth_stencil_ref) ? depth_stencil_ref->attachment : VK_ATTACHMENT_UNUSED;
 }
 
-bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferAccessContext& cb_context, vvl::Func command) const {
+bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferContext& cb_context, vvl::Func command) const {
     bool skip = false;
     const vvl::CommandBuffer& cmd_buffer = cb_context.GetCBState();
     const auto& last_bound_state = cmd_buffer.GetLastBoundGraphics();
@@ -729,7 +729,7 @@ const vvl::ImageView* RenderPassAccessContext::GetClearAttachmentView(const VkCl
     return attachment_views_[attachment_index].GetViewState();
 }
 
-bool RenderPassAccessContext::ValidateNextSubpass(const CommandBufferAccessContext& cb_context, vvl::Func command) const {
+bool RenderPassAccessContext::ValidateNextSubpass(const CommandBufferContext& cb_context, vvl::Func command) const {
     // PHASE1 TODO: Add Validate Preserve attachments
     bool skip = false;
     skip |= ValidateResolveOperations(cb_context, command);
@@ -755,7 +755,7 @@ bool RenderPassAccessContext::ValidateNextSubpass(const CommandBufferAccessConte
     }
     return skip;
 }
-bool RenderPassAccessContext::ValidateEndRenderPass(const CommandBufferAccessContext& cb_context, vvl::Func command) const {
+bool RenderPassAccessContext::ValidateEndRenderPass(const CommandBufferContext& cb_context, vvl::Func command) const {
     // PHASE1 TODO: Validate Preserve
     bool skip = false;
     skip |= ValidateResolveOperations(cb_context, command);
@@ -769,7 +769,7 @@ AccessContext* RenderPassAccessContext::CreateStoreResolveProxy() const {
                                           rp_state_->create_info.pSubpasses[current_subpass_].viewMask, attachment_views_);
 }
 
-bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const CommandBufferAccessContext& cb_context,
+bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const CommandBufferContext& cb_context,
                                                                     vvl::Func command) const {
     bool skip = false;
 

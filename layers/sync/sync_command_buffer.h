@@ -169,7 +169,7 @@ struct SyncEnvironment {
     const ResourceUsageInfoProvider& usage_info_provider;
 };
 
-class CommandBufferAccessContext final : public ResourceUsageInfoProvider, public DebugNameProvider {
+class CommandBufferContext final : public ResourceUsageInfoProvider, public DebugNameProvider {
   public:
     struct SyncOpEntry {
         ResourceUsageTag tag;
@@ -178,13 +178,11 @@ class CommandBufferAccessContext final : public ResourceUsageInfoProvider, publi
         SyncOpEntry() = default;
         SyncOpEntry(const SyncOpEntry &other) = default;
     };
-
-    CommandBufferAccessContext(SyncValidator &sync_validator, vvl::CommandBuffer *cb_state);
-
     struct AsProxyContext {};
-    CommandBufferAccessContext(const CommandBufferAccessContext &real_context, AsProxyContext dummy);
 
-    ~CommandBufferAccessContext();
+    CommandBufferContext(SyncValidator& sync_validator, vvl::CommandBuffer* cb_state);
+    CommandBufferContext(const CommandBufferContext& real_context, AsProxyContext dummy);
+    ~CommandBufferContext();
 
     // NOTE: because this class is encapsulated in syncval::CommandBuffer, it isn't safe
     // to use shared_from_this from the constructor.
@@ -243,7 +241,7 @@ class CommandBufferAccessContext final : public ResourceUsageInfoProvider, publi
     ResourceUsageTag RecordEndRenderPass(vvl::Func command);
     void RecordDestroyEvent(vvl::Event *event_state);
 
-    void RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_context);
+    void RecordExecutedCommandBuffer(const CommandBufferContext& recorded_context);
     void ResolveExecutedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 
     size_t GetTagCount() const { return access_log_->size(); }
@@ -268,7 +266,7 @@ class CommandBufferAccessContext final : public ResourceUsageInfoProvider, publi
 
     std::shared_ptr<AccessLog> GetAccessLogShared() const { return access_log_; }
     std::shared_ptr<CommandBufferSet> GetCBReferencesShared() const { return cbs_referenced_; }
-    void ImportRecordedAccessLog(const CommandBufferAccessContext &cb_context);
+    void ImportRecordedAccessLog(const CommandBufferContext& cb_context);
     const std::vector<SyncOpEntry> &GetSyncOps() const { return sync_ops_; };
 
     // DebugNameProvider
@@ -279,7 +277,7 @@ class CommandBufferAccessContext final : public ResourceUsageInfoProvider, publi
     void UpdateStats(AccessStats &access_stats) const;
 
   private:
-    CommandBufferAccessContext(const SyncValidator& sync_validator, VkQueueFlags queue_flags, VulkanTypedHandle handle);
+    CommandBufferContext(const SyncValidator& sync_validator, VkQueueFlags queue_flags, VulkanTypedHandle handle);
 
     uint32_t AddHandle(const VulkanTypedHandle &typed_handle, uint32_t index);
     AttachmentAccess GetAttachmentAccess(SyncOrdering ordering, AttachmentAccessType type = AttachmentAccessType::Access) const;
@@ -302,7 +300,7 @@ class CommandBufferAccessContext final : public ResourceUsageInfoProvider, publi
     const SyncValidator& sync_state_;
     const ErrorMessages& error_messages_;
 
-    // Note: since every CommandBufferAccessContext is encapsulated in its CommandBuffer object,
+    // Note: since every CommandBufferContext is encapsulated in its CommandBuffer object,
     // a reference count is not needed here.
     vvl::CommandBuffer *cb_state_ = nullptr;
 
@@ -348,7 +346,7 @@ class CommandBufferAccessContext final : public ResourceUsageInfoProvider, publi
 
 class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
-    CommandBufferAccessContext access_context;
+    CommandBufferContext cb_context;
 
     CommandBufferSubState(SyncValidator &dev, vvl::CommandBuffer &cb);
 
@@ -412,19 +410,18 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordExecuteCommand(vvl::CommandBuffer &secondary_command_buffer, uint32_t cmd_index, const Location &loc) override;
 };
 
-static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {
-    return *static_cast<CommandBufferSubState *>(cb.SubState(LayerObjectTypeSyncValidation));
+static inline CommandBufferSubState& SubState(vvl::CommandBuffer& cb) {
+    return *static_cast<CommandBufferSubState*>(cb.SubState(LayerObjectTypeSyncValidation));
 }
-static inline const CommandBufferSubState &SubState(const vvl::CommandBuffer &cb) {
-    return *static_cast<const CommandBufferSubState *>(cb.SubState(LayerObjectTypeSyncValidation));
+static inline const CommandBufferSubState& SubState(const vvl::CommandBuffer& cb) {
+    return *static_cast<const CommandBufferSubState*>(cb.SubState(LayerObjectTypeSyncValidation));
 }
 
-static inline CommandBufferAccessContext& GetAccessContext(vvl::CommandBuffer& cb) {
-    return static_cast<CommandBufferSubState*>(cb.SubState(LayerObjectTypeSyncValidation))->access_context;
+static inline CommandBufferContext& GetCommandBufferContext(vvl::CommandBuffer& cb) {
+    return static_cast<CommandBufferSubState*>(cb.SubState(LayerObjectTypeSyncValidation))->cb_context;
 }
-static inline const CommandBufferAccessContext& GetAccessContext(const vvl::CommandBuffer& cb) {
-    return static_cast<const CommandBufferSubState*>(cb.SubState(LayerObjectTypeSyncValidation))->access_context;
+static inline const CommandBufferContext& GetCommandBufferContext(const vvl::CommandBuffer& cb) {
+    return static_cast<const CommandBufferSubState*>(cb.SubState(LayerObjectTypeSyncValidation))->cb_context;
 }
 
 }  // namespace syncval
-

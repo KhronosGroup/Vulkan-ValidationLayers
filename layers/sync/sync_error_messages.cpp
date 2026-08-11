@@ -45,7 +45,7 @@ std::string ErrorMessages::Error(const SyncEnvironment& env, const HazardResult&
     return message;
 }
 
-std::string ErrorMessages::BufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+std::string ErrorMessages::BufferError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
                                        const std::string& resource_description, const AccessRange range,
                                        AdditionalMessageInfo additional_info) const {
     std::ostringstream ss;
@@ -58,7 +58,7 @@ std::string ErrorMessages::BufferError(const HazardResult& hazard, const Command
     return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "BufferError", additional_info);
 }
 
-std::string ErrorMessages::BufferCopyError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::BufferCopyError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                            const vvl::Func command, const std::string& resource_description, uint32_t region_index,
                                            AccessRange range) const {
     AdditionalMessageInfo additional_info;
@@ -74,7 +74,7 @@ std::string ErrorMessages::BufferCopyError(const HazardResult& hazard, const Com
     return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "BufferCopyError", additional_info);
 }
 
-std::string ErrorMessages::AccelerationStructureError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::AccelerationStructureError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                                       const vvl::Func command, const std::string& resource_description,
                                                       const AccessRange range, VkAccelerationStructureKHR as,
                                                       const Location& as_location) const {
@@ -97,7 +97,7 @@ std::string ErrorMessages::AccelerationStructureError(const HazardResult& hazard
                  additional_info);
 }
 
-std::string ErrorMessages::ImageCopyResolveBlitError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::ImageCopyResolveBlitError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                                      vvl::Func command, const std::string& resource_description,
                                                      uint32_t region_index, const VkOffset3D& offset, const VkExtent3D& extent,
                                                      const VkImageSubresourceLayers& subresource) const {
@@ -128,9 +128,8 @@ std::string ErrorMessages::ImageCopyResolveBlitError(const HazardResult& hazard,
     return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, message_type, additional_info);
 }
 
-std::string ErrorMessages::ImageClearError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                           vvl::Func command, const std::string& resource_description,
-                                           uint32_t subresource_range_index,
+std::string ErrorMessages::ImageClearError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
+                                           const std::string& resource_description, uint32_t subresource_range_index,
                                            const VkImageSubresourceRange& subresource_range) const {
     std::ostringstream ss;
     ss << "\nImage clear subresource range " << subresource_range_index << ": {\n";
@@ -166,7 +165,7 @@ static void PrepareCommonDescriptorMessage(Logger& logger, const vvl::Pipeline& 
     ss << ", " << logger.FormatHandle(pipeline);
 }
 
-std::string ErrorMessages::BufferDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::BufferDescriptorError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                                  vvl::Func command, const std::string& resource_description,
                                                  const vvl::Pipeline& pipeline, uint32_t set_number,
                                                  const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
@@ -182,7 +181,7 @@ std::string ErrorMessages::BufferDescriptorError(const HazardResult& hazard, con
     return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "BufferDescriptorError", additional_info);
 }
 
-std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                                 vvl::Func command, const std::string& resource_description,
                                                 const vvl::Pipeline& pipeline, uint32_t set_number,
                                                 const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
@@ -200,10 +199,9 @@ std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, cons
 }
 
 std::string ErrorMessages::AccelerationStructureDescriptorError(
-    const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
-    const std::string& resource_description, const vvl::Pipeline& pipeline, uint32_t set_number,
-    const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type, uint32_t descriptor_binding,
-    uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage) const {
+    const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command, const std::string& resource_description,
+    const vvl::Pipeline& pipeline, uint32_t set_number, const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
+    uint32_t descriptor_binding, uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage) const {
     AdditionalMessageInfo additional_info;
     additional_info.access_action = "traces rays against";
 
@@ -217,7 +215,7 @@ std::string ErrorMessages::AccelerationStructureDescriptorError(
                  additional_info);
 }
 
-std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                                 vvl::Func command, const std::string& resource_description,
                                                 VkImageAspectFlags clear_aspects, uint32_t clear_rect_index,
                                                 const VkClearRect& clear_rect) const {
@@ -237,7 +235,7 @@ std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, cons
     return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "ClearAttachmentError", additional_info);
 }
 
-std::string ErrorMessages::RenderPassAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::RenderPassAttachmentError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                                      vvl::Func command, const std::string& resource_description) const {
     return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "RenderPassAttachmentError");
 }
@@ -268,7 +266,7 @@ static void CheckForLoadOpDontCareInsight(VkAttachmentLoadOp load_op, bool is_co
     }
 }
 
-std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                                vvl::Func command, const std::string& resource_description,
                                                VkAttachmentLoadOp load_op) const {
     AdditionalMessageInfo additional_info;
@@ -278,7 +276,7 @@ std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard, const
     return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "BeginRenderingError", additional_info);
 }
 
-std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                                     vvl::Func command, const std::string& resource_description,
                                                     VkResolveModeFlagBits resolve_mode, bool resolve_write) const {
     AdditionalMessageInfo additional_info;
@@ -289,7 +287,7 @@ std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, 
                  additional_info);
 }
 
-std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                                   vvl::Func command, const std::string& resource_description,
                                                   VkAttachmentStoreOp store_op) const {
     AdditionalMessageInfo additional_info;
@@ -298,7 +296,7 @@ std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, co
     return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "EndRenderingStoreError", additional_info);
 }
 
-std::string ErrorMessages::RenderPassLoadOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::RenderPassLoadOpError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                                  vvl::Func command, const std::string& resource_description, uint32_t subpass,
                                                  uint32_t attachment, VkAttachmentLoadOp load_op, bool is_color) const {
     AdditionalMessageInfo additional_info;
@@ -310,7 +308,7 @@ std::string ErrorMessages::RenderPassLoadOpError(const HazardResult& hazard, con
 }
 
 std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const HazardResult& hazard,
-                                                                   const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                                                   const CommandBufferContext& cb_context, vvl::Func command,
                                                                    const std::string& resource_description,
                                                                    VkAttachmentLoadOp load_op, bool is_color) const {
     AdditionalMessageInfo additional_info;
@@ -323,12 +321,12 @@ std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const HazardR
                  additional_info);
 }
 
-std::string ErrorMessages::RenderPassResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::RenderPassResolveError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                                   vvl::Func command, const std::string& resource_description) const {
     return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "RenderPassResolveError");
 }
 
-std::string ErrorMessages::RenderPassStoreOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::RenderPassStoreOpError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                                   vvl::Func command, const std::string& resource_description,
                                                   VkAttachmentStoreOp store_op) const {
     AdditionalMessageInfo additional_info;
@@ -337,7 +335,7 @@ std::string ErrorMessages::RenderPassStoreOpError(const HazardResult& hazard, co
     return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "RenderPassStoreOpError", additional_info);
 }
 
-std::string ErrorMessages::RenderPassLayoutTransitionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::RenderPassLayoutTransitionError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                                            vvl::Func command, const std::string& resource_description,
                                                            VkImageLayout old_layout, VkImageLayout new_layout) const {
     const char* old_layout_str = string_VkImageLayout(old_layout);
@@ -352,7 +350,7 @@ std::string ErrorMessages::RenderPassLayoutTransitionError(const HazardResult& h
 }
 
 std::string ErrorMessages::RenderPassLayoutTransitionVsResolveError(const HazardResult& hazard,
-                                                                    const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                                                    const CommandBufferContext& cb_context, vvl::Func command,
                                                                     const std::string& resource_description,
                                                                     VkImageLayout old_layout, VkImageLayout new_layout,
                                                                     uint32_t resolve_subpass) const {
@@ -371,10 +369,9 @@ std::string ErrorMessages::RenderPassLayoutTransitionVsResolveError(const Hazard
                  additional_info);
 }
 
-std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const HazardResult& hazard,
-                                                                const CommandBufferAccessContext& cb_context, vvl::Func command,
-                                                                const std::string& resource_description, VkImageLayout old_layout,
-                                                                VkImageLayout new_layout) const {
+std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const HazardResult& hazard, const CommandBufferContext& cb_context,
+                                                                vvl::Func command, const std::string& resource_description,
+                                                                VkImageLayout old_layout, VkImageLayout new_layout) const {
     const char* old_layout_str = string_VkImageLayout(old_layout);
     const char* new_layout_str = string_VkImageLayout(new_layout);
 
@@ -388,12 +385,9 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const HazardResu
                  additional_info);
 }
 
-std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard,
-                                                                                const CommandBufferAccessContext& cb_context,
-                                                                                vvl::Func command,
-                                                                                const std::string& resource_description,
-                                                                                VkImageLayout old_layout, VkImageLayout new_layout,
-                                                                                uint32_t store_resolve_subpass) const {
+std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(
+    const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command, const std::string& resource_description,
+    VkImageLayout old_layout, VkImageLayout new_layout, uint32_t store_resolve_subpass) const {
     const char* old_layout_str = string_VkImageLayout(old_layout);
     const char* new_layout_str = string_VkImageLayout(new_layout);
 
@@ -428,7 +422,7 @@ std::string ErrorMessages::ImageBarrierError(const SyncEnvironment& env, const H
 }
 
 std::string ErrorMessages::FirstUseError(const SyncEnvironment& env, const HazardResult& hazard,
-                                         const CommandBufferAccessContext& recorded_context, uint32_t command_buffer_index) const {
+                                         const CommandBufferContext& recorded_context, uint32_t command_buffer_index) const {
     const ResourceUsageInfo prior_usage_info = env.usage_info_provider.GetResourceUsageInfo(hazard.TagEx());
     const ResourceUsageInfo recorded_usage_info = recorded_context.GetResourceUsageInfo(hazard.RecordedAccess()->TagEx());
 
@@ -485,7 +479,7 @@ std::string ErrorMessages::PresentError(const HazardResult& hazard, const QueueB
     return Error(batch_context.GetSyncEnvironment(), hazard, command, resource_description, "PresentError", additional_info);
 }
 
-std::string ErrorMessages::VideoError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+std::string ErrorMessages::VideoError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
                                       const std::string& resource_description) const {
     return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "VideoError");
 }

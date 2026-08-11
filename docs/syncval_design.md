@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2025 LunarG, Inc. -->
+<!-- Copyright 2015-2026 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -543,7 +543,7 @@ Implements:
 *   Subpass dependency graph traversal for state lookup and resolution operations (including support  for RenderPass specific and Hazard detection operations)
 *   Range map operations to split (and potentially combine) ResourceAccessState records, to ensure state changes only impact the correct portion of the address space.
 
-#### CommandBufferAccessContext
+#### CommandBufferContext
 
 container for all access contexts for a specific command buffer, and state reflecting the current context.
 
@@ -578,7 +578,7 @@ RenderPass specific hazard check and state update operations
 
 Contains the access and event context information for a given queue submission batch.  This includes a full copy of all accesses from earlier queue batches.  "Earlier" includes the previous batches in submission order on the same queue and batches corresponding to Semaphore wait operations.  To minimize memory footprint, only two groups of contexts are retained. The first contains the access and  event context for a given queue as of its most recent submission operation. The second group are the QueueBatchContext corresponding to the state of a queue with a signaled semaphore or fence operation which has not yet been awaited.  Batches that have neither unresolved semaphore or fence operations associated, nor are the most recently submitted, may have QueueBatchContext with lifespans of only the submit entry point call.
 
-Accesses within a QueueBatchContext are tagged with "global" (at device scope) ResourceUsageTag id's, which are atomically allocated when the batch context is created. These tags are unique and monotonically increasing across all queues for a given VkDevice. While CommandBufferAccessContext contains the access usage records for all commands and synchronization operations, the QueueBatchContext tagging information references a global usage record store.  *Note: Clean up of the global usage record store will require traversing the access contexts of the queue batch contexts to find and eliminate unreferenced usage records.  This will need to be assessed as to priority relative to other apparent memory leaks in the maintenance of unresolved/unknown signal and event states.*
+Accesses within a QueueBatchContext are tagged with "global" (at device scope) ResourceUsageTag id's, which are atomically allocated when the batch context is created. These tags are unique and monotonically increasing across all queues for a given VkDevice. While CommandBufferContext contains the access usage records for all commands and synchronization operations, the QueueBatchContext tagging information references a global usage record store.  *Note: Clean up of the global usage record store will require traversing the access contexts of the queue batch contexts to find and eliminate unreferenced usage records.  This will need to be assessed as to priority relative to other apparent memory leaks in the maintenance of unresolved/unknown signal and event states.*
 
 
 ### Range Based Operations

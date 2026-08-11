@@ -122,8 +122,8 @@ void AccessStats::Update(SyncValidator& validator) {
     subpass_access_stats = {};
 
     validator.device_state->ForEachShared<vvl::CommandBuffer>([this](std::shared_ptr<vvl::CommandBuffer> cb) {
-        const CommandBufferAccessContext& cb_access_context = GetAccessContext(*cb);
-        cb_access_context.UpdateStats(*this);
+        const CommandBufferContext& cb_context = GetCommandBufferContext(*cb);
+        cb_context.UpdateStats(*this);
     });
     for (const auto& batch : validator.GetAllQueueBatchContexts()) {
         const AccessContext& access_context = batch->GetAccessContext();
@@ -219,7 +219,7 @@ std::string Stats::CreateReport() {
     ss << "-----------------------\n";
     ss << "Common stats                    count       max_count\n";
     ss << "-----------------------\n";
-    print_common_stats("CommandBufferAccessContext", command_buffer_contexts);
+    print_common_stats("CommandBufferContext", command_buffer_contexts);
     print_common_stats("QueueBatchContext", queue_batch_contexts);
     print_common_stats("Timeline signal", timeline_signals);
     print_common_stats("Unresolved batch", unresolved_batches);
