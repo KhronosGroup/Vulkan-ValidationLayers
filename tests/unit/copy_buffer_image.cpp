@@ -3106,6 +3106,32 @@ TEST_F(NegativeCopyBufferImage, CompletelyOverlappingBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeCopyBufferImage, OverlapDstBuffer) {
+    RETURN_IF_SKIP(Init());
+
+    VkBufferCopy copy_infos[3];
+    copy_infos[0].srcOffset = 0;
+    copy_infos[0].dstOffset = 0;
+    copy_infos[0].size = 8;
+    copy_infos[1].srcOffset = 8;
+    copy_infos[1].dstOffset = 16;
+    copy_infos[1].size = 8;
+    copy_infos[2].srcOffset = 16;
+    copy_infos[2].dstOffset = 8;
+    copy_infos[2].size = 16;
+
+    vkt::Buffer src_buffer(*m_device, 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer dst_buffer(*m_device, 64, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBuffer-pRegions-12482");
+    vk::CmdCopyBuffer(m_command_buffer, src_buffer, dst_buffer, 3, copy_infos);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeCopyBufferImage, InterleavedRegions) {
     TEST_DESCRIPTION("Test copying between interleaved source and destination regions.");
     RETURN_IF_SKIP(Init());

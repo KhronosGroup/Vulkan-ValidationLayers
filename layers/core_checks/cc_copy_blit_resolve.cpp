@@ -794,14 +794,14 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer commandBuffer, cons
     const auto* dst_binding = dst_buffer_state.Binding();
 
     const bool are_buffers_sparse = src_buffer_state.sparse || dst_buffer_state.sparse;
-    const bool validate_no_memory_overlaps = !are_buffers_sparse && (regionCount > 0) && src_binding && dst_binding &&
-                                             (src_binding->memory_state == dst_binding->memory_state);
+    const bool validate_src_dst_overlaps = !are_buffers_sparse && (regionCount > 0) && src_binding && dst_binding &&
+                                           (src_binding->memory_state == dst_binding->memory_state);
 
     using MemoryRange = vvl::BindableMemoryTracker::BufferRange;
 
     std::vector<MemoryRange> src_memory_ranges;
     std::vector<MemoryRange> dst_memory_ranges;
-    if (validate_no_memory_overlaps) {
+    if (validate_src_dst_overlaps) {
         src_memory_ranges.reserve(regionCount);
         dst_memory_ranges.reserve(regionCount);
     }
@@ -850,9 +850,28 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer commandBuffer, cons
             }
         }
 
-        // The union of the source regions, and the union of the destination regions, must not overlap in memory
-        if (validate_no_memory_overlaps) {
-            // Sort copy ranges
+        // Validate Dst vs Dst overlap
+        if (dst_binding) {
+            MemoryRange dst_buffer_memory_range(dst_binding->memory_offset + region.dstOffset,
+                                                dst_binding->memory_offset + region.dstOffset + region.size);
+            for (uint32_t j = i + 1; j < regionCount; ++j) {
+                const auto& other_region = pRegions[j];
+                MemoryRange other_region_range(dst_binding->memory_offset + other_region.dstOffset,
+                                               dst_binding->memory_offset + other_region.dstOffset + other_region.size);
+                if (dst_buffer_memory_range.intersects(other_region_range)) {
+                    const LogObjectList objlist(commandBuffer, dst_binding->memory_state->Handle(), dst_buffer_state.Handle());
+                    const char* vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-12482" : "VUID-vkCmdCopyBuffer-pRegions-12482";
+                    skip |= LogError(vuid, objlist, region_loc,
+                                     "destination buffer range %s overlaps with pRegions[%" PRIu32
+                                     "] destination buffer range %s\nThis will cause a write-after-write memory hazard.",
+                                     vvl::string_range(dst_buffer_memory_range).c_str(), j,
+                                     vvl::string_range(other_region_range).c_str());
+                }
+            }
+        }
+
+        // Sort copy ranges to validate src vs dst overlap
+        if (validate_src_dst_overlaps) {
             {
                 MemoryRange src_buffer_memory_range(src_binding->memory_offset + region.srcOffset,
                                                     src_binding->memory_offset + region.srcOffset + region.size);
@@ -869,7 +888,7 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer commandBuffer, cons
         }
     }
 
-    if (validate_no_memory_overlaps) {
+    if (validate_src_dst_overlaps) {
         // Memory ranges are sorted, so looking for overlaps can be done in linear time
         auto src_ranges_it = src_memory_ranges.cbegin();
         auto dst_ranges_it = dst_memory_ranges.cbegin();
