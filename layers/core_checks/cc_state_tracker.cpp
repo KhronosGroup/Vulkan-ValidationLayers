@@ -1440,4 +1440,15 @@ LogObjectList RenderingAttachment::GetObjectList() const {
     return objlist;
 }
 
+LogObjectList RenderingAttachment::GetObjectList(const core::RenderingAttachment& other_attachment) const {
+    LogObjectList objlist = GetObjectList();
+    if (other_attachment.image_view_state) {
+        objlist.add(other_attachment.image_view_state->Handle(), other_attachment.image_view_state->image_state->Handle());
+    }
+    if (other_attachment.resolve_view_state) {
+        objlist.add(other_attachment.resolve_view_state->Handle(), other_attachment.resolve_view_state->image_state->Handle());
+    }
+    return objlist;
+}
+
 }  // namespace core

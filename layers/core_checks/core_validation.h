@@ -1729,10 +1729,12 @@ class CoreChecks : public vvl::DeviceProxy {
                                                                    const Location& inheritance_loc) const;
     bool ValidateRenderingInfoAttachment(const vvl::ImageView& image_view_state, const VkRenderingInfo& rendering_info,
                                          const LogObjectList& objlist, const Location& attachment_loc) const;
-    bool ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
-                                                  const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
-                                                   const Location& rendering_info_loc) const;
+    bool ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer commandBuffer,
+                                                  const VkRenderingFragmentDensityMapAttachmentInfoEXT& fdm_attachment_info,
+                                                  const VkRenderingInfo& rendering_info, const Location& rendering_info_loc) const;
+    bool ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer commandBuffer,
+                                                   const VkRenderingFragmentShadingRateAttachmentInfoKHR& fsr_attachment_info,
+                                                   const VkRenderingInfo& rendering_info, const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingFragmentShadingRateRenderArea(
         VkCommandBuffer commandBuffer, const vvl::ImageView& view_state,
         const VkRenderingFragmentShadingRateAttachmentInfoKHR& fsr_attachment_info, const VkRenderingInfo& rendering_info,
@@ -1748,16 +1750,16 @@ class CoreChecks : public vvl::DeviceProxy {
                                        const VkRenderingInfo& last_rendering_info, const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingResume(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
                                       const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
-                                               const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingDepthAttachment(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
-                                               const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingStencilAttachment(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
-                                                 const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingDepthAndStencilAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
-                                                         const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingTileShadingCreateInfo(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
+    bool ValidateBeginRenderingColorAttachment(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateBeginRenderingColorResolveAttachment(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateBeginRenderingDepthAttachment(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateBeginRenderingStencilAttachment(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateBeginRenderingDepthAndStencilAttachment(const core::RenderingAttachment& depth_attachment,
+                                                         const core::RenderingAttachment& stencil_attachment) const;
+    bool ValidateBeginRenderingExternalDownsample(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateBeginRenderingTileShadingCreateInfo(const vvl::CommandBuffer& cb_state,
                                                      const VkRenderPassTileShadingCreateInfoQCOM& rp_tile_shading_ci,
+                                                     const VkRenderingInfo& rendering_info,
                                                      const Location& rendering_info_loc) const;
     bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR* pRenderingInfo,
                                              const ErrorObject& error_obj) const override;

@@ -658,6 +658,7 @@ TEST_F(NegativeAndroidExternalResolve, DynamicRendering) {
     begin_rendering_info.pStencilAttachment = nullptr;
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-colorAttachmentCount-09320");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-resolveMode-09324");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 }

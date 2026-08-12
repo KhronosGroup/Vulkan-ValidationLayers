@@ -24,6 +24,7 @@
 #include "state_tracker/queue_state.h"
 #include "state_tracker/event_state.h"
 #include "state_tracker/shader_stage_state.h"
+#include "error_message/error_location.h"
 
 class CoreChecks;
 
@@ -263,12 +264,9 @@ class QueueSubState : public vvl::QueueSubState {
 struct RenderingAttachment {
     enum class Type {
         Empty = 0,
-        Input,
         Color,
         Depth,
         Stencil,
-        FragmentDensityMap,
-        FragmentShadingRate,
     };
 
     RenderingAttachment(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
@@ -278,13 +276,15 @@ struct RenderingAttachment {
     const VkRenderingInfo& rendering_info;
 
     const VkRenderingAttachmentInfo& info;
-    const Location& loc;
+    vvl::LocationCapture loc;
     const Type type;
 
     std::shared_ptr<const vvl::ImageView> image_view_state;
     std::shared_ptr<const vvl::ImageView> resolve_view_state;
 
+    const Location& Loc() const { return loc.Get(); }
     LogObjectList GetObjectList() const;
+    LogObjectList GetObjectList(const core::RenderingAttachment& other_attachment) const;
 
     bool IsColor() const { return type == Type::Color; }
     bool IsDepth() const { return type == Type::Depth; }
