@@ -17,7 +17,6 @@
 
 #include "sync/sync_op.h"
 #include "sync/sync_render_pass.h"
-#include "sync/sync_access_context.h"
 #include "sync/sync_command_buffer.h"
 #include "sync/sync_event.h"
 #include "sync/sync_image.h"
@@ -261,63 +260,6 @@ const AccessContext& RenderPassReplayState::GetCurrentDestinationContext() const
 
 const AccessContext& RenderPassReplayState::GetCurrentRecordedContext() const {
     return rp_context->GetSubpassContexts()[current_subpass];
-}
-
-void SyncEventsContext::ApplyBarrier(const SyncExecScope& src, const SyncExecScope& dst, ResourceUsageTag tag) {
-    const bool all_commands_bit = 0 != (src.stage_mask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-    for (auto& event_pair : map_) {
-        assert(event_pair.second);  // Shouldn't be storing empty
-        auto& sync_event = *event_pair.second;
-        // Events don't happen at a stage, so we need to check and store the unexpanded ALL_COMMANDS if set for inter-event-calls
-        // But only if occuring before the tag
-        if (((sync_event.barriers & src.exec_scope) || all_commands_bit) && (sync_event.last_command_tag <= tag)) {
-            sync_event.barriers |= dst.exec_scope;
-            sync_event.barriers |= dst.stage_mask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-        }
-    }
-}
-
-void SyncEventsContext::ApplyTaggedWait(VkQueueFlags queue_flags, ResourceUsageTag tag) {
-    const SyncExecScope src_scope =
-        SyncExecScope::MakeSrc(queue_flags, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_2_HOST_BIT);
-    const SyncExecScope dst_scope = SyncExecScope::MakeDst(queue_flags, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
-    ApplyBarrier(src_scope, dst_scope, tag);
-}
-
-SyncEventsContext& SyncEventsContext::DeepCopy(const SyncEventsContext& from) {
-    // We need a deep copy of the const context to update during validation phase
-    for (const auto& event : from.map_) {
-        map_.emplace(event.first, std::make_shared<SyncEventState>(*event.second));
-    }
-    return *this;
-}
-
-void SyncEventsContext::AddReferencedTags(ResourceUsageTagSet& referenced) const {
-    for (const auto& event : map_) {
-        const std::shared_ptr<const SyncEventState>& event_state = event.second;
-        if (event_state) {
-            event_state->AddReferencedTags(referenced);
-        }
-    }
-}
-
-SyncEventState::SyncEventState(const SyncEventState::EventPointer& event_state) : SyncEventState() { event = event_state; }
-
-void SyncEventState::ResetFirstScope() {
-    first_scope.reset();
-    scope = SyncExecScope();
-    first_scope_tag = 0;
-}
-
-bool SyncEventState::HasBarrier(VkPipelineStageFlags2 stageMask, VkPipelineStageFlags2 exec_scope_arg) const {
-    return (last_command == vvl::Func::Empty) || (stageMask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) || (barriers & exec_scope_arg) ||
-           (barriers & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-}
-
-void SyncEventState::AddReferencedTags(ResourceUsageTagSet& referenced) const {
-    if (first_scope) {
-        first_scope->AddReferencedTags(referenced);
-    }
 }
 
 }  // namespace syncval

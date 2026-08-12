@@ -17,11 +17,9 @@
 #pragma once
 
 #include "sync/sync_access_context.h"
-#include <vulkan/utility/vk_safe_struct.hpp>
+#include "sync/sync_barrier.h"
 #include "error_message/error_location.h"
 #include <optional>
-
-struct DeviceExtensions;
 
 namespace vvl {
 class Event;
@@ -30,89 +28,11 @@ class RenderPass;
 }  // namespace vvl
 
 namespace syncval {
-
 class CommandBufferContext;
 struct SyncEnvironment;
 class QueueBatchContext;
 class RenderPassAccessContext;
-class SyncValidator;
 struct ReplayState;
-
-struct SyncEventState {
-    using EventPointer = std::shared_ptr<const vvl::Event>;
-    EventPointer event;
-    vvl::Func last_command;             // Only Event commands are valid here.
-    ResourceUsageTag last_command_tag;  // Needed to filter replay validation
-    vvl::Func unsynchronized_set;
-    VkPipelineStageFlags2 barriers;
-    SyncExecScope scope;
-    ResourceUsageTag first_scope_tag;
-    std::shared_ptr<const AccessContext> first_scope;
-
-    SyncEventState()
-        : event(),
-          last_command(vvl::Func::Empty),
-          last_command_tag(0),
-          unsynchronized_set(vvl::Func::Empty),
-          barriers(0U),
-          scope(),
-          first_scope_tag() {}
-
-    SyncEventState(const SyncEventState&) = default;
-    SyncEventState(SyncEventState&&) = default;
-
-    SyncEventState(const SyncEventState::EventPointer& event_state);
-
-    void ResetFirstScope();
-    const AccessContext::ScopeMap& FirstScope() const { return first_scope->GetAccessMap(); }
-    bool HasBarrier(VkPipelineStageFlags2 stageMask, VkPipelineStageFlags2 exec_scope) const;
-    void AddReferencedTags(ResourceUsageTagSet& referenced) const;
-};
-
-class SyncEventsContext {
-  public:
-    using Map = vvl::unordered_map<const vvl::Event*, std::shared_ptr<SyncEventState>>;
-    using iterator = Map::iterator;
-    using const_iterator = Map::const_iterator;
-
-    SyncEventState* GetFromShared(const SyncEventState::EventPointer& event_state) {
-        const auto find_it = map_.find(event_state.get());
-        if (find_it == map_.end()) {
-            if (!event_state.get()) return nullptr;
-
-            const auto* event_plain_ptr = event_state.get();
-            auto sync_state = std::make_shared<SyncEventState>(event_state);
-            auto insert_pair = map_.emplace(event_plain_ptr, sync_state);
-            return insert_pair.first->second.get();
-        }
-        return find_it->second.get();
-    }
-
-    const SyncEventState* Get(const SyncEventState::EventPointer& event_state) const {
-        const auto find_it = map_.find(event_state.get());
-        if (find_it == map_.end()) {
-            return nullptr;
-        }
-        return find_it->second.get();
-    }
-
-    void ApplyBarrier(const SyncExecScope& src, const SyncExecScope& dst, ResourceUsageTag tag);
-    void ApplyTaggedWait(VkQueueFlags queue_flags, ResourceUsageTag tag);
-
-    void Destroy(const vvl::Event* event_state) {
-        auto sync_it = map_.find(event_state);
-        if (sync_it != map_.end()) {
-            map_.erase(sync_it);
-        }
-    }
-    void Clear() { map_.clear(); }
-
-    SyncEventsContext& DeepCopy(const SyncEventsContext& from);
-    void AddReferencedTags(ResourceUsageTagSet& referenced) const;
-
-  private:
-    Map map_;
-};
 
 class SyncOp {
   public:
@@ -182,7 +102,6 @@ class SyncOpBeginRenderPass : public SyncOp {
                           const RenderPassAccessContext* rp_context);
     bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const override;
-    const RenderPassAccessContext* GetRenderPassAccessContext() const { return rp_context_; }
 
   protected:
     // Keep references to rp_state and attachments in case they are deleted.
