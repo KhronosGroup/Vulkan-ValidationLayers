@@ -16,6 +16,7 @@
  */
 #pragma once
 
+#include "sync/sync_event.h"
 #include "sync/sync_op.h"
 #include "sync/sync_render_pass.h"
 #include "state_tracker/cmd_buffer_state.h"
@@ -23,7 +24,6 @@
 struct RecordObject;
 
 namespace syncval {
-
 class SyncValidator;
 class ErrorMessages;
 struct AccessStats;
