@@ -49,7 +49,7 @@ bool SyncOpPipelineBarrier::ReplayValidate(ReplayState& replay, ResourceUsageTag
 
 SyncOpSetEvent::SyncOpSetEvent(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& src_exec_scope,
                                std::shared_ptr<const AccessContext>&& src_access_context, const Location& loc)
-    : SyncOpBase(loc.function),
+    : command_(loc.function),
       event_(std::move(event)),
       recorded_context_(std::move(src_access_context)),
       src_exec_scope_(src_exec_scope) {}
@@ -73,7 +73,7 @@ void SyncOpSetEvent::ReplayRecord(SyncEnvironment& env, AccessContext& access_co
 }
 
 SyncOpResetEvent::SyncOpResetEvent(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& exec_scope, const Location& loc)
-    : SyncOpBase(loc.function), event_(std::move(event)), exec_scope_(exec_scope) {}
+    : command_(loc.function), event_(std::move(event)), exec_scope_(exec_scope) {}
 
 bool SyncOpResetEvent::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     const ResourceUsageTag exec_tag = replay.base_tag + recorded_tag;
@@ -86,7 +86,7 @@ void SyncOpResetEvent::ReplayRecord(SyncEnvironment& env, AccessContext& access_
 
 SyncOpWaitEvents::SyncOpWaitEvents(std::vector<std::shared_ptr<const vvl::Event>>&& events, std::vector<BarrierSet>&& barrier_sets,
                                    const Location& loc)
-    : SyncOpBase(loc.function), events_(std::move(events)), barrier_sets_(std::move(barrier_sets)) {}
+    : command_(loc.function), events_(std::move(events)), barrier_sets_(std::move(barrier_sets)) {}
 
 void SyncOpWaitEvents::ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const {
     ApplyCmdWaitEvents(env, access_context, events_, barrier_sets_, exec_tag, command_);
@@ -100,8 +100,8 @@ bool SyncOpWaitEvents::ReplayValidate(ReplayState& replay, ResourceUsageTag reco
 
 SyncOpBeginRenderPass::SyncOpBeginRenderPass(std::shared_ptr<const vvl::RenderPass>&& rp_state,
                                              std::vector<std::shared_ptr<const vvl::ImageView>>&& attachments,
-                                             const RenderPassAccessContext* rp_context, const Location& loc)
-    : SyncOpBase(loc.function), rp_state_(std::move(rp_state)), attachments_(std::move(attachments)), rp_context_(rp_context) {}
+                                             const RenderPassAccessContext* rp_context)
+    : rp_state_(std::move(rp_state)), attachments_(std::move(attachments)), rp_context_(rp_context) {}
 
 bool SyncOpBeginRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     replay.rp_replay.emplace(rp_context_, replay.destination_context, replay.env.queue_flags);
@@ -114,8 +114,6 @@ bool SyncOpBeginRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag
 void SyncOpBeginRenderPass::ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const {
     // All the needed replay state changes (for the layout transition, and context update) have to happen in ReplayValidate
 }
-
-SyncOpNextSubpass::SyncOpNextSubpass(const Location& loc) : SyncOpBase(loc.function) {}
 
 bool SyncOpNextSubpass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     bool skip = false;
@@ -136,8 +134,6 @@ bool SyncOpNextSubpass::ReplayValidate(ReplayState& replay, ResourceUsageTag rec
 void SyncOpNextSubpass::ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const {
     // All the needed replay state changes (for the layout transition, and context update) have to happen in ReplayValidate
 }
-
-SyncOpEndRenderPass::SyncOpEndRenderPass(const Location& loc) : SyncOpBase(loc.function) {}
 
 bool SyncOpEndRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     // The record_tag is the final layout transition. Any store/resolve operations happen before
