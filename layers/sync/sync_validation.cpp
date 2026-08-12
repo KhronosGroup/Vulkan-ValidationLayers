@@ -607,7 +607,7 @@ void SyncValidator::RecordCmdPipelineBarrier(CommandBufferContext& cb_context, B
         }
     }
     ApplyBarrier(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), barrier_set, tag);
-    auto sync_op = std::make_shared<SyncOpPipelineBarrier>(std::move(barrier_set));
+    auto sync_op = std::make_unique<SyncOpPipelineBarrier>(std::move(barrier_set));
     cb_context.AddSyncOp(tag, std::move(sync_op));
 }
 
@@ -2221,7 +2221,7 @@ void SyncValidator::RecordCmdSetEvent(CommandBufferContext& cb_context, std::sha
 
     ApplyCmdSetEvent(cb_context.GetSyncEnvironment(), event, src_exec_scope, src_access_context, tag, loc.function);
 
-    auto sync_op = std::make_shared<SyncOpSetEvent>(std::move(event), src_exec_scope, std::move(src_access_context), loc);
+    auto sync_op = std::make_unique<SyncOpSetEvent>(std::move(event), src_exec_scope, std::move(src_access_context), loc);
     cb_context.AddSyncOp(tag, std::move(sync_op));
 }
 
@@ -2293,7 +2293,7 @@ void SyncValidator::RecordCmdResetEvent(CommandBufferContext& cb_context, std::s
                                         const SyncExecScope& exec_scope, const Location& loc) const {
     const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
     ApplyCmdResetEvent(cb_context.GetSyncEnvironment(), event, tag, loc.function);
-    auto sync_op = std::make_shared<SyncOpResetEvent>(std::move(event), exec_scope, loc);
+    auto sync_op = std::make_unique<SyncOpResetEvent>(std::move(event), exec_scope, loc);
     cb_context.AddSyncOp(tag, std::move(sync_op));
 }
 
@@ -2372,7 +2372,7 @@ void SyncValidator::RecordCmdWaitEvents(CommandBufferContext& cb_context, std::v
     const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
     ApplyCmdWaitEvents(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), events, barrier_sets, tag,
                        loc.function);
-    auto sync_op = std::make_shared<SyncOpWaitEvents>(std::move(events), std::move(barrier_sets), loc);
+    auto sync_op = std::make_unique<SyncOpWaitEvents>(std::move(events), std::move(barrier_sets), loc);
     cb_context.AddSyncOp(tag, std::move(sync_op));
 }
 

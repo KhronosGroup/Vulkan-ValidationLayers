@@ -173,10 +173,9 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
   public:
     struct SyncOpEntry {
         ResourceUsageTag tag;
-        std::shared_ptr<SyncOpBase> sync_op;
-        SyncOpEntry(ResourceUsageTag tag_, std::shared_ptr<SyncOpBase>&& sync_op_) : tag(tag_), sync_op(std::move(sync_op_)) {}
+        std::unique_ptr<SyncOp> sync_op;
+        SyncOpEntry(ResourceUsageTag tag, std::unique_ptr<SyncOp>&& sync_op) : tag(tag), sync_op(std::move(sync_op)) {}
         SyncOpEntry() = default;
-        SyncOpEntry(const SyncOpEntry &other) = default;
     };
     struct AsProxyContext {};
 
@@ -257,7 +256,7 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     // The following method allows to set subcommand handles independently of the main command.
     void AddSubcommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index);
 
-    void AddSyncOp(ResourceUsageTag tag, std::shared_ptr<SyncOpBase>&& sync_op);
+    void AddSyncOp(ResourceUsageTag tag, std::unique_ptr<SyncOp>&& sync_op);
 
     const std::vector<HandleRecord> &GetHandleRecords() const { return handles_; }
 

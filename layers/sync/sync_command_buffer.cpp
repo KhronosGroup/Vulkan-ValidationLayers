@@ -1490,9 +1490,7 @@ std::string CommandBufferContext::GetDebugRegionName(const ResourceUsageRecord& 
     return vvl::CommandBuffer::GetDebugRegionName(label_commands, record.label_command_index);
 }
 
-void CommandBufferContext::AddSyncOp(ResourceUsageTag tag, std::shared_ptr<SyncOpBase>&& sync_op) {
-    // As renderpass operations can have side effects on the command buffer access context,
-    // update the sync operation to record these if any.
+void CommandBufferContext::AddSyncOp(ResourceUsageTag tag, std::unique_ptr<SyncOp>&& sync_op) {
     sync_ops_.emplace_back(tag, std::move(sync_op));
 }
 
@@ -2012,7 +2010,7 @@ void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& r
     const ResourceUsageTag begin_tag =
         cb_context.RecordBeginRenderPass(loc.function, *rp_state, render_pass_begin.renderArea, attachments);
     const RenderPassAccessContext* rp_context = cb_context.GetCurrentRenderPassContext();
-    auto sync_op = std::make_shared<SyncOpBeginRenderPass>(std::move(rp_state), std::move(attachments), rp_context, loc);
+    auto sync_op = std::make_unique<SyncOpBeginRenderPass>(std::move(rp_state), std::move(attachments), rp_context);
     cb_context.AddSyncOp(begin_tag, std::move(sync_op));
 }
 
@@ -2025,7 +2023,7 @@ void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo& subpass_
         return;  // [core validation check]: begin render pass was not called
     }
     const ResourceUsageTag tag = cb_context.RecordNextSubpass(loc.function);
-    auto sync_op = std::make_shared<SyncOpNextSubpass>(loc.function);
+    auto sync_op = std::make_unique<SyncOpNextSubpass>();
     cb_context.AddSyncOp(tag, std::move(sync_op));
 }
 
@@ -2037,7 +2035,7 @@ void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo* subpass_
         return;  // [core validation check]: begin render pass was not called
     }
     const ResourceUsageTag tag = cb_context.RecordEndRenderPass(loc.function);
-    auto sync_op = std::make_shared<SyncOpEndRenderPass>(loc.function);
+    auto sync_op = std::make_unique<SyncOpEndRenderPass>();
     cb_context.AddSyncOp(tag, std::move(sync_op));
 }
 
