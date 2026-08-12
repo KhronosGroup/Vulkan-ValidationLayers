@@ -844,7 +844,7 @@ bool CoreChecks::ValidateRenderingAttachmentCurrentLayout(const core::RenderingA
                 if (!layout_check.Check(state)) {
                     const subresource_adapter::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
                     local_skip |=
-                        LogError(vuid, vvl_attachment.GetObjectList(), vvl_attachment.loc,
+                        LogError(vuid, vvl_attachment.GetObjectList(), vvl_attachment.Loc(),
                                  "(%s, layer %" PRIu32 ", mip %" PRIu32 ") is expected to have layout %s but %s layout is %s.",
                                  FormatHandle(image_state).c_str(), subresource.arrayLayer, subresource.mipLevel,
                                  string_VkImageLayout(layout_check.expected_layout), layout_check.message,

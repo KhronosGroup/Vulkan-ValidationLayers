@@ -898,6 +898,12 @@ bool Device::ValidateRenderingInfo(const LogObjectList& objlist, const VkRenderi
                                    const Location& rendering_info_loc) const {
     bool skip = false;
 
+    if (MostSignificantBit(rendering_info.viewMask) >= static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
+        skip |= LogError("VUID-VkRenderingInfo-viewMask-06128", objlist, rendering_info_loc.dot(Field::viewMask),
+                         "(0x%" PRIx32 ") most significant bit must be less than maxMultiviewViewCount (%" PRIu32 ")",
+                         rendering_info.viewMask, phys_dev_props_core11.maxMultiviewViewCount);
+    }
+
     if (rendering_info.viewMask == 0 && rendering_info.layerCount == 0) {
         skip |= LogError("VUID-VkRenderingInfo-viewMask-06069", objlist, rendering_info_loc,
                          "viewMask and layerCount are both zero");
