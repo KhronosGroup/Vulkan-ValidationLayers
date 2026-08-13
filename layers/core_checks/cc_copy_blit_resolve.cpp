@@ -1767,7 +1767,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                          "is VK_IMAGE_ASPECT_COLOR_BIT and srcSubresource.aspectMask is %s, but the src "
                                          "depth/stencil format (%s) is not "
                                          "compatible with the dst color format (%s).",
-                                         string_VkImageAspectFlags(dst_aspect).c_str(), string_VkFormat(src_format),
+                                         string_VkImageAspectFlags(src_aspect).c_str(), string_VkFormat(src_format),
                                          string_VkFormat(dst_format));
                     }
                 }
