@@ -90,7 +90,14 @@ jobs:
         with:
           key: ${{ matrix.config }}-address-${{matrix.custom_hash_map}}
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev xvfb
-      - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_CUSTOM_HASH_MAP=${{matrix.custom_hash_map}}'
+      - name: Cache external dependencies
+        id: cache-deps
+        uses: actions/cache@v6
+        with:
+          path: |
+            ${{ github.workspace }}/build-ci/external
+          key: linux-dependencies-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
+      - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_CUSTOM_HASH_MAP=${{matrix.custom_hash_map}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
         env:
           CFLAGS: -fsanitize=address
           CXXFLAGS: -fsanitize=address
@@ -132,7 +139,14 @@ jobs:
         with:
           key: ${{ matrix.config }}-thread-${{matrix.custom_hash_map}}
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev xvfb
-      - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_CUSTOM_HASH_MAP=${{matrix.custom_hash_map}}'
+      - name: Cache external dependencies
+        id: cache-deps
+        uses: actions/cache@v6
+        with:
+          path: |
+            ${{ github.workspace }}/build-ci/external
+          key: linux-tsan-dependencies-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
+      - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_CUSTOM_HASH_MAP=${{matrix.custom_hash_map}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
         env:
           CFLAGS: -fsanitize=thread
           CXXFLAGS: -fsanitize=thread
@@ -164,7 +178,14 @@ jobs:
         with:
           key: linux-ubsan
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      - run: python scripts/tests.py --build --config debug --cmake='-DVVL_ENABLE_UBSAN=ON'
+      - name: Cache external dependencies
+        id: cache-deps
+        uses: actions/cache@v6
+        with:
+          path: |
+            ${{ github.workspace }}/build-ci/external
+          key: linux-ubsan-dependencies-debug-${{ hashfiles('scripts/known_good.json') }}
+      - run: python scripts/tests.py --build --config debug --cmake='-DVVL_ENABLE_UBSAN=ON -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
         env:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
@@ -189,7 +210,14 @@ jobs:
         with:
           key: linux_back_compat
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      - run: cmake -S . -B build/ -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Debug
+      - name: Cache external dependencies
+        id: cache-deps
+        uses: actions/cache@v6
+        with:
+          path: |
+            ${{ github.workspace }}/external
+          key: linux-backcompat-dependencies-debug-${{ hashfiles('scripts/known_good.json') }}
+      - run: cmake -S . -B build/ -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Debug -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON
         env:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
@@ -209,7 +237,14 @@ jobs:
         with:
           key: linux-upload-ccache
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      - run: cmake -S. -B build -D BUILD_WERROR=ON -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release
+      - name: Cache external dependencies
+        id: cache-deps
+        uses: actions/cache@v6
+        with:
+          path: |
+            ${{ github.workspace }}/external
+          key: linux-upload-dependencies-release-${{ hashfiles('scripts/known_good.json') }}
+      - run: cmake -S. -B build -D BUILD_WERROR=ON -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON
       - run: cmake --build build
       - run: cmake --install build --prefix /tmp --strip
         env:
@@ -273,6 +308,7 @@ jobs:
             ${{ github.workspace }}/external/SPIRV-Tools/build/install
             ${{ github.workspace }}/external/Vulkan-Headers/build/install
             ${{ github.workspace }}/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/external/slang/install
           key: windows-dependencies-${{ matrix.arch }}-${{ hashfiles('scripts/known_good.json') }}
       - run: |
          cmake -S. -B build `
@@ -309,6 +345,7 @@ jobs:
             ${{ github.workspace }}/external/SPIRV-Tools/build/install
             ${{ github.workspace }}/external/Vulkan-Headers/build/install
             ${{ github.workspace }}/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/external/slang/install
           key: windows-dependencies-release-amd64-${{ hashfiles('scripts/known_good.json') }}
       - run: |
          cmake -S. -B build `
@@ -412,6 +449,13 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: iOS-cache
+      - name: Cache external dependencies
+        id: cache-deps
+        uses: actions/cache@v6
+        with:
+          path: |
+            ${{ github.workspace }}/external
+          key: macos-dependencies-${{ hashfiles('scripts/known_good.json') }}
       - name: Configure for iOS
         run: |
           cmake -S . -B build/ \
@@ -419,6 +463,7 @@ jobs:
           -D CMAKE_OSX_ARCHITECTURES=arm64 \
           -D BUILD_WERROR=ON \
           -D UPDATE_DEPS=ON \
+          -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON \
           -D CMAKE_BUILD_TYPE=Debug
         env:
           CMAKE_C_COMPILER_LAUNCHER: ccache
