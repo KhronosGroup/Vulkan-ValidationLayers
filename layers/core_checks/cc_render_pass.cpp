@@ -3634,16 +3634,18 @@ bool CoreChecks::ValidateBeginRenderingSampleCount(VkCommandBuffer commandBuffer
             if (color_attachment.imageView == VK_NULL_HANDLE) {
                 continue;
             }
-            first_color_index = std::min(first_color_index, i);
             const auto image_view = Get<vvl::ImageView>(color_attachment.imageView);
             ASSERT_AND_CONTINUE(image_view);
-            color_sample_count = (color_sample_count == unused) ? image_view->samples : color_sample_count;
+            if (color_sample_count == unused) {
+                color_sample_count = image_view->samples;
+                first_color_index = i;
+            }
             if (color_sample_count != image_view->samples) {
                 const LogObjectList objlist(commandBuffer, color_attachment.imageView,
                                             rendering_info.pColorAttachments[first_color_index].imageView);
                 skip |= LogError("VUID-VkRenderingInfo-multisampledRenderToSingleSampled-06857", objlist,
                                  rendering_info_loc.dot(Field::pColorAttachments, i).dot(Field::imageView),
-                                 "was created with %s, but the pColorAttachments[%" PRId32 "]->imageView was created with %s.",
+                                 "was created with %s, but the pColorAttachments[%" PRIu32 "].imageView was created with %s.",
                                  string_VkSampleCountFlagBits(image_view->samples), first_color_index,
                                  string_VkSampleCountFlagBits(color_sample_count));
                 return skip;
