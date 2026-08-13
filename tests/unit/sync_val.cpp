@@ -3886,8 +3886,7 @@ TEST_F(NegativeSyncVal, SubpassMultiDep) {
 }
 
 TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
     // overall set up:
     // subpass 0:
@@ -3932,10 +3931,10 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     dst_img_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     dst_img_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    std::vector<std::unique_ptr<vkt::Image>> images;
-    images.emplace_back(std::make_unique<vkt::Image>(*m_device, src_img_info));
+    std::vector<vkt::Image> images;
+    images.emplace_back(vkt::Image(*m_device, src_img_info));
     for (uint32_t i = 1; i < kNumImages; i++) {
-        images.emplace_back(std::make_unique<vkt::Image>(*m_device, dst_img_info));
+        images.emplace_back(vkt::Image(*m_device, dst_img_info));
     }
 
     vkt::ImageView attachment_wrappers[kNumImages];
@@ -3945,7 +3944,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     std::array<VkImageMemoryBarrier, kNumImages> img_barriers{};
 
     for (uint32_t i = 0; i < attachments.size(); i++) {
-        attachment_wrappers[i] = images[i]->CreateView();
+        attachment_wrappers[i] = images[i].CreateView();
         attachments[i] = attachment_wrappers[i];
         attachment_descriptions[i] = {};
         attachment_descriptions[i].flags = 0;
@@ -3968,7 +3967,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         img_barriers[i].newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         img_barriers[i].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         img_barriers[i].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        img_barriers[i].image = images[i]->handle();
+        img_barriers[i].image = images[i];
         img_barriers[i].subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
     }
 
@@ -4019,7 +4018,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
         CreatePipelineHelper g_pipe_0(*this);
         g_pipe_0.gp_ci_.renderPass = rp;
-        ASSERT_EQ(VK_SUCCESS, g_pipe_0.CreateGraphicsPipeline());
+        g_pipe_0.CreateGraphicsPipeline();
 
         CreatePipelineHelper g_pipe_12(*this);
         g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -4064,16 +4063,6 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
             m_command_buffer.NextSubpass();
             m_errorMonitor->VerifyFound();
         }
-
-        // Suppress core validation that render pass ends before reaching final subpass.
-        // NextSubpass does not update current subpass (Record is skipped) due to syncval error.
-        m_errorMonitor->SetUnexpectedError("VUID-vkCmdEndRenderPass-None-00910");
-
-        // m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
-        // No sync error here, as all of the NextSubpass calls *failed*
-        m_command_buffer.EndRenderPass();
-        // m_errorMonitor->VerifyFound();
-
         vk::ResetCommandPool(device(), m_command_pool, 0);
     }
 
@@ -6300,6 +6289,10 @@ TEST_F(NegativeSyncVal, WriteSameLocationFromTwoSubmits) {
 TEST_F(NegativeSyncVal, ResourceHandleIndexStability) {
     TEST_DESCRIPTION("Test that stale handle indices (inconsistent state after core validation error) are handled correctly");
     RETURN_IF_SKIP(InitSyncVal());
+
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "This test only runs on the mock ICD: do not record pending command buffers on real drivers";
+    }
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
