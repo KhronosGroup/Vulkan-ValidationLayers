@@ -6971,3 +6971,38 @@ TEST_F(NegativeSyncVal, RacingHazardBetweenLayoutTransitions) {
 
     m_device->Wait();
 }
+
+TEST_F(NegativeSyncVal, WaitEventImageLayoutTransition) {
+    TEST_DESCRIPTION("Submit-time validation detects event image layout transition hazard");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::CommandBuffer write_cb(*m_device, m_command_pool);
+    vkt::CommandBuffer wait_cb(*m_device, m_command_pool);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::Event event(*m_device);
+
+    const VkImageSubresourceRange subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    const VkClearColorValue clear_color{};
+
+    write_cb.Begin();
+    vk::CmdClearColorImage(write_cb, image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &subresource_range);
+    write_cb.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    write_cb.End();
+
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    // Don't specify src access to cause hazard
+    barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.image = image;
+    barrier.subresourceRange = subresource_range;
+
+    wait_cb.Begin();
+    wait_cb.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
+    wait_cb.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_default_queue->Submit({write_cb, wait_cb});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
