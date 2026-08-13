@@ -47,10 +47,8 @@ static bool IsExtentInsideBounds(VkExtent2D extent, VkExtent2D min, VkExtent2D m
     return true;
 }
 
-static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(const VkSwapchainCreateInfoKHR& create_info) {
-    VkImageCreateInfo result = vku::InitStructHelper();
-
-    VkImageUsageFlags2CreateInfoKHR image_usage_flags2;
+static void GetSwapchainImpliedImageCreateInfo(const VkSwapchainCreateInfoKHR& create_info, VkImageCreateInfo& result,
+                                               VkImageUsageFlags2CreateInfoKHR& image_usage_flags2) {
     auto chain_image_usage_flags2 = vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(create_info.pNext);
     if (chain_image_usage_flags2) {
         image_usage_flags2 = *chain_image_usage_flags2;
@@ -58,6 +56,7 @@ static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(const VkSwapchainCre
         result.pNext = &image_usage_flags2;
     }
 
+    result.flags = 0u;
     if (create_info.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) {
         result.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
     }
@@ -80,8 +79,6 @@ static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(const VkSwapchainCre
     result.queueFamilyIndexCount = create_info.queueFamilyIndexCount;
     result.pQueueFamilyIndices = create_info.pQueueFamilyIndices;
     result.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-    return result;
 }
 
 bool CoreChecks::ValidateSwapchainImageExtent(const VkSwapchainCreateInfoKHR& create_info,
@@ -659,20 +656,45 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
         }
     }
 
-    const VkImageCreateInfo image_create_info = GetSwapchainImpliedImageCreateInfo(create_info);
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    VkImageUsageFlags2CreateInfoKHR image_usage_flags2 = vku::InitStructHelper();
+    GetSwapchainImpliedImageCreateInfo(create_info, image_create_info, image_usage_flags2);
     VkImageFormatProperties image_properties = {};
-    const VkResult image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
-        physical_device, image_create_info.format, image_create_info.imageType, image_create_info.tiling, image_create_info.usage,
-        image_create_info.flags, &image_properties);
+    if (image_create_info.pNext != nullptr) {
+        VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper(&image_usage_flags2);
+        image_format_info.format = image_create_info.format;
+        image_format_info.type = image_create_info.imageType;
+        image_format_info.tiling = image_create_info.tiling;
+        image_format_info.flags = image_create_info.flags;
+        VkImageFormatProperties2 image_properties_2 = vku::InitStructHelper();
+        VkResult image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(
+            api_version, physical_device, &image_format_info, &image_properties_2);
 
-    if (image_properties_result != VK_SUCCESS) {
-        if (LogError(
-                "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc,
-                "vkGetPhysicalDeviceImageFormatProperties() unexpectedly failed, with following VkImageCreateInfo\n%s",
-                string_VkPhysicalDeviceImageFormatInfo2(image_create_info.flags, image_create_info.usage, image_create_info.format,
-                                                        image_create_info.imageType, image_create_info.tiling)
-                    .c_str())) {
-            return true;
+        if (image_properties_result != VK_SUCCESS) {
+            if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc,
+                         "vkGetPhysicalDeviceImageFormatProperties2() unexpectedly failed, with following VkImageCreateInfo\n%s",
+                         string_VkPhysicalDeviceImageFormatInfo2(image_create_info.flags, image_usage_flags2.usage,
+                                                                 image_create_info.format, image_create_info.imageType,
+                                                                 image_create_info.tiling)
+                             .c_str())) {
+                return true;
+            }
+        }
+        image_properties = image_properties_2.imageFormatProperties;
+    } else {
+        const VkResult image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
+            physical_device, image_create_info.format, image_create_info.imageType, image_create_info.tiling,
+            image_create_info.usage, image_create_info.flags, &image_properties);
+
+        if (image_properties_result != VK_SUCCESS) {
+            if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc,
+                         "vkGetPhysicalDeviceImageFormatProperties() unexpectedly failed, with following VkImageCreateInfo\n%s",
+                         string_VkPhysicalDeviceImageFormatInfo2(image_create_info.flags, image_create_info.usage,
+                                                                 image_create_info.format, image_create_info.imageType,
+                                                                 image_create_info.tiling)
+                             .c_str())) {
+                return true;
+            }
         }
     }
 
