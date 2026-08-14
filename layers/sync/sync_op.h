@@ -19,7 +19,6 @@
 #include "sync/sync_access_context.h"
 #include "sync/sync_barrier.h"
 #include "error_message/error_location.h"
-#include <optional>
 #include <variant>
 
 namespace vvl {
@@ -30,10 +29,8 @@ class RenderPass;
 
 namespace syncval {
 class CommandBufferContext;
-struct SyncEnvironment;
-class QueueBatchContext;
 class RenderPassAccessContext;
-struct ReplayState;
+struct SyncEnvironment;
 
 struct PipelineBarrierReplay {
     PipelineBarrierReplay(BarrierSet&& barrier_set);
@@ -99,6 +96,26 @@ struct ReplayContextChange {
 using ReplayOperation =
     std::variant<PipelineBarrierReplay, SetEventReplay, ResetEventReplay, WaitEventsReplay, ReplayContextChange>;
 
+struct ReplayEntry {
+    // NOTE: templated Operation is a GCC workaround. Use Non-templated version with
+    // ReplayOperation&& and std::move instead of std::forward when our GCC version supports this
+    template <typename Operation>
+    ReplayEntry(ResourceUsageTag tag, bool validate_layout_transition_first_use, Operation&& operation)
+        : tag(tag),
+          validate_layout_transition_first_use(validate_layout_transition_first_use),
+          operation(std::forward<Operation>(operation)) {}
+
+    ResourceUsageTag tag = 0;
+    bool validate_layout_transition_first_use = false;
+    ReplayOperation operation;
+};
+
+void ApplyReplayAction(SyncEnvironment& env, const ReplayOperation& operation, AccessContext& access_context,
+                       ResourceUsageTag exec_tag);
+
+bool ValidateFirstUseHazards(SyncEnvironment& env, const CommandBufferContext& recorded_cb_context,
+                             AccessContext& destination_context, ResourceUsageTag base_tag, const Location& cb_loc);
+
 static inline const PipelineBarrierReplay* GetPipelineBarrierReplay(const ReplayOperation& operation) {
     return std::get_if<PipelineBarrierReplay>(&operation);
 }
@@ -118,62 +135,5 @@ static inline const WaitEventsReplay* GetWaitEventsReplay(const ReplayOperation&
 static inline const ReplayContextChange* GetReplayContextChange(const ReplayOperation& operation) {
     return std::get_if<ReplayContextChange>(&operation);
 }
-
-// Render pass state for submit-time replay. The accesses come from RenderPassAccessContext's
-// recorded subpass contexts, and the subpass dependencies are applied to the accesses in the
-// queue batch context (via subpass_contexts).
-struct RenderPassReplayState {
-    RenderPassReplayState(const RenderPassAccessContext* rp_context, const AccessContext& external_context,
-                          VkQueueFlags queue_flags);
-    AccessContext& GetCurrentDestinationContext();
-    const AccessContext& GetCurrentDestinationContext() const;
-    const AccessContext& GetCurrentRecordedContext() const;
-
-    const RenderPassAccessContext* rp_context = nullptr;
-    uint32_t current_subpass = 0;
-
-    // Per-subpass contexts for replay. Unlike RenderPassAccessContext::subpass_contexts_ these hold
-    // no recorded accesses (access maps are emtpy). All they store is the subpass dependencies
-    std::unique_ptr<AccessContext[]> destination_subpass_contexts;
-};
-
-void ApplyReplayAction(SyncEnvironment& env, const ReplayOperation& operation, AccessContext& access_context,
-                       ResourceUsageTag exec_tag);
-
-struct ReplayEntry {
-    // NOTE: templated Operation is a GCC workaround. Use Non-templated version with
-    // ReplayOperation&& and std::move instead of std::forward when our GCC version supports this
-    template <typename Operation>
-    ReplayEntry(ResourceUsageTag tag, bool validate_layout_transition_first_use, Operation&& operation)
-        : tag(tag),
-          validate_layout_transition_first_use(validate_layout_transition_first_use),
-          operation(std::forward<Operation>(operation)) {}
-
-    ResourceUsageTag tag = 0;
-    bool validate_layout_transition_first_use = false;
-    ReplayOperation operation;
-};
-
-struct ReplayState {
-    ReplayState(CommandBufferContext& proxy_primary_cb_context, const CommandBufferContext& recorded_cb_context,
-                ResourceUsageTag base_tag, const Location& cb_loc);
-    ReplayState(QueueBatchContext& batch_context, const CommandBufferContext& recorded_cb_context, ResourceUsageTag base_tag,
-                const Location& cb_loc);
-
-    bool ValidateFirstUse();
-    bool DetectFirstUseHazard(const ResourceUsageRange& first_use_range) const;
-    void ApplyContextChange(const ReplayContextChange& change);
-
-    AccessContext& GetCurrentDestinationContext();
-    const AccessContext& GetCurrentDestinationContext() const;
-    const AccessContext& GetCurrentRecordedContext() const;
-
-    SyncEnvironment& env;
-    AccessContext& destination_context;
-    const CommandBufferContext& recorded_cb_context;
-    std::optional<RenderPassReplayState> rp_replay;
-    const ResourceUsageTag base_tag;
-    const Location& cb_loc;
-};
 
 }  // namespace syncval

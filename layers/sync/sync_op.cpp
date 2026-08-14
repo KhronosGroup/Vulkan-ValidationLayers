@@ -49,6 +49,88 @@ WaitEventsReplay::WaitEventsReplay(std::vector<std::shared_ptr<const vvl::Event>
                                    const Location& loc)
     : command(loc.function), events(std::move(events)), barrier_sets(std::move(barrier_sets)) {}
 
+// Tracks the recorded and destination contexts used during replay.
+// Command buffer contexts are used outside a render pass and subpass contexts inside one.
+class ReplayContexts {
+  public:
+    ReplayContexts(const CommandBufferContext& recorded_cb_context, AccessContext& destination_context, VkQueueFlags queue_flags)
+        : recorded_cb_context_(recorded_cb_context), destination_context_(destination_context), queue_flags_(queue_flags) {}
+
+    void BeginRenderPass(const RenderPassAccessContext& rp_context) {
+        const vvl::RenderPass& render_pass = *rp_context.GetRenderPassState();
+        const uint32_t subpass_count = render_pass.create_info.subpassCount;
+
+        rp_context_ = &rp_context;
+        current_subpass_ = 0;
+        destination_subpass_contexts_ = InitSubpassContexts(queue_flags_, render_pass, destination_context_);
+
+        // Replace the Async contexts with the async context of the "external" context.
+        // For replay we don't care about async subpasses, only async queue batches
+        for (uint32_t i = 0; i < subpass_count; i++) {
+            AccessContext& subpass_context = destination_subpass_contexts_[i];
+            subpass_context.ClearAsyncContexts();
+            subpass_context.ImportAsyncContexts(destination_context_);
+        }
+    }
+
+    void NextSubpass() {
+        const uint32_t subpass_count = rp_context_->GetRenderPassState()->create_info.subpassCount;
+        if (current_subpass_ + 1 < subpass_count) {
+            // Any store/resolve operations happen before the NextSubpass tag.
+            current_subpass_++;
+        }
+    }
+
+    void EndRenderPass() {
+        const uint32_t subpass_count = rp_context_->GetRenderPassState()->create_info.subpassCount;
+        destination_context_.ResolveChildContexts(vvl::make_span(destination_subpass_contexts_.get(), subpass_count));
+        rp_context_ = nullptr;
+        current_subpass_ = 0;
+        destination_subpass_contexts_.reset();
+    }
+
+    const AccessContext& GetRecordedContext() const {
+        return rp_context_ ? rp_context_->GetSubpassContexts()[current_subpass_] : recorded_cb_context_.GetCbAccessContext();
+    }
+    const AccessContext& GetDestinationContext() const {
+        return rp_context_ ? destination_subpass_contexts_[current_subpass_] : destination_context_;
+    }
+    AccessContext& GetDestinationContext() {
+        return rp_context_ ? destination_subpass_contexts_[current_subpass_] : destination_context_;
+    }
+
+  private:
+    const CommandBufferContext& recorded_cb_context_;
+    AccessContext& destination_context_;
+    const VkQueueFlags queue_flags_;
+
+    const RenderPassAccessContext* rp_context_ = nullptr;
+    uint32_t current_subpass_ = 0;
+
+    // Unlike the recorded subpass contexts, these contain no recorded accesses.
+    // They only store subpass dependencies applied to the destination state.
+    std::unique_ptr<AccessContext[]> destination_subpass_contexts_;
+};
+
+static bool ValidateEventCommand(const SyncEnvironment& env, const ReplayOperation& operation,
+                                 const AccessContext& destination_context, ResourceUsageTag exec_tag) {
+    if (const auto* set_event = GetSetEventReplay(operation)) {
+        return ValidateCmdSetEvent(env, set_event->event, set_event->src_exec_scope, exec_tag, Location(set_event->command));
+    }
+    if (const auto* reset_event = GetResetEventReplay(operation)) {
+        return ValidateCmdResetEvent(env, reset_event->event, reset_event->exec_scope, exec_tag, Location(reset_event->command));
+    }
+    if (const auto* wait_events = GetWaitEventsReplay(operation)) {
+        bool skip = false;
+        Location location(wait_events->command);
+        skip |= ValidateCmdWaitEvents(env, wait_events->events, exec_tag, location);
+        skip |= DetectCmdWaitEventsImageBarrierHazard(env, destination_context, wait_events->events, wait_events->barrier_sets,
+                                                      exec_tag, location);
+        return skip;
+    }
+    return false;
+}
+
 void ApplyReplayAction(SyncEnvironment& env, const ReplayOperation& operation, AccessContext& access_context,
                        ResourceUsageTag exec_tag) {
     if (const auto* barrier = GetPipelineBarrierReplay(operation)) {
@@ -70,49 +152,32 @@ void ApplyReplayAction(SyncEnvironment& env, const ReplayOperation& operation, A
     }
 }
 
-static bool ValidateEventCommand(const SyncEnvironment& env, const ReplayOperation& operation,
-                                 const AccessContext& destination_context, ResourceUsageTag exec_tag) {
-    if (const auto* set_event = GetSetEventReplay(operation)) {
-        return ValidateCmdSetEvent(env, set_event->event, set_event->src_exec_scope, exec_tag, Location(set_event->command));
+static void ApplyContextChange(const ReplayContextChange& change, ReplayContexts& contexts) {
+    if (change.type == ReplayContextChange::Type::kBeginRenderPass) {
+        contexts.BeginRenderPass(*change.rp_context);
+        return;
     }
-    if (const auto* reset_event = GetResetEventReplay(operation)) {
-        return ValidateCmdResetEvent(env, reset_event->event, reset_event->exec_scope, exec_tag, Location(reset_event->command));
+    if (change.type == ReplayContextChange::Type::kNextSubpass) {
+        contexts.NextSubpass();
+        return;
     }
-    if (const auto* wait_events = GetWaitEventsReplay(operation)) {
-        bool skip = false;
-        Location location(wait_events->command);
-        skip |= ValidateCmdWaitEvents(env, wait_events->events, exec_tag, location);
-        skip |= DetectCmdWaitEventsImageBarrierHazard(env, destination_context, wait_events->events, wait_events->barrier_sets,
-                                                      exec_tag, location);
-        return skip;
+    if (change.type == ReplayContextChange::Type::kEndRenderPass) {
+        contexts.EndRenderPass();
+        return;
     }
-    return false;
 }
 
-ReplayState::ReplayState(CommandBufferContext& proxy_primary_cb_context, const CommandBufferContext& recorded_cb_context,
-                         ResourceUsageTag base_tag, const Location& cb_loc)
-    : env(proxy_primary_cb_context.GetSyncEnvironment()),
-      destination_context(proxy_primary_cb_context.GetCbAccessContext()),
-      recorded_cb_context(recorded_cb_context),
-      base_tag(base_tag),
-      cb_loc(cb_loc) {}
-
-ReplayState::ReplayState(QueueBatchContext& batch_context, const CommandBufferContext& recorded_cb_context,
-                         ResourceUsageTag base_tag, const Location& cb_loc)
-    : env(batch_context.GetSyncEnvironment()),
-      destination_context(batch_context.GetAccessContext()),
-      recorded_cb_context(recorded_cb_context),
-      base_tag(base_tag),
-      cb_loc(cb_loc) {}
-
-bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange& first_use_range) const {
+static bool DetectFirstUseHazard(const SyncEnvironment& env, const ReplayContexts& contexts,
+                                 const CommandBufferContext& recorded_cb_context, const ResourceUsageRange& first_use_range,
+                                 const Location& cb_loc) {
     bool skip = false;
     if (!first_use_range.non_empty()) {
         return skip;
     }
-    const AccessContext& recorded_access_context = GetCurrentRecordedContext();
-    const HazardResult hazard =
-        recorded_access_context.DetectFirstUseHazard(env.queue_id, first_use_range, GetCurrentDestinationContext());
+    const AccessContext& recorded_context = contexts.GetRecordedContext();
+    const AccessContext& destination_context = contexts.GetDestinationContext();
+    const HazardResult hazard = recorded_context.DetectFirstUseHazard(env.queue_id, first_use_range, destination_context);
+
     if (hazard.IsHazard()) {
         LogObjectList objlist(env.handle, recorded_cb_context.GetCBState().Handle());
         const std::string error = env.validator.error_messages_.FirstUseError(env, hazard, recorded_cb_context, cb_loc.index);
@@ -121,56 +186,42 @@ bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange& first_use_range
     return skip;
 }
 
-void ReplayState::ApplyContextChange(const ReplayContextChange& change) {
-    if (change.type == ReplayContextChange::Type::kBeginRenderPass) {
-        rp_replay.emplace(change.rp_context, destination_context, env.queue_flags);
-    } else if (change.type == ReplayContextChange::Type::kNextSubpass) {
-        const uint32_t subpass_count = rp_replay->rp_context->GetRenderPassState()->create_info.subpassCount;
-        // Store and resolve operations happen before the next-subpass tag.
-        if (rp_replay->current_subpass + 1 < subpass_count) {
-            rp_replay->current_subpass++;
-        }
-    } else if (change.type == ReplayContextChange::Type::kEndRenderPass) {
-        const uint32_t subpass_count = rp_replay->rp_context->GetRenderPassState()->create_info.subpassCount;
-        auto subpass_contexts = vvl::make_span(rp_replay->destination_subpass_contexts.get(), subpass_count);
-        destination_context.ResolveChildContexts(subpass_contexts);
-        rp_replay.reset();
-    }
-}
-
 // Validate first-use hazards. The following describes how it works.
 //
 // The first access to a memory location can occur anywhere in the command buffer
 // (not necessarily at the beginning), and first accesses to different resources
 // may be interleaved with barriers. To validate each first access against accesses
-// from previous submissions, we need to replay all barriers that occur before that
+// from previous submissions, we need to replay all sync operations that occur before that
 // specific first access.
 //
-// This defines the algorithm: replay barriers until we reach the next first access,
-// validate that first access, then continue replaying barriers until the next first
+// This defines the algorithm: replay sync operations until we reach the next first access,
+// validate that first access, then continue replaying operations until the next first
 // access, validate that one, and so on until we reach the end of the command buffer.
-bool ReplayState::ValidateFirstUse() {
+bool ValidateFirstUseHazards(SyncEnvironment& env, const CommandBufferContext& recorded_cb_context,
+                             AccessContext& destination_context, ResourceUsageTag base_tag, const Location& cb_loc) {
     bool skip = false;
+    ReplayContexts contexts(recorded_cb_context, destination_context, env.queue_flags);
     ResourceUsageRange first_use_range = {0, 0};
 
     for (const ReplayEntry& entry : recorded_cb_context.GetReplayEntries()) {
         first_use_range.end = entry.tag;
-        skip |= DetectFirstUseHazard(first_use_range);
+        skip |= DetectFirstUseHazard(env, contexts, recorded_cb_context, first_use_range, cb_loc);
 
         const auto* context_change = GetReplayContextChange(entry.operation);
         if (context_change) {
-            ApplyContextChange(*context_change);
+            ApplyContextChange(*context_change, contexts);
         }
 
         if (entry.validate_layout_transition_first_use) {
-            skip |= DetectFirstUseHazard({entry.tag, entry.tag + 1});
+            skip |= DetectFirstUseHazard(env, contexts, recorded_cb_context, {entry.tag, entry.tag + 1}, cb_loc);
         }
 
         const bool replay_action = context_change == nullptr;
         if (replay_action) {
             const ResourceUsageTag exec_tag = base_tag + entry.tag;
-            skip |= ValidateEventCommand(env, entry.operation, GetCurrentDestinationContext(), exec_tag);
-            ApplyReplayAction(env, entry.operation, GetCurrentDestinationContext(), exec_tag);
+            AccessContext& current_destination = contexts.GetDestinationContext();
+            skip |= ValidateEventCommand(env, entry.operation, current_destination, exec_tag);
+            ApplyReplayAction(env, entry.operation, current_destination, exec_tag);
         }
 
         first_use_range.begin = entry.tag + 1;
@@ -178,48 +229,8 @@ bool ReplayState::ValidateFirstUse() {
 
     // Validate first accesses after the last replay entry.
     first_use_range.end = ResourceUsageRecord::kMaxIndex;
-    skip |= DetectFirstUseHazard(first_use_range);
-
+    skip |= DetectFirstUseHazard(env, contexts, recorded_cb_context, first_use_range, cb_loc);
     return skip;
-}
-
-const AccessContext& ReplayState::GetCurrentDestinationContext() const {
-    return rp_replay ? rp_replay->GetCurrentDestinationContext() : destination_context;
-}
-
-AccessContext& ReplayState::GetCurrentDestinationContext() {
-    return rp_replay ? rp_replay->GetCurrentDestinationContext() : destination_context;
-}
-
-const AccessContext& ReplayState::GetCurrentRecordedContext() const {
-    return rp_replay ? rp_replay->GetCurrentRecordedContext() : recorded_cb_context.GetCbAccessContext();
-}
-
-RenderPassReplayState::RenderPassReplayState(const RenderPassAccessContext* rp_context, const AccessContext& external_context,
-                                             VkQueueFlags queue_flags)
-    : rp_context(rp_context), current_subpass(0) {
-    const vvl::RenderPass& render_pass = *rp_context->GetRenderPassState();
-    const uint32_t subpass_count = render_pass.create_info.subpassCount;
-
-    destination_subpass_contexts = InitSubpassContexts(queue_flags, render_pass, external_context);
-
-    // Replace the Async contexts with the the async context of the "external" context
-    // For replay we don't care about async subpasses, just async queue batches
-    for (uint32_t i = 0; i < subpass_count; i++) {
-        AccessContext& subpass_context = destination_subpass_contexts[i];
-        subpass_context.ClearAsyncContexts();
-        subpass_context.ImportAsyncContexts(external_context);
-    }
-}
-
-AccessContext& RenderPassReplayState::GetCurrentDestinationContext() { return destination_subpass_contexts[current_subpass]; }
-
-const AccessContext& RenderPassReplayState::GetCurrentDestinationContext() const {
-    return destination_subpass_contexts[current_subpass];
-}
-
-const AccessContext& RenderPassReplayState::GetCurrentRecordedContext() const {
-    return rp_context->GetSubpassContexts()[current_subpass];
 }
 
 }  // namespace syncval

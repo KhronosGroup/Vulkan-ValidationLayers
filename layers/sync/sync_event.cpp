@@ -430,7 +430,7 @@ void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
     // to apply pending barriers in the end).
     //
     // NOTE: event's global barriers can split() access map because EventSimpleRangeGenerator filters kFullRange.
-    // That's why, in contrast to SyncOpPipelineBarrier, we need apply markup action also to global barriers.
+    // That's why, in contrast to ApplyBarrier, we need apply markup action also to global barriers.
     // TODO: need a test that demonstrates this (when doing some work on syncval events)
     size_t barrier_set_index = 0;
     size_t barrier_set_incr = (barrier_sets.size() == 1) ? 0 : 1;
