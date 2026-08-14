@@ -19,8 +19,9 @@
 #include "utils/convert_utils.h"
 
 class PositiveRenderPass : public VkLayerTest {};
+class PositiveRenderPassShared : public VkSharedLayerTest<> {};
 
-TEST_F(PositiveRenderPass, AttachmentUsedTwiceOK) {
+TEST_F(PositiveRenderPassShared, AttachmentUsedTwiceOK) {
     TEST_DESCRIPTION("Attachment is used simultaneously as color and input, with the same layout. This is OK.");
 
     RETURN_IF_SKIP(Init());
@@ -32,7 +33,7 @@ TEST_F(PositiveRenderPass, AttachmentUsedTwiceOK) {
     rp.CreateRenderPass();
 }
 
-TEST_F(PositiveRenderPass, InitialLayoutUndefined) {
+TEST_F(PositiveRenderPassShared, InitialLayoutUndefined) {
     TEST_DESCRIPTION(
         "Ensure that CmdBeginRenderPass with an attachment's initialLayout of VK_IMAGE_LAYOUT_UNDEFINED works when the command "
         "buffer has prior knowledge of that attachment's layout.");
@@ -62,7 +63,7 @@ TEST_F(PositiveRenderPass, InitialLayoutUndefined) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveRenderPass, AttachmentLayoutWithLoadOpThenReadOnly) {
+TEST_F(PositiveRenderPassShared, AttachmentLayoutWithLoadOpThenReadOnly) {
     TEST_DESCRIPTION(
         "Positive test where we create a renderpass with an attachment that uses LOAD_OP_CLEAR, the first subpass has a valid "
         "layout, and a second subpass then uses a valid *READ_ONLY* layout.");
@@ -99,7 +100,7 @@ TEST_F(PositiveRenderPass, AttachmentLayoutWithLoadOpThenReadOnly) {
     vkt::RenderPass rp(*m_device, rpci);
 }
 
-TEST_F(PositiveRenderPass, BeginSubpassZeroTransitionsApplied) {
+TEST_F(PositiveRenderPassShared, BeginSubpassZeroTransitionsApplied) {
     TEST_DESCRIPTION("Ensure that CmdBeginRenderPass applies the layout transitions for the first subpass");
 
     RETURN_IF_SKIP(Init());
@@ -141,7 +142,7 @@ TEST_F(PositiveRenderPass, BeginSubpassZeroTransitionsApplied) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveRenderPass, BeginTransitionsAttachmentUnused) {
+TEST_F(PositiveRenderPassShared, BeginTransitionsAttachmentUnused) {
     TEST_DESCRIPTION(
         "Ensure that layout transitions work correctly without errors, when an attachment reference is VK_ATTACHMENT_UNUSED");
 
@@ -166,7 +167,7 @@ TEST_F(PositiveRenderPass, BeginTransitionsAttachmentUnused) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
+TEST_F(PositiveRenderPassShared, BeginStencilLoadOp) {
     TEST_DESCRIPTION("Create a stencil-only attachment with a LOAD_OP set to CLEAR. stencil[Load|Store]Op used to be ignored.");
     RETURN_IF_SKIP(Init());
     VkFormat depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
@@ -221,7 +222,7 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     m_default_queue->SubmitAndWait(cmdbuf);
 }
 
-TEST_F(PositiveRenderPass, BeginInlineAndSecondaryCommandBuffers) {
+TEST_F(PositiveRenderPassShared, BeginInlineAndSecondaryCommandBuffers) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -235,7 +236,7 @@ TEST_F(PositiveRenderPass, BeginInlineAndSecondaryCommandBuffers) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveRenderPass, BeginDepthStencilLayoutTransitionFromUndefined) {
+TEST_F(PositiveRenderPassShared, BeginDepthStencilLayoutTransitionFromUndefined) {
     TEST_DESCRIPTION(
         "Create a render pass with depth-stencil attachment where layout transition from UNDEFINED TO DS_READ_ONLY_OPTIMAL is set "
         "by render pass and verify that transition has correctly occurred at queue submit time with no validation errors.");
@@ -270,7 +271,7 @@ TEST_F(PositiveRenderPass, BeginDepthStencilLayoutTransitionFromUndefined) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveRenderPass, DestroyPipeline) {
+TEST_F(PositiveRenderPassShared, DestroyPipeline) {
     TEST_DESCRIPTION("Draw using a pipeline whose create renderPass has been destroyed.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -428,7 +429,7 @@ TEST_F(PositiveRenderPass, ValidStages) {
     }
 }
 
-TEST_F(PositiveRenderPass, SingleMipTransition) {
+TEST_F(PositiveRenderPassShared, SingleMipTransition) {
     TEST_DESCRIPTION("Ensure that the validation message contains the correct miplevel");
 
     RETURN_IF_SKIP(Init());
@@ -597,7 +598,7 @@ TEST_F(PositiveRenderPass, StoreOpNoneExt) {
     rp.CreateRenderPass();
 }
 
-TEST_F(PositiveRenderPass, FramebufferCreateDepthStencilLayoutTransitionForDepthOnlyImageView) {
+TEST_F(PositiveRenderPassShared, FramebufferCreateDepthStencilLayoutTransitionForDepthOnlyImageView) {
     TEST_DESCRIPTION(
         "Validate that when an imageView of a depth/stencil image is used as a depth/stencil framebuffer attachment, the "
         "aspectMask is ignored and both depth and stencil image subresources are used.");
@@ -814,7 +815,7 @@ TEST_F(PositiveRenderPass, ImageLayoutTransitionOf3dImageWith2dViews) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveRenderPass, SubpassWithReadOnlyLayoutWithoutDependency) {
+TEST_F(PositiveRenderPassShared, SubpassWithReadOnlyLayoutWithoutDependency) {
     TEST_DESCRIPTION("When both subpasses' attachments are the same and layouts are read-only, they don't need dependency.");
     RETURN_IF_SKIP(Init());
 

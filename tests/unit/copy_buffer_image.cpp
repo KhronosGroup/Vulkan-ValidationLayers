@@ -18,6 +18,7 @@
 #include "layer_validation_tests.h"
 
 class NegativeCopyBufferImage : public VkLayerTest {};
+class NegativeCopyBufferImageShared : public VkSharedLayerTest<> {};
 
 constexpr VkImageUsageFlags kSrcDstUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 constexpr VkFormatFeatureFlags kSrcDstFeature = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
@@ -694,7 +695,7 @@ TEST_F(NegativeCopyBufferImage, CompressedImageMip) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCopyBufferImage, CompressedToCompressedNonPowerOf2) {
+TEST_F(NegativeCopyBufferImageShared, CompressedToCompressedNonPowerOf2) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-Docs/issues/1005");
     RETURN_IF_SKIP(Init());
 
@@ -724,7 +725,7 @@ TEST_F(NegativeCopyBufferImage, CompressedToCompressedNonPowerOf2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCopyBufferImage, CompressedToCompressedSrc) {
+TEST_F(NegativeCopyBufferImageShared, CompressedToCompressedSrc) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC2_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
@@ -748,7 +749,7 @@ TEST_F(NegativeCopyBufferImage, CompressedToCompressedSrc) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCopyBufferImage, CompressedMipLevels) {
+TEST_F(NegativeCopyBufferImageShared, CompressedMipLevels) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-Docs/issues/1005");
     RETURN_IF_SKIP(Init());
 
@@ -784,7 +785,7 @@ TEST_F(NegativeCopyBufferImage, CompressedMipLevels) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, CopyBufferCompressedMipLevels) {
+TEST_F(NegativeCopyBufferImageShared, CopyBufferCompressedMipLevels) {
     RETURN_IF_SKIP(Init());
 
     // 1 texel block is 8 bytes, so not enough
@@ -831,7 +832,7 @@ TEST_F(NegativeCopyBufferImage, CopyBufferCompressedMipLevels) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, UncompressedToCompressedDstOffset) {
+TEST_F(NegativeCopyBufferImageShared, UncompressedToCompressedDstOffset) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
@@ -876,7 +877,7 @@ TEST_F(NegativeCopyBufferImage, UncompressedToCompressedDstOffset) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, CompressedToUncompressedDstOffset) {
+TEST_F(NegativeCopyBufferImageShared, CompressedToUncompressedDstOffset) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
@@ -914,7 +915,7 @@ TEST_F(NegativeCopyBufferImage, CompressedToUncompressedDstOffset) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, UncompressedToCompressedNonPowerOfTwo) {
+TEST_F(NegativeCopyBufferImageShared, UncompressedToCompressedNonPowerOfTwo) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
@@ -993,7 +994,7 @@ TEST_F(NegativeCopyBufferImage, CopyBufferSizePlanar) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, BufferToCompressedNonPowerOfTwo) {
+TEST_F(NegativeCopyBufferImageShared, BufferToCompressedNonPowerOfTwo) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC2_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
@@ -1026,7 +1027,7 @@ TEST_F(NegativeCopyBufferImage, BufferToCompressedNonPowerOfTwo) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, CopyBufferTexelSize) {
+TEST_F(NegativeCopyBufferImageShared, CopyBufferTexelSize) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL,
@@ -1050,7 +1051,7 @@ TEST_F(NegativeCopyBufferImage, CopyBufferTexelSize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCopyBufferImage, CopyBufferImage1D) {
+TEST_F(NegativeCopyBufferImageShared, CopyBufferImage1D) {
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -1084,7 +1085,7 @@ TEST_F(NegativeCopyBufferImage, CopyBufferImage1D) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCopyBufferImage, CopyBufferImage2D) {
+TEST_F(NegativeCopyBufferImageShared, CopyBufferImage2D) {
     RETURN_IF_SKIP(Init());
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -1108,7 +1109,7 @@ TEST_F(NegativeCopyBufferImage, CopyBufferImage2D) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCopyBufferImage, CopyBufferRowLength) {
+TEST_F(NegativeCopyBufferImageShared, CopyBufferRowLength) {
     RETURN_IF_SKIP(Init());
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -1132,7 +1133,7 @@ TEST_F(NegativeCopyBufferImage, CopyBufferRowLength) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
+TEST_F(NegativeCopyBufferImageShared, ImageTypeExtentMismatch) {
     TEST_DESCRIPTION("Image copy tests where format type and extents don't match");
     RETURN_IF_SKIP(Init());
 
@@ -1226,7 +1227,7 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch3D) {
+TEST_F(NegativeCopyBufferImageShared, ImageTypeExtentMismatch3D) {
     TEST_DESCRIPTION("Image copy tests where format type and extents don't match");
     RETURN_IF_SKIP(Init());
 
@@ -1580,7 +1581,7 @@ TEST_F(NegativeCopyBufferImage, ImageCompressedBlockAlignment) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, ImageSrcSizeExceeded) {
+TEST_F(NegativeCopyBufferImageShared, ImageSrcSizeExceeded) {
     // Image copy with source region specified greater than src image size
     RETURN_IF_SKIP(Init());
 
@@ -1645,7 +1646,7 @@ TEST_F(NegativeCopyBufferImage, ImageSrcSizeExceeded) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, ImageDstSizeExceeded) {
+TEST_F(NegativeCopyBufferImageShared, ImageDstSizeExceeded) {
     // Image copy with dest region specified greater than dest image size
     RETURN_IF_SKIP(Init());
 
@@ -1709,7 +1710,7 @@ TEST_F(NegativeCopyBufferImage, ImageDstSizeExceeded) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, ImageZeroSize) {
+TEST_F(NegativeCopyBufferImageShared, ImageZeroSize) {
     TEST_DESCRIPTION("Image Copy with empty regions");
     RETURN_IF_SKIP(Init());
 
@@ -2032,7 +2033,7 @@ TEST_F(NegativeCopyBufferImage, ImageFormatSizeMismatch2) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, ImageDepthStencilFormatMismatch) {
+TEST_F(NegativeCopyBufferImageShared, ImageDepthStencilFormatMismatch) {
     RETURN_IF_SKIP(Init());
     auto depth_format = FindSupportedDepthStencilFormat(Gpu());
 
@@ -2062,7 +2063,7 @@ TEST_F(NegativeCopyBufferImage, ImageDepthStencilFormatMismatch) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCopyBufferImage, ImageSampleCountMismatch) {
+TEST_F(NegativeCopyBufferImageShared, ImageSampleCountMismatch) {
     TEST_DESCRIPTION("Image copies with sample count mis-matches");
     RETURN_IF_SKIP(Init());
 
@@ -2112,7 +2113,7 @@ TEST_F(NegativeCopyBufferImage, ImageSampleCountMismatch) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, ImageLayerCount) {
+TEST_F(NegativeCopyBufferImageShared, ImageLayerCount) {
     TEST_DESCRIPTION("Check layerCount in vkCmdCopyImage");
     RETURN_IF_SKIP(Init());
 
@@ -2295,7 +2296,7 @@ TEST_F(NegativeCopyBufferImage, DepthStencilImageCopyNoGraphicsQueueFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCopyBufferImage, ImageTransferQueueFlags) {
+TEST_F(NegativeCopyBufferImageShared, ImageTransferQueueFlags) {
     TEST_DESCRIPTION(
         "Allocate a command buffer on a queue that does not support graphics/compute and try to issue an invalid image copy to "
         "buffer");
@@ -2521,7 +2522,7 @@ TEST_F(NegativeCopyBufferImage, DISABLED_ImageOverlappingMemory) {
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10125
-TEST_F(NegativeCopyBufferImage, DISABLED_ImageOverlappingMemoryOffsets) {
+TEST_F(NegativeCopyBufferImageShared, DISABLED_ImageOverlappingMemoryOffsets) {
     RETURN_IF_SKIP(Init());
 
     VkDeviceSize buff_size = 16 * 16 * 4;
@@ -2559,7 +2560,7 @@ TEST_F(NegativeCopyBufferImage, DISABLED_ImageOverlappingMemoryOffsets) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCopyBufferImage, ImageRemainingLayers) {
+TEST_F(NegativeCopyBufferImageShared, ImageRemainingLayers) {
     TEST_DESCRIPTION("Test copying an image with VkImageSubresourceLayers.layerCount = VK_REMAINING_ARRAY_LAYERS");
     RETURN_IF_SKIP(Init());
 
@@ -2651,7 +2652,7 @@ TEST_F(NegativeCopyBufferImage, DifferentFormatTexelBlockExtent) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, BufferToCompressedImage) {
+TEST_F(NegativeCopyBufferImageShared, BufferToCompressedImage) {
     TEST_DESCRIPTION("Copy buffer to compressed image when buffer is larger than image.");
     RETURN_IF_SKIP(Init());
 
@@ -2876,7 +2877,7 @@ TEST_F(NegativeCopyBufferImage, ImageMissingUsage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, OverlappingImage) {
+TEST_F(NegativeCopyBufferImageShared, OverlappingImage) {
     TEST_DESCRIPTION("Copy a range of an image to another overlapping range of the same image");
 
     RETURN_IF_SKIP(Init());
@@ -2899,7 +2900,7 @@ TEST_F(NegativeCopyBufferImage, OverlappingImage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, MinImageTransferGranularity) {
+TEST_F(NegativeCopyBufferImageShared, MinImageTransferGranularity) {
     TEST_DESCRIPTION("Tests for validation of Queue Family property minImageTransferGranularity.");
     RETURN_IF_SKIP(Init());
 
@@ -3080,7 +3081,7 @@ TEST_F(NegativeCopyBufferImage, Extents) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, CompletelyOverlappingBuffer) {
+TEST_F(NegativeCopyBufferImageShared, CompletelyOverlappingBuffer) {
     TEST_DESCRIPTION("Test copying between buffers with completely overlapping source and destination regions.");
     RETURN_IF_SKIP(Init());
 
@@ -3106,7 +3107,7 @@ TEST_F(NegativeCopyBufferImage, CompletelyOverlappingBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCopyBufferImage, OverlapDstBuffer) {
+TEST_F(NegativeCopyBufferImageShared, OverlapDstBuffer) {
     RETURN_IF_SKIP(Init());
 
     VkBufferCopy copy_infos[3];
@@ -3132,7 +3133,7 @@ TEST_F(NegativeCopyBufferImage, OverlapDstBuffer) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, InterleavedRegions) {
+TEST_F(NegativeCopyBufferImageShared, InterleavedRegions) {
     TEST_DESCRIPTION("Test copying between interleaved source and destination regions.");
     RETURN_IF_SKIP(Init());
 
@@ -3172,7 +3173,7 @@ TEST_F(NegativeCopyBufferImage, InterleavedRegions) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, FillBuffer) {
+TEST_F(NegativeCopyBufferImageShared, FillBuffer) {
     TEST_DESCRIPTION("Test vkCmdFillBuffer");
     RETURN_IF_SKIP(Init());
 
@@ -3199,7 +3200,7 @@ TEST_F(NegativeCopyBufferImage, FillBuffer) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, UpdateBuffer) {
+TEST_F(NegativeCopyBufferImageShared, UpdateBuffer) {
     TEST_DESCRIPTION("Test vkCmdUpdateBuffer");
     RETURN_IF_SKIP(Init());
 
@@ -3229,7 +3230,7 @@ TEST_F(NegativeCopyBufferImage, UpdateBuffer) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, CopyToBufferWithoutMemoryBound) {
+TEST_F(NegativeCopyBufferImageShared, CopyToBufferWithoutMemoryBound) {
     TEST_DESCRIPTION("Copy to dst buffer that has no memory bound");
     RETURN_IF_SKIP(Init());
 
@@ -3570,7 +3571,7 @@ TEST_F(NegativeCopyBufferImage, MissingQueueGraphicsSupportMS) {
     command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, BufferCopy) {
+TEST_F(NegativeCopyBufferImageShared, BufferCopy) {
     RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -3785,7 +3786,7 @@ TEST_F(NegativeCopyBufferImage, ImageCopyMissingDstFormatFeature) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, ImageCopyAspectMismatch) {
+TEST_F(NegativeCopyBufferImageShared, ImageCopyAspectMismatch) {
     RETURN_IF_SKIP(Init());
 
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R16_UNORM,
@@ -3811,7 +3812,7 @@ TEST_F(NegativeCopyBufferImage, ImageCopyAspectMismatch) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, CopyToBufferWithoutMemory) {
+TEST_F(NegativeCopyBufferImageShared, CopyToBufferWithoutMemory) {
     RETURN_IF_SKIP(Init());
 
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM,
@@ -3836,7 +3837,7 @@ TEST_F(NegativeCopyBufferImage, CopyToBufferWithoutMemory) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, ImageCopyInvalidLayout) {
+TEST_F(NegativeCopyBufferImageShared, ImageCopyInvalidLayout) {
     RETURN_IF_SKIP(Init());
 
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | kSrcDstUsage);
@@ -3871,7 +3872,7 @@ TEST_F(NegativeCopyBufferImage, ImageCopyInvalidLayout) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, CopySrcImageMissingTransferBit) {
+TEST_F(NegativeCopyBufferImageShared, CopySrcImageMissingTransferBit) {
     RETURN_IF_SKIP(Init());
 
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -3895,7 +3896,7 @@ TEST_F(NegativeCopyBufferImage, CopySrcImageMissingTransferBit) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, BlitImage) {
+TEST_F(NegativeCopyBufferImageShared, BlitImage) {
     RETURN_IF_SKIP(Init());
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
@@ -3972,7 +3973,7 @@ TEST_F(NegativeCopyBufferImage, BlitSubsampledBit) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, BlitDepthImage) {
+TEST_F(NegativeCopyBufferImageShared, BlitDepthImage) {
     RETURN_IF_SKIP(Init());
 
     VkFormatProperties props;
@@ -4004,7 +4005,7 @@ TEST_F(NegativeCopyBufferImage, BlitDepthImage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, ResolveImage) {
+TEST_F(NegativeCopyBufferImageShared, ResolveImage) {
     RETURN_IF_SKIP(Init());
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
@@ -4101,7 +4102,7 @@ TEST_F(NegativeCopyBufferImage, ResolveImageRemainingLayers) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, ImageCopyWidthOverflow) {
+TEST_F(NegativeCopyBufferImageShared, ImageCopyWidthOverflow) {
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -4293,7 +4294,7 @@ TEST_F(NegativeCopyBufferImage, SmallImageCopyCommand2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCopyBufferImage, Image3dArrayLayer) {
+TEST_F(NegativeCopyBufferImageShared, Image3dArrayLayer) {
     RETURN_IF_SKIP(Init());
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
@@ -4351,7 +4352,7 @@ TEST_F(NegativeCopyBufferImage, Image2dTo3dArrayLayer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCopyBufferImage, CopyBufferToCompressedNonFullTexelBlock) {
+TEST_F(NegativeCopyBufferImageShared, CopyBufferToCompressedNonFullTexelBlock) {
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -4474,7 +4475,7 @@ TEST_F(NegativeCopyBufferImage, CopyCompress2DTo1D) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, CopyCompressToCompress) {
+TEST_F(NegativeCopyBufferImageShared, CopyCompressToCompress) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-Docs/issues/1005");
     RETURN_IF_SKIP(Init());
 
@@ -5351,7 +5352,7 @@ TEST_F(NegativeCopyBufferImage, BufferToLayeredImageCopy) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, DestroyAfterCopyImageToBuffer) {
+TEST_F(NegativeCopyBufferImageShared, DestroyAfterCopyImageToBuffer) {
     RETURN_IF_SKIP(Init());
 
     vkt::Buffer buffer(*m_device, 1024, kSrcDstUsage);
@@ -5407,7 +5408,7 @@ TEST_F(NegativeCopyBufferImage, DestroyAfterCopyImageToMemory) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCopyBufferImage, BC3Copy) {
+TEST_F(NegativeCopyBufferImageShared, BC3Copy) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {

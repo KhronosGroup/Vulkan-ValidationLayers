@@ -24,8 +24,9 @@
 #include <algorithm>
 
 class NegativeDescriptors : public VkLayerTest {};
+class NegativeDescriptorsShared : public VkSharedLayerTest<> {};
 
-TEST_F(NegativeDescriptors, DescriptorPoolConsistency) {
+TEST_F(NegativeDescriptorsShared, DescriptorPoolConsistency) {
     TEST_DESCRIPTION("Allocate descriptor sets from one DS pool and attempt to delete them from another.");
     RETURN_IF_SKIP(Init());
 
@@ -306,7 +307,7 @@ TEST_F(NegativeDescriptors, AllocateOverDescriptorYCbCr) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, FreeDescriptorFromOneShotPool) {
+TEST_F(NegativeDescriptorsShared, FreeDescriptorFromOneShotPool) {
     RETURN_IF_SKIP(Init());
 
     VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1};
@@ -335,7 +336,7 @@ TEST_F(NegativeDescriptors, FreeDescriptorFromOneShotPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DescriptorPool) {
+TEST_F(NegativeDescriptorsShared, DescriptorPool) {
     // Attempt to clear Descriptor Pool with bad object.
     // ObjectTracker should catch this.
 
@@ -347,7 +348,7 @@ TEST_F(NegativeDescriptors, DescriptorPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, BindInvalidDescriptorSet) {
+TEST_F(NegativeDescriptorsShared, BindInvalidDescriptorSet) {
     RETURN_IF_SKIP(Init());
     constexpr uint64_t fake_set_handle = 0xbaad6001;
     VkDescriptorSet bad_set = CastFromUint64<VkDescriptorSet>(fake_set_handle);
@@ -362,7 +363,7 @@ TEST_F(NegativeDescriptors, BindInvalidDescriptorSet) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DescriptorSetNotInRange) {
+TEST_F(NegativeDescriptorsShared, DescriptorSetNotInRange) {
     RETURN_IF_SKIP(Init());
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -431,7 +432,7 @@ TEST_F(NegativeDescriptors, DescriptorSetNotInRange2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, IncompatiblePipelineLayout) {
+TEST_F(NegativeDescriptorsShared, IncompatiblePipelineLayout) {
     RETURN_IF_SKIP(Init());
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -452,7 +453,7 @@ TEST_F(NegativeDescriptors, IncompatiblePipelineLayout) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptors, IncompatiblePipelineLayout2) {
+TEST_F(NegativeDescriptorsShared, IncompatiblePipelineLayout2) {
     RETURN_IF_SKIP(Init());
     if (m_device->Physical().limits_.maxPerStageDescriptorStorageBuffers <= 8) {
         GTEST_SKIP() << "maxPerStageDescriptorStorageBuffers of 8+ required";
@@ -529,7 +530,7 @@ TEST_F(NegativeDescriptors, NullDescriptorSetGPL) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptors, DescriptorSetLayout) {
+TEST_F(NegativeDescriptorsShared, DescriptorSetLayout) {
     // Attempt to create a Pipeline Layout with an invalid Descriptor Set Layout.
     // ObjectTracker should catch this.
     constexpr uint64_t fake_layout_handle = 0xbaad6001;
@@ -545,7 +546,7 @@ TEST_F(NegativeDescriptors, DescriptorSetLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, WriteDescriptorSetNull) {
+TEST_F(NegativeDescriptorsShared, WriteDescriptorSetNull) {
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -570,7 +571,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetNull) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, WriteDescriptorSetTypeStageMatch) {
+TEST_F(NegativeDescriptorsShared, WriteDescriptorSetTypeStageMatch) {
     RETURN_IF_SKIP(Init());
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -611,7 +612,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetTypeStageMatch) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, WriteDescriptorSetImmutableSamplerMix) {
+TEST_F(NegativeDescriptorsShared, WriteDescriptorSetImmutableSamplerMix) {
     RETURN_IF_SKIP(Init());
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -639,7 +640,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetImmutableSamplerMix) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
+TEST_F(NegativeDescriptorsShared, WriteDescriptorSetIntegrity) {
     RETURN_IF_SKIP(Init());
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -734,7 +735,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetInputAttachment2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, WriteImmutableSampler) {
+TEST_F(NegativeDescriptorsShared, WriteImmutableSampler) {
     RETURN_IF_SKIP(Init());
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -749,7 +750,7 @@ TEST_F(NegativeDescriptors, WriteImmutableSampler) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, WriteImmutableSampler2) {
+TEST_F(NegativeDescriptorsShared, WriteImmutableSampler2) {
     RETURN_IF_SKIP(Init());
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -775,7 +776,7 @@ TEST_F(NegativeDescriptors, WriteImmutableSampler2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, WriteDescriptorSetIdentitySwizzle) {
+TEST_F(NegativeDescriptorsShared, WriteDescriptorSetIdentitySwizzle) {
     TEST_DESCRIPTION("Test descriptors that need to have identity swizzle set");
     RETURN_IF_SKIP(Init());
 
@@ -806,7 +807,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIdentitySwizzle) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
+TEST_F(NegativeDescriptorsShared, WriteDescriptorSetConsecutiveUpdates) {
     TEST_DESCRIPTION(
         "Verifies that updates rolling over to next descriptor work correctly by destroying buffer from consecutive update known "
         "to be used in descriptor set and verifying that error is flagged.");
@@ -872,7 +873,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, CmdBufferDescriptorSetBufferDestroyed) {
+TEST_F(NegativeDescriptorsShared, CmdBufferDescriptorSetBufferDestroyed) {
     TEST_DESCRIPTION(
         "Attempt to draw with a command buffer that is invalid due to a bound descriptor set with a buffer dependency being "
         "destroyed.");
@@ -922,7 +923,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetBufferDestroyed) {
 
 // This is similar to the CmdBufferDescriptorSetBufferDestroyed test above except that the buffer
 // is destroyed before recording the Draw cmd.
-TEST_F(NegativeDescriptors, DrawDescriptorSetBufferDestroyed) {
+TEST_F(NegativeDescriptorsShared, DrawDescriptorSetBufferDestroyed) {
     TEST_DESCRIPTION("Attempt to bind a descriptor set that is invalid at Draw time due to its buffer dependency being destroyed.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -964,7 +965,7 @@ TEST_F(NegativeDescriptors, DrawDescriptorSetBufferDestroyed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
+TEST_F(NegativeDescriptorsShared, CmdBufferDescriptorSetImageSamplerDestroyed) {
     TEST_DESCRIPTION(
         "Attempt to draw with a command buffer that is invalid due to a bound descriptor sets with a combined image sampler having "
         "their image, sampler, and descriptor set each respectively destroyed and then attempting to submit associated cmd "
@@ -1220,7 +1221,7 @@ TEST_F(NegativeDescriptors, OpArrayLengthStaticallyUsed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DescriptorSetSamplerDestroyed) {
+TEST_F(NegativeDescriptorsShared, DescriptorSetSamplerDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a bound descriptor sets with a combined image sampler where sampler has been deleted.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1414,7 +1415,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
     }
 }
 
-TEST_F(NegativeDescriptors, DescriptorPoolInUseResetSignaled) {
+TEST_F(NegativeDescriptorsShared, DescriptorPoolInUseResetSignaled) {
     TEST_DESCRIPTION("Reset a DescriptorPool with a DescriptorSet that is in use.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1461,7 +1462,7 @@ TEST_F(NegativeDescriptors, DescriptorPoolInUseResetSignaled) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeDescriptors, DescriptorImageUpdateNoMemoryBound) {
+TEST_F(NegativeDescriptorsShared, DescriptorImageUpdateNoMemoryBound) {
     TEST_DESCRIPTION("Attempt an image descriptor set update where image's bound memory has been freed.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1489,7 +1490,7 @@ TEST_F(NegativeDescriptors, DescriptorImageUpdateNoMemoryBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DynamicOffsetCases) {
+TEST_F(NegativeDescriptorsShared, DynamicOffsetCases) {
     // Create a descriptorSet w/ dynamic descriptor and then hit 3 offset error
     // cases:
     // 1. No dynamicOffset supplied
@@ -1622,7 +1623,7 @@ TEST_F(NegativeDescriptors, BindDescriptorSetsInfoPipelineLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DescriptorBufferUpdateNoMemoryBound) {
+TEST_F(NegativeDescriptorsShared, DescriptorBufferUpdateNoMemoryBound) {
     TEST_DESCRIPTION("Attempt to update a descriptor with a non-sparse buffer that doesn't have memory bound");
 
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00329");
@@ -1647,7 +1648,7 @@ TEST_F(NegativeDescriptors, DescriptorBufferUpdateNoMemoryBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DynamicDescriptorSet) {
+TEST_F(NegativeDescriptorsShared, DynamicDescriptorSet) {
     RETURN_IF_SKIP(Init());
 
     const VkDeviceSize partial_size = m_device->Physical().limits_.minUniformBufferOffsetAlignment;
@@ -1770,7 +1771,7 @@ TEST_F(NegativeDescriptors, DynamicDescriptorSet) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
+TEST_F(NegativeDescriptorsShared, DynamicOffsetWithNullBuffer) {
     TEST_DESCRIPTION("Create a descriptorSet w/ dynamic descriptors where 1 binding is inactive, but all have null buffers");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1834,7 +1835,7 @@ TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptors, DSBufferInfo) {
+TEST_F(NegativeDescriptorsShared, DSBufferInfo) {
     RETURN_IF_SKIP(Init());
 
     std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
@@ -2014,7 +2015,7 @@ TEST_F(NegativeDescriptors, DISABLED_MutableBufferUpdate) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptors, UpdateDescriptorSetMismatchType) {
+TEST_F(NegativeDescriptorsShared, UpdateDescriptorSetMismatchType) {
     RETURN_IF_SKIP(Init());
 
     vkt::Buffer buffer(*m_device, m_device->Physical().limits_.minUniformBufferOffsetAlignment, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -2031,7 +2032,7 @@ TEST_F(NegativeDescriptors, UpdateDescriptorSetMismatchType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
+TEST_F(NegativeDescriptorsShared, DescriptorSetCompatibility) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -2200,7 +2201,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptors, DescriptorSetCompatibilityCompute) {
+TEST_F(NegativeDescriptorsShared, DescriptorSetCompatibilityCompute) {
     RETURN_IF_SKIP(Init());
 
     vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
@@ -2302,7 +2303,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibilityMutableDescriptors) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptors, DSUsageBits) {
+TEST_F(NegativeDescriptorsShared, DSUsageBits) {
     RETURN_IF_SKIP(Init());
 
     const VkFormat buffer_format = VK_FORMAT_R8_UNORM;
@@ -2474,7 +2475,7 @@ TEST_F(NegativeDescriptors, DSUsageBitsFlags2SubSet) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DSBufferLimit) {
+TEST_F(NegativeDescriptorsShared, DSBufferLimit) {
     TEST_DESCRIPTION(
         "Attempt to update buffer descriptor set that has VkDescriptorBufferInfo values that violate device limits.\n"
         "Test cases include:\n"
@@ -2583,7 +2584,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
     }
 }
 
-TEST_F(NegativeDescriptors, DSTypeMismatch) {
+TEST_F(NegativeDescriptorsShared, DSTypeMismatch) {
     // Create DS w/ layout of one type and attempt Update w/ mis-matched type
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00319");
 
@@ -2600,7 +2601,7 @@ TEST_F(NegativeDescriptors, DSTypeMismatch) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DSUpdateOutOfBounds) {
+TEST_F(NegativeDescriptorsShared, DSUpdateOutOfBounds) {
     // For overlapping Update, have arrayIndex exceed that of layout
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstArrayElement-00321");
     RETURN_IF_SKIP(Init());
@@ -2614,7 +2615,7 @@ TEST_F(NegativeDescriptors, DSUpdateOutOfBounds) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DSUpdateOutOfBoundsCombinedSampler) {
+TEST_F(NegativeDescriptorsShared, DSUpdateOutOfBoundsCombinedSampler) {
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -2632,7 +2633,7 @@ TEST_F(NegativeDescriptors, DSUpdateOutOfBoundsCombinedSampler) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DSUpdateOutOfBoundsCombinedSampler2) {
+TEST_F(NegativeDescriptorsShared, DSUpdateOutOfBoundsCombinedSampler2) {
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -2659,7 +2660,7 @@ TEST_F(NegativeDescriptors, DSUpdateOutOfBoundsCombinedSampler2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DSUpdateIndex) {
+TEST_F(NegativeDescriptorsShared, DSUpdateIndex) {
     // Create layout w/ count of 1 and attempt update to that layout w/ binding index 2
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstBinding-00315");
     RETURN_IF_SKIP(Init());
@@ -2673,7 +2674,7 @@ TEST_F(NegativeDescriptors, DSUpdateIndex) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DSUpdateEmptyBinding) {
+TEST_F(NegativeDescriptorsShared, DSUpdateEmptyBinding) {
     TEST_DESCRIPTION("Create layout w/ empty binding and attempt to update it");
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -2688,7 +2689,7 @@ TEST_F(NegativeDescriptors, DSUpdateEmptyBinding) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, UpdateIndexSmaller) {
+TEST_F(NegativeDescriptorsShared, UpdateIndexSmaller) {
     TEST_DESCRIPTION("Only have a binding 2, but try updating binding 1");
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -2701,7 +2702,7 @@ TEST_F(NegativeDescriptors, UpdateIndexSmaller) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DSUpdateStruct) {
+TEST_F(NegativeDescriptorsShared, DSUpdateStruct) {
     TEST_DESCRIPTION("Call UpdateDS w/ struct type other than valid VK_STRUCTUR_TYPE_UPDATE_* types");
     m_errorMonitor->SetDesiredError(".sType must be VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET");
     RETURN_IF_SKIP(Init());
@@ -2726,7 +2727,7 @@ TEST_F(NegativeDescriptors, DSUpdateStruct) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, SampleDescriptorUpdate) {
+TEST_F(NegativeDescriptorsShared, SampleDescriptorUpdate) {
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -2746,7 +2747,7 @@ TEST_F(NegativeDescriptors, SampleDescriptorUpdate) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, ImageViewDescriptorUpdate) {
+TEST_F(NegativeDescriptorsShared, ImageViewDescriptorUpdate) {
     // Create a single combined Image/Sampler descriptor and send it an invalid
     // imageView
 
@@ -2767,7 +2768,7 @@ TEST_F(NegativeDescriptors, ImageViewDescriptorUpdate) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, InputAttachmentDescriptorUpdate) {
+TEST_F(NegativeDescriptorsShared, InputAttachmentDescriptorUpdate) {
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -2782,7 +2783,7 @@ TEST_F(NegativeDescriptors, InputAttachmentDescriptorUpdate) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, InputAttachmentDepthStencilAspect) {
+TEST_F(NegativeDescriptorsShared, InputAttachmentDepthStencilAspect) {
     TEST_DESCRIPTION("Checks for InputAttachment image view with more than one aspect.");
     RETURN_IF_SKIP(Init());
 
@@ -2802,7 +2803,7 @@ TEST_F(NegativeDescriptors, InputAttachmentDepthStencilAspect) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
+TEST_F(NegativeDescriptorsShared, CopyDescriptorUpdate) {
     // Create DS w/ layout of 2 types, write update 1 and attempt to copy-update
     // into the other
     m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-dstBinding-02632");
@@ -2884,7 +2885,7 @@ TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, CopyDescriptorUpdate2) {
+TEST_F(NegativeDescriptorsShared, CopyDescriptorUpdate2) {
     RETURN_IF_SKIP(Init());
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -2942,7 +2943,7 @@ TEST_F(NegativeDescriptors, Maint1BindingSliceOf3DImage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, UpdateDestroyDescriptorSetLayout) {
+TEST_F(NegativeDescriptorsShared, UpdateDestroyDescriptorSetLayout) {
     TEST_DESCRIPTION("Attempt updates to descriptor sets with destroyed descriptor set layouts");
     RETURN_IF_SKIP(Init());
 
@@ -3013,7 +3014,7 @@ TEST_F(NegativeDescriptors, UpdateDestroyDescriptorSetLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, WriteDescriptorSetNotAllocated) {
+TEST_F(NegativeDescriptorsShared, WriteDescriptorSetNotAllocated) {
     TEST_DESCRIPTION("Try to update a descriptor that has yet to be allocated");
     RETURN_IF_SKIP(Init());
 
@@ -3040,7 +3041,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetNotAllocated) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, ConsecutiveBindingUpdatesStartOver) {
+TEST_F(NegativeDescriptorsShared, ConsecutiveBindingUpdatesStartOver) {
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
@@ -3086,7 +3087,7 @@ TEST_F(NegativeDescriptors, ConsecutiveBindingUpdatesStartOver) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, ConsecutiveBindingUpdatesStartOverInConsistent) {
+TEST_F(NegativeDescriptorsShared, ConsecutiveBindingUpdatesStartOverInConsistent) {
     RETURN_IF_SKIP(Init());
     // binding 0 is different
     OneOffDescriptorSet descriptor_set(m_device,
@@ -3111,7 +3112,7 @@ TEST_F(NegativeDescriptors, ConsecutiveBindingUpdatesStartOverInConsistent) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, CreateDescriptorPool) {
+TEST_F(NegativeDescriptorsShared, CreateDescriptorPool) {
     TEST_DESCRIPTION("Attempt to create descriptor pool with invalid parameters");
 
     RETURN_IF_SKIP(Init());
@@ -3150,7 +3151,7 @@ TEST_F(NegativeDescriptors, CreateDescriptorPool) {
     }
 }
 
-TEST_F(NegativeDescriptors, DuplicateDescriptorBinding) {
+TEST_F(NegativeDescriptorsShared, DuplicateDescriptorBinding) {
     TEST_DESCRIPTION("Create a descriptor set layout with a duplicate binding number.");
     RETURN_IF_SKIP(Init());
     // Create layout where two binding #s are "1"
@@ -3396,7 +3397,7 @@ TEST_F(NegativeDescriptors, MaxInlineUniformBlockBindings) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DstArrayElement) {
+TEST_F(NegativeDescriptorsShared, DstArrayElement) {
     RETURN_IF_SKIP(Init());
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
@@ -3439,7 +3440,7 @@ TEST_F(NegativeDescriptors, DstArrayElement) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DescriptorSetLayoutMisc) {
+TEST_F(NegativeDescriptorsShared, DescriptorSetLayoutMisc) {
     TEST_DESCRIPTION("Various invalid ways to create a VkDescriptorSetLayout.");
     RETURN_IF_SKIP(Init());
 
@@ -3463,7 +3464,7 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutMisc) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DescriptorSetLayoutStageFlags) {
+TEST_F(NegativeDescriptorsShared, DescriptorSetLayoutStageFlags) {
     TEST_DESCRIPTION("VkDescriptorSetLayout stageFlags are not valid flags");
     RETURN_IF_SKIP(Init());
 
@@ -3478,7 +3479,7 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutStageFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DescriptorSetLayoutImmutableSamplers) {
+TEST_F(NegativeDescriptorsShared, DescriptorSetLayoutImmutableSamplers) {
     TEST_DESCRIPTION("VkDescriptorSetLayout with invalid pImmutableSamplers");
     RETURN_IF_SKIP(Init());
 
@@ -3497,7 +3498,7 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutImmutableSamplers) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DescriptorSetLayoutNullImmutableSamplers) {
+TEST_F(NegativeDescriptorsShared, DescriptorSetLayoutNullImmutableSamplers) {
     TEST_DESCRIPTION("VkDescriptorSetLayout with invalid pImmutableSamplers set to null");
     RETURN_IF_SKIP(Init());
 
@@ -3516,9 +3517,8 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutNullImmutableSamplers) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, NullDescriptorsDisabled) {
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState());
+TEST_F(NegativeDescriptorsShared, NullDescriptorsDisabled) {
+    RETURN_IF_SKIP(Init());
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -3622,7 +3622,7 @@ TEST_F(NegativeDescriptors, NullDescriptorsEnabled) {
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8095
-TEST_F(NegativeDescriptors, DISABLED_ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) {
+TEST_F(NegativeDescriptorsShared, DISABLED_ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) {
     TEST_DESCRIPTION("Validate if attachments and descriptor set use the same image subresources");
 
     RETURN_IF_SKIP(Init());
@@ -4503,7 +4503,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8095
-TEST_F(NegativeDescriptors, DISABLED_DescriptorReadFromWriteAttachment) {
+TEST_F(NegativeDescriptorsShared, DISABLED_DescriptorReadFromWriteAttachment) {
     TEST_DESCRIPTION("Validate reading from a descriptor that uses same image view as framebuffer write attachment");
 
     RETURN_IF_SKIP(Init());
@@ -5006,7 +5006,7 @@ TEST_F(NegativeDescriptors, InvalidDescriptorSetLayoutInlineUniformBlockFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DispatchWithUnboundSet) {
+TEST_F(NegativeDescriptorsShared, DispatchWithUnboundSet) {
     TEST_DESCRIPTION("Dispatch with unbound descriptor set");
     RETURN_IF_SKIP(Init());
 
@@ -5053,7 +5053,7 @@ TEST_F(NegativeDescriptors, DispatchWithUnboundSet) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, CompatiblePushConstantRanges) {
+TEST_F(NegativeDescriptorsShared, CompatiblePushConstantRanges) {
     RETURN_IF_SKIP(Init());
 
     const char* shader_source = R"glsl(
@@ -5195,7 +5195,7 @@ TEST_F(NegativeDescriptors, SampledImageDepthComparisonForFormat) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptors, BindDescriptorWithoutPipelineLayout) {
+TEST_F(NegativeDescriptorsShared, BindDescriptorWithoutPipelineLayout) {
     TEST_DESCRIPTION("Bind a DescriptorSet with a null pipeline layout.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -5298,7 +5298,7 @@ TEST_F(NegativeDescriptors, CopyDescriptorSetMissingSrcFlag) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptors, InvalidDescriptorWriteImageInfo) {
+TEST_F(NegativeDescriptorsShared, InvalidDescriptorWriteImageInfo) {
     TEST_DESCRIPTION("Write descriptor set with invalid image info.");
 
     RETURN_IF_SKIP(Init());
@@ -5319,7 +5319,7 @@ TEST_F(NegativeDescriptors, InvalidDescriptorWriteImageInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, BindStorageBufferDynamicAlignment) {
+TEST_F(NegativeDescriptorsShared, BindStorageBufferDynamicAlignment) {
     TEST_DESCRIPTION("Bind dynamic storage buffer with invalid alignment.");
 
     RETURN_IF_SKIP(Init());
@@ -5643,7 +5643,7 @@ TEST_F(NegativeDescriptors, GetSupportMutableDescriptorType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, EmptyDescriptorSetLayout) {
+TEST_F(NegativeDescriptorsShared, EmptyDescriptorSetLayout) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8065");
     RETURN_IF_SKIP(Init());
 
@@ -5681,7 +5681,7 @@ TEST_F(NegativeDescriptors, EmptyDescriptorSetLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, DuplicateLayoutDifferentSampler) {
+TEST_F(NegativeDescriptorsShared, DuplicateLayoutDifferentSampler) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497");
     RETURN_IF_SKIP(Init());
     auto sampler_ci = SafeSaneSamplerCreateInfo();
@@ -6168,7 +6168,7 @@ TEST_F(NegativeDescriptors, PartitionedAccelerationStructureTypeMismatch) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, ImmutableSamplerIdenticallyDefined) {
+TEST_F(NegativeDescriptorsShared, ImmutableSamplerIdenticallyDefined) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10098");
     RETURN_IF_SKIP(Init());
 

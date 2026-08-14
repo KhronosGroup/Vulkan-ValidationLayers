@@ -22,6 +22,7 @@
 #include "pipeline_helper.h"
 
 class NegativeImage : public ImageTest {};
+class NegativeImageShared : public VkSharedLayerTest<ImageTest> {};
 
 TEST_F(NegativeImage, UsageBits) {
     TEST_DESCRIPTION(
@@ -83,7 +84,7 @@ TEST_F(NegativeImage, UsageBits) {
     }
 }
 
-TEST_F(NegativeImage, UnknownObject) {
+TEST_F(NegativeImageShared, UnknownObject) {
     m_errorMonitor->SetDesiredError("VUID-vkGetImageMemoryRequirements-image-parameter");
 
     TEST_DESCRIPTION("Pass an invalid image object handle into a Vulkan API call.");
@@ -100,7 +101,7 @@ TEST_F(NegativeImage, UnknownObject) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeImage, SampleCounts) {
+TEST_F(NegativeImageShared, SampleCounts) {
     TEST_DESCRIPTION("Use bad sample counts in image transfer calls to trigger validation errors.");
     RETURN_IF_SKIP(Init());
 
@@ -448,7 +449,7 @@ TEST_F(NegativeImage, BlitFilters) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeImage, BlitOffsets) {
+TEST_F(NegativeImageShared, BlitOffsets) {
     RETURN_IF_SKIP(Init());
 
     VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
@@ -566,7 +567,7 @@ TEST_F(NegativeImage, BlitOffsets) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeImage, BlitOverlap) {
+TEST_F(NegativeImageShared, BlitOverlap) {
     TEST_DESCRIPTION("Try to blit an image on same region.");
 
     RETURN_IF_SKIP(Init());
@@ -607,7 +608,7 @@ TEST_F(NegativeImage, BlitOverlap) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeImage, MiscBlitTests) {
+TEST_F(NegativeImageShared, MiscBlitTests) {
     RETURN_IF_SKIP(Init());
 
     VkFormat f_color = VK_FORMAT_R32_SFLOAT;  // Need features ..BLIT_SRC_BIT & ..BLIT_DST_BIT
@@ -728,7 +729,7 @@ TEST_F(NegativeImage, MiscBlitTests) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeImage, BlitMipLevels) {
+TEST_F(NegativeImageShared, BlitMipLevels) {
     RETURN_IF_SKIP(Init());
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
@@ -834,7 +835,7 @@ TEST_F(NegativeImage, BlitBothRemainingArrayLayers) {
                      VK_FILTER_NEAREST);
 }
 
-TEST_F(NegativeImage, BlitToDepth) {
+TEST_F(NegativeImageShared, BlitToDepth) {
     RETURN_IF_SKIP(Init());
 
     const VkFormat f_depth = VK_FORMAT_D32_SFLOAT;
@@ -1099,7 +1100,7 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
+TEST_F(NegativeImageShared, ImageViewFormatFeatureMismatch) {
     TEST_DESCRIPTION("Create view with a format that does not have the same features as the image format.");
 
     RETURN_IF_SKIP(Init());
@@ -1378,7 +1379,7 @@ TEST_F(NegativeImage, ImageViewStencilUsageCreateInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeImage, ImageViewNoMemoryBoundToImage) {
+TEST_F(NegativeImageShared, ImageViewNoMemoryBoundToImage) {
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -1402,7 +1403,7 @@ TEST_F(NegativeImage, ImageViewNoMemoryBoundToImage) {
                         " used with no memory bound. Memory should be bound by calling vkBindImageMemory().");
 }
 
-TEST_F(NegativeImage, ImageViewAspect) {
+TEST_F(NegativeImageShared, ImageViewAspect) {
     TEST_DESCRIPTION("Create an image and try to create a view with an invalid aspectMask");
     RETURN_IF_SKIP(Init());
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -1416,7 +1417,7 @@ TEST_F(NegativeImage, ImageViewAspect) {
     CreateImageViewTest(image_view_create_info, "VUID-VkImageViewCreateInfo-subresourceRange-09594");
 }
 
-TEST_F(NegativeImage, GetImageSubresourceLayout) {
+TEST_F(NegativeImageShared, GetImageSubresourceLayout) {
     TEST_DESCRIPTION("Test vkGetImageSubresourceLayout() valid usages");
 
     RETURN_IF_SKIP(Init());
@@ -1632,7 +1633,7 @@ TEST_F(NegativeImage, DeviceImageSubresourceInfoKHR) {
     }
 }
 
-TEST_F(NegativeImage, UndefinedFormat) {
+TEST_F(NegativeImageShared, UndefinedFormat) {
     TEST_DESCRIPTION("Create image with undefined format");
 
     RETURN_IF_SKIP(Init());
@@ -1650,7 +1651,7 @@ TEST_F(NegativeImage, UndefinedFormat) {
     CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-pNext-01975");
 }
 
-TEST_F(NegativeImage, ImageViewFormatMismatchUnrelated) {
+TEST_F(NegativeImageShared, ImageViewFormatMismatchUnrelated) {
     TEST_DESCRIPTION("Create an image with a color format, then try to create a depth view of it");
 
     RETURN_IF_SKIP(Init());
@@ -1679,7 +1680,7 @@ TEST_F(NegativeImage, ImageViewFormatMismatchUnrelated) {
     CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-image-12397");
 }
 
-TEST_F(NegativeImage, ImageViewNoMutableFormatBit) {
+TEST_F(NegativeImageShared, ImageViewNoMutableFormatBit) {
     TEST_DESCRIPTION("Create an image view with a different format, when the image does not have MUTABLE_FORMAT bit");
 
     RETURN_IF_SKIP(Init());
@@ -1706,7 +1707,7 @@ TEST_F(NegativeImage, ImageViewNoMutableFormatBit) {
     CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-image-12397");
 }
 
-TEST_F(NegativeImage, ImageViewDifferentClass) {
+TEST_F(NegativeImageShared, ImageViewDifferentClass) {
     TEST_DESCRIPTION("Passing bad parameters to CreateImageView");
 
     RETURN_IF_SKIP(Init());
@@ -1740,7 +1741,7 @@ TEST_F(NegativeImage, ImageViewDifferentClass) {
     }
 }
 
-TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
+TEST_F(NegativeImageShared, ImageViewInvalidSubresourceRange) {
     TEST_DESCRIPTION("Passing bad image subrange to CreateImageView");
     RETURN_IF_SKIP(Init());
 
@@ -2063,7 +2064,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
     sparse_image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 }
 
-TEST_F(NegativeImage, ImageViewLayerCount) {
+TEST_F(NegativeImageShared, ImageViewLayerCount) {
     TEST_DESCRIPTION("Image and ImageView arrayLayers/layerCount parameters not being compatibile");
 
     RETURN_IF_SKIP(Init());
@@ -2266,7 +2267,7 @@ TEST_F(NegativeImage, ZeroInitializeFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeImage, ImageMinLimits) {
+TEST_F(NegativeImageShared, ImageMinLimits) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters violation minimum limit, such as being zero.");
 
     RETURN_IF_SKIP(Init());
@@ -2360,7 +2361,7 @@ TEST_F(NegativeImage, ImageMinLimits) {
     }
 }
 
-TEST_F(NegativeImage, MaxLimitsMipLevelsAndExtent) {
+TEST_F(NegativeImageShared, MaxLimitsMipLevelsAndExtent) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
     RETURN_IF_SKIP(Init());
     VkImageCreateInfo image_ci = DefaultImageInfo();
@@ -2373,7 +2374,7 @@ TEST_F(NegativeImage, MaxLimitsMipLevelsAndExtent) {
     CreateImageTest(image_ci, "VUID-VkImageCreateInfo-mipLevels-00958");
 }
 
-TEST_F(NegativeImage, MaxLimitsMipLevels) {
+TEST_F(NegativeImageShared, MaxLimitsMipLevels) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
     RETURN_IF_SKIP(Init());
 
@@ -2397,7 +2398,7 @@ TEST_F(NegativeImage, MaxLimitsMipLevels) {
     GTEST_SKIP() << "Cannot find a format to test maxMipLevels limit; skipping part of test";
 }
 
-TEST_F(NegativeImage, MaxLimitsArrayLayers) {
+TEST_F(NegativeImageShared, MaxLimitsArrayLayers) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
     RETURN_IF_SKIP(Init());
     VkImageCreateInfo image_ci = DefaultImageInfo();
@@ -2412,7 +2413,7 @@ TEST_F(NegativeImage, MaxLimitsArrayLayers) {
     CreateImageTest(image_ci, "VUID-VkImageCreateInfo-arrayLayers-02256");
 }
 
-TEST_F(NegativeImage, MaxLimitsSamples) {
+TEST_F(NegativeImageShared, MaxLimitsSamples) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
     RETURN_IF_SKIP(Init());
     VkImageCreateInfo image_ci = DefaultImageInfo();
@@ -2435,7 +2436,7 @@ TEST_F(NegativeImage, MaxLimitsSamples) {
     GTEST_SKIP() << "Could not find a format with some unsupported samples; skipping part of test.";
 }
 
-TEST_F(NegativeImage, MaxLimitsExtent) {
+TEST_F(NegativeImageShared, MaxLimitsExtent) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
     RETURN_IF_SKIP(Init());
     VkImageCreateInfo image_ci = DefaultImageInfo();
@@ -2454,7 +2455,7 @@ TEST_F(NegativeImage, MaxLimitsExtent) {
     CreateImageTest(image_ci, "VUID-VkImageCreateInfo-extent-02254");
 }
 
-TEST_F(NegativeImage, MaxLimitsFramebufferWidth) {
+TEST_F(NegativeImageShared, MaxLimitsFramebufferWidth) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
     RETURN_IF_SKIP(Init());
 
@@ -2475,7 +2476,7 @@ TEST_F(NegativeImage, MaxLimitsFramebufferWidth) {
     CreateImageTest(image_ci, "VUID-VkImageCreateInfo-usage-00964");
 }
 
-TEST_F(NegativeImage, MaxLimitsFramebufferHeight) {
+TEST_F(NegativeImageShared, MaxLimitsFramebufferHeight) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
     RETURN_IF_SKIP(Init());
 
@@ -2497,7 +2498,7 @@ TEST_F(NegativeImage, MaxLimitsFramebufferHeight) {
     CreateImageTest(image_ci, "VUID-VkImageCreateInfo-usage-00965");
 }
 
-TEST_F(NegativeImage, DepthStencilImageViewWithColorAspectBit) {
+TEST_F(NegativeImageShared, DepthStencilImageViewWithColorAspectBit) {
     // Create a single Image descriptor and cause it to first hit an error due
     //  to using a DS format, then cause it to hit error due to COLOR_BIT not
     //  set in aspect
@@ -3614,7 +3615,7 @@ TEST_F(NegativeImage, ImageViewMinLodFeature) {
     CreateImageViewTest(ivci, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06455");
 }
 
-TEST_F(NegativeImage, ColorWthDepthAspect) {
+TEST_F(NegativeImageShared, ColorWthDepthAspect) {
     TEST_DESCRIPTION("Test creating an image with color format but depth aspect.");
     RETURN_IF_SKIP(Init());
 
@@ -3890,7 +3891,7 @@ TEST_F(NegativeImage, GetImageSubresourceLayout2Maintenance5) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeImage, TransitionNonSparseImageLayoutWithoutBoundMemory) {
+TEST_F(NegativeImageShared, TransitionNonSparseImageLayoutWithoutBoundMemory) {
     TEST_DESCRIPTION("Try to change layout of non sparse image with no memory bound.");
 
     RETURN_IF_SKIP(Init());
@@ -4381,7 +4382,7 @@ TEST_F(NegativeImage, ImageViewTextureSampleWeighted) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeImage, CubeCompatibleMustBeImageType2D) {
+TEST_F(NegativeImageShared, CubeCompatibleMustBeImageType2D) {
     TEST_DESCRIPTION("If flags contains VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, imageType must be VK_IMAGE_TYPE_2D");
     RETURN_IF_SKIP(Init());
     if (!IsPlatformMockICD()) {
@@ -4403,7 +4404,7 @@ TEST_F(NegativeImage, CubeCompatibleMustBeImageType2D) {
     CreateImageTest(ci, "VUID-VkImageCreateInfo-flags-00949");
 }
 
-TEST_F(NegativeImage, GetPhysicalDeviceImageFormatProperties) {
+TEST_F(NegativeImageShared, GetPhysicalDeviceImageFormatProperties) {
     TEST_DESCRIPTION("fail a call to GetPhysicalDeviceImageFormatProperties");
     RETURN_IF_SKIP(Init());
 
@@ -4464,7 +4465,7 @@ TEST_F(NegativeImage, GetPhysicalDeviceImageFormatProperties2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeImage, BlitColorToDepth) {
+TEST_F(NegativeImageShared, BlitColorToDepth) {
     TEST_DESCRIPTION("Blit a color image to a depth image");
     RETURN_IF_SKIP(Init());
 
@@ -4890,7 +4891,7 @@ TEST_F(NegativeImage, ArrayFrom3dImage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeImage, StatelessChainOfLocations) {
+TEST_F(NegativeImageShared, StatelessChainOfLocations) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11912");
     RETURN_IF_SKIP(Init());
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);

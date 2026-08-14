@@ -99,6 +99,9 @@ class VkRenderFramework : public VkTestFramework {
     void InitFramework(void *instance_pnext = NULL);
     void ShutdownFramework();
 
+    void InitShared(VkRenderFramework* shared_framework);
+    void DestroyErrorMonitorCallback() { m_errorMonitor->DestroyCallback(instance_); }
+
     // Functions to modify the VkRenderFramework surface & swapchain variables
     void InitSurface();
     void InitSwapchainInfo();
@@ -198,6 +201,9 @@ class VkRenderFramework : public VkTestFramework {
 
     ErrorMonitor monitor_ = ErrorMonitor(m_print_vu);
     ErrorMonitor *m_errorMonitor = &monitor_;  // TODO: Removing this properly is it's own PR. It's a big change.
+
+    // When sharing the framework between tests
+    bool owns_instance_and_device_ = true;
 
     bool allow_promoted_extensions_ = false;
 

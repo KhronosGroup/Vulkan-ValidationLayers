@@ -19,6 +19,7 @@
 #include "shader_helper.h"
 
 class PositiveShaderSpirv : public VkLayerTest {};
+class PositiveShaderSpirvShared : public VkSharedLayerTest<> {};
 
 TEST_F(PositiveShaderSpirv, NonSemanticInfo) {
     // This is a positive test, no errors expected
@@ -49,7 +50,7 @@ TEST_F(PositiveShaderSpirv, NonSemanticInfo) {
     VkShaderObj cs(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 }
 
-TEST_F(PositiveShaderSpirv, GroupDecorations) {
+TEST_F(PositiveShaderSpirvShared, GroupDecorations) {
     TEST_DESCRIPTION("Test shader validation support for group decorations.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -706,7 +707,7 @@ TEST_F(PositiveShaderSpirv, OpTypeArraySpecConstant) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info_spec, kErrorBit);
 }
 
-TEST_F(PositiveShaderSpirv, OpTypeStructRuntimeArray) {
+TEST_F(PositiveShaderSpirvShared, OpTypeStructRuntimeArray) {
     TEST_DESCRIPTION("Make sure variables with a OpTypeStruct can handle a runtime array inside");
 
     RETURN_IF_SKIP(Init());
@@ -987,7 +988,7 @@ TEST_F(PositiveShaderSpirv, SpecializeInt16) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderSpirv, SpecializeInt32) {
+TEST_F(PositiveShaderSpirvShared, SpecializeInt32) {
     TEST_DESCRIPTION("Test int32 specialization.");
 
     RETURN_IF_SKIP(Init());
@@ -1085,7 +1086,7 @@ TEST_F(PositiveShaderSpirv, SpecializeInt64) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderSpirv, SpecializationUnused) {
+TEST_F(PositiveShaderSpirvShared, SpecializationUnused) {
     TEST_DESCRIPTION("Make sure an unused spec constant is valid to us");
 
     RETURN_IF_SKIP(Init());
@@ -1755,7 +1756,7 @@ void main() {
     VkShaderObj tese(*m_device, source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 }
 
-TEST_F(PositiveShaderSpirv, SpecConstantTextureArrayVertex) {
+TEST_F(PositiveShaderSpirvShared, SpecConstantTextureArrayVertex) {
     TEST_DESCRIPTION("Reproduces https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6370");
     RETURN_IF_SKIP(Init());
     const char* source = R"glsl(
@@ -1774,7 +1775,7 @@ void main() {
     VkShaderObj vs(*m_device, source, VK_SHADER_STAGE_VERTEX_BIT);
 }
 
-TEST_F(PositiveShaderSpirv, SpecConstantTextureIndexDefault) {
+TEST_F(PositiveShaderSpirvShared, SpecConstantTextureIndexDefault) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6293");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1799,7 +1800,7 @@ TEST_F(PositiveShaderSpirv, SpecConstantTextureIndexDefault) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderSpirv, SpecConstantTextureIndexValue) {
+TEST_F(PositiveShaderSpirvShared, SpecConstantTextureIndexValue) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1853,7 +1854,7 @@ TEST_F(PositiveShaderSpirv, SpecConstantTextureIndexValue) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderSpirv, DescriptorCountSpecConstant) {
+TEST_F(PositiveShaderSpirvShared, DescriptorCountSpecConstant) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -2285,7 +2286,7 @@ TEST_F(PositiveShaderSpirv, ImageGatherOffsetMaintenance8) {
     VkShaderObj fs(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 }
 
-TEST_F(PositiveShaderSpirv, NonSemanticInfoEnabled) {
+TEST_F(PositiveShaderSpirvShared, NonSemanticInfoEnabled) {
     TEST_DESCRIPTION("Test VK_KHR_shader_non_semantic_info.");
 
     RETURN_IF_SKIP(Init());

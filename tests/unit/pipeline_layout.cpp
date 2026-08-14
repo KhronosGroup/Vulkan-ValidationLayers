@@ -19,8 +19,9 @@
 #include <algorithm>
 
 class NegativePipelineLayout : public VkLayerTest {};
+class NegativePipelineLayoutShared : public VkSharedLayerTest<> {};
 
-TEST_F(NegativePipelineLayout, ExceedsSetLimit) {
+TEST_F(NegativePipelineLayoutShared, ExceedsSetLimit) {
     TEST_DESCRIPTION("Attempt to create a pipeline layout using more than the physical limit of SetLayouts.");
     RETURN_IF_SKIP(Init());
 
@@ -685,7 +686,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 }
 
-TEST_F(NegativePipelineLayout, DescriptorTypeMismatch) {
+TEST_F(NegativePipelineLayoutShared, DescriptorTypeMismatch) {
     TEST_DESCRIPTION("Challenge core_validation with shader validation issues related to vkCreateGraphicsPipelines.");
 
     RETURN_IF_SKIP(Init());
@@ -716,7 +717,7 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatch) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipelineLayout, DescriptorTypeMismatchCompute) {
+TEST_F(NegativePipelineLayoutShared, DescriptorTypeMismatchCompute) {
     TEST_DESCRIPTION("Test that an error is produced for a pipeline consuming a descriptor-backed resource of a mismatched type");
 
     RETURN_IF_SKIP(Init());
@@ -738,7 +739,7 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchCompute) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipelineLayout, DescriptorTypeMismatchNonCombinedImageSampler) {
+TEST_F(NegativePipelineLayoutShared, DescriptorTypeMismatchNonCombinedImageSampler) {
     TEST_DESCRIPTION(
         "HLSL will sometimes produce a SAMPLED_IMAGE / SAMPLER on the same slot that is same as COMBINED_IMAGE_SAMPLER");
 
@@ -796,7 +797,7 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchNonCombinedImageSampler) {
     CreatePipelineHelper::OneshotTest(*this, set_sampler, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07990");
 }
 
-TEST_F(NegativePipelineLayout, DescriptorTypeMismatchBufferBlock) {
+TEST_F(NegativePipelineLayoutShared, DescriptorTypeMismatchBufferBlock) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11352");
     RETURN_IF_SKIP(Init());
 
@@ -818,7 +819,7 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchBufferBlock) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipelineLayout, DescriptorNotAccessible) {
+TEST_F(NegativePipelineLayoutShared, DescriptorNotAccessible) {
     TEST_DESCRIPTION(
         "Create a pipeline in which a descriptor used by a shader stage does not include that stage in its stageFlags.");
 
@@ -850,7 +851,7 @@ TEST_F(NegativePipelineLayout, DescriptorNotAccessible) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipelineLayout, UniformBlockNotProvided) {
+TEST_F(NegativePipelineLayoutShared, UniformBlockNotProvided) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a shader consuming a uniform block which has no corresponding binding in the pipeline "
         "layout");
@@ -872,7 +873,7 @@ TEST_F(NegativePipelineLayout, UniformBlockNotProvided) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipelineLayout, MissingDescriptor) {
+TEST_F(NegativePipelineLayoutShared, MissingDescriptor) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a compute pipeline consuming a descriptor which is not provided in the pipeline "
         "layout");

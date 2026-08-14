@@ -21,6 +21,7 @@
 #endif
 
 class NegativeMemory : public VkLayerTest {};
+class NegativeMemoryShared : public VkSharedLayerTest<> {};
 
 TEST_F(NegativeMemory, MemoryDecompressionEnabled) {
     TEST_DESCRIPTION("Validate memoryDecompression feature is enabled");
@@ -693,7 +694,7 @@ TEST_F(NegativeMemory, MemoryDecompressionSrcAddressOutOfRange) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeMemory, MapMemory) {
+TEST_F(NegativeMemoryShared, MapMemory) {
     RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -748,7 +749,7 @@ TEST_F(NegativeMemory, MapMemory) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeMemory, MapMemoryFlush) {
+TEST_F(NegativeMemoryShared, MapMemoryFlush) {
     RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -813,7 +814,7 @@ TEST_F(NegativeMemory, MapMemoryFlush) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeMemory, MapMemoryCoherentAtomSize) {
+TEST_F(NegativeMemoryShared, MapMemoryCoherentAtomSize) {
     RETURN_IF_SKIP(Init());
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, MapMemory will fail ASAN";
@@ -935,7 +936,7 @@ TEST_F(NegativeMemory, MapMemory2) {
     vk::UnmapMemory2KHR(device(), &unmap_info);
     m_errorMonitor->VerifyFound();
 }
-TEST_F(NegativeMemory, MapMemoryNullppData) {
+TEST_F(NegativeMemoryShared, MapMemoryNullppData) {
     TEST_DESCRIPTION("vkMapMemory but ppData is null");
     RETURN_IF_SKIP(Init());
 
@@ -949,7 +950,7 @@ TEST_F(NegativeMemory, MapMemoryNullppData) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeMemory, MapMemWithoutHostVisibleBit) {
+TEST_F(NegativeMemoryShared, MapMemWithoutHostVisibleBit) {
     TEST_DESCRIPTION("Allocate memory that is not mappable and then attempt to map it.");
 
     RETURN_IF_SKIP(Init());
@@ -1193,7 +1194,7 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedDisabled) {
 }
 #endif
 
-TEST_F(NegativeMemory, RebindMemoryMultiObject) {
+TEST_F(NegativeMemoryShared, RebindMemoryMultiObject) {
     RETURN_IF_SKIP(Init());
 
     // Create an image, allocate memory, free it, and then try to bind it
@@ -1222,7 +1223,7 @@ TEST_F(NegativeMemory, RebindMemoryMultiObject) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeMemory, QueryMemoryCommitmentWithoutLazyProperty) {
+TEST_F(NegativeMemoryShared, QueryMemoryCommitmentWithoutLazyProperty) {
     TEST_DESCRIPTION("Attempt to query memory commitment on memory without lazy allocation");
     RETURN_IF_SKIP(Init());
 
@@ -1248,7 +1249,7 @@ TEST_F(NegativeMemory, QueryMemoryCommitmentWithoutLazyProperty) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeMemory, BindImageMemoryType) {
+TEST_F(NegativeMemoryShared, BindImageMemoryType) {
     TEST_DESCRIPTION("Create an image, allocate memory, set a bad typeIndex and then try to bind it");
     RETURN_IF_SKIP(Init());
 
@@ -1484,7 +1485,7 @@ TEST_F(NegativeMemory, BindMemory) {
     }
 }
 
-TEST_F(NegativeMemory, BindMemoryUnsupported) {
+TEST_F(NegativeMemoryShared, BindMemoryUnsupported) {
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info =
@@ -1529,7 +1530,7 @@ TEST_F(NegativeMemory, BindMemoryUnsupported) {
     }
 }
 
-TEST_F(NegativeMemory, BindMemoryNoCheckBuffer) {
+TEST_F(NegativeMemoryShared, BindMemoryNoCheckBuffer) {
     TEST_DESCRIPTION("Tests case were no call to memory requirements was made prior to binding");
     RETURN_IF_SKIP(Init());
 
@@ -1566,7 +1567,7 @@ TEST_F(NegativeMemory, BindMemoryNoCheckBuffer) {
     }
 }
 
-TEST_F(NegativeMemory, BindMemoryNoCheckImage) {
+TEST_F(NegativeMemoryShared, BindMemoryNoCheckImage) {
     TEST_DESCRIPTION("Tests case were no call to memory requirements was made prior to binding");
     RETURN_IF_SKIP(Init());
 
@@ -1872,7 +1873,7 @@ TEST_F(NegativeMemory, BindMemory2BindInfosMultiPlane) {
     vk::FreeMemory(device(), mp_image_b_mem[1], nullptr);
 }
 
-TEST_F(NegativeMemory, BindMemoryToDestroyedObject) {
+TEST_F(NegativeMemoryShared, BindMemoryToDestroyedObject) {
     RETURN_IF_SKIP(Init());
 
     // Create an image object, allocate memory, destroy the object and then try
@@ -1904,7 +1905,7 @@ TEST_F(NegativeMemory, BindMemoryToDestroyedObject) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeMemory, AllocationCount) {
+TEST_F(NegativeMemoryShared, AllocationCount) {
     RETURN_IF_SKIP(Init());
 
     const uint32_t max_mems = m_device->Physical().limits_.maxMemoryAllocationCount;
@@ -1936,7 +1937,7 @@ TEST_F(NegativeMemory, AllocationCount) {
     }
 }
 
-TEST_F(NegativeMemory, ImageMemoryNotBound) {
+TEST_F(NegativeMemoryShared, ImageMemoryNotBound) {
     TEST_DESCRIPTION("Attempt to draw with an image which has not had memory bound to it.");
     RETURN_IF_SKIP(Init());
 
@@ -1976,7 +1977,7 @@ TEST_F(NegativeMemory, ImageMemoryNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeMemory, BufferMemoryNotBound) {
+TEST_F(NegativeMemoryShared, BufferMemoryNotBound) {
     TEST_DESCRIPTION("Attempt to copy from a buffer which has not had memory bound to it.");
     RETURN_IF_SKIP(Init());
 
@@ -2321,7 +2322,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeMemory, MemoryType) {
+TEST_F(NegativeMemoryShared, MemoryType) {
     // Attempts to allocate from a memory type that doesn't exist
 
     RETURN_IF_SKIP(Init());
@@ -2340,7 +2341,7 @@ TEST_F(NegativeMemory, MemoryType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeMemory, AllocationBeyondHeapSize) {
+TEST_F(NegativeMemoryShared, AllocationBeyondHeapSize) {
     // Attempts to allocate a single piece of memory that's larger than the heap size
 
     RETURN_IF_SKIP(Init());

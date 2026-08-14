@@ -17,8 +17,9 @@
 #include "error_message/log_message_type.h"
 
 class NegativeVertexInput : public VkLayerTest {};
+class NegativeVertexInputShared : public VkSharedLayerTest<> {};
 
-TEST_F(NegativeVertexInput, AttributeFormat) {
+TEST_F(NegativeVertexInputShared, AttributeFormat) {
     TEST_DESCRIPTION("Test that pipeline validation catches invalid vertex attribute formats");
 
     RETURN_IF_SKIP(Init());
@@ -351,7 +352,7 @@ TEST_F(NegativeVertexInput, DivisorInstanceRateZero14) {
                                       "VUID-VkVertexInputBindingDivisorDescription-vertexAttributeInstanceRateZeroDivisor-02228");
 }
 
-TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindings) {
+TEST_F(NegativeVertexInputShared, InputBindingMaxVertexInputBindings) {
     TEST_DESCRIPTION(
         "Test VUID-VkVertexInputBindingDescription-binding-00618: binding must be less than "
         "VkPhysicalDeviceLimits::maxVertexInputBindings");
@@ -370,7 +371,7 @@ TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindings) {
     CreatePipelineHelper::OneshotTest(*this, set_binding, kErrorBit, "VUID-VkVertexInputBindingDescription-binding-00618");
 }
 
-TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindingStride) {
+TEST_F(NegativeVertexInputShared, InputBindingMaxVertexInputBindingStride) {
     TEST_DESCRIPTION(
         "Test VUID-VkVertexInputBindingDescription-stride-00619: stride must be less than or equal to "
         "VkPhysicalDeviceLimits::maxVertexInputBindingStride");
@@ -389,7 +390,7 @@ TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindingStride) {
     CreatePipelineHelper::OneshotTest(*this, set_binding, kErrorBit, "VUID-VkVertexInputBindingDescription-stride-00619");
 }
 
-TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputAttributes) {
+TEST_F(NegativeVertexInputShared, InputAttributeMaxVertexInputAttributes) {
     TEST_DESCRIPTION(
         "Test VUID-VkVertexInputAttributeDescription-location-00620: location must be less than "
         "VkPhysicalDeviceLimits::maxVertexInputAttributes");
@@ -411,7 +412,7 @@ TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputAttributes) {
                                                                "VUID-VkVertexInputAttributeDescription-format-00623"});
 }
 
-TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputBindings) {
+TEST_F(NegativeVertexInputShared, InputAttributeMaxVertexInputBindings) {
     TEST_DESCRIPTION(
         "Test VUID-VkVertexInputAttributeDescription-binding-00621: binding must be less than "
         "VkPhysicalDeviceLimits::maxVertexInputBindings");
@@ -433,7 +434,7 @@ TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputBindings) {
                                                                "VUID-VkVertexInputAttributeDescription-format-00623"});
 }
 
-TEST_F(NegativeVertexInput, AttributeDescriptionOffset) {
+TEST_F(NegativeVertexInputShared, AttributeDescriptionOffset) {
     TEST_DESCRIPTION(
         "Test VUID-VkVertexInputAttributeDescription-offset-00622: offset must be less than or equal to "
         "VkPhysicalDeviceLimits::maxVertexInputAttributeOffset");
@@ -465,7 +466,7 @@ TEST_F(NegativeVertexInput, AttributeDescriptionOffset) {
     CreatePipelineHelper::OneshotTest(*this, set_attribute, kErrorBit, "VUID-VkVertexInputAttributeDescription-offset-00622");
 }
 
-TEST_F(NegativeVertexInput, BindingDescriptions) {
+TEST_F(NegativeVertexInputShared, BindingDescriptions) {
     TEST_DESCRIPTION(
         "Attempt to create a graphics pipeline where:"
         "1) count of vertex bindings exceeds device's maxVertexInputBindings limit"
@@ -502,7 +503,7 @@ TEST_F(NegativeVertexInput, BindingDescriptions) {
     CreatePipelineHelper::OneshotTest(*this, set_Info, kErrorBit, vuids);
 }
 
-TEST_F(NegativeVertexInput, AttributeDescriptions) {
+TEST_F(NegativeVertexInputShared, AttributeDescriptions) {
     TEST_DESCRIPTION(
         "Attempt to create a graphics pipeline where:"
         "1) count of vertex attributes exceeds device's maxVertexInputAttributes limit"
@@ -609,7 +610,7 @@ TEST_F(NegativeVertexInput, ProvokingVertexModePerPipeline) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeVertexInput, VertextBinding) {
+TEST_F(NegativeVertexInputShared, VertextBinding) {
     TEST_DESCRIPTION("Verify if VkPipelineVertexInputStateCreateInfo matches vkCmdBindVertexBuffers");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -655,7 +656,7 @@ TEST_F(NegativeVertexInput, VertextBinding) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeVertexInput, VertextBindingNonLinear) {
+TEST_F(NegativeVertexInputShared, VertextBindingNonLinear) {
     TEST_DESCRIPTION("Have Binding not be in a linear order");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -700,7 +701,7 @@ TEST_F(NegativeVertexInput, VertextBindingNonLinear) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeVertexInput, VertextBindingMultipleLocations) {
+TEST_F(NegativeVertexInputShared, VertextBindingMultipleLocations) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -804,7 +805,7 @@ TEST_F(NegativeVertexInput, VertextBindingDynamicState) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeVertexInput, AttributeAlignment) {
+TEST_F(NegativeVertexInputShared, AttributeAlignment) {
     TEST_DESCRIPTION("Check for proper aligment of attribAddress which depends on a bound pipeline and on a bound vertex buffer");
 
     RETURN_IF_SKIP(Init());
@@ -903,7 +904,7 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeVertexInput, BindVertexOffset) {
+TEST_F(NegativeVertexInputShared, BindVertexOffset) {
     TEST_DESCRIPTION("set the pOffset in vkCmdBindVertexBuffers to 3 and use R16");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -944,7 +945,7 @@ TEST_F(NegativeVertexInput, BindVertexOffset) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeVertexInput, VertexStride) {
+TEST_F(NegativeVertexInputShared, VertexStride) {
     TEST_DESCRIPTION("set the Stride to 3 and use R16");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1190,7 +1191,7 @@ TEST_F(NegativeVertexInput, VertexStrideDoubleDynamicStride) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeVertexInput, AttributeNotConsumed) {
+TEST_F(NegativeVertexInputShared, AttributeNotConsumed) {
     TEST_DESCRIPTION("Test that a warning is produced for a vertex attribute which is not consumed by the vertex shader");
 
     RETURN_IF_SKIP(Init());
@@ -1211,7 +1212,7 @@ TEST_F(NegativeVertexInput, AttributeNotConsumed) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "WARNING-Shader-OutputNotConsumed");
 }
 
-TEST_F(NegativeVertexInput, AttributeLocationMismatch) {
+TEST_F(NegativeVertexInputShared, AttributeLocationMismatch) {
     TEST_DESCRIPTION(
         "Test that a warning is produced for a location mismatch on vertex attributes. This flushes out bad behavior in the "
         "interface walker");
@@ -1235,7 +1236,7 @@ TEST_F(NegativeVertexInput, AttributeLocationMismatch) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "WARNING-Shader-OutputNotConsumed");
 }
 
-TEST_F(NegativeVertexInput, MatrixComponentNotConsumed) {
+TEST_F(NegativeVertexInputShared, MatrixComponentNotConsumed) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11355");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1268,7 +1269,7 @@ TEST_F(NegativeVertexInput, MatrixComponentNotConsumed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeVertexInput, MatrixArrayComponentNotConsumed) {
+TEST_F(NegativeVertexInputShared, MatrixArrayComponentNotConsumed) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11355");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1302,7 +1303,7 @@ TEST_F(NegativeVertexInput, MatrixArrayComponentNotConsumed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeVertexInput, AttributeNotProvided) {
+TEST_F(NegativeVertexInputShared, AttributeNotProvided) {
     TEST_DESCRIPTION("Test that an error is produced for a vertex shader input which is not provided by a vertex attribute");
 
     RETURN_IF_SKIP(Init());
@@ -1323,7 +1324,7 @@ TEST_F(NegativeVertexInput, AttributeNotProvided) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-07904");
 }
 
-TEST_F(NegativeVertexInput, AttributeTypeMismatch) {
+TEST_F(NegativeVertexInputShared, AttributeTypeMismatch) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a mismatch between the fundamental type (float/int/uint) of an attribute and the "
         "vertex shader input that consumes it");
@@ -1356,7 +1357,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatch) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");
 }
 
-TEST_F(NegativeVertexInput, AttributeStructTypeFirstLocation) {
+TEST_F(NegativeVertexInputShared, AttributeStructTypeFirstLocation) {
     TEST_DESCRIPTION("Input is OpTypeStruct but doesn't match");
 
     RETURN_IF_SKIP(Init());
@@ -1411,7 +1412,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeFirstLocation) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeVertexInput, AttributeStructTypeSecondLocation) {
+TEST_F(NegativeVertexInputShared, AttributeStructTypeSecondLocation) {
     TEST_DESCRIPTION("Input is OpTypeStruct but doesn't match for location given");
 
     RETURN_IF_SKIP(Init());
@@ -1465,7 +1466,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeSecondLocation) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation) {
+TEST_F(NegativeVertexInputShared, AttributeStructTypeBlockLocation) {
     TEST_DESCRIPTION("Input is OpTypeStruct where the Block has the Location");
 
     RETURN_IF_SKIP(Init());
@@ -1567,7 +1568,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatchDynamic) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeVertexInput, AttributeBindingConflict) {
+TEST_F(NegativeVertexInputShared, AttributeBindingConflict) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a vertex attribute setup where multiple bindings provide the same location");
 
@@ -1870,7 +1871,7 @@ TEST_F(NegativeVertexInput, UnsupportedDynamicStateDivisor) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeVertexInput, BindVertexBufferNull) {
+TEST_F(NegativeVertexInputShared, BindVertexBufferNull) {
     TEST_DESCRIPTION("Have null vertex but no nullDescriptor feature");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1934,7 +1935,7 @@ TEST_F(NegativeVertexInput, NoBoundVertexBuffer) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeVertexInput, VertexBufferDestroyed) {
+TEST_F(NegativeVertexInputShared, VertexBufferDestroyed) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

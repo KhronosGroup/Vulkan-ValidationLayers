@@ -19,6 +19,7 @@
 #include <cstdint>
 
 class NegativeQuery : public QueryTest {};
+class NegativeQueryShared : public VkSharedLayerTest<QueryTest> {};
 
 TEST_F(NegativeQuery, PerformanceCreation) {
     TEST_DESCRIPTION("Create performance query without support");
@@ -845,7 +846,7 @@ TEST_F(NegativeQuery, HostResetDevice) {
     vk::DestroyDevice(second_device, nullptr);
 }
 
-TEST_F(NegativeQuery, CmdBufferQueryPoolDestroyed) {
+TEST_F(NegativeQueryShared, CmdBufferQueryPoolDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a query pool dependency being destroyed.");
     RETURN_IF_SKIP(Init());
 
@@ -862,7 +863,7 @@ TEST_F(NegativeQuery, CmdBufferQueryPoolDestroyed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, BeginQueryOnTimestampPool) {
+TEST_F(NegativeQueryShared, BeginQueryOnTimestampPool) {
     TEST_DESCRIPTION("Call CmdBeginQuery on a TIMESTAMP query pool.");
 
     RETURN_IF_SKIP(Init());
@@ -879,7 +880,7 @@ TEST_F(NegativeQuery, BeginQueryOnTimestampPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, InsideRenderPass) {
+TEST_F(NegativeQueryShared, InsideRenderPass) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -899,7 +900,7 @@ TEST_F(NegativeQuery, InsideRenderPass) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeQuery, OutsideRenderPass) {
+TEST_F(NegativeQueryShared, OutsideRenderPass) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -973,7 +974,7 @@ TEST_F(NegativeQuery, OutsideRenderPassDynamicRendering) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, PoolCreate) {
+TEST_F(NegativeQueryShared, PoolCreate) {
     TEST_DESCRIPTION("Attempt to create a query pool for PIPELINE_STATISTICS without enabling pipeline stats for the device.");
 
     RETURN_IF_SKIP(Init());
@@ -1012,7 +1013,7 @@ TEST_F(NegativeQuery, PoolCreate) {
     vk::DestroyDevice(local_device, nullptr);
 }
 
-TEST_F(NegativeQuery, Sizes) {
+TEST_F(NegativeQueryShared, Sizes) {
     TEST_DESCRIPTION("Invalid size of using queries commands.");
 
     RETURN_IF_SKIP(Init());
@@ -1196,7 +1197,7 @@ TEST_F(NegativeQuery, PreciseBit) {
     vk::DestroyCommandPool(test_device, command_pool, nullptr);
 }
 
-TEST_F(NegativeQuery, PoolPartialTimestamp) {
+TEST_F(NegativeQueryShared, PoolPartialTimestamp) {
     TEST_DESCRIPTION("Request partial result on timestamp query.");
 
     RETURN_IF_SKIP(Init());
@@ -1256,7 +1257,7 @@ TEST_F(NegativeQuery, PerformanceQueryIntel) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, PoolInUseDestroyed) {
+TEST_F(NegativeQueryShared, PoolInUseDestroyed) {
     TEST_DESCRIPTION("Delete in-use query pool.");
 
     RETURN_IF_SKIP(Init());
@@ -1480,7 +1481,7 @@ TEST_F(NegativeQuery, ResultStatusOnly) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, DestroyActiveQueryPool) {
+TEST_F(NegativeQueryShared, DestroyActiveQueryPool) {
     TEST_DESCRIPTION("Destroy query pool after GetQueryPoolResults() without VK_QUERY_RESULT_PARTIAL_BIT returns VK_SUCCESS");
 
     RETURN_IF_SKIP(Init());
@@ -1924,7 +1925,7 @@ TEST_F(NegativeQuery, WriteTimestampWithoutQueryPool) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeQuery, DestroyWithoutQueryPool) {
+TEST_F(NegativeQueryShared, DestroyWithoutQueryPool) {
     TEST_DESCRIPTION("call vkDestryQueryPool with queryPool being invalid.");
     RETURN_IF_SKIP(Init());
     VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
@@ -1933,7 +1934,7 @@ TEST_F(NegativeQuery, DestroyWithoutQueryPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, GetQueryPoolResultsWithoutQueryPool) {
+TEST_F(NegativeQueryShared, GetQueryPoolResultsWithoutQueryPool) {
     TEST_DESCRIPTION("call vkGetQueryPoolResults with queryPool being invalid.");
     RETURN_IF_SKIP(Init());
     VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
@@ -1944,7 +1945,7 @@ TEST_F(NegativeQuery, GetQueryPoolResultsWithoutQueryPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, CmdEndQueryWithoutQueryPool) {
+TEST_F(NegativeQueryShared, CmdEndQueryWithoutQueryPool) {
     TEST_DESCRIPTION("call vkCmdEndQuery with queryPool being invalid.");
     RETURN_IF_SKIP(Init());
 
@@ -1962,7 +1963,7 @@ TEST_F(NegativeQuery, CmdEndQueryWithoutQueryPool) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeQuery, CmdCopyQueryPoolResultsWithoutQueryPool) {
+TEST_F(NegativeQueryShared, CmdCopyQueryPoolResultsWithoutQueryPool) {
     TEST_DESCRIPTION("call vkCmdCopyQueryPoolResults with queryPool being invalid.");
     RETURN_IF_SKIP(Init());
 
@@ -1982,7 +1983,7 @@ TEST_F(NegativeQuery, CmdCopyQueryPoolResultsWithoutQueryPool) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeQuery, CmdResetQueryPoolWithoutQueryPool) {
+TEST_F(NegativeQueryShared, CmdResetQueryPoolWithoutQueryPool) {
     TEST_DESCRIPTION("call vkCmdResetQueryPool with queryPool being invalid.");
     RETURN_IF_SKIP(Init());
     VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
@@ -2003,7 +2004,7 @@ TEST_F(NegativeQuery, ResetQueryPoolWithoutQueryPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, ActiveEndQuery) {
+TEST_F(NegativeQueryShared, ActiveEndQuery) {
     TEST_DESCRIPTION("Check all queries for vkCmdEndQuery are active");
     RETURN_IF_SKIP(Init());
 
@@ -2017,7 +2018,7 @@ TEST_F(NegativeQuery, ActiveEndQuery) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeQuery, ActiveCmdResetQueryPool) {
+TEST_F(NegativeQueryShared, ActiveCmdResetQueryPool) {
     TEST_DESCRIPTION("Check all queries for vkCmdResetQueryPool are not active");
     RETURN_IF_SKIP(Init());
 
@@ -2033,7 +2034,7 @@ TEST_F(NegativeQuery, ActiveCmdResetQueryPool) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeQuery, ActiveCmdCopyQueryPoolResults) {
+TEST_F(NegativeQueryShared, ActiveCmdCopyQueryPoolResults) {
     TEST_DESCRIPTION("Check all queries for vkCmdCopyQueryPoolResults are not active");
     RETURN_IF_SKIP(Init());
 
@@ -2362,7 +2363,7 @@ TEST_F(NegativeQuery, WriteTimestampInsideRenderPass) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeQuery, Stride) {
+TEST_F(NegativeQueryShared, Stride) {
     TEST_DESCRIPTION("Validate Stride parameter.");
     RETURN_IF_SKIP(Init());
 
@@ -2501,7 +2502,7 @@ TEST_F(NegativeQuery, NoInitReset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, CopyUnavailableQueries) {
+TEST_F(NegativeQueryShared, CopyUnavailableQueries) {
     TEST_DESCRIPTION("Copy query results when they are not available");
     RETURN_IF_SKIP(Init());
 

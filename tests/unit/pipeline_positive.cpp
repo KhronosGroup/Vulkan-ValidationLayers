@@ -17,6 +17,7 @@
 #include "render_pass_helper.h"
 
 class PositivePipeline : public VkLayerTest {};
+class PositivePipelineShared : public VkSharedLayerTest<> {};
 
 TEST_F(PositivePipeline, ComplexTypes) {
     TEST_DESCRIPTION("Smoke test for complex types across VS/FS boundary");
@@ -40,7 +41,7 @@ TEST_F(PositivePipeline, ComplexTypes) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositivePipeline, BasicUsage) {
+TEST_F(PositivePipelineShared, BasicUsage) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -48,7 +49,7 @@ TEST_F(PositivePipeline, BasicUsage) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositivePipeline, MissingDescriptorUnused) {
+TEST_F(PositivePipelineShared, MissingDescriptorUnused) {
     TEST_DESCRIPTION(
         "Test that pipeline validation accepts a compute pipeline which declares a descriptor-backed resource which is not "
         "provided, but the shader does not statically use it. This is interesting because it requires compute pipelines to have a "
@@ -93,7 +94,7 @@ TEST_F(PositivePipeline, FragmentShadingRate) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsSampler) {
+TEST_F(PositivePipelineShared, CombinedImageSamplerConsumedAsSampler) {
     TEST_DESCRIPTION(
         "Test that pipeline validation accepts a shader consuming only the sampler portion of a combined image + sampler");
 
@@ -119,7 +120,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsSampler) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsImage) {
+TEST_F(PositivePipelineShared, CombinedImageSamplerConsumedAsImage) {
     TEST_DESCRIPTION(
         "Test that pipeline validation accepts a shader consuming only the image portion of a combined image + sampler");
 
@@ -145,7 +146,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsImage) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsBoth) {
+TEST_F(PositivePipelineShared, CombinedImageSamplerConsumedAsBoth) {
     TEST_DESCRIPTION(
         "Test that pipeline validation accepts a shader consuming both the sampler and the image of a combined image+sampler but "
         "via separate variables");
@@ -171,7 +172,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsBoth) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositivePipeline, IgnoredMultisampleState) {
+TEST_F(PositivePipelineShared, IgnoredMultisampleState) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5931");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -187,7 +188,7 @@ TEST_F(PositivePipeline, IgnoredMultisampleState) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositivePipeline, CreateComputePipelineWithDerivatives) {
+TEST_F(PositivePipelineShared, CreateComputePipelineWithDerivatives) {
     TEST_DESCRIPTION("Create Compute Pipeline with derivatives");
 
     RETURN_IF_SKIP(Init());
@@ -657,7 +658,7 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
     }
 }
 
-TEST_F(PositivePipeline, AttachmentUnused) {
+TEST_F(PositivePipelineShared, AttachmentUnused) {
     TEST_DESCRIPTION("Make sure unused attachments are correctly ignored.");
 
     RETURN_IF_SKIP(Init());
@@ -760,7 +761,7 @@ TEST_F(PositivePipeline, SampleMaskOverrideCoverageNV) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositivePipeline, RasterizationDiscardEnableTrue) {
+TEST_F(PositivePipelineShared, RasterizationDiscardEnableTrue) {
     TEST_DESCRIPTION("Ensure it doesn't crash and trigger error msg when rasterizerDiscardEnable = true");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -787,7 +788,7 @@ TEST_F(PositivePipeline, RasterizationDiscardEnableTrue) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositivePipeline, SamplerDataForCombinedImageSampler) {
+TEST_F(PositivePipelineShared, SamplerDataForCombinedImageSampler) {
     TEST_DESCRIPTION("Shader code uses sampler data for CombinedImageSampler");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1293,7 +1294,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineRasterizationOrderAttachmentAcces
     }
 }
 
-TEST_F(PositivePipeline, AttachmentsDisableRasterization) {
+TEST_F(PositivePipelineShared, AttachmentsDisableRasterization) {
     TEST_DESCRIPTION(
         "Create a pipeline with rasterization disabled, containing a valid pColorBlendState and color attachments, "
         "without a fragment shader");
@@ -1875,7 +1876,7 @@ TEST_F(PositivePipeline, GetPipelinePropertiesEXT) {
     vk::GetPipelinePropertiesEXT(device(), &pipeline_info, &out_struct);
 }
 
-TEST_F(PositivePipeline, ColorWriteMaskE5B9G9R9) {
+TEST_F(PositivePipelineShared, ColorWriteMaskE5B9G9R9) {
     RETURN_IF_SKIP(Init());
     if (!(m_device->FormatFeaturesOptimal(VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT)) {
         GTEST_SKIP() << "Device does not support VK_FORMAT_E5B9G9R9_UFLOAT_PACK32";

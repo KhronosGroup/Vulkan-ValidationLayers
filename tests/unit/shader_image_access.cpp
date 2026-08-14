@@ -13,8 +13,9 @@
 #include "pipeline_helper.h"
 
 class NegativeShaderImageAccess : public VkLayerTest {};
+class NegativeShaderImageAccessShared : public VkSharedLayerTest<> {};
 
-TEST_F(NegativeShaderImageAccess, FunctionOpImage) {
+TEST_F(NegativeShaderImageAccessShared, FunctionOpImage) {
     TEST_DESCRIPTION("Use Component Format mismatch to test image access edge cases");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -103,7 +104,7 @@ TEST_F(NegativeShaderImageAccess, FunctionOpImage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderImageAccess, ComponentTypeMismatchFunctionTwoArgs) {
+TEST_F(NegativeShaderImageAccessShared, ComponentTypeMismatchFunctionTwoArgs) {
     TEST_DESCRIPTION("Pass a signed and unsinged sampler, and use the incorrect one.");
 
     RETURN_IF_SKIP(Init());
@@ -159,7 +160,7 @@ TEST_F(NegativeShaderImageAccess, ComponentTypeMismatchFunctionTwoArgs) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderImageAccess, UnnormalizedCoordinatesFunction) {
+TEST_F(NegativeShaderImageAccessShared, UnnormalizedCoordinatesFunction) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -210,7 +211,7 @@ TEST_F(NegativeShaderImageAccess, UnnormalizedCoordinatesFunction) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderImageAccess, MultisampleMismatchWithPipeline) {
+TEST_F(NegativeShaderImageAccessShared, MultisampleMismatchWithPipeline) {
     TEST_DESCRIPTION("Shader uses Multisample, but image view isn't.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -258,7 +259,7 @@ TEST_F(NegativeShaderImageAccess, MultisampleMismatchWithPipeline) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderImageAccess, AliasImageMultisample) {
+TEST_F(NegativeShaderImageAccessShared, AliasImageMultisample) {
     TEST_DESCRIPTION("Same binding used for Multisampling and non-Multisampling");
     RETURN_IF_SKIP(Init());
 
@@ -314,7 +315,7 @@ TEST_F(NegativeShaderImageAccess, AliasImageMultisample) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderImageAccess, NonMultisampleMismatchWithPipeline) {
+TEST_F(NegativeShaderImageAccessShared, NonMultisampleMismatchWithPipeline) {
     TEST_DESCRIPTION("Shader uses non-Multisample, but image view is Multisample.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -371,7 +372,7 @@ TEST_F(NegativeShaderImageAccess, NonMultisampleMismatchWithPipeline) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderImageAccess, NonMultisampleMismatchWithPipelineArray) {
+TEST_F(NegativeShaderImageAccessShared, NonMultisampleMismatchWithPipelineArray) {
     TEST_DESCRIPTION("Shader uses non-Multisample, but image view is Multisample.");
     RETURN_IF_SKIP(Init());
 
@@ -428,7 +429,7 @@ TEST_F(NegativeShaderImageAccess, NonMultisampleMismatchWithPipelineArray) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderImageAccess, MultipleFunctionCalls) {
+TEST_F(NegativeShaderImageAccessShared, MultipleFunctionCalls) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -508,7 +509,7 @@ TEST_F(NegativeShaderImageAccess, MultipleFunctionCalls) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderImageAccess, AliasImageBinding) {
+TEST_F(NegativeShaderImageAccessShared, AliasImageBinding) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7677");
     RETURN_IF_SKIP(Init());
 
@@ -560,7 +561,7 @@ TEST_F(NegativeShaderImageAccess, AliasImageBinding) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
-TEST_F(NegativeShaderImageAccess, AliasImageBindingArrayType) {
+TEST_F(NegativeShaderImageAccessShared, AliasImageBindingArrayType) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9553");
     RETURN_IF_SKIP(Init());
 
@@ -607,7 +608,7 @@ TEST_F(NegativeShaderImageAccess, AliasImageBindingArrayType) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderImageAccess, SampledImageShareBinding) {
+TEST_F(NegativeShaderImageAccessShared, SampledImageShareBinding) {
     TEST_DESCRIPTION("Make sure the binding from the correct set it detected");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -806,7 +807,7 @@ TEST_F(NegativeShaderImageAccess, SampledImageShareBindingArrayFunction) {
 }
 
 // Currently not detecting through functions correctly
-TEST_F(NegativeShaderImageAccess, DISABLED_FunctionDescriptorIndexing) {
+TEST_F(NegativeShaderImageAccessShared, DISABLED_FunctionDescriptorIndexing) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

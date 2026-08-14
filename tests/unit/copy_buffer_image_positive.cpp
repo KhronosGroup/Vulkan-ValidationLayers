@@ -16,6 +16,7 @@
 #include "layer_validation_tests.h"
 
 class PositiveCopyBufferImage : public VkLayerTest {};
+class PositiveCopyBufferImageShared : public VkSharedLayerTest<> {};
 
 constexpr VkImageUsageFlags kSrcDstUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 constexpr VkFormatFeatureFlags kSrcDstFeature = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
@@ -253,7 +254,7 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemoryCompressed) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
+TEST_F(PositiveCopyBufferImageShared, UncompressedToCompressedImage) {
     TEST_DESCRIPTION("Image copies between compressed and uncompressed images");
     RETURN_IF_SKIP(Init());
 
@@ -293,7 +294,7 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, UncompressedToCompressedDstOffset) {
+TEST_F(PositiveCopyBufferImageShared, UncompressedToCompressedDstOffset) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
@@ -335,7 +336,7 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedDstOffset) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, CompressedToUncompressedDstOffset) {
+TEST_F(PositiveCopyBufferImageShared, CompressedToUncompressedDstOffset) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
@@ -377,7 +378,7 @@ TEST_F(PositiveCopyBufferImage, CompressedToUncompressedDstOffset) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage2) {
+TEST_F(PositiveCopyBufferImageShared, UncompressedToCompressedImage2) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-Docs/issues/593");
     RETURN_IF_SKIP(Init());
 
@@ -408,7 +409,7 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage2) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage3) {
+TEST_F(PositiveCopyBufferImageShared, UncompressedToCompressedImage3) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-Docs/issues/1637");
     RETURN_IF_SKIP(Init());
 
@@ -457,7 +458,7 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage3) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, UncompressedToCompressedNonPowerOfTwo) {
+TEST_F(PositiveCopyBufferImageShared, UncompressedToCompressedNonPowerOfTwo) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
@@ -487,7 +488,7 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedNonPowerOfTwo) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, CompressedNonPowerOfTwo) {
+TEST_F(PositiveCopyBufferImageShared, CompressedNonPowerOfTwo) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC2_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
@@ -514,8 +515,7 @@ TEST_F(PositiveCopyBufferImage, CompressedNonPowerOfTwo) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, CompressedNonPowerOfTwo2) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+TEST_F(PositiveCopyBufferImageShared, CompressedNonPowerOfTwo2) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
@@ -549,7 +549,7 @@ TEST_F(PositiveCopyBufferImage, CompressedNonPowerOfTwo2) {
     vk::CmdCopyImage(m_command_buffer, image_2, VK_IMAGE_LAYOUT_GENERAL, image_1, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 }
 
-TEST_F(PositiveCopyBufferImage, BufferCopyNonPowerOfTwo) {
+TEST_F(PositiveCopyBufferImageShared, BufferCopyNonPowerOfTwo) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
@@ -606,7 +606,7 @@ TEST_F(PositiveCopyBufferImage, BufferCopyNonPowerOfTwo) {
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10125
 // Need to rewrite test to work everywhere
-TEST_F(PositiveCopyBufferImage, DISABLED_OverlappingRegion) {
+TEST_F(PositiveCopyBufferImageShared, DISABLED_OverlappingRegion) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9537");
     RETURN_IF_SKIP(Init());
 
@@ -648,7 +648,7 @@ TEST_F(PositiveCopyBufferImage, DISABLED_OverlappingRegion) {
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10125
 // Need to rewrite test to work everywhere
-TEST_F(PositiveCopyBufferImage, DISABLED_OverlappingRegion2) {
+TEST_F(PositiveCopyBufferImageShared, DISABLED_OverlappingRegion2) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9276");
     RETURN_IF_SKIP(Init());
 
@@ -684,7 +684,7 @@ TEST_F(PositiveCopyBufferImage, DISABLED_OverlappingRegion2) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, BufferToCompressedNonPowerOfTwo) {
+TEST_F(PositiveCopyBufferImageShared, BufferToCompressedNonPowerOfTwo) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC2_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
@@ -707,7 +707,7 @@ TEST_F(PositiveCopyBufferImage, BufferToCompressedNonPowerOfTwo) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, ImageSubresource) {
+TEST_F(PositiveCopyBufferImageShared, ImageSubresource) {
     RETURN_IF_SKIP(Init());
 
     VkImageUsageFlags usage = kSrcDstUsage | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -781,7 +781,7 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveCopyBufferImage, CopyCompressed1DImage) {
+TEST_F(PositiveCopyBufferImageShared, CopyCompressed1DImage) {
     TEST_DESCRIPTION("Copy a 1D image with compressed format");
     RETURN_IF_SKIP(Init());
 
@@ -907,7 +907,7 @@ TEST_F(PositiveCopyBufferImage, CopyCompress1DTo2D) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, CopyBufferTo1DCompressedImage) {
+TEST_F(PositiveCopyBufferImageShared, CopyBufferTo1DCompressedImage) {
     TEST_DESCRIPTION("Copy a buffer to 1D image with compressed format");
     RETURN_IF_SKIP(Init());
 
@@ -983,7 +983,7 @@ TEST_F(PositiveCopyBufferImage, CopyCompress2DTo1D) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, CopyCompressLowestMip) {
+TEST_F(PositiveCopyBufferImageShared, CopyCompressLowestMip) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/1946");
     RETURN_IF_SKIP(Init());
 
@@ -1039,7 +1039,7 @@ TEST_F(PositiveCopyBufferImage, CopyCompressLowestMip) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, CompressedImageMip) {
+TEST_F(PositiveCopyBufferImageShared, CompressedImageMip) {
     TEST_DESCRIPTION("Image/Buffer copies for higher mip levels");
     RETURN_IF_SKIP(Init());
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
@@ -1103,7 +1103,7 @@ TEST_F(PositiveCopyBufferImage, CompressedImageMip) {
     vk::CmdCopyBufferToImage(m_command_buffer, buffer_16, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
 }
 
-TEST_F(PositiveCopyBufferImage, CopyCompressToCompress) {
+TEST_F(PositiveCopyBufferImageShared, CopyCompressToCompress) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-Docs/issues/1005");
     RETURN_IF_SKIP(Init());
 
@@ -1152,7 +1152,7 @@ TEST_F(PositiveCopyBufferImage, CopyCompressToCompress) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, CopyBufferToCompressedNonFullTexelBlock) {
+TEST_F(PositiveCopyBufferImageShared, CopyBufferToCompressedNonFullTexelBlock) {
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -1184,7 +1184,7 @@ TEST_F(PositiveCopyBufferImage, CopyBufferToCompressedNonFullTexelBlock) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, CopyBufferToCompressedMipLevels) {
+TEST_F(PositiveCopyBufferImageShared, CopyBufferToCompressedMipLevels) {
     RETURN_IF_SKIP(Init());
 
     // 1 texel block is 8 bytes
@@ -1881,7 +1881,7 @@ TEST_F(PositiveCopyBufferImage, SinglePlaneYCbCr) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, CompressedMipLevels) {
+TEST_F(PositiveCopyBufferImageShared, CompressedMipLevels) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/1762");
     RETURN_IF_SKIP(Init());
 

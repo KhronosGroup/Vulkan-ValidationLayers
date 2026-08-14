@@ -15,8 +15,9 @@
 #include "pipeline_helper.h"
 
 class PositiveShaderCompute : public VkLayerTest {};
+class PositiveShaderComputeShared : public VkSharedLayerTest<> {};
 
-TEST_F(PositiveShaderCompute, WorkGroupSizePrecedenceOverLocalSize) {
+TEST_F(PositiveShaderComputeShared, WorkGroupSizePrecedenceOverLocalSize) {
     // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
     // execution mode."
     TEST_DESCRIPTION("Make sure work WorkgroupSize decoration is used over LocalSize");
@@ -59,7 +60,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizePrecedenceOverLocalSize) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderCompute, WorkGroupSizeSpecConstantUnder) {
+TEST_F(PositiveShaderComputeShared, WorkGroupSizeSpecConstantUnder) {
     TEST_DESCRIPTION("Make sure spec constants get applied to to be under maxComputeWorkGroupSize");
 
     RETURN_IF_SKIP(Init());
@@ -238,7 +239,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizePrecedenceOverLocalSizeId) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderCompute, SharedMemorySpecConstantOp) {
+TEST_F(PositiveShaderComputeShared, SharedMemorySpecConstantOp) {
     TEST_DESCRIPTION("Validate compute shader shared memory");
 
     RETURN_IF_SKIP(Init());
@@ -269,7 +270,7 @@ TEST_F(PositiveShaderCompute, SharedMemorySpecConstantOp) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderCompute, SharedMemory) {
+TEST_F(PositiveShaderComputeShared, SharedMemory) {
     TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize");
 
     RETURN_IF_SKIP(Init());

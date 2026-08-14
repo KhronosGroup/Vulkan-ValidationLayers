@@ -17,8 +17,9 @@
 #include "render_pass_helper.h"
 
 class PositiveSecondaryCommandBuffer : public VkLayerTest {};
+class PositiveSecondaryCommandBufferShared : public VkSharedLayerTest<> {};
 
-TEST_F(PositiveSecondaryCommandBuffer, Barrier) {
+TEST_F(PositiveSecondaryCommandBufferShared, Barrier) {
     TEST_DESCRIPTION("Add a pipeline barrier in a secondary command buffer");
     RETURN_IF_SKIP(Init());
 
@@ -83,7 +84,7 @@ TEST_F(PositiveSecondaryCommandBuffer, Barrier) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveSecondaryCommandBuffer, ClearAttachmentsCalled) {
+TEST_F(PositiveSecondaryCommandBufferShared, ClearAttachmentsCalled) {
     TEST_DESCRIPTION(
         "This test is to verify that when vkCmdClearAttachments is called by a secondary commandbuffer, the validation layers do "
         "not throw an error if the primary commandbuffer begins a renderpass before executing the secondary commandbuffer.");
@@ -125,7 +126,7 @@ TEST_F(PositiveSecondaryCommandBuffer, ClearAttachmentsCalled) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveSecondaryCommandBuffer, ClearAttachmentsCalledWithoutFb) {
+TEST_F(PositiveSecondaryCommandBufferShared, ClearAttachmentsCalledWithoutFb) {
     TEST_DESCRIPTION(
         "Verify calling vkCmdClearAttachments inside secondary commandbuffer without linking framebuffer pointer to"
         "inheritance struct");
@@ -166,7 +167,7 @@ TEST_F(PositiveSecondaryCommandBuffer, ClearAttachmentsCalledWithoutFb) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveSecondaryCommandBuffer, CommandPoolDeleteWithReferences) {
+TEST_F(PositiveSecondaryCommandBufferShared, CommandPoolDeleteWithReferences) {
     TEST_DESCRIPTION("Ensure the validation layers bookkeeping tracks the implicit command buffer frees.");
     RETURN_IF_SKIP(Init());
 
@@ -212,7 +213,7 @@ TEST_F(PositiveSecondaryCommandBuffer, CommandPoolDeleteWithReferences) {
     ASSERT_EQ(VK_SUCCESS, res);
 }
 
-TEST_F(PositiveSecondaryCommandBuffer, ClearColorAttachments) {
+TEST_F(PositiveSecondaryCommandBufferShared, ClearColorAttachments) {
     TEST_DESCRIPTION("Create a secondary command buffer and record a CmdClearAttachments call into it");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -251,7 +252,7 @@ TEST_F(PositiveSecondaryCommandBuffer, ClearColorAttachments) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveSecondaryCommandBuffer, ImageLayoutTransitions) {
+TEST_F(PositiveSecondaryCommandBufferShared, ImageLayoutTransitions) {
     TEST_DESCRIPTION("Perform an image layout transition in a secondary command buffer followed by a transition in the primary.");
     RETURN_IF_SKIP(Init());
     auto depth_format = FindSupportedDepthStencilFormat(Gpu());
@@ -364,7 +365,7 @@ TEST_F(PositiveSecondaryCommandBuffer, Sync2ImageLayouts) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveSecondaryCommandBuffer, EventStageMask) {
+TEST_F(PositiveSecondaryCommandBufferShared, EventStageMask) {
     TEST_DESCRIPTION("Check secondary command buffers transfer event data when executed by primary ones");
     RETURN_IF_SKIP(Init());
 
@@ -387,7 +388,7 @@ TEST_F(PositiveSecondaryCommandBuffer, EventStageMask) {
     m_default_queue->Wait();
 }
 
-TEST_F(PositiveSecondaryCommandBuffer, EventsIn) {
+TEST_F(PositiveSecondaryCommandBufferShared, EventsIn) {
     TEST_DESCRIPTION("Test setting and waiting for an event in a secondary command buffer");
     RETURN_IF_SKIP(Init());
 
@@ -493,7 +494,7 @@ TEST_F(PositiveSecondaryCommandBuffer, NestedPrimary) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveSecondaryCommandBuffer, NonNestedWithRenderPassContinue) {
+TEST_F(PositiveSecondaryCommandBufferShared, NonNestedWithRenderPassContinue) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9541");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();

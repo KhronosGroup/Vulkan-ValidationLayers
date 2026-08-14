@@ -17,8 +17,9 @@
 #include "shader_object_helper.h"
 
 class NegativeShaderPushConstants : public VkLayerTest {};
+class NegativeShaderPushConstantsShared : public VkSharedLayerTest<> {};
 
-TEST_F(NegativeShaderPushConstants, NotDeclared) {
+TEST_F(NegativeShaderPushConstantsShared, NotDeclared) {
     TEST_DESCRIPTION(
         "Create a graphics pipeline in which a push constant range containing a push constant block member is not declared in the "
         "layout.");
@@ -53,7 +54,7 @@ TEST_F(NegativeShaderPushConstants, NotDeclared) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderPushConstants, PipelineRange) {
+TEST_F(NegativeShaderPushConstantsShared, PipelineRange) {
     TEST_DESCRIPTION("Invalid use of VkPushConstantRange structs.");
     RETURN_IF_SKIP(Init());
 
@@ -187,7 +188,7 @@ TEST_F(NegativeShaderPushConstants, PipelineRangeShaderObject) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderPushConstants, NotInLayout) {
+TEST_F(NegativeShaderPushConstantsShared, NotInLayout) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a shader consuming push constants which are not provided in the pipeline layout");
 
@@ -213,7 +214,7 @@ TEST_F(NegativeShaderPushConstants, NotInLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderPushConstants, Range) {
+TEST_F(NegativeShaderPushConstantsShared, Range) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -278,7 +279,7 @@ TEST_F(NegativeShaderPushConstants, Range) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
+TEST_F(NegativeShaderPushConstantsShared, DrawWithoutUpdate) {
     TEST_DESCRIPTION("Not every bytes in used push constant ranges has been set before Draw ");
 
     RETURN_IF_SKIP(Init());
@@ -426,7 +427,7 @@ TEST_F(NegativeShaderPushConstants, BufferDeviceAddress) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
+TEST_F(NegativeShaderPushConstantsShared, MultipleEntryPoint) {
     TEST_DESCRIPTION("Test push-constant detect the write entrypoint with the push constants.");
 
     RETURN_IF_SKIP(Init());
@@ -524,7 +525,7 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(NegativeShaderPushConstants, SpecConstantSize) {
+TEST_F(NegativeShaderPushConstantsShared, SpecConstantSize) {
     TEST_DESCRIPTION("Use SpecConstant to adjust size of Push Constant Block");
     RETURN_IF_SKIP(Init());
 

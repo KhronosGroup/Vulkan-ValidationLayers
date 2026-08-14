@@ -16,8 +16,9 @@
 #include "pipeline_helper.h"
 
 class NegativeShaderLimits : public VkLayerTest {};
+class NegativeShaderLimitsShared : public VkSharedLayerTest<> {};
 
-TEST_F(NegativeShaderLimits, MaxSampleMaskWordsInput) {
+TEST_F(NegativeShaderLimitsShared, MaxSampleMaskWordsInput) {
     TEST_DESCRIPTION("Test limit of maxSampleMaskWords.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -79,7 +80,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWordsInput) {
                                       "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711");
 }
 
-TEST_F(NegativeShaderLimits, MaxSampleMaskWordsOutput) {
+TEST_F(NegativeShaderLimitsShared, MaxSampleMaskWordsOutput) {
     TEST_DESCRIPTION("Test limit of maxSampleMaskWords.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -135,7 +136,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWordsOutput) {
                                       "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711");
 }
 
-TEST_F(NegativeShaderLimits, MinAndMaxTexelGatherOffset) {
+TEST_F(NegativeShaderLimitsShared, MinAndMaxTexelGatherOffset) {
     TEST_DESCRIPTION("Test shader with offset less than minTexelGatherOffset and greather than maxTexelGatherOffset");
 
     RETURN_IF_SKIP(Init());
@@ -203,7 +204,7 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelGatherOffset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderLimits, MinAndMaxTexelOffset) {
+TEST_F(NegativeShaderLimitsShared, MinAndMaxTexelOffset) {
     TEST_DESCRIPTION("Test shader with offset less than minTexelOffset and greather than maxTexelOffset");
 
     RETURN_IF_SKIP(Init());
@@ -426,7 +427,7 @@ TEST_F(NegativeShaderLimits, MaxComputeSharedMemorySizeArrayStride) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachments) {
+TEST_F(NegativeShaderLimitsShared, MaxFragmentOutputAttachments) {
     RETURN_IF_SKIP(Init());
     if (m_device->Physical().limits_.maxFragmentOutputAttachments != 4) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
@@ -453,7 +454,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachments) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArray) {
+TEST_F(NegativeShaderLimitsShared, MaxFragmentOutputAttachmentsArray) {
     RETURN_IF_SKIP(Init());
     if (m_device->Physical().limits_.maxFragmentOutputAttachments != 4) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
@@ -472,7 +473,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArray) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArrayAtEnd) {
+TEST_F(NegativeShaderLimitsShared, MaxFragmentOutputAttachmentsArrayAtEnd) {
     RETURN_IF_SKIP(Init());
     if (m_device->Physical().limits_.maxFragmentOutputAttachments != 4) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
@@ -491,7 +492,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArrayAtEnd) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderLimits, MaxFragmentCombinedOutputResources) {
+TEST_F(NegativeShaderLimitsShared, MaxFragmentCombinedOutputResources) {
     RETURN_IF_SKIP(Init());
     // limit we have in min_core.json
     if (m_device->Physical().limits_.maxFragmentCombinedOutputResources > 16) {

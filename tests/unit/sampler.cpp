@@ -17,6 +17,7 @@
 #include "descriptor_helper.h"
 
 class NegativeSampler : public VkLayerTest {};
+class NegativeSamplerShared : public VkSharedLayerTest<> {};
 
 TEST_F(NegativeSampler, MirrorClampToEdgeNotEnabled) {
     TEST_DESCRIPTION("Validation should catch using CLAMP_TO_EDGE addressing mode if the extension is not enabled.");
@@ -42,7 +43,7 @@ TEST_F(NegativeSampler, MirrorClampToEdgeNotEnabled12) {
     CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-addressModeU-01079");
 }
 
-TEST_F(NegativeSampler, AnisotropyFeatureDisabled) {
+TEST_F(NegativeSamplerShared, AnisotropyFeatureDisabled) {
     TEST_DESCRIPTION("Validation should check anisotropy parameters are correct with samplerAnisotropy disabled.");
 
     RETURN_IF_SKIP(Init());
@@ -162,7 +163,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesEnabled) {
     sampler_info = sampler_info_ref;
 }
 
-TEST_F(NegativeSampler, BasicUsage) {
+TEST_F(NegativeSamplerShared, BasicUsage) {
     TEST_DESCRIPTION("Checks various cases where VkSamplerCreateInfo is invalid");
     RETURN_IF_SKIP(Init());
 
@@ -183,7 +184,7 @@ TEST_F(NegativeSampler, BasicUsage) {
     sampler_info.mipLodBias = sampler_info_ref.mipLodBias;
 }
 
-TEST_F(NegativeSampler, AllocationCount) {
+TEST_F(NegativeSamplerShared, AllocationCount) {
     RETURN_IF_SKIP(Init());
 
     const uint32_t max_samplers = m_device->Physical().limits_.maxSamplerAllocationCount;
@@ -1146,7 +1147,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSampler) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedImage) {
+TEST_F(NegativeSamplerShared, UnnormalizedCoordinatesSeparateSamplerSharedImage) {
     TEST_DESCRIPTION("Doesn't use COMBINED_IMAGE_SAMPLER, but multiple OpLoad share Image OpVariable");
 
     RETURN_IF_SKIP(Init());
@@ -1211,7 +1212,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedImage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
+TEST_F(NegativeSamplerShared, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
     TEST_DESCRIPTION("Doesn't use COMBINED_IMAGE_SAMPLER, but multiple OpLoad share Sampler OpVariable");
 
     RETURN_IF_SKIP(Init());
@@ -1279,7 +1280,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedSamplerArray) {
+TEST_F(NegativeSamplerShared, UnnormalizedCoordinatesSeparateSamplerSharedSamplerArray) {
     TEST_DESCRIPTION("Doesn't use COMBINED_IMAGE_SAMPLER, but multiple OpLoad share Sampler OpVariable");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1346,7 +1347,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedSamplerArray
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSampler, UnnormalizedCoordinatesInBoundsAccess) {
+TEST_F(NegativeSamplerShared, UnnormalizedCoordinatesInBoundsAccess) {
     TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, but using OpInBoundsAccessChain");
 
     RETURN_IF_SKIP(Init());
@@ -1439,7 +1440,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesInBoundsAccess) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSampler, UnnormalizedCoordinatesCopyObject) {
+TEST_F(NegativeSamplerShared, UnnormalizedCoordinatesCopyObject) {
     TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, but using OpCopyObject");
 
     RETURN_IF_SKIP(Init());
@@ -1574,7 +1575,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesLevelCount) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSampler, ShareOpSampledImage) {
+TEST_F(NegativeSamplerShared, ShareOpSampledImage) {
     TEST_DESCRIPTION(
         "Have two OpImageSampleImplicitLod share the same OpSampledImage. This needs to be in the same block post-shader "
         "instrumentation.");
@@ -1730,7 +1731,7 @@ TEST_F(NegativeSampler, BorderColorSwizzle) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSampler, BorderColorValue) {
+TEST_F(NegativeSamplerShared, BorderColorValue) {
     TEST_DESCRIPTION("Using a bad VkBorderColor value.");
     RETURN_IF_SKIP(Init());
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -1739,7 +1740,7 @@ TEST_F(NegativeSampler, BorderColorValue) {
     CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-addressModeU-01078");
 }
 
-TEST_F(NegativeSampler, CompareOpValue) {
+TEST_F(NegativeSamplerShared, CompareOpValue) {
     TEST_DESCRIPTION("Using a bad VkCompareOp value.");
     RETURN_IF_SKIP(Init());
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();

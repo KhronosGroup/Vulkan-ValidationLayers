@@ -19,6 +19,7 @@
 #include "thread_helper.h"
 
 class PositiveCommand : public VkLayerTest {};
+class PositiveCommandShared : public VkSharedLayerTest<> {};
 
 TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature) {
     TEST_DESCRIPTION("Use VK_KHR_draw_indirect_count in 1.1 before drawIndirectCount feature was added");
@@ -125,7 +126,7 @@ TEST_F(PositiveCommand, DrawIndirectCountWithFeature) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCommand, CommandBufferSimultaneousUseSync) {
+TEST_F(PositiveCommandShared, CommandBufferSimultaneousUseSync) {
     RETURN_IF_SKIP(Init());
 
     // Record (empty!) command buffer that can be submitted multiple times
@@ -165,7 +166,7 @@ TEST_F(PositiveCommand, CommandBufferSimultaneousUseSync) {
     vk::DestroyFence(device(), fence, nullptr);
 }
 
-TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
+TEST_F(PositiveCommandShared, FramebufferBindingDestroyCommandPool) {
     TEST_DESCRIPTION(
         "This test should pass. Create a Framebuffer and command buffer, bind them together, then destroy command pool and "
         "framebuffer and verify there are no errors.");
@@ -324,7 +325,7 @@ TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
     for (auto& worker : workers) worker.join();
 }
 
-TEST_F(PositiveCommand, ClearAttachmentsDepthStencil) {
+TEST_F(PositiveCommandShared, ClearAttachmentsDepthStencil) {
     TEST_DESCRIPTION("Call CmdClearAttachments with no depth/stencil attachment.");
 
     RETURN_IF_SKIP(Init());
@@ -352,7 +353,7 @@ TEST_F(PositiveCommand, ClearAttachmentsDepthStencil) {
     vk::CmdClearAttachments(m_command_buffer, 1, &attachment, 1, &clear_rect);
 }
 
-TEST_F(PositiveCommand, ClearColorImageWithValidRange) {
+TEST_F(PositiveCommandShared, ClearColorImageWithValidRange) {
     TEST_DESCRIPTION("Record clear color with a valid VkImageSubresourceRange");
 
     RETURN_IF_SKIP(Init());
@@ -380,7 +381,7 @@ TEST_F(PositiveCommand, ClearColorImageWithValidRange) {
     }
 }
 
-TEST_F(PositiveCommand, ClearDepthStencilWithValidRange) {
+TEST_F(PositiveCommandShared, ClearDepthStencilWithValidRange) {
     TEST_DESCRIPTION("Record clear depth with a valid VkImageSubresourceRange");
 
     RETURN_IF_SKIP(Init());
@@ -410,7 +411,7 @@ TEST_F(PositiveCommand, ClearDepthStencilWithValidRange) {
     }
 }
 
-TEST_F(PositiveCommand, ClearColor64Bit) {
+TEST_F(PositiveCommandShared, ClearColor64Bit) {
     TEST_DESCRIPTION("Clear with a 64-bit format");
     RETURN_IF_SKIP(Init());
 
@@ -596,7 +597,7 @@ TEST_F(PositiveCommand, DeviceLost2) {
     vk::FreeCommandBuffers(device(), command_pool, 1, &command_buffer);
 }
 
-TEST_F(PositiveCommand, CommandBufferInheritanceInfoIgnoredPointer) {
+TEST_F(PositiveCommandShared, CommandBufferInheritanceInfoIgnoredPointer) {
     TEST_DESCRIPTION("VkCommandBufferInheritanceInfo is ignored if using a primary command buffer.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();

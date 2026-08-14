@@ -15,8 +15,9 @@
 #include "pipeline_helper.h"
 
 class PositiveShaderLimits : public VkLayerTest {};
+class PositiveShaderLimitsShared : public VkSharedLayerTest<> {};
 
-TEST_F(PositiveShaderLimits, MaxSampleMaskWords) {
+TEST_F(PositiveShaderLimitsShared, MaxSampleMaskWords) {
     TEST_DESCRIPTION("Test limit of maxSampleMaskWords.");
 
     RETURN_IF_SKIP(Init());
@@ -79,7 +80,7 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryWorkgroupMemoryExplicitLayout) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositiveShaderLimits, ComputeSharedMemoryAtLimit) {
+TEST_F(PositiveShaderLimitsShared, ComputeSharedMemoryAtLimit) {
     TEST_DESCRIPTION("Validate compute shader shared memory is valid at the exact maxComputeSharedMemorySize");
 
     RETURN_IF_SKIP(Init());
@@ -101,7 +102,7 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryAtLimit) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositiveShaderLimits, ComputeSharedMemoryBooleanAtLimit) {
+TEST_F(PositiveShaderLimitsShared, ComputeSharedMemoryBooleanAtLimit) {
     TEST_DESCRIPTION("Validate compute shader shared memory is valid at the exact maxComputeSharedMemorySize using Booleans");
 
     RETURN_IF_SKIP(Init());
@@ -291,7 +292,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachmentsDynamicEnabled) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachments) {
+TEST_F(PositiveShaderLimitsShared, MaxFragmentOutputAttachments) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
     if (m_device->Physical().limits_.maxFragmentOutputAttachments != 4) {
@@ -318,7 +319,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachments) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachmentsArray) {
+TEST_F(PositiveShaderLimitsShared, MaxFragmentOutputAttachmentsArray) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

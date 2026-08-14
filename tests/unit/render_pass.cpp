@@ -29,6 +29,7 @@ class NegativeRenderPass : public VkLayerTest {
     void TestRenderPass2KHRCreate(const VkRenderPassCreateInfo2KHR& create_info, const std::vector<const char*>& vuids);
     void TestPotentialFormatFeatures(bool const useLinearColorAttachment);
 };
+class NegativeRenderPassShared : public VkSharedLayerTest<> {};
 
 void NegativeRenderPass::TestRenderPass2KHRCreate(const VkRenderPassCreateInfo2KHR& create_info,
                                                   const std::vector<const char*>& vuids) {
@@ -1216,7 +1217,7 @@ TEST_F(NegativeRenderPass, BeginWithinRenderPass) {
     }
 }
 
-TEST_F(NegativeRenderPass, BeginIncompatibleFramebuffer) {
+TEST_F(NegativeRenderPassShared, BeginIncompatibleFramebuffer) {
     TEST_DESCRIPTION("Test that renderpass begin is compatible with the framebuffer renderpass ");
 
     RETURN_IF_SKIP(Init());
@@ -1603,7 +1604,7 @@ TEST_F(NegativeRenderPass, BeginSampleLocationsIndicesEXT) {
     CreateRenderPassBeginTest(m_command_buffer, &rp_begin, false, "VUID-VkSubpassSampleLocationsEXT-subpassIndex-01532", nullptr);
 }
 
-TEST_F(NegativeRenderPass, DestroyWhileInUse) {
+TEST_F(NegativeRenderPassShared, DestroyWhileInUse) {
     TEST_DESCRIPTION("Delete in-use renderPass.");
 
     RETURN_IF_SKIP(Init());
@@ -1692,7 +1693,7 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRenderPass, FramebufferIncompatible) {
+TEST_F(NegativeRenderPassShared, FramebufferIncompatible) {
     TEST_DESCRIPTION(
         "Bind a secondary command buffer with a framebuffer that does not match the framebuffer for the active renderpass.");
     RETURN_IF_SKIP(Init());
@@ -1737,7 +1738,7 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRenderPass, FramebufferIncompatibleNoHandle) {
+TEST_F(NegativeRenderPassShared, FramebufferIncompatibleNoHandle) {
     TEST_DESCRIPTION(
         "Bind a secondary command buffer with a framebuffer that does not match the framebuffer for the active renderpass.");
     RETURN_IF_SKIP(Init());
@@ -1761,7 +1762,7 @@ TEST_F(NegativeRenderPass, FramebufferIncompatibleNoHandle) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRenderPass, NullRenderPass) {
+TEST_F(NegativeRenderPassShared, NullRenderPass) {
     // Bind a NULL RenderPass
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass-pRenderPassBegin-parameter");
 
@@ -1778,7 +1779,7 @@ TEST_F(NegativeRenderPass, NullRenderPass) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRenderPass, FramebufferAttachmentPointers) {
+TEST_F(NegativeRenderPassShared, FramebufferAttachmentPointers) {
     TEST_DESCRIPTION("pAttachments points to valid objects for the Framebuffer creation");
 
     RETURN_IF_SKIP(Init());
@@ -1813,7 +1814,7 @@ TEST_F(NegativeRenderPass, FramebufferAttachmentPointers) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRenderPass, NullFramebufferCreateInfo) {
+TEST_F(NegativeRenderPassShared, NullFramebufferCreateInfo) {
     RETURN_IF_SKIP(Init());
     VkFramebuffer framebuffer;
     m_errorMonitor->SetDesiredError("VUID-vkCreateFramebuffer-pCreateInfo-parameter");
@@ -1821,7 +1822,7 @@ TEST_F(NegativeRenderPass, NullFramebufferCreateInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRenderPass, EndCommandBufferWithinRenderPass) {
+TEST_F(NegativeRenderPassShared, EndCommandBufferWithinRenderPass) {
     TEST_DESCRIPTION("End a command buffer with an active render pass");
 
     m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00060");
@@ -1844,7 +1845,7 @@ TEST_F(NegativeRenderPass, EndCommandBufferWithinRenderPass) {
     // TODO: Add test for VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT
 }
 
-TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPass) {
+TEST_F(NegativeRenderPassShared, DrawWithPipelineIncompatibleWithRenderPass) {
     TEST_DESCRIPTION(
         "Hit RenderPass incompatible cases. Initial case is drawing with an active renderpass that's not compatible with the bound "
         "pipeline state object's creation renderpass");
@@ -1970,7 +1971,7 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRenderPass, MissingAttachment) {
+TEST_F(NegativeRenderPassShared, MissingAttachment) {
     TEST_DESCRIPTION("Begin render pass with missing framebuffer attachment");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -2392,7 +2393,7 @@ TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRenderPass, RenderPassBeginNullValues) {
+TEST_F(NegativeRenderPassShared, RenderPassBeginNullValues) {
     TEST_DESCRIPTION("Test invalid null entries for clear color");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -2471,7 +2472,7 @@ TEST_F(NegativeRenderPass, RenderPassAttachmentFormat) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
+TEST_F(NegativeRenderPassShared, SamplingFromReadOnlyDepthStencilAttachment) {
     TEST_DESCRIPTION("Use same image as depth stencil attachment in read only layer and as sampler");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -3351,7 +3352,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled5) {
     attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
 }
 
-TEST_F(NegativeRenderPass, AttachmentDescriptionUndefinedFormat) {
+TEST_F(NegativeRenderPassShared, AttachmentDescriptionUndefinedFormat) {
     TEST_DESCRIPTION("Create a render pass with an attachment description format set to VK_FORMAT_UNDEFINED");
     RETURN_IF_SKIP(Init());
 
@@ -3364,7 +3365,7 @@ TEST_F(NegativeRenderPass, AttachmentDescriptionUndefinedFormat) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRenderPass, IncompatibleRenderPass) {
+TEST_F(NegativeRenderPassShared, IncompatibleRenderPass) {
     TEST_DESCRIPTION("Validate if attachments in render pass and descriptor set use the same image subresources");
 
     RETURN_IF_SKIP(Init());
@@ -3935,7 +3936,7 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayoutSeparateDepthStencil) {
     }
 }
 
-TEST_F(NegativeRenderPass, BeginInfoWithoutRenderPass) {
+TEST_F(NegativeRenderPassShared, BeginInfoWithoutRenderPass) {
     TEST_DESCRIPTION("call VkRenderPassBeginInfo with invalid renderpass");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -3951,7 +3952,7 @@ TEST_F(NegativeRenderPass, BeginInfoWithoutRenderPass) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRenderPass, BeginInfoWithoutFramebuffer) {
+TEST_F(NegativeRenderPassShared, BeginInfoWithoutFramebuffer) {
     TEST_DESCRIPTION("call VkRenderPassBeginInfo with invalid framebuffer");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -3963,7 +3964,7 @@ TEST_F(NegativeRenderPass, BeginInfoWithoutFramebuffer) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRenderPass, EndWithoutRenderPass) {
+TEST_F(NegativeRenderPassShared, EndWithoutRenderPass) {
     TEST_DESCRIPTION("call vkCmdEndRenderPass never starting a renderpass");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -3974,7 +3975,7 @@ TEST_F(NegativeRenderPass, EndWithoutRenderPass) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRenderPass, RenderPassBegin) {
+TEST_F(NegativeRenderPassShared, RenderPassBegin) {
     TEST_DESCRIPTION("have an invalid pRenderPassBegin");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -3985,7 +3986,7 @@ TEST_F(NegativeRenderPass, RenderPassBegin) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRenderPass, IncompatibleFramebuffer) {
+TEST_F(NegativeRenderPassShared, IncompatibleFramebuffer) {
     TEST_DESCRIPTION("Incompatible framebuffer in command buffer inheritance info");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -4015,7 +4016,7 @@ TEST_F(NegativeRenderPass, IncompatibleFramebuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRenderPass, ZeroRenderArea) {
+TEST_F(NegativeRenderPassShared, ZeroRenderArea) {
     TEST_DESCRIPTION("renderArea set to zero");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -4103,7 +4104,7 @@ TEST_F(NegativeRenderPass, InvalidAttachmentDescriptionColorLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRenderPass, InvalidFramebufferAttachmentImageUsage) {
+TEST_F(NegativeRenderPassShared, InvalidFramebufferAttachmentImageUsage) {
     TEST_DESCRIPTION("Use image at framebuffer attachment without VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT");
 
     RETURN_IF_SKIP(Init());
@@ -4193,7 +4194,7 @@ TEST_F(NegativeRenderPass, ViewMaskWithoutFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRenderPass, AttachmentLayout) {
+TEST_F(NegativeRenderPassShared, AttachmentLayout) {
     TEST_DESCRIPTION("Test attachment descriptions with layouts other than undefined");
     RETURN_IF_SKIP(Init());
 
@@ -4228,7 +4229,7 @@ TEST_F(NegativeRenderPass, AttachmentLayout) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRenderPass, ImageSubresourceOverlapBetweenCurrentRenderPassAndDescriptorSets) {
+TEST_F(NegativeRenderPassShared, ImageSubresourceOverlapBetweenCurrentRenderPassAndDescriptorSets) {
     TEST_DESCRIPTION("Validate if attachments in render pass and descriptor set use the same image subresources");
 
     RETURN_IF_SKIP(Init());
@@ -4509,7 +4510,7 @@ TEST_F(NegativeRenderPass, MissingNestedCommandBuffersFeature2) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRenderPass, FramebufferMismatchedAttachmentCount) {
+TEST_F(NegativeRenderPassShared, FramebufferMismatchedAttachmentCount) {
     TEST_DESCRIPTION("Create framebuffer with different attachment count than render pass has");
 
     RETURN_IF_SKIP(Init());
@@ -4534,7 +4535,7 @@ TEST_F(NegativeRenderPass, FramebufferMismatchedAttachmentCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRenderPass, FramebufferDepthAttachmentInvalidUsage) {
+TEST_F(NegativeRenderPassShared, FramebufferDepthAttachmentInvalidUsage) {
     TEST_DESCRIPTION("Create framebuffer with depth/stencil attachment that doesn't have depth stencil usage");
 
     RETURN_IF_SKIP(Init());
@@ -4950,7 +4951,7 @@ TEST_F(NegativeRenderPass, FramebufferLimits) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRenderPass, CreateFramebufferWithNullHandleView) {
+TEST_F(NegativeRenderPassShared, CreateFramebufferWithNullHandleView) {
     RETURN_IF_SKIP(Init());
 
     VkAttachmentDescription description = {0,
@@ -5056,7 +5057,7 @@ TEST_F(NegativeRenderPass, RenderPassAttachmentFlagsMaintenance10Disabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRenderPass, MaxPerStageDescriptorInputAttachments) {
+TEST_F(NegativeRenderPassShared, MaxPerStageDescriptorInputAttachments) {
     RETURN_IF_SKIP(Init());
 
     const uint32_t max_attachments = m_device->Physical().limits_.maxPerStageDescriptorInputAttachments;

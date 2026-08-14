@@ -346,6 +346,37 @@ void VkRenderFramework::InitFramework(void* instance_pnext) {
     }
 }
 
+void VkRenderFramework::InitShared(VkRenderFramework* shared_framework) {
+    owns_instance_and_device_ = false;
+    instance_ = shared_framework->instance_;
+    gpu_ = shared_framework->gpu_;
+    physDevProps_ = shared_framework->physDevProps_;
+    m_device = shared_framework->m_device;
+    m_render_target_fmt = shared_framework->m_render_target_fmt;
+    m_width = shared_framework->m_width;
+    m_height = shared_framework->m_height;
+
+    // Copy queue pointers (they are owned by the shared m_device)
+    m_default_queue = shared_framework->m_default_queue;
+    m_default_queue_caps = shared_framework->m_default_queue_caps;
+    m_second_queue = shared_framework->m_second_queue;
+    m_second_queue_caps = shared_framework->m_second_queue_caps;
+    m_third_queue = shared_framework->m_third_queue;
+    m_third_queue_caps = shared_framework->m_third_queue_caps;
+    m_fourth_queue = shared_framework->m_fourth_queue;
+    m_fourth_queue_caps = shared_framework->m_fourth_queue_caps;
+
+    // Allocate the local depth stencil object that tests expect to be ready
+    m_depthStencil = new vkt::Image();
+
+    // Fresh command pool & buffer for this individual test
+    m_command_pool.Init(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    m_command_buffer.Init(*m_device, m_command_pool);
+
+    // Attach this test's local ErrorMonitor callback to the shared instance
+    m_errorMonitor->CreateCallback(instance_);
+}
+
 void VkRenderFramework::AddRequiredExtensions(const char* ext_name) {
     m_required_extensions.push_back(ext_name);
     AddRequestedInstanceExtensions(ext_name);
@@ -536,15 +567,11 @@ bool VkRenderFramework::CanEnableDeviceExtension(const std::string& dev_ext_name
 }
 
 void VkRenderFramework::ShutdownFramework() {
-    // Nothing to shut down without a VkInstance
     if (!instance_) {
         return;
     }
 
-    if (m_device && m_device->handle() != VK_NULL_HANDLE) {
-        m_device->Wait();
-    }
-
+    // Always clean up test-local command objects
     m_command_buffer.Destroy();
     m_command_pool.Destroy();
 
@@ -558,7 +585,10 @@ void VkRenderFramework::ShutdownFramework() {
 
     delete m_framebuffer;
     m_framebuffer = nullptr;
-    if (m_renderPass) vk::DestroyRenderPass(device(), m_renderPass, NULL);
+
+    if (m_renderPass) {
+        vk::DestroyRenderPass(device(), m_renderPass, NULL);
+    }
     m_renderPass = VK_NULL_HANDLE;
 
     m_render_target_views.clear();
@@ -567,9 +597,24 @@ void VkRenderFramework::ShutdownFramework() {
     delete m_depthStencil;
     m_depthStencil = nullptr;
 
+    // If we are sharing the framework and don't own the instance/device, keep alive
+    // But not until AFTER all the above local members
+    if (!owns_instance_and_device_) {
+        if (m_errorMonitor) {
+            m_errorMonitor->DestroyCallback(instance_);
+        }
+        instance_ = VK_NULL_HANDLE;
+        m_device = nullptr;
+        return;
+    }
+
+    // Global Device/Instance Teardown (Only runs when shutting down the suite)
+    if (m_device && m_device->handle() != VK_NULL_HANDLE) {
+        m_device->Wait();
+    }
+
     DestroySwapchain();
 
-    // reset the driver
     delete m_device;
     m_device = nullptr;
 

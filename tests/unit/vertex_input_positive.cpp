@@ -18,6 +18,7 @@
 #include "test_framework.h"
 
 class PositiveVertexInput : public VkLayerTest {};
+class PositiveVertexInputShared : public VkSharedLayerTest<> {};
 
 TEST_F(PositiveVertexInput, AttributeMatrixType) {
     TEST_DESCRIPTION("Test that pipeline validation accepts matrices passed as vertex attributes");
@@ -57,7 +58,7 @@ TEST_F(PositiveVertexInput, AttributeMatrixType) {
     /* expect success */
 }
 
-TEST_F(PositiveVertexInput, AttributeArrayType) {
+TEST_F(PositiveVertexInputShared, AttributeArrayType) {
     TEST_DESCRIPTION("Input in OpTypeArray");
 
     RETURN_IF_SKIP(Init());
@@ -94,7 +95,7 @@ TEST_F(PositiveVertexInput, AttributeArrayType) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveVertexInput, AttributeStructType) {
+TEST_F(PositiveVertexInputShared, AttributeStructType) {
     TEST_DESCRIPTION("Input is OpTypeStruct");
 
     RETURN_IF_SKIP(Init());
@@ -142,7 +143,7 @@ TEST_F(PositiveVertexInput, AttributeStructType) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveVertexInput, AttributeStructTypeWithArray) {
+TEST_F(PositiveVertexInputShared, AttributeStructTypeWithArray) {
     TEST_DESCRIPTION("Input is OpTypeStruct that has an OpTypeArray. Locations are not in order netiher");
 
     RETURN_IF_SKIP(Init());
@@ -202,7 +203,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeWithArray) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveVertexInput, AttributeStructTypeSecondLocation) {
+TEST_F(PositiveVertexInputShared, AttributeStructTypeSecondLocation) {
     TEST_DESCRIPTION("Input is OpTypeStruct with 2 locations");
 
     RETURN_IF_SKIP(Init());
@@ -254,7 +255,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeSecondLocation) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation) {
+TEST_F(PositiveVertexInputShared, AttributeStructTypeBlockLocation) {
     TEST_DESCRIPTION("Input is OpTypeStruct where the Block has the Location");
 
     RETURN_IF_SKIP(Init());
@@ -629,7 +630,7 @@ TEST_F(PositiveVertexInput, VertexAttributeDivisorFirstInstance) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveVertexInput, VertextBindingNonLinear) {
+TEST_F(PositiveVertexInputShared, VertextBindingNonLinear) {
     TEST_DESCRIPTION("Have Binding not be in a linear order");
 
     RETURN_IF_SKIP(Init());
@@ -845,7 +846,7 @@ TEST_F(PositiveVertexInput, BindVertexBufferNull) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveVertexInput, InterleavedAttributes) {
+TEST_F(PositiveVertexInputShared, InterleavedAttributes) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7892");
 
     RETURN_IF_SKIP(Init());
@@ -1127,7 +1128,7 @@ TEST_F(PositiveVertexInput, VertexInputRebinding) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveVertexInput, UnusedInputBinding) {
+TEST_F(PositiveVertexInputShared, UnusedInputBinding) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9305");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1371,7 +1372,7 @@ TEST_F(PositiveVertexInput, AttributeNotProvided) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveVertexInput, NoInputLocation) {
+TEST_F(PositiveVertexInputShared, NoInputLocation) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10771");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1400,7 +1401,7 @@ TEST_F(PositiveVertexInput, NoInputLocation) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveVertexInput, MatrixComponentNotConsumed) {
+TEST_F(PositiveVertexInputShared, MatrixComponentNotConsumed) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11355");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1431,7 +1432,7 @@ TEST_F(PositiveVertexInput, MatrixComponentNotConsumed) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveVertexInput, MatrixArrayComponentNotConsumed) {
+TEST_F(PositiveVertexInputShared, MatrixArrayComponentNotConsumed) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11355");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();

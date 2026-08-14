@@ -18,8 +18,9 @@
 #include "shader_helper.h"
 
 class PositiveShaderInterface : public VkLayerTest {};
+class PositiveShaderInterfaceShared : public VkSharedLayerTest<> {};
 
-TEST_F(PositiveShaderInterface, InputAndOutputComponents) {
+TEST_F(PositiveShaderInterfaceShared, InputAndOutputComponents) {
     TEST_DESCRIPTION("Test shader layout in and out with different components.");
 
     RETURN_IF_SKIP(Init());
@@ -121,7 +122,7 @@ TEST_F(PositiveShaderInterface, InputAndOutputComponents) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderInterface, InputAndOutputStructComponents) {
+TEST_F(PositiveShaderInterfaceShared, InputAndOutputStructComponents) {
     TEST_DESCRIPTION("Test shader interface with structs.");
 
     RETURN_IF_SKIP(Init());
@@ -291,7 +292,7 @@ TEST_F(PositiveShaderInterface, ScalarBlockLayout) {
     VkShaderObj vs(*m_device, spv_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 }
 
-TEST_F(PositiveShaderInterface, FragmentOutputNotWrittenMasked) {
+TEST_F(PositiveShaderInterfaceShared, FragmentOutputNotWrittenMasked) {
     TEST_DESCRIPTION(
         "Test that no error is produced when the fragment shader fails to declare an output, but the corresponding attachment's "
         "write mask is 0.");
@@ -311,7 +312,7 @@ TEST_F(PositiveShaderInterface, FragmentOutputNotWrittenMasked) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderInterface, FragmentOutputNotWritten) {
+TEST_F(PositiveShaderInterfaceShared, FragmentOutputNotWritten) {
     RETURN_IF_SKIP(Init());
     m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
     InitRenderTarget();
@@ -478,7 +479,7 @@ TEST_F(PositiveShaderInterface, GeometryInputBlockPositive) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderInterface, InputAttachment) {
+TEST_F(PositiveShaderInterfaceShared, InputAttachment) {
     TEST_DESCRIPTION("Positive test for a correctly matched input attachment");
 
     RETURN_IF_SKIP(Init());
@@ -513,7 +514,7 @@ TEST_F(PositiveShaderInterface, InputAttachment) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderInterface, InputAttachmentMissingNotRead) {
+TEST_F(PositiveShaderInterfaceShared, InputAttachmentMissingNotRead) {
     TEST_DESCRIPTION("Input Attachment would be missing, but it is not read from in shader");
 
     RETURN_IF_SKIP(Init());
@@ -745,7 +746,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderInterface, FragmentOutputNotConsumedButAlphaToCoverageEnabled) {
+TEST_F(PositiveShaderInterfaceShared, FragmentOutputNotConsumedButAlphaToCoverageEnabled) {
     TEST_DESCRIPTION(
         "Test that no warning is produced when writing to non-existing color attachment if alpha to coverage is enabled.");
 
@@ -791,7 +792,7 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageOutputIndex0) {
 
 // Spec doesn't clarify if this is valid or not
 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3445
-TEST_F(PositiveShaderInterface, DISABLED_InputOutputMatch2) {
+TEST_F(PositiveShaderInterfaceShared, DISABLED_InputOutputMatch2) {
     TEST_DESCRIPTION("Test matching vertex shader output with fragment shader input.");
 
     RETURN_IF_SKIP(Init());
@@ -825,7 +826,7 @@ TEST_F(PositiveShaderInterface, DISABLED_InputOutputMatch2) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderInterface, InputOutputMatch) {
+TEST_F(PositiveShaderInterfaceShared, InputOutputMatch) {
     TEST_DESCRIPTION("Test matching vertex shader output with fragment shader input.");
 
     RETURN_IF_SKIP(Init());
@@ -925,7 +926,7 @@ TEST_F(PositiveShaderInterface, InputOutputMatch) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderInterface, NestedStructs) {
+TEST_F(PositiveShaderInterfaceShared, NestedStructs) {
     TEST_DESCRIPTION("Use nested structs between shaders.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -964,7 +965,7 @@ TEST_F(PositiveShaderInterface, NestedStructs) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderInterface, AlphaToCoverageOffsetToAlpha) {
+TEST_F(PositiveShaderInterfaceShared, AlphaToCoverageOffsetToAlpha) {
     TEST_DESCRIPTION("Only set the needed component and nothing else.");
 
     RETURN_IF_SKIP(Init());
@@ -990,7 +991,7 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageOffsetToAlpha) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderInterface, AlphaToCoverageArray) {
+TEST_F(PositiveShaderInterfaceShared, AlphaToCoverageArray) {
     TEST_DESCRIPTION("Have array out outputs");
 
     RETURN_IF_SKIP(Init());
@@ -1016,7 +1017,7 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageArray) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockStructArray) {
+TEST_F(PositiveShaderInterfaceShared, VsFsTypeMismatchBlockStructArray) {
     TEST_DESCRIPTION("Have an struct inside a block between shaders");
 
     RETURN_IF_SKIP(Init());
@@ -1067,7 +1068,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockStructArray) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructLastElementArray) {
+TEST_F(PositiveShaderInterfaceShared, VsFsTypeMismatchBlockNestedStructLastElementArray) {
     TEST_DESCRIPTION("Have nested struct inside a block between shaders");
 
     RETURN_IF_SKIP(Init());
@@ -1129,7 +1130,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructLastElementArra
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructArray) {
+TEST_F(PositiveShaderInterfaceShared, VsFsTypeMismatchBlockNestedStructArray) {
     TEST_DESCRIPTION("Have nested struct inside a block between shaders");
 
     RETURN_IF_SKIP(Init());
@@ -1191,7 +1192,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructArray) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderInterface, MultidimensionalArray) {
+TEST_F(PositiveShaderInterfaceShared, MultidimensionalArray) {
     TEST_DESCRIPTION("Make sure multidimensional arrays are handled");
 
     RETURN_IF_SKIP(Init());
@@ -1219,7 +1220,7 @@ TEST_F(PositiveShaderInterface, MultidimensionalArray) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderInterface, MultidimensionalArrayVertex) {
+TEST_F(PositiveShaderInterfaceShared, MultidimensionalArrayVertex) {
     TEST_DESCRIPTION("multidimensional arrays but have lingering vertex output");
 
     RETURN_IF_SKIP(Init());
@@ -1250,7 +1251,7 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayVertex) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderInterface, MultidimensionalArrayDims) {
+TEST_F(PositiveShaderInterfaceShared, MultidimensionalArrayDims) {
     TEST_DESCRIPTION("multidimensional arrays but have lingering vertex output");
 
     RETURN_IF_SKIP(Init());
@@ -1281,7 +1282,7 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayDims) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderInterface, MultidimensionalArrayDims2) {
+TEST_F(PositiveShaderInterfaceShared, MultidimensionalArrayDims2) {
     TEST_DESCRIPTION("multidimensional arrays but have lingering vertex output");
 
     RETURN_IF_SKIP(Init());
@@ -1348,7 +1349,7 @@ TEST_F(PositiveShaderInterface, MultidimensionalArray64bit) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderInterface, MultipleFragmentAttachment) {
+TEST_F(PositiveShaderInterfaceShared, MultipleFragmentAttachment) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7923");
     RETURN_IF_SKIP(Init());
     m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
@@ -1555,7 +1556,7 @@ TEST_F(PositiveShaderInterface, FragmentOutputTypeDynamicRenderingLocalReadTypeR
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderInterface, NonZeroComponentArray) {
+TEST_F(PositiveShaderInterfaceShared, NonZeroComponentArray) {
     TEST_DESCRIPTION("From https://gitlab.khronos.org/vulkan/vulkan/-/issues/3558");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1580,7 +1581,7 @@ TEST_F(PositiveShaderInterface, NonZeroComponentArray) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderInterface, PackingInsideArray) {
+TEST_F(PositiveShaderInterfaceShared, PackingInsideArray) {
     TEST_DESCRIPTION(
         "From https://gitlab.khronos.org/vulkan/vulkan/-/issues/3558, but then overturned in "
         "https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4719 and "
@@ -1735,7 +1736,7 @@ TEST_F(PositiveShaderInterface, MeshFragmentSlang) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderInterface, BlockFragmentLocation) {
+TEST_F(PositiveShaderInterfaceShared, BlockFragmentLocation) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12281");
     RETURN_IF_SKIP(Init());
     m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);

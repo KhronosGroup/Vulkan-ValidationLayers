@@ -24,8 +24,9 @@ struct icd_spv_header {
 };
 
 class NegativeShaderSpirv : public VkLayerTest {};
+class NegativeShaderSpirvShared : public VkSharedLayerTest<> {};
 
-TEST_F(NegativeShaderSpirv, CodeSize) {
+TEST_F(NegativeShaderSpirvShared, CodeSize) {
     TEST_DESCRIPTION("Test that errors are produced for a spirv modules with invalid code sizes");
 
     RETURN_IF_SKIP(Init());
@@ -140,7 +141,7 @@ TEST_F(NegativeShaderSpirv, CodeSizeMaintenance5Compute) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderSpirv, Magic) {
+TEST_F(NegativeShaderSpirvShared, Magic) {
     TEST_DESCRIPTION("Test that an error is produced for a spirv module with a bad magic number");
     RETURN_IF_SKIP(Init());
 
@@ -1223,7 +1224,7 @@ TEST_F(NegativeShaderSpirv, ReadShaderClock) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderSpirv, SpecializationApplied) {
+TEST_F(NegativeShaderSpirvShared, SpecializationApplied) {
     TEST_DESCRIPTION(
         "Make sure specialization constants get applied during shader validation by using a value that breaks compilation.");
 
@@ -1282,7 +1283,7 @@ TEST_F(NegativeShaderSpirv, SpecializationApplied) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
 }
 
-TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBounds) {
+TEST_F(NegativeShaderSpirvShared, SpecializationOffsetOutOfBounds) {
     TEST_DESCRIPTION("Validate VkSpecializationInfo offset.");
 
     RETURN_IF_SKIP(Init());
@@ -1366,7 +1367,7 @@ TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBoundsWithIdentifier) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderSpirv, SpecializationSizeOutOfBounds) {
+TEST_F(NegativeShaderSpirvShared, SpecializationSizeOutOfBounds) {
     TEST_DESCRIPTION("Challenge core_validation with shader validation issues related to vkCreateGraphicsPipelines.");
 
     RETURN_IF_SKIP(Init());
@@ -1400,7 +1401,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeOutOfBounds) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationInfo-pMapEntries-00774");
 }
 
-TEST_F(NegativeShaderSpirv, SpecializationSizeZero) {
+TEST_F(NegativeShaderSpirvShared, SpecializationSizeZero) {
     TEST_DESCRIPTION("Make sure an error is logged when a specialization map entry's size is 0");
 
     RETURN_IF_SKIP(Init());
@@ -1708,7 +1709,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatchFloat64) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
 }
 
-TEST_F(NegativeShaderSpirv, DuplicatedSpecializationConstantID) {
+TEST_F(NegativeShaderSpirvShared, DuplicatedSpecializationConstantID) {
     TEST_DESCRIPTION("Create a pipeline with non unique constantID in specialization pMapEntries.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1745,7 +1746,7 @@ TEST_F(NegativeShaderSpirv, DuplicatedSpecializationConstantID) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationInfo-constantID-04911");
 }
 
-TEST_F(NegativeShaderSpirv, ShaderModuleCheckCapability) {
+TEST_F(NegativeShaderSpirvShared, ShaderModuleCheckCapability) {
     TEST_DESCRIPTION("Create a shader in which a capability declared by the shader is not supported.");
     // Note that this failure message comes from spirv-tools, specifically the validator.
 
@@ -1765,7 +1766,7 @@ TEST_F(NegativeShaderSpirv, ShaderModuleCheckCapability) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderSpirv, ShaderNotEnabled) {
+TEST_F(NegativeShaderSpirvShared, ShaderNotEnabled) {
     TEST_DESCRIPTION(
         "Create a graphics pipeline in which a capability declared by the shader requires a feature not enabled on the device.");
 
@@ -2250,13 +2251,9 @@ TEST_F(NegativeShaderSpirv, ConservativeRasterizationPostDepthCoverage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderSpirv, DynamicUniformIndex) {
+TEST_F(NegativeShaderSpirvShared, DynamicUniformIndex) {
     TEST_DESCRIPTION("Check for the array dynamic array index features when the SPIR-V capabilities are requested.");
-
-    VkPhysicalDeviceFeatures features{};
-    features.shaderUniformBufferArrayDynamicIndexing = VK_FALSE;
-    RETURN_IF_SKIP(Init(&features));
-
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     std::string const source{R"(
@@ -2303,7 +2300,7 @@ TEST_F(NegativeShaderSpirv, DynamicUniformIndex) {
     }
 }
 
-TEST_F(NegativeShaderSpirv, SpecConstantArraySize) {
+TEST_F(NegativeShaderSpirvShared, SpecConstantArraySize) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/SPIRV-Tools/issues/5921");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -2335,7 +2332,7 @@ TEST_F(NegativeShaderSpirv, SpecConstantArraySize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderSpirv, DescriptorCountConstant) {
+TEST_F(NegativeShaderSpirvShared, DescriptorCountConstant) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -2357,7 +2354,7 @@ TEST_F(NegativeShaderSpirv, DescriptorCountConstant) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderSpirv, DescriptorCountSpecConstant) {
+TEST_F(NegativeShaderSpirvShared, DescriptorCountSpecConstant) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -2384,7 +2381,7 @@ TEST_F(NegativeShaderSpirv, DescriptorCountSpecConstant) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderSpirv, DescriptorCountSpecConstantOp) {
+TEST_F(NegativeShaderSpirvShared, DescriptorCountSpecConstantOp) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -2650,7 +2647,7 @@ TEST_F(NegativeShaderSpirv, VkShaderModuleCreateInfoPNext) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderSpirv, NullShaderModuleCreateInfo) {
+TEST_F(NegativeShaderSpirvShared, NullShaderModuleCreateInfo) {
     RETURN_IF_SKIP(Init());
     VkShaderModule module;
     m_errorMonitor->SetDesiredError("VUID-vkCreateShaderModule-pCreateInfo-parameter");

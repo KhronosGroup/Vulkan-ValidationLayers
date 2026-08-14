@@ -17,8 +17,9 @@
 #include <algorithm>
 
 class NegativeShaderCompute : public VkLayerTest {};
+class NegativeShaderComputeShared : public VkSharedLayerTest<> {};
 
-TEST_F(NegativeShaderCompute, SharedMemoryOverLimit) {
+TEST_F(NegativeShaderComputeShared, SharedMemoryOverLimit) {
     TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize");
 
     RETURN_IF_SKIP(Init());
@@ -44,7 +45,7 @@ TEST_F(NegativeShaderCompute, SharedMemoryOverLimit) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderCompute, SharedMemoryBooleanOverLimit) {
+TEST_F(NegativeShaderComputeShared, SharedMemoryBooleanOverLimit) {
     TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize with booleans");
 
     RETURN_IF_SKIP(Init());
@@ -113,7 +114,7 @@ TEST_F(NegativeShaderCompute, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderCompute, SharedMemorySpecConstantDefault) {
+TEST_F(NegativeShaderComputeShared, SharedMemorySpecConstantDefault) {
     TEST_DESCRIPTION("Validate shared memory exceed maxComputeSharedMemorySize limit with spec constants default");
 
     RETURN_IF_SKIP(Init());
@@ -140,7 +141,7 @@ TEST_F(NegativeShaderCompute, SharedMemorySpecConstantDefault) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Workgroup-06530");
 }
 
-TEST_F(NegativeShaderCompute, SharedMemorySpecConstantSet) {
+TEST_F(NegativeShaderComputeShared, SharedMemorySpecConstantSet) {
     TEST_DESCRIPTION("Validate shared memory exceed maxComputeSharedMemorySize limit with spec constants set");
 
     RETURN_IF_SKIP(Init());
@@ -181,7 +182,7 @@ TEST_F(NegativeShaderCompute, SharedMemorySpecConstantSet) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Workgroup-06530");
 }
 
-TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstant) {
+TEST_F(NegativeShaderComputeShared, WorkGroupSizeSpecConstant) {
     TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeWorkGroupSize");
 
     RETURN_IF_SKIP(Init());
@@ -232,7 +233,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstant) {
     }
 }
 
-TEST_F(NegativeShaderCompute, WorkGroupSizeConstantDefault) {
+TEST_F(NegativeShaderComputeShared, WorkGroupSizeConstantDefault) {
     TEST_DESCRIPTION("Make sure constant are applied for maxComputeWorkGroupSize using WorkgroupSize");
 
     RETURN_IF_SKIP(Init());
@@ -271,7 +272,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeConstantDefault) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-x-06429");
 }
 
-TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstantDefault) {
+TEST_F(NegativeShaderComputeShared, WorkGroupSizeSpecConstantDefault) {
     TEST_DESCRIPTION("Make sure spec constant are applied for maxComputeWorkGroupSize using WorkgroupSize");
 
     RETURN_IF_SKIP(Init());
@@ -600,7 +601,7 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
     }
 }
 
-TEST_F(NegativeShaderCompute, ZeroInitializeWorkgroupMemory) {
+TEST_F(NegativeShaderComputeShared, ZeroInitializeWorkgroupMemory) {
     TEST_DESCRIPTION("Test initializing workgroup memory in compute shader");
     RETURN_IF_SKIP(Init());
 

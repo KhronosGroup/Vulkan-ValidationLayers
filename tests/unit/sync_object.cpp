@@ -21,8 +21,9 @@
 #include "sync_helper.h"
 
 class NegativeSyncObject : public SyncObjectTest {};
+class NegativeSyncObjectShared : public VkSharedLayerTest<> {};
 
-TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
+TEST_F(NegativeSyncObjectShared, ImageBarrierSubpassConflicts) {
     TEST_DESCRIPTION("Add a pipeline barrier within a subpass that has conflicting state");
     RETURN_IF_SKIP(Init());
 
@@ -181,7 +182,7 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     m_command_buffer.EndRenderPass();
 }
 
-TEST_F(NegativeSyncObject, BufferMemoryBarrierNoBuffer) {
+TEST_F(NegativeSyncObjectShared, BufferMemoryBarrierNoBuffer) {
     // Try to add a buffer memory barrier with no buffer.
     m_errorMonitor->SetDesiredError("UNASSIGNED-GeneralParameterError-RequiredHandle");
 
@@ -1330,7 +1331,7 @@ TEST_F(NegativeSyncObject, ImageOwnershipTransferQueueMismatch) {
     acquire_cb.End();
 }
 
-TEST_F(NegativeSyncObject, BufferOwnershipTransferQueueMismatch) {
+TEST_F(NegativeSyncObjectShared, BufferOwnershipTransferQueueMismatch) {
     TEST_DESCRIPTION("Neither src nor dst barrier queue family matches submit queue family");
     RETURN_IF_SKIP(Init());
 
@@ -1523,7 +1524,7 @@ TEST_F(NegativeSyncObject, ImageBarrierWithHostStage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSyncObject, BufferBarrierWithHostStageSync1) {
+TEST_F(NegativeSyncObjectShared, BufferBarrierWithHostStageSync1) {
     TEST_DESCRIPTION("Buffer barrier includes VK_PIPELINE_STAGE_HOST_BIT as srcStageMask or dstStageMask");
     RETURN_IF_SKIP(Init());
 
@@ -1559,7 +1560,7 @@ TEST_F(NegativeSyncObject, BufferBarrierWithHostStageSync1) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSyncObject, ImageBarrierWithHostStageSync1) {
+TEST_F(NegativeSyncObjectShared, ImageBarrierWithHostStageSync1) {
     TEST_DESCRIPTION("Image barrier includes VK_PIPELINE_STAGE_HOST_BIT as srcStageMask or dstStageMask");
     RETURN_IF_SKIP(Init());
 
@@ -1663,7 +1664,7 @@ TEST_F(NegativeSyncObject, BarrierQueueFamilyWithMemExt2) {
     conc_test(VK_QUEUE_FAMILY_EXTERNAL_KHR, VK_QUEUE_FAMILY_IGNORED);
 }
 
-TEST_F(NegativeSyncObject, ImageBarrierWithBadRange) {
+TEST_F(NegativeSyncObjectShared, ImageBarrierWithBadRange) {
     TEST_DESCRIPTION("VkImageMemoryBarrier with an invalid subresourceRange");
 
     RETURN_IF_SKIP(Init());
@@ -2114,7 +2115,7 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSyncObject, BarrierAccessSync1) {
+TEST_F(NegativeSyncObjectShared, BarrierAccessSync1) {
     TEST_DESCRIPTION("Special cases for sync1 that worth to check. Sync2 testing is enough for other checks");
     RETURN_IF_SKIP(Init());
 
@@ -2138,7 +2139,7 @@ TEST_F(NegativeSyncObject, BarrierAccessSync1) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSyncObject, BarrierAccessSync1AllCommands) {
+TEST_F(NegativeSyncObjectShared, BarrierAccessSync1AllCommands) {
     TEST_DESCRIPTION("Test access flag is not supported by ALL_COMMANDS on the given queue");
     RETURN_IF_SKIP(Init());
 
@@ -2559,7 +2560,7 @@ TEST_F(NegativeSyncObject, ZeroInitializeLayoutSubresource) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSyncObject, SubmitSignaledFence) {
+TEST_F(NegativeSyncObjectShared, SubmitSignaledFence) {
     RETURN_IF_SKIP(Init());
 
     VkFenceCreateInfo fenceInfo = vku::InitStructHelper();
@@ -3535,7 +3536,7 @@ TEST_F(NegativeSyncObject, SemaphoreCounterType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSyncObject, SignalSignaledSemaphore) {
+TEST_F(NegativeSyncObjectShared, SignalSignaledSemaphore) {
     TEST_DESCRIPTION("Call VkQueueSubmit with a semaphore that is already signaled but not waited on by the queue.");
     RETURN_IF_SKIP(Init());
 
@@ -3593,7 +3594,7 @@ TEST_F(NegativeSyncObject, PipelineStageConditionalRenderingWithWrongQueue) {
     commandBuffer.End();
 }
 
-TEST_F(NegativeSyncObject, RenderPassPipelineBarrierGraphicsStage) {
+TEST_F(NegativeSyncObjectShared, RenderPassPipelineBarrierGraphicsStage) {
     TEST_DESCRIPTION("Use non-graphics pipeline stage inside a renderpass");
     RETURN_IF_SKIP(Init());
 
@@ -4237,7 +4238,7 @@ TEST_F(NegativeSyncObject, Sync2FeatureDisabled) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSyncObject, BufferMemoryBarrierUnbound) {
+TEST_F(NegativeSyncObjectShared, BufferMemoryBarrierUnbound) {
     RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -4261,7 +4262,7 @@ TEST_F(NegativeSyncObject, BufferMemoryBarrierUnbound) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSyncObject, BufferMemoryBarrierQueueFamilyExternal) {
+TEST_F(NegativeSyncObjectShared, BufferMemoryBarrierQueueFamilyExternal) {
     RETURN_IF_SKIP(Init());
 
     if (!m_second_queue) {

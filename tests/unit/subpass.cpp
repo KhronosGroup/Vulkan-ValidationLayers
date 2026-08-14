@@ -19,6 +19,7 @@
 #include "utils/convert_utils.h"
 
 class NegativeSubpass : public VkLayerTest {};
+class NegativeSubpassShared : public VkSharedLayerTest<> {};
 
 TEST_F(NegativeSubpass, NonGraphicsPipeline) {
     TEST_DESCRIPTION("Create a subpass with the compute pipeline bind point");
@@ -414,7 +415,7 @@ TEST_F(NegativeSubpass, SubpassIndices) {
     }
 }
 
-TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
+TEST_F(NegativeSubpassShared, DrawWithPipelineIncompatibleWithSubpass) {
     TEST_DESCRIPTION("Use a pipeline for the wrong subpass in a render pass instance");
 
     RETURN_IF_SKIP(Init());
@@ -473,7 +474,7 @@ TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
+TEST_F(NegativeSubpassShared, ImageBarrierSubpassConflict) {
     TEST_DESCRIPTION("Check case where subpass index references different image from image barrier");
     RETURN_IF_SKIP(Init());
 
@@ -529,7 +530,7 @@ TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
+TEST_F(NegativeSubpassShared, SubpassInputNotBoundDescriptorSet) {
     TEST_DESCRIPTION("Validate subpass input isn't bound to fragment shader or descriptor set");
 
     RETURN_IF_SKIP(Init());
@@ -884,7 +885,7 @@ TEST_F(NegativeSubpass, InputAttachmentReferences) {
     CreateRenderPassTest(rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01927", nullptr);
 }
 
-TEST_F(NegativeSubpass, InputAttachmentMissing) {
+TEST_F(NegativeSubpassShared, InputAttachmentMissing) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a shader consuming an input attachment which is not included in the subpass "
         "description");
@@ -910,7 +911,7 @@ TEST_F(NegativeSubpass, InputAttachmentMissing) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038");
 }
 
-TEST_F(NegativeSubpass, InputAttachmentMissingArray) {
+TEST_F(NegativeSubpassShared, InputAttachmentMissingArray) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a shader consuming an input attachment which is not included in the subpass "
         "description -- array case");
@@ -936,7 +937,7 @@ TEST_F(NegativeSubpass, InputAttachmentMissingArray) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038");
 }
 
-TEST_F(NegativeSubpass, InputAttachmentMissingArray2) {
+TEST_F(NegativeSubpassShared, InputAttachmentMissingArray2) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1010,7 +1011,7 @@ TEST_F(NegativeSubpass, InputAttachmentMissingSpecConstant) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSubpass, InputAttachmentMissingSpecConstant2) {
+TEST_F(NegativeSubpassShared, InputAttachmentMissingSpecConstant2) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1046,7 +1047,7 @@ TEST_F(NegativeSubpass, InputAttachmentMissingSpecConstant2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSubpass, InputAttachmentSharingVariable) {
+TEST_F(NegativeSubpassShared, InputAttachmentSharingVariable) {
     TEST_DESCRIPTION("Make sure if 2 loads use same variable, both are tracked");
 
     RETURN_IF_SKIP(Init());
@@ -1165,7 +1166,7 @@ TEST_F(NegativeSubpass, SubpassInputWithoutFormat) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSubpass, NextSubpassNoRenderPass) {
+TEST_F(NegativeSubpassShared, NextSubpassNoRenderPass) {
     TEST_DESCRIPTION("call next subpass outside a renderpass");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1184,7 +1185,7 @@ TEST_F(NegativeSubpass, NextSubpassNoRenderPass) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSubpass, FramebufferNoAttachmentsSampleCounts) {
+TEST_F(NegativeSubpassShared, FramebufferNoAttachmentsSampleCounts) {
     TEST_DESCRIPTION("Create no attachment subpass that goes against framebufferNoAttachmentsSampleCounts");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();

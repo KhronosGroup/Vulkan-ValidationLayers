@@ -14,8 +14,9 @@
 #include "pipeline_helper.h"
 
 class PositiveShaderImageAccess : public VkLayerTest {};
+class PositiveShaderImageAccessShared : public VkSharedLayerTest<> {};
 
-TEST_F(PositiveShaderImageAccess, FunctionParameterToVariable) {
+TEST_F(PositiveShaderImageAccessShared, FunctionParameterToVariable) {
     TEST_DESCRIPTION("Test getting a ImageAccess from a OpFunctionParameter to a OpVariable");
 
     RETURN_IF_SKIP(Init());
@@ -43,7 +44,7 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToVariable) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositiveShaderImageAccess, MultipleFunctionParameterToVariable) {
+TEST_F(PositiveShaderImageAccessShared, MultipleFunctionParameterToVariable) {
     TEST_DESCRIPTION("Test getting a ImageAccess from a chain of OpFunctionParameter to a OpVariable");
 
     RETURN_IF_SKIP(Init());
@@ -76,7 +77,7 @@ TEST_F(PositiveShaderImageAccess, MultipleFunctionParameterToVariable) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositiveShaderImageAccess, DifferentFunctionParameterToVariable) {
+TEST_F(PositiveShaderImageAccessShared, DifferentFunctionParameterToVariable) {
     TEST_DESCRIPTION("Test getting a different ImageAccess from the same OpFunctionParameter to a OpVariable");
 
     RETURN_IF_SKIP(Init());
@@ -106,7 +107,7 @@ TEST_F(PositiveShaderImageAccess, DifferentFunctionParameterToVariable) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositiveShaderImageAccess, FunctionParameterToLoad) {
+TEST_F(PositiveShaderImageAccessShared, FunctionParameterToLoad) {
     TEST_DESCRIPTION("Test getting a ImageAccess from a OpFunctionParameter to a OpLoad");
 
     RETURN_IF_SKIP(Init());
@@ -163,7 +164,7 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToLoad) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositiveShaderImageAccess, FunctionParameterToVariableSampledImage) {
+TEST_F(PositiveShaderImageAccessShared, FunctionParameterToVariableSampledImage) {
     TEST_DESCRIPTION("Test getting a OpSampledImage ImageAccess from a OpFunctionParameter to a OpVariable");
 
     RETURN_IF_SKIP(Init());
@@ -193,7 +194,7 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToVariableSampledImage) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositiveShaderImageAccess, FunctionParameterToLoadSampledImage) {
+TEST_F(PositiveShaderImageAccessShared, FunctionParameterToLoadSampledImage) {
     TEST_DESCRIPTION("Test getting a OpSampledImage ImageAccess from a OpFunctionParameter to a OpLoad");
 
     RETURN_IF_SKIP(Init());
@@ -257,7 +258,7 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToLoadSampledImage) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositiveShaderImageAccess, CopyObjectFromLoad) {
+TEST_F(PositiveShaderImageAccessShared, CopyObjectFromLoad) {
     TEST_DESCRIPTION("Use a OpCopyObject from a OpLoad");
 
     RETURN_IF_SKIP(Init());
@@ -306,7 +307,7 @@ TEST_F(PositiveShaderImageAccess, CopyObjectFromLoad) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositiveShaderImageAccess, UndefImage) {
+TEST_F(PositiveShaderImageAccessShared, UndefImage) {
     TEST_DESCRIPTION("A OpSampledImage has the Image ID pointing to a OpUndef");
 
     RETURN_IF_SKIP(Init());
@@ -356,7 +357,7 @@ TEST_F(PositiveShaderImageAccess, UndefImage) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositiveShaderImageAccess, ComponentTypeMismatchFunctionTwoArgs) {
+TEST_F(PositiveShaderImageAccessShared, ComponentTypeMismatchFunctionTwoArgs) {
     TEST_DESCRIPTION("Pass a signed and unsinged sampler, and use the correct one.");
 
     RETURN_IF_SKIP(Init());
@@ -410,7 +411,7 @@ TEST_F(PositiveShaderImageAccess, ComponentTypeMismatchFunctionTwoArgs) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderImageAccess, SamplerNeverAccessed) {
+TEST_F(PositiveShaderImageAccessShared, SamplerNeverAccessed) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -484,7 +485,7 @@ TEST_F(PositiveShaderImageAccess, SamplerNeverAccessed) {
 
 // TODO - unclear if this is valid or not, need spec clarification
 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4098#note_506228
-TEST_F(PositiveShaderImageAccess, DISABLED_ExtraUnusedInvalidDescriptor) {
+TEST_F(PositiveShaderImageAccessShared, DISABLED_ExtraUnusedInvalidDescriptor) {
     TEST_DESCRIPTION("Bind extra invalid descriptors, but shader will not statically ever use them");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -543,7 +544,7 @@ TEST_F(PositiveShaderImageAccess, DISABLED_ExtraUnusedInvalidDescriptor) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderImageAccess, FunctionDescriptorIndexing) {
+TEST_F(PositiveShaderImageAccessShared, FunctionDescriptorIndexing) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -596,7 +597,7 @@ TEST_F(PositiveShaderImageAccess, FunctionDescriptorIndexing) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderImageAccess, AliasImageBinding) {
+TEST_F(PositiveShaderImageAccessShared, AliasImageBinding) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7677");
     RETURN_IF_SKIP(Init());
 

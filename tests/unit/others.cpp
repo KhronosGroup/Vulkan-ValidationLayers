@@ -22,6 +22,7 @@
 #include "generated/vk_validation_error_messages.h"
 
 class NegativeOther : public VkLayerTest {};
+class NegativeOtherShared : public VkSharedLayerTest<> {};
 
 TEST_F(NegativeOther, VersionCheckPromotedAPIs) {
     TEST_DESCRIPTION("Validate that promoted APIs are not valid in old versions.");
@@ -97,7 +98,7 @@ TEST_F(NegativeOther, VuidHashStability) {
     ASSERT_TRUE(hash_util::VuidHash("CURRENT-VALIDATION-ENABLED") == 0xfd7b2292);
 }
 
-TEST_F(NegativeOther, RequiredParameter) {
+TEST_F(NegativeOtherShared, RequiredParameter) {
     TEST_DESCRIPTION("Specify VK_NULL_HANDLE, NULL, and 0 for required handle, pointer, array, and array count parameters");
 
     RETURN_IF_SKIP(Init());
@@ -187,7 +188,7 @@ TEST_F(NegativeOther, RequiredParameter) {
 }
 
 #ifdef ANNOTATED_SPEC_LINK
-TEST_F(NegativeOther, SpecLinksImplicit) {
+TEST_F(NegativeOtherShared, SpecLinksImplicit) {
     TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
     RETURN_IF_SKIP(Init());
 
@@ -200,7 +201,7 @@ TEST_F(NegativeOther, SpecLinksImplicit) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, SpecLinksExplicit) {
+TEST_F(NegativeOtherShared, SpecLinksExplicit) {
     TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
     RETURN_IF_SKIP(Init());
 
@@ -217,7 +218,7 @@ TEST_F(NegativeOther, SpecLinksExplicit) {
 
 #else   // ANNOTATED_SPEC_LINK
 
-TEST_F(NegativeOther, SpecLinksImplicit) {
+TEST_F(NegativeOtherShared, SpecLinksImplicit) {
     TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
     RETURN_IF_SKIP(Init());
 
@@ -230,7 +231,7 @@ TEST_F(NegativeOther, SpecLinksImplicit) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, SpecLinksExplicit) {
+TEST_F(NegativeOtherShared, SpecLinksExplicit) {
     TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
     RETURN_IF_SKIP(Init());
 
@@ -284,7 +285,7 @@ TEST_F(NegativeOther, PnextOnlyStructValidation) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, ReservedParameter) {
+TEST_F(NegativeOtherShared, ReservedParameter) {
     TEST_DESCRIPTION("Specify a non-zero value for a reserved parameter");
 
     RETURN_IF_SKIP(Init());
@@ -300,7 +301,7 @@ TEST_F(NegativeOther, ReservedParameter) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, InvalidStructSType) {
+TEST_F(NegativeOtherShared, InvalidStructSType) {
     TEST_DESCRIPTION("Specify an invalid VkStructureType for a Vulkan structure's sType field");
 
     RETURN_IF_SKIP(Init());
@@ -361,7 +362,7 @@ TEST_F(NegativeOther, InvalidStructPNext) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, UnrecognizedEnumOutOfRange) {
+TEST_F(NegativeOtherShared, UnrecognizedEnumOutOfRange) {
     RETURN_IF_SKIP(Init());
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_MAINTENANCE_5_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_maintenance5 is supported";
@@ -389,7 +390,7 @@ TEST_F(NegativeOther, UnrecognizedEnumOutOfRange2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, UnrecognizedFlagOutOfRange) {
+TEST_F(NegativeOtherShared, UnrecognizedFlagOutOfRange) {
     RETURN_IF_SKIP(Init());
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_MAINTENANCE_5_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_maintenance5 is supported";
@@ -421,7 +422,7 @@ TEST_F(NegativeOther, UnrecognizedFlagOutOfRange2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, UnrecognizedValueBadMask) {
+TEST_F(NegativeOtherShared, UnrecognizedValueBadMask) {
     RETURN_IF_SKIP(Init());
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_MAINTENANCE_5_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_maintenance5 is supported";
@@ -436,7 +437,7 @@ TEST_F(NegativeOther, UnrecognizedValueBadMask) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, UnrecognizedValueBadFlag) {
+TEST_F(NegativeOtherShared, UnrecognizedValueBadFlag) {
     RETURN_IF_SKIP(Init());
 
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pWaitDstStageMask-parameter");
@@ -471,7 +472,7 @@ TEST_F(NegativeOther, UnrecognizedValueBadBool) {
     CreateSamplerTest(sampler_info, "UNASSIGNED-GeneralParameterError-UnrecognizedBool32");
 }
 
-TEST_F(NegativeOther, UnrecognizedValueMaxEnum) {
+TEST_F(NegativeOtherShared, UnrecognizedValueMaxEnum) {
     RETURN_IF_SKIP(Init());
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_MAINTENANCE_5_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_maintenance5 is supported";
@@ -484,7 +485,7 @@ TEST_F(NegativeOther, UnrecognizedValueMaxEnum) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, UseObjectWithWrongDevice) {
+TEST_F(NegativeOtherShared, UseObjectWithWrongDevice) {
     TEST_DESCRIPTION(
         "Try to destroy a render pass object using a device other than the one it was created on. This should generate a distinct "
         "error from the invalid handle error.");
@@ -519,7 +520,7 @@ TEST_F(NegativeOther, UseObjectWithWrongDevice) {
     vk::DestroyDevice(second_device, nullptr);
 }
 
-TEST_F(NegativeOther, InvalidAllocationCallbacks) {
+TEST_F(NegativeOtherShared, InvalidAllocationCallbacks) {
     TEST_DESCRIPTION("Test with invalid VkAllocationCallbacks");
 
     RETURN_IF_SKIP(Init());
@@ -595,7 +596,7 @@ TEST_F(NegativeOther, ValidationCacheTestBadMerge) {
     vk::DestroyValidationCacheEXT(device(), validationCache, nullptr);
 }
 
-TEST_F(NegativeOther, UnclosedAndDuplicateQueries) {
+TEST_F(NegativeOtherShared, UnclosedAndDuplicateQueries) {
     TEST_DESCRIPTION("End a command buffer with a query still in progress, create nested queries.");
 
     RETURN_IF_SKIP(Init());
@@ -620,7 +621,7 @@ TEST_F(NegativeOther, UnclosedAndDuplicateQueries) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, ExecuteUnrecordedCB) {
+TEST_F(NegativeOtherShared, ExecuteUnrecordedCB) {
     TEST_DESCRIPTION("Attempt vkQueueSubmit with a CB in the initial state");
 
     RETURN_IF_SKIP(Init());
@@ -641,7 +642,7 @@ TEST_F(NegativeOther, ExecuteUnrecordedCB) {
     // m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, ValidateArrayLength) {
+TEST_F(NegativeOtherShared, ValidateArrayLength) {
     TEST_DESCRIPTION("Validate arraylength VUs");
 
     RETURN_IF_SKIP(Init());
@@ -798,7 +799,7 @@ TEST_F(NegativeOther, InvalidImageCreateFlagWithPhysicalDeviceCount) {
     CreateImageTest(ici, "VUID-VkImageCreateInfo-physicalDeviceCount-01421");
 }
 
-TEST_F(NegativeOther, ZeroBitmask) {
+TEST_F(NegativeOtherShared, ZeroBitmask) {
     TEST_DESCRIPTION("Test a reserved flags field set to a non-zero value");
 
     RETURN_IF_SKIP(Init());
@@ -811,7 +812,7 @@ TEST_F(NegativeOther, ZeroBitmask) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, InvalidExtEnum) {
+TEST_F(NegativeOtherShared, InvalidExtEnum) {
     TEST_DESCRIPTION("Use an enum from an extension that is not enabled.");
     RETURN_IF_SKIP(Init());
 
@@ -871,7 +872,7 @@ TEST_F(NegativeOther, DuplicateValidPNextStructures) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, GetPhysicalDeviceImageFormatPropertiesFlags) {
+TEST_F(NegativeOtherShared, GetPhysicalDeviceImageFormatPropertiesFlags) {
     RETURN_IF_SKIP(Init());
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_MAINTENANCE_5_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_maintenance5 is supported";
@@ -1140,7 +1141,7 @@ TEST_F(NegativeOther, DescriptorBufferNoExtension) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeOther, MissingCreateInfo) {
+TEST_F(NegativeOtherShared, MissingCreateInfo) {
     RETURN_IF_SKIP(Init());
 
     VkBuffer buffer;
@@ -1256,7 +1257,7 @@ TEST_F(NegativeOther, MissingCreateInfo) {
 
 // Android loader returns an error in this case, so never makes it to the VVL
 #if !defined(VK_USE_PLATFORM_ANDROID_KHR)
-TEST_F(NegativeOther, GetDeviceProcAddrInstance) {
+TEST_F(NegativeOtherShared, GetDeviceProcAddrInstance) {
     TEST_DESCRIPTION("Call GetDeviceProcAddr on an instance function");
     RETURN_IF_SKIP(Init());
     m_errorMonitor->SetDesiredWarning("WARNING-vkGetDeviceProcAddr-device");
@@ -1267,7 +1268,7 @@ TEST_F(NegativeOther, GetDeviceProcAddrInstance) {
 
 // TODO - Can reproduce locally when setting VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME
 // but need to unset variable and make sure works on Android before having CI run this
-TEST_F(NegativeOther, DISABLED_DisplayApplicationName) {
+TEST_F(NegativeOtherShared, DISABLED_DisplayApplicationName) {
     TEST_DESCRIPTION("Test message_format_display_application_name");
     const char* name_0 = "first instance";
     app_info_.pApplicationName = name_0;
@@ -1374,7 +1375,7 @@ TEST_F(NegativeOther, DISABLED_PhysicalDeviceLayeredApiVulkanPropertiesPNext) {
 }
 // stype-check on
 
-TEST_F(NegativeOther, UnrecognizedEnumExtension) {
+TEST_F(NegativeOtherShared, UnrecognizedEnumExtension) {
     RETURN_IF_SKIP(Init());
     m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-format-parameter");
     vkt::Image image(*m_device, 4, 4, VK_FORMAT_A4B4G4R4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT);

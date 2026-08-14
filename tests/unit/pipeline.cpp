@@ -21,8 +21,9 @@
 #include "shader_helper.h"
 
 class NegativePipeline : public VkLayerTest {};
+class NegativePipelineShared : public VkSharedLayerTest<> {};
 
-TEST_F(NegativePipeline, NotBound) {
+TEST_F(NegativePipelineShared, NotBound) {
     TEST_DESCRIPTION("Pass in an invalid pipeline object handle into a Vulkan API call.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipeline-parameter");
@@ -38,7 +39,7 @@ TEST_F(NegativePipeline, NotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, WrongBindPointGraphics) {
+TEST_F(NegativePipelineShared, WrongBindPointGraphics) {
     TEST_DESCRIPTION("Bind a compute pipeline in the graphics bind point");
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineBindPoint-00779");
@@ -55,7 +56,7 @@ TEST_F(NegativePipeline, WrongBindPointGraphics) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, BasicCompute) {
+TEST_F(NegativePipelineShared, BasicCompute) {
     TEST_DESCRIPTION("Bind a compute pipeline (no subpasses)");
     RETURN_IF_SKIP(Init());
 
@@ -84,7 +85,7 @@ TEST_F(NegativePipeline, BasicCompute) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 }
 
-TEST_F(NegativePipeline, WrongBindPointCompute) {
+TEST_F(NegativePipelineShared, WrongBindPointCompute) {
     TEST_DESCRIPTION("Bind a graphics pipeline in the compute bind point");
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineBindPoint-00780");
@@ -101,13 +102,8 @@ TEST_F(NegativePipeline, WrongBindPointCompute) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, DisabledIndependentBlend) {
-    TEST_DESCRIPTION(
-        "Generate INDEPENDENT_BLEND by disabling independent blend and then specifying different blend states for two "
-        "attachments");
-    VkPhysicalDeviceFeatures features = {};
-    features.independentBlend = VK_FALSE;
-    RETURN_IF_SKIP(Init(&features));
+TEST_F(NegativePipelineShared, DisabledIndependentBlend) {
+    RETURN_IF_SKIP(Init());
 
     // Create a renderPass with two color attachments
     RenderPassSingleSubpass rp(*this);
@@ -134,11 +130,8 @@ TEST_F(NegativePipeline, DisabledIndependentBlend) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
-    TEST_DESCRIPTION("Test that blending is not enabled with a format not support blending");
-    VkPhysicalDeviceFeatures features = {};
-    features.independentBlend = VK_FALSE;
-    RETURN_IF_SKIP(Init(&features));
+TEST_F(NegativePipelineShared, BlendingOnFormatWithoutBlendingSupport) {
+    RETURN_IF_SKIP(Init());
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06041");
 
@@ -170,7 +163,7 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, ColorWriteMaskE5B9G9R9) {
+TEST_F(NegativePipelineShared, ColorWriteMaskE5B9G9R9) {
     RETURN_IF_SKIP(Init());
     if (!(m_device->FormatFeaturesOptimal(VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT)) {
         GTEST_SKIP() << "Device does not support VK_FORMAT_E5B9G9R9_UFLOAT_PACK32";
@@ -190,7 +183,7 @@ TEST_F(NegativePipeline, ColorWriteMaskE5B9G9R9) {
 }
 
 // Is the Pipeline compatible with the expectations of the Renderpass/subpasses?
-TEST_F(NegativePipeline, PipelineRenderpassCompatibility) {
+TEST_F(NegativePipelineShared, PipelineRenderpassCompatibility) {
     TEST_DESCRIPTION(
         "Create a graphics pipeline that is incompatible with the requirements of its contained Renderpass/subpasses.");
     RETURN_IF_SKIP(Init());
@@ -207,7 +200,7 @@ TEST_F(NegativePipeline, PipelineRenderpassCompatibility) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09030");
 }
 
-TEST_F(NegativePipeline, CmdBufferPipelineDestroyed) {
+TEST_F(NegativePipelineShared, CmdBufferPipelineDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a pipeline dependency being destroyed.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -338,7 +331,7 @@ TEST_F(NegativePipeline, NoPipelineDynamicState) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativePipeline, ShaderStageName) {
+TEST_F(NegativePipelineShared, ShaderStageName) {
     TEST_DESCRIPTION("Create Pipelines with invalid state set");
 
     RETURN_IF_SKIP(Init());
@@ -367,7 +360,7 @@ TEST_F(NegativePipeline, ShaderStageName) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "contains invalid characters or is badly formed");
 }
 
-TEST_F(NegativePipeline, ShaderStageBit) {
+TEST_F(NegativePipelineShared, ShaderStageBit) {
     TEST_DESCRIPTION("Create Pipelines with invalid state set");
 
     RETURN_IF_SKIP(Init());
@@ -392,7 +385,7 @@ TEST_F(NegativePipeline, ShaderStageBit) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, SampleRateFeatureDisable) {
+TEST_F(NegativePipelineShared, SampleRateFeatureDisable) {
     // Enable sample shading in pipeline when the feature is disabled.
     // Disable sampleRateShading here
 
@@ -459,7 +452,7 @@ TEST_F(NegativePipeline, SamplePNextUnknown) {
     CreatePipelineHelper::OneshotTest(*this, bad_chain, kErrorBit, "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
 }
 
-TEST_F(NegativePipeline, SubpassRasterizationSamples) {
+TEST_F(NegativePipelineShared, SubpassRasterizationSamples) {
     TEST_DESCRIPTION("Test creating two pipelines referring to the same subpass but with different rasterization samples count");
 
     RETURN_IF_SKIP(Init());
@@ -715,7 +708,7 @@ TEST_F(NegativePipeline, CustomResolveSampleShadingImplicit) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativePipeline, RasterizerDiscardWithFragmentShader) {
+TEST_F(NegativePipelineShared, RasterizerDiscardWithFragmentShader) {
     TEST_DESCRIPTION("Create Graphics Pipeline with fragment shader and rasterizer discard");
     RETURN_IF_SKIP(Init());
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
@@ -782,7 +775,7 @@ TEST_F(NegativePipeline, RasterizerDiscardWithFragmentShader) {
     vk::DestroyPipelineLayout(*m_device, pipeline_layout, nullptr);
 }
 
-TEST_F(NegativePipeline, CreateGraphicsPipelineWithBadBasePointer) {
+TEST_F(NegativePipelineShared, CreateGraphicsPipelineWithBadBasePointer) {
     TEST_DESCRIPTION("Create Graphics Pipeline with pointers that must be ignored by layers");
 
     RETURN_IF_SKIP(Init());
@@ -961,7 +954,7 @@ TEST_F(NegativePipeline, ColorBlendInvalidLogicOp) {
                                       "VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00607");
 }
 
-TEST_F(NegativePipeline, ColorBlendUnsupportedLogicOp) {
+TEST_F(NegativePipelineShared, ColorBlendUnsupportedLogicOp) {
     TEST_DESCRIPTION("Attempt enabling VkPipelineColorBlendStateCreateInfo::logicOpEnable when logicOp feature is disabled.");
 
     RETURN_IF_SKIP(Init());
@@ -972,11 +965,8 @@ TEST_F(NegativePipeline, ColorBlendUnsupportedLogicOp) {
                                       "VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00606");
 }
 
-TEST_F(NegativePipeline, ColorBlendUnsupportedDualSourceBlend) {
-    TEST_DESCRIPTION("Attempt to use dual-source blending when dualSrcBlend feature is disabled.");
-
-    VkPhysicalDeviceFeatures features{};
-    RETURN_IF_SKIP(Init(&features));
+TEST_F(NegativePipelineShared, ColorBlendUnsupportedDualSourceBlend) {
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPipelineColorBlendAttachmentState cb_attachments = {};
@@ -1024,7 +1014,7 @@ TEST_F(NegativePipeline, ColorBlendUnsupportedDualSourceBlend) {
                                       "VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-00611");
 }
 
-TEST_F(NegativePipeline, DuplicateStage) {
+TEST_F(NegativePipelineShared, DuplicateStage) {
     TEST_DESCRIPTION("Test that an error is produced for a pipeline containing multiple shaders for the same stage");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1112,7 +1102,7 @@ TEST_F(NegativePipeline, DuplicateStageMaintenance5Vertex) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, MissingEntrypoint) {
+TEST_F(NegativePipelineShared, MissingEntrypoint) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1152,7 +1142,7 @@ TEST_F(NegativePipeline, MissingEntrypoint) {
     }
 }
 
-TEST_F(NegativePipeline, MissingEntrypoint2) {
+TEST_F(NegativePipelineShared, MissingEntrypoint2) {
     RETURN_IF_SKIP(Init());
 
     const char* shader_source = R"(
@@ -1241,7 +1231,7 @@ TEST_F(NegativePipeline, MissingEntrypointInlineWrongStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, DepthStencilRequired) {
+TEST_F(NegativePipelineShared, DepthStencilRequired) {
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09028");
 
     RETURN_IF_SKIP(Init());
@@ -1260,7 +1250,7 @@ TEST_F(NegativePipeline, DepthStencilRequired) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, NullStagepName) {
+TEST_F(NegativePipelineShared, NullStagepName) {
     TEST_DESCRIPTION("Test that an error is produced for a stage with a null pName pointer");
 
     RETURN_IF_SKIP(Init());
@@ -1276,7 +1266,7 @@ TEST_F(NegativePipeline, NullStagepName) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, NullStagepNameCompute) {
+TEST_F(NegativePipelineShared, NullStagepNameCompute) {
     TEST_DESCRIPTION("Test that an error is produced for a stage with a null pName pointer");
     RETURN_IF_SKIP(Init());
     VkShaderObj cs(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -1446,7 +1436,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesNV) {
     }
 }
 
-TEST_F(NegativePipeline, FramebufferMixedSamples) {
+TEST_F(NegativePipelineShared, FramebufferMixedSamples) {
     TEST_DESCRIPTION("Verify that the expected VUIds are hits when VK_NV_framebuffer_mixed_samples is disabled.");
 
     RETURN_IF_SKIP(Init());
@@ -1891,7 +1881,7 @@ TEST_F(NegativePipeline, LineRasterization) {
     vk::CmdSetLineStippleEXT(m_command_buffer, 1, 1);
 }
 
-TEST_F(NegativePipeline, NotCompatibleForSet) {
+TEST_F(NegativePipelineShared, NotCompatibleForSet) {
     TEST_DESCRIPTION("Check that validation path catches pipeline layout inconsistencies for bind vs. dispatch");
     RETURN_IF_SKIP(Init());
 
@@ -1984,7 +1974,7 @@ TEST_F(NegativePipeline, NotCompatibleForSetIndependent) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativePipeline, DescriptorSetNotBound) {
+TEST_F(NegativePipelineShared, DescriptorSetNotBound) {
     RETURN_IF_SKIP(Init());
 
     const char* cs_source = R"glsl(
@@ -2484,7 +2474,7 @@ TEST_F(NegativePipeline, CreateFlagsCompute) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-vkCreateComputePipelines-pNext-09617");
 }
 
-TEST_F(NegativePipeline, MergePipelineCachesInvalidDst) {
+TEST_F(NegativePipelineShared, MergePipelineCachesInvalidDst) {
     TEST_DESCRIPTION("Test mergeing pipeline caches with dst cache in src list");
 
     RETURN_IF_SKIP(Init());
@@ -2504,7 +2494,7 @@ TEST_F(NegativePipeline, MergePipelineCachesInvalidDst) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, CreateComputePipelineWithBadBasePointer) {
+TEST_F(NegativePipelineShared, CreateComputePipelineWithBadBasePointer) {
     TEST_DESCRIPTION("Create Compute Pipeline with bad base pointer");
 
     RETURN_IF_SKIP(Init());
@@ -2537,7 +2527,7 @@ TEST_F(NegativePipeline, CreateComputePipelineWithBadBasePointer) {
     }
 }
 
-TEST_F(NegativePipeline, CreateComputePipelineWithDerivatives) {
+TEST_F(NegativePipelineShared, CreateComputePipelineWithDerivatives) {
     TEST_DESCRIPTION("Create Compute Pipeline with derivatives");
 
     RETURN_IF_SKIP(Init());
@@ -2629,7 +2619,7 @@ TEST_F(NegativePipeline, CreateComputePipelineWithDerivatives) {
     }
 }
 
-TEST_F(NegativePipeline, GraphicsPipelineWithBadBasePointer) {
+TEST_F(NegativePipelineShared, GraphicsPipelineWithBadBasePointer) {
     TEST_DESCRIPTION("Create Graphics Pipeline with bad base pointer");
 
     RETURN_IF_SKIP(Init());
@@ -2896,7 +2886,7 @@ TEST_F(NegativePipeline, RasterizationConservativeStateCreateInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, NullRenderPass) {
+TEST_F(NegativePipelineShared, NullRenderPass) {
     TEST_DESCRIPTION("Test for a creating a pipeline with a null renderpass but VK_KHR_dynamic_rendering is not enabled");
     RETURN_IF_SKIP(Init());
 
@@ -3132,7 +3122,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
     }
 }
 
-TEST_F(NegativePipeline, MismatchedRenderPassAndPipelineAttachments) {
+TEST_F(NegativePipelineShared, MismatchedRenderPassAndPipelineAttachments) {
     TEST_DESCRIPTION("Test creating a pipeline with no attachments with a render pass with attachments.");
 
     RETURN_IF_SKIP(Init());
@@ -3300,7 +3290,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
     }
 }
 
-TEST_F(NegativePipeline, PipelineSubpassOutOfBounds) {
+TEST_F(NegativePipelineShared, PipelineSubpassOutOfBounds) {
     TEST_DESCRIPTION("Create pipeline with subpass index larger than number of subpasses in render pass");
 
     RETURN_IF_SKIP(Init());
@@ -3378,12 +3368,8 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, InvalidPipelineDepthBias) {
-    TEST_DESCRIPTION("Create pipeline with invalid depth bias");
-
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceFeatures features = {};
-    RETURN_IF_SKIP(InitState(&features));
+TEST_F(NegativePipelineShared, InvalidPipelineDepthBias) {
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -3459,12 +3445,8 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativePipeline, PipelineMissingFeatures) {
-    TEST_DESCRIPTION("Enabled depth bounds when the features is disabled");
-
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceFeatures features = {};
-    RETURN_IF_SKIP(InitState(&features));
+TEST_F(NegativePipelineShared, PipelineMissingFeatures) {
+    RETURN_IF_SKIP(Init());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(m_device->Physical());
     RenderPassSingleSubpass rp(*this);
@@ -3878,7 +3860,7 @@ TEST_F(NegativePipeline, OMMPipelineCreationFlags2LibraryLinkTime) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, ViewportStateScissorOverflow) {
+TEST_F(NegativePipelineShared, ViewportStateScissorOverflow) {
     TEST_DESCRIPTION("Validate sum of offset and width of viewport state scissor");
 
     RETURN_IF_SKIP(Init());
@@ -3907,7 +3889,7 @@ TEST_F(NegativePipeline, ViewportStateScissorOverflow) {
                                       std::vector<std::string>({"VUID-VkPipelineViewportStateCreateInfo-offset-02823"}));
 }
 
-TEST_F(NegativePipeline, ViewportStateScissorNegative) {
+TEST_F(NegativePipelineShared, ViewportStateScissorNegative) {
     TEST_DESCRIPTION("Validate offset of viewport state scissor");
 
     RETURN_IF_SKIP(Init());
@@ -3950,7 +3932,7 @@ TEST_F(NegativePipeline, PipelineCreateFlags2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, RasterizationStateFlag) {
+TEST_F(NegativePipelineShared, RasterizationStateFlag) {
     TEST_DESCRIPTION("Enabled depth bounds when the features is disabled");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -4005,7 +3987,7 @@ TEST_F(NegativePipeline, PipelinePropertiesIdentifierEXT) {
 }
 // stype-check on
 
-TEST_F(NegativePipeline, NoRasterizationState) {
+TEST_F(NegativePipelineShared, NoRasterizationState) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8051");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -4087,7 +4069,7 @@ TEST_F(NegativePipeline, DepthClampControlUserDefined) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, Viewport) {
+TEST_F(NegativePipelineShared, Viewport) {
     TEST_DESCRIPTION("Test VkPipelineViewportStateCreateInfo viewport and scissor count validation for non-multiViewport");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -4287,7 +4269,7 @@ TEST_F(NegativePipeline, DepthBounds) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, AllGraphicsFlag) {
+TEST_F(NegativePipelineShared, AllGraphicsFlag) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
     VkShaderObj vs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);

@@ -21,8 +21,9 @@
 #include "render_pass_helper.h"
 
 class NegativeCommand : public VkLayerTest {};
+class NegativeCommandShared : public VkSharedLayerTest<> {};
 
-TEST_F(NegativeCommand, CommandPoolConsistency) {
+TEST_F(NegativeCommandShared, CommandPoolConsistency) {
     TEST_DESCRIPTION("Allocate command buffers from one command pool and attempt to delete them from another.");
 
     m_errorMonitor->SetDesiredError("VUID-vkFreeCommandBuffers-pCommandBuffers-parent");
@@ -47,7 +48,7 @@ TEST_F(NegativeCommand, CommandPoolConsistency) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, IndexBufferNotBound) {
+TEST_F(NegativeCommandShared, IndexBufferNotBound) {
     TEST_DESCRIPTION("Run an indexed draw call without an index buffer bound.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -89,7 +90,7 @@ TEST_F(NegativeCommand, IndexBufferNotBoundMaintenance6) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, IndexBufferDestroyed) {
+TEST_F(NegativeCommandShared, IndexBufferDestroyed) {
     TEST_DESCRIPTION("Run an indexed draw call without an index buffer bound.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -109,7 +110,7 @@ TEST_F(NegativeCommand, IndexBufferDestroyed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, IndexBufferSizeOffset) {
+TEST_F(NegativeCommandShared, IndexBufferSizeOffset) {
     TEST_DESCRIPTION("Run bind index buffer with an offset greater than the size of the index buffer.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -147,7 +148,7 @@ TEST_F(NegativeCommand, IndexBufferSizeOffset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, MissingClearAttachment) {
+TEST_F(NegativeCommandShared, MissingClearAttachment) {
     TEST_DESCRIPTION("Points to a wrong colorAttachment index in a VkClearAttachment structure passed to vkCmdClearAttachments");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -174,7 +175,7 @@ TEST_F(NegativeCommand, MissingClearAttachment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, MissingClearAttachment2) {
+TEST_F(NegativeCommandShared, MissingClearAttachment2) {
     TEST_DESCRIPTION("Points to a wrong colorAttachment index in a VkClearAttachment structure passed to vkCmdClearAttachments");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -195,7 +196,7 @@ TEST_F(NegativeCommand, MissingClearAttachment2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, ClearAttachment64Bit) {
+TEST_F(NegativeCommandShared, ClearAttachment64Bit) {
     TEST_DESCRIPTION("Clear with a 64-bit format");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -230,7 +231,7 @@ TEST_F(NegativeCommand, ClearAttachment64Bit) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
+TEST_F(NegativeCommandShared, CommandBufferTwoSubmits) {
     m_errorMonitor->SetDesiredError("UNASSIGNED-DrawState-CommandBufferSingleSubmitViolation");
 
     RETURN_IF_SKIP(Init());
@@ -282,7 +283,7 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, PushConstants) {
+TEST_F(NegativeCommandShared, PushConstants) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -436,7 +437,7 @@ TEST_F(NegativeCommand, PushConstants) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, PushConstantsCompute) {
+TEST_F(NegativeCommandShared, PushConstantsCompute) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11404");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -517,7 +518,7 @@ TEST_F(NegativeCommand, CommandBufferReset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, CommandBufferPrimaryFlags) {
+TEST_F(NegativeCommandShared, CommandBufferPrimaryFlags) {
     RETURN_IF_SKIP(Init());
     VkCommandBufferBeginInfo cmd_buf_info = vku::InitStructHelper();
     cmd_buf_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -526,7 +527,7 @@ TEST_F(NegativeCommand, CommandBufferPrimaryFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, ClearColorAttachmentsOutsideRenderPass) {
+TEST_F(NegativeCommandShared, ClearColorAttachmentsOutsideRenderPass) {
     // Call CmdClearAttachmentss outside of an active RenderPass
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-renderpass");
@@ -550,7 +551,7 @@ TEST_F(NegativeCommand, ClearColorAttachmentsOutsideRenderPass) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, ClearColorAttachmentsZeroLayercount) {
+TEST_F(NegativeCommandShared, ClearColorAttachmentsZeroLayercount) {
     TEST_DESCRIPTION("Call CmdClearAttachments with a pRect having a layerCount of zero.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-layerCount-01934");
@@ -574,7 +575,7 @@ TEST_F(NegativeCommand, ClearColorAttachmentsZeroLayercount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, ClearColorAttachmentsZeroExtent) {
+TEST_F(NegativeCommandShared, ClearColorAttachmentsZeroExtent) {
     TEST_DESCRIPTION("Call CmdClearAttachments with a pRect having a rect2D extent of zero.");
 
     RETURN_IF_SKIP(Init());
@@ -648,7 +649,7 @@ TEST_F(NegativeCommand, ClearAttachmentsAspectMasks) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, ClearAttachmentsImplicitCheck) {
+TEST_F(NegativeCommandShared, ClearAttachmentsImplicitCheck) {
     TEST_DESCRIPTION("Check VkClearAttachment implicit VUs.");
 
     RETURN_IF_SKIP(Init());
@@ -680,7 +681,7 @@ TEST_F(NegativeCommand, ClearAttachmentsImplicitCheck) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, ClearAttachmentsDepth) {
+TEST_F(NegativeCommandShared, ClearAttachmentsDepth) {
     TEST_DESCRIPTION("Call CmdClearAttachments with invalid depth aspect masks.");
 
     RETURN_IF_SKIP(Init());
@@ -714,7 +715,7 @@ TEST_F(NegativeCommand, ClearAttachmentsDepth) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, ClearAttachmentsStencil) {
+TEST_F(NegativeCommandShared, ClearAttachmentsStencil) {
     TEST_DESCRIPTION("Call CmdClearAttachments with invalid stencil aspect masks.");
 
     RETURN_IF_SKIP(Init());
@@ -744,7 +745,7 @@ TEST_F(NegativeCommand, ClearAttachmentsStencil) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, ClearAttachmentsOutsideRenderPass) {
+TEST_F(NegativeCommandShared, ClearAttachmentsOutsideRenderPass) {
     TEST_DESCRIPTION("Call CmdClearAttachments outside renderpass");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -763,7 +764,7 @@ TEST_F(NegativeCommand, ClearAttachmentsOutsideRenderPass) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, DrawOutsideRenderPass) {
+TEST_F(NegativeCommandShared, DrawOutsideRenderPass) {
     TEST_DESCRIPTION("call vkCmdDraw without renderpass");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -778,7 +779,7 @@ TEST_F(NegativeCommand, DrawOutsideRenderPass) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, DispatchInsideRenderPass) {
+TEST_F(NegativeCommandShared, DispatchInsideRenderPass) {
     TEST_DESCRIPTION("Only allowed with VK_QCOM_tile_shading");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -815,7 +816,7 @@ TEST_F(NegativeCommand, MultiDrawDrawOutsideRenderPass) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, ExecuteCommandsPrimaryCB) {
+TEST_F(NegativeCommandShared, ExecuteCommandsPrimaryCB) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands with a primary command buffer (should only be secondary)");
 
     RETURN_IF_SKIP(Init());
@@ -840,7 +841,7 @@ TEST_F(NegativeCommand, ExecuteCommandsPrimaryCB) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, SimultaneousUseOneShot) {
+TEST_F(NegativeCommandShared, SimultaneousUseOneShot) {
     TEST_DESCRIPTION("Submit the same command buffer twice in one submit looking for simultaneous use and one time submit errors");
     const char* simultaneous_use_message = "is already in use and is not marked for simultaneous use";
     RETURN_IF_SKIP(Init());
@@ -882,7 +883,7 @@ TEST_F(NegativeCommand, SimultaneousUseOneShot) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipeline) {
+TEST_F(NegativeCommandShared, DrawTimeImageViewTypeMismatchWithPipeline) {
     TEST_DESCRIPTION(
         "Test that an error is produced when an image view type does not match the dimensionality declared in the shader");
 
@@ -933,7 +934,7 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipeline) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipelineFunction) {
+TEST_F(NegativeCommandShared, DrawTimeImageViewTypeMismatchWithPipelineFunction) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -986,7 +987,7 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipelineFunction) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, DrawTimeImageComponentTypeMismatchWithPipeline) {
+TEST_F(NegativeCommandShared, DrawTimeImageComponentTypeMismatchWithPipeline) {
     TEST_DESCRIPTION(
         "Test that an error is produced when the component type of an imageview disagrees with the type in the shader.");
 
@@ -1036,7 +1037,7 @@ TEST_F(NegativeCommand, DrawTimeImageComponentTypeMismatchWithPipeline) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, ResolveImageLowSampleCount) {
+TEST_F(NegativeCommandShared, ResolveImageLowSampleCount) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcImage-00257");
 
     RETURN_IF_SKIP(Init());
@@ -1066,7 +1067,7 @@ TEST_F(NegativeCommand, ResolveImageLowSampleCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, ResolveImageHighSampleCount) {
+TEST_F(NegativeCommandShared, ResolveImageHighSampleCount) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstImage-00259");
 
     RETURN_IF_SKIP(Init());
@@ -1112,7 +1113,7 @@ TEST_F(NegativeCommand, ResolveImageHighSampleCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, ResolveImageFormatMismatch) {
+TEST_F(NegativeCommandShared, ResolveImageFormatMismatch) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -1159,7 +1160,7 @@ TEST_F(NegativeCommand, ResolveImageFormatMismatch) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, ResolveImageLayoutMismatch) {
+TEST_F(NegativeCommandShared, ResolveImageLayoutMismatch) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -1371,7 +1372,7 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, ResolveImageImageType) {
+TEST_F(NegativeCommandShared, ResolveImageImageType) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -1446,7 +1447,7 @@ TEST_F(NegativeCommand, ResolveImageImageType) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, ResolveImageSizeExceeded) {
+TEST_F(NegativeCommandShared, ResolveImageSizeExceeded) {
     TEST_DESCRIPTION("Resolve Image with subresource region greater than size of src/dst image");
     RETURN_IF_SKIP(Init());
 
@@ -1538,7 +1539,7 @@ TEST_F(NegativeCommand, ResolveImageSizeExceeded) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, ClearImage) {
+TEST_F(NegativeCommandShared, ClearImage) {
     TEST_DESCRIPTION("Call ClearColorImage w/ a depth|stencil image and ClearDepthStencilImage with a color image.");
 
     RETURN_IF_SKIP(Init());
@@ -1588,7 +1589,7 @@ TEST_F(NegativeCommand, ClearImage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, ClearColor64Bit) {
+TEST_F(NegativeCommandShared, ClearColor64Bit) {
     TEST_DESCRIPTION("Clear with a 64-bit format");
     RETURN_IF_SKIP(Init());
 
@@ -1606,7 +1607,7 @@ TEST_F(NegativeCommand, ClearColor64Bit) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, CommandQueueFlags) {
+TEST_F(NegativeCommandShared, CommandQueueFlags) {
     TEST_DESCRIPTION(
         "Allocate a command buffer on a queue that does not support graphics and try to issue a graphics-only command");
 
@@ -1893,7 +1894,7 @@ TEST_F(NegativeCommand, IndirectDraw) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, MultiDrawIndirectFeature) {
+TEST_F(NegativeCommandShared, MultiDrawIndirectFeature) {
     TEST_DESCRIPTION("use vkCmdDrawIndexedIndirect without MultiDrawIndirect");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -2557,7 +2558,7 @@ TEST_F(NegativeCommand, ImageFilterCubicSamplerInCmdDraw) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, CmdUpdateBufferSize) {
+TEST_F(NegativeCommandShared, CmdUpdateBufferSize) {
     TEST_DESCRIPTION("Update buffer with invalid dataSize");
 
     RETURN_IF_SKIP(Init());
@@ -2573,7 +2574,7 @@ TEST_F(NegativeCommand, CmdUpdateBufferSize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, CmdUpdateBufferDstOffset) {
+TEST_F(NegativeCommandShared, CmdUpdateBufferDstOffset) {
     TEST_DESCRIPTION("Update buffer with invalid dst offset");
     RETURN_IF_SKIP(Init());
 
@@ -2588,7 +2589,7 @@ TEST_F(NegativeCommand, CmdUpdateBufferDstOffset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
+TEST_F(NegativeCommandShared, DescriptorSetPipelineBindPoint) {
     TEST_DESCRIPTION(
         "Attempt to bind descriptor set to a bind point not supported by command pool the command buffer was allocated from");
     RETURN_IF_SKIP(Init());
@@ -2655,7 +2656,7 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPointMaintenance6) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, CmdClearColorImageNullColor) {
+TEST_F(NegativeCommandShared, CmdClearColorImageNullColor) {
     TEST_DESCRIPTION("Test invalid null entries for clear color");
     RETURN_IF_SKIP(Init());
 
@@ -2837,7 +2838,7 @@ TEST_F(NegativeCommand, EndConditionalRendering) {
     m_command_buffer.EndRenderPass();
 }
 
-TEST_F(NegativeCommand, ResolveUsage) {
+TEST_F(NegativeCommandShared, ResolveUsage) {
     TEST_DESCRIPTION("Resolve image with missing usage flags.");
 
     RETURN_IF_SKIP(Init());
@@ -2945,7 +2946,7 @@ TEST_F(NegativeCommand, ResolveUsage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
+TEST_F(NegativeCommandShared, DepthStencilStateForReadOnlyLayout) {
     TEST_DESCRIPTION("invalid depth stencil state for subpass that uses read only image layout.");
 
     RETURN_IF_SKIP(Init());
@@ -3115,7 +3116,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayoutDynamicRendering) {
     }
 }
 
-TEST_F(NegativeCommand, ClearColorImageWithRange) {
+TEST_F(NegativeCommandShared, ClearColorImageWithRange) {
     TEST_DESCRIPTION("Record clear color with an invalid VkImageSubresourceRange");
 
     RETURN_IF_SKIP(Init());
@@ -3194,7 +3195,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
     }
 }
 
-TEST_F(NegativeCommand, ClearDepthStencilWithAspect) {
+TEST_F(NegativeCommandShared, ClearDepthStencilWithAspect) {
     TEST_DESCRIPTION("Verify ClearDepth with an invalid VkImageAspectFlags.");
     RETURN_IF_SKIP(Init());
     const auto depth_format = FindSupportedDepthStencilFormat(Gpu());
@@ -3260,7 +3261,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithAspectSeparate) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
+TEST_F(NegativeCommandShared, ClearDepthStencilWithRange) {
     TEST_DESCRIPTION("Record clear depth with an invalid VkImageSubresourceRange");
 
     RETURN_IF_SKIP(Init());
@@ -3341,7 +3342,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
     }
 }
 
-TEST_F(NegativeCommand, ClearColorImageWithinRenderPass) {
+TEST_F(NegativeCommandShared, ClearColorImageWithinRenderPass) {
     // Call CmdClearColorImage within an active RenderPass
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-renderpass");
     RETURN_IF_SKIP(Init());
@@ -3367,7 +3368,7 @@ TEST_F(NegativeCommand, ClearColorImageWithinRenderPass) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, ClearDepthStencilImage) {
+TEST_F(NegativeCommandShared, ClearDepthStencilImage) {
     // Hit errors related to vk::CmdClearDepthStencilImage()
     // 1. Use an image that doesn't have VK_IMAGE_USAGE_TRANSFER_DST_BIT set
     // 2. Call CmdClearDepthStencilImage within an active RenderPass
@@ -3407,7 +3408,7 @@ TEST_F(NegativeCommand, ClearDepthStencilImage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, ClearDepthImage) {
+TEST_F(NegativeCommandShared, ClearDepthImage) {
     TEST_DESCRIPTION("Test clearing without VK_EXT_depth_range_unrestricted");
     // Extension doesn't have feature bit, so not enabling extension invokes restrictions
     RETURN_IF_SKIP(Init());
@@ -3451,7 +3452,7 @@ TEST_F(NegativeCommand, ClearDepthImage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, ClearDepthImageWithNAN) {
+TEST_F(NegativeCommandShared, ClearDepthImageWithNAN) {
     TEST_DESCRIPTION("Clear depth image when depth clear value is NAN");
     RETURN_IF_SKIP(Init());
 
@@ -3492,7 +3493,7 @@ TEST_F(NegativeCommand, ClearColorImageImageLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, CmdClearAttachmentTests) {
+TEST_F(NegativeCommandShared, CmdClearAttachmentTests) {
     TEST_DESCRIPTION("Various tests for validating usage of vkCmdClearAttachments");
 
     RETURN_IF_SKIP(Init());
@@ -3606,7 +3607,7 @@ TEST_F(NegativeCommand, CmdClearAttachmentTests) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, BindVertexIndexBufferUsage) {
+TEST_F(NegativeCommandShared, BindVertexIndexBufferUsage) {
     TEST_DESCRIPTION("Bad usage flags for binding the Vertex and Index buffer");
     RETURN_IF_SKIP(Init());
 
@@ -3626,7 +3627,7 @@ TEST_F(NegativeCommand, BindVertexIndexBufferUsage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, BindIndexBufferHandles) {
+TEST_F(NegativeCommandShared, BindIndexBufferHandles) {
     TEST_DESCRIPTION("call vkCmdBindIndexBuffer with bad Handles");
     RETURN_IF_SKIP(Init());
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -3638,7 +3639,7 @@ TEST_F(NegativeCommand, BindIndexBufferHandles) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, ClearImageAspectMask) {
+TEST_F(NegativeCommandShared, ClearImageAspectMask) {
     TEST_DESCRIPTION("Need to use VK_IMAGE_ASPECT_COLOR_BIT.");
 
     RETURN_IF_SKIP(Init());
@@ -3656,7 +3657,7 @@ TEST_F(NegativeCommand, ClearImageAspectMask) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, RenderPassContinueNotSupportedByCommandPool) {
+TEST_F(NegativeCommandShared, RenderPassContinueNotSupportedByCommandPool) {
     TEST_DESCRIPTION("Use render pass continue bit with unsupported command pool.");
 
     RETURN_IF_SKIP(Init());
@@ -3678,7 +3679,7 @@ TEST_F(NegativeCommand, RenderPassContinueNotSupportedByCommandPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, ClearDepthStencilImageWithInvalidAspect) {
+TEST_F(NegativeCommandShared, ClearDepthStencilImageWithInvalidAspect) {
     TEST_DESCRIPTION("Use vkCmdClearDepthStencilImage with invalid image aspect.");
 
     RETURN_IF_SKIP(Init());
@@ -3738,7 +3739,7 @@ TEST_F(NegativeCommand, ClearColorImageWithMissingFeature) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
+TEST_F(NegativeCommandShared, ClearDsImageWithInvalidAspect) {
     TEST_DESCRIPTION("Attempt to clear color aspect of depth/stencil image.");
 
     RETURN_IF_SKIP(Init());
@@ -3866,7 +3867,7 @@ TEST_F(NegativeCommand, QueryControlInvalidFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCommand, CommandBufferRecording) {
+TEST_F(NegativeCommandShared, CommandBufferRecording) {
     TEST_DESCRIPTION("Test core functions for commandBuffer-recording VUs.");
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitRenderTarget());
@@ -4099,7 +4100,7 @@ TEST_F(NegativeCommand, CommandBufferRecording) {
     }
 }
 
-TEST_F(NegativeCommand, ManyInvalidatedObjects) {
+TEST_F(NegativeCommandShared, ManyInvalidatedObjects) {
     RETURN_IF_SKIP(Init());
 
     const char* cs_source = R"glsl(

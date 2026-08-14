@@ -20,8 +20,9 @@
 #include "pipeline_helper.h"
 
 class NegativeSecondaryCommandBuffer : public VkLayerTest {};
+class NegativeSecondaryCommandBufferShared : public VkSharedLayerTest<> {};
 
-TEST_F(NegativeSecondaryCommandBuffer, AsPrimary) {
+TEST_F(NegativeSecondaryCommandBufferShared, AsPrimary) {
     TEST_DESCRIPTION("Create a secondary command buffer and pass it to QueueSubmit.");
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-00075");
 
@@ -35,7 +36,7 @@ TEST_F(NegativeSecondaryCommandBuffer, AsPrimary) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, Barrier) {
+TEST_F(NegativeSecondaryCommandBufferShared, Barrier) {
     TEST_DESCRIPTION("Add an invalid image barrier in a secondary command buffer");
     RETURN_IF_SKIP(Init());
 
@@ -117,7 +118,7 @@ TEST_F(NegativeSecondaryCommandBuffer, Sync2AsPrimary) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, RerecordedExplicitReset) {
+TEST_F(NegativeSecondaryCommandBufferShared, RerecordedExplicitReset) {
 #if defined(VVL_ENABLE_TSAN)
     GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
 #endif
@@ -145,7 +146,7 @@ TEST_F(NegativeSecondaryCommandBuffer, RerecordedExplicitReset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, RerecordedNoReset) {
+TEST_F(NegativeSecondaryCommandBufferShared, RerecordedNoReset) {
 #if defined(VVL_ENABLE_TSAN)
     GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
 #endif
@@ -172,7 +173,7 @@ TEST_F(NegativeSecondaryCommandBuffer, RerecordedNoReset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, CascadedInvalidation) {
+TEST_F(NegativeSecondaryCommandBufferShared, CascadedInvalidation) {
     RETURN_IF_SKIP(Init());
 
     VkEventCreateInfo eci = vku::InitStructHelper();
@@ -197,7 +198,7 @@ TEST_F(NegativeSecondaryCommandBuffer, CascadedInvalidation) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, ExecuteCommandsTo) {
+TEST_F(NegativeSecondaryCommandBufferShared, ExecuteCommandsTo) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands to a Secondary command buffer");
 
     RETURN_IF_SKIP(Init());
@@ -213,7 +214,7 @@ TEST_F(NegativeSecondaryCommandBuffer, ExecuteCommandsTo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, SimultaneousUseTwoExecutes) {
+TEST_F(NegativeSecondaryCommandBufferShared, SimultaneousUseTwoExecutes) {
     RETURN_IF_SKIP(Init());
 
     const char* simultaneous_use_message = "VUID-vkCmdExecuteCommands-pCommandBuffers-00092";
@@ -234,7 +235,7 @@ TEST_F(NegativeSecondaryCommandBuffer, SimultaneousUseTwoExecutes) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, SimultaneousUseSingleExecute) {
+TEST_F(NegativeSecondaryCommandBufferShared, SimultaneousUseSingleExecute) {
     RETURN_IF_SKIP(Init());
 
     // variation on previous test executing the same CB twice in the same
@@ -258,7 +259,7 @@ TEST_F(NegativeSecondaryCommandBuffer, SimultaneousUseSingleExecute) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, ExecuteDiffertQueueFlags) {
+TEST_F(NegativeSecondaryCommandBufferShared, ExecuteDiffertQueueFlags) {
     TEST_DESCRIPTION("Allocate a command buffer from two different queues and try to use a secondary command buffer");
 
     RETURN_IF_SKIP(Init());
@@ -312,7 +313,7 @@ TEST_F(NegativeSecondaryCommandBuffer, ExecuteDiffertQueueFlags) {
     command_buffer_primary.End();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, ExecuteUnrecorded) {
+TEST_F(NegativeSecondaryCommandBufferShared, ExecuteUnrecorded) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands with a CB in the initial state");
     RETURN_IF_SKIP(Init());
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -325,7 +326,7 @@ TEST_F(NegativeSecondaryCommandBuffer, ExecuteUnrecorded) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, ExecuteWithLayoutMismatch) {
+TEST_F(NegativeSecondaryCommandBufferShared, ExecuteWithLayoutMismatch) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands with a CB with incorrect initial layout.");
 
     RETURN_IF_SKIP(Init());
@@ -427,7 +428,7 @@ TEST_F(NegativeSecondaryCommandBuffer, ExecuteWithLayoutMismatchUseGenericLayout
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, RenderPassScope) {
+TEST_F(NegativeSecondaryCommandBufferShared, RenderPassScope) {
     TEST_DESCRIPTION(
         "Test secondary buffers executed in wrong render pass scope wrt VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT");
 
@@ -474,7 +475,7 @@ TEST_F(NegativeSecondaryCommandBuffer, RenderPassScope) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, ClearColorAttachmentsRenderArea) {
+TEST_F(NegativeSecondaryCommandBufferShared, ClearColorAttachmentsRenderArea) {
     TEST_DESCRIPTION(
         "Create a secondary command buffer with CmdClearAttachments call that has a rect outside of renderPass renderArea");
     RETURN_IF_SKIP(Init());
@@ -519,7 +520,7 @@ TEST_F(NegativeSecondaryCommandBuffer, ClearColorAttachmentsRenderArea) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, RenderPassContentsFirstSubpass) {
+TEST_F(NegativeSecondaryCommandBufferShared, RenderPassContentsFirstSubpass) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRenderPass that hasn't set "
         "VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS");
@@ -611,7 +612,7 @@ TEST_F(NegativeSecondaryCommandBuffer, RenderPassContentsNotFirstSubpass) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, ExecuteCommandsSubpassIndices) {
+TEST_F(NegativeSecondaryCommandBufferShared, ExecuteCommandsSubpassIndices) {
     TEST_DESCRIPTION("Test invalid subpass when calling CmdExecuteCommands");
     RETURN_IF_SKIP(Init());
 
@@ -677,7 +678,7 @@ TEST_F(NegativeSecondaryCommandBuffer, ExecuteCommandsSubpassIndices) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, IncompatibleRenderPassesInExecuteCommands) {
+TEST_F(NegativeSecondaryCommandBufferShared, IncompatibleRenderPassesInExecuteCommands) {
     TEST_DESCRIPTION("Test invalid subpass when calling CmdExecuteCommands");
     RETURN_IF_SKIP(Init());
 
@@ -1074,7 +1075,7 @@ TEST_F(NegativeSecondaryCommandBuffer, MissingPipelineFormatCount) {
     secondary.End();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, MissingSimultaniousUseBit) {
+TEST_F(NegativeSecondaryCommandBufferShared, MissingSimultaniousUseBit) {
     RETURN_IF_SKIP(Init());
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);

@@ -15,8 +15,9 @@
 #include "pipeline_helper.h"
 
 class PositiveShaderPushConstants : public VkLayerTest {};
+class PositiveShaderPushConstantsShared : public VkSharedLayerTest<> {};
 
-TEST_F(PositiveShaderPushConstants, OverlappingPushConstantRange) {
+TEST_F(PositiveShaderPushConstantsShared, OverlappingPushConstantRange) {
     TEST_DESCRIPTION("Test overlapping push-constant ranges.");
 
     RETURN_IF_SKIP(Init());
@@ -55,7 +56,7 @@ TEST_F(PositiveShaderPushConstants, OverlappingPushConstantRange) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderPushConstants, MultipleEntryPointVert) {
+TEST_F(PositiveShaderPushConstantsShared, MultipleEntryPointVert) {
     TEST_DESCRIPTION("Test push-constant only being used by single entrypoint.");
 
     RETURN_IF_SKIP(Init());
@@ -164,7 +165,7 @@ TEST_F(PositiveShaderPushConstants, MultipleEntryPointVert) {
     }
 }
 
-TEST_F(PositiveShaderPushConstants, MultipleEntryPointFrag) {
+TEST_F(PositiveShaderPushConstantsShared, MultipleEntryPointFrag) {
     TEST_DESCRIPTION("Test push-constant only being used by single entrypoint.");
 
     RETURN_IF_SKIP(Init());
@@ -273,7 +274,7 @@ TEST_F(PositiveShaderPushConstants, MultipleEntryPointFrag) {
     }
 }
 
-TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
+TEST_F(PositiveShaderPushConstantsShared, CompatibilityGraphicsOnly) {
     TEST_DESCRIPTION("Based on verified valid examples from internal Vulkan Spec issue #2168");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -408,7 +409,7 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
+TEST_F(PositiveShaderPushConstantsShared, StaticallyUnused) {
     TEST_DESCRIPTION("Test cases where creating pipeline with no use of push constants but still has ranges in layout");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -469,7 +470,7 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderPushConstants, OffsetVector) {
+TEST_F(PositiveShaderPushConstantsShared, OffsetVector) {
     TEST_DESCRIPTION("Vector uses offset in the shader.");
 
     RETURN_IF_SKIP(Init());
@@ -627,7 +628,7 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferVertFrag) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderPushConstants, MultipleStructs) {
+TEST_F(PositiveShaderPushConstantsShared, MultipleStructs) {
     TEST_DESCRIPTION("Test having multiple structs Push Constant structs, but only one is used.");
 
     RETURN_IF_SKIP(Init());
@@ -695,7 +696,7 @@ TEST_F(PositiveShaderPushConstants, MultipleStructs) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderPushConstants, SpecConstantSizeDefault) {
+TEST_F(PositiveShaderPushConstantsShared, SpecConstantSizeDefault) {
     TEST_DESCRIPTION("Use SpecConstant to adjust size of Push Constant Block, but use default value");
     RETURN_IF_SKIP(Init());
 
@@ -720,7 +721,7 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSizeDefault) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositiveShaderPushConstants, SpecConstantSizeSet) {
+TEST_F(PositiveShaderPushConstantsShared, SpecConstantSizeSet) {
     TEST_DESCRIPTION("Use SpecConstant to adjust size of Push Constant Block");
     RETURN_IF_SKIP(Init());
 

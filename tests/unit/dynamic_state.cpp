@@ -31,7 +31,9 @@ class NegativeDynamicState : public DynamicStateTest {
     void InitLineRasterizationFeatureDisabled();
 };
 
-TEST_F(NegativeDynamicState, DepthBiasNotBound) {
+class NegativeDynamicStateShared : public VkSharedLayerTest<> {};
+
+TEST_F(NegativeDynamicStateShared, DepthBiasNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Depth Bias dynamic state is required but not correctly bound.");
     RETURN_IF_SKIP(Init());
@@ -52,7 +54,7 @@ TEST_F(NegativeDynamicState, DepthBiasNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDynamicState, LineWidthNotBound) {
+TEST_F(NegativeDynamicStateShared, LineWidthNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Line Width dynamic state is required but not correctly bound.");
     RETURN_IF_SKIP(Init());
@@ -174,7 +176,7 @@ TEST_F(NegativeDynamicState, InvalidateStaticPipeline) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDynamicState, ViewportNotBound) {
+TEST_F(NegativeDynamicStateShared, ViewportNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Viewport dynamic state is required but not correctly bound.");
     RETURN_IF_SKIP(Init());
@@ -193,7 +195,7 @@ TEST_F(NegativeDynamicState, ViewportNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDynamicState, ScissorNotBound) {
+TEST_F(NegativeDynamicStateShared, ScissorNotBound) {
     TEST_DESCRIPTION("Run a simple draw calls to validate failure when Scissor dynamic state is required but not correctly bound.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -266,7 +268,7 @@ TEST_F(NegativeDynamicState, DepthBoundsNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDynamicState, StencilReadNotBound) {
+TEST_F(NegativeDynamicStateShared, StencilReadNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Stencil Read dynamic state is required but not correctly bound.");
     RETURN_IF_SKIP(Init());
@@ -292,7 +294,7 @@ TEST_F(NegativeDynamicState, StencilReadNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDynamicState, StencilWriteNotBound) {
+TEST_F(NegativeDynamicStateShared, StencilWriteNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Stencil Write dynamic state is required but not correctly bound.");
     RETURN_IF_SKIP(Init());
@@ -318,7 +320,7 @@ TEST_F(NegativeDynamicState, StencilWriteNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDynamicState, StencilRefNotBound) {
+TEST_F(NegativeDynamicStateShared, StencilRefNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Stencil Ref dynamic state is required but not correctly bound.");
     RETURN_IF_SKIP(Init());
@@ -3714,7 +3716,7 @@ TEST_F(NegativeDynamicState, DiscardRectanglesVersion) {
 }
 
 // Not possible to hit the desired failure messages given invalid enums.
-TEST_F(NegativeDynamicState, ExtensionNotEnabled) {
+TEST_F(NegativeDynamicStateShared, ExtensionNotEnabled) {
     TEST_DESCRIPTION("Create a graphics pipeline with Extension dynamic states without enabling the required Extensions.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -3765,9 +3767,8 @@ TEST_F(NegativeDynamicState, ViewportAndScissorUndefinedDrawState) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDynamicState, Duplicate) {
+TEST_F(NegativeDynamicStateShared, Duplicate) {
     TEST_DESCRIPTION("Create a pipeline with duplicate dynamic states set.");
-
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -3835,7 +3836,7 @@ TEST_F(NegativeDynamicState, ViewportCountWithExtendedDynamicState) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDynamicState, PipelineColorBlendStateCreateInfoArrayNonDynamic) {
+TEST_F(NegativeDynamicStateShared, PipelineColorBlendStateCreateInfoArrayNonDynamic) {
     TEST_DESCRIPTION("Validate VkPipelineColorBlendStateCreateInfo array with no extensions");
 
     RETURN_IF_SKIP(Init());
@@ -3872,7 +3873,7 @@ TEST_F(NegativeDynamicState, PipelineColorBlendStateCreateInfoArrayDynamic) {
     }
 }
 
-TEST_F(NegativeDynamicState, SettingCommands) {
+TEST_F(NegativeDynamicStateShared, SettingCommands) {
     TEST_DESCRIPTION("Verify if pipeline doesn't setup dynamic state, but set dynamic commands");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -4096,7 +4097,7 @@ TEST_F(NegativeDynamicState, ViewportStateIgnored) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDynamicState, Viewport) {
+TEST_F(NegativeDynamicStateShared, Viewport) {
     TEST_DESCRIPTION("Test VkPipelineViewportStateCreateInfo viewport and scissor count validation for non-multiViewport");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -4503,7 +4504,7 @@ TEST_F(NegativeDynamicState, LineWidth) {
     }
 }
 
-TEST_F(NegativeDynamicState, SetAfterStaticPipeline) {
+TEST_F(NegativeDynamicStateShared, SetAfterStaticPipeline) {
     TEST_DESCRIPTION("Pipeline without state is set and tried to use vkCmdSet");
 
     RETURN_IF_SKIP(Init());
@@ -4806,7 +4807,7 @@ TEST_F(NegativeDynamicState, DrawNotSetExclusiveScissor) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDynamicState, SetDepthBiasClampDisabled) {
+TEST_F(NegativeDynamicStateShared, SetDepthBiasClampDisabled) {
     TEST_DESCRIPTION("Call vkCmdSetDepthBias with depthBiasClamp disabled");
 
     RETURN_IF_SKIP(Init());

@@ -16,8 +16,9 @@
 #include "render_pass_helper.h"
 
 class NegativeEvent : public SyncObjectTest {};
+class NegativeEventShared : public VkSharedLayerTest<SyncObjectTest> {};
 
-TEST_F(NegativeEvent, WaitEventsDifferentQueueFamilies) {
+TEST_F(NegativeEventShared, WaitEventsDifferentQueueFamilies) {
     TEST_DESCRIPTION("Using CmdWaitEvents with invalid barrier queue families");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -115,7 +116,7 @@ TEST_F(NegativeEvent, WaitEvent2HostStage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, StageMaskResetEvent) {
+TEST_F(NegativeEventShared, StageMaskResetEvent) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -127,7 +128,7 @@ TEST_F(NegativeEvent, StageMaskResetEvent) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, StageMaskHostResetEvent) {
+TEST_F(NegativeEventShared, StageMaskHostResetEvent) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
     event.Reset();
@@ -141,7 +142,7 @@ TEST_F(NegativeEvent, StageMaskHostResetEvent) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeEvent, StageMaskResetEventSecondary) {
+TEST_F(NegativeEventShared, StageMaskResetEventSecondary) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -158,7 +159,7 @@ TEST_F(NegativeEvent, StageMaskResetEventSecondary) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, EventStageMaskSubmit) {
+TEST_F(NegativeEventShared, EventStageMaskSubmit) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -180,7 +181,7 @@ TEST_F(NegativeEvent, EventStageMaskSubmit) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeEvent, StageMaskWaitBeforeSet) {
+TEST_F(NegativeEventShared, StageMaskWaitBeforeSet) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -196,7 +197,7 @@ TEST_F(NegativeEvent, StageMaskWaitBeforeSet) {
     monitor_.VerifyFound();
 }
 
-TEST_F(NegativeEvent, StageMaskSecondaryWaitBeforeSet) {
+TEST_F(NegativeEventShared, StageMaskSecondaryWaitBeforeSet) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -215,7 +216,7 @@ TEST_F(NegativeEvent, StageMaskSecondaryWaitBeforeSet) {
     monitor_.VerifyFound();
 }
 
-TEST_F(NegativeEvent, SecondaryWaitIncludesHostStage) {
+TEST_F(NegativeEventShared, SecondaryWaitIncludesHostStage) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -237,7 +238,7 @@ TEST_F(NegativeEvent, SecondaryWaitIncludesHostStage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, StageMaskTwoEventsTwoSubmits) {
+TEST_F(NegativeEventShared, StageMaskTwoEventsTwoSubmits) {
     RETURN_IF_SKIP(Init());
 
     vkt::Event event(*m_device);
@@ -262,7 +263,7 @@ TEST_F(NegativeEvent, StageMaskTwoEventsTwoSubmits) {
     monitor_.VerifyFound();
 }
 
-TEST_F(NegativeEvent, EventStageMaskHost) {
+TEST_F(NegativeEventShared, EventStageMaskHost) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -276,7 +277,7 @@ TEST_F(NegativeEvent, EventStageMaskHost) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeEvent, StageMaskHost2) {
+TEST_F(NegativeEventShared, StageMaskHost2) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -292,7 +293,7 @@ TEST_F(NegativeEvent, StageMaskHost2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeEvent, StageMaskHostAndExtraDeviceStage) {
+TEST_F(NegativeEventShared, StageMaskHostAndExtraDeviceStage) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
     event.Set();
@@ -307,7 +308,7 @@ TEST_F(NegativeEvent, StageMaskHostAndExtraDeviceStage) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeEvent, StageMaskPrimarySetSecondaryWait) {
+TEST_F(NegativeEventShared, StageMaskPrimarySetSecondaryWait) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -329,7 +330,7 @@ TEST_F(NegativeEvent, StageMaskPrimarySetSecondaryWait) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, StageMaskPrimarySetSecondaryWaitSubmit) {
+TEST_F(NegativeEventShared, StageMaskPrimarySetSecondaryWaitSubmit) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -354,7 +355,7 @@ TEST_F(NegativeEvent, StageMaskPrimarySetSecondaryWaitSubmit) {
     monitor_.VerifyFound();
 }
 
-TEST_F(NegativeEvent, StageMaskPrimarySetSecondaryResetAndWait) {
+TEST_F(NegativeEventShared, StageMaskPrimarySetSecondaryResetAndWait) {
     RETURN_IF_SKIP(Init());
 
     vkt::Event event(*m_device);
@@ -383,7 +384,7 @@ TEST_F(NegativeEvent, StageMaskPrimarySetSecondaryResetAndWait) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, StageMaskSecondarySetSecondaryWait) {
+TEST_F(NegativeEventShared, StageMaskSecondarySetSecondaryWait) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -409,7 +410,7 @@ TEST_F(NegativeEvent, StageMaskSecondarySetSecondaryWait) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, StageMaskSecondarySetSecondaryWait2) {
+TEST_F(NegativeEventShared, StageMaskSecondarySetSecondaryWait2) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -432,7 +433,7 @@ TEST_F(NegativeEvent, StageMaskSecondarySetSecondaryWait2) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, StageMaskTwoSecondariesSameCommand) {
+TEST_F(NegativeEventShared, StageMaskTwoSecondariesSameCommand) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -456,7 +457,7 @@ TEST_F(NegativeEvent, StageMaskTwoSecondariesSameCommand) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, StageMaskPrimaryResetSecondarySetAndWait) {
+TEST_F(NegativeEventShared, StageMaskPrimaryResetSecondarySetAndWait) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -474,7 +475,7 @@ TEST_F(NegativeEvent, StageMaskPrimaryResetSecondarySetAndWait) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, RepeatedSetEvent) {
+TEST_F(NegativeEventShared, RepeatedSetEvent) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -625,7 +626,7 @@ TEST_F(NegativeEvent, InterQueueEvent2UsageSecondary) {
     m_device->Wait();
 }
 
-TEST_F(NegativeEvent, WaitOnNoEvent) {
+TEST_F(NegativeEventShared, WaitOnNoEvent) {
     RETURN_IF_SKIP(Init());
     VkEvent bad_event = CastToHandle<VkEvent, uintptr_t>(0xbaadbeef);
     m_command_buffer.Begin();
@@ -721,7 +722,7 @@ TEST_F(NegativeEvent, SetEvent2HostStageKHR) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeEvent, WaitEventRenderPassHostBit) {
+TEST_F(NegativeEventShared, WaitEventRenderPassHostBit) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -739,7 +740,7 @@ TEST_F(NegativeEvent, WaitEventRenderPassHostBit) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, WaitEventThenHostSet) {
+TEST_F(NegativeEventShared, WaitEventThenHostSet) {
     TEST_DESCRIPTION("Submit event wait then set it on the host");
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
@@ -757,7 +758,7 @@ TEST_F(NegativeEvent, WaitEventThenHostSet) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeEvent, WaitEventThenHostSetMultipleCBs) {
+TEST_F(NegativeEventShared, WaitEventThenHostSetMultipleCBs) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -1015,7 +1016,7 @@ TEST_F(NegativeEvent, InvalidAssymetricSrcStagemask) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeEvent, StageMaskHost) {
+TEST_F(NegativeEventShared, StageMaskHost) {
     TEST_DESCRIPTION("Test invalid usage of VK_PIPELINE_STAGE_HOST_BIT.");
     RETURN_IF_SKIP(Init());
 
@@ -1346,7 +1347,7 @@ TEST_F(NegativeEvent, Set2Wait2ThenWaitMismatchSubmit) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeEvent, ResetAfterWait) {
+TEST_F(NegativeEventShared, ResetAfterWait) {
     RETURN_IF_SKIP(Init());
 
     vkt::Event event(*m_device);
@@ -1484,7 +1485,7 @@ TEST_F(NegativeEvent, ResetAfterWaitBarrierExecutionDependency2) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, ResetAfterSecondaryWaitRace) {
+TEST_F(NegativeEventShared, ResetAfterSecondaryWaitRace) {
     RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
@@ -1782,7 +1783,7 @@ TEST_F(NegativeEvent, WaitWithOnlyHostDependencySecondary) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, WaitEventsLayoutTransitionInsideRenderPass) {
+TEST_F(NegativeEventShared, WaitEventsLayoutTransitionInsideRenderPass) {
     RETURN_IF_SKIP(Init());
 
     RenderPassSingleSubpass rp(*this);
@@ -1861,7 +1862,7 @@ TEST_F(NegativeEvent, WaitEventsLayoutTransitionInsideRenderPass2) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeEvent, HostResetPendingWait) {
+TEST_F(NegativeEventShared, HostResetPendingWait) {
     RETURN_IF_SKIP(Init());
 
     vkt::Event event(*m_device);
@@ -1901,7 +1902,7 @@ TEST_F(NegativeEvent, HostResetPendingWait2) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeEvent, HostResetMultiplePendingWaits) {
+TEST_F(NegativeEventShared, HostResetMultiplePendingWaits) {
     RETURN_IF_SKIP(Init());
 
     vkt::Event event(*m_device);
@@ -1930,7 +1931,7 @@ TEST_F(NegativeEvent, HostResetMultiplePendingWaits) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeEvent, HostResetPendingWaitAndReset) {
+TEST_F(NegativeEventShared, HostResetPendingWaitAndReset) {
     RETURN_IF_SKIP(Init());
 
     vkt::Event event(*m_device);
@@ -1950,7 +1951,7 @@ TEST_F(NegativeEvent, HostResetPendingWaitAndReset) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeEvent, HostResetPendingWaitSecondary) {
+TEST_F(NegativeEventShared, HostResetPendingWaitSecondary) {
     RETURN_IF_SKIP(Init());
 
     vkt::Event event(*m_device);

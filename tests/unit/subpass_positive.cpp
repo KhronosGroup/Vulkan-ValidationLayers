@@ -21,6 +21,7 @@
 #include "utils/convert_utils.h"
 
 class PositiveSubpass : public VkLayerTest {};
+class PositiveSubpassShared : public VkSharedLayerTest<> {};
 
 TEST_F(PositiveSubpass, SubpassImageBarrier) {
     TEST_DESCRIPTION("Subpass with image barrier (self-dependency)");
@@ -210,7 +211,7 @@ TEST_F(PositiveSubpass, InputAttachmentMissingSpecConstant) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveSubpass, InputAttachmentMissingSpecConstant2) {
+TEST_F(PositiveSubpassShared, InputAttachmentMissingSpecConstant2) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -284,7 +285,7 @@ TEST_F(PositiveSubpass, AccessFlags3) {
     vkt::RenderPass rp(*m_device, rpci2);
 }
 
-TEST_F(PositiveSubpass, AllCommandsInSubpassDependency) {
+TEST_F(PositiveSubpassShared, AllCommandsInSubpassDependency) {
     TEST_DESCRIPTION("Test ALL_COMMANDS_BIT is allowed in subpass dependency");
     RETURN_IF_SKIP(Init());
 
@@ -301,7 +302,7 @@ TEST_F(PositiveSubpass, AllCommandsInSubpassDependency) {
     rp.CreateRenderPass();
 }
 
-TEST_F(PositiveSubpass, TopOfPipeInSubpassDependency) {
+TEST_F(PositiveSubpassShared, TopOfPipeInSubpassDependency) {
     TEST_DESCRIPTION("Test TOP_OF_PIPE is allowed in subpass dependency");
     RETURN_IF_SKIP(Init());
 
@@ -318,7 +319,7 @@ TEST_F(PositiveSubpass, TopOfPipeInSubpassDependency) {
     rp.CreateRenderPass();
 }
 
-TEST_F(PositiveSubpass, BottomOfPipeInSubpassDependency) {
+TEST_F(PositiveSubpassShared, BottomOfPipeInSubpassDependency) {
     TEST_DESCRIPTION("Test BOTTOM_OF_PIPE is allowed in subpass dependency");
     RETURN_IF_SKIP(Init());
 
@@ -335,7 +336,7 @@ TEST_F(PositiveSubpass, BottomOfPipeInSubpassDependency) {
     rp.CreateRenderPass();
 }
 
-TEST_F(PositiveSubpass, ColorBlendEnable) {
+TEST_F(PositiveSubpassShared, ColorBlendEnable) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10535");
     RETURN_IF_SKIP(Init());
     const VkFormat depth_format = FindSupportedDepthStencilFormat(Gpu());

@@ -23,6 +23,7 @@
 #endif
 
 class PositiveSyncObject : public SyncObjectTest {};
+class PositiveSyncObjectShared : public VkSharedLayerTest<> {};
 
 TEST_F(PositiveSyncObject, Sync2OwnershipTransfersImage) {
     TEST_DESCRIPTION("Valid image ownership transfers that shouldn't create errors");
@@ -182,7 +183,7 @@ TEST_F(PositiveSyncObject, LayoutFromPresentWithoutAccessMemoryRead) {
                            nullptr, 1, &barrier);
 }
 
-TEST_F(PositiveSyncObject, QueueSubmitSemaphoresAndLayoutTracking) {
+TEST_F(PositiveSyncObjectShared, QueueSubmitSemaphoresAndLayoutTracking) {
     TEST_DESCRIPTION("Submit multiple command buffers with chained semaphore signals and layout transitions");
 
     RETURN_IF_SKIP(Init());
@@ -265,7 +266,7 @@ TEST_F(PositiveSyncObject, QueueSubmitSemaphoresAndLayoutTracking) {
     m_default_queue->Wait();
 }
 
-TEST_F(PositiveSyncObject, ResetUnsignaledFence) {
+TEST_F(PositiveSyncObjectShared, ResetUnsignaledFence) {
     RETURN_IF_SKIP(Init());
     vkt::Fence testFence(*m_device);
     VkFence fences[1] = {testFence};
@@ -273,7 +274,7 @@ TEST_F(PositiveSyncObject, ResetUnsignaledFence) {
     ASSERT_EQ(VK_SUCCESS, result);
 }
 
-TEST_F(PositiveSyncObject, FenceCreateSignaledWaitHandling) {
+TEST_F(PositiveSyncObjectShared, FenceCreateSignaledWaitHandling) {
     RETURN_IF_SKIP(Init());
 
     // A fence created signaled
@@ -294,7 +295,7 @@ TEST_F(PositiveSyncObject, FenceCreateSignaledWaitHandling) {
     // Should have both retired! (get destroyed now)
 }
 
-TEST_F(PositiveSyncObject, TwoFencesThreeFrames) {
+TEST_F(PositiveSyncObjectShared, TwoFencesThreeFrames) {
     TEST_DESCRIPTION(
         "Two command buffers with two separate fences are each run through a Submit & WaitForFences cycle 3 times. This previously "
         "revealed a bug so running this positive test to prevent a regression.");
@@ -547,7 +548,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAnd
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 }
 
-TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
+TEST_F(PositiveSyncObjectShared, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
     TEST_DESCRIPTION(
         "Two command buffers, each in a separate QueueSubmit call on the same queue, sharing a signal/wait semaphore, the second "
         "having a fence, followed by a WaitForFences call.");
@@ -581,7 +582,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 }
 
-TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
+TEST_F(PositiveSyncObjectShared, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
     TEST_DESCRIPTION(
         "Two command buffers, each in a separate QueueSubmit call on the same queue, no fences, followed by a third QueueSubmit "
         "with NO SubmitInfos but with a fence, followed by a WaitForFences call.");
@@ -615,7 +616,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 }
 
-TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueOneFence) {
+TEST_F(PositiveSyncObjectShared, TwoQueueSubmitsOneQueueOneFence) {
     TEST_DESCRIPTION(
         "Two command buffers, each in a separate QueueSubmit call on the same queue, the second having a fence, followed by a "
         "WaitForFences call.");
@@ -648,7 +649,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueOneFence) {
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 }
 
-TEST_F(PositiveSyncObject, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) {
+TEST_F(PositiveSyncObjectShared, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) {
     TEST_DESCRIPTION(
         "Two command buffers each in a separate SubmitInfo sent in a single QueueSubmit call followed by a WaitForFences call.");
 
@@ -730,7 +731,7 @@ TEST_F(PositiveSyncObject, WaitBeforeSignalOnDifferentQueuesSignalLargerThanWait
     m_device->Wait();
 }
 
-TEST_F(PositiveSyncObject, LongSemaphoreChain) {
+TEST_F(PositiveSyncObjectShared, LongSemaphoreChain) {
     RETURN_IF_SKIP(Init());
     std::vector<VkSemaphore> semaphores;
 
@@ -1109,7 +1110,7 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
     m_default_queue->Wait();
 }
 
-TEST_F(PositiveSyncObject, DoubleLayoutTransition) {
+TEST_F(PositiveSyncObjectShared, DoubleLayoutTransition) {
     TEST_DESCRIPTION("Attempt vkCmdPipelineBarrier with 2 layout transitions of the same image.");
 
     RETURN_IF_SKIP(Init());
@@ -1203,7 +1204,7 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     m_device->Wait();
 }
 
-TEST_F(PositiveSyncObject, ResetQueryPoolFromDifferentCBWithFenceAfter) {
+TEST_F(PositiveSyncObjectShared, ResetQueryPoolFromDifferentCBWithFenceAfter) {
     TEST_DESCRIPTION("Reset query pool from a different command buffer and wait on fence after both are submitted");
 
     RETURN_IF_SKIP(Init());
@@ -1509,7 +1510,7 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-TEST_F(PositiveSyncObject, SubpassBarrier) {
+TEST_F(PositiveSyncObjectShared, SubpassBarrier) {
     TEST_DESCRIPTION("The queue family indices for subpass barrier should be equal (but otherwise are not restricted");
     RETURN_IF_SKIP(Init());
 
@@ -1584,7 +1585,7 @@ TEST_F(PositiveSyncObject, SubpassBarrier2) {
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6204
-TEST_F(PositiveSyncObject, SubpassBarrierWithExpandableStages) {
+TEST_F(PositiveSyncObjectShared, SubpassBarrierWithExpandableStages) {
     TEST_DESCRIPTION("Specify expandable stages in subpass barrier");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1767,7 +1768,7 @@ TEST_F(PositiveSyncObject, DynamicRenderingLocalReadImageBarrier) {
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6172
-TEST_F(PositiveSyncObject, TwoQueuesReuseBinarySemaphore) {
+TEST_F(PositiveSyncObjectShared, TwoQueuesReuseBinarySemaphore) {
     TEST_DESCRIPTION("Use binary semaphore with the first queue then re-use on a different queue");
     RETURN_IF_SKIP(Init());
 
@@ -2468,7 +2469,7 @@ TEST_F(PositiveSyncObject, QueueWaitAfterBinarySignal) {
     m_default_queue->Wait();
 }
 
-TEST_F(PositiveSyncObject, QueueWaitAfterBinarySignal2) {
+TEST_F(PositiveSyncObjectShared, QueueWaitAfterBinarySignal2) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8989
     TEST_DESCRIPTION("Binary signal followed by queue wait");
     RETURN_IF_SKIP(Init());
@@ -2483,7 +2484,7 @@ TEST_F(PositiveSyncObject, QueueWaitAfterBinarySignal2) {
     m_default_queue->Wait();
 }
 
-TEST_F(PositiveSyncObject, QueueWaitAfterBinarySignal3) {
+TEST_F(PositiveSyncObjectShared, QueueWaitAfterBinarySignal3) {
     TEST_DESCRIPTION("Binary signal followed by queue wait");
     RETURN_IF_SKIP(Init());
 

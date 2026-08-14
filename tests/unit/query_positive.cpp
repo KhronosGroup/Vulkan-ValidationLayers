@@ -23,6 +23,7 @@ bool QueryTest::HasZeroTimestampValidBits() {
 }
 
 class PositiveQuery : public QueryTest {};
+class PositiveQueryShared : public VkSharedLayerTest<QueryTest> {};
 
 TEST_F(PositiveQuery, OutsideRenderPass) {
     AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
@@ -60,7 +61,7 @@ TEST_F(PositiveQuery, InsideRenderPass) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
+TEST_F(PositiveQueryShared, ResetQueryPoolFromDifferentCB) {
 #if defined(VVL_ENABLE_TSAN)
     // NOTE: This test in particular has failed sporadically on CI when TSAN is enabled.
     GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
@@ -112,7 +113,7 @@ TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
     vk::FreeCommandBuffers(device(), m_command_pool, 2, command_buffer);
 }
 
-TEST_F(PositiveQuery, BasicQuery) {
+TEST_F(PositiveQueryShared, BasicQuery) {
     TEST_DESCRIPTION("Use a couple occlusion queries");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -158,7 +159,7 @@ TEST_F(PositiveQuery, BasicQuery) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
+TEST_F(PositiveQueryShared, DestroyQueryPoolBasedOnQueryPoolResults) {
     TEST_DESCRIPTION("Destroy a QueryPool based on vkGetQueryPoolResults");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -322,7 +323,7 @@ TEST_F(PositiveQuery, QueryAndCopyMultipleCommandBuffers) {
     vk::QueueWaitIdle(queue);
 }
 
-TEST_F(PositiveQuery, DestroyQueryPoolAfterGetQueryPoolResults) {
+TEST_F(PositiveQueryShared, DestroyQueryPoolAfterGetQueryPoolResults) {
     TEST_DESCRIPTION("Destroy query pool after GetQueryPoolResults() without VK_QUERY_RESULT_PARTIAL_BIT returns VK_SUCCESS");
 
     RETURN_IF_SKIP(Init());
@@ -508,7 +509,7 @@ TEST_F(PositiveQuery, HostQueryResetSuccess) {
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7874
-TEST_F(PositiveQuery, ReuseSecondaryWithQueryCommand) {
+TEST_F(PositiveQueryShared, ReuseSecondaryWithQueryCommand) {
     TEST_DESCRIPTION("Regression test for a deadlock when secondary command buffer is reused and records a query command");
 
     RETURN_IF_SKIP(Init());
@@ -660,7 +661,7 @@ TEST_F(PositiveQuery, QueryPoolResultsStride) {
                             VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
 }
 
-TEST_F(PositiveQuery, SubpassQueries) {
+TEST_F(PositiveQueryShared, SubpassQueries) {
     RETURN_IF_SKIP(Init());
 
     VkSubpassDescription subpasses[2] = {};

@@ -520,6 +520,53 @@ class ParentTest : public VkLayerTest {
     vkt::Device *m_second_device = nullptr;
 };
 
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12158
+// A bottle neck of many test is creating and destroying
+template <typename BaseTestClass = VkLayerTest>
+class VkSharedLayerTest : public BaseTestClass {
+  public:
+    struct SharedFramework : public BaseTestClass {
+        void TestBody() override {}
+    };
+
+  protected:
+    static inline std::unique_ptr<SharedFramework> s_framework = nullptr;
+
+    static void SetUpTestSuite() {
+        s_framework = std::make_unique<SharedFramework>();
+        // don't silence recurring errors  across the various of tests
+        s_framework->InitFramework(&kDisableMessageLimit);
+        s_framework->InitState();
+
+        // Unregister master messenger so it doesn't intercept test errors
+        s_framework->DestroyErrorMonitorCallback();
+    }
+
+    static void TearDownTestSuite() { s_framework.reset(); }
+
+    void SetUp() override {
+        BaseTestClass::SetUp();
+        // Use the InitShared method you just added to the framework!
+        this->InitShared(s_framework.get());
+    }
+
+    // Bring the base class Init methods into scope
+    using BaseTestClass::Init;
+
+    void Init(VkPhysicalDeviceFeatures* features = nullptr,
+              VkPhysicalDeviceFeatures2* features2 = nullptr,
+              void* instance_pnext = nullptr) {
+
+        const bool requested_extensions = !this->m_required_extensions.empty() ||
+                                          !this->m_optional_extensions.empty() ||
+                                          !this->m_wsi_extensions.empty();
+
+        if (features || features2 || instance_pnext || requested_extensions) {
+            GTEST_SKIP() << "VkSharedLayerTest does not support custom features, extensions, or instance_pnext";
+        }
+    }
+};
+
 template <typename T>
 bool IsValidVkStruct(const T &s) {
     return vku::GetSType<T>() == s.sType;

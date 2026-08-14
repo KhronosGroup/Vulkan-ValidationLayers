@@ -22,8 +22,9 @@
 #include "error_message/log_message_type.h"
 
 class PositiveDescriptors : public VkLayerTest {};
+class PositiveDescriptorsShared : public VkSharedLayerTest<> {};
 
-TEST_F(PositiveDescriptors, CopyNonupdatedDescriptors) {
+TEST_F(PositiveDescriptorsShared, CopyNonupdatedDescriptors) {
     TEST_DESCRIPTION("Copy non-updated descriptors");
 
     RETURN_IF_SKIP(Init());
@@ -51,7 +52,7 @@ TEST_F(PositiveDescriptors, CopyNonupdatedDescriptors) {
     vk::UpdateDescriptorSets(device(), 0, NULL, copy_size, copy_ds_update);
 }
 
-TEST_F(PositiveDescriptors, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
+TEST_F(PositiveDescriptorsShared, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     TEST_DESCRIPTION("Create DSLayouts and DescriptorSets and then delete the DSLayouts before the DescriptorSets.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -79,7 +80,7 @@ TEST_F(PositiveDescriptors, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     vk::FreeDescriptorSets(device(), ds_pool_one, 1, &descriptorSet);
 }
 
-TEST_F(PositiveDescriptors, PoolSizeCountZero) {
+TEST_F(PositiveDescriptorsShared, PoolSizeCountZero) {
     TEST_DESCRIPTION("Allow poolSizeCount to zero.");
     RETURN_IF_SKIP(Init());
 
@@ -89,7 +90,7 @@ TEST_F(PositiveDescriptors, PoolSizeCountZero) {
     vkt::DescriptorPool ds_pool_one(*m_device, ds_pool_ci);
 }
 
-TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
+TEST_F(PositiveDescriptorsShared, IgnoreUnrelatedDescriptor) {
     TEST_DESCRIPTION(
         "Ensure that the vkUpdateDescriptorSets validation code is ignoring VkWriteDescriptorSet members that are not related to "
         "the descriptor type specified by VkWriteDescriptorSet::descriptorType.  Correct validation behavior will result in the "
@@ -191,7 +192,7 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
     }
 }
 
-TEST_F(PositiveDescriptors, ImmutableSamplerOnlyDescriptor) {
+TEST_F(PositiveDescriptorsShared, ImmutableSamplerOnlyDescriptor) {
     TEST_DESCRIPTION("Bind a DescriptorSet with an immutable sampler and make sure that we don't warn for no update.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -249,7 +250,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerOnlyDescriptor) {
     sampler.Destroy();
 }
 
-TEST_F(PositiveDescriptors, EmptyDescriptorUpdate) {
+TEST_F(PositiveDescriptorsShared, EmptyDescriptorUpdate) {
     TEST_DESCRIPTION("Update last descriptor in a set that includes an empty binding");
     RETURN_IF_SKIP(Init());
     // Create layout with two uniform buffer descriptors w/ empty binding between them
@@ -274,7 +275,7 @@ TEST_F(PositiveDescriptors, EmptyDescriptorUpdate) {
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 }
 
-TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
+TEST_F(PositiveDescriptorsShared, DynamicOffsetWithInactiveBinding) {
     // Create a descriptorSet w/ dynamic descriptors where 1 binding is inactive
     // We previously had a bug where dynamic offset of inactive bindings was still being used
     RETURN_IF_SKIP(Init());
@@ -622,7 +623,7 @@ TEST_F(PositiveDescriptors, AccelerationStructureTemplates) {
     }
 }
 
-TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
+TEST_F(PositiveDescriptorsShared, ImageViewAsDescriptorReadAndInputAttachment) {
     TEST_DESCRIPTION("Test reading from a descriptor that uses same image view as framebuffer input attachment");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -760,7 +761,7 @@ TEST_F(PositiveDescriptors, MultipleThreadsUsingHostOnlyDescriptorSet) {
     for (auto& t : threads) t.join();
 }
 
-TEST_F(PositiveDescriptors, BindingEmptyDescriptorSets) {
+TEST_F(PositiveDescriptorsShared, BindingEmptyDescriptorSets) {
     RETURN_IF_SKIP(Init());
 
     OneOffDescriptorSet empty_ds(m_device, {});
@@ -771,7 +772,7 @@ TEST_F(PositiveDescriptors, BindingEmptyDescriptorSets) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
+TEST_F(PositiveDescriptorsShared, DrawingWithUnboundUnusedSetWithInputAttachments) {
     TEST_DESCRIPTION(
         "Test issuing draw command with pipeline layout that has 2 descriptor sets with input attachment descriptors. "
         "The second descriptor set is unused and unbound. Its purpose is to catch regression of the following bug or similar "
@@ -834,7 +835,7 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
+TEST_F(PositiveDescriptorsShared, UpdateDescritorSetsNoLongerInUse) {
     TEST_DESCRIPTION("Use descriptor in the draw call and then update descriptor when it is no longer in use");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1107,7 +1108,7 @@ TEST_F(PositiveDescriptors, VariableDescriptorCount) {
     vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
 }
 
-TEST_F(PositiveDescriptors, ShaderStageAll) {
+TEST_F(PositiveDescriptorsShared, ShaderStageAll) {
     TEST_DESCRIPTION("VkDescriptorSetLayout stageFlags can be VK_SHADER_STAGE_ALL");
     RETURN_IF_SKIP(Init());
 
@@ -1226,7 +1227,7 @@ TEST_F(PositiveDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptors, DuplicateLayoutSameSampler) {
+TEST_F(PositiveDescriptorsShared, DuplicateLayoutSameSampler) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497");
     RETURN_IF_SKIP(Init());
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -1243,7 +1244,7 @@ TEST_F(PositiveDescriptors, DuplicateLayoutSameSampler) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptors, DuplicateLayoutDuplicateSampler) {
+TEST_F(PositiveDescriptorsShared, DuplicateLayoutDuplicateSampler) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497");
     RETURN_IF_SKIP(Init());
     vkt::Sampler sampler_0(*m_device, SafeSaneSamplerCreateInfo());
@@ -1261,7 +1262,7 @@ TEST_F(PositiveDescriptors, DuplicateLayoutDuplicateSampler) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptors, DuplicateLayoutSameSamplerArray) {
+TEST_F(PositiveDescriptorsShared, DuplicateLayoutSameSamplerArray) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497");
     RETURN_IF_SKIP(Init());
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -1279,7 +1280,7 @@ TEST_F(PositiveDescriptors, DuplicateLayoutSameSamplerArray) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptors, DuplicateLayoutDuplicateSamplerArray) {
+TEST_F(PositiveDescriptorsShared, DuplicateLayoutDuplicateSamplerArray) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497");
     RETURN_IF_SKIP(Init());
     vkt::Sampler sampler_0(*m_device, SafeSaneSamplerCreateInfo());
@@ -1299,7 +1300,7 @@ TEST_F(PositiveDescriptors, DuplicateLayoutDuplicateSamplerArray) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptors, CopyDestroyDescriptor) {
+TEST_F(PositiveDescriptorsShared, CopyDestroyDescriptor) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4125");
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet src_descriptor_set(m_device, {
@@ -1599,7 +1600,7 @@ TEST_F(PositiveDescriptors, WriteMutableDescriptorSet2) {
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 }
 
-TEST_F(PositiveDescriptors, WriteDescriptorSetTypeStageMatch) {
+TEST_F(PositiveDescriptorsShared, WriteDescriptorSetTypeStageMatch) {
     TEST_DESCRIPTION("Overstep the current binding to another valid binding");
     RETURN_IF_SKIP(Init());
 
@@ -1772,7 +1773,7 @@ TEST_F(PositiveDescriptors, DescriptorSetLayoutBinding0Count) {
     vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
 }
 
-TEST_F(PositiveDescriptors, ConsecutiveBindingUpdatesStartOver) {
+TEST_F(PositiveDescriptorsShared, ConsecutiveBindingUpdatesStartOver) {
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
@@ -1895,7 +1896,7 @@ TEST_F(PositiveDescriptors, AccelerationStructureTemplateNullDescriptor) {
     vk::UpdateDescriptorSetWithTemplate(device(), descriptor_set.set_, update_template, &update_template_data);
 }
 
-TEST_F(PositiveDescriptors, ImmutableSamplerIdenticallyDefined) {
+TEST_F(PositiveDescriptorsShared, ImmutableSamplerIdenticallyDefined) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10560");
     RETURN_IF_SKIP(Init());
 
@@ -2136,7 +2137,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerIdenticallyDefinedFilterMinmax) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptors, ReuseSetLayoutDefWithImmutableSamplers) {
+TEST_F(PositiveDescriptorsShared, ReuseSetLayoutDefWithImmutableSamplers) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10603");
     RETURN_IF_SKIP(Init());
 
@@ -2252,7 +2253,7 @@ TEST_F(PositiveDescriptors, ReuseSetLayoutDefWithImmutableSamplers2) {
     }
 }
 
-TEST_F(PositiveDescriptors, TryToConfuseWithReorderedBindings) {
+TEST_F(PositiveDescriptorsShared, TryToConfuseWithReorderedBindings) {
     TEST_DESCRIPTION("SetLayout Def does not depend on the order of VkDescriptorSetLayoutBinding. Check for related regressions");
     // NOTE: regression that led to trace crashes on CI: https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/10623
     RETURN_IF_SKIP(Init());
@@ -2306,7 +2307,7 @@ TEST_F(PositiveDescriptors, TryToConfuseWithReorderedBindings) {
     vk::UpdateDescriptorSets(*m_device, 1, &descriptor_write, 0u, nullptr);
 }
 
-TEST_F(PositiveDescriptors, DummySecondDevice) {
+TEST_F(PositiveDescriptorsShared, DummySecondDevice) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11204
     TEST_DESCRIPTION("Test that canonical ids dictionaries are not cleared accidentally when create new device");
     RETURN_IF_SKIP(Init());
@@ -2348,7 +2349,7 @@ TEST_F(PositiveDescriptors, DummySecondDevice) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptors, DummySecondInstance) {
+TEST_F(PositiveDescriptorsShared, DummySecondInstance) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11204
     TEST_DESCRIPTION("Test that canonical ids dictionaries are not cleared accidentally when create new instance");
     RETURN_IF_SKIP(Init());
@@ -2411,7 +2412,7 @@ TEST_F(PositiveDescriptors, WriteDescriptorTensorAliasingLayout) {
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 }
 
-TEST_F(PositiveDescriptors, InputAttachmentDescriptorUpdateGarbageSampler) {
+TEST_F(PositiveDescriptorsShared, InputAttachmentDescriptorUpdateGarbageSampler) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11356");
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet descriptor_set(m_device,
@@ -2427,7 +2428,7 @@ TEST_F(PositiveDescriptors, InputAttachmentDescriptorUpdateGarbageSampler) {
     descriptor_set.UpdateDescriptorSets();
 }
 
-TEST_F(PositiveDescriptors, Image1DArray) {
+TEST_F(PositiveDescriptorsShared, Image1DArray) {
     RETURN_IF_SKIP(Init());
 
     const char* cs_source = R"glsl(
