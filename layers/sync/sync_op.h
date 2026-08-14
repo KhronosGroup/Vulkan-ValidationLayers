@@ -20,6 +20,7 @@
 #include "sync/sync_barrier.h"
 #include "error_message/error_location.h"
 #include <optional>
+#include <variant>
 
 namespace vvl {
 class Event;
@@ -34,96 +35,89 @@ class QueueBatchContext;
 class RenderPassAccessContext;
 struct ReplayState;
 
-class SyncOp {
-  public:
-    virtual ~SyncOp() = default;
-    virtual bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const = 0;
-    virtual void ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const = 0;
+struct PipelineBarrierReplay {
+    PipelineBarrierReplay(BarrierSet&& barrier_set);
+    BarrierSet barrier_set;
 };
 
-class SyncOpPipelineBarrier : public SyncOp {
-  public:
-    SyncOpPipelineBarrier(BarrierSet&& barrier_set);
-    bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const override;
-
-  private:
-    BarrierSet barrier_set_;
-};
-
-class SyncOpSetEvent : public SyncOp {
-  public:
-    SyncOpSetEvent(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& src_exec_scope,
+struct SetEventReplay {
+    SetEventReplay(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& src_exec_scope,
                    std::shared_ptr<const AccessContext>&& src_access_context, const Location& loc);
-    bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const override;
 
-  private:
-    vvl::Func command_ = vvl::Func::Empty;
-    std::shared_ptr<const vvl::Event> event_;
+    vvl::Func command = vvl::Func::Empty;
+    std::shared_ptr<const vvl::Event> event;
     // Snapshot of the command buffer's access context at set event time
-    std::shared_ptr<const AccessContext> recorded_context_;
-    SyncExecScope src_exec_scope_;
+    std::shared_ptr<const AccessContext> recorded_context;
+    SyncExecScope src_exec_scope;
 };
 
-class SyncOpResetEvent : public SyncOp {
-  public:
-    SyncOpResetEvent(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& exec_scope, const Location& loc);
-    bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const override;
+struct ResetEventReplay {
+    ResetEventReplay(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& exec_scope, const Location& loc);
 
-  private:
-    vvl::Func command_ = vvl::Func::Empty;
-    std::shared_ptr<const vvl::Event> event_;
-    SyncExecScope exec_scope_;
+    vvl::Func command = vvl::Func::Empty;
+    std::shared_ptr<const vvl::Event> event;
+    SyncExecScope exec_scope;
 };
 
-class SyncOpWaitEvents : public SyncOp {
-  public:
-    SyncOpWaitEvents(std::vector<std::shared_ptr<const vvl::Event>>&& events, std::vector<BarrierSet>&& barrier_sets,
+struct WaitEventsReplay {
+    WaitEventsReplay(std::vector<std::shared_ptr<const vvl::Event>>&& events, std::vector<BarrierSet>&& barrier_sets,
                      const Location& loc);
-    bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const override;
 
-  private:
-    vvl::Func command_ = vvl::Func::Empty;
-
-    // TODO PHASE2 This is the wrong thing to use for "replay".. as the event state will have moved on since the record
-    // TODO PHASE2 May need to capture by value w.r.t. "first use" or build up in calling/enqueue context through replay.
-    std::vector<std::shared_ptr<const vvl::Event>> events_;
-
-    std::vector<BarrierSet> barrier_sets_;
+    vvl::Func command = vvl::Func::Empty;
+    std::vector<std::shared_ptr<const vvl::Event>> events;
+    std::vector<BarrierSet> barrier_sets;
 };
 
-class SyncOpBeginRenderPass : public SyncOp {
-  public:
-    SyncOpBeginRenderPass(std::shared_ptr<const vvl::RenderPass>&& rp_state,
-                          std::vector<std::shared_ptr<const vvl::ImageView>>&& attachments,
-                          const RenderPassAccessContext* rp_context);
-    bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const override;
+// Describes how replay changes its recorded and destination contexts.
+// These changes are needed because each render pass subpass has its own access context
+struct ReplayContextChange {
+    enum class Type {
+        kBeginRenderPass,
+        kNextSubpass,
+        kEndRenderPass,
+    };
 
-  protected:
-    // Keep references to rp_state and attachments in case they are deleted.
-    // The RenderPassAccessContext keeps only pointers to them.
-    // TODO: make RenderPassAccessContext the owner of rp_state and attachments
-    std::shared_ptr<const vvl::RenderPass> rp_state_;
-    std::vector<std::shared_ptr<const vvl::ImageView>> attachments_;
+    ReplayContextChange(std::shared_ptr<const vvl::RenderPass>&& rp_state,
+                        std::vector<std::shared_ptr<const vvl::ImageView>>&& attachments, const RenderPassAccessContext* rp_context)
+        : type(Type::kBeginRenderPass),
+          rp_state(std::move(rp_state)),
+          attachments(std::move(attachments)),
+          rp_context(rp_context) {}
 
-    const RenderPassAccessContext* rp_context_ = nullptr;
+    explicit ReplayContextChange(Type type) : type(type) {}
+
+    Type type;
+
+    // Keep these objects alive because RenderPassAccessContext stores pointers to them
+    std::shared_ptr<const vvl::RenderPass> rp_state;
+    std::vector<std::shared_ptr<const vvl::ImageView>> attachments;
+
+    const RenderPassAccessContext* rp_context = nullptr;
 };
 
-class SyncOpNextSubpass : public SyncOp {
-  public:
-    bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const override;
-};
+// Describes either a synchronization action or a context change during replay
+using ReplayOperation =
+    std::variant<PipelineBarrierReplay, SetEventReplay, ResetEventReplay, WaitEventsReplay, ReplayContextChange>;
 
-class SyncOpEndRenderPass : public SyncOp {
-  public:
-    bool ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const override;
-    void ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const override;
-};
+static inline const PipelineBarrierReplay* GetPipelineBarrierReplay(const ReplayOperation& operation) {
+    return std::get_if<PipelineBarrierReplay>(&operation);
+}
+
+static inline const SetEventReplay* GetSetEventReplay(const ReplayOperation& operation) {
+    return std::get_if<SetEventReplay>(&operation);
+}
+
+static inline const ResetEventReplay* GetResetEventReplay(const ReplayOperation& operation) {
+    return std::get_if<ResetEventReplay>(&operation);
+}
+
+static inline const WaitEventsReplay* GetWaitEventsReplay(const ReplayOperation& operation) {
+    return std::get_if<WaitEventsReplay>(&operation);
+}
+
+static inline const ReplayContextChange* GetReplayContextChange(const ReplayOperation& operation) {
+    return std::get_if<ReplayContextChange>(&operation);
+}
 
 // Render pass state for submit-time replay. The accesses come from RenderPassAccessContext's
 // recorded subpass contexts, and the subpass dependencies are applied to the accesses in the
@@ -143,6 +137,23 @@ struct RenderPassReplayState {
     std::unique_ptr<AccessContext[]> destination_subpass_contexts;
 };
 
+void ApplyReplayAction(SyncEnvironment& env, const ReplayOperation& operation, AccessContext& access_context,
+                       ResourceUsageTag exec_tag);
+
+struct ReplayEntry {
+    // NOTE: templated Operation is a GCC workaround. Use Non-templated version with
+    // ReplayOperation&& and std::move instead of std::forward when our GCC version supports this
+    template <typename Operation>
+    ReplayEntry(ResourceUsageTag tag, bool validate_layout_transition_first_use, Operation&& operation)
+        : tag(tag),
+          validate_layout_transition_first_use(validate_layout_transition_first_use),
+          operation(std::forward<Operation>(operation)) {}
+
+    ResourceUsageTag tag = 0;
+    bool validate_layout_transition_first_use = false;
+    ReplayOperation operation;
+};
+
 struct ReplayState {
     ReplayState(CommandBufferContext& proxy_primary_cb_context, const CommandBufferContext& recorded_cb_context,
                 ResourceUsageTag base_tag, const Location& cb_loc);
@@ -151,6 +162,7 @@ struct ReplayState {
 
     bool ValidateFirstUse();
     bool DetectFirstUseHazard(const ResourceUsageRange& first_use_range) const;
+    void ApplyContextChange(const ReplayContextChange& change);
 
     AccessContext& GetCurrentDestinationContext();
     const AccessContext& GetCurrentDestinationContext() const;
