@@ -1022,7 +1022,8 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPh
 
     if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties-tiling-02248", physicalDevice,
-                         error_obj.location.dot(Field::tiling), "is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT.");
+                         error_obj.location.dot(Field::tiling),
+                         "is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT (Use vkGetPhysicalDeviceImageFormatProperties2 instead).");
     }
 
     return skip;
