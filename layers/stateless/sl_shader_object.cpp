@@ -239,6 +239,13 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
                              "includes VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT (%s), but pPushConstantRanges is not NULL (0x%p).",
                              string_VkShaderCreateFlagsEXT(create_info.flags).c_str(), create_info.pPushConstantRanges);
             }
+
+            if ((create_info.flags & VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR) != 0) {
+                skip |= LogError(" VUID-VkShaderCreateInfoEXT-flags-12490", device, create_info_loc.dot(Field::flags),
+                                 "includes both VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT and "
+                                 "VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR\nflags = %s",
+                                 string_VkShaderCreateFlagsEXT(create_info.flags).c_str());
+            }
         }
 
         if ((create_info.stage & linkedStages) != 0 && (create_info.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {
