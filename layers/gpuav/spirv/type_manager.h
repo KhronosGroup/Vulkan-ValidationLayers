@@ -282,7 +282,7 @@ class TypeManager {
 
     std::vector<const Variable*> input_variables_;
     std::vector<const Variable*> output_variables_;
-    // There is invalid to have more than 1 push constant variable per entrypoint
+    // It is invalid to have more than 1 push constant variable per entrypoint
     const Variable* push_constant_variable_ = nullptr;
     std::vector<const Variable*> shared_memory_variables_;
     std::vector<const Variable*> task_payload_variables_;

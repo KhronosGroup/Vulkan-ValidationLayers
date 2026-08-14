@@ -215,7 +215,7 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
     }
 
     // If multiple entrypoints, need to resolve which is the real push constant for it
-    if (!type_manager_.FindPushConstantVariable() && entry_points_.size() > 1) {
+    if (type_manager_.FindPushConstantVariable() && entry_points_.size() > 1) {
         const uint32_t spirv_version_1_4 = 0x00010400;
         if (header_.version < spirv_version_1_4) {
             // will just use the 2nd one found to not blow up

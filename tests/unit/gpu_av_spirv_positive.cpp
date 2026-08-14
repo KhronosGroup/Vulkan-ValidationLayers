@@ -869,3 +869,47 @@ TEST_F(PositiveGpuAVSpirv, SamplerCopyObjectFunction) {
     pipe.cs_ = VkShaderObj(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 }
+
+TEST_F(PositiveGpuAVSpirv, MultiEntrypointVulkan11) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12871");
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const char* spv_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %vert_main "main" %gl_Position
+               OpEntryPoint Fragment %frag_main "main" %uFragColor
+               OpExecutionMode %frag_main OriginUpperLeft
+               OpDecorate %gl_Position BuiltIn Position
+               OpDecorate %uFragColor Location 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+%gl_Position = OpVariable %_ptr_Output_v4float Output
+ %uFragColor = OpVariable %_ptr_Output_v4float Output
+    %float_1 = OpConstant %float 1
+    %float_0 = OpConstant %float 0
+%v4_ones     = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+%v4_green    = OpConstantComposite %v4float %float_0 %float_1 %float_0 %float_1
+  %vert_main = OpFunction %void None %3
+     %label_v = OpLabel
+               OpStore %gl_Position %v4_ones
+               OpReturn
+               OpFunctionEnd
+  %frag_main = OpFunction %void None %3
+     %label_f = OpLabel
+               OpStore %uFragColor %v4_green
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj vs(*m_device, spv_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+    VkShaderObj fs(*m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}
