@@ -2730,7 +2730,7 @@ TEST_F(NegativeDescriptorHeap, ShaderCreateInfoPushConstant) {
         vert_ci.pPushConstantRanges = nullptr;
 
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-11370");
-        const vkt::Shader vertShader(*m_device, vert_ci);
+        const vkt::Shader vert_shader(*m_device, vert_ci);
         m_errorMonitor->VerifyFound();
     }
     {
@@ -2742,9 +2742,25 @@ TEST_F(NegativeDescriptorHeap, ShaderCreateInfoPushConstant) {
         vert_ci.pPushConstantRanges = &push_constant_range;
 
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-11371");
-        const vkt::Shader vertShader(*m_device, vert_ci);
+        const vkt::Shader vert_shader(*m_device, vert_ci);
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(NegativeDescriptorHeap, ShaderObjectIndependentSet) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    const VkShaderCreateFlagsEXT flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT | VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    VkShaderCreateInfoEXT vert_ci = ShaderCreateInfoFlag(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, flags);
+
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-12490");
+    const vkt::Shader vert_shader(*m_device, vert_ci);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, DescriptorType) {

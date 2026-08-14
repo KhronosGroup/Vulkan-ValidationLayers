@@ -1288,7 +1288,7 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
                 if (const auto* swizzle_state =
                         vku::FindStructInPNextChain<VkPipelineViewportSwizzleStateCreateInfoNV>(viewport_state->pNext)) {
                     if (swizzle_state->viewportCount < cb_state.dynamic_state_value.viewport_count) {
-                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PIPELINE_VIEWPORT_SWIZZLE_07492),
+                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PIPELINE_VIEWPORT_SWIZZLE_04141),
                                          cb_state.Handle(), loc,
                                          "viewportCount (%" PRIu32
                                          ") set with vkCmdSetViewportWithCount is greater than "

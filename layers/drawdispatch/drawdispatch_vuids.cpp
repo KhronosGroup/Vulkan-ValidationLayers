@@ -422,10 +422,10 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::PIPELINE_VIEWPORT_W_SCALING_04137: suffix = "viewportCount-04137"; break;
         // ### VUID-vkCmdDraw-viewportCount-04139
         case ActionVUID::PIPELINE_SHADING_RATE_PALETTE_04139: suffix = "viewportCount-04139"; break;
-        // ### VUID-vkCmdDraw-viewportCount-07492
-        case ActionVUID::PIPELINE_VIEWPORT_SWIZZLE_07492: suffix = "viewportCount-07492"; break;
-        // ### VUID-vkCmdDraw-VkPipelineVieportCreateInfo-04142
-        case ActionVUID::PIPELINE_EXCLUSIVE_SCISSOR_04142: suffix = "VkPipelineVieportCreateInfo-04142"; break;
+        // ### VUID-vkCmdDraw-viewportCount-04141
+        case ActionVUID::PIPELINE_VIEWPORT_SWIZZLE_04141: suffix = "VkPipelineViewportCreateInfo-04141"; break;
+        // ### VUID-vkCmdDraw-VkPipelineVie2portCreateInfo-04142
+        case ActionVUID::PIPELINE_EXCLUSIVE_SCISSOR_04142: suffix = "VkPipelineViewportCreateInfo-04142"; break;
         // ### VUID-vkCmdDraw-alphaToCoverageEnable-08920
         case ActionVUID::ALPHA_COMPONENT_WORD_08920: suffix = "alphaToCoverageEnable-08920"; break;
         // ### VUID-vkCmdDraw-multiviewPerViewViewports-12262

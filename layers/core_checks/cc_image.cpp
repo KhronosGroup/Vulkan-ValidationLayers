@@ -1783,6 +1783,13 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image& image_state, 
                              string_VkFormat(view_format), string_VkImageTiling(image_tiling),
                              string_VkFormatFeatureFlags2(tiling_features).c_str());
         }
+    } else if ((image_usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) &&
+               !(tiling_features & VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+        skip |= LogError("VUID-VkImageViewCreateInfo-usage-12488", image_state.Handle(), create_info_loc.dot(Field::format),
+                         "%s with tiling %s doesn't support VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT.\n"
+                         "(supported features: %s)",
+                         string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                         string_VkFormatFeatureFlags2(tiling_features).c_str());
     } else if ((image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
         // shadingRateImage is from the NV extension, should mean the same, lacks spec text
         if (!enabled_features.attachmentFragmentShadingRate && !enabled_features.shadingRateImage) {

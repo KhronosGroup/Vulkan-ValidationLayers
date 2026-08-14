@@ -6478,7 +6478,7 @@ TEST_F(NegativeDynamicState, PipelineViewportSwizzleCountWithDynamicViewportCoun
     vk::CmdSetViewportWithCountEXT(m_command_buffer, 2, viewports);
     vk::CmdSetScissorWithCountEXT(m_command_buffer, 2, scissors);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-07492");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-VkPipelineViewportCreateInfo-04141");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -6609,7 +6609,7 @@ TEST_F(NegativeDynamicState, PipelineExclusiveScissorCountWithDynamicViewportCou
     vk::CmdSetViewportWithCountEXT(m_command_buffer, 2, viewports);
     vk::CmdSetScissorWithCountEXT(m_command_buffer, 2, scissors);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-VkPipelineVieportCreateInfo-04142");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-VkPipelineViewportCreateInfo-04142");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
