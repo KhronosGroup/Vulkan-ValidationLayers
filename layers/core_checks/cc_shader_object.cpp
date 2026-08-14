@@ -819,6 +819,27 @@ bool CoreChecks::ValidateDrawShaderObjectFlags(const LastBound& last_bound_state
         }
     }
 
+    if (shader_with_independent_sets && last_bound_state.push_constant_pipeline_layout) {
+        if ((last_bound_state.push_constant_pipeline_layout->create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) ==
+            0) {
+            const bool uses_push_constants = !last_bound_state.push_constant_pipeline_layout->push_constant_ranges_layout->empty();
+            if (uses_push_constants) {
+                const LogObjectList objlist(last_bound_state.cb_state.Handle(),
+                                            last_bound_state.push_constant_pipeline_layout->VkHandle(),
+                                            shader_with_independent_sets->VkHandle());
+                skip |= LogError(
+                    CreateActionVuid(loc.function, vvl::ActionVUID::INDEPENDENT_SETS_12491), objlist, loc,
+                    "Shader object bound at stage %s has flag VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR but the "
+                    "VkPipelineLayout (bound with %s) "
+                    "was created without the VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT flag\nWhile there may be no "
+                    "descriptors, this Shader Object was created with push constant ranges\nCreate flags: %s.",
+                    string_VkShaderStageFlagBits(shader_with_independent_sets->safe_create_info.stage),
+                    vvl::String(last_bound_state.GetDescriptorModeFunc()),
+                    string_VkPipelineLayoutCreateFlags(last_bound_state.push_constant_pipeline_layout->create_flags).c_str());
+            }
+        }
+    }
+
     return skip;
 }
 

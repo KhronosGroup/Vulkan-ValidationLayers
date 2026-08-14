@@ -215,6 +215,8 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
 
         // ### VUID-vkCmdDraw-None-08601
         case ActionVUID::PUSH_CONSTANT_08601: suffix = "None-08601"; break;
+        // ### VUID-vkCmdDraw-flags-12491
+        case ActionVUID::INDEPENDENT_SETS_12491: suffix = "flags-12491"; break;
         // ### VUID-vkCmdDraw-flags-13361
         case ActionVUID::INDEPENDENT_SETS_13361: suffix = "flags-13361"; break;
         // ### VUID-vkCmdDraw-flags-13362

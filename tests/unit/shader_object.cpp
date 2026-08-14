@@ -8071,6 +8071,45 @@ TEST_F(NegativeShaderObject, PipelineLayoutNoMissingIndependentSetFlag) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeShaderObject, PipelineLayoutNoMissingIndependentSetFlagPushConstant) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const char* vert_src = R"glsl(
+        #version 460
+        layout(push_constant) uniform PC {
+            vec4 data;
+        };
+        void main() {
+            gl_Position = data;
+        }
+    )glsl";
+    VkPushConstantRange ranges = {VK_SHADER_STAGE_VERTEX_BIT, 0, 16};
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr, 1, &ranges);
+    create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    const vkt::Shader vert_shader(*m_device, create_info);
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {}, {ranges});
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    VkShaderEXT shaders[] = {vert_shader, VK_NULL_HANDLE};
+    vk::CmdBindShadersEXT(m_command_buffer, 2u, stages, shaders);
+    float dummy_values[4];
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 16, dummy_values);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-flags-12491");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeShaderObject, PipelineLayoutIndependentSetsTaskStage) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);

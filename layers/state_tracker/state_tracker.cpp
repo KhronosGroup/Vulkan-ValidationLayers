@@ -3611,7 +3611,7 @@ void DeviceState::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, 
     ASSERT_AND_RETURN(cb_state && pipeline_layout_state);
 
     cb_state->RecordCommand(record_obj.location);
-    cb_state->RecordPushConstants(*pipeline_layout_state, stageFlags, offset, size, pValues);
+    cb_state->RecordPushConstants(pipeline_layout_state, stageFlags, offset, size, pValues);
 
     const DescriptorMode descriptor_mode =
         pipeline_layout_state->has_descriptor_buffer ? DescriptorModeBuffer : DescriptorModeClassic;
