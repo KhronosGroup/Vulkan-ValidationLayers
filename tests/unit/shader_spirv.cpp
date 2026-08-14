@@ -2561,7 +2561,8 @@ TEST_F(NegativeShaderSpirv, FPFastMathMode) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderSpirv, ScalarBlockLayoutShaderCache) {
+// Fixed with SPIRV-Tools update
+TEST_F(NegativeShaderSpirv, DISABLED_ScalarBlockLayoutShaderCache) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8031");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
