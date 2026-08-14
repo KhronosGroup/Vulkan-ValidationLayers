@@ -92,9 +92,14 @@ void SyncOpWaitEvents::ReplayRecord(SyncEnvironment& env, AccessContext& access_
 }
 
 bool SyncOpWaitEvents::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
+    bool skip = false;
+    const Location location(command_);
     const ResourceUsageTag exec_tag = replay.base_tag + recorded_tag;
-    return ValidateCmdWaitEvents(replay.env, replay.GetCurrentDestinationContext(), events_, barrier_sets_, exec_tag,
-                                 Location(command_));
+    const AccessContext& destination_context = replay.GetCurrentDestinationContext();
+
+    skip |= ValidateCmdWaitEvents(replay.env, events_, exec_tag, location);
+    skip |= DetectCmdWaitEventsImageBarrierHazard(replay.env, destination_context, events_, barrier_sets_, exec_tag, location);
+    return skip;
 }
 
 SyncOpBeginRenderPass::SyncOpBeginRenderPass(std::shared_ptr<const vvl::RenderPass>&& rp_state,
