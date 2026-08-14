@@ -2522,13 +2522,14 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
         const ResourceUsageTag base_tag = proxy_cb_context.GetTagCount();
         const Location cb_loc = error_obj.location.dot(vvl::Field::pCommandBuffers, cb_index);
-        skip |= ReplayState(proxy_cb_context, recorded_cb_context, base_tag, cb_loc).ValidateFirstUse();
+        skip |= ValidateFirstUseHazards(proxy_cb_context.GetSyncEnvironment(), recorded_cb_context,
+                                        proxy_cb_context.GetCbAccessContext(), base_tag, cb_loc);
 
         // Update proxy label commands so they can be used by ImportRecordedAccessLog
         const auto& recorded_label_commands = recorded_cb->GetLabelCommands();
         proxy_label_commands.insert(proxy_label_commands.end(), recorded_label_commands.begin(), recorded_label_commands.end());
 
-        // The barriers have already been applied in ValidatFirstUse
+        // The barriers have already been applied in ValidateFirstUseHazards
         proxy_cb_context.ImportRecordedAccessLog(recorded_cb_context);
         proxy_cb_context.ResolveExecutedCommandBuffer(recorded_cb_context.GetCbAccessContext(), base_tag);
     }
