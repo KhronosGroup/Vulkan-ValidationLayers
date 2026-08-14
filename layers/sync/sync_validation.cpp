@@ -607,8 +607,7 @@ void SyncValidator::RecordCmdPipelineBarrier(CommandBufferContext& cb_context, B
         }
     }
     ApplyBarrier(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), barrier_set, tag);
-    auto sync_op = std::make_unique<SyncOpPipelineBarrier>(std::move(barrier_set));
-    cb_context.AddSyncOp(tag, std::move(sync_op));
+    cb_context.AddReplayEntry(tag, true, PipelineBarrierReplay(std::move(barrier_set)));
 }
 
 void SyncValidator::PostCallRecordCmdPipelineBarrier(
@@ -2220,9 +2219,7 @@ void SyncValidator::RecordCmdSetEvent(CommandBufferContext& cb_context, std::sha
     src_access_context->InitFrom(cb_context.GetCbAccessContext());
 
     ApplyCmdSetEvent(cb_context.GetSyncEnvironment(), event, src_exec_scope, src_access_context, tag, loc.function);
-
-    auto sync_op = std::make_unique<SyncOpSetEvent>(std::move(event), src_exec_scope, std::move(src_access_context), loc);
-    cb_context.AddSyncOp(tag, std::move(sync_op));
+    cb_context.AddReplayEntry(tag, false, SetEventReplay(std::move(event), src_exec_scope, std::move(src_access_context), loc));
 }
 
 void SyncValidator::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
@@ -2293,8 +2290,7 @@ void SyncValidator::RecordCmdResetEvent(CommandBufferContext& cb_context, std::s
                                         const SyncExecScope& exec_scope, const Location& loc) const {
     const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
     ApplyCmdResetEvent(cb_context.GetSyncEnvironment(), event, tag, loc.function);
-    auto sync_op = std::make_unique<SyncOpResetEvent>(std::move(event), exec_scope, loc);
-    cb_context.AddSyncOp(tag, std::move(sync_op));
+    cb_context.AddReplayEntry(tag, false, ResetEventReplay(std::move(event), exec_scope, loc));
 }
 
 void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
@@ -2378,8 +2374,7 @@ void SyncValidator::RecordCmdWaitEvents(CommandBufferContext& cb_context, std::v
     const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
     ApplyCmdWaitEvents(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), events, barrier_sets, tag,
                        loc.function);
-    auto sync_op = std::make_unique<SyncOpWaitEvents>(std::move(events), std::move(barrier_sets), loc);
-    cb_context.AddSyncOp(tag, std::move(sync_op));
+    cb_context.AddReplayEntry(tag, false, WaitEventsReplay(std::move(events), std::move(barrier_sets), loc));
 }
 
 void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,

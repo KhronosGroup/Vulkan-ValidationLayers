@@ -33,134 +33,61 @@ using vvl::Func;
 
 namespace syncval {
 
-SyncOpPipelineBarrier::SyncOpPipelineBarrier(BarrierSet&& barrier_set) : barrier_set_(std::move(barrier_set)) {}
+PipelineBarrierReplay::PipelineBarrierReplay(BarrierSet&& barrier_set) : barrier_set(std::move(barrier_set)) {}
 
-void SyncOpPipelineBarrier::ReplayRecord(SyncEnvironment& env, AccessContext& access_context,
-                                         const ResourceUsageTag exec_tag) const {
-    ApplyBarrier(env, access_context, barrier_set_, exec_tag);
-}
-
-bool SyncOpPipelineBarrier::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
-    // The layout transitions happen at the replay tag
-    ResourceUsageRange first_use_range = {recorded_tag, recorded_tag + 1};
-    return replay.DetectFirstUseHazard(first_use_range);
-}
-
-SyncOpSetEvent::SyncOpSetEvent(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& src_exec_scope,
+SetEventReplay::SetEventReplay(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& src_exec_scope,
                                std::shared_ptr<const AccessContext>&& src_access_context, const Location& loc)
-    : command_(loc.function),
-      event_(std::move(event)),
-      recorded_context_(std::move(src_access_context)),
-      src_exec_scope_(src_exec_scope) {}
+    : command(loc.function),
+      event(std::move(event)),
+      recorded_context(std::move(src_access_context)),
+      src_exec_scope(src_exec_scope) {}
 
-bool SyncOpSetEvent::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
-    const ResourceUsageTag exec_tag = replay.base_tag + recorded_tag;
-    return ValidateCmdSetEvent(replay.env, event_, src_exec_scope_, exec_tag, Location(command_));
-}
+ResetEventReplay::ResetEventReplay(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& exec_scope, const Location& loc)
+    : command(loc.function), event(std::move(event)), exec_scope(exec_scope) {}
 
-void SyncOpSetEvent::ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const {
-    // Create a copy of the current context, and merge in the state snapshot at record set event time
-    // Note: we mustn't change the recorded context copy, as a given CB could be submitted more than once (in generaL)
-
-    // Note: merged_context is a copy of the access_context, combined with the recorded context
-    auto merged_context = std::make_shared<AccessContext>(*access_context.validator);
-    merged_context->InitFrom(access_context);
-    merged_context->ResolveFromContext(QueueTagOffsetBarrierAction(env.queue_id, exec_tag), *recorded_context_);
-    merged_context->TrimAndClearFirstAccess();  // Ensure the copy is minimal and normalized
-
-    ApplyCmdSetEvent(env, event_, src_exec_scope_, merged_context, exec_tag, command_);
-}
-
-SyncOpResetEvent::SyncOpResetEvent(std::shared_ptr<const vvl::Event>&& event, const SyncExecScope& exec_scope, const Location& loc)
-    : command_(loc.function), event_(std::move(event)), exec_scope_(exec_scope) {}
-
-bool SyncOpResetEvent::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
-    const ResourceUsageTag exec_tag = replay.base_tag + recorded_tag;
-    return ValidateCmdResetEvent(replay.env, event_, exec_scope_, exec_tag, Location(command_));
-}
-
-void SyncOpResetEvent::ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const {
-    ApplyCmdResetEvent(env, event_, exec_tag, command_);
-}
-
-SyncOpWaitEvents::SyncOpWaitEvents(std::vector<std::shared_ptr<const vvl::Event>>&& events, std::vector<BarrierSet>&& barrier_sets,
+WaitEventsReplay::WaitEventsReplay(std::vector<std::shared_ptr<const vvl::Event>>&& events, std::vector<BarrierSet>&& barrier_sets,
                                    const Location& loc)
-    : command_(loc.function), events_(std::move(events)), barrier_sets_(std::move(barrier_sets)) {}
+    : command(loc.function), events(std::move(events)), barrier_sets(std::move(barrier_sets)) {}
 
-void SyncOpWaitEvents::ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const {
-    ApplyCmdWaitEvents(env, access_context, events_, barrier_sets_, exec_tag, command_);
+void ApplyReplayAction(SyncEnvironment& env, const ReplayOperation& operation, AccessContext& access_context,
+                       ResourceUsageTag exec_tag) {
+    if (const auto* barrier = GetPipelineBarrierReplay(operation)) {
+        ApplyBarrier(env, access_context, barrier->barrier_set, exec_tag);
+    } else if (const auto* set_event = GetSetEventReplay(operation)) {
+        // Build the event's first-scope context by merging the current replay destination
+        // with the command-buffer context captured when the set-event command was recorded.
+        // Keep the recorded context unchanged because the command buffer can be replayed multiple times.
+        auto merged_context = std::make_shared<AccessContext>(*access_context.validator);
+        merged_context->InitFrom(access_context);
+        merged_context->ResolveFromContext(QueueTagOffsetBarrierAction(env.queue_id, exec_tag), *set_event->recorded_context);
+        merged_context->TrimAndClearFirstAccess();
+
+        ApplyCmdSetEvent(env, set_event->event, set_event->src_exec_scope, merged_context, exec_tag, set_event->command);
+    } else if (const auto* reset_event = GetResetEventReplay(operation)) {
+        ApplyCmdResetEvent(env, reset_event->event, exec_tag, reset_event->command);
+    } else if (const auto* wait_events = GetWaitEventsReplay(operation)) {
+        ApplyCmdWaitEvents(env, access_context, wait_events->events, wait_events->barrier_sets, exec_tag, wait_events->command);
+    }
 }
 
-bool SyncOpWaitEvents::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
-    bool skip = false;
-    const Location location(command_);
-    const ResourceUsageTag exec_tag = replay.base_tag + recorded_tag;
-    const AccessContext& destination_context = replay.GetCurrentDestinationContext();
-
-    skip |= ValidateCmdWaitEvents(replay.env, events_, exec_tag, location);
-    skip |= DetectCmdWaitEventsImageBarrierHazard(replay.env, destination_context, events_, barrier_sets_, exec_tag, location);
-    return skip;
-}
-
-SyncOpBeginRenderPass::SyncOpBeginRenderPass(std::shared_ptr<const vvl::RenderPass>&& rp_state,
-                                             std::vector<std::shared_ptr<const vvl::ImageView>>&& attachments,
-                                             const RenderPassAccessContext* rp_context)
-    : rp_state_(std::move(rp_state)), attachments_(std::move(attachments)), rp_context_(rp_context) {}
-
-bool SyncOpBeginRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
-    replay.rp_replay.emplace(rp_context_, replay.destination_context, replay.env.queue_flags);
-
-    // Only the layout transitions happen at the replay tag, loadOp's happen at a subsequent tag
-    ResourceUsageRange first_use_range = {recorded_tag, recorded_tag + 1};
-    return replay.DetectFirstUseHazard(first_use_range);
-}
-
-void SyncOpBeginRenderPass::ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const {
-    // All the needed replay state changes (for the layout transition, and context update) have to happen in ReplayValidate
-}
-
-bool SyncOpNextSubpass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
-    bool skip = false;
-    const uint32_t subpass_count = replay.rp_replay->rp_context->GetRenderPassState()->create_info.subpassCount;
-    if (replay.rp_replay->current_subpass + 1 >= subpass_count) {
+static bool ValidateEventCommand(const SyncEnvironment& env, const ReplayOperation& operation,
+                                 const AccessContext& destination_context, ResourceUsageTag exec_tag) {
+    if (const auto* set_event = GetSetEventReplay(operation)) {
+        return ValidateCmdSetEvent(env, set_event->event, set_event->src_exec_scope, exec_tag, Location(set_event->command));
+    }
+    if (const auto* reset_event = GetResetEventReplay(operation)) {
+        return ValidateCmdResetEvent(env, reset_event->event, reset_event->exec_scope, exec_tag, Location(reset_event->command));
+    }
+    if (const auto* wait_events = GetWaitEventsReplay(operation)) {
+        bool skip = false;
+        Location location(wait_events->command);
+        skip |= ValidateCmdWaitEvents(env, wait_events->events, exec_tag, location);
+        skip |= DetectCmdWaitEventsImageBarrierHazard(env, destination_context, wait_events->events, wait_events->barrier_sets,
+                                                      exec_tag, location);
         return skip;
     }
-
-    // Any store/resolve operations happen before the NextSubpass tag so we can advance to the next subpass state
-    replay.rp_replay->current_subpass++;
-
-    // Only the layout transitions happen at the replay tag, loadOp's happen at a subsequent tag
-    ResourceUsageRange first_use_range = {recorded_tag, recorded_tag + 1};
-    skip |= replay.DetectFirstUseHazard(first_use_range);
-    return skip;
+    return false;
 }
-
-void SyncOpNextSubpass::ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const {
-    // All the needed replay state changes (for the layout transition, and context update) have to happen in ReplayValidate
-}
-
-bool SyncOpEndRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
-    // The record_tag is the final layout transition. Any store/resolve operations happen before
-    // the EndRenderPass tag so we can ignore them here.
-    //
-    // The final layout transition is recorded in command buffer context (not render pass context).
-    // Do a render pass cleanup. This also switches replay to command buffer context where we can
-    // validate layout transition.
-
-    auto subpass_contexts = vvl::make_span(replay.rp_replay->destination_subpass_contexts.get(),
-                                           replay.rp_replay->rp_context->GetRenderPassState()->create_info.subpassCount);
-    replay.destination_context.ResolveChildContexts(subpass_contexts);
-    replay.rp_replay.reset();
-
-    // Validate final layout transition
-    ResourceUsageRange first_use_range = {recorded_tag, recorded_tag + 1};
-    bool skip = false;
-    skip |= replay.DetectFirstUseHazard(first_use_range);
-
-    return skip;
-}
-
-void SyncOpEndRenderPass::ReplayRecord(SyncEnvironment& env, AccessContext& access_context, ResourceUsageTag exec_tag) const {}
 
 ReplayState::ReplayState(CommandBufferContext& proxy_primary_cb_context, const CommandBufferContext& recorded_cb_context,
                          ResourceUsageTag base_tag, const Location& cb_loc)
@@ -194,6 +121,23 @@ bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange& first_use_range
     return skip;
 }
 
+void ReplayState::ApplyContextChange(const ReplayContextChange& change) {
+    if (change.type == ReplayContextChange::Type::kBeginRenderPass) {
+        rp_replay.emplace(change.rp_context, destination_context, env.queue_flags);
+    } else if (change.type == ReplayContextChange::Type::kNextSubpass) {
+        const uint32_t subpass_count = rp_replay->rp_context->GetRenderPassState()->create_info.subpassCount;
+        // Store and resolve operations happen before the next-subpass tag.
+        if (rp_replay->current_subpass + 1 < subpass_count) {
+            rp_replay->current_subpass++;
+        }
+    } else if (change.type == ReplayContextChange::Type::kEndRenderPass) {
+        const uint32_t subpass_count = rp_replay->rp_context->GetRenderPassState()->create_info.subpassCount;
+        auto subpass_contexts = vvl::make_span(rp_replay->destination_subpass_contexts.get(), subpass_count);
+        destination_context.ResolveChildContexts(subpass_contexts);
+        rp_replay.reset();
+    }
+}
+
 // Validate first-use hazards. The following describes how it works.
 //
 // The first access to a memory location can occur anywhere in the command buffer
@@ -209,22 +153,33 @@ bool ReplayState::ValidateFirstUse() {
     bool skip = false;
     ResourceUsageRange first_use_range = {0, 0};
 
-    for (const auto& sync_op : recorded_cb_context.GetSyncOps()) {
-        // Validate all first accesses until the next sync_op
-        first_use_range.end = sync_op.tag;
+    for (const ReplayEntry& entry : recorded_cb_context.GetReplayEntries()) {
+        first_use_range.end = entry.tag;
         skip |= DetectFirstUseHazard(first_use_range);
 
-        // Validate and record sync_ops that make memory accesses (for example, image layout transition)
-        skip |= sync_op.sync_op->ReplayValidate(*this, sync_op.tag);
-        sync_op.sync_op->ReplayRecord(env, GetCurrentDestinationContext(), base_tag + sync_op.tag);
+        const auto* context_change = GetReplayContextChange(entry.operation);
+        if (context_change) {
+            ApplyContextChange(*context_change);
+        }
 
-        // Advance past sync_op
-        first_use_range.begin = sync_op.tag + 1;
+        if (entry.validate_layout_transition_first_use) {
+            skip |= DetectFirstUseHazard({entry.tag, entry.tag + 1});
+        }
+
+        const bool replay_action = context_change == nullptr;
+        if (replay_action) {
+            const ResourceUsageTag exec_tag = base_tag + entry.tag;
+            skip |= ValidateEventCommand(env, entry.operation, GetCurrentDestinationContext(), exec_tag);
+            ApplyReplayAction(env, entry.operation, GetCurrentDestinationContext(), exec_tag);
+        }
+
+        first_use_range.begin = entry.tag + 1;
     }
 
-    // Validate first accesses after the last syncop
+    // Validate first accesses after the last replay entry.
     first_use_range.end = ResourceUsageRecord::kMaxIndex;
     skip |= DetectFirstUseHazard(first_use_range);
+
     return skip;
 }
 

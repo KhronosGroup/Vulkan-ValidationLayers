@@ -171,12 +171,6 @@ struct SyncEnvironment {
 
 class CommandBufferContext final : public ResourceUsageInfoProvider, public DebugNameProvider {
   public:
-    struct SyncOpEntry {
-        ResourceUsageTag tag;
-        std::unique_ptr<SyncOp> sync_op;
-        SyncOpEntry(ResourceUsageTag tag, std::unique_ptr<SyncOp>&& sync_op) : tag(tag), sync_op(std::move(sync_op)) {}
-        SyncOpEntry() = default;
-    };
     struct AsProxyContext {};
 
     CommandBufferContext(SyncValidator& sync_validator, vvl::CommandBuffer* cb_state);
@@ -256,7 +250,11 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     // The following method allows to set subcommand handles independently of the main command.
     void AddSubcommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index);
 
-    void AddSyncOp(ResourceUsageTag tag, std::unique_ptr<SyncOp>&& sync_op);
+    // NOTE: templated Operation is a GCC workaround (see the ReplayEntry constructor)
+    template <typename Operation>
+    void AddReplayEntry(ResourceUsageTag tag, bool validate_layout_transition_first_use, Operation&& operation) {
+        replay_entries_.emplace_back(tag, validate_layout_transition_first_use, std::forward<Operation>(operation));
+    }
 
     const std::vector<HandleRecord> &GetHandleRecords() const { return handles_; }
 
@@ -266,7 +264,7 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     std::shared_ptr<AccessLog> GetAccessLogShared() const { return access_log_; }
     std::shared_ptr<CommandBufferSet> GetCBReferencesShared() const { return cbs_referenced_; }
     void ImportRecordedAccessLog(const CommandBufferContext& cb_context);
-    const std::vector<SyncOpEntry> &GetSyncOps() const { return sync_ops_; };
+    const std::vector<ReplayEntry>& GetReplayEntries() const { return replay_entries_; }
 
     // DebugNameProvider
     std::string GetDebugRegionName(const ResourceUsageRecord &record) const override;
@@ -324,7 +322,7 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     // Don't need the following for an active proxy cb context
     std::vector<std::unique_ptr<RenderPassAccessContext>> render_pass_contexts_;
     RenderPassAccessContext *current_renderpass_context_;
-    std::vector<SyncOpEntry> sync_ops_;
+    std::vector<ReplayEntry> replay_entries_;
 
     // State during dynamic rendering (dynamic rendering rendering passes must be
     // contained within a single command buffer)

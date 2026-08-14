@@ -277,8 +277,7 @@ CommandBufferContext::CommandBufferContext(const SyncValidator& sync_validator, 
       events_context_(),
       environment_(sync_validator, queue_flags, kQueueIdInvalid, handle, events_context_, *this),
       render_pass_contexts_(),
-      current_renderpass_context_(),
-      sync_ops_() {}
+      current_renderpass_context_() {}
 
 CommandBufferContext::CommandBufferContext(SyncValidator& sync_validator, vvl::CommandBuffer* cb_state)
     : CommandBufferContext(sync_validator, cb_state->GetQueueFlags(), cb_state->Handle()) {
@@ -322,7 +321,7 @@ void CommandBufferContext::Reset() {
     if (cb_state_) {
         cbs_referenced_->push_back(cb_state_->shared_from_this());
     }
-    sync_ops_.clear();
+    replay_entries_.clear();
     command_number_ = 0;
     reset_count_++;
 
@@ -1371,12 +1370,14 @@ void CommandBufferContext::RecordDestroyEvent(vvl::Event* event_state) { events_
 void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContext& recorded_cb_context) {
     const AccessContext& recorded_context = recorded_cb_context.GetCbAccessContext();
 
-    // Just run through the barriers ignoring the usage from the recorded context, as Resolve will overwrite outdated state
+    // Replay synchronization actions against the current destination state. The
+    // secondary's recorded access state already includes their effects and is resolved below.
     const ResourceUsageTag base_tag = GetTagCount();
-    for (const auto& sync_op : recorded_cb_context.GetSyncOps()) {
-        // we update the range to any include layout transition first use writes,
-        // as they are stored along with the source scope (as effective barrier) when recorded
-        sync_op.sync_op->ReplayRecord(environment_, *current_context_, base_tag + sync_op.tag);
+    for (const ReplayEntry& entry : recorded_cb_context.GetReplayEntries()) {
+        const bool replay_action = GetReplayContextChange(entry.operation) == nullptr;
+        if (replay_action) {
+            ApplyReplayAction(environment_, entry.operation, *current_context_, base_tag + entry.tag);
+        }
     }
 
     ImportRecordedAccessLog(recorded_cb_context);
@@ -1488,10 +1489,6 @@ std::string CommandBufferContext::GetDebugRegionName(const ResourceUsageRecord& 
     const bool use_proxy = !proxy_label_commands_.empty();
     const auto& label_commands = use_proxy ? proxy_label_commands_ : cb_state_->GetLabelCommands();
     return vvl::CommandBuffer::GetDebugRegionName(label_commands, record.label_command_index);
-}
-
-void CommandBufferContext::AddSyncOp(ResourceUsageTag tag, std::unique_ptr<SyncOp>&& sync_op) {
-    sync_ops_.emplace_back(tag, std::move(sync_op));
 }
 
 AttachmentAccess CommandBufferContext::GetAttachmentAccess(SyncOrdering ordering, AttachmentAccessType type) const {
@@ -2010,8 +2007,7 @@ void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& r
     const ResourceUsageTag begin_tag =
         cb_context.RecordBeginRenderPass(loc.function, *rp_state, render_pass_begin.renderArea, attachments);
     const RenderPassAccessContext* rp_context = cb_context.GetCurrentRenderPassContext();
-    auto sync_op = std::make_unique<SyncOpBeginRenderPass>(std::move(rp_state), std::move(attachments), rp_context);
-    cb_context.AddSyncOp(begin_tag, std::move(sync_op));
+    cb_context.AddReplayEntry(begin_tag, true, ReplayContextChange(std::move(rp_state), std::move(attachments), rp_context));
 }
 
 void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo& subpass_begin_info,
@@ -2023,8 +2019,7 @@ void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo& subpass_
         return;  // [core validation check]: begin render pass was not called
     }
     const ResourceUsageTag tag = cb_context.RecordNextSubpass(loc.function);
-    auto sync_op = std::make_unique<SyncOpNextSubpass>();
-    cb_context.AddSyncOp(tag, std::move(sync_op));
+    cb_context.AddReplayEntry(tag, true, ReplayContextChange(ReplayContextChange::Type::kNextSubpass));
 }
 
 void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo* subpass_end_info, const Location& loc) {
@@ -2035,8 +2030,7 @@ void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo* subpass_
         return;  // [core validation check]: begin render pass was not called
     }
     const ResourceUsageTag tag = cb_context.RecordEndRenderPass(loc.function);
-    auto sync_op = std::make_unique<SyncOpEndRenderPass>();
-    cb_context.AddSyncOp(tag, std::move(sync_op));
+    cb_context.AddReplayEntry(tag, true, ReplayContextChange(ReplayContextChange::Type::kEndRenderPass));
 }
 
 void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_command_buffer, uint32_t cmd_index,
