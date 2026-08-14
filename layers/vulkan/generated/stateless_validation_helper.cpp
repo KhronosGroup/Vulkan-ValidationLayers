@@ -30316,8 +30316,6 @@ bool Device::PreCallValidateGetShaderInstrumentationValuesARM(VkDevice device, V
     skip |= context.ValidateRequiredHandle(loc.dot(Field::instrumentation), instrumentation);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pMetricBlockCount), pMetricBlockCount,
                                             "VUID-vkGetShaderInstrumentationValuesARM-pMetricBlockCount-parameter");
-    skip |= context.ValidateRequiredPointer(loc.dot(Field::pMetricValues), pMetricValues,
-                                            "VUID-vkGetShaderInstrumentationValuesARM-pMetricValues-parameter");
     skip |=
         context.ValidateReservedFlags(loc.dot(Field::flags), flags, "VUID-vkGetShaderInstrumentationValuesARM-flags-zerobitmask");
     return skip;
