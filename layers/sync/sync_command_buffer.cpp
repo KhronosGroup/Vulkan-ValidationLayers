@@ -19,7 +19,7 @@
 #include "sync/sync_command_buffer.h"
 #include "error_message/error_location.h"
 #include "sync/sync_image.h"
-#include "sync/sync_op.h"
+#include "sync/sync_replay.h"
 #include "sync/sync_reporting.h"
 #include "sync/sync_validation.h"
 #include "state_tracker/descriptor_sets.h"

@@ -18,7 +18,7 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include "sync/sync_render_pass.h"
 #include "sync/sync_validation.h"
-#include "sync/sync_op.h"
+#include "sync/sync_replay.h"
 #include "sync/sync_image.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
