@@ -73,11 +73,12 @@ bool Device::ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDevi
                          loc.dot(Field::pCreateInfo).dot(Field::pNext), "chain contains VkImageSwapchainCreateInfoKHR.\n%s",
                          PrintPNextChain(Struct::VkImageCreateInfo, create_info.pNext).c_str());
     }
-    if (vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(create_info.pNext)) {
-        skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06776", device,
-                         loc.dot(Field::pCreateInfo).dot(Field::pNext),
-                         "chain contains VkImageDrmFormatModifierExplicitCreateInfoEXT.\n%s",
-                         PrintPNextChain(Struct::VkImageCreateInfo, create_info.pNext).c_str());
+    if (create_info.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+        skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-12489", device,
+                         loc.dot(Field::pCreateInfo).dot(Field::tiling),
+                         "is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT\nThe issue is that there is currently no way for the "
+                         "application to determine which format modifier in the specified list the implementation will choose, and "
+                         "hence no way to determine which memory plane aspects are valid.");
     }
 
     const bool has_disjoint = (create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0;
@@ -98,7 +99,7 @@ bool Device::ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDevi
                          "pNext chain contains VkExternalFormatANDROID with externalFormat %" PRIu64 ".", external_format);
     }
 
-    if (create_info.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT || has_disjoint) {
+    if (!has_disjoint) {
         skip |= context.ValidateFlags(loc.dot(Field::planeAspect), vvl::FlagBitmask::VkImageAspectFlagBits,
                                       AllVkImageAspectFlagBits, memory_requirements.planeAspect, kOptionalSingleBit,
                                       "VUID-VkDeviceImageMemoryRequirements-planeAspect-12399", nullptr, false);
