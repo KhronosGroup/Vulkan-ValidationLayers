@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "sync/sync_op.h"
+#include "sync/sync_replay.h"
 #include "sync/sync_render_pass.h"
 #include "sync/sync_command_buffer.h"
 #include "sync/sync_event.h"

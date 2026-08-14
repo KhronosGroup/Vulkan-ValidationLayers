@@ -17,8 +17,8 @@
 #pragma once
 
 #include "sync/sync_event.h"
-#include "sync/sync_op.h"
 #include "sync/sync_render_pass.h"
+#include "sync/sync_replay.h"
 #include "state_tracker/cmd_buffer_state.h"
 
 struct RecordObject;
