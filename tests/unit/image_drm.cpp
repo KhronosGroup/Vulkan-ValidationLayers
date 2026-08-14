@@ -232,15 +232,14 @@ TEST_F(NegativeImageDrm, GetImageSubresourceLayoutPlane) {
 }
 
 TEST_F(NegativeImageDrm, DeviceImageMemoryRequirements) {
-    TEST_DESCRIPTION("Validate usage of VkDeviceImageMemoryRequirementsKHR.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicImageDrm());
 
-    VkSubresourceLayout planeLayout = {0, 0, 0, 0, 0};
+    VkSubresourceLayout plane_layout = {0, 0, 0, 0, 0};
     VkImageDrmFormatModifierExplicitCreateInfoEXT drm_format_modifier_create_info = vku::InitStructHelper();
     drm_format_modifier_create_info.drmFormatModifierPlaneCount = 1;
-    drm_format_modifier_create_info.pPlaneLayouts = &planeLayout;
+    drm_format_modifier_create_info.pPlaneLayouts = &plane_layout;
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper(&drm_format_modifier_create_info);
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -248,7 +247,7 @@ TEST_F(NegativeImageDrm, DeviceImageMemoryRequirements) {
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.arrayLayers = 1;
 
@@ -258,7 +257,7 @@ TEST_F(NegativeImageDrm, DeviceImageMemoryRequirements) {
 
     VkMemoryRequirements2 memory_requirements = vku::InitStructHelper();
 
-    m_errorMonitor->SetDesiredError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06776");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-12489");
     vk::GetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
     m_errorMonitor->VerifyFound();
 }
@@ -616,14 +615,12 @@ TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeImageDrm, DisjointPlaneAspect) {
+TEST_F(NegativeImageDrm, NonDisjointPlaneAspect) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(InitBasicImageDrm());
 
     VkImageCreateInfo image_create_info =
         vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
 
     VkDeviceImageMemoryRequirements image_mem_reqs = vku::InitStructHelper();
     image_mem_reqs.pCreateInfo = &image_create_info;
