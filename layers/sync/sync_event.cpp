@@ -281,7 +281,7 @@ bool ValidateCmdSetEvent(const SyncEnvironment& env, const std::shared_ptr<const
 }
 
 bool ValidateCmdResetEvent(const SyncEnvironment& env, const std::shared_ptr<const vvl::Event>& event,
-                           const SyncExecScope& exec_scope, const ResourceUsageTag base_tag, const Location& loc) {
+                           const SyncExecScope& exec_scope, ResourceUsageTag base_tag, const Location& loc) {
     bool skip = false;
     const auto* sync_event = env.events_context.Get(event);
     if (!sync_event) {
@@ -300,92 +300,71 @@ bool ValidateCmdResetEvent(const SyncEnvironment& env, const std::shared_ptr<con
     return skip;
 }
 
-bool ValidateCmdWaitEvents(const SyncEnvironment& env, const AccessContext& access_context,
-                           const std::vector<std::shared_ptr<const vvl::Event>>& events,
-                           const vvl::span<const BarrierSet>& barrier_sets, const ResourceUsageTag base_tag, const Location& loc) {
+bool ValidateCmdWaitEvents(const SyncEnvironment& env, const std::vector<std::shared_ptr<const vvl::Event>>& events,
+                           const ResourceUsageTag base_tag, const Location& loc) {
     bool skip = false;
-
-    // This is only interesting at record and not replay (Execute/Submit) time
-    if (base_tag == ResourceUsageRecord::kMaxIndex) {
-        for (size_t barrier_set_index = 0; barrier_set_index < barrier_sets.size(); barrier_set_index++) {
-            const auto& barrier_set = barrier_sets[barrier_set_index];
-            if (barrier_set.single_exec_scope) {
-                if (barrier_set.src_exec_scope.stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
-                    const std::string vuid =
-                        std::string("SYNC-") + vvl::String(loc.function) + std::string("-hostevent-unsupported");
-                    env.validator.LogInfo(vuid, env.handle, loc,
-                                          "srcStageMask includes %s, unsupported by synchronization validation.",
-                                          string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT));
-                } else {
-                    const auto& barriers = barrier_set.memory_barriers;
-                    for (size_t barrier_index = 0; barrier_index < barriers.size(); barrier_index++) {
-                        const auto& barrier = barriers[barrier_index];
-                        if (barrier.src_exec_scope.stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
-                            const std::string vuid =
-                                std::string("SYNC-") + vvl::String(loc.function) + std::string("-hostevent-unsupported");
-
-                            env.validator.LogInfo(vuid, env.handle, loc,
-                                                  "srcStageMask %s of %s %zu, %s %zu, unsupported by synchronization validation.",
-                                                  string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT), "pDependencyInfo",
-                                                  barrier_set_index, "pMemoryBarriers", barrier_index);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // The rest is common to record time and replay time
-    size_t barrier_set_index = 0;
-    size_t barrier_set_incr = (barrier_sets.size() == 1) ? 0 : 1;
     for (const auto& event : events) {
         const auto* sync_event = env.events_context.Get(event);
-        const auto& barrier_set = barrier_sets[barrier_set_index];
         if (!sync_event || !sync_event->first_scope) {
-            barrier_set_index += barrier_set_incr;
-            continue;  // Core, Lifetimes, or Param check needs to catch invalid events.
+            continue;  // [core validation check]: invalid event
         }
-
-        // For replay calls, don't revalidate "same command buffer" events
         if (sync_event->last_command_tag >= base_tag) {
+            // for replay calls, don't revalidate "same command buffer" events
             continue;
         }
-
-        const VkEvent event_handle = sync_event->event->VkHandle();
-
-        // TODO: Cleanup this error message
         if (sync_event->unsynchronized_set != vvl::Func::Empty) {
-            // Issue error message that Wait is waiting on an signal subject to race condition, and is thus ignored for
-            // this event
-            const char* const vuid = "SYNC-vkCmdWaitEvents-unsynchronized-setops";
-            const char* const message = "%s Unsychronized %s calls result in race conditions w.r.t. event signalling, %s %s";
-            const char* const reason = "First synchronization scope is undefined.";
-            skip |=
-                env.validator.LogError(vuid, event_handle, loc, message, env.validator.FormatHandle(event_handle).c_str(),
-                                       vvl::String(sync_event->last_command), reason, "Wait operation is ignored for this event.");
+            skip |= env.validator.LogError("SYNC-vkCmdWaitEvents-unsynchronized-setops", sync_event->event->VkHandle(), loc,
+                                           "does not create an execution dependency with the previous %s for %s.",
+                                           vvl::String(sync_event->last_command),
+                                           env.validator.FormatHandle(sync_event->event->Handle()).c_str());
         }
-        if (barrier_set.image_barriers.size()) {
-            const auto& image_memory_barriers = barrier_set.image_barriers;
-            for (const auto& image_memory_barrier : image_memory_barriers) {
-                if (!image_memory_barrier.layout_transition) continue;
-                const auto* image_state = image_memory_barrier.image.get();
-                if (!image_state) continue;
-                const auto& subresource_range = image_memory_barrier.subresource_range;
-                const auto& src_access_scope = image_memory_barrier.barrier.src_access_scope;
-                const auto hazard = access_context.DetectImageBarrierHazard(
-                    *image_state, subresource_range, sync_event->scope.exec_scope, src_access_scope, env.queue_id,
-                    sync_event->FirstScope(), sync_event->first_scope_tag, AccessContext::DetectOptions::kDetectAll);
-                if (hazard.IsHazard()) {
-                    LogObjectList objlist(env.handle, image_state->Handle());
-                    const std::string resource_description = env.validator.FormatHandle(image_state->Handle());
-                    const std::string error = env.validator.error_messages_.ImageBarrierError(
-                        env, hazard, loc.function, resource_description, image_memory_barrier);
-                    skip |= env.validator.SyncError(hazard.Hazard(), image_state->Handle(), loc, error);
-                    break;
-                }
+    }
+    return skip;
+}
+
+bool DetectCmdWaitEventsImageBarrierHazard(const SyncEnvironment& env, const AccessContext& access_context,
+                                           const std::vector<std::shared_ptr<const vvl::Event>>& events,
+                                           const vvl::span<const BarrierSet>& barrier_sets, ResourceUsageTag base_tag,
+                                           const Location& loc) {
+    bool skip = false;
+
+    size_t index = 0;
+    size_t index_incr = (barrier_sets.size() == 1) ? 0 : 1;
+    for (const auto& event : events) {
+        const auto* sync_event = env.events_context.Get(event);
+        if (!sync_event || !sync_event->first_scope) {
+            index += index_incr;
+            continue;  // [core validation check]: invalid event
+        }
+        if (sync_event->last_command_tag >= base_tag) {
+            // for replay calls, don't revalidate "same command buffer" events
+            index += index_incr;
+            continue;
+        }
+        const auto& barrier_set = barrier_sets[index];
+        if (barrier_set.image_barriers.empty()) {
+            index += index_incr;
+            continue;
+        }
+        for (const SyncImageBarrier& barrier : barrier_set.image_barriers) {
+            const auto& image = barrier.image;
+            if (!image || !barrier.layout_transition) {
+                continue;
+            }
+            const HazardResult hazard = access_context.DetectImageBarrierHazard(
+                *image, barrier.subresource_range, sync_event->scope.exec_scope, barrier.barrier.src_access_scope, env.queue_id,
+                sync_event->FirstScope(), sync_event->first_scope_tag, AccessContext::DetectOptions::kDetectAll);
+
+            if (hazard.IsHazard()) {
+                LogObjectList objlist(env.handle, image->Handle());
+                const auto& messages = env.validator.error_messages_;
+                const auto resource_description = env.validator.FormatHandle(image->Handle());
+                const auto error = messages.ImageBarrierError(env, hazard, loc.function, resource_description, barrier);
+                skip |= env.validator.SyncError(hazard.Hazard(), image->Handle(), loc, error);
+                break;
             }
         }
-        barrier_set_index += barrier_set_incr;
+        index += index_incr;
     }
     return skip;
 }

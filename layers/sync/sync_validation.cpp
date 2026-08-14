@@ -2363,8 +2363,14 @@ bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
         events[i] = Get<vvl::Event>(pEvents[i]);
     }
 
-    return ValidateCmdWaitEvents(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), events,
-                                 vvl::make_span(&barrier_set, 1), ResourceUsageRecord::kMaxIndex, error_obj.location);
+    const SyncEnvironment& env = cb_context.GetSyncEnvironment();
+    const auto barrier_sets = vvl::make_span(&barrier_set, 1);
+
+    bool skip = false;
+    skip |= ValidateCmdWaitEvents(env, events, ResourceUsageRecord::kMaxIndex, error_obj.location);
+    skip |= DetectCmdWaitEventsImageBarrierHazard(env, cb_context.GetCurrentAccessContext(), events, barrier_sets,
+                                                  ResourceUsageRecord::kMaxIndex, error_obj.location);
+    return skip;
 }
 
 void SyncValidator::RecordCmdWaitEvents(CommandBufferContext& cb_context, std::vector<std::shared_ptr<const vvl::Event>>&& events,
@@ -2430,8 +2436,13 @@ bool SyncValidator::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer,
     for (uint32_t i = 0; i < eventCount; i++) {
         barrier_sets[i] = BarrierSet(*this, queue_flags, pDependencyInfos[i]);
     }
-    return ValidateCmdWaitEvents(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), events, barrier_sets,
-                                 ResourceUsageRecord::kMaxIndex, error_obj.location);
+
+    const SyncEnvironment& env = cb_context.GetSyncEnvironment();
+
+    skip |= ValidateCmdWaitEvents(env, events, ResourceUsageRecord::kMaxIndex, error_obj.location);
+    skip |= DetectCmdWaitEventsImageBarrierHazard(env, cb_context.GetCurrentAccessContext(), events, barrier_sets,
+                                                  ResourceUsageRecord::kMaxIndex, error_obj.location);
+    return skip;
 }
 
 void SyncValidator::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,

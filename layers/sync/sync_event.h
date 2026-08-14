@@ -117,9 +117,13 @@ bool ValidateCmdSetEvent(const SyncEnvironment& env, const std::shared_ptr<const
 bool ValidateCmdResetEvent(const SyncEnvironment& env, const std::shared_ptr<const vvl::Event>& event,
                            const SyncExecScope& exec_scope, ResourceUsageTag base_tag, const Location& loc);
 
-bool ValidateCmdWaitEvents(const SyncEnvironment& env, const AccessContext& access_context,
-                           const std::vector<std::shared_ptr<const vvl::Event>>& events,
-                           const vvl::span<const BarrierSet>& barrier_sets, const ResourceUsageTag base_tag, const Location& loc);
+bool ValidateCmdWaitEvents(const SyncEnvironment& env, const std::vector<std::shared_ptr<const vvl::Event>>& events,
+                           const ResourceUsageTag base_tag, const Location& loc);
+
+bool DetectCmdWaitEventsImageBarrierHazard(const SyncEnvironment& env, const AccessContext& access_context,
+                                           const std::vector<std::shared_ptr<const vvl::Event>>& events,
+                                           const vvl::span<const BarrierSet>& barrier_sets, ResourceUsageTag base_tag,
+                                           const Location& loc);
 
 // Main functionality of the correspodning Record methods, which perform additional setup
 void ApplyCmdSetEvent(SyncEnvironment& env, const std::shared_ptr<const vvl::Event>& event, const SyncExecScope& src_exec_scope,
