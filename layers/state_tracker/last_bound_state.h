@@ -55,6 +55,9 @@ struct LastBound {
     std::shared_ptr<vvl::ShaderObject> shader_object_states[kShaderObjectStageCount]{nullptr};
     // The compatible layout used binding descriptor sets (track location to provide better error message)
     std::shared_ptr<const vvl::PipelineLayout> desc_set_pipeline_layout;
+    // Because you can have a shader with push constants and no descriptors, we need to track both pipeline layout
+    // We normally will use |desc_set_pipeline_layout| as these layouts must be compatible at draw/dispatch time
+    std::shared_ptr<const vvl::PipelineLayout> push_constant_pipeline_layout;
     vvl::Func desc_set_bound_command = vvl::Func::Empty;  // will be something like vkCmdBindDescriptorSets
     std::shared_ptr<vvl::DescriptorSet> push_descriptor_set;
 

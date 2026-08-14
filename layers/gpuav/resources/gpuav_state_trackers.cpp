@@ -119,17 +119,6 @@ void CommandBufferSubState::Reset(const Location& loc) {
 
 void CommandBufferSubState::RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset,
                                                 uint32_t size, const void* values) {
-    if (IsStageInPipelineBindPoint(stage_flags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
-        push_constant_latest_used_layout[vvl::BindPointGraphics] = layout;
-    } else if (IsStageInPipelineBindPoint(stage_flags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
-        push_constant_latest_used_layout[vvl::BindPointCompute] = layout;
-    } else if (IsStageInPipelineBindPoint(stage_flags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
-        push_constant_latest_used_layout[vvl::BindPointRayTracing] = layout;
-    } else {
-        // Need to handle new binding point
-        assert(false);
-    }
-
     PushConstantData push_constant_data;
     push_constant_data.layout = layout;
     push_constant_data.stage_flags = stage_flags;
@@ -146,10 +135,7 @@ void CommandBufferSubState::RecordPushConstants(VkPipelineLayout layout, VkShade
     push_constant_data_chunks.emplace_back(push_constant_data);
 }
 
-void CommandBufferSubState::ClearPushConstants() {
-    push_constant_data_chunks.clear();
-    push_constant_latest_used_layout.fill(VK_NULL_HANDLE);
-}
+void CommandBufferSubState::ClearPushConstants() { push_constant_data_chunks.clear(); }
 
 void CommandBufferSubState::RecordPushData(const VkPushDataInfoEXT& push_data_info) {
     if (push_data_value.empty()) {

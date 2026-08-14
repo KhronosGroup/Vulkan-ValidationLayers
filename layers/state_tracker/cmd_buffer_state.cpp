@@ -2379,7 +2379,7 @@ void CommandBuffer::RecordBarrierObjects(const VkDependencyInfo& dep_info, const
     }
 }
 
-void CommandBuffer::RecordPushConstants(const vvl::PipelineLayout& pipeline_layout_state, VkShaderStageFlags stage_flags,
+void CommandBuffer::RecordPushConstants(std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, VkShaderStageFlags stage_flags,
                                         uint32_t offset, uint32_t size, const void* values) {
     // Discussed in details in https://github.com/KhronosGroup/Vulkan-Docs/issues/1081
     // Internal discussion and CTS were written to prove that this is not called after an incompatible vkCmdBindPipeline
@@ -2390,15 +2390,18 @@ void CommandBuffer::RecordPushConstants(const vvl::PipelineLayout& pipeline_layo
     //
     // Part of this assumes apps at draw/dispatch/traceRays/etc time will have it properly compatible or else other VU will be
     // triggered
-    if (push_constant_ranges_layout != pipeline_layout_state.push_constant_ranges_layout) {
-        push_constant_ranges_layout = pipeline_layout_state.push_constant_ranges_layout;
+    if (push_constant_ranges_layout != pipeline_layout->push_constant_ranges_layout) {
+        push_constant_ranges_layout = pipeline_layout->push_constant_ranges_layout;
         for (auto& item : sub_states_) {
             item.second->ClearPushConstants();
         }
     }
 
+    const VkPipelineBindPoint bind_point = ConvertStageToBindPoint(stage_flags);
+    lastBound[ConvertToVvlBindPoint(bind_point)].push_constant_pipeline_layout = pipeline_layout;
+
     for (auto& item : sub_states_) {
-        item.second->RecordPushConstants(pipeline_layout_state.VkHandle(), stage_flags, offset, size, values);
+        item.second->RecordPushConstants(pipeline_layout->VkHandle(), stage_flags, offset, size, values);
 
         // vkspec.html#descriptorheaps-invalidate-sets
         item.second->ClearPushData();

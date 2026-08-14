@@ -90,6 +90,7 @@ void LastBound::Reset() {
         shader_object_states[i] = nullptr;
     }
     desc_set_pipeline_layout.reset();
+    push_constant_pipeline_layout.reset();
     if (push_descriptor_set) {
         cb_state.RemoveChild(push_descriptor_set);
         push_descriptor_set->Destroy();
@@ -1087,6 +1088,12 @@ vvl::DescriptorMode LastBound::GetActionDescriptorMode() const {
         }
         if (desc_set_pipeline_layout) {
             if (desc_set_pipeline_layout->has_descriptor_buffer) {
+                return vvl::DescriptorModeBuffer;
+            } else {
+                return vvl::DescriptorModeClassic;
+            }
+        } else if (push_constant_pipeline_layout) {
+            if (push_constant_pipeline_layout->has_descriptor_buffer) {
                 return vvl::DescriptorModeBuffer;
             } else {
                 return vvl::DescriptorModeClassic;

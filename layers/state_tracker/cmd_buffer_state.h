@@ -760,8 +760,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordWaitEvents(vvl::span<const VkEvent> events, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                           const Location& loc);
     void RecordWaitEvent2(VkEvent event, const VkDependencyInfo& dependency_info, const Location& dep_info_loc);
-    void RecordPushConstants(const vvl::PipelineLayout& pipeline_layout_state, VkShaderStageFlags stage_flags, uint32_t offset,
-                             uint32_t size, const void *values);
+    void RecordPushConstants(std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, VkShaderStageFlags stage_flags,
+                             uint32_t offset, uint32_t size, const void* values);
     void RecordPushData(const VkPushDataInfoEXT& push_data_info, const Location& loc);
     bool VerifyPushData(uint32_t offset, uint32_t size) const;
 

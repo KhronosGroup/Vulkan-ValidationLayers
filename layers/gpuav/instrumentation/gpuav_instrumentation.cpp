@@ -667,14 +667,12 @@ void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferS
             inst_binding_pipe_layout.source = PipelineLayoutSource::LastBoundPipeline;
         } else {
             // App uses shader objects
-            const vvl::BindPoint vvl_bind_point = ConvertToVvlBindPoint(last_bound.bind_point);
             if (last_bound.desc_set_pipeline_layout) {
                 inst_binding_pipe_layout.state = last_bound.desc_set_pipeline_layout;
                 inst_binding_pipe_layout.handle = inst_binding_pipe_layout.state->VkHandle();
                 inst_binding_pipe_layout.source = PipelineLayoutSource::LastBoundDescriptorSet;
-            } else if (cb_state.push_constant_latest_used_layout[vvl_bind_point] != VK_NULL_HANDLE) {
-                inst_binding_pipe_layout.state =
-                    gpuav.Get<vvl::PipelineLayout>(cb_state.push_constant_latest_used_layout[vvl_bind_point]);
+            } else if (last_bound.push_constant_pipeline_layout) {
+                inst_binding_pipe_layout.state = last_bound.push_constant_pipeline_layout;
                 inst_binding_pipe_layout.handle = inst_binding_pipe_layout.state->VkHandle();
                 inst_binding_pipe_layout.source = PipelineLayoutSource::LastPushedConstants;
             }
