@@ -131,15 +131,26 @@ bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreat
                                   VendorSpecificTag(kBPVendorArm));
     }
 
-    const auto* graphics_lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
     if (create_info.renderPass == VK_NULL_HANDLE &&
-        !vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext) &&
-        (!graphics_lib_info ||
-         (graphics_lib_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
-                                      VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT)) != 0)) {
-        skip |= LogWarning(
-            "BestPractices-Pipeline-NoRendering", device, create_info_loc,
-            "renderPass is VK_NULL_HANDLE and pNext chain does not contain an instance of VkPipelineRenderingCreateInfo.");
+        !vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext)) {
+        const auto* graphics_lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
+        const VkGraphicsPipelineLibraryFlagsEXT rendering_flags =
+            VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
+        bool missing_rendering_info = !graphics_lib_info || (graphics_lib_info->flags & rendering_flags) != 0;
+        if (pipeline.library_create_info) {
+            for (uint32_t i = 0; i < pipeline.library_create_info->libraryCount; ++i) {
+                const auto lib_state = Get<vvl::Pipeline>(pipeline.library_create_info->pLibraries[i]);
+                if (lib_state && (lib_state->graphics_lib_type & rendering_flags) && lib_state->rendering_create_info) {
+                    missing_rendering_info = false;
+                    break;
+                }
+            }
+        }
+        if (missing_rendering_info) {
+            skip |= LogWarning(
+                "BestPractices-Pipeline-NoRendering", device, create_info_loc,
+                "renderPass is VK_NULL_HANDLE and pNext chain does not contain an instance of VkPipelineRenderingCreateInfo.");
+        }
     }
 
     if (VendorCheckEnabled(kBPVendorArm)) {
