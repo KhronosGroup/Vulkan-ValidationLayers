@@ -453,7 +453,7 @@ bool CoreChecks::ValidateImageSwapchain(const VkImageCreateInfo& create_info, co
                          "was created with imageArrayLayers %" PRIu32 " which doesn't match pCreateInfo->arrayLayers %" PRIu32 ".",
                          swapchain_state->create_info.imageArrayLayers, create_info.arrayLayers);
     }
-    if (usage != swapchain_state->create_info.imageUsage) {
+    if (usage != swapchain_state->image_usage) {
         skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
                          "was created with imageUsage %s which doesn't match pCreateInfo->usage %s.",
                          string_VkImageUsageFlags2KHR(swapchain_state->image_usage).c_str(),
