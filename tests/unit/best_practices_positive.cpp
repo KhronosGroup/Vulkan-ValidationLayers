@@ -561,3 +561,65 @@ TEST_F(PositiveBestPractices, CreateDeviceWithFeatures) {
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kPerformanceWarningBit);
     vkt::Device device(phys_device_obj, device_ci);
 }
+
+TEST_F(PositiveBestPractices, PipelineLibraryRendering) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+
+    VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1u;
+    pipeline_rendering_info.pColorAttachmentFormats = &format;
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const vkt::PipelineLayout pipeline_layout(*m_device);
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci, &pipeline_rendering_info);
+    pre_raster_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pre_raster_lib.gp_ci_.layout = pipeline_layout;
+    pre_raster_lib.CreateGraphicsPipeline();
+
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &pipeline_rendering_info);
+    frag_shader_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    frag_shader_lib.gp_ci_.pDepthStencilState = &frag_shader_lib.ds_ci_;
+    frag_shader_lib.gp_ci_.layout = pipeline_layout;
+    frag_shader_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo(&pipeline_rendering_info);
+    frag_out_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[4] = {
+        vertex_input_lib,
+        pre_raster_lib,
+        frag_shader_lib,
+        frag_out_lib,
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = 4u;
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = pipeline_layout;
+    exe_pipe_ci.renderPass = VK_NULL_HANDLE;
+
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kPerformanceWarningBit);
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+}
