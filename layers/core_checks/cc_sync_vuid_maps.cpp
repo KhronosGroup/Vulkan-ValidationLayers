@@ -737,17 +737,6 @@ static const vvl::unordered_map<VkAccessFlags2, std::array<Entry, 8>>& GetAccess
          }}},
         {VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT,
          ValueType{{
-             {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-03920"},
-             {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-03920"},
-             {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "VUID-VkBufferMemoryBarrier2-srcAccessMask-03920"},
-             {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "VUID-VkBufferMemoryBarrier2-dstAccessMask-03920"},
-             {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-03920"},
-             {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-03920"},
-             {Key(Struct::VkMemoryRangeBarrierKHR, Field::srcAccessMask), "VUID-VkMemoryRangeBarrierKHR-srcAccessMask-03920"},
-             {Key(Struct::VkMemoryRangeBarrierKHR, Field::dstAccessMask), "VUID-VkMemoryRangeBarrierKHR-dstAccessMask-03920"},
-         }}},
-        {VK_ACCESS_2_SHADING_RATE_IMAGE_READ_BIT_NV,
-         ValueType{{
              {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-03922"},
              {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-03922"},
              {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "VUID-VkBufferMemoryBarrier2-srcAccessMask-03922"},
@@ -757,7 +746,7 @@ static const vvl::unordered_map<VkAccessFlags2, std::array<Entry, 8>>& GetAccess
              {Key(Struct::VkMemoryRangeBarrierKHR, Field::srcAccessMask), "VUID-VkMemoryRangeBarrierKHR-srcAccessMask-03922"},
              {Key(Struct::VkMemoryRangeBarrierKHR, Field::dstAccessMask), "VUID-VkMemoryRangeBarrierKHR-dstAccessMask-03922"},
          }}},
-        {VK_ACCESS_2_COMMAND_PREPROCESS_READ_BIT_NV,
+        {VK_ACCESS_2_SHADING_RATE_IMAGE_READ_BIT_NV,
          ValueType{{
              {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-03923"},
              {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-03923"},
@@ -768,7 +757,7 @@ static const vvl::unordered_map<VkAccessFlags2, std::array<Entry, 8>>& GetAccess
              {Key(Struct::VkMemoryRangeBarrierKHR, Field::srcAccessMask), "VUID-VkMemoryRangeBarrierKHR-srcAccessMask-03923"},
              {Key(Struct::VkMemoryRangeBarrierKHR, Field::dstAccessMask), "VUID-VkMemoryRangeBarrierKHR-dstAccessMask-03923"},
          }}},
-        {VK_ACCESS_2_COMMAND_PREPROCESS_WRITE_BIT_NV,
+        {VK_ACCESS_2_COMMAND_PREPROCESS_READ_BIT_NV,
          ValueType{{
              {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-03924"},
              {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-03924"},
@@ -779,7 +768,7 @@ static const vvl::unordered_map<VkAccessFlags2, std::array<Entry, 8>>& GetAccess
              {Key(Struct::VkMemoryRangeBarrierKHR, Field::srcAccessMask), "VUID-VkMemoryRangeBarrierKHR-srcAccessMask-03924"},
              {Key(Struct::VkMemoryRangeBarrierKHR, Field::dstAccessMask), "VUID-VkMemoryRangeBarrierKHR-dstAccessMask-03924"},
          }}},
-        {VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV,
+        {VK_ACCESS_2_COMMAND_PREPROCESS_WRITE_BIT_NV,
          ValueType{{
              {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-03925"},
              {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-03925"},
