@@ -277,10 +277,10 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
             // https://registry.khronos.org/vulkan/specs/latest/man/html/VkSharingMode.html
             VkQueueFamilyOwnershipTransferPropertiesKHR qfot_props = vku::InitStructHelper();
             uint32_t qf_count = last_usage.queue_family_index + 1;
-            std::vector<VkQueueFamilyProperties2> qf_props(qf_count);
+            std::vector<VkQueueFamilyProperties2> qf_props(qf_count, vku::InitStruct<VkQueueFamilyProperties2>());
             qf_props.back().pNext = &qfot_props;
             DispatchGetPhysicalDeviceQueueFamilyProperties2(cbs.dev_data.physical_device, &qf_count, qf_props.data());
-            qfot_required = (qfot_props.optimalImageTransferToQueueFamilies & (1 << last_usage.queue_family_index)) == 0;
+            qfot_required = (qfot_props.optimalImageTransferToQueueFamilies & (1u << last_usage.queue_family_index)) == 0;
         }
     }
 
