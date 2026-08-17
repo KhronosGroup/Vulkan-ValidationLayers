@@ -1799,9 +1799,8 @@ void CommandBufferSubState::RecordResolveImage(vvl::Image& src_image_state, vvl:
     auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_image_state.Handle());
 
     for (const auto& resolve_region : vvl::make_span(regions, region_count)) {
-        UpdateImageAccessState(context, src_image_state, SYNC_RESOLVE_TRANSFER_READ,
-                               RangeFromLayers(resolve_region.srcSubresource), resolve_region.srcOffset, resolve_region.extent,
-                               src_tag_ex);
+        UpdateImageAccessState(context, src_image_state, SYNC_RESOLVE_TRANSFER_READ, RangeFromLayers(resolve_region.srcSubresource),
+                               resolve_region.srcOffset, resolve_region.extent, src_tag_ex);
         UpdateImageAccessState(context, dst_image_state, SYNC_RESOLVE_TRANSFER_WRITE,
                                RangeFromLayers(resolve_region.dstSubresource), resolve_region.dstOffset, resolve_region.extent,
                                dst_tag_ex);
@@ -1817,9 +1816,8 @@ void CommandBufferSubState::RecordResolveImage2(vvl::Image& src_image_state, vvl
     auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_image_state.Handle());
 
     for (const auto& resolve_region : vvl::make_span(regions, region_count)) {
-        UpdateImageAccessState(context, src_image_state, SYNC_RESOLVE_TRANSFER_READ,
-                               RangeFromLayers(resolve_region.srcSubresource), resolve_region.srcOffset, resolve_region.extent,
-                               src_tag_ex);
+        UpdateImageAccessState(context, src_image_state, SYNC_RESOLVE_TRANSFER_READ, RangeFromLayers(resolve_region.srcSubresource),
+                               resolve_region.srcOffset, resolve_region.extent, src_tag_ex);
         UpdateImageAccessState(context, dst_image_state, SYNC_RESOLVE_TRANSFER_WRITE,
                                RangeFromLayers(resolve_region.dstSubresource), resolve_region.dstOffset, resolve_region.extent,
                                dst_tag_ex);

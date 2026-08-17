@@ -115,7 +115,7 @@ struct SignalsUpdate {
 
     // Register submission batch signals.
     // Return true if at least one timeline signal was registered
-    bool RegisterSignals(const BatchContextPtr &batch, const vvl::span<const VkSemaphoreSubmitInfo> &submit_signals);
+    bool RegisterSignals(const BatchContextPtr& batch, const vvl::span<const VkSemaphoreSubmitInfo>& submit_signals);
 
     // Return resolving binary signal. Empty result in the case of a validation error
     std::optional<SignalInfo> OnBinaryWait(VkSemaphore semaphore);
@@ -123,7 +123,7 @@ struct SignalsUpdate {
     // Return resolving timeline signal. Empty result if it is a wait-before-signal
     std::optional<SignalInfo> OnTimelineWait(VkSemaphore semaphore, uint64_t wait_value);
 
-    SignalsUpdate(const SyncValidator &sync_validator) : sync_validator_(sync_validator) {}
+    SignalsUpdate(const SyncValidator& sync_validator) : sync_validator_(sync_validator) {}
 
   private:
     void OnBinarySignal(const vvl::Semaphore& semaphore_state, const BatchContextPtr& batch,
@@ -133,7 +133,7 @@ struct SignalsUpdate {
                           const VkSemaphoreSubmitInfo& submit_signal);
 
   private:
-    const SyncValidator &sync_validator_;
+    const SyncValidator& sync_validator_;
 };
 
 struct FenceHostSyncPoint {
@@ -169,11 +169,11 @@ struct PresentedImage : public PresentedImageRecord {
     subresource_adapter::ImageRangeGenerator range_gen;
 
     PresentedImage() = default;
-    void UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext &access_context, SyncFlags flags = 0) const;
-    PresentedImage(SyncValidator &sync_state, std::shared_ptr<QueueBatchContext> batch, VkSwapchainKHR swapchain,
+    void UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext& access_context, SyncFlags flags = 0) const;
+    PresentedImage(SyncValidator& sync_state, std::shared_ptr<QueueBatchContext> batch, VkSwapchainKHR swapchain,
                    uint32_t image_index, uint32_t present_index, ResourceUsageTag present_tag_);
     // For non-previsously presented images..
-    PresentedImage(std::shared_ptr<vvl::Swapchain> &&swapchain, uint32_t at_index);
+    PresentedImage(std::shared_ptr<vvl::Swapchain>&& swapchain, uint32_t at_index);
     bool Invalid() const;
     void ExportToSwapchain();
     void SetImage(uint32_t at_index);
@@ -192,26 +192,26 @@ class BatchAccessLog {
     };
 
     struct AccessRecord {
-        const BatchRecord *batch;
-        const ResourceUsageRecord *record;
-        const DebugNameProvider *debug_name_provider;
+        const BatchRecord* batch;
+        const ResourceUsageRecord* record;
+        const DebugNameProvider* debug_name_provider;
         bool IsValid() const { return batch && record; }
     };
 
     struct CBSubmitLog : DebugNameProvider {
       public:
         CBSubmitLog() = default;
-        CBSubmitLog(const CBSubmitLog &batch) = default;
-        CBSubmitLog(CBSubmitLog &&other) = default;
-        CBSubmitLog &operator=(const CBSubmitLog &other) = default;
-        CBSubmitLog &operator=(CBSubmitLog &&other) = default;
+        CBSubmitLog(const CBSubmitLog& batch) = default;
+        CBSubmitLog(CBSubmitLog&& other) = default;
+        CBSubmitLog& operator=(const CBSubmitLog& other) = default;
+        CBSubmitLog& operator=(CBSubmitLog&& other) = default;
         CBSubmitLog(const BatchRecord& batch, std::shared_ptr<const CommandBufferSet> cbs, std::shared_ptr<const AccessLog> log);
         CBSubmitLog(const BatchRecord& batch, const CommandBufferContext& cb, const std::vector<std::string>& initial_label_stack);
         size_t Size() const { return log_->size(); }
         AccessRecord GetAccessRecord(ResourceUsageTag tag) const;
 
         // DebugNameProvider
-        std::string GetDebugRegionName(const ResourceUsageRecord &record) const override;
+        std::string GetDebugRegionName(const ResourceUsageRecord& record) const override;
 
       private:
         BatchRecord batch_;
@@ -226,7 +226,7 @@ class BatchAccessLog {
     void Import(const BatchAccessLog& other);
     void Insert(const BatchRecord& batch, const ResourceUsageRange& range, std::shared_ptr<const AccessLog> log);
 
-    void Trim(const ResourceUsageTagSet &used);
+    void Trim(const ResourceUsageTagSet& used);
     // AccessRecord lookup is based on global tags
     AccessRecord GetAccessRecord(ResourceUsageTag tag) const;
     BatchAccessLog() {}
@@ -269,7 +269,7 @@ struct LastSynchronizedPresent {
     small_vector<std::pair<VkSwapchainKHR, ResourceUsageTag>, 1> per_swapchain;
 
     void Update(VkSwapchainKHR swapchain, ResourceUsageTag present_tag);
-    void Merge(const LastSynchronizedPresent &other);
+    void Merge(const LastSynchronizedPresent& other);
     void OnDestroySwapchain(VkSwapchainKHR swapchain);
 };
 
@@ -314,7 +314,7 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
         using Base_ = AlternateResourceUsage::RecordBase;
         Base_::Record MakeRecord() const override;
         ~PresentResourceRecord() override {}
-        PresentResourceRecord(const PresentedImageRecord &presented) : presented_(presented) {}
+        PresentResourceRecord(const PresentedImageRecord& presented) : presented_(presented) {}
         vvl::Func GetCommand() const override { return vvl::Func::vkQueuePresentKHR; }
         VkSwapchainKHR GetSwapchainHandle() const override;
 
@@ -326,7 +326,7 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
       public:
         using Base_ = AlternateResourceUsage::RecordBase;
         Base_::Record MakeRecord() const override;
-        AcquireResourceRecord(const PresentedImageRecord &presented, ResourceUsageTag tag, vvl::Func command)
+        AcquireResourceRecord(const PresentedImageRecord& presented, ResourceUsageTag tag, vvl::Func command)
             : presented_(presented), acquire_tag_(tag), command_(command) {}
         vvl::Func GetCommand() const override { return command_; }
         VkSwapchainKHR GetSwapchainHandle() const override;
@@ -352,7 +352,7 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
     SyncEventsContext& GetEventsContext() { return events_context_; }
 
     ResourceUsageRange GetTagRange() const { return tag_range_; }
-    const std::vector<ResourceUsageTag> &GetQueueSyncTags() const { return queue_sync_tag_; }
+    const std::vector<ResourceUsageTag>& GetQueueSyncTags() const { return queue_sync_tag_; }
 
     ResourceUsageTag SetupBatchTags(uint32_t tag_count);
     void ResetEventsContext() { events_context_.Clear(); }
@@ -364,34 +364,34 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
 
     bool ValidateSubmit(const std::vector<CommandBufferConstPtr>& command_buffers, uint64_t submit_index, uint32_t batch_index,
                         std::vector<std::string>& current_label_stack, const Location& submit_loc);
-    void ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
+    void ResolveSubmittedCommandBuffer(const AccessContext& recorded_context, ResourceUsageTag offset);
 
     // For Present
     std::vector<BatchContextPtr> ResolvePresentWaits(vvl::span<const VkSemaphore> wait_semaphores,
                                                      const PresentedImages& presented_images, SignalsUpdate& signals_update);
-    bool DoQueuePresentValidate(const Location &loc, const PresentedImages &presented_images);
-    void DoPresentOperations(const PresentedImages &presented_images);
-    void LogPresentOperations(const PresentedImages &presented_images, uint64_t submit_index);
+    bool DoQueuePresentValidate(const Location& loc, const PresentedImages& presented_images);
+    void DoPresentOperations(const PresentedImages& presented_images);
+    void LogPresentOperations(const PresentedImages& presented_images, uint64_t submit_index);
 
     // For Acquire
-    void SetupAccessContext(const PresentedImage &presented);
-    void DoAcquireOperation(const PresentedImage &presented);
-    void LogAcquireOperation(const PresentedImage &presented, vvl::Func command);
+    void SetupAccessContext(const PresentedImage& presented);
+    void DoAcquireOperation(const PresentedImage& presented);
+    void LogAcquireOperation(const PresentedImage& presented, vvl::Func command);
 
     template <typename Predicate>
-    void ApplyPredicatedWait(Predicate &predicate, const LastSynchronizedPresent &last_synchronized_present);
-    void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag, const LastSynchronizedPresent &last_synchronized_present);
-    void ApplyDeviceWait(const LastSynchronizedPresent &last_synchronized_present);
-    void ApplyAcquireWait(const AcquiredImage &acquired);
-    void OnResourceDestroyed(const AccessRange &resource_range);
+    void ApplyPredicatedWait(Predicate& predicate, const LastSynchronizedPresent& last_synchronized_present);
+    void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag, const LastSynchronizedPresent& last_synchronized_present);
+    void ApplyDeviceWait(const LastSynchronizedPresent& last_synchronized_present);
+    void ApplyAcquireWait(const AcquiredImage& acquired);
+    void OnResourceDestroyed(const AccessRange& resource_range);
 
     [[nodiscard]] std::vector<BatchContextPtr> RegisterAsyncContexts(const std::vector<BatchContextPtr>& batches_resolved);
     void ResolveLastBatch(const BatchContextPtr& last_batch);
 
-    void ResolveSubmitSemaphoreWait(const SignalInfo &signal_info, VkPipelineStageFlags2 wait_mask);
-    void ImportTags(const QueueBatchContext &from);
+    void ResolveSubmitSemaphoreWait(const SignalInfo& signal_info, VkPipelineStageFlags2 wait_mask);
+    void ImportTags(const QueueBatchContext& from);
 
-    const AccessContext &GetAccessContext() const { return access_context_; }
+    const AccessContext& GetAccessContext() const { return access_context_; }
     AccessContext& GetAccessContext() { return access_context_; }
 
   public:
@@ -403,7 +403,7 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
 
   private:
     const SyncValidator& sync_state_;
-    const QueueState *queue_state_ = nullptr;
+    const QueueState* queue_state_ = nullptr;
     ResourceUsageRange tag_range_ = ResourceUsageRange(0, 0);  // Range of tags referenced by cbs_referenced
 
     AccessContext access_context_;

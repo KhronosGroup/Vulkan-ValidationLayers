@@ -42,13 +42,13 @@ class AlternateResourceUsage {
     vvl::Func GetCommand() const { return record_->GetCommand(); }
     VkSwapchainKHR GetSwapchainHandle() const { return record_->GetSwapchainHandle(); }
     AlternateResourceUsage() = default;
-    AlternateResourceUsage(const RecordBase &record) : record_(record.MakeRecord()) {}
-    AlternateResourceUsage(const AlternateResourceUsage &other) : record_() {
+    AlternateResourceUsage(const RecordBase& record) : record_(record.MakeRecord()) {}
+    AlternateResourceUsage(const AlternateResourceUsage& other) : record_() {
         if (bool(other.record_)) {
             record_ = other.record_->MakeRecord();
         }
     }
-    AlternateResourceUsage &operator=(const AlternateResourceUsage &other) {
+    AlternateResourceUsage& operator=(const AlternateResourceUsage& other) {
         if (bool(other.record_)) {
             record_ = other.record_->MakeRecord();
         } else {
@@ -72,7 +72,7 @@ struct HandleRecord {
     uint32_t index = vvl::kNoIndex32;
 
     HandleRecord() = default;
-    explicit HandleRecord(const VulkanTypedHandle &typed_handle, uint32_t index = vvl::kNoIndex32)
+    explicit HandleRecord(const VulkanTypedHandle& typed_handle, uint32_t index = vvl::kNoIndex32)
         : handle(typed_handle.handle), type(typed_handle.type), index(index) {}
     bool IsIndexed() const { return index != vvl::kNoIndex32; }
 
@@ -91,7 +91,7 @@ enum class SubCommandType { kNone, kSubpassTransition, kLoadOp, kStoreOp, kResol
 struct ResourceUsageRecord {
     static constexpr auto kMaxIndex = std::numeric_limits<ResourceUsageTag>::max();
 
-    ResourceUsageRecord(vvl::Func command, uint32_t seq_num, SubCommandType sub_type, const vvl::CommandBuffer *cb_state,
+    ResourceUsageRecord(vvl::Func command, uint32_t seq_num, SubCommandType sub_type, const vvl::CommandBuffer* cb_state,
                         uint32_t reset_count, uint32_t subpass = vvl::kNoIndex32)
         : command(command),
           seq_num(seq_num),
@@ -99,7 +99,7 @@ struct ResourceUsageRecord {
           subpass(subpass),
           cb_state(cb_state),
           reset_count(reset_count) {}
-    ResourceUsageRecord(const AlternateResourceUsage &other) : alt_usage(other) {}
+    ResourceUsageRecord(const AlternateResourceUsage& other) : alt_usage(other) {}
 
     vvl::Func command = vvl::Func::Empty;
 
@@ -114,7 +114,7 @@ struct ResourceUsageRecord {
     // This is somewhat repetitive, but it prevents the need for Exec/Submit time touchup, after which usage records can be
     // from different command buffers and resets.
     // plain pointer as a shared pointer is held by the context storing this record
-    const vvl::CommandBuffer *cb_state = nullptr;
+    const vvl::CommandBuffer* cb_state = nullptr;
     uint32_t reset_count = 0;
 
     uint32_t first_handle_index = vvl::kNoIndex32;
@@ -135,10 +135,10 @@ struct ResourceUsageInfo {
     VulkanTypedHandle resource_handle;
     std::string debug_region_name;
 
-    const vvl::CommandBuffer *cb = nullptr;
+    const vvl::CommandBuffer* cb = nullptr;
     uint32_t command_buffer_reset_count = 0;
 
-    const vvl::Queue *queue = nullptr;
+    const vvl::Queue* queue = nullptr;
     uint64_t submit_index = 0;
     uint32_t batch_index = 0;
     ResourceUsageTag batch_base_tag = 0;
@@ -147,7 +147,7 @@ struct ResourceUsageInfo {
 // Provides debug region name for the specified access log command.
 // If empty name is returned it means the command is not inside debug region.
 struct DebugNameProvider {
-    virtual std::string GetDebugRegionName(const ResourceUsageRecord &record) const = 0;
+    virtual std::string GetDebugRegionName(const ResourceUsageRecord& record) const = 0;
 };
 
 struct ResourceUsageInfoProvider {
@@ -195,7 +195,7 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     AccessContext& GetCurrentAccessContext() { return *current_context_; }
     const AccessContext& GetCurrentAccessContext() const { return *current_context_; }
-    QueueId GetQueueId() const ;
+    QueueId GetQueueId() const;
 
     SyncEnvironment& GetSyncEnvironment() { return environment_; }
     const SyncEnvironment& GetSyncEnvironment() const { return environment_; }
@@ -206,36 +206,36 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     AccessContext& GetCbAccessContext() { return cb_access_context_; }
     const AccessContext& GetCbAccessContext() const { return cb_access_context_; }
 
-    RenderPassAccessContext *GetCurrentRenderPassContext() { return current_renderpass_context_; }
-    const RenderPassAccessContext *GetCurrentRenderPassContext() const { return current_renderpass_context_; }
+    RenderPassAccessContext* GetCurrentRenderPassContext() { return current_renderpass_context_; }
+    const RenderPassAccessContext* GetCurrentRenderPassContext() const { return current_renderpass_context_; }
     uint32_t GetCurrentRenderPassInstanceId() const { return current_render_pass_instance_id_; }
     ResourceUsageTag RecordBeginRenderPass(vvl::Func command, const vvl::RenderPass& rp_state, const VkRect2D& render_area,
                                            const std::vector<std::shared_ptr<const vvl::ImageView>>& attachment_views);
 
-    bool ValidateBeginRendering(const ErrorObject &error_obj, BeginRenderingCmdState &cmd_state) const;
-    void RecordBeginRendering(BeginRenderingCmdState &cmd_state, const Location &loc);
-    bool ValidateEndRendering(const ErrorObject &error_obj) const;
-    void RecordEndRendering(const RecordObject &record_obj);
-    bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const Location &loc) const;
+    bool ValidateBeginRendering(const ErrorObject& error_obj, BeginRenderingCmdState& cmd_state) const;
+    void RecordBeginRendering(BeginRenderingCmdState& cmd_state, const Location& loc);
+    bool ValidateEndRendering(const ErrorObject& error_obj) const;
+    void RecordEndRendering(const RecordObject& record_obj);
+    bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const Location& loc) const;
     void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, ResourceUsageTag tag);
-    bool ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const Location &loc) const;
+    bool ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const Location& loc) const;
     void RecordDrawVertex(uint32_t vertexCount, uint32_t firstVertex, ResourceUsageTag tag);
-    bool ValidateDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const Location &loc) const;
+    bool ValidateDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const Location& loc) const;
     void RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, ResourceUsageTag tag);
-    bool ValidateDrawAttachment(const Location &loc) const;
-    bool ValidateDrawDynamicRenderingAttachment(const Location &loc) const;
+    bool ValidateDrawAttachment(const Location& loc) const;
+    bool ValidateDrawDynamicRenderingAttachment(const Location& loc) const;
     void RecordDrawAttachment(ResourceUsageTag tag);
     void RecordDrawDynamicRenderingAttachment(ResourceUsageTag tag);
-    bool ValidateClearAttachment(const Location &loc, const VkClearAttachment &clear_attachment, uint32_t clear_rect_index,
-                                 const VkClearRect &clear_rect) const;
-    void RecordClearAttachment(ResourceUsageTag tag, const VkClearAttachment &clear_attachment, const VkClearRect &clear_rect);
+    bool ValidateClearAttachment(const Location& loc, const VkClearAttachment& clear_attachment, uint32_t clear_rect_index,
+                                 const VkClearRect& clear_rect) const;
+    void RecordClearAttachment(ResourceUsageTag tag, const VkClearAttachment& clear_attachment, const VkClearRect& clear_rect);
 
     ResourceUsageTag RecordNextSubpass(vvl::Func command);
     ResourceUsageTag RecordEndRenderPass(vvl::Func command);
-    void RecordDestroyEvent(vvl::Event *event_state);
+    void RecordDestroyEvent(vvl::Event* event_state);
 
     void RecordExecutedCommandBuffer(const CommandBufferContext& recorded_context);
-    void ResolveExecutedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
+    void ResolveExecutedCommandBuffer(const AccessContext& recorded_context, ResourceUsageTag offset);
 
     size_t GetTagCount() const { return access_log_->size(); }
 
@@ -243,12 +243,12 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
                                     uint32_t subpass = vvl::kNoIndex32);
     ResourceUsageTag NextSubCommandTag(vvl::Func command, SubCommandType subcommand, uint32_t subpass = vvl::kNoIndex32);
 
-    ResourceUsageTagEx AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle);
-    ResourceUsageTagEx AddCommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index);
+    ResourceUsageTagEx AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle& typed_handle);
+    ResourceUsageTagEx AddCommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle& typed_handle, uint32_t index);
 
     // Default subcommand behavior is that it references the same handles as the main command.
     // The following method allows to set subcommand handles independently of the main command.
-    void AddSubcommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index);
+    void AddSubcommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle& typed_handle, uint32_t index);
 
     // NOTE: templated Operation is a GCC workaround (see the ReplayEntry constructor)
     template <typename Operation>
@@ -256,7 +256,7 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
         replay_entries_.emplace_back(tag, validate_layout_transition_first_use, std::forward<Operation>(operation));
     }
 
-    const std::vector<HandleRecord> &GetHandleRecords() const { return handles_; }
+    const std::vector<HandleRecord>& GetHandleRecords() const { return handles_; }
 
     std::shared_ptr<const vvl::CommandBuffer> GetCBStateShared() const { return cb_state_->shared_from_this(); }
     const vvl::CommandBuffer& GetCBState() const { return *cb_state_; }
@@ -267,23 +267,23 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     const std::vector<ReplayEntry>& GetReplayEntries() const { return replay_entries_; }
 
     // DebugNameProvider
-    std::string GetDebugRegionName(const ResourceUsageRecord &record) const override;
+    std::string GetDebugRegionName(const ResourceUsageRecord& record) const override;
 
-    std::vector<vvl::LabelCommand> &GetProxyLabelCommands() { return proxy_label_commands_; }
+    std::vector<vvl::LabelCommand>& GetProxyLabelCommands() { return proxy_label_commands_; }
 
-    void UpdateStats(AccessStats &access_stats) const;
+    void UpdateStats(AccessStats& access_stats) const;
 
   private:
     CommandBufferContext(const SyncValidator& sync_validator, VkQueueFlags queue_flags, VulkanTypedHandle handle);
 
-    uint32_t AddHandle(const VulkanTypedHandle &typed_handle, uint32_t index);
+    uint32_t AddHandle(const VulkanTypedHandle& typed_handle, uint32_t index);
     AttachmentAccess GetAttachmentAccess(SyncOrdering ordering, AttachmentAccessType type = AttachmentAccessType::Access) const;
 
     // Should be called only during render pass instance
     uint32_t GetViewMask() const;
 
     struct ClearAttachmentInfo {
-        const vvl::ImageView &attachment_view;
+        const vvl::ImageView& attachment_view;
         VkImageSubresourceRange subresource_range{};
     };
     std::optional<ClearAttachmentInfo> GetClearAttachmentInfo(const VkClearAttachment& clear_attachment, uint32_t clear_first_layer,
@@ -299,7 +299,7 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     // Note: since every CommandBufferContext is encapsulated in its CommandBuffer object,
     // a reference count is not needed here.
-    vvl::CommandBuffer *cb_state_ = nullptr;
+    vvl::CommandBuffer* cb_state_ = nullptr;
 
     std::shared_ptr<AccessLog> access_log_;
     std::shared_ptr<CommandBufferSet> cbs_referenced_;
@@ -314,14 +314,14 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     ResourceUsageTag current_command_tag_ = vvl::kNoIndex32;
 
     AccessContext cb_access_context_;
-    AccessContext *current_context_;
+    AccessContext* current_context_;
     SyncEventsContext events_context_;
 
     SyncEnvironment environment_;
 
     // Don't need the following for an active proxy cb context
     std::vector<std::unique_ptr<RenderPassAccessContext>> render_pass_contexts_;
-    RenderPassAccessContext *current_renderpass_context_;
+    RenderPassAccessContext* current_renderpass_context_;
     std::vector<ReplayEntry> replay_entries_;
 
     // State during dynamic rendering (dynamic rendering rendering passes must be
@@ -345,66 +345,66 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
     CommandBufferContext cb_context;
 
-    CommandBufferSubState(SyncValidator &dev, vvl::CommandBuffer &cb);
+    CommandBufferSubState(SyncValidator& dev, vvl::CommandBuffer& cb);
 
-    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
+    void NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) override;
 
     void End() override;
     void Destroy() override;
-    void Reset(const Location &loc) override;
+    void Reset(const Location& loc) override;
 
-    void RecordCopyBuffer(vvl::Buffer &src_buffer_state, vvl::Buffer &dst_buffer_state, uint32_t region_count,
-                          const VkBufferCopy *regions, const Location &loc) override;
-    void RecordCopyBuffer2(vvl::Buffer &src_buffer_state, vvl::Buffer &dst_buffer_state, uint32_t region_count,
-                           const VkBufferCopy2 *regions, const Location &loc) override;
-    void RecordCopyImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
-                         VkImageLayout dst_image_layout, uint32_t region_count, const VkImageCopy *regions,
-                         const Location &loc) override;
-    void RecordCopyImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
-                          VkImageLayout dst_image_layout, uint32_t region_count, const VkImageCopy2 *regions,
-                          const Location &loc) override;
-    void RecordCopyBufferToImage(vvl::Buffer &src_buffer_state, vvl::Image &dst_image_state, VkImageLayout dst_image_layout,
-                                 uint32_t region_count, const VkBufferImageCopy *regions, const Location &loc) override;
-    void RecordCopyBufferToImage2(vvl::Buffer &src_buffer_state, vvl::Image &dst_image_state, VkImageLayout dst_image_layout,
-                                  uint32_t region_count, const VkBufferImageCopy2 *regions, const Location &loc) override;
-    void RecordCopyImageToBuffer(vvl::Image &src_image_state, vvl::Buffer &dst_buffer_state, VkImageLayout src_image_layout,
-                                 uint32_t region_count, const VkBufferImageCopy *regions, const Location &loc) override;
-    void RecordCopyImageToBuffer2(vvl::Image &src_image_state, vvl::Buffer &dst_buffer_state, VkImageLayout src_image_layout,
-                                  uint32_t region_count, const VkBufferImageCopy2 *regions, const Location &loc) override;
-    void RecordBlitImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
-                         VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit *regions,
-                         const Location &loc) override;
-    void RecordBlitImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
-                          VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit2 *regions,
-                          const Location &loc) override;
-    void RecordResolveImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, uint32_t region_count,
-                            const VkImageResolve *regions, const Location &loc) override;
-    void RecordResolveImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, uint32_t region_count,
-                             const VkImageResolve2 *regions, const Location &loc) override;
-    void RecordClearColorImage(vvl::Image &image_state, VkImageLayout image_layout, const VkClearColorValue *color_values,
-                               uint32_t range_count, const VkImageSubresourceRange *ranges, const Location &loc) override;
-    void RecordClearDepthStencilImage(vvl::Image &image_state, VkImageLayout image_layout,
-                                      const VkClearDepthStencilValue *depth_stencil_values, uint32_t range_count,
-                                      const VkImageSubresourceRange *ranges, const Location &loc) override;
-    void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments, uint32_t rect_count,
-                                const VkClearRect *pRects, const Location &loc) override;
-    void RecordFillBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc) override;
-    void RecordUpdateBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc) override;
+    void RecordCopyBuffer(vvl::Buffer& src_buffer_state, vvl::Buffer& dst_buffer_state, uint32_t region_count,
+                          const VkBufferCopy* regions, const Location& loc) override;
+    void RecordCopyBuffer2(vvl::Buffer& src_buffer_state, vvl::Buffer& dst_buffer_state, uint32_t region_count,
+                           const VkBufferCopy2* regions, const Location& loc) override;
+    void RecordCopyImage(vvl::Image& src_image_state, vvl::Image& dst_image_state, VkImageLayout src_image_layout,
+                         VkImageLayout dst_image_layout, uint32_t region_count, const VkImageCopy* regions,
+                         const Location& loc) override;
+    void RecordCopyImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state, VkImageLayout src_image_layout,
+                          VkImageLayout dst_image_layout, uint32_t region_count, const VkImageCopy2* regions,
+                          const Location& loc) override;
+    void RecordCopyBufferToImage(vvl::Buffer& src_buffer_state, vvl::Image& dst_image_state, VkImageLayout dst_image_layout,
+                                 uint32_t region_count, const VkBufferImageCopy* regions, const Location& loc) override;
+    void RecordCopyBufferToImage2(vvl::Buffer& src_buffer_state, vvl::Image& dst_image_state, VkImageLayout dst_image_layout,
+                                  uint32_t region_count, const VkBufferImageCopy2* regions, const Location& loc) override;
+    void RecordCopyImageToBuffer(vvl::Image& src_image_state, vvl::Buffer& dst_buffer_state, VkImageLayout src_image_layout,
+                                 uint32_t region_count, const VkBufferImageCopy* regions, const Location& loc) override;
+    void RecordCopyImageToBuffer2(vvl::Image& src_image_state, vvl::Buffer& dst_buffer_state, VkImageLayout src_image_layout,
+                                  uint32_t region_count, const VkBufferImageCopy2* regions, const Location& loc) override;
+    void RecordBlitImage(vvl::Image& src_image_state, vvl::Image& dst_image_state, VkImageLayout src_image_layout,
+                         VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit* regions,
+                         const Location& loc) override;
+    void RecordBlitImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state, VkImageLayout src_image_layout,
+                          VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit2* regions,
+                          const Location& loc) override;
+    void RecordResolveImage(vvl::Image& src_image_state, vvl::Image& dst_image_state, uint32_t region_count,
+                            const VkImageResolve* regions, const Location& loc) override;
+    void RecordResolveImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state, uint32_t region_count,
+                             const VkImageResolve2* regions, const Location& loc) override;
+    void RecordClearColorImage(vvl::Image& image_state, VkImageLayout image_layout, const VkClearColorValue* color_values,
+                               uint32_t range_count, const VkImageSubresourceRange* ranges, const Location& loc) override;
+    void RecordClearDepthStencilImage(vvl::Image& image_state, VkImageLayout image_layout,
+                                      const VkClearDepthStencilValue* depth_stencil_values, uint32_t range_count,
+                                      const VkImageSubresourceRange* ranges, const Location& loc) override;
+    void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment* pAttachments, uint32_t rect_count,
+                                const VkClearRect* pRects, const Location& loc) override;
+    void RecordFillBuffer(vvl::Buffer& buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location& loc) override;
+    void RecordUpdateBuffer(vvl::Buffer& buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location& loc) override;
 
-    void RecordDecodeVideo(vvl::VideoSession &vs_state, const VkVideoDecodeInfoKHR &decode_info, const Location &loc) override;
-    void RecordEncodeVideo(vvl::VideoSession &vs_state, const VkVideoEncodeInfoKHR &encode_info, const Location &loc) override;
+    void RecordDecodeVideo(vvl::VideoSession& vs_state, const VkVideoDecodeInfoKHR& decode_info, const Location& loc) override;
+    void RecordEncodeVideo(vvl::VideoSession& vs_state, const VkVideoEncodeInfoKHR& encode_info, const Location& loc) override;
 
-    void RecordCopyQueryPoolResults(vvl::QueryPool &pool_state, vvl::Buffer &dst_buffer_state, uint32_t first_query,
+    void RecordCopyQueryPoolResults(vvl::QueryPool& pool_state, vvl::Buffer& dst_buffer_state, uint32_t first_query,
                                     uint32_t query_count, VkDeviceSize dst_offset, VkDeviceSize stride, VkQueryResultFlags flags,
-                                    const Location &loc) override;
+                                    const Location& loc) override;
 
     void RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pass_begin, const VkSubpassBeginInfo& subpass_begin_info,
                                const Location& loc) override;
-    void RecordNextSubpass(const VkSubpassBeginInfo &subpass_begin_info, const VkSubpassEndInfo *subpass_end_info,
-                           const Location &loc) override;
-    void RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc) override;
+    void RecordNextSubpass(const VkSubpassBeginInfo& subpass_begin_info, const VkSubpassEndInfo* subpass_end_info,
+                           const Location& loc) override;
+    void RecordEndRenderPass(const VkSubpassEndInfo* subpass_end_info, const Location& loc) override;
 
-    void RecordExecuteCommand(vvl::CommandBuffer &secondary_command_buffer, uint32_t cmd_index, const Location &loc) override;
+    void RecordExecuteCommand(vvl::CommandBuffer& secondary_command_buffer, uint32_t cmd_index, const Location& loc) override;
 };
 
 static inline CommandBufferSubState& SubState(vvl::CommandBuffer& cb) {
