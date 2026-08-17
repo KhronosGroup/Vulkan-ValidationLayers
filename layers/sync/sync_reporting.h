@@ -72,42 +72,42 @@ std::string FormatErrorMessage(const SyncEnvironment& env, const HazardResult& h
 std::string FormatSyncAccesses(const SyncValidator& validator, const SyncAccessFlags& sync_accesses,
                                VkQueueFlags allowed_queue_flags, bool format_as_extra_property);
 
-void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::ostringstream &ss);
-void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantizationMapInfoKHR &quantization_map,
-                                std::ostringstream &ss);
+void FormatVideoPictureResouce(const Logger& logger, const VkVideoPictureResourceInfoKHR& video_picture, std::ostringstream& ss);
+void FormatVideoQuantizationMap(const Logger& logger, const VkVideoEncodeQuantizationMapInfoKHR& quantization_map,
+                                std::ostringstream& ss);
 
 // Common properties
-inline constexpr const char *kPropertyMessageType = "message_type";
-inline constexpr const char *kPropertyHazardType = "hazard_type";
-inline constexpr const char *kPropertyCommand = "command";
-inline constexpr const char *kPropertyPriorCommand = "prior_command";
-inline constexpr const char *kPropertyDebugRegion = "debug_region";
-inline constexpr const char *kPropertyPriorDebugRegion = "prior_debug_region";
-inline constexpr const char *kPropertyAccess = "access";
-inline constexpr const char *kPropertyPriorAccess = "prior_access";
-inline constexpr const char *kPropertyReadBarriers = "read_barriers";
-inline constexpr const char *kPropertyWriteBarriers = "write_barriers";
+inline constexpr const char* kPropertyMessageType = "message_type";
+inline constexpr const char* kPropertyHazardType = "hazard_type";
+inline constexpr const char* kPropertyCommand = "command";
+inline constexpr const char* kPropertyPriorCommand = "prior_command";
+inline constexpr const char* kPropertyDebugRegion = "debug_region";
+inline constexpr const char* kPropertyPriorDebugRegion = "prior_debug_region";
+inline constexpr const char* kPropertyAccess = "access";
+inline constexpr const char* kPropertyPriorAccess = "prior_access";
+inline constexpr const char* kPropertyReadBarriers = "read_barriers";
+inline constexpr const char* kPropertyWriteBarriers = "write_barriers";
 
 // Message-specific properties
-inline constexpr const char *kPropertyRegionIndex = "region_index";
-inline constexpr const char *kPropertyLoadOp = "load_op";
-inline constexpr const char *kPropertyStoreOp = "store_op";
-inline constexpr const char *kPropertyResolveMode = "resolve_mode";
-inline constexpr const char *kPropertyOldLayout = "old_layout";
-inline constexpr const char *kPropertyNewLayout = "new_layout";
-inline constexpr const char *kPropertyDescriptorType = "descriptor_type";
-inline constexpr const char *kPropertyDescriptorBinding = "descriptor_binding";
-inline constexpr const char *kPropertyDescriptorArrayElement = "descriptor_array_element";
-inline constexpr const char *kPropertyImageLayout = "image_layout";
-inline constexpr const char *kPropertyImageAspects = "image_aspects";
-inline constexpr const char *kPropertySubmitIndex = "submit_index";
-inline constexpr const char *kPropertyBatchIndex = "batch_index";
-inline constexpr const char *kPropertyCommandBufferIndex = "command_buffer_index";
-inline constexpr const char *kPropertySwapchainIndex = "swapchain_index";
+inline constexpr const char* kPropertyRegionIndex = "region_index";
+inline constexpr const char* kPropertyLoadOp = "load_op";
+inline constexpr const char* kPropertyStoreOp = "store_op";
+inline constexpr const char* kPropertyResolveMode = "resolve_mode";
+inline constexpr const char* kPropertyOldLayout = "old_layout";
+inline constexpr const char* kPropertyNewLayout = "new_layout";
+inline constexpr const char* kPropertyDescriptorType = "descriptor_type";
+inline constexpr const char* kPropertyDescriptorBinding = "descriptor_binding";
+inline constexpr const char* kPropertyDescriptorArrayElement = "descriptor_array_element";
+inline constexpr const char* kPropertyImageLayout = "image_layout";
+inline constexpr const char* kPropertyImageAspects = "image_aspects";
+inline constexpr const char* kPropertySubmitIndex = "submit_index";
+inline constexpr const char* kPropertyBatchIndex = "batch_index";
+inline constexpr const char* kPropertyCommandBufferIndex = "command_buffer_index";
+inline constexpr const char* kPropertySwapchainIndex = "swapchain_index";
 
 // Debug properties
-inline constexpr const char *kPropertySeqNo = "seq_no";
-inline constexpr const char *kPropertyResetNo = "reset_no";
-inline constexpr const char *kPropertyBatchTag = "batch_tag";
+inline constexpr const char* kPropertySeqNo = "seq_no";
+inline constexpr const char* kPropertyResetNo = "reset_no";
+inline constexpr const char* kPropertyBatchTag = "batch_tag";
 
 }  // namespace syncval

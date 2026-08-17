@@ -51,8 +51,8 @@ struct ResourceUsageTagEx {
 };
 
 AccessRange MakeRange(VkDeviceSize start, VkDeviceSize size);
-AccessRange MakeRange(const vvl::Buffer &buffer, VkDeviceSize offset, VkDeviceSize size);
-inline const SyncAccessInfo &GetAccessInfo(SyncAccessIndex access) { return GetSyncAccessInfos()[access]; }
+AccessRange MakeRange(const vvl::Buffer& buffer, VkDeviceSize offset, VkDeviceSize size);
+inline const SyncAccessInfo& GetAccessInfo(SyncAccessIndex access) { return GetSyncAccessInfos()[access]; }
 
 extern const AccessRange kFullRange;
 constexpr VkImageAspectFlags kDepthStencilAspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
@@ -116,7 +116,7 @@ class ThreadSafeLookupTable {
     // For already registerd objects the function performs single atomic load and hash map access (fast path).
     // In order to register new object the follow expensive operations are performed (slow path):
     // mutex lock, repeat the search, allocate new snapshot object, copy all data from the old snapshot.
-    uint32_t GetIndexAndMaybeInsert(const ObjectType &object) {
+    uint32_t GetIndexAndMaybeInsert(const ObjectType& object) {
         //
         // Fast path: object was already registered
         //

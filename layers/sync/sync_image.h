@@ -24,7 +24,7 @@ namespace syncval {
 
 class ImageSubState : public vvl::ImageSubState {
   public:
-    ImageSubState(vvl::Image &image);
+    ImageSubState(vvl::Image& image);
 
     void SetSwapchain(vvl::Swapchain& swapchain) override;
 
@@ -32,39 +32,39 @@ class ImageSubState : public vvl::ImageSubState {
     bool IsTiled() const { return !IsLinear(); }
     bool IsSimplyBound() const;
 
-    void SetOpaqueBaseAddress(vvl::DeviceState &dev_data);
+    void SetOpaqueBaseAddress(vvl::DeviceState& dev_data);
 
     VkDeviceSize GetResourceBaseAddress() const;
-    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
-    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, bool is_depth_sliced,
+    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange& subresource_range, bool is_depth_sliced) const;
+    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange& subresource_range, bool is_depth_sliced,
                                     uint32_t view_mask) const;
-    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                                    const VkExtent3D &extent, bool is_depth_sliced) const;
+    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange& subresource_range, const VkOffset3D& offset,
+                                    const VkExtent3D& extent, bool is_depth_sliced) const;
 
   protected:
     VkDeviceSize opaque_base_address_ = 0U;
     const subresource_adapter::ImageRangeEncoder fragment_encoder;
 };
 
-static inline ImageSubState &SubState(vvl::Image &img) {
-    return *static_cast<ImageSubState *>(img.SubState(LayerObjectTypeSyncValidation));
+static inline ImageSubState& SubState(vvl::Image& img) {
+    return *static_cast<ImageSubState*>(img.SubState(LayerObjectTypeSyncValidation));
 }
 
-static inline const ImageSubState &SubState(const vvl::Image &img) {
-    return *static_cast<const ImageSubState *>(img.SubState(LayerObjectTypeSyncValidation));
+static inline const ImageSubState& SubState(const vvl::Image& img) {
+    return *static_cast<const ImageSubState*>(img.SubState(LayerObjectTypeSyncValidation));
 }
 
-ImageRangeGen MakeImageRangeGen(const vvl::ImageView &view);
-ImageRangeGen MakeImageRangeGen(const vvl::ImageView &view, uint32_t view_mask,
+ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view);
+ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view, uint32_t view_mask,
                                 VkImageAspectFlags override_depth_stencil_aspect_mask = 0);
-ImageRangeGen MakeImageRangeGen(const vvl::ImageView &view, const VkOffset3D &offset, const VkExtent3D &extent,
+ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view, const VkOffset3D& offset, const VkExtent3D& extent,
                                 VkImageAspectFlags override_depth_stencil_aspect_mask = 0);
 
 class SwapchainSubState : public vvl::SwapchainSubState {
   public:
-    SwapchainSubState(vvl::Swapchain &swapchain) : vvl::SwapchainSubState(swapchain) {}
+    SwapchainSubState(vvl::Swapchain& swapchain) : vvl::SwapchainSubState(swapchain) {}
     ~SwapchainSubState() { Destroy(); }
-    void RecordPresentedImage(PresentedImage &&presented_images);
+    void RecordPresentedImage(PresentedImage&& presented_images);
     PresentedImage MovePresentedImage(uint32_t image_index);
     void GetPresentBatches(std::vector<BatchContextPtr>& batches) const;
 
@@ -72,12 +72,12 @@ class SwapchainSubState : public vvl::SwapchainSubState {
     PresentedImages presented;  // Build this on demand
 };
 
-static inline SwapchainSubState &SubState(vvl::Swapchain &sc) {
-    return *static_cast<SwapchainSubState *>(sc.SubState(LayerObjectTypeSyncValidation));
+static inline SwapchainSubState& SubState(vvl::Swapchain& sc) {
+    return *static_cast<SwapchainSubState*>(sc.SubState(LayerObjectTypeSyncValidation));
 }
 
-static inline const SwapchainSubState &SubState(const vvl::Swapchain &sc) {
-    return *static_cast<const SwapchainSubState *>(sc.SubState(LayerObjectTypeSyncValidation));
+static inline const SwapchainSubState& SubState(const vvl::Swapchain& sc) {
+    return *static_cast<const SwapchainSubState*>(sc.SubState(LayerObjectTypeSyncValidation));
 }
 
 }  // namespace syncval
