@@ -134,8 +134,9 @@ bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreat
     if (create_info.renderPass == VK_NULL_HANDLE &&
         !vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext)) {
         const auto* graphics_lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
-        const VkGraphicsPipelineLibraryFlagsEXT rendering_flags =
-            VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
+        const VkGraphicsPipelineLibraryFlagsEXT rendering_flags = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                                                                  VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+                                                                  VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
         bool missing_rendering_info = !graphics_lib_info || (graphics_lib_info->flags & rendering_flags) != 0;
         if (pipeline.library_create_info) {
             for (uint32_t i = 0; i < pipeline.library_create_info->libraryCount; ++i) {
