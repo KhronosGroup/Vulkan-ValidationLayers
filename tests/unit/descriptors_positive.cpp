@@ -2609,3 +2609,36 @@ TEST_F(PositiveDescriptors, TransitionImageUnusedByShader) {
     m_command_buffer.Barrier(transition);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDescriptors, TemplateUpdateConsecutiveBindings) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0u;
+    update_template_entry.dstArrayElement = 0u;
+    update_template_entry.descriptorCount = 6u;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    update_template_entry.offset = 0u;
+    update_template_entry.stride = sizeof(VkDescriptorBufferInfo);
+
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
+    update_template_ci.descriptorUpdateEntryCount = 1u;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_;
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
+
+    VkDescriptorBufferInfo buffer_infos[6];
+    for (auto& buffer_info : buffer_infos) {
+        buffer_info = {buffer, 0, VK_WHOLE_SIZE};
+    }
+    vk::UpdateDescriptorSetWithTemplate(device(), descriptor_set.set_, update_template, buffer_infos);
+}
