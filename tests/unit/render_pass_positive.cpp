@@ -1029,18 +1029,17 @@ TEST_F(PositiveRenderPass, TestDepthStencilRenderPassTransition) {
         "pass. Then create a barrier on both aspect, for this to be valid *both* aspects must have been correctly tracked as "
         "transitioned to the new layout.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(m_device->Physical());
-    vkt::Image depthImage(*m_device, 32, 32, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image depth_image(*m_device, 32, 32, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     for (size_t i = 0; i < 2; i++) {
         const vkt::ImageView depth_or_stencil_view(
-            *m_device, depthImage.BasicViewCreatInfo(i == 0 ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_STENCIL_BIT));
+            *m_device, depth_image.BasicViewCreatInfo(i == 0 ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_STENCIL_BIT));
 
         RenderPassSingleSubpass rp(*this);
         rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
@@ -1059,7 +1058,7 @@ TEST_F(PositiveRenderPass, TestDepthStencilRenderPassTransition) {
         img_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
         img_barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-        img_barrier.image = depthImage;
+        img_barrier.image = depth_image;
         img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
         img_barrier.subresourceRange.layerCount = 1;
         img_barrier.subresourceRange.levelCount = 1;
