@@ -527,31 +527,38 @@ TEST_F(NegativeDeviceGeneratedCommands, PushConstantNoStage) {
 TEST_F(NegativeDeviceGeneratedCommands, PushConstantOutOfRange) {
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
 
-    VkIndirectCommandsPushConstantTokenEXT pc_token;
-    pc_token.updateRange = {VK_SHADER_STAGE_VERTEX_BIT, 4, 8};
-
-    VkIndirectCommandsLayoutTokenEXT tokens[2];
-    tokens[0] = vku::InitStructHelper();
-    tokens[0].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT;
-    tokens[0].data.pPushConstant = &pc_token;
-    tokens[0].offset = 0;
-
-    tokens[1] = vku::InitStructHelper();
-    tokens[1].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
-    tokens[1].offset = 8;
-
     const std::vector<VkPushConstantRange> pc_range = {{VK_SHADER_STAGE_VERTEX_BIT, 16, 64}};
     vkt::PipelineLayout pipeline_layout(*m_device, {}, pc_range);
-    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
-    command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
-    command_layout_ci.pipelineLayout = pipeline_layout;
-    command_layout_ci.tokenCount = 2;
-    command_layout_ci.pTokens = tokens;
 
-    VkIndirectCommandsLayoutEXT command_layout;
-    m_errorMonitor->SetDesiredError("VUID-VkIndirectCommandsPushConstantTokenEXT-updateRange-11132");
-    vk::CreateIndirectCommandsLayoutEXT(device(), &command_layout_ci, nullptr, &command_layout);
-    m_errorMonitor->VerifyFound();
+    const VkIndirectCommandsTokenTypeEXT token_types[2] = {VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT,
+                                                           VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT};
+    const uint32_t update_range_sizes[2] = {8, 4};
+
+    for (uint32_t i = 0; i < 2; i++) {
+        VkIndirectCommandsPushConstantTokenEXT pc_token;
+        pc_token.updateRange = {VK_SHADER_STAGE_VERTEX_BIT, 4, update_range_sizes[i]};
+
+        VkIndirectCommandsLayoutTokenEXT tokens[2];
+        tokens[0] = vku::InitStructHelper();
+        tokens[0].type = token_types[i];
+        tokens[0].data.pPushConstant = &pc_token;
+        tokens[0].offset = 0;
+
+        tokens[1] = vku::InitStructHelper();
+        tokens[1].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
+        tokens[1].offset = 8;
+
+        VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
+        command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
+        command_layout_ci.pipelineLayout = pipeline_layout;
+        command_layout_ci.tokenCount = 2;
+        command_layout_ci.pTokens = tokens;
+
+        VkIndirectCommandsLayoutEXT command_layout;
+        m_errorMonitor->SetDesiredError("VUID-VkIndirectCommandsPushConstantTokenEXT-updateRange-11132");
+        vk::CreateIndirectCommandsLayoutEXT(device(), &command_layout_ci, nullptr, &command_layout);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(NegativeDeviceGeneratedCommands, PushConstantOutOfRangeDynamic) {
