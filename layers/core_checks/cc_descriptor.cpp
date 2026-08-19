@@ -1535,9 +1535,14 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState& device
             size_t offset = descriptor_update_entry.offset + j * descriptor_update_entry.stride;
             char* update_entry = (char*)(pData) + offset;
 
-            if (dst_array_element >= binding_count) {
-                dst_array_element = 0;
-                binding_being_updated = ds_layout_state->GetNextValidBinding(binding_being_updated);
+            while (dst_array_element >= binding_count) {
+                dst_array_element -= binding_count;
+                const uint32_t next_binding = ds_layout_state->GetNextValidBinding(binding_being_updated);
+                if (next_binding == binding_being_updated) {
+                    break;
+                }
+                binding_being_updated = next_binding;
+                binding_count = ds_layout_state->GetDescriptorCountFromBinding(binding_being_updated);
             }
 
             write_entry.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
