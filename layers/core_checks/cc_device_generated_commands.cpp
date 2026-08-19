@@ -83,7 +83,8 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
 
         // Validate contents of VkIndirectCommandsTokenDataEXT
         const Location data_loc = token_loc.dot(Field::data);
-        if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT) {
+        if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT ||
+            token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT) {
             const VkIndirectCommandsPushConstantTokenEXT* push_constant_token = token.data.pPushConstant;
             const Location pc_token_loc = data_loc.dot(Field::pPushConstant);
             const Location update_range_loc = pc_token_loc.dot(Field::updateRange);
