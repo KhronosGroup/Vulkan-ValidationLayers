@@ -3619,9 +3619,10 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                         resource_variable.array_length == 1 ? "(array of length 1 is also not allowed)" : "");
                 }
             }
-            if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) {
-                // If there is a runtime array, we can't detect statically, but should be handled in some GPU-AV check
-                if (type_struct_info && !type_struct_info->has_runtime_array) {
+
+            // If there is a runtime array, we can't detect statically, but should be handled in some GPU-AV check
+            if (type_struct_info && !type_struct_info->has_runtime_array) {
+                if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) {
                     const uint64_t struct_size = (uint64_t)type_struct_info->GetSize(module_state).size;
                     if (struct_size >
                         (uint64_t)(phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - mapping.sourceData.pushDataOffset)) {
@@ -3635,22 +3636,22 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                                      resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str(), struct_size,
                                      mapping.sourceData.pushDataOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize);
                     }
-                }
-            }
-            if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT) {
-                const uint32_t struct_size = type_struct_info ? type_struct_info->GetSize(module_state).size : 0;
-                if (mapping.sourceData.shaderRecordDataOffset + struct_size >
-                    phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride) {
-                    const char* vuid =
-                        pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-11317" : "VUID-VkShaderCreateInfoEXT-pNext-11317";
-                    skip |= LogError(
-                        vuid, module_state.handle(), mapping_loc.dot(Field::source),
-                        "(VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT) is used to map descriptor %s in %s which has a "
-                        "structure "
-                        "size of %" PRIu32 ", which summed with shaderRecordDataOffset (%" PRIu32
-                        ") is larger than maxShaderGroupStride (%" PRIu32 ").",
-                        resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str(), struct_size,
-                        mapping.sourceData.shaderRecordDataOffset, phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride);
+                } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT) {
+                    const uint32_t struct_size = type_struct_info ? type_struct_info->GetSize(module_state).size : 0;
+                    if (mapping.sourceData.shaderRecordDataOffset + struct_size >
+                        phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride) {
+                        const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-11317"
+                                                    : "VUID-VkShaderCreateInfoEXT-pNext-11317";
+                        skip |= LogError(
+                            vuid, module_state.handle(), mapping_loc.dot(Field::source),
+                            "(VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT) is used to map descriptor %s in %s which has a "
+                            "structure "
+                            "size of %" PRIu32 ", which summed with shaderRecordDataOffset (%" PRIu32
+                            ") is larger than maxShaderGroupStride (%" PRIu32 ").",
+                            resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str(), struct_size,
+                            mapping.sourceData.shaderRecordDataOffset,
+                            phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride);
+                    }
                 }
             }
 
