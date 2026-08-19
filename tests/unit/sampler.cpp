@@ -488,9 +488,7 @@ TEST_F(NegativeSampler, AddressModeWithCornerSampledNV) {
         "VK_SAMPLER_ADDRESS_MODE_CLAMP_EDGE.");
 
     AddRequiredExtensions(VK_NV_CORNER_SAMPLED_IMAGE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, 0));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV and imageType is VK_IMAGE_TYPE_2D,

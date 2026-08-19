@@ -482,14 +482,11 @@ TEST_F(NegativeCommand, NoBeginCommandBuffer) {
 }
 
 TEST_F(NegativeCommand, CommandBufferReset) {
-    // Cause error due to Begin while recording CB
-    // Then cause 2 errors for attempting to reset CB w/o having
-    // VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT set for the pool from
-    // which CBs were allocated. Note that this bit is off by default.
-    m_errorMonitor->SetDesiredError("VUID-vkBeginCommandBuffer-commandBuffer-00049");
+    RETURN_IF_SKIP(Init());
 
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, 0));
+    // no VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, 0);
+    vkt::CommandBuffer cb(*m_device, pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     // Force the failure by setting the Renderpass and Framebuffer fields with (fake) data
     VkCommandBufferInheritanceInfo cmd_buf_hinfo = vku::InitStructHelper();
@@ -498,22 +495,23 @@ TEST_F(NegativeCommand, CommandBufferReset) {
     cmd_buf_info.pInheritanceInfo = &cmd_buf_hinfo;
 
     // Begin CB to transition to recording state
-    vk::BeginCommandBuffer(m_command_buffer, &cmd_buf_info);
+    vk::BeginCommandBuffer(cb, &cmd_buf_info);
     // Can't re-begin. This should trigger error
-    vk::BeginCommandBuffer(m_command_buffer, &cmd_buf_info);
+    m_errorMonitor->SetDesiredError("VUID-vkBeginCommandBuffer-commandBuffer-00049");
+    vk::BeginCommandBuffer(cb, &cmd_buf_info);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkResetCommandBuffer-commandBuffer-00046");
     VkCommandBufferResetFlags flags = 0;  // Don't care about flags for this test
     // Reset attempt will trigger error due to incorrect CommandPool state
-    vk::ResetCommandBuffer(m_command_buffer, flags);
+    vk::ResetCommandBuffer(cb, flags);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkBeginCommandBuffer-commandBuffer-00050");
     // Transition CB to RECORDED state
-    vk::EndCommandBuffer(m_command_buffer);
+    vk::EndCommandBuffer(cb);
     // Now attempting to Begin will implicitly reset, which triggers error
-    vk::BeginCommandBuffer(m_command_buffer, &cmd_buf_info);
+    vk::BeginCommandBuffer(cb, &cmd_buf_info);
     m_errorMonitor->VerifyFound();
 }
 
