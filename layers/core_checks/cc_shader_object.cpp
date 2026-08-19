@@ -1102,15 +1102,18 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
         }
     }
 
-    if (enabled_features.taskShader && enabled_features.meshShader && is_mesh_command && has_mesh_shader) {
+    if (enabled_features.meshShader && is_mesh_command && has_mesh_shader) {
         if (const auto mesh_state = last_bound_state.GetShaderObjectState(ShaderObjectStage::MESH)) {
             const bool no_task_shader_flag = (mesh_state->create_info.flags & VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) != 0;
 
             if (!no_task_shader_flag && !has_task_shader) {
                 skip |= LogError(
                     CreateActionVuid(loc.function, vvl::ActionVUID::TASK_MESH_SHADER_08694), cb_state.Handle(), loc,
-                    "Mesh shader (%s) was created without VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT, but no task shader is bound.",
-                    FormatHandle(mesh_shader_handle).c_str());
+                    "Mesh shader (%s) was created without VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT, but no task shader is bound.%s",
+                    FormatHandle(mesh_shader_handle).c_str(),
+                    enabled_features.taskShader ? ""
+                                                : "\nEven with the taskShader feature not enabled, the driver still needs the "
+                                                  "shader create flag, this ensures Binary Shader Compatibility.");
             } else if (no_task_shader_flag && has_task_shader) {
                 skip |= LogError(
                     CreateActionVuid(loc.function, vvl::ActionVUID::TASK_MESH_SHADER_08695), cb_state.Handle(), loc,
