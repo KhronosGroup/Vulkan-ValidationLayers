@@ -182,11 +182,12 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
 
     if (cb_state->InUse()) {
-        skip |= LogError("VUID-vkBeginCommandBuffer-commandBuffer-00049", commandBuffer, error_obj.location,
-                         "on active %s before it has completed. You must check "
-                         "command buffer fence before this call.%s",
-                         FormatHandle(commandBuffer).c_str(),
-                         is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command buffer must be freed)" : "");
+        skip |=
+            LogError("VUID-vkBeginCommandBuffer-commandBuffer-00049", commandBuffer, error_obj.location,
+                     "%s is still in use (pending state) and you may not begin again before it has completed. You must check the "
+                     "command buffer fence before this call.%s",
+                     FormatHandle(commandBuffer).c_str(),
+                     is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command buffer must be freed)" : "");
     }
     const Location begin_info_loc = error_obj.location.dot(Field::pBeginInfo);
     if (cb_state->IsPrimary()) {
@@ -207,19 +208,21 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
         skip |= ValidateBeginCommandBufferInheritanceInfo(*cb_state, info, pBeginInfo->flags, inheritance_loc);
     }
 
-    if (IsRecording(cb_state->state)) {
-        skip |= LogError("VUID-vkBeginCommandBuffer-commandBuffer-00049", commandBuffer, error_obj.location,
-                         "Cannot be called for %s while it is still in the recording state. Must first call "
-                         "vkEndCommandBuffer().",
-                         FormatHandle(commandBuffer).c_str());
-    } else if (IsRecorded(cb_state->state)) {
-        VkCommandPool cmd_pool = cb_state->allocate_info.commandPool;
-        if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & cb_state->command_pool.createFlags)) {
-            const LogObjectList objlist(commandBuffer, cmd_pool);
+    if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & cb_state->command_pool.createFlags)) {
+        if (IsRecording(cb_state->state)) {
+            const LogObjectList objlist(commandBuffer, cb_state->allocate_info.commandPool);
             skip |= LogError("VUID-vkBeginCommandBuffer-commandBuffer-00050", objlist, error_obj.location,
-                             "%s attempts to implicitly reset cmdBuffer created from "
-                             "%s that does NOT have the VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT bit set.",
-                             FormatHandle(commandBuffer).c_str(), FormatHandle(cmd_pool).c_str());
+                             "Cannot be called for %s while it is still in the recording state. You must first call "
+                             "vkEndCommandBuffer() before begining again.\nThis is only valid if "
+                             "VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT is used, which %s was not created with.",
+                             FormatHandle(commandBuffer).c_str(), FormatHandle(cb_state->allocate_info.commandPool).c_str());
+        } else if (IsRecorded(cb_state->state)) {
+            const LogObjectList objlist(commandBuffer, cb_state->allocate_info.commandPool);
+            skip |= LogError("VUID-vkBeginCommandBuffer-commandBuffer-00050", objlist, error_obj.location,
+                             "%s was recorded and now in the executable state. You must call vkResetCommandBuffer() before calling "
+                             "vkBeginCommandBuffer() again.\nTo implicitly reset the command buffer, "
+                             "%s must have the VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT set.",
+                             FormatHandle(commandBuffer).c_str(), FormatHandle(cb_state->allocate_info.commandPool).c_str());
         }
     }
 
@@ -587,14 +590,15 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
         const LogObjectList objlist(commandBuffer, cmd_pool);
         skip |=
             LogError("VUID-vkResetCommandBuffer-commandBuffer-00046", objlist, error_obj.location,
-                     "%s was created from %s which was created with %s.", FormatHandle(commandBuffer).c_str(),
-                     FormatHandle(cmd_pool).c_str(), string_VkCommandPoolCreateFlags(cb_state->command_pool.createFlags).c_str());
+                     "%s was created from %s which was created with %s (missing VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT).",
+                     FormatHandle(commandBuffer).c_str(), FormatHandle(cmd_pool).c_str(),
+                     string_VkCommandPoolCreateFlags(cb_state->command_pool.createFlags).c_str());
     }
 
     if (cb_state->InUse()) {
         const LogObjectList objlist(commandBuffer, cmd_pool);
-        skip |= LogError("VUID-vkResetCommandBuffer-commandBuffer-00045", objlist, error_obj.location, "(%s) is in use.%s",
-                         FormatHandle(commandBuffer).c_str(),
+        skip |= LogError("VUID-vkResetCommandBuffer-commandBuffer-00045", objlist, error_obj.location,
+                         "(%s) is in use (pending state).%s", FormatHandle(commandBuffer).c_str(),
                          is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command buffers must be freed)" : "");
     }
 

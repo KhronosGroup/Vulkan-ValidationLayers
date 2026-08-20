@@ -52,9 +52,9 @@ class VideoSessionParameters;
 }  // namespace vvl
 
 enum class CbState {
-    New,                // Newly created CB w/o any cmds
+    New,                // Newly created CB w/o any cmds (Initial state)
     Recording,          // BeginCB has been called on this CB
-    Recorded,           // EndCB has been called on this CB
+    Recorded,           // EndCB has been called on this CB (Executable state)
     InvalidComplete,    // had a complete recording, but was since invalidated
     InvalidIncomplete,  // fouled before recording was completed
 };

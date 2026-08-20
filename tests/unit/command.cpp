@@ -497,7 +497,7 @@ TEST_F(NegativeCommand, CommandBufferReset) {
     // Begin CB to transition to recording state
     vk::BeginCommandBuffer(cb, &cmd_buf_info);
     // Can't re-begin. This should trigger error
-    m_errorMonitor->SetDesiredError("VUID-vkBeginCommandBuffer-commandBuffer-00049");
+    m_errorMonitor->SetDesiredError("VUID-vkBeginCommandBuffer-commandBuffer-00050");
     vk::BeginCommandBuffer(cb, &cmd_buf_info);
     m_errorMonitor->VerifyFound();
 
