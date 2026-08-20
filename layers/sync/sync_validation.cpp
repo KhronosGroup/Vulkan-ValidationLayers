@@ -2564,7 +2564,7 @@ void SyncValidator::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t 
 }
 
 void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject& record_obj) {
-    if (record_obj.result != VK_SUCCESS || !syncval_settings.submit_time_validation || queue == VK_NULL_HANDLE) {
+    if (record_obj.result != VK_SUCCESS || !syncval_settings.legacy_submit_time_validation || queue == VK_NULL_HANDLE) {
         return;
     }
     const QueueId waited_queue = GetQueueId(queue);
@@ -2612,7 +2612,7 @@ void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordOb
 bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    if (!syncval_settings.submit_time_validation) {
+    if (!syncval_settings.legacy_submit_time_validation) {
         return skip;
     }
     std::lock_guard lock_guard(queue_mutex_);
@@ -2696,7 +2696,7 @@ uint32_t SyncValidator::SetupPresentInfo(const VkPresentInfoKHR& present_info, B
 void SyncValidator::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                       VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
                                                       const RecordObject& record_obj) {
-    if (!syncval_settings.submit_time_validation) {
+    if (!syncval_settings.legacy_submit_time_validation) {
         return;
     }
     RecordAcquireNextImageState(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
@@ -2704,7 +2704,7 @@ void SyncValidator::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapcha
 
 void SyncValidator::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo,
                                                        uint32_t* pImageIndex, const RecordObject& record_obj) {
-    if (!syncval_settings.submit_time_validation) {
+    if (!syncval_settings.legacy_submit_time_validation) {
         return;
     }
     RecordAcquireNextImageState(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
@@ -2769,7 +2769,7 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
 bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    if (!syncval_settings.submit_time_validation) {
+    if (!syncval_settings.legacy_submit_time_validation) {
         return skip;
     }
 
@@ -2784,7 +2784,7 @@ bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
 bool SyncValidator::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    if (!syncval_settings.submit_time_validation) {
+    if (!syncval_settings.legacy_submit_time_validation) {
         return skip;
     }
     std::lock_guard lock_guard(queue_mutex_);
@@ -2985,7 +2985,7 @@ bool SyncValidator::PropagateTimelineSignals(SignalsUpdate& signals_update) {
 }
 
 void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, const RecordObject& record_obj) {
-    if (!syncval_settings.submit_time_validation) {
+    if (!syncval_settings.legacy_submit_time_validation) {
         return;
     }
     if (record_obj.result == VK_SUCCESS) {
@@ -2996,7 +2996,7 @@ void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence,
 
 void SyncValidator::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
                                                 uint64_t timeout, const RecordObject& record_obj) {
-    if (!syncval_settings.submit_time_validation) {
+    if (!syncval_settings.legacy_submit_time_validation) {
         return;
     }
     if ((record_obj.result == VK_SUCCESS) && ((VK_TRUE == waitAll) || (1 == fenceCount))) {
@@ -3010,7 +3010,7 @@ void SyncValidator::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceC
 bool SyncValidator::PreCallValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    if (!syncval_settings.submit_time_validation) {
+    if (!syncval_settings.legacy_submit_time_validation) {
         return skip;
     }
     // Although SignalSemaphore does not run on the queue, the signalling can resolve
@@ -3053,7 +3053,7 @@ bool SyncValidator::ProcessSignalSemaphore(VkDevice device, const VkSemaphoreSig
 
 void SyncValidator::PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
                                                  const RecordObject& record_obj) {
-    if (!syncval_settings.submit_time_validation) {
+    if (!syncval_settings.legacy_submit_time_validation) {
         return;
     }
     const bool wait_all = pWaitInfo->semaphoreCount == 1 || (pWaitInfo->flags & VK_SEMAPHORE_WAIT_ANY_BIT) == 0;
@@ -3071,7 +3071,7 @@ void SyncValidator::PostCallRecordWaitSemaphoresKHR(VkDevice device, const VkSem
 
 void SyncValidator::PostCallRecordGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue,
                                                            const RecordObject& record_obj) {
-    if (!syncval_settings.submit_time_validation) {
+    if (!syncval_settings.legacy_submit_time_validation) {
         return;
     }
     if (record_obj.result == VK_SUCCESS) {

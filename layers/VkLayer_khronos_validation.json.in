@@ -106,6 +106,8 @@
                     "settings": [
                         { "key": "validate_core", "value": false },
                         { "key": "validate_sync", "value": true },
+                            { "key": "syncval_full_validation", "value": false },
+                            { "key": "syncval_record_time_validation", "value": true },
                             { "key": "syncval_submit_time_validation", "value": true },
                             { "key": "syncval_shader_accesses_heuristic", "value": false },
                             { "key": "syncval_message_extra_properties", "value": false },
@@ -449,8 +451,35 @@
                             "expanded": false,
                             "settings": [
                                 {
+                                    "key": "syncval_full_validation",
+                                    "label": "Full validation",
+                                    "description": "Validate accesses across all command buffers. Errors are reported during queue submission.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "view": "HIDDEN",
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "validate_sync", "value": true }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "syncval_record_time_validation",
+                                    "label": "Record-time validation",
+                                    "description": "Enable early reporting during command buffer recording, at the command that caused the error. Only a subset of validation can run this early. Full validation runs during queue submission. Disabling this reduces validation overhead.",
+                                    "type": "BOOL",
+                                    "default": true,
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "validate_sync", "value": true }
+                                        ]
+                                    }
+                                },
+                                {
                                     "key": "syncval_submit_time_validation",
-                                    "label": "Submit time validation",
+                                    "label": "Submit-time validation (legacy)",
                                     "description": "Enable synchronization validation on the boundary between submitted command buffers. This also validates accesses from presentation operations. This option can incur a significant performance cost.",
                                     "type": "BOOL",
                                     "default": true,

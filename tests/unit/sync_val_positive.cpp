@@ -36,22 +36,31 @@ void VkSyncValTest::InitSyncValFramework(const SyncValSettings* p_sync_settings)
         // The main layer configuration can have some options turned off by default,
         // but we might still want that functionality to be available for testing.
         SyncValSettings settings;
-        settings.submit_time_validation = true;
+        settings.legacy_submit_time_validation = true;
         settings.shader_accesses_heuristic = true;
         settings.load_op_after_store_op_validation = true;
         return settings;
     }();
     const SyncValSettings& sync_settings = p_sync_settings ? *p_sync_settings : test_default_sync_settings;
 
-    const auto submit_time_validation = static_cast<VkBool32>(sync_settings.submit_time_validation);
+    const VkBool32 full_validation = static_cast<VkBool32>(sync_settings.full_validation);
+    settings.emplace_back(
+        VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_full_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &full_validation});
+
+    const VkBool32 record_time_validation = static_cast<VkBool32>(sync_settings.record_time_validation);
+    settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_record_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
+                                            1, &record_time_validation});
+
+    // TODO: remove after refactor
+    const VkBool32 submit_time_validation = static_cast<VkBool32>(sync_settings.legacy_submit_time_validation);
     settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_submit_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
                                             1, &submit_time_validation});
 
-    const auto shader_accesses_heuristic = static_cast<VkBool32>(sync_settings.shader_accesses_heuristic);
+    const VkBool32 shader_accesses_heuristic = static_cast<VkBool32>(sync_settings.shader_accesses_heuristic);
     settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_shader_accesses_heuristic",
                                             VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &shader_accesses_heuristic});
 
-    const auto load_op_after_store_op_validation = static_cast<VkBool32>(sync_settings.load_op_after_store_op_validation);
+    const VkBool32 load_op_after_store_op_validation = static_cast<VkBool32>(sync_settings.load_op_after_store_op_validation);
     settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_load_op_after_store_op_validation",
                                             VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &load_op_after_store_op_validation});
 
@@ -1359,7 +1368,7 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
 TEST_F(PositiveSyncVal, QSBufferCopyHazardsDisabled) {
     TEST_DESCRIPTION("This test checks that disabling syncval's submit time validation actually disables it");
     SyncValSettings settings;
-    settings.submit_time_validation = false;
+    settings.legacy_submit_time_validation = false;
     RETURN_IF_SKIP(InitSyncValFramework(&settings));
     RETURN_IF_SKIP(InitState());
 
