@@ -16,6 +16,7 @@
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "render_pass_helper.h"
+#include "test_framework.h"
 #include "thread_helper.h"
 
 class PositiveCommand : public VkLayerTest {};
@@ -902,4 +903,16 @@ TEST_F(PositiveCommand, ArmSchedulingControls) {
     m_command_buffer.Begin();
     vk::CmdSetDispatchParametersARM(m_command_buffer, &dispatch_parameters);
     m_command_buffer.End();
+}
+
+TEST_F(PositiveCommand, CommandBufferReset) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8487");
+    // was created with VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+    RETURN_IF_SKIP(Init());
+    m_command_buffer.Begin();
+    m_command_buffer.Begin();
+    m_command_buffer.Begin();
+    m_command_buffer.Reset();
+    m_command_buffer.Begin();
+    m_command_buffer.Begin();
 }
