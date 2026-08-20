@@ -250,6 +250,7 @@ target_sources(vvl PRIVATE
     core_checks/cc_ray_tracing_nv.cpp
     core_checks/cc_render_pass.cpp
     core_checks/cc_spirv.cpp
+    core_checks/cc_spirv_cooperative.cpp
     core_checks/cc_shader_interface.cpp
     core_checks/cc_shader_object.cpp
     core_checks/cc_state_tracker.h
