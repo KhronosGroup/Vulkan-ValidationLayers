@@ -102,12 +102,7 @@ TEST_F(NegativePipeline, WrongBindPointCompute) {
 }
 
 TEST_F(NegativePipeline, DisabledIndependentBlend) {
-    TEST_DESCRIPTION(
-        "Generate INDEPENDENT_BLEND by disabling independent blend and then specifying different blend states for two "
-        "attachments");
-    VkPhysicalDeviceFeatures features = {};
-    features.independentBlend = VK_FALSE;
-    RETURN_IF_SKIP(Init(&features));
+    RETURN_IF_SKIP(Init());
 
     // Create a renderPass with two color attachments
     RenderPassSingleSubpass rp(*this);
@@ -135,10 +130,7 @@ TEST_F(NegativePipeline, DisabledIndependentBlend) {
 }
 
 TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
-    TEST_DESCRIPTION("Test that blending is not enabled with a format not support blending");
-    VkPhysicalDeviceFeatures features = {};
-    features.independentBlend = VK_FALSE;
-    RETURN_IF_SKIP(Init(&features));
+    RETURN_IF_SKIP(Init());
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06041");
 
@@ -974,9 +966,7 @@ TEST_F(NegativePipeline, ColorBlendUnsupportedLogicOp) {
 
 TEST_F(NegativePipeline, ColorBlendUnsupportedDualSourceBlend) {
     TEST_DESCRIPTION("Attempt to use dual-source blending when dualSrcBlend feature is disabled.");
-
-    VkPhysicalDeviceFeatures features{};
-    RETURN_IF_SKIP(Init(&features));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPipelineColorBlendAttachmentState cb_attachments = {};
@@ -3379,11 +3369,7 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
 }
 
 TEST_F(NegativePipeline, InvalidPipelineDepthBias) {
-    TEST_DESCRIPTION("Create pipeline with invalid depth bias");
-
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceFeatures features = {};
-    RETURN_IF_SKIP(InitState(&features));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -3460,11 +3446,7 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
 }
 
 TEST_F(NegativePipeline, PipelineMissingFeatures) {
-    TEST_DESCRIPTION("Enabled depth bounds when the features is disabled");
-
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceFeatures features = {};
-    RETURN_IF_SKIP(InitState(&features));
+    RETURN_IF_SKIP(Init());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(m_device->Physical());
     RenderPassSingleSubpass rp(*this);
