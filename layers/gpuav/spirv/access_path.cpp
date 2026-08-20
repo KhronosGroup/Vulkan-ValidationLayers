@@ -430,9 +430,14 @@ AccessPath::AccessPath(const Module& module, TypeManager& type_manager, const Fu
             }
         }
     }
-    assert(descriptor.type != VK_DESCRIPTOR_TYPE_MAX_ENUM);
 
-    is_valid = true;
+    if (descriptor.type != VK_DESCRIPTOR_TYPE_MAX_ENUM) {
+        is_valid = true;
+    } else {
+        // This occurs for direct access to the heap
+        // TODO - We don't mark these valid, but in theory they could be OOB or touching reserved range still
+        assert(variable->type_.inst_.StorageClass() == spv::StorageClassUniformConstant && variable->interface_.IsHeap());
+    }
 }
 
 }  // namespace spirv
