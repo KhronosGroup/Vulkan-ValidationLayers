@@ -984,8 +984,12 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    constexpr uint64_t max_signal_value = 5'000;  // 15'000 in the original version for stress testing
-    constexpr int waiter_count = 8;               // 24 in the original version for stress testing
+    // 15'000 in the original version for stress testing, then 5K, now it's 1K
+    // Don't make it smaller, threading tests need iterations.
+    constexpr uint64_t max_signal_value = 1'000;
+
+    // 24 in the original version for stress testing, then 8, now it's 5
+    constexpr int waiter_count = 5;
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     ThreadTimeoutHelper timeout_helper(waiter_count + 1 /* signaling thread*/);

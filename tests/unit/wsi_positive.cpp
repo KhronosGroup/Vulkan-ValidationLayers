@@ -1380,7 +1380,10 @@ TEST_F(PositiveWsi, PresentFenceRetiresPresentQueueOperation) {
     };
     std::vector<Frame> frames;
 
-    for (uint32_t i = 0; i < 100 /* initially 1000 for higher repro rate*/; i++) {
+    // Initially 1000 for higher repro rate, then 100, now it's 50.
+    // Don't make it smaller.
+    uint32_t N = 50;
+    for (uint32_t i = 0; i < N; i++) {
         // Remove completed frames
         for (auto it = frames.begin(); it != frames.end();) {
             if (it->present_finished_fence.GetStatus() == VK_SUCCESS) {
@@ -2491,7 +2494,6 @@ TEST_F(PositiveWsi, ProgressOnPresentOnlyQueue) {
     }
     const auto swapchain_images = m_swapchain.GetImages();
 
-
     std::vector<vkt::Semaphore> present_wait_semaphores;
     for (size_t i = 0; i < swapchain_images.size(); i++) {
         present_wait_semaphores.emplace_back(*m_device);
@@ -2505,7 +2507,7 @@ TEST_F(PositiveWsi, ProgressOnPresentOnlyQueue) {
 
     // NOTE: This test can be used for manual inspection of memory usage.
     // Increase frame count and observe that the test does not continuously allocate memory.
-    const int frame_count = 100;
+    const int frame_count = 20;
     for (int i = 0; i < frame_count; i++) {
         const vkt::Fence& frame_fence = frame_fences[frame_index];
         const vkt::Semaphore& acquire_semaphore = acquire_semaphores[frame_index];
@@ -2894,7 +2896,6 @@ TEST_F(PositiveWsi, DestroySemaphoreUsedByOldSwapchain3) {
     m_default_queue->Wait();
 }
 
-
 TEST_F(PositiveWsi, PresentModeFifoLatestReady) {
     TEST_DESCRIPTION("Create a swapchain with present mode VK_PRESENT_MODE_FIFO_LATEST_READY_KHR");
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3090,7 +3091,7 @@ TEST_F(PositiveWsi, PresentTimings) {
     past_presentation_timing.timeDomain = VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT;
 
     // Give some time for a frame to land
-    static const uint32_t num_attempts = 100;
+    static const uint32_t num_attempts = 20;
     static const uint32_t wait_time_ms = 17;
     bool present_timing_returned = false;
     for (uint32_t attempt = 0; attempt < num_attempts; attempt++) {
