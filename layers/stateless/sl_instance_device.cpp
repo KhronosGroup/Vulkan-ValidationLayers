@@ -704,7 +704,8 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
             }
             if (((queue_create_info.flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) != 0) && (protected_memory == VK_FALSE)) {
                 skip |= LogError(
-                    "VUID-VkDeviceQueueCreateInfo-flags-02861", physicalDevice, create_info_loc.dot(Field::flags),
+                    "VUID-VkDeviceQueueCreateInfo-flags-02861", physicalDevice,
+                    create_info_loc.dot(Field::pQueueCreateInfos, i).dot(Field::flags),
                     "includes VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT, but the protectedMemory feature is not being enabled.");
             }
         }
