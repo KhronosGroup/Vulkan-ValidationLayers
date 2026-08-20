@@ -968,6 +968,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateShaderInputAttachment(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                        const ShaderStageState& stage_state, const vvl::Pipeline& pipeline,
                                        const spirv::ResourceInterfaceVariable& variable, const Location& loc) const;
+    bool ValidateShaderInputAttachmentDynamicRendering(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                       const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidatePushConstantUsage(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const vvl::Pipeline* pipeline, const ShaderStageState& stage_state, const Location& loc) const;
     bool ValidateBuiltInLimits(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,

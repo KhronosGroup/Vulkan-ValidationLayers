@@ -57,6 +57,21 @@
 #include "containers/container_utils.h"
 #include "utils/math_utils.h"
 
+static std::string DescribeInputAttachmentIndex(const spirv::EntryPoint& entrypoint,
+                                                const spirv::ResourceInterfaceVariable& variable, uint32_t index) {
+    std::ostringstream ss;
+    ss << "shader " << entrypoint.Describe() << " ";
+    if (variable.IsArray()) {
+        ss << variable.DescribeDescriptor() << " has an effective InputAttachmentIndex of " << index;
+        ss << " (started at InputAttachmentIndex " << variable.decorations.input_attachment_index_start << " plus index "
+           << (index - variable.decorations.input_attachment_index_start) << " into the array)";
+    } else {
+        ss << variable.DescribeDescriptor() << " has an InputAttachmentIndex of "
+           << variable.decorations.input_attachment_index_start;
+    }
+    return ss.str();
+}
+
 // Validate use of input attachments against subpass structure
 bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                                const ShaderStageState& stage_state, const vvl::Pipeline& pipeline,
@@ -65,72 +80,71 @@ bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module& module_state
     assert(variable.is_input_attachment);
 
     const auto& rp_state = pipeline.RenderPassState();
-    if (!rp_state) {
+    if (!rp_state || rp_state->UsesDynamicRendering()) {
         return skip;
     }
 
-    auto print_index = [variable, entrypoint](uint32_t i) {
-        std::ostringstream ss;
-        ss << "shader " << entrypoint.Describe() << " ";
-        if (variable.IsArray()) {
-            ss << variable.DescribeDescriptor() << " has an effective InputAttachmentIndex of " << i;
-            ss << " (started at InputAttachmentIndex " << variable.decorations.input_attachment_index_start << " plus index "
-               << (i - variable.decorations.input_attachment_index_start) << " into the array)";
-        } else {
-            ss << variable.DescribeDescriptor() << " has an InputAttachmentIndex of "
-               << variable.decorations.input_attachment_index_start;
-        }
-        return ss.str();
-    };
+    const auto rpci = rp_state->create_info.ptr();
+    const uint32_t subpass = pipeline.Subpass();
+    const auto subpass_description = rpci->pSubpasses[subpass];
+    const auto input_attachments = subpass_description.pInputAttachments;
 
-    // VUID 06061 requires dynamicRenderingLocalRead and if they have, we can just check the colorAttachmentCount
-    if (rp_state->UsesDynamicRendering()) {
-        const bool has_input_attachment_remapping_info =
-            vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(pipeline.GetCreateInfoPNext());
-        if (!has_input_attachment_remapping_info) {
-            const uint32_t color_count = rp_state->dynamic_pipeline_rendering_create_info.colorAttachmentCount;
-            for (const auto i : variable.input_attachment_index_read) {
-                // offsets by the InputAttachmentIndex decoration
-                const uint32_t input_attachment_index = variable.decorations.input_attachment_index_start + i;
-                if (input_attachment_index >= color_count) {
-                    const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
-                    skip |=
-                        LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09652", objlist, loc,
+    for (const auto i : variable.input_attachment_index_read) {
+        // offsets by the InputAttachmentIndex decoration
+        const uint32_t input_attachment_index = variable.decorations.input_attachment_index_start + i;
+
+        // Same error, but provide more useful message 'how' VK_ATTACHMENT_UNUSED is derived
+        if (!input_attachments) {
+            const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
+                             "%s but pSubpasses[%" PRIu32 "].pInputAttachments is NULL.",
+                             DescribeInputAttachmentIndex(entrypoint, variable, input_attachment_index).c_str(), subpass);
+        } else if (input_attachment_index >= subpass_description.inputAttachmentCount) {
+            const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
+                             "%s but that is not less than the pSubpasses[%" PRIu32 "].inputAttachmentCount (%" PRIu32 ").",
+                             DescribeInputAttachmentIndex(entrypoint, variable, input_attachment_index).c_str(), subpass,
+                             subpass_description.inputAttachmentCount);
+        } else if (input_attachments[input_attachment_index].attachment == VK_ATTACHMENT_UNUSED) {
+            const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
+                             "%s but pSubpasses[%" PRIu32 "].pInputAttachments[%" PRIu32 "].attachment is VK_ATTACHMENT_UNUSED.",
+                             DescribeInputAttachmentIndex(entrypoint, variable, input_attachment_index).c_str(), subpass,
+                             input_attachment_index);
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateShaderInputAttachmentDynamicRendering(const spirv::Module& module_state,
+                                                               const spirv::EntryPoint& entrypoint, const vvl::Pipeline& pipeline,
+                                                               const Location& create_info_loc) const {
+    bool skip = false;
+    const auto& rp_state = pipeline.RenderPassState();
+    ASSERT_AND_RETURN_SKIP(rp_state && pipeline.fragment_shader_state);
+
+    const void* fragment_shader_pnext = pipeline.fragment_shader_state->parent.GetCreateInfoPNext();
+    if (vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(fragment_shader_pnext)) {
+        // The indexes are remapped, so the default mapping checked here doesn't apply
+        return skip;
+    }
+
+    const uint32_t color_count = rp_state->dynamic_pipeline_rendering_create_info.colorAttachmentCount;
+    for (const auto& variable : entrypoint.resource_interface_variables) {
+        if (!variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
+            continue;
+        }
+        for (const auto i : variable.input_attachment_index_read) {
+            const uint32_t input_attachment_index = variable.decorations.input_attachment_index_start + i;
+            if (input_attachment_index >= color_count) {
+                const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09652", objlist, create_info_loc,
                                  "%s which is not less than VkPipelineRenderingCreateInfo::colorAttachmentCount (%" PRIu32
                                  ")\nIf VkRenderingInputAttachmentIndexInfo is provided, the index can be set, but without it, it "
                                  "uses the default index values.\nHint: If using Depth/Stencil attachments, you should be omitting "
                                  "the input attachment index in the shader to access the depth/stencil attachments.",
-                                 print_index(input_attachment_index).c_str(), color_count);
-                }
-            }
-        }
-    } else {
-        const auto rpci = rp_state->create_info.ptr();
-        const uint32_t subpass = pipeline.Subpass();
-        const auto subpass_description = rpci->pSubpasses[subpass];
-        const auto input_attachments = subpass_description.pInputAttachments;
-
-        for (const auto i : variable.input_attachment_index_read) {
-            // offsets by the InputAttachmentIndex decoration
-            const uint32_t input_attachment_index = variable.decorations.input_attachment_index_start + i;
-
-            // Same error, but provide more useful message 'how' VK_ATTACHMENT_UNUSED is derived
-            if (!input_attachments) {
-                const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
-                                 "%s but pSubpasses[%" PRIu32 "].pInputAttachments is NULL.",
-                                 print_index(input_attachment_index).c_str(), subpass);
-            } else if (input_attachment_index >= subpass_description.inputAttachmentCount) {
-                const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
-                                 "%s but that is not less than the pSubpasses[%" PRIu32 "].inputAttachmentCount (%" PRIu32 ").",
-                                 print_index(input_attachment_index).c_str(), subpass, subpass_description.inputAttachmentCount);
-            } else if (input_attachments[input_attachment_index].attachment == VK_ATTACHMENT_UNUSED) {
-                const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
-                skip |=
-                    LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
-                             "%s but pSubpasses[%" PRIu32 "].pInputAttachments[%" PRIu32 "].attachment is VK_ATTACHMENT_UNUSED.",
-                             print_index(input_attachment_index).c_str(), subpass, input_attachment_index);
+                                 DescribeInputAttachmentIndex(entrypoint, variable, input_attachment_index).c_str(), color_count);
             }
         }
     }

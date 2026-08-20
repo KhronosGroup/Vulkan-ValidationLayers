@@ -991,6 +991,13 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline& pipeli
             skip |= ValidateFsOutputsAgainstRenderPass(*fragment_stage->spirv_state.get(), *fragment_stage->entrypoint, pipeline,
                                                        pipeline.Subpass(), create_info_loc);
         }
+
+        if (pipeline.fragment_output_state) {
+            if (rp_state && rp_state->UsesDynamicRendering()) {
+                skip |= ValidateShaderInputAttachmentDynamicRendering(*fragment_stage->spirv_state.get(),
+                                                                      *fragment_stage->entrypoint, pipeline, create_info_loc);
+            }
+        }
     }
 
     if (tesc_stage && tese_stage) {
