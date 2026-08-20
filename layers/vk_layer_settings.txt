@@ -263,12 +263,17 @@ khronos_validation.stateless_param = true
 # Append a section of key-value properties to the error message. Useful for filtering errors.
 khronos_validation.syncval_message_extra_properties = false
 
+# Record-time validation
+# =====================
+# Enable early reporting during command buffer recording, at the command that caused the error. Only a subset of validation can run this early. Full validation runs during queue submission. Disabling this reduces validation overhead.
+khronos_validation.syncval_record_time_validation = true
+
 # Shader accesses heuristic
 # =====================
 # Take into account memory accesses performed by the shader based on SPIR-V static analysis. Warning: can produce false-positives, can ignore certain types of accesses, does not support VK_EXT_descriptor_buffer.
 khronos_validation.syncval_shader_accesses_heuristic = false
 
-# Submit time validation
+# Submit-time validation (legacy)
 # =====================
 # Enable synchronization validation on the boundary between submitted command buffers. This also validates accesses from presentation operations. This option can incur a significant performance cost.
 khronos_validation.syncval_submit_time_validation = true

@@ -28,6 +28,12 @@ static const std::array syncval_disables = {
 void StressSyncVal::InitSyncVal() {
     std::vector<VkLayerSettingEXT> settings;
 
+    // TODO: set syncval_full_validation to True after refactor
+    settings.emplace_back(
+        VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_full_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse});
+    settings.emplace_back(
+        VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_record_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue});
+    // TODO: remove after refactor
     settings.emplace_back(
         VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_submit_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue});
     settings.emplace_back(

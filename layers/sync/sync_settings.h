@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,13 @@
 #pragma once
 
 struct SyncValSettings {
-    bool submit_time_validation = true;
+    bool full_validation = false;
+    bool record_time_validation = true;
+    bool legacy_submit_time_validation = true;  // TODO: remove after refactor
     bool shader_accesses_heuristic = false;
+
+    // TODO: remove this and replace with direct record_time_validation access after refactor
+    bool IsRecordTimeValidationEnabled() const { return record_time_validation || legacy_submit_time_validation; }
 
     // This validation currently is controlled only by the settings and is disabled by default.
     // There is a discussion https://gitlab.khronos.org/vulkan/vulkan/-/issues/4513 to clarify

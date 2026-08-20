@@ -200,10 +200,13 @@ const char* VK_LAYER_GPUAV_DEBUG_DISABLE_DONTINLINE = "gpuav_debug_disable_donti
 
 // SyncVal
 // ---
-const char* VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION = "syncval_submit_time_validation";
+const char* VK_LAYER_SYNCVAL_FULL_VALIDATION = "syncval_full_validation";
+const char* VK_LAYER_SYNCVAL_RECORD_TIME_VALIDATION = "syncval_record_time_validation";
 const char* VK_LAYER_SYNCVAL_SHADER_ACCESSES_HEURISTIC = "syncval_shader_accesses_heuristic";
 const char* VK_LAYER_SYNCVAL_LOAD_OP_AFTER_STORE_OP_VALIDATION = "syncval_load_op_after_store_op_validation";
 const char* VK_LAYER_SYNCVAL_MESSAGE_EXTRA_PROPERTIES = "syncval_message_extra_properties";
+// TODO: mark as REMOVED after refactor
+const char* VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION = "syncval_submit_time_validation";
 
 // Message Formatting
 // ---
@@ -1222,9 +1225,13 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
     }
 
     SyncValSettings& syncval_settings = *settings_data->syncval_settings;
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION,
-                                syncval_settings.submit_time_validation);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_FULL_VALIDATION)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_SYNCVAL_FULL_VALIDATION, syncval_settings.full_validation);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_RECORD_TIME_VALIDATION)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_SYNCVAL_RECORD_TIME_VALIDATION,
+                                syncval_settings.record_time_validation);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_SHADER_ACCESSES_HEURISTIC)) {
@@ -1240,6 +1247,12 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_MESSAGE_EXTRA_PROPERTIES)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_SYNCVAL_MESSAGE_EXTRA_PROPERTIES,
                                 syncval_settings.message_extra_properties);
+    }
+
+    // TODO: add REMOVED warning similar to REMOVED_VK_LAYER_GPUAV_VALIDATE_RAY_QUERY
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION,
+                                syncval_settings.legacy_submit_time_validation);
     }
 
     GpuDumpSettings& gpu_dump_settings = *settings_data->gpu_dump_settings;
