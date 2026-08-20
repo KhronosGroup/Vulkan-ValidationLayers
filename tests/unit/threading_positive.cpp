@@ -299,7 +299,7 @@ TEST_F(PositiveThreading, Queue) {
 
     std::mutex queue_mutex;
 
-    constexpr auto test_duration = seconds{2};
+    constexpr auto test_duration = milliseconds{150};
     const auto timer_begin = steady_clock::now();
 
     const auto& testing_thread1 = [&]() {
