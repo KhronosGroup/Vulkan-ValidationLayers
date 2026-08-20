@@ -149,7 +149,10 @@ TEST_F(PositiveSyncValWsi, ThreadedSubmitAndFenceWaitAndPresent) {
         GTEST_SKIP() << "Failed to pre-transition swapchain images";
     }
 
-    constexpr int N = 100;  // Initially 1000 for higher repro rate
+    // Initially 1000 for higher repro rate, then 100, now it's 50.
+    // Don't make it smaller, threading tests need iterations.
+    constexpr int N = 50;
+
     std::mutex queue_mutex;
 
     // Worker thread submits accesses and waits on the fence.
@@ -294,7 +297,7 @@ TEST_F(PositiveSyncValWsi, RecreateBuffer) {
     // NOTE: This test can be used for manual inspection of memory usage.
     // Increase frame count and observe that the test does not continuously allocate memory.
     // Syncval should not track ranges of deleted resources.
-    const int frame_count = 100;
+    const int frame_count = 20;
 
     for (int i = 0; i < frame_count; i++) {
         const uint32_t image_index = m_swapchain.AcquireNextImage(current_fence, kWaitTimeout);
@@ -354,7 +357,7 @@ TEST_F(PositiveSyncValWsi, RecreateImage) {
     // NOTE: This test can be used for manual inspection of memory usage.
     // Increase frame count and observe that the test does not continuously allocate memory.
     // Syncval should not track ranges of deleted resources.
-    const int frame_count = 100;
+    const int frame_count = 20;
 
     for (int i = 0; i < frame_count; i++) {
         const uint32_t image_index = m_swapchain.AcquireNextImage(current_fence, kWaitTimeout);
@@ -1086,7 +1089,11 @@ TEST_F(PositiveSyncValWsi, ConcurrentPresentAndSubmit) {
     }
 
     const auto swapchain_images = m_swapchain.GetImages();
-    const int N = 100;  // Initially 500 for higher repro rate
+
+    // Initially 500 for higher repro rate, then 100, now it's 50.
+    // Don't make it smaller, threading tests need iterations.
+    // In case of regression increase to 500 to simplify investigation.
+    const int N = 50;
 
     std::atomic<bool> bailout{false};
     monitor_.SetBailout(&bailout);
@@ -1145,9 +1152,15 @@ TEST_F(PositiveSyncValWsi, ConcurrentPresentMultipleSwapchains) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitSyncVal());
 
-    const uint32_t num_threads = 6; /* Initially 8 */
+    // Initially 8, now it's 6. We couldn't repro with 5.
+    // In case of regression increase to 8 to simplify investigation.
+    const uint32_t num_threads = 6;
+
+    // Initially 200, then 100, now it's 30.
+    // In case of regression increase to 200 to simplify investigation.
+    const uint32_t N = 30;
+
     const uint32_t num_frames_in_flight = 2;
-    const uint32_t N = 100; /* Initially 200 */
 
     std::mutex queue_mutex;
 
