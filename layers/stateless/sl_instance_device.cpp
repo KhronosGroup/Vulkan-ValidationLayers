@@ -18,7 +18,6 @@
 
 #include <sstream>
 #include "generated/vk_extension_helper.h"
-#include "generated/pnext_chain_extraction.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
