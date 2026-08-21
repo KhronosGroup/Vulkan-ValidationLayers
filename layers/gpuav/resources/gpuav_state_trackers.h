@@ -255,9 +255,9 @@ class QueueSubState : public vvl::QueueSubState {
     QueueSubState(Validator &gpuav, vvl::Queue &q);
     virtual ~QueueSubState();
 
-    void PreSubmit(std::vector<vvl::QueueSubmission> &submissions) override;
-    void PostSubmit(std::deque<vvl::QueueSubmission> &submissions) override;
-    void Retire(vvl::QueueSubmission &) override;
+    void PreSubmit(std::vector<vvl::QueueSubmission>& submissions) override;
+    bool PostSubmit(vvl::QueueSubmission& submission) override;
+    void Retire(vvl::QueueSubmission&) override;
 
     vko::SharedResourcesCache<false> shared_resources_cache;
 

@@ -571,32 +571,31 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
     }
 }
 
-void QueueSubState::PostSubmit(std::deque<vvl::QueueSubmission>& submissions) {
-    bool success = true;
-    for (const auto& submission : submissions) {
-        auto loc = submission.loc.Get();
-        for (auto& cb_submission : submission.cb_submissions) {
-            auto guard = cb_submission.cb->ReadLock();
-            auto& gpu_cb = SubState(*cb_submission.cb);
-            success = gpu_cb.PostSubmit(*this, loc);
-            if (!success) {
-                return;
-            }
-            for (auto* secondary_cb : gpu_cb.base.linked_command_buffers) {
-                auto secondary_guard = secondary_cb->ReadLock();
-                auto& secondary_gpu_cb = SubState(*secondary_cb);
-                success = secondary_gpu_cb.PostSubmit(*this, loc);
-                if (!success) {
-                    return;
-                }
+bool QueueSubState::PostSubmit(vvl::QueueSubmission& submission) {
+    auto loc = submission.loc.Get();
+    if (loc.function == vvl::Func::vkQueuePresentKHR) {
+        // Present batches have no GPU-AV work and more importantly, they
+        // must not submit the barrier (the same check as in Retire).
+        return true;
+    }
+    for (auto& cb_submission : submission.cb_submissions) {
+        auto guard = cb_submission.cb->ReadLock();
+        auto& gpu_cb = SubState(*cb_submission.cb);
+        if (!gpu_cb.PostSubmit(*this, loc)) {
+            return false;
+        }
+        for (auto* secondary_cb : gpu_cb.base.linked_command_buffers) {
+            auto secondary_guard = secondary_cb->ReadLock();
+            auto& secondary_gpu_cb = SubState(*secondary_cb);
+            if (!secondary_gpu_cb.PostSubmit(*this, loc)) {
+                return false;
             }
         }
     }
-
-    if (!submissions.empty() && submissions.back().is_last_submission) {
-        auto loc = submissions.back().loc.Get();
-        SubmitBarrier(loc, submissions.back().seq);
+    if (submission.is_last_submission) {
+        SubmitBarrier(loc, submission.seq);
     }
+    return true;
 }
 
 void QueueSubState::Retire(vvl::QueueSubmission& submission) {
