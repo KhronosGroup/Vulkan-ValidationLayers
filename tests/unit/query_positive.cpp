@@ -15,11 +15,7 @@
 #include "pipeline_helper.h"
 
 bool QueryTest::HasZeroTimestampValidBits() {
-    uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_count, nullptr);
-    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_count, queue_props.data());
-    return (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0);
+    return m_device->Physical().queue_properties_[m_device->graphics_queue_node_index_].timestampValidBits == 0;
 }
 
 class PositiveQuery : public QueryTest {};

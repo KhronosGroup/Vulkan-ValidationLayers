@@ -4178,15 +4178,7 @@ TEST_F(NegativeSyncObject, Sync2FeatureDisabled) {
     RETURN_IF_SKIP(Init());
 
     const bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
-    bool timestamp = false;
-
-    uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_count, NULL);
-    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_count, queue_props.data());
-    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits > 0) {
-        timestamp = true;
-    }
+    const bool timestamp = (m_device->Physical().queue_properties_[m_device->graphics_queue_node_index_].timestampValidBits > 0);
 
     m_command_buffer.Begin();
 

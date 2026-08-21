@@ -2366,11 +2366,7 @@ TEST_F(NegativeQuery, Stride) {
     TEST_DESCRIPTION("Validate Stride parameter.");
     RETURN_IF_SKIP(Init());
 
-    uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_count, nullptr);
-    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_count, queue_props.data());
-    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+    if (m_device->Physical().queue_properties_[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
         GTEST_SKIP() << " Device graphic queue has timestampValidBits of 0, skipping.";
     }
 
