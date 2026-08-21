@@ -1033,22 +1033,19 @@ bool CoreChecks::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEv
     skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, *pDependencyInfo);
     if ((pDependencyInfo->dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) != 0) {
         if (pDependencyInfo->bufferMemoryBarrierCount != 0 || pDependencyInfo->imageMemoryBarrierCount != 0) {
-            skip |= LogError("VUID-vkCmdSetEvent2-dependencyFlags-10785", objlist,
-                             dep_info_loc.dot(Field::pDependencyInfo).dot(Field::dependencyFlags),
+            skip |= LogError("VUID-vkCmdSetEvent2-dependencyFlags-10785", objlist, dep_info_loc.dot(Field::dependencyFlags),
                              "contains VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR, but bufferMemoryBarrierCount is %" PRIu32
                              " and imageMemoryBarrierCount is %" PRIu32 ".",
                              pDependencyInfo->bufferMemoryBarrierCount, pDependencyInfo->imageMemoryBarrierCount);
         }
         if (pDependencyInfo->memoryBarrierCount != 1) {
-            skip |= LogError("VUID-vkCmdSetEvent2-dependencyFlags-10786", objlist,
-                             dep_info_loc.dot(Field::pDependencyInfo).dot(Field::dependencyFlags),
+            skip |= LogError("VUID-vkCmdSetEvent2-dependencyFlags-10786", objlist, dep_info_loc.dot(Field::dependencyFlags),
                              "contains VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR, but memoryBarrierCount is %" PRIu32 ".",
                              pDependencyInfo->memoryBarrierCount);
         } else {
             if (pDependencyInfo->pMemoryBarriers[0].srcAccessMask != 0 || pDependencyInfo->pMemoryBarriers[0].dstStageMask != 0 ||
                 pDependencyInfo->pMemoryBarriers[0].dstAccessMask != 0) {
-                skip |= LogError("VUID-vkCmdSetEvent2-dependencyFlags-10787", objlist,
-                                 dep_info_loc.dot(Field::pDependencyInfo).dot(Field::dependencyFlags),
+                skip |= LogError("VUID-vkCmdSetEvent2-dependencyFlags-10787", objlist, dep_info_loc.dot(Field::dependencyFlags),
                                  "contains VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR, but pMemoryBarriers[0].srcAccessMask is %s, "
                                  "pDependencyInfo->pMemoryBarriers[0].dstStageMask is %s and "
                                  "pDependencyInfo->pMemoryBarriers[0].dstAccessMask is %s.",
