@@ -1,10 +1,10 @@
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google Inc.
- * Copyright (c) 2023-2025 RasterGrid Kft.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google Inc.
+ * Copyright (c) 2023-2026 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,4 +94,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(VkDevice device, VkVali
                                                          void* pData);
 VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                                         VkPhysicalDevice* pPhysicalDevices);
+
+VKAPI_ATTR void VKAPI_CALL CmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo);
+VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo);
+VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer,
+                                                             const VkDrawIndirectCount2InfoKHR* pInfo);
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo);
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo);
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo);
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo);
+VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo);
 }  // namespace vulkan_layer_chassis

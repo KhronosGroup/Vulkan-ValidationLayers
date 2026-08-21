@@ -105,6 +105,16 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'vkGetValidationCacheDataEXT',
         'vkGetPhysicalDeviceToolProperties',
         'vkGetPhysicalDeviceToolPropertiesEXT',
+        # VK_KHR_device_address_commands commands using indirect/index buffers
+        # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12907
+        'vkCmdBindIndexBuffer3KHR',
+        'vkCmdDispatchIndirect2KHR',
+        'vkCmdDrawIndirect2KHR',
+        'vkCmdDrawIndexedIndirect2KHR',
+        'vkCmdDrawMeshTasksIndirect2EXT',
+        'vkCmdDrawIndirectCount2KHR',
+        'vkCmdDrawIndexedIndirectCount2KHR',
+        'vkCmdDrawMeshTasksIndirectCount2EXT',
     )
 
     def __init__(self):

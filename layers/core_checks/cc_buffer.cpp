@@ -22,6 +22,7 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
+#include "containers/container_utils.h"
 #include "error_message/error_location.h"
 #include "core_validation.h"
 #include "cc_buffer_address.h"
@@ -444,6 +445,19 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
 bool CoreChecks::ValidateDeviceAddressCommands(const LogObjectList& objlist, VkDeviceAddress address, VkDeviceSize size,
                                                VkAddressCommandFlagsKHR flags, const Location loc) const {
     bool skip = false;
+
+    // This is (another) ugly mess because we need to apply the STORAGE_BUFFER usage on all Indirect/Index buffers in GPU-AV such
+    // that when calling a call like vkCmdBindIndexBuffer3KHR or vkCmdDispatchIndirect2KHR we need to add this ADDRESS_COMMAND bit
+    // to prevent the VUs below. We will add the flag in GPU-AV, but the PreCallValidate is done first, so here we are...
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12907
+    if (gpuav_settings.IsBufferValidationEnabled()) {
+        if (IsValueIn(loc.function,
+                      {Func::vkCmdBindIndexBuffer3KHR, Func::vkCmdDispatchIndirect2KHR, Func::vkCmdDrawIndirect2KHR,
+                       Func::vkCmdDrawIndexedIndirect2KHR, Func::vkCmdDrawMeshTasksIndirect2EXT, Func::vkCmdDrawIndirectCount2KHR,
+                       Func::vkCmdDrawIndexedIndirectCount2KHR, Func::vkCmdDrawMeshTasksIndirectCount2EXT})) {
+            flags |= VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
+        }
+    }
 
     // TODO - tl;dr - This is a stupid mess
     // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5322#note_591585

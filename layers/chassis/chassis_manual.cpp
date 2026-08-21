@@ -1492,4 +1492,394 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(VkDevice device, VkVali
     }
     return VK_SUCCESS;
 }
+
+VKAPI_ATTR void VKAPI_CALL CmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdDispatchIndirect2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdDispatchIndirect2KHR");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdDispatchIndirect2KHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdDispatchIndirect2KHR(commandBuffer, pInfo, error_obj);
+            if (skip) return;
+        }
+    }
+
+    // This ONLY works because GPU-AV is the only layer that will modify this and doesn't touch the pNext chains
+    VkDispatchIndirect2InfoKHR chassis_modified_info = *pInfo;
+
+    RecordObject record_obj(vvl::Func::vkCmdDispatchIndirect2KHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdDispatchIndirect2KHR");
+        for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdDispatchIndirect2KHR(commandBuffer, pInfo, record_obj, chassis_modified_info);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdDispatchIndirect2KHR");
+        device_dispatch->CmdDispatchIndirect2KHR(commandBuffer, &chassis_modified_info);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdDispatchIndirect2KHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdDispatchIndirect2KHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdDispatchIndirect2KHR(commandBuffer, pInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksIndirect2EXT,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdDrawMeshTasksIndirect2EXT");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdDrawMeshTasksIndirect2EXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdDrawMeshTasksIndirect2EXT(commandBuffer, pInfo, error_obj);
+            if (skip) return;
+        }
+    }
+
+    // This ONLY works because GPU-AV is the only layer that will modify this and doesn't touch the pNext chains
+    VkDrawIndirect2InfoKHR chassis_modified_info = *pInfo;
+
+    RecordObject record_obj(vvl::Func::vkCmdDrawMeshTasksIndirect2EXT);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdDrawMeshTasksIndirect2EXT");
+        for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdDrawMeshTasksIndirect2EXT(commandBuffer, pInfo, record_obj, chassis_modified_info);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdDrawMeshTasksIndirect2EXT");
+        device_dispatch->CmdDrawMeshTasksIndirect2EXT(commandBuffer, &chassis_modified_info);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdDrawMeshTasksIndirect2EXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksIndirect2EXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdDrawMeshTasksIndirect2EXT(commandBuffer, pInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer,
+                                                             const VkDrawIndirectCount2InfoKHR* pInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksIndirectCount2EXT,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdDrawMeshTasksIndirectCount2EXT");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdDrawMeshTasksIndirectCount2EXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdDrawMeshTasksIndirectCount2EXT(commandBuffer, pInfo, error_obj);
+            if (skip) return;
+        }
+    }
+
+    // This ONLY works because GPU-AV is the only layer that will modify this and doesn't touch the pNext chains
+    VkDrawIndirectCount2InfoKHR chassis_modified_info = *pInfo;
+
+    RecordObject record_obj(vvl::Func::vkCmdDrawMeshTasksIndirectCount2EXT);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdDrawMeshTasksIndirectCount2EXT");
+        for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdDrawMeshTasksIndirectCount2EXT(commandBuffer, pInfo, record_obj, chassis_modified_info);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdDrawMeshTasksIndirectCount2EXT");
+        device_dispatch->CmdDrawMeshTasksIndirectCount2EXT(commandBuffer, &chassis_modified_info);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdDrawMeshTasksIndirectCount2EXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksIndirectCount2EXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdDrawMeshTasksIndirectCount2EXT(commandBuffer, pInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdDrawIndirect2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdDrawIndirect2KHR");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdDrawIndirect2KHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdDrawIndirect2KHR(commandBuffer, pInfo, error_obj);
+            if (skip) return;
+        }
+    }
+
+    // This ONLY works because GPU-AV is the only layer that will modify this and doesn't touch the pNext chains
+    VkDrawIndirect2InfoKHR chassis_modified_info = *pInfo;
+
+    RecordObject record_obj(vvl::Func::vkCmdDrawIndirect2KHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdDrawIndirect2KHR");
+        for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdDrawIndirect2KHR(commandBuffer, pInfo, record_obj, chassis_modified_info);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdDrawIndirect2KHR");
+        device_dispatch->CmdDrawIndirect2KHR(commandBuffer, &chassis_modified_info);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdDrawIndirect2KHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndirect2KHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdDrawIndirect2KHR(commandBuffer, pInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdDrawIndexedIndirect2KHR,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdDrawIndexedIndirect2KHR");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdDrawIndexedIndirect2KHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdDrawIndexedIndirect2KHR(commandBuffer, pInfo, error_obj);
+            if (skip) return;
+        }
+    }
+
+    // This ONLY works because GPU-AV is the only layer that will modify this and doesn't touch the pNext chains
+    VkDrawIndirect2InfoKHR chassis_modified_info = *pInfo;
+
+    RecordObject record_obj(vvl::Func::vkCmdDrawIndexedIndirect2KHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdDrawIndexedIndirect2KHR");
+        for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdDrawIndexedIndirect2KHR(commandBuffer, pInfo, record_obj, chassis_modified_info);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdDrawIndexedIndirect2KHR");
+        device_dispatch->CmdDrawIndexedIndirect2KHR(commandBuffer, &chassis_modified_info);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdDrawIndexedIndirect2KHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndexedIndirect2KHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdDrawIndexedIndirect2KHR(commandBuffer, pInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdDrawIndirectCount2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdDrawIndirectCount2KHR");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdDrawIndirectCount2KHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdDrawIndirectCount2KHR(commandBuffer, pInfo, error_obj);
+            if (skip) return;
+        }
+    }
+
+    // This ONLY works because GPU-AV is the only layer that will modify this and doesn't touch the pNext chains
+    VkDrawIndirectCount2InfoKHR chassis_modified_info = *pInfo;
+
+    RecordObject record_obj(vvl::Func::vkCmdDrawIndirectCount2KHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdDrawIndirectCount2KHR");
+        for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdDrawIndirectCount2KHR(commandBuffer, pInfo, record_obj, chassis_modified_info);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdDrawIndirectCount2KHR");
+        device_dispatch->CmdDrawIndirectCount2KHR(commandBuffer, &chassis_modified_info);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdDrawIndirectCount2KHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndirectCount2KHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdDrawIndirectCount2KHR(commandBuffer, pInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer,
+                                                           const VkDrawIndirectCount2InfoKHR* pInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdDrawIndexedIndirectCount2KHR,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdDrawIndexedIndirectCount2KHR");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdDrawIndexedIndirectCount2KHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdDrawIndexedIndirectCount2KHR(commandBuffer, pInfo, error_obj);
+            if (skip) return;
+        }
+    }
+
+    // This ONLY works because GPU-AV is the only layer that will modify this and doesn't touch the pNext chains
+    VkDrawIndirectCount2InfoKHR chassis_modified_info = *pInfo;
+
+    RecordObject record_obj(vvl::Func::vkCmdDrawIndexedIndirectCount2KHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdDrawIndexedIndirectCount2KHR");
+        for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdDrawIndexedIndirectCount2KHR(commandBuffer, pInfo, record_obj, chassis_modified_info);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdDrawIndexedIndirectCount2KHR");
+        device_dispatch->CmdDrawIndexedIndirectCount2KHR(commandBuffer, &chassis_modified_info);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdDrawIndexedIndirectCount2KHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdDrawIndexedIndirectCount2KHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdDrawIndexedIndirectCount2KHR(commandBuffer, pInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdBindIndexBuffer3KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdBindIndexBuffer3KHR");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdBindIndexBuffer3KHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdBindIndexBuffer3KHR(commandBuffer, pInfo, error_obj);
+            if (skip) return;
+        }
+    }
+
+    // This ONLY works because GPU-AV is the only layer that will modify this and doesn't touch the pNext chains
+    VkBindIndexBuffer3InfoKHR chassis_modified_info = *pInfo;
+
+    RecordObject record_obj(vvl::Func::vkCmdBindIndexBuffer3KHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdBindIndexBuffer3KHR");
+        for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdBindIndexBuffer3KHR(commandBuffer, pInfo, record_obj, chassis_modified_info);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdBindIndexBuffer3KHR");
+        device_dispatch->CmdBindIndexBuffer3KHR(commandBuffer, &chassis_modified_info);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdBindIndexBuffer3KHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdBindIndexBuffer3KHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdBindIndexBuffer3KHR(commandBuffer, pInfo, record_obj);
+        }
+    }
+}
 }  // namespace vulkan_layer_chassis

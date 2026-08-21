@@ -58,6 +58,14 @@ class DispatchVectorGenerator(BaseGenerator):
         'vkCreateBuffer',
         'vkGetShaderBinaryDataEXT',
         'vkCmdBindDescriptorBuffersEXT',
+        'vkCmdBindIndexBuffer3KHR',
+        'vkCmdDispatchIndirect2KHR',
+        'vkCmdDrawIndirect2KHR',
+        'vkCmdDrawIndexedIndirect2KHR',
+        'vkCmdDrawMeshTasksIndirect2EXT',
+        'vkCmdDrawIndirectCount2KHR',
+        'vkCmdDrawIndexedIndirectCount2KHR',
+        'vkCmdDrawMeshTasksIndirectCount2EXT',
     )
     skip_intercept_id_post_record = (
         'vkAllocateDescriptorSets',

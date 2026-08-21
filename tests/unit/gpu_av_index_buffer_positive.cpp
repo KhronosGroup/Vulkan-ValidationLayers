@@ -1078,3 +1078,32 @@ TEST_F(PositiveGpuAVIndexBuffer, Ssbo) {
         ASSERT_EQ(in_buffer_ptr[i], out_buffer_ptr[i]);
     }
 }
+
+TEST_F(PositiveGpuAVIndexBuffer, BindIndexBuffer3) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer index_buffer(*m_device, 256u, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, vkt::device_address);
+
+    VkBindIndexBuffer3InfoKHR index_buffer_info = vku::InitStructHelper();
+    index_buffer_info.addressRange = index_buffer.AddressRange();
+    index_buffer_info.addressFlags = 0u;
+    index_buffer_info.indexType = VK_INDEX_TYPE_UINT32;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindIndexBuffer3KHR(m_command_buffer, &index_buffer_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}

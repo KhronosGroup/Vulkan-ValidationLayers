@@ -142,15 +142,19 @@ class Validator : public GpuShaderInstrumentor {
                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                            uint32_t stride, const RecordObject& record_obj) final;
     void PreCallRecordCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
-                                          const RecordObject& record_obj) final;
+                                          const RecordObject& record_obj, VkDrawIndirect2InfoKHR& chassis_state) final;
     void PreCallRecordCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
-                                                 const RecordObject& record_obj) final;
+                                                 const RecordObject& record_obj, VkDrawIndirect2InfoKHR& chassis_state) final;
     void PreCallRecordCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
-                                               const RecordObject& record_obj) final;
+                                               const RecordObject& record_obj, VkDrawIndirectCount2InfoKHR& chassis_state) final;
     void PreCallRecordCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
-                                                      const RecordObject& record_obj) final;
+                                                      const RecordObject& record_obj,
+                                                      VkDrawIndirectCount2InfoKHR& chassis_state) final;
     void PreCallRecordCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
-                                                        const RecordObject& record_obj) final;
+                                                        const RecordObject& record_obj,
+                                                        VkDrawIndirectCount2InfoKHR& chassis_state) final;
+    void PreCallRecordCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                   const RecordObject& record_obj, VkDrawIndirect2InfoKHR& chassis_state) final;
     void PreCallRecordCmdDrawIndirectByteCount(VkCommandBuffer commandBuffer, const RecordObject& record_obj);
     void PreCallRecordCmdDrawIndirectByteCount2EXT(VkCommandBuffer commandBuffer, uint32_t instanceCount, uint32_t firstInstance,
                                                    const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo,
@@ -184,7 +188,7 @@ class Validator : public GpuShaderInstrumentor {
     void PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                           const RecordObject& record_obj) final;
     void PreCallRecordCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo,
-                                              const RecordObject& record_obj) final;
+                                              const RecordObject& record_obj, VkDispatchIndirect2InfoKHR& chassis_state) final;
     void PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ,
                                       uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
                                       const RecordObject& record_obj) final;
@@ -239,6 +243,9 @@ class Validator : public GpuShaderInstrumentor {
                                                       const RecordObject& record_obj) final;
     void PreCallRecordCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
                                               const RecordObject& record_obj) final;
+
+    void PreCallRecordCmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo,
+                                             const RecordObject& record_obj, VkBindIndexBuffer3InfoKHR& chassis_state) final;
 
     bool PreCallValidateCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
                                        const ErrorObject& error_obj) const override;

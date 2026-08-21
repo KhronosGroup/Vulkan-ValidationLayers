@@ -462,3 +462,71 @@ TEST_F(PositiveGpuAVIndirectBuffer, FirstInstanceCustomStride) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveGpuAVIndirectBuffer, DispatchIndirect2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.CreateComputePipeline();
+    vkt::Buffer buffer(*m_device, sizeof(VkDispatchIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    VkDispatchIndirectCommand* dispatch_ptr = static_cast<VkDispatchIndirectCommand*>(buffer.Memory().Map());
+    dispatch_ptr->x = 1u;
+    dispatch_ptr->y = 1u;
+    dispatch_ptr->z = 1u;
+    buffer.Memory().Unmap();
+
+    VkDispatchIndirect2InfoKHR indirect_info = vku::InitStructHelper();
+    indirect_info.addressRange = buffer.AddressRange();
+    indirect_info.addressFlags = 0u;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatchIndirect2KHR(m_command_buffer, &indirect_info);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVIndirectBuffer, DrawMeshTasksIndirect2EXT) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                            vkt::device_address);
+    auto* draw_ptr = static_cast<VkDrawMeshTasksIndirectCommandEXT*>(draw_buffer.Memory().Map());
+    draw_ptr->groupCountX = 1u;
+    draw_ptr->groupCountY = 1u;
+    draw_ptr->groupCountZ = 1u;
+    draw_buffer.Memory().Unmap();
+
+    VkDrawIndirect2InfoKHR indirect_info = vku::InitStructHelper();
+    indirect_info.addressRange = draw_buffer.StridedAddressRange(sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    indirect_info.addressFlags = 0u;
+    indirect_info.drawCount = 1u;
+
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    CreatePipelineHelper mesh_pipe(*this);
+    mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    mesh_pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe);
+    vk::CmdDrawMeshTasksIndirect2EXT(m_command_buffer, &indirect_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
