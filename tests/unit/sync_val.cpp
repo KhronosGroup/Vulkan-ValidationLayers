@@ -2906,11 +2906,7 @@ TEST_F(NegativeSyncVal, CmdQuery) {
     if ((m_device->Physical().queue_properties_.empty()) || (m_device->Physical().queue_properties_[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
-    uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_count, NULL);
-    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_count, queue_props.data());
-    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+    if (m_device->Physical().queue_properties_[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
