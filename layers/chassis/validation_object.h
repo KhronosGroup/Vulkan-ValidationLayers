@@ -462,6 +462,50 @@ class BaseDevice : public Logger {
         PreCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, record_obj);
     }
 
+    virtual void PreCallRecordCmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo,
+                                                     const RecordObject& record_obj, VkBindIndexBuffer3InfoKHR& chassis_state) {
+        PreCallRecordCmdBindIndexBuffer3KHR(commandBuffer, pInfo, record_obj);
+    }
+
+    virtual void PreCallRecordCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo,
+                                                      const RecordObject& record_obj, VkDispatchIndirect2InfoKHR& chassis_state) {
+        PreCallRecordCmdDispatchIndirect2KHR(commandBuffer, pInfo, record_obj);
+    }
+
+    virtual void PreCallRecordCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                           const RecordObject& record_obj, VkDrawIndirect2InfoKHR& chassis_state) {
+        PreCallRecordCmdDrawMeshTasksIndirect2EXT(commandBuffer, pInfo, record_obj);
+    }
+
+    virtual void PreCallRecordCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer,
+                                                                const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                                const RecordObject& record_obj,
+                                                                VkDrawIndirectCount2InfoKHR& chassis_state) {
+        PreCallRecordCmdDrawMeshTasksIndirectCount2EXT(commandBuffer, pInfo, record_obj);
+    }
+
+    virtual void PreCallRecordCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                  const RecordObject& record_obj, VkDrawIndirect2InfoKHR& chassis_state) {
+        PreCallRecordCmdDrawIndirect2KHR(commandBuffer, pInfo, record_obj);
+    }
+
+    virtual void PreCallRecordCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                         const RecordObject& record_obj, VkDrawIndirect2InfoKHR& chassis_state) {
+        PreCallRecordCmdDrawIndexedIndirect2KHR(commandBuffer, pInfo, record_obj);
+    }
+
+    virtual void PreCallRecordCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                       const RecordObject& record_obj, VkDrawIndirectCount2InfoKHR& chassis_state) {
+        PreCallRecordCmdDrawIndirectCount2KHR(commandBuffer, pInfo, record_obj);
+    }
+
+    virtual void PreCallRecordCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer,
+                                                              const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                              const RecordObject& record_obj,
+                                                              VkDrawIndirectCount2InfoKHR& chassis_state) {
+        PreCallRecordCmdDrawIndexedIndirectCount2KHR(commandBuffer, pInfo, record_obj);
+    }
+
 #include "generated/validation_object_device_methods.h"
 };
 
