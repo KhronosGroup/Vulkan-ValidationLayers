@@ -965,9 +965,13 @@ class CoreChecks : public vvl::DeviceProxy {
                                       const spirv::EntryPoint& entrypoint, const Location& create_info_loc) const;
     bool ValidateInterfaceFragmentOutput(const vvl::Pipeline& pipeline, const spirv::Module& module_state,
                                          const spirv::EntryPoint& entrypoint, const Location& create_info_loc) const;
-    bool ValidateShaderInputAttachment(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                       const ShaderStageState& stage_state, const vvl::Pipeline& pipeline,
-                                       const spirv::ResourceInterfaceVariable& variable, const Location& loc) const;
+    bool ValidateShaderInputAttachmentDynamicRendering(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                       const spirv::ResourceInterfaceVariable& variable,
+                                                       const vvl::Pipeline& pipeline, const vvl::RenderPass& rp_state,
+                                                       const Location& loc) const;
+    bool ValidateShaderInputAttachmentRenderPass(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                 const spirv::ResourceInterfaceVariable& variable, const vvl::Pipeline& pipeline,
+                                                 const vvl::RenderPass& rp_state, const Location& loc) const;
     bool ValidatePushConstantUsage(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const vvl::Pipeline* pipeline, const ShaderStageState& stage_state, const Location& loc) const;
     bool ValidateBuiltInLimits(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
@@ -978,8 +982,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateInterfaceBetweenStages(const ShaderStageState& producer, const ShaderStageState& consumer,
                                         const Location& create_info_loc) const;
     bool ValidateFsOutputsAgainstRenderPass(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                            const vvl::Pipeline& pipeline, uint32_t subpass_index,
-                                            const Location& create_info_loc) const;
+                                            const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidatePipelineTessellationStages(const ShaderStageState& tesc_stage, const ShaderStageState& tese_stage,
                                             const Location& create_info_loc) const;
     bool ValidateShaderInterfaceVariableDSL(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
