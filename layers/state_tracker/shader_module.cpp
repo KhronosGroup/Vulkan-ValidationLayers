@@ -882,6 +882,10 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
     // Tried to just create this map in GetResourceInterfaceVariables() but ran into errors because the function is static
     for (const auto& variable : resource_interface_variables) {
         resource_interface_variable_map[variable.id] = &variable;
+
+        if (stage == VK_SHADER_STAGE_FRAGMENT_BIT && variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
+            has_input_attachment = true;
+        }
     }
 
     // After all variables are made, can get references from them
@@ -2757,10 +2761,8 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                     if (is_input_attachment) {
                         if (!IsArray()) {
                             input_attachment_index_read.emplace(0);
-                        } else if (image_access.image_access_chain_index != kInvalidValue &&
-                                   image_access.image_access_chain_index != kSpecConstant) {
-                            // Non-constant index requires GPU-AV
-                            // Spec Constants are handled after constant folding
+                        } else {
+                            // Might be kInvalidValue, but handled from the code accessing it
                             input_attachment_index_read.emplace(image_access.image_access_chain_index);
                         }
                     }

@@ -3827,20 +3827,7 @@ TEST_F(NegativeGraphicsLibrary, MultiViewDraw) {
 
     CreatePipelineHelper frag_shader_lib(*this);
     {
-        VkStencilOpState stencil = {};
-        stencil.failOp = VK_STENCIL_OP_KEEP;
-        stencil.passOp = VK_STENCIL_OP_KEEP;
-        stencil.depthFailOp = VK_STENCIL_OP_KEEP;
-        stencil.compareOp = VK_COMPARE_OP_NEVER;
-
         VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
-        ds_ci.depthTestEnable = VK_FALSE;
-        ds_ci.depthWriteEnable = VK_TRUE;
-        ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
-        ds_ci.depthBoundsTestEnable = VK_FALSE;
-        ds_ci.stencilTestEnable = VK_TRUE;
-        ds_ci.front = stencil;
-        ds_ci.back = stencil;
 
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
         vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -4044,4 +4031,122 @@ TEST_F(NegativeGraphicsLibrary, InvalidDescriptorSet) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeGraphicsLibrary, DynamicRenderingLocalReadInputAttachmentIndex) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+
+    char const* fs_source = R"glsl(
+        #version 450
+        layout(input_attachment_index = 1, set = 0, binding = 0) uniform subpassInput inColor;
+        layout(location = 0) out vec4 outColor;
+        void main() {
+            outColor = subpassLoad(inColor);
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1u;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    CreatePipelineHelper vi_lib(*this);
+    vi_lib.InitVertexInputLibInfo();
+    vi_lib.CreateGraphicsPipeline();
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    CreatePipelineHelper pr_lib(*this);
+    pr_lib.InitPreRasterLibInfo(&vs_stage.stage_ci, &pipeline_rendering_info);
+    pr_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pr_lib.gp_ci_.layout = pipeline_layout;
+    pr_lib.CreateGraphicsPipeline();
+
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper fs_lib(*this);
+    fs_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &pipeline_rendering_info);
+    fs_lib.ds_ci_ = vku::InitStructHelper();
+    fs_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    fs_lib.gp_ci_.layout = pipeline_layout;
+    fs_lib.CreateGraphicsPipeline();
+
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09652");
+    CreatePipelineHelper fo_lib(*this);
+    fo_lib.InitFragmentOutputLibInfo(&pipeline_rendering_info);
+    fo_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    fo_lib.CreateGraphicsPipeline();
+
+    VkPipeline libraries[4] = {vi_lib, pr_lib, fs_lib, fo_lib};
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size32(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = pipeline_layout;
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGraphicsLibrary, AlphaToCoverageNoLocation0DynamicRendering) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {});
+
+    const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1u;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    CreatePipelineHelper vi_lib(*this);
+    vi_lib.InitVertexInputLibInfo();
+    vi_lib.CreateGraphicsPipeline();
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    CreatePipelineHelper pr_lib(*this);
+    pr_lib.InitPreRasterLibInfo(&vs_stage.stage_ci, &pipeline_rendering_info);
+    pr_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pr_lib.gp_ci_.layout = pipeline_layout;
+    pr_lib.CreateGraphicsPipeline();
+
+    VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kMinimalShaderGlsl);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper fs_lib(*this);
+    fs_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &pipeline_rendering_info);
+    fs_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    fs_lib.gp_ci_.pDepthStencilState = &ds_ci;
+    // Can be ignored with dynamic rendering
+    fs_lib.gp_ci_.pMultisampleState = nullptr;
+    fs_lib.gp_ci_.layout = pipeline_layout;
+    fs_lib.CreateGraphicsPipeline();
+
+    CreatePipelineHelper fo_lib(*this);
+    fo_lib.InitFragmentOutputLibInfo(&pipeline_rendering_info);
+    fo_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    fo_lib.ms_ci_.alphaToCoverageEnable = VK_TRUE;
+    fo_lib.CreateGraphicsPipeline();
+
+    VkPipeline libraries[4] = {vi_lib, pr_lib, fs_lib, fo_lib};
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size32(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = pipeline_layout;
+
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891");
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    m_errorMonitor->VerifyFound();
 }

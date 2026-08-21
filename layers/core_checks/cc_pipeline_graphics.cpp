@@ -1314,7 +1314,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, 
                                                                         : "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635";
                 skip |= LogError(vuid, device, create_info_loc,
                                  "Fragment Shader and Fragment Output Interface were created with different "
-                                 "VkPipelineMultisampleStateCreateInfo."
+                                 "VkPipelineMultisampleStateCreateInfo.\n"
                                  "Fragment Shader pMultisampleState:\n"
                                  "\tpNext: %p\n"
                                  "\trasterizationSamples: %s\n"
@@ -4354,6 +4354,7 @@ bool CoreChecks::ValidateMultiviewPerViewViewports(const vvl::Pipeline& pipeline
     }
 
     if (rp_state.UsesDynamicRendering()) {
+        // will be zero with GPL without PreRaster/FragShader
         const uint32_t view_mask = rp_state.dynamic_pipeline_rendering_create_info.viewMask;
         if (view_mask == 0) {
             return skip;

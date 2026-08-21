@@ -1805,3 +1805,78 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentAccessValidStages) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentMissingSpecConstant) {
+    AddRequiredFeature(vkt::Feature::shaderInputAttachmentArrayDynamicIndexing);
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    const char* fs_source = R"glsl(
+        #version 450
+        layout (constant_id = 0) const int index = 0;
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[2];
+        layout(location=0) out vec4 color;
+        void main() {
+           color = subpassLoad(xs[index]);
+        }
+    )glsl";
+
+    uint32_t data = 1;
+    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1u;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09652");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexDynamicOOB) {
+    AddRequiredFeature(vkt::Feature::shaderInputAttachmentArrayDynamicIndexing);
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    const char* fs_source = R"glsl(
+        #version 450
+        // The starting index is already going to be over
+        layout(input_attachment_index=4, set=0, binding=0) uniform subpassInput xs[2];
+        layout(set=0, binding=1) uniform UBO { int index; } ubo;
+        layout(location=0) out vec4 color;
+
+        void main() {
+           color = subpassLoad(xs[ubo.index]);
+        }
+    )glsl";
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                        {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1u;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09652");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
