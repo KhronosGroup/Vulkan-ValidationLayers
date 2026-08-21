@@ -2938,3 +2938,44 @@ TEST_F(PositiveGpuAV, QueueSubmitDuringQueryRetire) {
         m_default_queue->Wait();
     }
 }
+
+TEST_F(PositiveGpuAV, QueueSubmitDuringQueryRetire2) {
+    // Similar to QueueSubmitDuringQueryRetire but resubmits the same command buffer
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12899");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    if (m_device->Physical().queue_properties_[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+        GTEST_SKIP() << "Device graphics queue has timestampValidBits of 0, skipping.";
+    }
+
+    const uint32_t query_count = 32;
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, query_count);
+
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, query_count);
+    for (uint32_t i = 0; i < query_count; i++) {
+        vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, i);
+    }
+    m_command_buffer.End();
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    for (uint64_t i = 0; i < 10; i++) {
+        m_default_queue->Submit(m_command_buffer, vkt::TimelineSignal(semaphore, i + 1));
+
+        // Start waiting for submission to initiate Retire on the queue thread
+        std::atomic<bool> wait_finished{false};
+        std::thread waiter([&semaphore, &wait_finished, i] {
+            semaphore.Wait(i + 1, kWaitTimeout);
+            wait_finished = true;
+        });
+
+        // Resubmit the same command buffer
+        while (!wait_finished) {
+            m_default_queue->Submit(m_command_buffer);
+        }
+        waiter.join();
+        m_default_queue->Wait();
+    }
+}

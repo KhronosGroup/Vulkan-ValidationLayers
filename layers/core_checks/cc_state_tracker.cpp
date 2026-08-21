@@ -1161,15 +1161,29 @@ void CommandBufferSubState::RecordEncodeVideo(vvl::VideoSession& vs_state, const
     }
 }
 
-void CommandBufferSubState::Retire(uint32_t perf_submit_pass,
-                                   const std::function<bool(const QueryObject&)>& is_query_updated_after) {
+QueryMap CommandBufferSubState::GetLocalQueryMap(uint32_t perf_submit_pass) const {
     QueryMap local_query_to_state_map;
     VkQueryPool first_pool = VK_NULL_HANDLE;
     for (auto& function : query_updates) {
         function(base, /*do_validate*/ false, first_pool, perf_submit_pass, &local_query_to_state_map);
     }
+    return local_query_to_state_map;
+}
 
-    for (const auto& [query_object, query_state] : local_query_to_state_map) {
+void CommandBufferSubState::RetireQueries(uint32_t perf_submit_pass, const QuerySubmissionSnapshot& submission_snapshot) {
+    auto is_query_updated_after = [&submission_snapshot](const QueryObject& query_object) {
+        for (const auto& [snapshot_perf_submit_pass, snapshot_cb] : submission_snapshot) {
+            if (query_object.perf_pass != snapshot_perf_submit_pass) {
+                continue;
+            }
+            if (snapshot_cb->UpdatesQuery(query_object)) {
+                return true;
+            }
+        }
+        return false;
+    };
+    const QueryMap local_query_map = GetLocalQueryMap(perf_submit_pass);
+    for (const auto& [query_object, query_state] : local_query_map) {
         if (query_state == QUERYSTATE_ENDED && !is_query_updated_after(query_object)) {
             auto query_pool_state = base.dev_data.Get<vvl::QueryPool>(query_object.pool);
             if (!query_pool_state) continue;
@@ -1361,11 +1375,7 @@ void CommandBufferSubState::Submit(vvl::Queue& queue_state, uint32_t perf_submit
     // Update vvl::QueryPool with a query state at the end of the command buffer.
     // Ultimately, it tracks the final query state for the entire submission.
     {
-        VkQueryPool first_pool = VK_NULL_HANDLE;
-        QueryMap local_query_to_state_map;
-        for (auto& function : query_updates) {
-            function(base, /*do_validate*/ false, first_pool, perf_submit_pass, &local_query_to_state_map);
-        }
+        const QueryMap local_query_to_state_map = GetLocalQueryMap(perf_submit_pass);
         for (const auto& [query_object, query_state] : local_query_to_state_map) {
             auto query_pool_state = base.dev_data.Get<vvl::QueryPool>(query_object.pool);
             if (!query_pool_state) continue;
@@ -1389,26 +1399,24 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
 }
 
 void QueueSubState::Retire(vvl::QueueSubmission& submission) {
-    auto is_query_updated_after = [this](const QueryObject& query_object) {
+    // Create snapshot of submission related information for queries (locks queue)
+    // before locking command buffers below. This is to avoid lock inversion with
+    // Queue::PostSubmit which also locks queue and then command buffers.
+    CommandBufferSubState::QuerySubmissionSnapshot submission_snapshot;
+    {
         auto guard = base.Lock();
-        bool first_queue_submission = true;
+        bool first_batch = true;
         for (const vvl::QueueSubmission& queue_submission : base.Submissions()) {
             // The current submission is still on the deque, so skip it
-            if (first_queue_submission) {
-                first_queue_submission = false;
+            if (first_batch) {
+                first_batch = false;
                 continue;
             }
             for (const vvl::CommandBufferSubmission& cb_submission : queue_submission.cb_submissions) {
-                if (query_object.perf_pass != queue_submission.perf_submit_pass) {
-                    continue;
-                }
-                if (cb_submission.cb->UpdatesQuery(query_object)) {
-                    return true;
-                }
+                submission_snapshot.emplace_back(queue_submission.perf_submit_pass, cb_submission.cb);
             }
         }
-        return false;
-    };
+    }
 
     for (vvl::CommandBufferSubmission& cb_submission : submission.cb_submissions) {
         CommandBufferSubState& cb_sub_state = SubState(*cb_submission.cb);
@@ -1416,9 +1424,9 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
         for (vvl::CommandBuffer* secondary_cmd_buffer : cb_submission.cb->linked_command_buffers) {
             CommandBufferSubState& secondary_sub_state = SubState(*secondary_cmd_buffer);
             auto secondary_guard = secondary_sub_state.base.WriteLock();
-            secondary_sub_state.Retire(submission.perf_submit_pass, is_query_updated_after);
+            secondary_sub_state.RetireQueries(submission.perf_submit_pass, submission_snapshot);
         }
-        cb_sub_state.Retire(submission.perf_submit_pass, is_query_updated_after);
+        cb_sub_state.RetireQueries(submission.perf_submit_pass, submission_snapshot);
     }
 }
 
