@@ -223,6 +223,7 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     std::deque<QueueSubmission> submissions_;
     std::atomic<uint64_t> seq_{0};
     uint64_t request_seq_{0};
+    uint64_t first_seq_to_post_process_{0};
     bool exit_thread_{false};
     mutable std::mutex lock_;
     // condition to wake up the queue's thread
@@ -245,9 +246,12 @@ class QueueSubState {
     virtual ~QueueSubState() {}
     virtual void Destroy() {}
 
-    virtual void PreSubmit(std::vector<QueueSubmission> &submissions) {}
-    virtual void PostSubmit(std::deque<QueueSubmission> &submissions_) {}
-    virtual void Retire(QueueSubmission &submission) {}
+    virtual void PreSubmit(std::vector<QueueSubmission>& submissions) {}
+
+    // Return false in case of failure to stop processing the remaining batches from the same submit
+    virtual bool PostSubmit(QueueSubmission& submission) { return true; }
+
+    virtual void Retire(QueueSubmission& submission) {}
 
     VulkanTypedHandle Handle() const { return base.Handle(); }
     VkQueue VkHandle() const { return base.VkHandle(); }

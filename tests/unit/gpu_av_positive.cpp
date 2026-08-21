@@ -16,7 +16,9 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include <atomic>
 #include <cstdint>
+#include <thread>
 #include <vector>
 #include "layer_validation_tests.h"
 #include "buffer_helper.h"
@@ -2890,4 +2892,49 @@ TEST_F(PositiveGpuAV, ImmutableSamplerIdenticallyDefinedMaintenance4) {
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAV, QueueSubmitDuringQueryRetire) {
+    // Regression test for a deadlock between:
+    //   a) a submitting thread (Queue lock -> CB lock in GPU-AV PostSubmit)
+    //   b) the queue thread (CB lock -> Queue lock in query retirement)
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12899");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    if (m_device->Physical().queue_properties_[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+        GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.";
+    }
+
+    const uint32_t query_count = 32;
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, query_count);
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, query_count);
+    for (uint32_t i = 0; i < query_count; i++) {
+        vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, i);
+    }
+    m_command_buffer.End();
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    for (uint64_t i = 0; i < 10; i++) {
+        m_default_queue->Submit(m_command_buffer, vkt::TimelineSignal(semaphore, i + 1));
+
+        // Start waiting for submission to initiate Retire on the queue thread
+        std::atomic<bool> wait_finished{false};
+        std::thread waiter([&semaphore, &wait_finished, i] {
+            semaphore.Wait(i + 1, kWaitTimeout);
+            wait_finished = true;
+        });
+
+        // Before the fix, PostSubmit (that does Queue lock -> CB lock) was mistakenly
+        // re-applied to batches from the previous submissions . If such a batch was in
+        // the middle of query retirement (CB lock -> Queue lock) this led to deadlock.
+        while (!wait_finished) {
+            m_default_queue->Submit(vkt::no_cmd);
+        }
+        waiter.join();
+        m_default_queue->Wait();
+    }
 }
