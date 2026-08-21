@@ -128,8 +128,10 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordDecodeVideo(vvl::VideoSession &vs_state, const VkVideoDecodeInfoKHR &decode_info, const Location &loc) final;
     void RecordEncodeVideo(vvl::VideoSession &vs_state, const VkVideoEncodeInfoKHR &encode_info, const Location &loc) final;
 
+    QueryMap GetLocalQueryMap(uint32_t perf_submit_pass) const;
     // Only need to retire for core checks to track queries
-    void Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after);
+    using QuerySubmissionSnapshot = std::vector<std::pair<uint32_t, std::shared_ptr<vvl::CommandBuffer>>>;
+    void RetireQueries(uint32_t perf_submit_pass, const QuerySubmissionSnapshot& submission_snapshot);
 
     void Reset(const Location &loc) final;
     void Destroy() final;
