@@ -66,7 +66,9 @@ class RenderPass : public StateObject {
     const bool use_dynamic_rendering_inherited;
 
     const vku::safe_VkRenderingInfo dynamic_rendering_begin_rendering_info;
-    // Note, this is not the exact VkPipelineRenderingCreateInfo passed in, instead it will handle fields being ignored
+    // Note, this is not the exact VkPipelineRenderingCreateInfo passed in, instead it will handle fields being ignored.
+    // When dealing with GPL (puke) you will have to be cautious that viewMask are only in the PreRaster/FragShader and the formats
+    // are only in the FragOutput... nothing could go wrong
     const vku::safe_VkPipelineRenderingCreateInfo dynamic_pipeline_rendering_create_info;
     // when a secondary command buffer is recorded with VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT
     const vku::safe_VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info;

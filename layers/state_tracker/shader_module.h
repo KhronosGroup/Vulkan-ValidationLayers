@@ -605,8 +605,6 @@ struct EntryPoint {
     const std::vector<ResourceInterfaceVariable> resource_interface_variables;
     const std::vector<StageInterfaceVariable> stage_interface_variables;
 
-    bool uses_tosa_1_0{false};
-
     // Easier to lookup without having to check for the is_builtin bool
     // "Built-in interface variables" - vkspec.html#interfaces-iointerfaces-builtin
     std::vector<const StageInterfaceVariable *> built_in_variables;
@@ -638,6 +636,10 @@ struct EntryPoint {
     bool has_alpha_to_coverage_variable{false};  // only for Fragment shaders
 
     bool has_physical_storage_buffer_interface{false};
+
+    bool has_input_attachment{false};
+
+    bool uses_tosa_1_0{false};
 
     EntryPoint(const Module &module_state, const Instruction &entrypoint_insn, const ParsedInfo &parsed);
 

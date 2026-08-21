@@ -18,6 +18,7 @@
  */
 
 #include <spirv/unified1/spirv.hpp>
+#include <cstdint>
 #include <cassert>
 #include <sstream>
 #include <string>
@@ -201,6 +202,117 @@ bool CoreChecks::ValidateInterfaceFragmentOutput(const vvl::Pipeline& pipeline, 
                              entrypoint.Describe().c_str());
         }
     }
+
+    if (const auto& rp_state = pipeline.RenderPassState()) {
+        // Dynamic Rendering is done at draw time incase the user has VK_EXT_dynamic_rendering_unused_attachments we can't do all
+        // the checks at this time
+        if (!rp_state->UsesDynamicRendering()) {
+            skip |= ValidateFsOutputsAgainstRenderPass(module_state, entrypoint, pipeline, create_info_loc);
+        }
+
+        if (entrypoint.has_input_attachment) {
+            for (const auto& variable : entrypoint.resource_interface_variables) {
+                if (!variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
+                    continue;
+                }
+
+                if (rp_state->UsesDynamicRendering()) {
+                    skip |= ValidateShaderInputAttachmentDynamicRendering(module_state, entrypoint, variable, pipeline, *rp_state,
+                                                                          create_info_loc);
+                } else {
+                    skip |= ValidateShaderInputAttachmentRenderPass(module_state, entrypoint, variable, pipeline, *rp_state,
+                                                                    create_info_loc);
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+static std::string DescribeInputAttachmentIndex(const spirv::EntryPoint& entrypoint,
+                                                const spirv::ResourceInterfaceVariable& variable, uint32_t index) {
+    std::ostringstream ss;
+    ss << "shader " << entrypoint.Describe() << " ";
+    if (variable.IsArray()) {
+        ss << variable.DescribeDescriptor() << " has an effective InputAttachmentIndex of " << index;
+        ss << " (started at InputAttachmentIndex " << variable.decorations.input_attachment_index_start << " plus index "
+           << (index - variable.decorations.input_attachment_index_start) << " into the array)";
+    } else {
+        ss << variable.DescribeDescriptor() << " has an InputAttachmentIndex of "
+           << variable.decorations.input_attachment_index_start;
+    }
+    return ss.str();
+}
+
+bool CoreChecks::ValidateShaderInputAttachmentDynamicRendering(const spirv::Module& module_state,
+                                                               const spirv::EntryPoint& entrypoint,
+                                                               const spirv::ResourceInterfaceVariable& variable,
+                                                               const vvl::Pipeline& pipeline, const vvl::RenderPass& rp_state,
+                                                               const Location& loc) const {
+    bool skip = false;
+    assert(variable.is_input_attachment);
+
+    // VUID 06061 requires dynamicRenderingLocalRead and if they have, we can just check the colorAttachmentCount
+    if (vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(pipeline.GetCreateInfoPNext())) {
+        return skip;  // has input attachment remapping
+    }
+
+    const uint32_t color_count = rp_state.dynamic_pipeline_rendering_create_info.colorAttachmentCount;
+    for (const auto i : variable.input_attachment_index_read) {
+        // offsets by the InputAttachmentIndex decoration
+        const uint32_t input_attachment_index = variable.decorations.input_attachment_index_start + i;
+        if (input_attachment_index >= color_count) {
+            const LogObjectList objlist(module_state.handle(), pipeline.Handle());
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09652", objlist, loc,
+                             "%s which is not less than VkPipelineRenderingCreateInfo::colorAttachmentCount (%" PRIu32
+                             ")\nIf VkRenderingInputAttachmentIndexInfo is provided, the index can be set, but without it, it "
+                             "uses the default index values.\nHint: If using Depth/Stencil attachments, you should be omitting "
+                             "the input attachment index in the shader to access the depth/stencil attachments.",
+                             DescribeInputAttachmentIndex(entrypoint, variable, input_attachment_index).c_str(), color_count);
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateShaderInputAttachmentRenderPass(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                         const spirv::ResourceInterfaceVariable& variable,
+                                                         const vvl::Pipeline& pipeline, const vvl::RenderPass& rp_state,
+                                                         const Location& loc) const {
+    bool skip = false;
+    assert(variable.is_input_attachment);
+
+    const auto rpci = rp_state.create_info.ptr();
+    const uint32_t subpass = pipeline.Subpass();
+    const auto subpass_description = rpci->pSubpasses[subpass];
+    const auto input_attachments = subpass_description.pInputAttachments;
+
+    for (const auto i : variable.input_attachment_index_read) {
+        // offsets by the InputAttachmentIndex decoration
+        const uint32_t input_attachment_index = variable.decorations.input_attachment_index_start + i;
+
+        // Same error, but provide more useful message 'how' VK_ATTACHMENT_UNUSED is derived
+        if (!input_attachments) {
+            const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state.Handle());
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
+                             "%s but pSubpasses[%" PRIu32 "].pInputAttachments is NULL.",
+                             DescribeInputAttachmentIndex(entrypoint, variable, input_attachment_index).c_str(), subpass);
+        } else if (input_attachment_index >= subpass_description.inputAttachmentCount) {
+            const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state.Handle());
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
+                             "%s but that is not less than the pSubpasses[%" PRIu32 "].inputAttachmentCount (%" PRIu32 ").",
+                             DescribeInputAttachmentIndex(entrypoint, variable, input_attachment_index).c_str(), subpass,
+                             subpass_description.inputAttachmentCount);
+        } else if (input_attachments[input_attachment_index].attachment == VK_ATTACHMENT_UNUSED) {
+            const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state.Handle());
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
+                             "%s but pSubpasses[%" PRIu32 "].pInputAttachments[%" PRIu32 "].attachment is VK_ATTACHMENT_UNUSED.",
+                             DescribeInputAttachmentIndex(entrypoint, variable, input_attachment_index).c_str(), subpass,
+                             input_attachment_index);
+        }
+    }
+
     return skip;
 }
 
@@ -514,8 +626,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
 // Note - This is missing a variation check for ShaderObjects, but there is one for Dynamic Rendering and likely people using
 // ShaderObject are not using Render Passes
 bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                                    const vvl::Pipeline& pipeline, uint32_t subpass_index,
-                                                    const Location& create_info_loc) const {
+                                                    const vvl::Pipeline& pipeline, const Location& create_info_loc) const {
     bool skip = false;
     // To match with the dynamic rendering case
     if (global_settings.only_report_errors) {
@@ -532,7 +643,10 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module& module_
     const auto& rp_state = pipeline.RenderPassState();
     ASSERT_AND_RETURN_SKIP(rp_state);
     const auto rpci = rp_state->create_info.ptr();
-    if (subpass_index >= rpci->subpassCount) return skip;
+    const uint32_t subpass_index = pipeline.Subpass();
+    if (subpass_index >= rpci->subpassCount) {
+        return skip;
+    }
 
     const auto subpass = rpci->pSubpasses[subpass_index];
     for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
@@ -920,13 +1034,18 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline& pipeli
     // if the shader stages are no good individually, cross-stage validation is pointless.
     if (skip) return true;
 
-    if (pipeline.vertex_input_state && vertex_stage && vertex_stage->entrypoint && vertex_stage->spirv_state &&
+    if (pipeline.vertex_input_state && vertex_stage && vertex_stage->HasSpirv() &&
         !pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
         skip |=
             ValidateInterfaceVertexInput(pipeline, *vertex_stage->spirv_state.get(), *vertex_stage->entrypoint, create_info_loc);
     }
 
-    if (pipeline.fragment_shader_state && fragment_stage && fragment_stage->entrypoint && fragment_stage->spirv_state) {
+    // Thanks to GPL (puke) we might have a library with only the FragmentShader or FragmentOutput.
+    // The ValidateShaderStage() function is called when there is a FragmentShader, but the color attachment info is not known until
+    // we get the FragmentOutput so we need to defer some Fragment Shader checks until here incase Also if rasterization is disabled
+    // none of these checks matter as well... fun right?
+    if (pipeline.fragment_shader_state && pipeline.fragment_output_state && !pipeline.RasterizationDisabled() && fragment_stage &&
+        fragment_stage->HasSpirv()) {
         skip |= ValidateInterfaceFragmentOutput(pipeline, *fragment_stage->spirv_state.get(), *fragment_stage->entrypoint,
                                                 create_info_loc);
     }
@@ -979,17 +1098,6 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline& pipeli
             skip |= ValidateInterfaceBetweenStages(producer, consumer, create_info_loc);
 
             producer_index = consumer_index;
-        }
-    }
-
-    // Don't check any color attachments if rasterization is disabled
-    if (fragment_stage && fragment_stage->entrypoint && fragment_stage->spirv_state && !pipeline.RasterizationDisabled()) {
-        const auto& rp_state = pipeline.RenderPassState();
-        // Dynamic Rendering is done at draw time incase the user has VK_EXT_dynamic_rendering_unused_attachments we can't do all
-        // the checks at this time
-        if (rp_state && !rp_state->UsesDynamicRendering()) {
-            skip |= ValidateFsOutputsAgainstRenderPass(*fragment_stage->spirv_state.get(), *fragment_stage->entrypoint, pipeline,
-                                                       pipeline.Subpass(), create_info_loc);
         }
     }
 
