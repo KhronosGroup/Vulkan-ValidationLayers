@@ -259,7 +259,8 @@ class QueueSubState : public vvl::QueueSubState {
     bool PostSubmit(vvl::QueueSubmission& submission) override;
     void Retire(vvl::QueueSubmission&) override;
 
-    vko::SharedResourcesCache<false> shared_resources_cache;
+    // Accessed from both the submitting thread (PreSubmit/PostSubmit) and the queue thread (Retire)
+    vko::SharedResourcesCache<true> shared_resources_cache;
 
   protected:
     void SubmitBarrier(const Location &loc, uint64_t seq);

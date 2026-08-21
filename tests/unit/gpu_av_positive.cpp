@@ -2894,6 +2894,36 @@ TEST_F(PositiveGpuAV, ImmutableSamplerIdenticallyDefinedMaintenance4) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
+TEST_F(PositiveGpuAV, QueueSubmitAndRetirement) {
+    TEST_DESCRIPTION("Concurrent QueueSubmit and submission retirement on the queue thread");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    m_command_buffer.End();
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    for (uint64_t i = 0; i < 10; i++) {
+        m_default_queue->Submit(m_command_buffer, vkt::TimelineSignal(semaphore, i + 1));
+
+        // Start waiting for the submission to initiate Retire on the queue thread
+        std::atomic<bool> wait_finished{false};
+        std::thread waiter([&semaphore, &wait_finished, i] {
+            semaphore.Wait(i + 1, kWaitTimeout);
+            wait_finished = true;
+        });
+
+        // Keep submitting while the queue thread retires earlier submissions
+        while (!wait_finished) {
+            m_default_queue->Submit(m_command_buffer);
+        }
+        waiter.join();
+        m_default_queue->Wait();
+    }
+}
+
 TEST_F(PositiveGpuAV, QueueSubmitDuringQueryRetire) {
     // Regression test for a deadlock between:
     //   a) a submitting thread (Queue lock -> CB lock in GPU-AV PostSubmit)
