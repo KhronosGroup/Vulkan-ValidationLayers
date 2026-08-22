@@ -681,7 +681,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                        const vvl::RenderPass& rp_state, const Location& loc) const;
     bool ValidateDrawPipelineRasterizationState(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                 const Location& loc) const;
-    bool ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer, const vvl::ImageView& image_view_state,
+    bool ValidateMultisampledRenderToSingleSampleView(const LogObjectList& objlist, const vvl::ImageView& image_view_state,
                                                       const VkMultisampledRenderToSingleSampledInfoEXT& msrtss_info,
                                                       const Location& attachment_loc, const Location& rendering_info_loc) const;
 
@@ -1729,34 +1729,41 @@ class CoreChecks : public vvl::DeviceProxy {
                                                                    const Location& inheritance_loc) const;
     bool ValidateRenderingInfoAttachment(const vvl::ImageView& image_view_state, const VkRenderingInfo& rendering_info,
                                          const LogObjectList& objlist, const Location& attachment_loc) const;
-    bool ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer commandBuffer,
-                                                  const VkRenderingFragmentDensityMapAttachmentInfoEXT& fdm_attachment_info,
-                                                  const VkRenderingInfo& rendering_info, const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer commandBuffer,
-                                                   const VkRenderingFragmentShadingRateAttachmentInfoKHR& fsr_attachment_info,
-                                                   const VkRenderingInfo& rendering_info, const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingFragmentShadingRateRenderArea(
-        VkCommandBuffer commandBuffer, const vvl::ImageView& view_state,
-        const VkRenderingFragmentShadingRateAttachmentInfoKHR& fsr_attachment_info, const VkRenderingInfo& rendering_info,
-        const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingSampleCount(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
-                                           const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
-                                           const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingMultisampledRenderToSingleSampled(VkCommandBuffer commandBuffer,
-                                                                 const VkRenderingInfo& rendering_info,
-                                                                 const Location& rendering_info_loc) const;
+    bool ValidateRenderingInfoCommon(const LogObjectList& objlist, const VkRenderingInfo& rendering_info,
+                                     const Location& rendering_info_loc) const;
+    bool ValidateRenderingInfoFragmentDensityMap(const LogObjectList& objlist,
+                                                 const VkRenderingFragmentDensityMapAttachmentInfoEXT& fdm_attachment_info,
+                                                 const VkRenderingInfo& rendering_info, const Location& rendering_info_loc) const;
+    bool ValidateRenderingInfoFragmentShadingRate(const LogObjectList& objlist,
+                                                  const VkRenderingFragmentShadingRateAttachmentInfoKHR& fsr_attachment_info,
+                                                  const VkRenderingInfo& rendering_info,
+                                                  const Location& rendering_info_loc) const;
+    bool ValidateRenderingInfoFragmentShadingRateRenderArea(const LogObjectList& objlist, const vvl::ImageView& view_state,
+                                                            const VkRenderingFragmentShadingRateAttachmentInfoKHR& fsr_attachment_info,
+                                                            const VkRenderingInfo& rendering_info,
+                                                            const Location& rendering_info_loc) const;
+    bool ValidateRenderingInfoSampleCount(const LogObjectList& objlist, const VkRenderingInfo& rendering_info,
+                                          const Location& rendering_info_loc) const;
+    bool ValidateRenderingInfoDeviceGroup(const LogObjectList& objlist, const VkRenderingInfo& rendering_info,
+                                          const Location& rendering_info_loc) const;
+    bool ValidateRenderingInfoMultisampledRenderToSingleSampled(const LogObjectList& objlist,
+                                                                const VkRenderingInfo& rendering_info,
+                                                                const Location& rendering_info_loc) const;
     bool ValidateSuspendResumeMismatch(const char* vuid, const LogObjectList& objlist, const VkRenderingInfo& rendering_info,
                                        const VkRenderingInfo& last_rendering_info, const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingResume(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
                                       const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingColorAttachment(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateRenderingInfoColorAttachment(const core::RenderingAttachment& vvl_attachment) const;
     bool ValidateBeginRenderingColorResolveAttachment(const core::RenderingAttachment& vvl_attachment) const;
-    bool ValidateBeginRenderingDepthAttachment(const core::RenderingAttachment& vvl_attachment) const;
-    bool ValidateBeginRenderingStencilAttachment(const core::RenderingAttachment& vvl_attachment) const;
-    bool ValidateBeginRenderingDepthAndStencilAttachment(const core::RenderingAttachment& depth_attachment,
-                                                         const core::RenderingAttachment& stencil_attachment) const;
+    bool ValidateRenderingInfoDepthAttachment(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateRenderingInfoStencilAttachment(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateRenderingDepthAndStencilAttachment(const core::RenderingAttachment& depth_attachment,
+                                                    const core::RenderingAttachment& stencil_attachment) const;
     bool ValidateBeginRenderingExternalDownsample(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateRenderingInfoTileShadingCreateInfo(const LogObjectList& objlist,
+                                                    const VkRenderPassTileShadingCreateInfoQCOM& rp_tile_shading_ci,
+                                                    const VkRenderingInfo& rendering_info,
+                                                    const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingTileShadingCreateInfo(const vvl::CommandBuffer& cb_state,
                                                      const VkRenderPassTileShadingCreateInfoQCOM& rp_tile_shading_ci,
                                                      const VkRenderingInfo& rendering_info,
@@ -1765,12 +1772,16 @@ class CoreChecks : public vvl::DeviceProxy {
                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
                                           const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
+                                                              VkTilePropertiesQCOM* pProperties,
+                                                              const ErrorObject& error_obj) const override;
     bool ValidateRenderingAttachmentInfo(const core::RenderingAttachment& vvl_attachment) const;
     bool ValidateRenderingAttachmentInfoResolveMode(const core::RenderingAttachment& vvl_attachment) const;
     bool ValidateRenderingAttachmentInfoMultisampledResolveMode(const core::RenderingAttachment& vvl_attachment) const;
     bool ValidateRenderingAttachmentInfoFeedbackLoop(const core::RenderingAttachment& vvl_attachment) const;
     bool ValidateRenderingAttachmentFlagsInfo(const core::RenderingAttachment& vvl_attachment) const;
-    bool ValidateRenderingAttachmentCurrentLayout(const core::RenderingAttachment& vvl_attachment) const;
+    bool ValidateRenderingAttachmentCurrentLayout(const vvl::CommandBuffer& cb_state,
+                                                  const core::RenderingAttachment& vvl_attachment) const;
     bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
     bool ValidateCmdEndRendering(const vvl::CommandBuffer& cb_state, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
@@ -2136,9 +2147,9 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                             const VkSubpassBeginInfo* pSubpassBeginInfo,
                                             const ErrorObject& error_obj) const override;
-    bool ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkCommandBuffer commandBuffer,
-                                                                const VkRenderPassPerformanceCountersByRegionBeginInfoARM &counters_begin_info,
-                                                                const LogObjectList& objlist, uint32_t subpass_count,
+    bool ValidateRenderPassPerformanceCountersByRegionBeginInfo(const LogObjectList& objlist,
+                                                                const VkRenderPassPerformanceCountersByRegionBeginInfoARM& counters_begin_info,
+                                                                uint32_t subpass_count,
                                                                 uint32_t layer_or_view_count, VkRect2D render_area,
                                                                 const Location& begin_loc) const;
     bool PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
