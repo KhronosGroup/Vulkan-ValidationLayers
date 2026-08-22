@@ -882,6 +882,10 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
     // Tried to just create this map in GetResourceInterfaceVariables() but ran into errors because the function is static
     for (const auto& variable : resource_interface_variables) {
         resource_interface_variable_map[variable.id] = &variable;
+
+        if (stage == VK_SHADER_STAGE_FRAGMENT_BIT && variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
+            has_input_attachment = true;
+        }
     }
 
     // After all variables are made, can get references from them
