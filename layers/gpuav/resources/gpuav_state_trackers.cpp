@@ -30,6 +30,8 @@
 #include "state_tracker/last_bound_state.h"
 #include "state_tracker/pipeline_layout_state.h"
 
+#include <mutex>
+
 namespace gpuav {
 
 CommandBufferSubState::CommandBufferSubState(Validator& gpuav, vvl::CommandBuffer& cb)
@@ -298,6 +300,8 @@ vko::Buffer& CommandBufferSubState::GetInternalDescriptorHeap() {
 }
 
 struct FenceWaiter {
+    // FenceWaiter is accessed by PostSubmit and by queue thread's Retire at the same time.
+    std::mutex lock;
     std::vector<VkFence> fences;
 };
 
@@ -358,6 +362,7 @@ bool CommandBufferSubState::PostSubmit(QueueSubState& queue, const Location& loc
         }
 
         FenceWaiter& fence_waiter = queue.shared_resources_cache.GetOrCreate<FenceWaiter>();
+        std::lock_guard<std::mutex> fence_waiter_guard(fence_waiter.lock);
         fence_waiter.fences.emplace_back(fence);
     }
 
@@ -619,11 +624,18 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
             DispatchWaitSemaphores(gpuav_.device, &wait_info, 1'000'000'000);
         }
 
-        FenceWaiter* fence_waiter = shared_resources_cache.TryGet<FenceWaiter>();
-        if (fence_waiter && !fence_waiter->fences.empty()) {
-            DispatchWaitForFences(gpuav_.device, uint32_t(fence_waiter->fences.size()), fence_waiter->fences.data(), VK_TRUE,
-                                  UINT64_MAX);
-            fence_waiter->fences.clear();
+        if (FenceWaiter* fence_waiter = shared_resources_cache.TryGet<FenceWaiter>()) {
+            std::vector<VkFence> fences;
+            // Lock for a short time just to move the fences, so DispatchWaitForFences
+            // below does not block PostSubmit from adding new fences.
+            {
+                std::lock_guard<std::mutex> fence_waiter_guard(fence_waiter->lock);
+                fences = std::move(fence_waiter->fences);
+                fence_waiter->fences.clear();
+            }
+            if (!fences.empty()) {
+                DispatchWaitForFences(gpuav_.device, uint32_t(fences.size()), fences.data(), VK_TRUE, UINT64_MAX);
+            }
         }
 
         for (std::vector<vvl::CommandBufferSubmission>& cb_submissions : retiring_) {
