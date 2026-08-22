@@ -21,6 +21,7 @@
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
+#include "generated/extended_flags_helper_generator.h"
 #include "containers/container_utils.h"
 #include "utils/image_utils.h"
 #include "utils/math_utils.h"
@@ -1007,6 +1008,29 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
                     "tiling is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT and flags contain VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT "
                     "bit, but the pNext chain does not contain an instance of VkImageFormatListCreateInfo with non-zero "
                     "viewFormatCount.");
+            }
+        }
+
+        if (vku::FindStructInPNextChain<VkFilterCubicImageViewImageFormatPropertiesEXT>(pImageFormatProperties->pNext)) {
+            const auto* image_view_info =
+                vku::FindStructInPNextChain<VkPhysicalDeviceImageViewImageFormatInfoEXT>(pImageFormatInfo->pNext);
+            if (!image_view_info) {
+                skip |= LogError(
+                    "VUID-VkFilterCubicImageViewImageFormatPropertiesEXT-pNext-02627", physicalDevice,
+                    error_obj.location.dot(Field::pImageFormatProperties).pNext(Struct::VkFilterCubicImageViewImageFormatPropertiesEXT),
+                    "is included in the pNext chain of pImageFormatProperties, but "
+                    "VkPhysicalDeviceImageViewImageFormatInfoEXT isn't included in the pNext chain of pImageFormatInfo.\n%s",
+                    PrintPNextChain(Struct::VkPhysicalDeviceImageFormatInfo2, pImageFormatInfo->pNext).c_str());
+            } else if (!IsImageViewTypeCompatibleWithImageType(physical_device_extensions.at(physicalDevice),
+                                                               image_view_info->imageViewType, pImageFormatInfo->type,
+                                                               GetImageCreateFlags(*pImageFormatInfo))) {
+                skip |= LogError(
+                    "VUID-VkFilterCubicImageViewImageFormatPropertiesEXT-pNext-02627", physicalDevice,
+                    format_info_loc.pNext(Struct::VkPhysicalDeviceImageViewImageFormatInfoEXT, Field::imageViewType),
+                    "(%s) is not compatible with (%s) that has (%s).",
+                    string_VkImageViewType(image_view_info->imageViewType),
+                    string_VkImageType(pImageFormatInfo->type),
+                    string_VkImageCreateFlags2KHR(GetImageCreateFlags(*pImageFormatInfo)).c_str());
             }
         }
     }
