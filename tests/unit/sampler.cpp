@@ -1763,3 +1763,78 @@ TEST_F(NegativeSampler, CustomBorderColorsFeature) {
     vk::CreateSampler(device(), &sampler_info, NULL, &sampler);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSampler, MissingViewConversion) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView view = image.CreateView();
+
+    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM);
+    VkSamplerYcbcrConversionInfo ycbcr_info = conversion.ConversionInfo();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&ycbcr_info));
+
+    OneOffDescriptorSet descriptor_set(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler.handle()},
+                  });
+
+    if (!descriptor_set.set_) {
+        GTEST_SKIP() << "Failed to allocate descriptor set, skipping test.";
+    }
+
+    descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
+
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-01948");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSampler, MissingSamplerConversion) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_LINEAR;
+
+    bool supported = IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
+    if (!supported) {
+        GTEST_SKIP() << "Multiplane image format not supported";
+    }
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM);
+    VkSamplerYcbcrConversionInfo ycbcr_info = conversion.ConversionInfo();
+    vkt::ImageView view = image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT, &ycbcr_info);
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    OneOffDescriptorSet descriptor_set(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler.handle()},
+                  });
+
+    if (!descriptor_set.set_) {
+        GTEST_SKIP() << "Failed to allocate descriptor set, skipping test.";
+    }
+
+    descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
+
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-01948");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+}
