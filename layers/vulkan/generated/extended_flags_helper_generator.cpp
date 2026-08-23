@@ -37,7 +37,7 @@ VkBufferUsageFlags2 GetBufferUsageFlags(const VkBufferCreateInfo& create_info) {
 Location GetUsageLocation(const VkBufferCreateInfo& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkBufferUsageFlags2CreateInfo).dot(vvl::Field::usage);
+        return loc.pNext(vvl::Struct::VkBufferUsageFlags2CreateInfo, vvl::Field::usage);
     }
     return loc.dot(vvl::Field::usage);
 }
@@ -53,7 +53,7 @@ VkImageCreateFlags2KHR GetImageCreateFlags(const VkImageCreateInfo& create_info)
 Location GetFlagsLocation(const VkImageCreateInfo& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkImageCreateFlags2CreateInfoKHR>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkImageCreateFlags2CreateInfoKHR).dot(vvl::Field::flags);
+        return loc.pNext(vvl::Struct::VkImageCreateFlags2CreateInfoKHR, vvl::Field::flags);
     }
     return loc.dot(vvl::Field::flags);
 }
@@ -69,7 +69,7 @@ VkImageUsageFlags2KHR GetImageUsageFlags(const VkImageCreateInfo& create_info) {
 Location GetUsageLocation(const VkImageCreateInfo& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkImageUsageFlags2CreateInfoKHR).dot(vvl::Field::usage);
+        return loc.pNext(vvl::Struct::VkImageUsageFlags2CreateInfoKHR, vvl::Field::usage);
     }
     return loc.dot(vvl::Field::usage);
 }
@@ -85,7 +85,7 @@ VkPipelineCreateFlags2 GetPipelineCreateFlags(const VkComputePipelineCreateInfo&
 Location GetFlagsLocation(const VkComputePipelineCreateInfo& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkPipelineCreateFlags2CreateInfo).dot(vvl::Field::flags);
+        return loc.pNext(vvl::Struct::VkPipelineCreateFlags2CreateInfo, vvl::Field::flags);
     }
     return loc.dot(vvl::Field::flags);
 }
@@ -101,7 +101,7 @@ VkPipelineCreateFlags2 GetPipelineCreateFlags(const VkGraphicsPipelineCreateInfo
 Location GetFlagsLocation(const VkGraphicsPipelineCreateInfo& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkPipelineCreateFlags2CreateInfo).dot(vvl::Field::flags);
+        return loc.pNext(vvl::Struct::VkPipelineCreateFlags2CreateInfo, vvl::Field::flags);
     }
     return loc.dot(vvl::Field::flags);
 }
@@ -117,7 +117,7 @@ VkImageUsageFlags2KHR GetImageUsageFlags(const VkPhysicalDeviceImageFormatInfo2&
 Location GetUsageLocation(const VkPhysicalDeviceImageFormatInfo2& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkImageUsageFlags2CreateInfoKHR).dot(vvl::Field::usage);
+        return loc.pNext(vvl::Struct::VkImageUsageFlags2CreateInfoKHR, vvl::Field::usage);
     }
     return loc.dot(vvl::Field::usage);
 }
@@ -133,7 +133,7 @@ VkImageCreateFlags2KHR GetImageCreateFlags(const VkPhysicalDeviceImageFormatInfo
 Location GetFlagsLocation(const VkPhysicalDeviceImageFormatInfo2& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkImageCreateFlags2CreateInfoKHR>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkImageCreateFlags2CreateInfoKHR).dot(vvl::Field::flags);
+        return loc.pNext(vvl::Struct::VkImageCreateFlags2CreateInfoKHR, vvl::Field::flags);
     }
     return loc.dot(vvl::Field::flags);
 }
@@ -149,7 +149,7 @@ VkImageUsageFlags2KHR GetImageUsageFlags(const VkPhysicalDeviceSparseImageFormat
 Location GetUsageLocation(const VkPhysicalDeviceSparseImageFormatInfo2& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkImageUsageFlags2CreateInfoKHR).dot(vvl::Field::usage);
+        return loc.pNext(vvl::Struct::VkImageUsageFlags2CreateInfoKHR, vvl::Field::usage);
     }
     return loc.dot(vvl::Field::usage);
 }
@@ -165,7 +165,7 @@ VkBufferUsageFlags2 GetBufferCreateFlags(const VkPhysicalDeviceExternalBufferInf
 Location GetFlagsLocation(const VkPhysicalDeviceExternalBufferInfo& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkBufferUsageFlags2CreateInfo).dot(vvl::Field::usage);
+        return loc.pNext(vvl::Struct::VkBufferUsageFlags2CreateInfo, vvl::Field::usage);
     }
     return loc.dot(vvl::Field::flags);
 }
@@ -181,7 +181,7 @@ VkImageCreateFlags2KHR GetImageCreateFlags(const VkFramebufferAttachmentImageInf
 Location GetFlagsLocation(const VkFramebufferAttachmentImageInfo& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkImageCreateFlags2CreateInfoKHR>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkImageCreateFlags2CreateInfoKHR).dot(vvl::Field::flags);
+        return loc.pNext(vvl::Struct::VkImageCreateFlags2CreateInfoKHR, vvl::Field::flags);
     }
     return loc.dot(vvl::Field::flags);
 }
@@ -197,7 +197,7 @@ VkImageUsageFlags2KHR GetImageUsageFlags(const VkFramebufferAttachmentImageInfo&
 Location GetUsageLocation(const VkFramebufferAttachmentImageInfo& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkImageUsageFlags2CreateInfoKHR).dot(vvl::Field::usage);
+        return loc.pNext(vvl::Struct::VkImageUsageFlags2CreateInfoKHR, vvl::Field::usage);
     }
     return loc.dot(vvl::Field::usage);
 }
@@ -213,7 +213,7 @@ VkImageUsageFlags2KHR GetImageUsageFlags(const VkSwapchainCreateInfoKHR& create_
 Location GetImageUsageLocation(const VkSwapchainCreateInfoKHR& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkImageUsageFlags2CreateInfoKHR).dot(vvl::Field::usage);
+        return loc.pNext(vvl::Struct::VkImageUsageFlags2CreateInfoKHR, vvl::Field::usage);
     }
     return loc.dot(vvl::Field::imageUsage);
 }
@@ -229,7 +229,7 @@ VkImageUsageFlags2KHR GetImageUsageFlags(const VkPhysicalDeviceVideoFormatInfoKH
 Location GetImageUsageLocation(const VkPhysicalDeviceVideoFormatInfoKHR& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkImageUsageFlags2CreateInfoKHR).dot(vvl::Field::usage);
+        return loc.pNext(vvl::Struct::VkImageUsageFlags2CreateInfoKHR, vvl::Field::usage);
     }
     return loc.dot(vvl::Field::imageUsage);
 }
@@ -245,7 +245,7 @@ VkPipelineCreateFlags2 GetPipelineCreateFlags(const VkRayTracingPipelineCreateIn
 Location GetFlagsLocation(const VkRayTracingPipelineCreateInfoNV& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkPipelineCreateFlags2CreateInfo).dot(vvl::Field::flags);
+        return loc.pNext(vvl::Struct::VkPipelineCreateFlags2CreateInfo, vvl::Field::flags);
     }
     return loc.dot(vvl::Field::flags);
 }
@@ -261,7 +261,7 @@ VkBufferUsageFlags2 GetBufferUsageFlags(const VkDescriptorBufferBindingInfoEXT& 
 Location GetUsageLocation(const VkDescriptorBufferBindingInfoEXT& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkBufferUsageFlags2CreateInfo).dot(vvl::Field::usage);
+        return loc.pNext(vvl::Struct::VkBufferUsageFlags2CreateInfo, vvl::Field::usage);
     }
     return loc.dot(vvl::Field::usage);
 }
@@ -277,7 +277,7 @@ VkPipelineCreateFlags2 GetPipelineCreateFlags(const VkRayTracingPipelineCreateIn
 Location GetFlagsLocation(const VkRayTracingPipelineCreateInfoKHR& create_info, const Location& loc) {
     const auto extended = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(create_info.pNext);
     if (extended) {
-        return loc.pNext(vvl::Struct::VkPipelineCreateFlags2CreateInfo).dot(vvl::Field::flags);
+        return loc.pNext(vvl::Struct::VkPipelineCreateFlags2CreateInfo, vvl::Field::flags);
     }
     return loc.dot(vvl::Field::flags);
 }
