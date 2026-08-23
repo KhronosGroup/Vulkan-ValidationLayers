@@ -1156,16 +1156,26 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
                                      "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00825", error_obj.location.dot(Field::dstBuffer));
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
+    const auto query_pool_state = Get<vvl::QueryPool>(queryPool);
+    ASSERT_AND_RETURN_SKIP(query_pool_state);
+
     if (dstOffset >= dst_buff_state->requirements.size) {
         skip |= LogError("VUID-vkCmdCopyQueryPoolResults-dstOffset-00819", buffer_objlist, error_obj.location.dot(Field::dstOffset),
                          "(%" PRIu64 ") is not less than the size (%" PRIu64 ") of buffer (%s).", dstOffset,
                          dst_buff_state->requirements.size, FormatHandle(dst_buff_state->Handle()).c_str());
-    } else if (dstOffset + (queryCount * stride) > dst_buff_state->requirements.size) {
-        skip |= LogError("VUID-vkCmdCopyQueryPoolResults-dstBuffer-00824", buffer_objlist, error_obj.location,
-                         "storage required (%" PRIu64
-                         ") equal to dstOffset + (queryCount * stride) is greater than the size (%" PRIu64 ") of buffer (%s).",
-                         dstOffset + (queryCount * stride), dst_buff_state->requirements.size,
-                         FormatHandle(dst_buff_state->Handle()).c_str());
+    } else if (queryCount != 0) {
+        const uint32_t query_size = query_pool_state->GetQuerySize(flags);
+        // Described in vkspec.html#queries-operation-memorylayout
+        const VkDeviceSize required_size = dstOffset + ((queryCount - 1) * stride) + query_size;
+        if (query_size != 0 && required_size > dst_buff_state->requirements.size) {
+            skip |= LogError("VUID-vkCmdCopyQueryPoolResults-dstBuffer-00824", buffer_objlist, error_obj.location,
+                             "storage required (%" PRIu64
+                             ") equal to dstOffset + ((queryCount - 1) * stride) + querySize is greater than the size (%" PRIu64
+                             ") of buffer (%s).\ndstOffset = %" PRIu64 "\n  queryCount = %" PRIu32 "\n  stride = %" PRIu64
+                             "\n  querySize = %" PRIu32,
+                             required_size, dst_buff_state->requirements.size, FormatHandle(dst_buff_state->Handle()).c_str(),
+                             dstOffset, queryCount, stride, query_size);
+        }
     }
 
     if ((flags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) && (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
@@ -1178,9 +1188,6 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
         skip |= LogError("VUID-vkCmdCopyQueryPoolResults-queryCount-09438", objlist, error_obj.location.dot(Field::queryCount),
                          "is %" PRIu32 " but stride is zero.", queryCount);
     }
-
-    const auto query_pool_state = Get<vvl::QueryPool>(queryPool);
-    ASSERT_AND_RETURN_SKIP(query_pool_state);
 
     skip |= ValidateQueryPoolIndex(commandBuffer, *query_pool_state, firstQuery, queryCount, error_obj.location,
                                    "VUID-vkCmdCopyQueryPoolResults-firstQuery-09436",
