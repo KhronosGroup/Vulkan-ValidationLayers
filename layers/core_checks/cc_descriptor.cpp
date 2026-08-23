@@ -2197,19 +2197,40 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, co
                 // VK_NULL_HANDLE when updating the imageView
                 if (desc.IsImmutableSampler()) {
                     if (auto sampler_state = Get<vvl::Sampler>(desc.GetSampler())) {
+                        const VkSamplerYcbcrConversion sampler_conversion = sampler_state->sampler_conversion;
+                        const VkSamplerYcbcrConversion view_conversion = iv_state->sampler_conversion;
                         // Do a quick handle check, if not the same, need to check if create info is the same
-                        if (iv_state->sampler_conversion != sampler_state->sampler_conversion) {
-                            const auto sampler_ycbcr = Get<vvl::SamplerYcbcrConversion>(sampler_state->sampler_conversion);
-                            const auto view_ycbcr = Get<vvl::SamplerYcbcrConversion>(iv_state->sampler_conversion);
-                            if (sampler_ycbcr && view_ycbcr && (*sampler_ycbcr != *view_ycbcr)) {
+                        if (view_conversion != sampler_conversion) {
+                            const auto sampler_ycbcr = Get<vvl::SamplerYcbcrConversion>(sampler_conversion);
+                            const auto view_ycbcr = Get<vvl::SamplerYcbcrConversion>(view_conversion);
+
+                            std::string msg;
+                            if (!view_ycbcr) {
+                                msg = "(" + FormatHandle(image_view) +
+                                      ") was created without a VkSamplerYcbcrConversionInfo in its pNext chain, but the "
+                                      "immutable sampler " +
+                                      FormatHandle(desc.GetSampler()) + " was created with " + FormatHandle(sampler_conversion) +
+                                      ".\n";
+                            } else if (!sampler_ycbcr) {
+                                msg = "(" + FormatHandle(image_view) + ") was created with " + FormatHandle(view_conversion) +
+                                      ", but the immutable sampler " + FormatHandle(desc.GetSampler()) +
+                                      " was created without a VkSamplerYcbcrConversionInfo in its pNext chain.\n";
+                            } else if (*sampler_ycbcr != *view_ycbcr) {
+                                msg = "(" + FormatHandle(image_view) + ") was created with " + FormatHandle(view_conversion) +
+                                      ", which is not identically defined to " + FormatHandle(sampler_conversion) +
+                                      " that the immutable sampler " + FormatHandle(desc.GetSampler()) + " was created with.\n";
+                            }
+
+                            if (!msg.empty()) {
+                                if (sampler_ycbcr) {
+                                    msg += "Sampler VkSamplerYcbcrConversion\n" + sampler_ycbcr->Describe();
+                                }
+                                if (view_ycbcr) {
+                                    msg += "ImageView VkSamplerYcbcrConversion\n" + view_ycbcr->Describe();
+                                }
                                 const LogObjectList objlist(update.dstSet, desc.GetSampler(), image_view);
-                                skip |= LogError(
-                                    "VUID-VkWriteDescriptorSet-descriptorType-01948", objlist, image_info_loc.dot(Field::sampler),
-                                    "was created with %s which is not identical to %s that was used to create %s.\nSampler "
-                                    "VkSamplerYcbcrConversion\n%sImageView VkSamplerYcbcrConversion\n%s",
-                                    FormatHandle(iv_state->sampler_conversion).c_str(),
-                                    FormatHandle(sampler_state->sampler_conversion).c_str(), FormatHandle(image_view).c_str(),
-                                    sampler_ycbcr->Describe().c_str(), view_ycbcr->Describe().c_str());
+                                skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-01948", objlist,
+                                                 image_info_loc.dot(Field::imageView), "%s", msg.c_str());
                             }
                         }
                     }
