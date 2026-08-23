@@ -2103,7 +2103,7 @@ TEST_F(NegativeVideo, CopyQueryPoolResultsStatusBitInvalidQueryType) {
 
     VkQueryResultFlags flags;
 
-    vkt::Buffer buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, 2 * sizeof(uint32_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_command_buffer.Begin();
 
