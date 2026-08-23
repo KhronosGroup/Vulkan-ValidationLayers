@@ -704,3 +704,24 @@ TEST_F(PositiveQuery, SubpassQueries) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveQuery, CopyLastQueryResult) {
+    RETURN_IF_SKIP(Init());
+
+    constexpr VkDeviceSize buffer_size = 4096u;
+    constexpr VkDeviceSize stride = buffer_size - 4u;
+    vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2u);
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 2u);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 1u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 1u);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0u, 2u, buffer, 0u, stride, VK_QUERY_RESULT_WAIT_BIT);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
