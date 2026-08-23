@@ -266,7 +266,7 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
 
     // Concurrent sharing usage of image with exclusive sharing mode
     bool qfot_required = true;
-    if (enabled_features.maintenance9) {
+    if (enabled_features.maintenance9 && last_usage.queue_family_index != VK_QUEUE_FAMILY_IGNORED) {
         if (image_state.GetTiling() == VK_IMAGE_TILING_LINEAR) {
             qfot_required = false;
         } else if ((image_state.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
