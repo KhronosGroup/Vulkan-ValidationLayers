@@ -102,7 +102,7 @@ class ExtendedFlagsHelperOutputGenerator(BaseGenerator):
                 out.append(f'Location Get{location_name}Location(const {struct.name}& create_info, const Location& loc) {{')
                 out.append(f'const auto extended = vku::FindStructInPNextChain<{extend_struct.name}>(create_info.pNext);')
                 out.append(f'if (extended) {{')
-                out.append(f'    return loc.pNext(vvl::Struct::{extend_struct.name}).dot(vvl::Field::{extend_member.name});')
+                out.append(f'    return loc.pNext(vvl::Struct::{extend_struct.name}, vvl::Field::{extend_member.name});')
                 out.append(f'}}')
                 out.append(f'    return loc.dot(vvl::Field::{member.name});')
                 out.append(f'}}\n\n')

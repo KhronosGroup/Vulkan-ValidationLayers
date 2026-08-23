@@ -1443,8 +1443,10 @@ TEST_F(NegativeOther, OverridePipelineCreateFlags2) {
 TEST_F(NegativeOther, AppendingPipelineCreateFlags2) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
     VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();

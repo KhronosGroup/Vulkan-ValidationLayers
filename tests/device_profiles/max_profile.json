@@ -909,6 +909,9 @@
                 "VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT": {
                     "multisampledRenderToSingleSampled": true
                 },
+                "VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT": {
+                    "multisampledRenderToSwapchain": true
+                },
                 "VkPhysicalDevicePipelineProtectedAccessFeaturesEXT": {
                     "pipelineProtectedAccess": true
                 },
@@ -1199,6 +1202,9 @@
                 },
                 "VkPhysicalDeviceDynamicRenderingLocalReadFeaturesKHR": {
                     "dynamicRenderingLocalRead": true
+                },
+                "VkPhysicalDeviceExtendedFlagsFeaturesKHR": {
+                    "extendedFlags": true
                 },
                 "VkPhysicalDevicePipelineBinaryFeaturesKHR": {
                     "pipelineBinaries": true
@@ -2566,6 +2572,7 @@
                 "VK_EXT_metal_surface": 1,
                 "VK_EXT_multi_draw": 1,
                 "VK_EXT_multisampled_render_to_single_sampled": 1,
+                "VK_EXT_multisampled_render_to_swapchain": 1,
                 "VK_EXT_mutable_descriptor_type": 1,
                 "VK_EXT_nested_command_buffer": 1,
                 "VK_EXT_non_seamless_cube_map": 1,
@@ -2680,6 +2687,7 @@
                 "VK_KHR_driver_properties": 1,
                 "VK_KHR_dynamic_rendering": 1,
                 "VK_KHR_dynamic_rendering_local_read": 1,
+                "VK_KHR_extended_flags": 1,
                 "VK_KHR_external_fence": 1,
                 "VK_KHR_external_fence_capabilities": 1,
                 "VK_KHR_external_fence_fd": 1,
