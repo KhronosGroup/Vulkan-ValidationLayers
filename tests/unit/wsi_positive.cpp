@@ -3824,3 +3824,45 @@ TEST_F(PositiveWsi, NullPresentIdsFeatureDisabled) {
     m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_id);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveWsi, NullPresentRegions) {
+    AddRequiredExtensions(VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const vkt::Fence image_acquired(*m_device);
+    const auto swapchain_images = m_swapchain.GetImages();
+    const uint32_t image_index = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
+    image_acquired.Wait(kWaitTimeout);
+    SetPresentImageLayout(swapchain_images[image_index]);
+
+    VkPresentRegionsKHR present_regions = vku::InitStructHelper();
+    present_regions.swapchainCount = 1u;
+    present_regions.pRegions = nullptr;
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore, &present_regions);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveWsi, NullPresentRegionRectangles) {
+    AddRequiredExtensions(VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const vkt::Fence image_acquired(*m_device);
+    const auto swapchain_images = m_swapchain.GetImages();
+    const uint32_t image_index = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
+    image_acquired.Wait(kWaitTimeout);
+    SetPresentImageLayout(swapchain_images[image_index]);
+
+    VkPresentRegionKHR present_region;
+    present_region.rectangleCount = 1u;
+    present_region.pRectangles = nullptr;
+
+    VkPresentRegionsKHR present_regions = vku::InitStructHelper();
+    present_regions.swapchainCount = 1u;
+    present_regions.pRegions = &present_region;
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore, &present_regions);
+    m_default_queue->Wait();
+}
