@@ -1036,24 +1036,25 @@ bool Device::manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice devi
     const Location info_loc = error_obj.location.dot(Field::pInfo);
     const Location create_info_loc = info_loc.dot(Field::pCreateInfo);
     const Location subresource_loc = info_loc.dot(Field::pSubresource);
+    const Location image_subresource_loc = subresource_loc.dot(Field::imageSubresource);
 
     const VkImageCreateInfo& create_info = *pInfo->pCreateInfo;
     const VkImageSubresource& subresource = pInfo->pSubresource->imageSubresource;
     const VkImageAspectFlags aspect_mask = subresource.aspectMask;
 
     if (CountSetBits(aspect_mask) != 1) {
-        skip |= LogError("VUID-VkDeviceImageSubresourceInfo-aspectMask-00997", device, subresource_loc.dot(Field::aspectMask),
+        skip |= LogError("VUID-VkDeviceImageSubresourceInfo-aspectMask-00997", device, image_subresource_loc.dot(Field::aspectMask),
                          "(%s) must have exactly 1 bit set.", string_VkImageAspectFlags(aspect_mask).c_str());
     }
 
     if (subresource.mipLevel >= create_info.mipLevels) {
-        skip |= LogError("VUID-VkDeviceImageSubresourceInfo-mipLevel-01716", device, subresource_loc.dot(Field::mipLevel),
+        skip |= LogError("VUID-VkDeviceImageSubresourceInfo-mipLevel-01716", device, image_subresource_loc.dot(Field::mipLevel),
                          "(%" PRIu32 ") must be less than %s (%" PRIu32 ").", subresource.mipLevel,
                          create_info_loc.dot(Field::mipLevel).Fields().c_str(), create_info.mipLevels);
     }
 
     if (subresource.arrayLayer >= create_info.arrayLayers) {
-        skip |= LogError("VUID-VkDeviceImageSubresourceInfo-arrayLayer-01717", device, subresource_loc.dot(Field::arrayLayer),
+        skip |= LogError("VUID-VkDeviceImageSubresourceInfo-arrayLayer-01717", device, image_subresource_loc.dot(Field::arrayLayer),
                          "(%" PRIu32 ") must be less than %s (%" PRIu32 ").", subresource.arrayLayer,
                          create_info_loc.dot(Field::arrayLayers).Fields().c_str(), create_info.arrayLayers);
     }
@@ -1063,26 +1064,26 @@ bool Device::manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice devi
         create_info.tiling == VK_IMAGE_TILING_LINEAR || create_info.tiling == VK_IMAGE_TILING_OPTIMAL;
     if (vkuFormatIsColor(image_format) && !vkuFormatIsMultiplane(image_format) && (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) &&
         tiling_linear_optimal) {
-        skip |= LogError("VUID-VkDeviceImageSubresourceInfo-format-08886", device, subresource_loc.dot(Field::aspectMask),
+        skip |= LogError("VUID-VkDeviceImageSubresourceInfo-format-08886", device, image_subresource_loc.dot(Field::aspectMask),
                          "(%s) is invalid with %s (%s).", string_VkImageAspectFlags(aspect_mask).c_str(),
                          create_info_loc.dot(Field::format).Fields().c_str(), string_VkFormat(image_format));
     }
 
     if (vkuFormatHasDepth(image_format) && ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) == 0)) {
-        skip |= LogError("VUID-VkDeviceImageSubresourceInfo-format-04462", device, subresource_loc.dot(Field::aspectMask),
+        skip |= LogError("VUID-VkDeviceImageSubresourceInfo-format-04462", device, image_subresource_loc.dot(Field::aspectMask),
                          "(%s) is invalid with %s (%s).", string_VkImageAspectFlags(aspect_mask).c_str(),
                          create_info_loc.dot(Field::format).Fields().c_str(), string_VkFormat(image_format));
     }
 
     if (vkuFormatHasStencil(image_format) && ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) == 0)) {
-        skip |= LogError("VUID-VkDeviceImageSubresourceInfo-format-04463", device, subresource_loc.dot(Field::aspectMask),
+        skip |= LogError("VUID-VkDeviceImageSubresourceInfo-format-04463", device, image_subresource_loc.dot(Field::aspectMask),
                          "(%s) is invalid with %s (%s).", string_VkImageAspectFlags(aspect_mask).c_str(),
                          create_info_loc.dot(Field::format).Fields().c_str(), string_VkFormat(image_format));
     }
 
     if (!vkuFormatHasDepth(image_format) && !vkuFormatHasStencil(image_format)) {
         if ((aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
-            skip |= LogError("VUID-VkDeviceImageSubresourceInfo-format-04464", device, subresource_loc.dot(Field::aspectMask),
+            skip |= LogError("VUID-VkDeviceImageSubresourceInfo-format-04464", device, image_subresource_loc.dot(Field::aspectMask),
                              "(%s) is invalid with %s (%s).", string_VkImageAspectFlags(aspect_mask).c_str(),
                              create_info_loc.dot(Field::format).Fields().c_str(), string_VkFormat(image_format));
         }
@@ -1091,7 +1092,7 @@ bool Device::manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice devi
     // subresource's aspect must be compatible with image's format.
     if (create_info.tiling == VK_IMAGE_TILING_LINEAR) {
         if (vkuFormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect_mask)) {
-            skip |= LogError("VUID-VkDeviceImageSubresourceInfo-tiling-08717", device, subresource_loc.dot(Field::aspectMask),
+            skip |= LogError("VUID-VkDeviceImageSubresourceInfo-tiling-08717", device, image_subresource_loc.dot(Field::aspectMask),
                              "(%s) is invalid for %s (%s).", string_VkImageAspectFlags(aspect_mask).c_str(),
                              create_info_loc.dot(Field::format).Fields().c_str(), string_VkFormat(image_format));
         }
