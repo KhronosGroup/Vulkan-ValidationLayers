@@ -233,6 +233,12 @@ ExecScopes GetExecScopes(const VkDependencyInfo& dep_info) {
         result.src |= dep_info.pImageMemoryBarriers[i].srcStageMask;
         result.dst |= dep_info.pImageMemoryBarriers[i].dstStageMask;
     }
+    if (const auto memory_range_info = vku::FindStructInPNextChain<VkMemoryRangeBarriersInfoKHR>(dep_info.pNext)) {
+        for (uint32_t i = 0; i < memory_range_info->memoryRangeBarrierCount; i++) {
+            result.src |= memory_range_info->pMemoryRangeBarriers[i].srcStageMask;
+            result.dst |= memory_range_info->pMemoryRangeBarriers[i].dstStageMask;
+        }
+    }
     return result;
 }
 
