@@ -885,11 +885,18 @@ bool CoreChecks::ValidatePresentRegions(VkQueue queue, const VkPresentInfoKHR& p
         return skip;
     }
 
+    if (!present_regions.pRegions) {
+        return skip;
+    }
+
     for (uint32_t i = 0; i < present_regions.swapchainCount; ++i) {
         auto swapchain_state = Get<vvl::Swapchain>(present_info.pSwapchains[i]);
         ASSERT_AND_CONTINUE(swapchain_state);
 
         const VkPresentRegionKHR& region = present_regions.pRegions[i];
+        if (!region.pRectangles) {
+            continue;
+        }
         const Location region_loc = present_info_loc.pNext(Struct::VkPresentRegionsKHR, Field::pRegions, i);
         for (uint32_t j = 0; j < region.rectangleCount; ++j) {
             const Location rect_loc = region_loc.dot(Field::pRectangles, j);
