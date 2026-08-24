@@ -1470,7 +1470,7 @@ bool CoreChecks::PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevic
         }
 
         if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR) {
-            if (as_state->GetType() != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR) {
+            if (as_state->GetType() == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR) {
                 const LogObjectList objlist(device, pAccelerationStructures[i]);
                 skip |= LogError("VUID-vkWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-12425", objlist, as_loc,
                                  "was created with type %s, but queryType is "
@@ -1527,7 +1527,7 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
                                               "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-buffer-03736");
 
         if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR) {
-            if (as_state->GetType() != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR) {
+            if (as_state->GetType() == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR) {
                 skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-12425", commandBuffer,
                                  as_loc,
                                  "was created with type %s, but queryType is "
