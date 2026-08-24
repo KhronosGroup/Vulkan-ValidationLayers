@@ -944,6 +944,21 @@ bool CoreChecks::ValidateTransformFeedbackPipeline(const spirv::Module& module_s
     return skip;
 }
 
+bool CoreChecks::ValidateTransformFeedbackShaderObject(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                       const vku::safe_VkShaderCreateInfoEXT& create_info,
+                                                       const Location& loc) const {
+    bool skip = false;
+
+    if ((create_info.flags & VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT) != 0 &&
+        entrypoint.execution_mode.Has(spirv::ExecutionModeSet::xfb_bit)) {
+        skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-11006", module_state.handle(), loc.dot(Field::flags),
+                         "contains VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT, but shader %s specifies xfb execution mode.",
+                         entrypoint.Describe().c_str());
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateImageWrite(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                     const Location& loc) const {
     bool skip = false;
@@ -1444,6 +1459,10 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
                              "dynamicRenderingLocalRead feature is enabled)",
                              entrypoint.Describe().c_str());
             }
+        }
+    } else {
+        if (enabled_features.transformFeedback) {
+            skip |= ValidateTransformFeedbackShaderObject(module_state, entrypoint, *stage_state.shader_object_create_info, loc);
         }
     }
 
