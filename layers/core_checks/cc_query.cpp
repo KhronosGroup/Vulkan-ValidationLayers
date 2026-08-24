@@ -700,9 +700,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer& cb_state, const Qu
                 is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryPool-04753" : "VUID-vkCmdBeginQuery-queryPool-01922";
             const LogObjectList objlist(cb_state.Handle(), query_obj.pool, active_query_obj.pool);
             skip |= LogError(vuid, objlist, loc,
-                             "query %" PRIu32
-                             " in %s has same queryType (%s) as active query "
-                             "%" PRIu32 " from pool %s inside this command buffer (%s).",
+                             "query %" PRIu32 " in %s has same queryType (%s) as active query %" PRIu32 " from pool %s inside %s.",
                              query_obj.index, FormatHandle(query_obj.pool).c_str(), string_VkQueryType(query_pool_ci.queryType),
                              active_query_obj.index, FormatHandle(active_query_obj.pool).c_str(), FormatHandle(cb_state).c_str());
         }
@@ -1070,13 +1068,13 @@ bool CoreChecks::ValidateQueryPoolIndex(LogObjectList objlist, const vvl::QueryP
     if (firstQuery >= available_query_count) {
         objlist.add(query_pool_state.Handle());
         skip |= LogError(first_vuid, objlist, loc,
-                         "In Query %s the firstQuery (%" PRIu32 ") is greater than or equal to the queryPool size (%" PRIu32 ").",
+                         "In %s the firstQuery (%" PRIu32 ") is greater than or equal to the queryPool size (%" PRIu32 ").",
                          FormatHandle(query_pool_state).c_str(), firstQuery, available_query_count);
     }
     if ((firstQuery + queryCount) > available_query_count) {
         objlist.add(query_pool_state.Handle());
         skip |= LogError(sum_vuid, objlist, loc,
-                         "In Query %s the sum of firstQuery (%" PRIu32 ") + queryCount (%" PRIu32
+                         "In %s the sum of firstQuery (%" PRIu32 ") + queryCount (%" PRIu32
                          ") is greater than the queryPool size (%" PRIu32 ").",
                          FormatHandle(query_pool_state).c_str(), firstQuery, queryCount, available_query_count);
     }
@@ -1161,20 +1159,20 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
 
     if (dstOffset >= dst_buff_state->requirements.size) {
         skip |= LogError("VUID-vkCmdCopyQueryPoolResults-dstOffset-00819", buffer_objlist, error_obj.location.dot(Field::dstOffset),
-                         "(%" PRIu64 ") is not less than the size (%" PRIu64 ") of buffer (%s).", dstOffset,
+                         "(%" PRIu64 ") is not less than the size (%" PRIu64 ") of %s.", dstOffset,
                          dst_buff_state->requirements.size, FormatHandle(dst_buff_state->Handle()).c_str());
     } else if (queryCount != 0) {
         const uint32_t query_size = query_pool_state->GetQuerySize(flags);
         // Described in vkspec.html#queries-operation-memorylayout
         const VkDeviceSize required_size = dstOffset + ((queryCount - 1) * stride) + query_size;
         if (query_size != 0 && required_size > dst_buff_state->requirements.size) {
-            skip |= LogError("VUID-vkCmdCopyQueryPoolResults-dstBuffer-00824", buffer_objlist, error_obj.location,
-                             "storage required (%" PRIu64
-                             ") equal to dstOffset + ((queryCount - 1) * stride) + querySize is greater than the size (%" PRIu64
-                             ") of buffer (%s).\ndstOffset = %" PRIu64 "\n  queryCount = %" PRIu32 "\n  stride = %" PRIu64
-                             "\n  querySize = %" PRIu32,
-                             required_size, dst_buff_state->requirements.size, FormatHandle(dst_buff_state->Handle()).c_str(),
-                             dstOffset, queryCount, stride, query_size);
+            skip |=
+                LogError("VUID-vkCmdCopyQueryPoolResults-dstBuffer-00824", buffer_objlist, error_obj.location,
+                         "%" PRIu64 " bytes is needed to store the query, but dstBuffer (%s) is only %" PRIu64
+                         " bytes\nQuery size equation: dstOffset + ((queryCount - 1) * stride) + querySize\n dstOffset = %" PRIu64
+                         "\n  queryCount = %" PRIu32 "\n  stride = %" PRIu64 "\n  querySize = %" PRIu32,
+                         required_size, FormatHandle(dst_buff_state->Handle()).c_str(), dst_buff_state->requirements.size,
+                         dstOffset, queryCount, stride, query_size);
         }
     }
 
@@ -1351,9 +1349,8 @@ bool CoreChecks::ValidateCmdWriteTimestamp(const vvl::CommandBuffer& cb_state, V
         const char* vuid =
             is_2 ? "VUID-vkCmdWriteTimestamp2-timestampValidBits-03863" : "VUID-vkCmdWriteTimestamp-timestampValidBits-00829";
         const LogObjectList objlist(cb_state.Handle(), queryPool);
-        skip |=
-            LogError(vuid, objlist, loc, "Query Pool %s has a timestampValidBits value of zero for queueFamilyIndex %" PRIu32 ".",
-                     FormatHandle(queryPool).c_str(), cb_state.command_pool.queueFamilyIndex);
+        skip |= LogError(vuid, objlist, loc, "%s has a timestampValidBits value of zero for queueFamilyIndex %" PRIu32 ".",
+                         FormatHandle(queryPool).c_str(), cb_state.command_pool.queueFamilyIndex);
     }
 
     const auto query_pool_state = Get<vvl::QueryPool>(queryPool);
@@ -1362,16 +1359,14 @@ bool CoreChecks::ValidateCmdWriteTimestamp(const vvl::CommandBuffer& cb_state, V
     if (query_pool_state->create_info.queryType != VK_QUERY_TYPE_TIMESTAMP) {
         const char* vuid = is_2 ? "VUID-vkCmdWriteTimestamp2-queryPool-03861" : "VUID-vkCmdWriteTimestamp-queryPool-01416";
         const LogObjectList objlist(cb_state.Handle(), queryPool);
-        skip |= LogError(vuid, objlist, loc, "Query Pool %s was not created with VK_QUERY_TYPE_TIMESTAMP.",
-                         FormatHandle(queryPool).c_str());
+        skip |= LogError(vuid, objlist, loc, "%s was not created with VK_QUERY_TYPE_TIMESTAMP.", FormatHandle(queryPool).c_str());
     }
 
     if (slot >= query_pool_state->create_info.queryCount) {
         const char* vuid = is_2 ? "VUID-vkCmdWriteTimestamp2-query-04903" : "VUID-vkCmdWriteTimestamp-query-04904";
         const LogObjectList objlist(cb_state.Handle(), queryPool);
-        skip |= LogError(vuid, objlist, loc,
-                         "query (%" PRIu32 ") is not lower than the number of queries (%" PRIu32 ") in Query pool %s.", slot,
-                         query_pool_state->create_info.queryCount, FormatHandle(queryPool).c_str());
+        skip |= LogError(vuid, objlist, loc, "query (%" PRIu32 ") is not lower than the number of queries (%" PRIu32 ") in %s.",
+                         slot, query_pool_state->create_info.queryCount, FormatHandle(queryPool).c_str());
     }
     const uint32_t view_mask = cb_state.GetViewMask();
     const uint32_t view_mask_bits = CountSetBits(view_mask);
@@ -1381,7 +1376,7 @@ bool CoreChecks::ValidateCmdWriteTimestamp(const vvl::CommandBuffer& cb_state, V
         skip |=
             LogError(vuid, objlist, loc,
                      "query (%" PRIu32 ") + number of bits (%" PRIu32 ") in current viewMask (0x%" PRIx32
-                     ") is not lower than the number of queries (%" PRIu32 ") in Query pool %s.",
+                     ") is not lower than the number of queries (%" PRIu32 ") in %s.",
                      slot, view_mask_bits, view_mask, query_pool_state->create_info.queryCount, FormatHandle(queryPool).c_str());
     }
 
