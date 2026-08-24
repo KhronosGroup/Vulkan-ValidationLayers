@@ -405,6 +405,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 self.extended_structs.add(member.extendedFlag.struct)
         self.extended_structs = sorted(self.extended_structs)
 
+        self.enumAliases = {alias: enum.name for enum in self.vk.enums.values() for alias in enum.aliases}
+
         if self.filename == 'stateless_instance_methods.h':
             self.generateInstanceHeader()
         elif self.filename == 'stateless_device_methods.h':
@@ -807,6 +809,11 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             return True
         return
 
+    def getEnumName(self, typeName: str) -> (str | None):
+        if typeName in self.vk.enums:
+            return typeName
+        return self.enumAliases.get(typeName, None)
+
     def isFlagReserved(self, flag) -> bool:
         bitmask = self.vk.flags[flag].bitmaskName
         # Check if doesn't have an associated bitmask type, or if the associated bitmask type is empty
@@ -1099,11 +1106,12 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         countRequiredVuid = self.GetVuid(callerName, f"{member.length}-arraylength")
                         arrayRequiredVuid = self.GetVuid(callerName, f"{member.name}-parameter")
                         usedLines.append(f'skip |= {context}ValidateBool32Array({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {counValueRequired}, {arrayRequired}, {countRequiredVuid}, {arrayRequiredVuid});\n')
-                    elif member.type in self.vk.enums and member.const:
+                    elif self.getEnumName(member.type) and member.const:
+                        enumName = self.getEnumName(member.type)
                         lenLoc = 'loc' if member.fixedSizeArray else f'{errorLoc}.dot(Field::{member.length})'
                         countRequiredVuid = self.GetVuid(callerName, f"{member.length}-arraylength")
                         arrayRequiredVuid = self.GetVuid(callerName, f"{member.name}-parameter")
-                        usedLines.append(f'skip |= {context}ValidateRangedEnumArray({lenLoc}, {errorLoc}.dot(Field::{member.name}), vvl::Enum::{member.type}, {valuePrefix}{member.length}, {valuePrefix}{member.name}, {counValueRequired}, {arrayRequired}, {countRequiredVuid}, {arrayRequiredVuid});\n')
+                        usedLines.append(f'skip |= {context}ValidateRangedEnumArray({lenLoc}, {errorLoc}.dot(Field::{member.name}), vvl::Enum::{enumName}, {valuePrefix}{member.length}, {valuePrefix}{member.name}, {counValueRequired}, {arrayRequired}, {countRequiredVuid}, {arrayRequiredVuid});\n')
                     elif member.name == 'pNext':
                         # Generate an array of acceptable VkStructureType values for pNext
                         allowedTypeCount = 0
@@ -1237,9 +1245,10 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     elif member.type == 'VkDeviceAddress' and not member.optional:
                         vuid = self.GetVuid(callerName, f"{member.name}-parameter")
                         usedLines.append(f'skip |= {context}ValidateNotZero({valuePrefix}{member.name} == 0, {vuid}, {errorLoc}.dot(Field::{member.name}));\n')
-                    elif member.type in self.vk.enums and member.type != 'VkStructureType':
+                    elif self.getEnumName(member.type) and member.type != 'VkStructureType':
+                        enumName = self.getEnumName(member.type)
                         vuid = self.GetVuid(callerName, f"{member.name}-parameter")
-                        usedLines.append(f'skip |= {context}ValidateRangedEnum({errorLoc}.dot(Field::{member.name}), vvl::Enum::{member.type}, {valuePrefix}{member.name}, {vuid});\n')
+                        usedLines.append(f'skip |= {context}ValidateRangedEnum({errorLoc}.dot(Field::{member.name}), vvl::Enum::{enumName}, {valuePrefix}{member.name}, {vuid});\n')
                     # If this is a struct, see if it contains members that need to be checked
                     if member.type in self.validatedStructs:
                         newErrorLoc = f'{member.name}_loc'

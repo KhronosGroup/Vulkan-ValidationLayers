@@ -23471,6 +23471,9 @@ bool Device::PreCallValidateCreateAccelerationStructureNV(VkDevice device, const
         skip |= context.ValidateStructPnext(info_loc, pCreateInfo->info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                             "VUID-VkAccelerationStructureInfoNV-pNext-pNext", kVUIDUndefined, true);
 
+        skip |= context.ValidateRangedEnum(info_loc.dot(Field::type), vvl::Enum::VkAccelerationStructureTypeKHR,
+                                           pCreateInfo->info.type, "VUID-VkAccelerationStructureInfoNV-type-parameter");
+
         skip |= context.ValidateFlags(info_loc.dot(Field::flags), vvl::FlagBitmask::VkBuildAccelerationStructureFlagBitsKHR,
                                       AllVkBuildAccelerationStructureFlagBitsKHR, pCreateInfo->info.flags, kOptionalFlags,
                                       "VUID-VkAccelerationStructureInfoNV-flags-parameter", nullptr, false);
@@ -23639,6 +23642,9 @@ bool Device::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer comm
         [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
         skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                             "VUID-VkAccelerationStructureInfoNV-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateRangedEnum(pInfo_loc.dot(Field::type), vvl::Enum::VkAccelerationStructureTypeKHR, pInfo->type,
+                                           "VUID-VkAccelerationStructureInfoNV-type-parameter");
 
         skip |= context.ValidateFlags(pInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBuildAccelerationStructureFlagBitsKHR,
                                       AllVkBuildAccelerationStructureFlagBitsKHR, pInfo->flags, kOptionalFlags,
@@ -27551,9 +27557,13 @@ bool Device::PreCallValidateCmdSetLineRasterizationModeEXT(VkCommandBuffer comma
                                                            VkLineRasterizationModeEXT lineRasterizationMode,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
+    Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
+    skip |=
+        context.ValidateRangedEnum(loc.dot(Field::lineRasterizationMode), vvl::Enum::VkLineRasterizationMode, lineRasterizationMode,
+                                   "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-parameter");
     return skip;
 }
 
