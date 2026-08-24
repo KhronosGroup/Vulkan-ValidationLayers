@@ -3611,3 +3611,33 @@ TEST_F(PositiveDescriptorHeap, ImageViewUsage) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDescriptorHeap, SecondSamplerHeap) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    if (heap_props.minSamplerHeapReservedRange == 0) {
+        GTEST_SKIP() << "Test requires minSamplerHeapReservedRange != 0";
+    }
+
+    vkt::DescriptorHeap heap1(*this);
+    heap1.CreateSamplerHeap(heap_props.samplerDescriptorSize);
+    vkt::DescriptorHeap heap2(*this);
+    heap2.CreateSamplerHeap(heap_props.samplerDescriptorSize);
+
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+
+    cb1.Begin();
+    heap1.BindSamplerHeap(cb1);
+    heap2.BindSamplerHeap(cb1);
+    cb1.End();
+
+    m_default_queue->SubmitAndWait(cb1);
+    cb1.Destroy();
+
+    cb2.Begin();
+    heap1.BindSamplerHeap(cb2);
+    heap2.BindSamplerHeap(cb2);
+    cb2.End();
+    m_default_queue->SubmitAndWait(cb2);
+}
