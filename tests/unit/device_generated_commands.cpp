@@ -3272,3 +3272,32 @@ TEST_F(NegativeDeviceGeneratedCommands, PreprocessAddressDestroyed) {
     vk::EndCommandBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDeviceGeneratedCommands, IndirectBindableXfbExecutionMode) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+
+    const char* vert = R"glsl(
+        #version 460
+        layout(location = 0, xfb_buffer = 0, xfb_offset = 0, xfb_stride = 12) out vec3 outPos;
+
+        void main() {
+            vec3 pos = vec3(gl_VertexIndex);
+            outPos = pos;
+            gl_Position = vec4(pos, 1.0);
+        }
+    )glsl";
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert);
+
+    VkShaderCreateInfoEXT create_info =
+        ShaderCreateInfoFlag(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
+
+    VkShaderEXT shader;
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-11006");
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
+    m_errorMonitor->VerifyFound();
+}
