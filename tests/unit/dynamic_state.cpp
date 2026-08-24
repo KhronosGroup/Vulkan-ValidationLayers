@@ -6616,3 +6616,15 @@ TEST_F(NegativeDynamicState, PipelineExclusiveScissorCountWithDynamicViewportCou
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDynamicState, InvalidLineRasterizationMode) {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3LineRasterizationMode);
+    RETURN_IF_SKIP(Init());
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-parameter");
+    vk::CmdSetLineRasterizationModeEXT(m_command_buffer, VK_LINE_RASTERIZATION_MODE_MAX_ENUM);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
