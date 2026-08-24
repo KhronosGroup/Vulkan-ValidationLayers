@@ -2476,7 +2476,7 @@ void CommandBuffer::RecordBindResourceHeap(vvl::DeviceState& device_state, const
     descriptor_heap.Update(bind_info, false);
 
     if (descriptor_heap.resource_reserved != old_reserved) {
-        device_state.UpdateCommandBufferHeapReservedAddressMap(this, descriptor_heap.resource_reserved, false);
+        device_state.UpdateCommandBufferHeapReservedAddressMap(this, old_reserved, descriptor_heap.resource_reserved, false);
     }
 
     SetDescriptorMode(DescriptorModeHeap, loc.function);
@@ -2496,7 +2496,7 @@ void CommandBuffer::RecordBindSamplerHeap(vvl::DeviceState& device_state, const 
     descriptor_heap.Update(bind_info, true);
 
     if (descriptor_heap.sampler_reserved != old_reserved) {
-        device_state.UpdateCommandBufferHeapReservedAddressMap(this, descriptor_heap.sampler_reserved, true);
+        device_state.UpdateCommandBufferHeapReservedAddressMap(this, old_reserved, descriptor_heap.sampler_reserved, true);
     }
 
     SetDescriptorMode(DescriptorModeHeap, loc.function);

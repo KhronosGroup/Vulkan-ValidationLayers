@@ -7199,19 +7199,18 @@ struct CommandBufferReservedAddressRemoveOps {
 };
 
 void DeviceState::UpdateCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* cb_state,
+                                                            const vvl::range<VkDeviceAddress>& old_range,
                                                             const vvl::range<VkDeviceAddress>& new_range, bool is_sampler) {
     assert(cb_state != nullptr);
 
     WriteLockGuard guard(descriptor_heap_reserved_address.lock);
 
-    const vvl::range<VkDeviceAddress>& existing_range =
-        is_sampler ? cb_state->descriptor_heap.sampler_reserved : cb_state->descriptor_heap.resource_reserved;
     DescriptorHeapReservedAddress::RangeMap& cmd_buffer_map =
         is_sampler ? descriptor_heap_reserved_address.sampler_map : descriptor_heap_reserved_address.resource_map;
 
-    if (existing_range.non_empty()) {
+    if (old_range.non_empty()) {
         CommandBufferReservedAddressRemoveOps remove_ops{cb_state};
-        cmd_buffer_map.erase_range_or_touch(existing_range, remove_ops);
+        cmd_buffer_map.erase_range_or_touch(old_range, remove_ops);
     }
 
     if (new_range.non_empty()) {

@@ -2164,8 +2164,8 @@ class DeviceState : public vvl::BaseDevice {
     // Canonical ids of the set layouts created from *this* device.
     vvl::DescriptorSetLayoutDict descriptor_set_layout_canonical_ids_;
 
-    void UpdateCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* cb_state, const vvl::range<VkDeviceAddress>& new_range,
-                                                   bool is_sampler);
+    void UpdateCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* cb_state, const vvl::range<VkDeviceAddress>& old_range,
+                                                   const vvl::range<VkDeviceAddress>& new_range, bool is_sampler);
     void RemoveCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* cb_state);
 
     // Map from serialized data host address to original AS handle.
