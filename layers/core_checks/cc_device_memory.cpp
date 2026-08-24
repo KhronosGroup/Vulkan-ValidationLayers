@@ -771,12 +771,52 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle
 bool CoreChecks::ValidateMemoryTypes(const vvl::DeviceMemory& mem_info, const uint32_t memory_type_bits,
                                      const Location& resource_loc, const char* vuid) const {
     bool skip = false;
-    if (((1 << mem_info.allocate_info.memoryTypeIndex) & memory_type_bits) == 0) {
-        skip |= LogError(vuid, mem_info.Handle(), resource_loc,
-                         "require memoryTypeBits (0x%x) but (%s) was allocated with memoryTypeIndex (%" PRIu32
-                         ") with memoryTypeBits (0x%x).",
-                         memory_type_bits, FormatHandle(mem_info.Handle()).c_str(), mem_info.allocate_info.memoryTypeIndex,
-                         phys_dev_mem_props.memoryTypes[mem_info.allocate_info.memoryTypeIndex].propertyFlags);
+    const uint32_t allocated_index = mem_info.allocate_info.memoryTypeIndex;
+
+    if (((1 << allocated_index) & memory_type_bits) == 0) {
+        std::ostringstream ss;
+
+        // strip the verbose "VK_MEMORY_PROPERTY_" prefix
+        auto strip_prefix = [](VkMemoryPropertyFlags flags) {
+            std::string str = string_VkMemoryPropertyFlags(flags);
+            std::string prefix = "VK_MEMORY_PROPERTY_";
+            size_t pos = 0;
+            while ((pos = str.find(prefix, pos)) != std::string::npos) {
+                str.erase(pos, prefix.length());
+            }
+            return str.empty() ? "None" : str;
+        };
+
+        const VkMemoryPropertyFlags allocated_flags = phys_dev_mem_props.memoryTypes[allocated_index].propertyFlags;
+        ss << "requires memoryTypeBits (0x" << std::hex << memory_type_bits << std::dec << ") but bound memory ("
+           << FormatHandle(mem_info.Handle()) << ") was allocated with memoryTypeIndex (" << allocated_index
+           << ").\nThe allocated memoryTypeIndex (" << allocated_index << ") provides: " << strip_prefix(allocated_flags) << "\n";
+
+        if (memory_type_bits == 0) {
+            ss << "There are currently no memoryTypeIndex that would have worked:\n";
+            for (uint32_t i = 0; i < phys_dev_mem_props.memoryTypeCount; ++i) {
+                ss << "    - Index " << i << " (" << strip_prefix(phys_dev_mem_props.memoryTypes[i].propertyFlags) << ")\n";
+            }
+        } else {
+            bool print_note = false;
+            ss << "The following are memoryTypeIndex that would have worked:\n";
+            for (uint32_t i = 0; i < phys_dev_mem_props.memoryTypeCount; ++i) {
+                if ((1 << i) & memory_type_bits) {
+                    const VkMemoryAllocateFlags flags_i = phys_dev_mem_props.memoryTypes[i].propertyFlags;
+                    ss << "    - Index " << i << " (" << strip_prefix(flags_i) << ")\n";
+                    if (allocated_flags == flags_i) {
+                        print_note = true;
+                    }
+                }
+            }
+            if (print_note) {
+                ss << "Note: Memory types with identical propertyFlags are not interchangeable, drivers may internal hardware "
+                      "restrictions between image tiling (linear vs optimal), resource type (buffer vs image), or specific format "
+                      "support.\n";
+            }
+        }
+
+        skip |= LogError(vuid, mem_info.Handle(), resource_loc, "%s", ss.str().c_str());
     }
     return skip;
 }
