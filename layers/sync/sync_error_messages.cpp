@@ -58,8 +58,8 @@ std::string ErrorMessages::BufferError(const HazardResult& hazard, const Command
     return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "BufferError", additional_info);
 }
 
-std::string ErrorMessages::BufferCopyError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                           const vvl::Func command, const std::string& resource_description, uint32_t region_index,
+std::string ErrorMessages::BufferCopyError(const SyncEnvironment& env, const HazardResult& hazard, const vvl::Func command,
+                                           const std::string& resource_description, uint32_t region_index,
                                            AccessRange range) const {
     AdditionalMessageInfo additional_info;
     additional_info.properties.Add(kPropertyRegionIndex, region_index);
@@ -71,7 +71,7 @@ std::string ErrorMessages::BufferCopyError(const HazardResult& hazard, const Com
     ss << "}\n";
     additional_info.message_end_text = ss.str();
 
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "BufferCopyError", additional_info);
+    return Error(env, hazard, command, resource_description, "BufferCopyError", additional_info);
 }
 
 std::string ErrorMessages::AccelerationStructureError(const HazardResult& hazard, const CommandBufferContext& cb_context,

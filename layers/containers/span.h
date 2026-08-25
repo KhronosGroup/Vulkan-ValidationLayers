@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ class enumeration {
     using const_pointer = T const *;
     using iterator = Iterator;
     using const_iterator = const Iterator;
+    using value_type = std::remove_cv_t<T>;
+    using size_type = size_t;
 
     enumeration() = default;
     enumeration(pointer start, size_t n) : data_(start), count_(n) {}

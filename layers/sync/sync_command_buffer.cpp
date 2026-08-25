@@ -322,6 +322,9 @@ void CommandBufferContext::Reset() {
         cbs_referenced_->push_back(cb_state_->shared_from_this());
     }
     replay_entries_.clear();
+    commands_.clear();
+    command_data_ = {};
+
     command_number_ = 0;
     reset_count_++;
 

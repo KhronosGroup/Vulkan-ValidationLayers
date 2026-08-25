@@ -16,6 +16,7 @@
  */
 #pragma once
 
+#include "sync/sync_command.h"
 #include "sync/sync_event.h"
 #include "sync/sync_render_pass.h"
 #include "sync/sync_replay.h"
@@ -323,6 +324,9 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     std::vector<std::unique_ptr<RenderPassAccessContext>> render_pass_contexts_;
     RenderPassAccessContext* current_renderpass_context_;
     std::vector<ReplayEntry> replay_entries_;
+
+    std::vector<CommandEntry> commands_;
+    CommandData command_data_;
 
     // State during dynamic rendering (dynamic rendering rendering passes must be
     // contained within a single command buffer)
