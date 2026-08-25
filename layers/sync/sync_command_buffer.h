@@ -257,6 +257,12 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
         replay_entries_.emplace_back(tag, validate_layout_transition_first_use, std::forward<Operation>(operation));
     }
 
+    template <typename Command, typename... Args>
+    void StoreCommand(ResourceUsageTag tag, const Command& command, Args&&... args) {
+        auto storage = command.MakeStorage(command_data_, std::forward<Args>(args)...);
+        commands_.push_back(CommandEntry{tag, std::move(storage)});
+    }
+
     const std::vector<HandleRecord>& GetHandleRecords() const { return handles_; }
 
     std::shared_ptr<const vvl::CommandBuffer> GetCBStateShared() const { return cb_state_->shared_from_this(); }

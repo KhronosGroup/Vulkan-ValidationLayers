@@ -1595,36 +1595,48 @@ void CommandBufferSubState::NotifyInvalidate(const vvl::StateObject::NodeList& i
 }
 
 void CommandBufferSubState::RecordCopyBuffer(vvl::Buffer& src_buffer_state, vvl::Buffer& dst_buffer_state, uint32_t region_count,
-                                             const VkBufferCopy* regions, const Location& loc) {
+                                             const VkBufferCopy* p_regions, const Location& loc) {
     const auto tag = cb_context.NextCommandTag(loc.function);
-    AccessContext& context = cb_context.GetCbAccessContext();
+    const auto src_tag_ex = cb_context.AddCommandHandle(tag, src_buffer_state.Handle());
+    const auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_buffer_state.Handle());
 
-    auto src_tag_ex = cb_context.AddCommandHandle(tag, src_buffer_state.Handle());
-    auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_buffer_state.Handle());
+    small_vector<BufferCopyRegion, 1> regions;
+    regions.reserve(region_count);
+    for (const VkBufferCopy& region : vvl::make_span(p_regions, region_count)) {
+        regions.emplace_back(BufferCopyRegion{region.srcOffset, region.dstOffset, region.size});
+    }
+    const BufferCopyCommand command{src_buffer_state, dst_buffer_state, regions};
 
-    for (const auto& copy_region : vvl::make_span(regions, region_count)) {
-        const AccessRange src_range = MakeRange(src_buffer_state, copy_region.srcOffset, copy_region.size);
-        context.UpdateAccessState(src_buffer_state, SYNC_COPY_TRANSFER_READ, src_range, src_tag_ex);
-
-        const AccessRange dst_range = MakeRange(dst_buffer_state, copy_region.dstOffset, copy_region.size);
-        context.UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, dst_range, dst_tag_ex);
+    const auto& settings = cb_context.GetSyncState().syncval_settings;
+    if (settings.IsRecordTimeValidationEnabled()) {
+        AccessContext& access_context = cb_context.GetCbAccessContext();
+        command.Apply(access_context, src_tag_ex, dst_tag_ex);
+    }
+    if (settings.full_validation) {
+        cb_context.StoreCommand(tag, command, src_tag_ex.handle_index, dst_tag_ex.handle_index);
     }
 }
 
 void CommandBufferSubState::RecordCopyBuffer2(vvl::Buffer& src_buffer_state, vvl::Buffer& dst_buffer_state, uint32_t region_count,
-                                              const VkBufferCopy2* regions, const Location& loc) {
+                                              const VkBufferCopy2* p_regions, const Location& loc) {
     const auto tag = cb_context.NextCommandTag(loc.function);
-    AccessContext& context = cb_context.GetCbAccessContext();
+    const auto src_tag_ex = cb_context.AddCommandHandle(tag, src_buffer_state.Handle());
+    const auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_buffer_state.Handle());
 
-    auto src_tag_ex = cb_context.AddCommandHandle(tag, src_buffer_state.Handle());
-    auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_buffer_state.Handle());
+    small_vector<BufferCopyRegion, 1> regions;
+    regions.reserve(region_count);
+    for (const VkBufferCopy2& region : vvl::make_span(p_regions, region_count)) {
+        regions.emplace_back(BufferCopyRegion{region.srcOffset, region.dstOffset, region.size});
+    }
+    const BufferCopyCommand command{src_buffer_state, dst_buffer_state, regions};
 
-    for (const auto& copy_region : vvl::make_span(regions, region_count)) {
-        const AccessRange src_range = MakeRange(src_buffer_state, copy_region.srcOffset, copy_region.size);
-        context.UpdateAccessState(src_buffer_state, SYNC_COPY_TRANSFER_READ, src_range, src_tag_ex);
-
-        const AccessRange dst_range = MakeRange(dst_buffer_state, copy_region.dstOffset, copy_region.size);
-        context.UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, dst_range, dst_tag_ex);
+    const auto& settings = cb_context.GetSyncState().syncval_settings;
+    if (settings.IsRecordTimeValidationEnabled()) {
+        AccessContext& access_context = cb_context.GetCbAccessContext();
+        command.Apply(access_context, src_tag_ex, dst_tag_ex);
+    }
+    if (settings.full_validation) {
+        cb_context.StoreCommand(tag, command, src_tag_ex.handle_index, dst_tag_ex.handle_index);
     }
 }
 

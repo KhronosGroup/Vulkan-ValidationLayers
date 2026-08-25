@@ -397,44 +397,28 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
                                                   const ErrorObject& error_obj) const {
-    bool skip = false;
-    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCbAccessContext();
-
-    // If we have no previous accesses, we have no hazards
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
+    if (!pCopyBufferInfo) {
+        return false;
+    }
     auto src_buffer = Get<vvl::Buffer>(pCopyBufferInfo->srcBuffer);
     auto dst_buffer = Get<vvl::Buffer>(pCopyBufferInfo->dstBuffer);
-
-    for (const auto [region_index, copy_region] : vvl::enumerate(pCopyBufferInfo->pRegions, pCopyBufferInfo->regionCount)) {
-        if (src_buffer) {
-            const AccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
-            auto hazard = access_context.DetectHazard(*src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
-            if (hazard.IsHazard()) {
-                // TODO -- add tag information to log msg when useful.
-                // TODO: there are no tests for this error
-                const LogObjectList objlist(commandBuffer, pCopyBufferInfo->srcBuffer);
-                const std::string error =
-                    error_messages_.BufferCopyError(cb_context.GetSyncEnvironment(), hazard, error_obj.location.function,
-                                                    FormatHandle(pCopyBufferInfo->srcBuffer), region_index, src_range);
-                skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
-            }
-        }
-        if (dst_buffer && !skip) {
-            const AccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
-            auto hazard = access_context.DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
-            if (hazard.IsHazard()) {
-                // TODO: there are no tests for this error
-                const LogObjectList objlist(commandBuffer, pCopyBufferInfo->dstBuffer);
-                const std::string error =
-                    error_messages_.BufferCopyError(cb_context.GetSyncEnvironment(), hazard, error_obj.location.function,
-                                                    FormatHandle(pCopyBufferInfo->dstBuffer), region_index, dst_range);
-                skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
-            }
-        }
-        if (skip) break;
+    if (!src_buffer || !dst_buffer) {
+        return false;
     }
-    return skip;
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
+
+    small_vector<BufferCopyRegion, 1> regions;
+    regions.reserve(pCopyBufferInfo->regionCount);
+    for (const VkBufferCopy2& region : vvl::make_span(pCopyBufferInfo->pRegions, pCopyBufferInfo->regionCount)) {
+        regions.emplace_back(BufferCopyRegion{region.srcOffset, region.dstOffset, region.size});
+    }
+    const BufferCopyCommand command{*src_buffer, *dst_buffer, regions};
+    return command.Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), error_obj.location,
+                            cb_state->Handle());
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo,
