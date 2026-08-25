@@ -61,8 +61,7 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                         const char* access_type = is_write ? "write" : "read";
                         const uint32_t byte_size = payload & kInst_BuffAddrAccess_PayloadMaskAccessInfo;
                         ss << "Out of bounds: trying to " << access_type << " " << byte_size << " bytes at [0x" << std::hex
-                           << address << ", 0x" << (address + byte_size) - 1
-                           << ") but no buffer device address was found at this range.";
+                           << address << ", 0x" << (address + byte_size) - 1 << ") but this range does not belong to any buffer.";
                         if (is_struct) {
                             // Added because glslang currently has no way to seperate out the struct (Slang does as of 2025.6.2)
                             ss << " This " << (is_write ? "write" : "read") << " corresponds to a full OpTypeStruct load";
@@ -77,19 +76,15 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                         const NearestBufferResult nearest = gpuav.GetNearestBuffersByAddress(address);
                         auto plural = [&](uint64_t counter) -> const char* { return counter > 1 ? "s" : ""; };
                         if (!nearest.above_buffers.empty()) {
-                            const VkDeviceAddress offset = nearest.above_range.begin - address;
-                            ss << "\nNearest above committed device address range " << vvl::string_range_hex(nearest.above_range)
-                               << " is above address by " << std::dec << offset << " byte" << plural(offset) << " and has buffer"
-                               << plural(nearest.above_buffers.size()) << ":";
+                            ss << "\nNearest above committed device address range is " << vvl::string_range_hex(nearest.above_range)
+                               << " and has buffer" << plural(nearest.above_buffers.size()) << ":";
                             for (const auto buffer : nearest.above_buffers) {
                                 ss << "\n  " << buffer->Describe(gpuav);
                             }
                         }
                         if (!nearest.below_buffers.empty()) {
-                            const VkDeviceAddress offset = address - nearest.below_range.end + 1;
-                            ss << "\nNearest below committed device address range " << vvl::string_range_hex(nearest.below_range)
-                               << " is below address by " << std::dec << offset << " byte" << plural(offset) << " and has buffer"
-                               << plural(nearest.below_buffers.size()) << ":";
+                            ss << "\nNearest below committed device address range is " << vvl::string_range_hex(nearest.below_range)
+                               << " and has buffer" << plural(nearest.below_buffers.size()) << ":";
                             for (const auto buffer : nearest.below_buffers) {
                                 ss << "\n  " << buffer->Describe(gpuav);
                             }
