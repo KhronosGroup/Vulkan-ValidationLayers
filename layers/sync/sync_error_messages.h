@@ -50,7 +50,7 @@ class ErrorMessages {
                             const std::string& resource_description, const AccessRange range,
                             AdditionalMessageInfo additional_info = {}) const;
 
-    std::string BufferCopyError(const HazardResult& hazard, const CommandBufferContext& cb_context, const vvl::Func command,
+    std::string BufferCopyError(const SyncEnvironment& env, const HazardResult& hazard, const vvl::Func command,
                                 const std::string& resouce_description, uint32_t region_index, AccessRange range) const;
 
     std::string AccelerationStructureError(const HazardResult& hazard, const CommandBufferContext& cb_context,

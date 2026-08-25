@@ -495,6 +495,8 @@ target_sources(vvl PRIVATE
     sync/sync_access_state.h
     sync/sync_barrier.cpp
     sync/sync_barrier.h
+    sync/sync_command.cpp
+    sync/sync_command.h
     sync/sync_command_buffer.cpp
     sync/sync_command_buffer.h
     sync/sync_common.cpp
