@@ -38,12 +38,17 @@ struct BufferCopyRegion {
     VkDeviceSize size;
 };
 
+struct CommandData {
+    std::vector<std::shared_ptr<const vvl::Buffer>> buffers;
+    std::vector<BufferCopyRegion> buffer_copy_regions;
+
+    uint32_t AddBuffer(const vvl::Buffer& buffer);
+};
+
 struct BufferCopyCommand {
     const vvl::Buffer& src_buffer;
     const vvl::Buffer& dst_buffer;
     vvl::span<const BufferCopyRegion> regions;
-    uint32_t src_handle_index = vvl::kNoIndex32;
-    uint32_t dst_handle_index = vvl::kNoIndex32;
 
     struct Storage {
         uint32_t src_buffer_index;
@@ -54,8 +59,10 @@ struct BufferCopyCommand {
         uint32_t dst_handle_index;
     };
 
+    Storage MakeStorage(CommandData& command_data, uint32_t src_handle_index, uint32_t dst_handle_index) const;
     bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const Location& loc,
                   VulkanTypedHandle command_buffer_handle) const;
+    void Apply(AccessContext& access_context, ResourceUsageTagEx src_tag_ex, ResourceUsageTagEx dst_tag_ex) const;
 };
 
 using CommandStorage = std::variant<BufferCopyCommand::Storage>;
@@ -66,11 +73,6 @@ using CommandStorage = std::variant<BufferCopyCommand::Storage>;
 struct CommandEntry {
     ResourceUsageTag tag;
     CommandStorage command;
-};
-
-struct CommandData {
-    std::vector<std::shared_ptr<vvl::Buffer>> buffers;
-    std::vector<BufferCopyRegion> buffer_copy_regions;
 };
 
 }  // namespace syncval
