@@ -920,16 +920,17 @@ bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer& cb_state, co
 
     if (perf_query_pass >= query_pool_state->n_performance_passes) {
         const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
-        skip |= state_data.LogError("VUID-VkPerformanceQuerySubmitInfoKHR-counterPassIndex-03221", objlist, loc,
-                                    "Invalid counterPassIndex (%" PRIu32 ", maximum allowed %" PRIu32 ") value for query pool %s.",
-                                    perf_query_pass, query_pool_state->n_performance_passes,
-                                    state_data.FormatHandle(query_obj.pool).c_str());
+        skip |= state_data.LogError(
+            "VUID-VkPerformanceQuerySubmitInfoKHR-counterPassIndex-03221", objlist, loc,
+            "counterPassIndex (%" PRIu32 ") is not less than number of performance passes (%" PRIu32
+            ") for %s\nThe maximum number of passes is queried with vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR.",
+            perf_query_pass, query_pool_state->n_performance_passes, state_data.FormatHandle(query_obj.pool).c_str());
     }
 
     if (!cb_state.performance_lock_acquired || cb_state.performance_lock_released) {
         const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
         skip |= state_data.LogError("VUID-vkQueueSubmit-pCommandBuffers-03220", objlist, loc,
-                                    "Commandbuffer %s was submitted and contains a performance query but the "
+                                    "%s was submitted and contains a performance query but the "
                                     "profiling lock was not held continuously throughout the recording of commands.",
                                     state_data.FormatHandle(cb_state).c_str());
     }
@@ -950,7 +951,7 @@ bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer& cb_state, co
             skip |= state_data.LogError(
                 query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03226" : "VUID-vkCmdBeginQuery-queryPool-03226",
                 objlist, loc,
-                "Commandbuffer %s contains more than one performance query pool but "
+                "%s contains more than one performance query pool but "
                 "performanceCounterMultipleQueryPools is not enabled.",
                 state_data.FormatHandle(cb_state).c_str());
         }
