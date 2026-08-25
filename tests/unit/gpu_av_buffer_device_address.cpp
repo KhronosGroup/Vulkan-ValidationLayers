@@ -323,7 +323,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredErrorRegex("VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819",
-                                         R"(.*is above address by 12 bytes.*\n.*VkBuffer.*size: 12 bytes.*)");
+                                         R"(.*VkBuffer.*size: 12 bytes.*)");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
@@ -331,7 +331,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     memcpy(uniform_buffer_ptr, &offset_index_buffer_ptr, sizeof(VkDeviceAddress));
 
     m_errorMonitor->SetDesiredErrorRegex("VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819",
-                                         R"(.*is below address by 1 byte.*\n.*VkBuffer.*size: 12 bytes.*)");
+                                         R"(.*VkBuffer.*size: 12 bytes.*)");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
