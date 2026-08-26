@@ -109,6 +109,44 @@ TEST_F(NegativeImageLayout, Blit) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeImageLayout, SubmitTimeDebugRegion) {
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
+    vkt::Image img_src_transfer(*m_device, 64, 64, fmt, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image img_color(*m_device, 64, 64, fmt,
+                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+    img_src_transfer.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    img_color.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    VkImageBlit blit_region = {};
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.srcOffsets[0] = {0, 0, 0};
+    blit_region.srcOffsets[1] = {32, 32, 1};
+    blit_region.dstOffsets[0] = {32, 32, 0};
+    blit_region.dstOffsets[1] = {64, 64, 1};
+
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    label.pLabelName = "FrameWork";
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
+    label.pLabelName = "BlitPass";
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
+    vk::CmdBlitImage(m_command_buffer, img_src_transfer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, img_color, VK_IMAGE_LAYOUT_GENERAL,
+                     1, &blit_region, VK_FILTER_LINEAR);
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDraw-None-09600", "Debug region: FrameWork::BlitPass");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeImageLayout, Compute) {
     TEST_DESCRIPTION("Attempt to use an image with an invalid layout in a compute shader");
 

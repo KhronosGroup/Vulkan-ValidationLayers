@@ -22,7 +22,6 @@
 #include "state_tracker/fence_state.h"
 #include "state_tracker/semaphore_state.h"
 #include "error_message/error_location.h"
-#include "chassis/dispatch_object.h"
 #include "vk_layer_config.h"
 #include <condition_variable>
 #include <deque>
@@ -36,8 +35,11 @@ namespace vvl {
 class CommandBuffer;
 class DeviceState;
 class QueueSubState;
+struct QueueSubmission;
 
 struct CommandBufferSubmission {
+    void SubmitTimeValidate(Queue& queue, const QueueSubmission& submission);
+
     std::shared_ptr<vvl::CommandBuffer> cb;
     // Specifically made for GPU-AV, for it has unique problems: Error reporting is done *after*
     // command buffer submissions, not at Pre/PostCall time.

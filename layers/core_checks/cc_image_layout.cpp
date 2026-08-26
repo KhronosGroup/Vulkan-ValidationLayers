@@ -29,6 +29,7 @@
 #include "core_checks/core_validation.h"
 #include "error_message/error_strings.h"
 #include "generated/error_location_helper.h"
+#include "state_tracker/queue_state.h"
 #include "utils/image_layout_utils.h"
 #include "utils/image_utils.h"
 #include "state_tracker/image_state.h"
@@ -234,14 +235,14 @@ struct GlobalLayoutUpdater {
 
 // This validates that the first layout specified in the command buffer for the image
 // is the same as this image's global (actual/current) layout
-bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::CommandBuffer& cb_state,
+bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::CommandBufferSubmission& cb_submission,
                                             vvl::unordered_map<const vvl::Image*, ImageLayoutMap>& local_image_layout_state) const {
     if (disabled[image_layout_validation]) {
         return false;
     }
     bool skip = false;
     // Iterate over the layout maps for each referenced image
-    for (const auto& [image, cb_layout_map] : cb_state.image_layout_registry) {
+    for (const auto& [image, cb_layout_map] : cb_submission.cb->image_layout_registry) {
         if (!cb_layout_map || cb_layout_map->empty()) {
             continue;
         }
@@ -291,18 +292,21 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::Comm
                 const auto aspect_mask = image_state->subresource_encoder.Decode(intersected_range.begin).aspectMask;
                 const bool matches = ImageLayoutMatches(aspect_mask, image_layout, first_layout);
                 if (!matches) {
+                    // TODO - this should detect the command, not just always use vkCmdDraw
+                    const char* vuid = cb_layout_state.submit_time_layout_mismatch_vuid
+                                           ? cb_layout_state.submit_time_layout_mismatch_vuid
+                                           : "VUID-vkCmdDraw-None-09600";
+                    const std::string debug_region = vvl::CommandBuffer::GetDebugRegionName(
+                        cb_submission.cb->GetLabelCommands(), cb_layout_state.label_command_i, cb_submission.initial_label_stack);
+                    const Location loc_with_region(loc, debug_region);
                     // We can report all the errors for the intersected range directly
                     for (auto index : vvl::range_view<decltype(intersected_range)>(intersected_range)) {
                         const auto subresource = image_state->subresource_encoder.Decode(index);
-                        const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
-                        // TODO - this should detect the command, not just always use vkCmdDraw
-                        const char* vuid = cb_layout_state.submit_time_layout_mismatch_vuid
-                                               ? cb_layout_state.submit_time_layout_mismatch_vuid
-                                               : "VUID-vkCmdDraw-None-09600";
+                        const LogObjectList objlist(cb_submission.cb->Handle(), image_state->Handle());
                         skip |= LogError(
-                            vuid, objlist, loc,
+                            vuid, objlist, loc_with_region,
                             "command buffer %s expects %s (subresource: %s) to be in layout %s--instead, current layout is %s.",
-                            FormatHandle(cb_state).c_str(), FormatHandle(*image_state).c_str(),
+                            FormatHandle(*cb_submission.cb).c_str(), FormatHandle(*image_state).c_str(),
                             string_VkImageSubresource(subresource).c_str(), string_VkImageLayout(first_layout),
                             string_VkImageLayout(image_layout));
                     }
@@ -320,7 +324,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::Comm
                     const bool fence_signal = swapchain_image.acquire_fence_status == vvl::AcquireSyncStatus::Signaled;
 
                     if (!swapchain_image.acquired) {
-                        const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
+                        const LogObjectList objlist(cb_submission.cb->Handle(), image_state->Handle());
                         // VUID request: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4784
                         // TODO: remove spec text after VUID is added
                         static const char* acquire_image_usage_spec_text =
@@ -346,7 +350,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::Comm
                             }
                             oss << FormatHandle(*swapchain_image.acquire_fence);
                         }
-                        const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
+                        const LogObjectList objlist(cb_submission.cb->Handle(), image_state->Handle());
                         // VUID request: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4784
                         // TODO: remove spec text after VUID is added
                         static const char* acquire_image_usage_spec_text =
@@ -1049,7 +1053,8 @@ bool CoreChecks::ValidateImageBarrierLayouts(const vvl::CommandBuffer& cb_state,
                 });
 
             UpdateCurrentLayout(*local_layout_map, RangeGenerator(image_state.subresource_encoder, normalized_isr),
-                                image_barrier.newLayout, kInvalidLayout, normalized_isr.aspectMask);
+                                image_barrier.newLayout, kInvalidLayout, normalized_isr.aspectMask,
+                                cb_state.GetLastLabelCommandIndex());
         }
     }
     return skip;

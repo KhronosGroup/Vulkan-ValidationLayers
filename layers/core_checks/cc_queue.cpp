@@ -738,16 +738,16 @@ static Location GetSignaledSemaphoreLocation(const Location& submit_loc, uint32_
 }
 
 bool CoreChecks::ProcessSubmissionBatch(const vvl::SubmitTimeTracker& tracker,
-                                        const std::vector<std::shared_ptr<vvl::CommandBuffer>>& command_buffers,
+                                        const std::vector<vvl::CommandBufferSubmission>& cb_submissions,
                                         vvl::span<const VkSemaphoreSubmitInfo> signal_semaphores, const Location& submit_loc) {
     bool skip = false;
     // Validate image layouts on the command buffer boundaries
     {
         vvl::unordered_map<const vvl::Image*, ImageLayoutMap> local_image_layout_map;
-        for (const auto& cb : command_buffers) {
-            if (cb) {
-                auto cb_guard = cb->ReadLock();
-                skip |= ValidateCmdBufImageLayouts(submit_loc, *cb, local_image_layout_map);
+        for (const auto& cb_submission : cb_submissions) {
+            if (cb_submission.cb) {
+                auto cb_guard = cb_submission.cb->ReadLock();
+                skip |= ValidateCmdBufImageLayouts(submit_loc, cb_submission, local_image_layout_map);
             }
         }
     }
@@ -773,8 +773,8 @@ bool CoreChecks::ProcessSubmissionBatch(const vvl::SubmitTimeTracker& tracker,
         }
     }
     // Queue family ownership transfer (QFOT) validation
-    for (const auto& cb : command_buffers) {
-        if (cb) {
+    for (const auto& cb_submission : cb_submissions) {
+        if (const auto& cb = cb_submission.cb) {
             auto cb_guard = cb->ReadLock();
             for (const vvl::CommandBuffer* secondary : cb->linked_command_buffers) {
                 skip |= ValidateQueuedQFOTransfers(*secondary, submit_loc);
@@ -783,8 +783,8 @@ bool CoreChecks::ProcessSubmissionBatch(const vvl::SubmitTimeTracker& tracker,
         }
     }
     if (!skip) {
-        for (const auto& cb : command_buffers) {
-            if (cb) {
+        for (const auto& cb_submission : cb_submissions) {
+            if (const auto& cb = cb_submission.cb) {
                 auto cb_guard = cb->WriteLock();
                 for (vvl::CommandBuffer* secondary : cb->linked_command_buffers) {
                     UpdateCmdBufImageLayouts(*secondary);

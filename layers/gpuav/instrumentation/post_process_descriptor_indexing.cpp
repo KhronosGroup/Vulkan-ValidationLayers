@@ -144,10 +144,9 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
     }
 
     // Validate descriptor set accesses done by command buffer submission
-    cb.on_cb_completion_functions.emplace_back([bound_desc_sets_to_pp_buffer_map](
-                                                   Validator& gpuav, CommandBufferSubState& cb,
-                                                   const CommandBufferSubState::LabelLogging& label_logging,
-                                                   const Location& submission_loc) {
+    cb.on_cb_completion_functions.emplace_back([bound_desc_sets_to_pp_buffer_map](Validator& gpuav, CommandBufferSubState& cb,
+                                                                                  const vvl::CommandBufferSubmission& cb_submission,
+                                                                                  const Location& submission_loc) {
         VVL_ZoneScoped;
 
         // We loop each vkCmdBindDescriptorSet, find each VkDescriptorSet that was used in the command buffer, and check
@@ -255,8 +254,8 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                     const CommandBufferSubState::CommandErrorLogger& cmd_error_logger =
                         cb.GetErrorLogger(descriptor_access.error_logger_i);
                     context.SetObjlistForGpuAv(&cmd_error_logger.objlist);
-                    std::string debug_region_name =
-                        cb.GetDebugLabelRegion(cmd_error_logger.label_cmd_i, label_logging.initial_label_stack);
+                    std::string debug_region_name = vvl::CommandBuffer::GetDebugRegionName(
+                        cb.base.GetLabelCommands(), cmd_error_logger.label_cmd_i, cb_submission.initial_label_stack);
 
                     Location access_loc(cmd_error_logger.loc.Get(), debug_region_name);
                     context.SetLocationForGpuAv(access_loc);

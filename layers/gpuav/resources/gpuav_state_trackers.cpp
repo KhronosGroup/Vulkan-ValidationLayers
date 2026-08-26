@@ -27,6 +27,7 @@
 #include "gpuav/validation_cmd/gpuav_draw.h"
 
 #include "profiling/profiling.h"
+#include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/last_bound_state.h"
 #include "state_tracker/pipeline_layout_state.h"
 
@@ -167,8 +168,7 @@ void CommandBufferSubState::AddCommandErrorLogger(const Location& loc, const Las
         return;
     }
 
-    const uint32_t label_command_i =
-        base.GetLabelCommands().empty() ? vvl::kNoIndex32 : uint32_t(base.GetLabelCommands().size() - 1);
+    const uint32_t label_command_i = base.GetLastLabelCommandIndex();
     command_error_loggers_.emplace_back(CommandBufferSubState::CommandErrorLogger{
         loc, last_bound ? last_bound->cb_state.GetObjectList(last_bound->bind_point) : LogObjectList{VkHandle()},
         std::move(error_logger_func), label_command_i});
@@ -242,26 +242,6 @@ uint32_t CommandBufferSubState::GetActionCommandIndex(VkPipelineBindPoint bind_p
 }
 
 uint32_t CommandBufferSubState::GetTotalActionCommandCount() const { return draw_index + compute_index + trace_rays_index; }
-
-std::string CommandBufferSubState::GetDebugLabelRegion(uint32_t label_command_i,
-                                                       const std::vector<std::string>& initial_label_stack) const {
-    std::string debug_region_name;
-    if (label_command_i != vvl::kNoIndex32) {
-        debug_region_name = base.GetDebugRegionName(base.GetLabelCommands(), label_command_i, initial_label_stack);
-    } else {
-        // label_command_i == vvl::kNoIndex32 => when the instrumented command was recorded,
-        // no debug label region was yet opened in the corresponding command buffer,
-        // but still a region might have been started in another previously submitted
-        // command buffer. So just compute region name from initial_label_stack.
-        for (const std::string& label_name : initial_label_stack) {
-            if (!debug_region_name.empty()) {
-                debug_region_name += "::";
-            }
-            debug_region_name += label_name;
-        }
-    }
-    return debug_region_name;
-}
 
 vko::Buffer& CommandBufferSubState::GetInternalDescriptorBuffer() {
     if (internal_descriptor_buffer_.IsDestroyed()) {
@@ -372,7 +352,7 @@ bool CommandBufferSubState::PostSubmit(QueueSubState& queue, const Location& loc
 bool CommandBufferSubState::NeedsPostProcess() { return error_output_buffer_range_.buffer != VK_NULL_HANDLE; }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::string>& initial_label_stack, const Location& loc) {
+void CommandBufferSubState::OnCompletion(VkQueue queue, const vvl::CommandBufferSubmission& cb_submission, const Location& loc) {
     VVL_ZoneScoped;
 
     // CommandBuffer::Destroy can happen on an other thread,
@@ -422,7 +402,8 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
                     const CommandErrorLogger& error_logger = GetErrorLogger(error_logger_i);
                     const LogObjectList objlist(queue, error_logger.objlist);
 
-                    std::string debug_region_name = GetDebugLabelRegion(error_logger.label_cmd_i, initial_label_stack);
+                    std::string debug_region_name = vvl::CommandBuffer::GetDebugRegionName(
+                        base.GetLabelCommands(), error_logger.label_cmd_i, cb_submission.initial_label_stack);
                     Location loc_with_debug_region(error_logger.loc.Get(), debug_region_name);
                     error_logger.error_logger_func(error_record_ptr, loc_with_debug_region, objlist);
                 }
@@ -448,9 +429,8 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
     }
 
     bool success = true;
-    LabelLogging label_logging = {initial_label_stack};
     for (auto& on_cb_completion_func : on_cb_completion_functions) {
-        success = on_cb_completion_func(gpuav_, *this, label_logging, loc);
+        success = on_cb_completion_func(gpuav_, *this, cb_submission, loc);
         if (!success) {
             break;
         }
@@ -643,11 +623,11 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
                 auto guard = cb_submission.cb->WriteLock();
                 auto& gpu_cb = SubState(*cb_submission.cb);
                 auto loc = submission.loc.Get();
-                gpu_cb.OnCompletion(VkHandle(), cb_submission.initial_label_stack, loc);
+                gpu_cb.OnCompletion(VkHandle(), cb_submission, loc);
                 for (vvl::CommandBuffer* secondary_cb : gpu_cb.base.linked_command_buffers) {
                     auto secondary_guard = secondary_cb->WriteLock();
                     auto& secondary_gpu_cb = SubState(*secondary_cb);
-                    secondary_gpu_cb.OnCompletion(VkHandle(), cb_submission.initial_label_stack, loc);
+                    secondary_gpu_cb.OnCompletion(VkHandle(), cb_submission, loc);
                 }
             }
         }
