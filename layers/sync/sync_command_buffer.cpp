@@ -1610,7 +1610,7 @@ void CommandBufferSubState::RecordCopyBuffer(vvl::Buffer& src_buffer_state, vvl:
     const auto& settings = cb_context.GetSyncState().syncval_settings;
     if (settings.IsRecordTimeValidationEnabled()) {
         AccessContext& access_context = cb_context.GetCbAccessContext();
-        command.Apply(access_context, src_tag_ex, dst_tag_ex);
+        command.Apply(cb_context.GetSyncEnvironment(), access_context, src_tag_ex, dst_tag_ex);
     }
     if (settings.full_validation) {
         cb_context.StoreCommand(tag, command, src_tag_ex.handle_index, dst_tag_ex.handle_index);
@@ -1633,7 +1633,7 @@ void CommandBufferSubState::RecordCopyBuffer2(vvl::Buffer& src_buffer_state, vvl
     const auto& settings = cb_context.GetSyncState().syncval_settings;
     if (settings.IsRecordTimeValidationEnabled()) {
         AccessContext& access_context = cb_context.GetCbAccessContext();
-        command.Apply(access_context, src_tag_ex, dst_tag_ex);
+        command.Apply(cb_context.GetSyncEnvironment(), access_context, src_tag_ex, dst_tag_ex);
     }
     if (settings.full_validation) {
         cb_context.StoreCommand(tag, command, src_tag_ex.handle_index, dst_tag_ex.handle_index);

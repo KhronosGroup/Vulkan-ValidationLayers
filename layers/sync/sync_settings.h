@@ -26,6 +26,8 @@ struct SyncValSettings {
     // TODO: remove this and replace with direct record_time_validation access after refactor
     bool IsRecordTimeValidationEnabled() const { return record_time_validation || legacy_submit_time_validation; }
 
+    bool IsSubmitTimeProcessingEnabled() const { return legacy_submit_time_validation || full_validation; }
+
     // This validation currently is controlled only by the settings and is disabled by default.
     // There is a discussion https://gitlab.khronos.org/vulkan/vulkan/-/issues/4513 to clarify
     // the spec and under which conditions this validation should be active.

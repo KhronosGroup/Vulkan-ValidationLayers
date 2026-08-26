@@ -215,7 +215,7 @@ struct ReadState {
     QueueId queue;
 
     void Set(VkPipelineStageFlagBits2 stage, SyncAccessIndex access_index, const AttachmentAccess& attachment_access,
-             ResourceUsageTagEx tag_ex);
+             ResourceUsageTagEx tag_ex, QueueId queue_id);
 
     ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
     bool operator==(const ReadState& rhs) const {
@@ -266,7 +266,8 @@ struct WriteState {
 
     SyncFlags flags;
 
-    void Set(SyncAccessIndex access_index, const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex, SyncFlags flags);
+    void Set(SyncAccessIndex access_index, const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex, SyncFlags flags,
+             QueueId queue_id);
     void SetQueueId(QueueId id);
     void MergeBarriers(const WriteState& other);
 
@@ -372,9 +373,9 @@ class AccessState {
                                      QueueId event_queue, ResourceUsageTag event_tag) const;
 
     void Update(const SyncAccessInfo& usage_info, const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex,
-                SyncFlags flags = 0);
+                SyncFlags flags, QueueId queue_id);
     void SetWrite(SyncAccessIndex access_index, const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex,
-                  SyncFlags flags = 0);
+                  SyncFlags flags = 0, QueueId = kQueueIdInvalid);
     void ClearWrite();
     void ClearRead();
     void ClearFirstUse();

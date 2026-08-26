@@ -523,7 +523,7 @@ void AccessState::Resolve(const AccessState& other) {
 }
 
 void AccessState::Update(const SyncAccessInfo& usage_info, const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex,
-                         SyncFlags flags) {
+                         SyncFlags flags, QueueId queue_id) {
     const VkPipelineStageFlagBits2 usage_stage = usage_info.stage_mask;
     if (IsRead(usage_info.access_index)) {
         // Mulitple outstanding reads may be of interest and do dependency chains independently
@@ -532,7 +532,7 @@ void AccessState::Update(const SyncAccessInfo& usage_info, const AttachmentAcces
             const auto not_usage_stage = ~usage_stage;
             for (auto& read_access : GetReads()) {
                 if (read_access.stage == usage_stage) {
-                    read_access.Set(usage_stage, usage_info.access_index, attachment_access, tag_ex);
+                    read_access.Set(usage_stage, usage_info.access_index, attachment_access, tag_ex, queue_id);
                 } else if (read_access.barriers & usage_stage) {
                     // If the current access is barriered to this stage, mark it as "known to happen after"
                     read_access.sync_stages |= usage_stage;
@@ -550,7 +550,7 @@ void AccessState::Update(const SyncAccessInfo& usage_info, const AttachmentAcces
                 }
             }
             ReadState new_read_state;
-            new_read_state.Set(usage_stage, usage_info.access_index, attachment_access, tag_ex);
+            new_read_state.Set(usage_stage, usage_info.access_index, attachment_access, tag_ex, queue_id);
             AddRead(new_read_state);
             last_read_stages |= usage_stage;
         }
@@ -561,7 +561,7 @@ void AccessState::Update(const SyncAccessInfo& usage_info, const AttachmentAcces
             input_attachment_read = (usage_info.access_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ);
         }
     } else {
-        SetWrite(usage_info.access_index, attachment_access, tag_ex, flags);
+        SetWrite(usage_info.access_index, attachment_access, tag_ex, flags, queue_id);
     }
     UpdateFirst(tag_ex, usage_info, attachment_access, flags);
 }
@@ -595,12 +595,12 @@ bool HazardResult::IsWAWHazard() const {
 // if the last_reads/last_write were unsafe, we've reported them, in either case the prior access is irrelevant.
 // We can overwrite them as *this* write is now after them.
 void AccessState::SetWrite(SyncAccessIndex access_index, const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex,
-                           SyncFlags flags) {
+                           SyncFlags flags, QueueId queue_id) {
     ClearRead();
     if (!last_write.has_value()) {
         last_write.emplace();
     }
-    last_write->Set(access_index, attachment_access, tag_ex, flags);
+    last_write->Set(access_index, attachment_access, tag_ex, flags, queue_id);
 }
 
 void AccessState::ClearWrite() { last_write.reset(); }
@@ -1098,7 +1098,7 @@ void AccessState::TouchupFirstForLayoutTransition(ResourceUsageTag tag, const Or
 }
 
 void ReadState::Set(VkPipelineStageFlagBits2 stage, SyncAccessIndex access_index, const AttachmentAccess& attachment_access,
-                    ResourceUsageTagEx tag_ex) {
+                    ResourceUsageTagEx tag_ex, QueueId queue_id) {
     assert(access_index != SYNC_ACCESS_INDEX_NONE);
     this->stage = stage;
     this->access_index = access_index;
@@ -1107,7 +1107,7 @@ void ReadState::Set(VkPipelineStageFlagBits2 stage, SyncAccessIndex access_index
     sync_stages = VK_PIPELINE_STAGE_2_NONE;
     tag = tag_ex.tag;
     handle_index = tag_ex.handle_index;
-    queue = kQueueIdInvalid;
+    queue = queue_id;
 }
 
 // Scope test including "queue submission order" effects.  Specifically, accesses from a different queue are not
@@ -1144,14 +1144,14 @@ bool ReadState::InBarrierSourceScope(const BarrierScope& barrier_scope) const {
 }
 
 void WriteState::Set(SyncAccessIndex access_index, const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex,
-                     SyncFlags flags) {
+                     SyncFlags flags, QueueId queue_id) {
     this->access_index = access_index;
     this->attachment_access = attachment_access;
     barriers.reset();
     dependency_chain = VK_PIPELINE_STAGE_2_NONE;
     tag = tag_ex.tag;
     handle_index = tag_ex.handle_index;
-    queue = kQueueIdInvalid;
+    queue = queue_id;
     this->flags = flags;
 }
 

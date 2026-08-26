@@ -272,7 +272,7 @@ class AccessContext {
     void ResolveChildContexts(vvl::span<AccessContext> subpass_contexts);
 
     void UpdateAccessState(const vvl::Buffer& buffer, SyncAccessIndex current_usage, const AccessRange& range,
-                           ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
+                           ResourceUsageTagEx tag_ex, SyncFlags flags = 0, QueueId queue_id = kQueueIdInvalid);
     void UpdateAccessState(ImageRangeGen& range_gen, SyncAccessIndex current_usage, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
     void UpdateAttachmentAccessState(ImageRangeGen& range_gen, SyncAccessIndex current_usage,
                                      const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex);
@@ -420,7 +420,8 @@ class AccessContext {
     AccessMap::iterator ResolveGapRecursePrev(const AccessRange& gap_range, AccessMap::iterator pos_hint);
 
     AccessMap::iterator DoUpdateAccessState(AccessMap::iterator pos, const AccessRange& range, SyncAccessIndex access_index,
-                                            const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex, SyncFlags flags);
+                                            const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex, SyncFlags flags,
+                                            QueueId queue_id = kQueueIdInvalid);
 
     // A recursive range walkers for hazard detection, first for the current context
     // and then walks the DAG of the contexts for subpasses
