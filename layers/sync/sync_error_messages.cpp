@@ -423,8 +423,22 @@ std::string ErrorMessages::ImageBarrierError(const SyncEnvironment& env, const H
 
 std::string ErrorMessages::FirstUseError(const SyncEnvironment& env, const HazardResult& hazard,
                                          const CommandBufferContext& recorded_context, uint32_t command_buffer_index) const {
-    const ResourceUsageInfo prior_usage_info = env.usage_info_provider.GetResourceUsageInfo(hazard.TagEx());
     const ResourceUsageInfo recorded_usage_info = recorded_context.GetResourceUsageInfo(hazard.RecordedAccess()->TagEx());
+
+    // Use generic "resource" when resource handle is not specified for some reason (likely just a missing code).
+    // TODO: specify resources in EndRenderPass (NegativeSyncVal.QSOBarrierHazard).
+    const std::string resource_description = (recorded_usage_info.resource_handle != NullVulkanTypedHandle)
+                                                 ? validator_.FormatHandle(recorded_usage_info.resource_handle)
+                                                 : "resource";
+    return SubmitTimeError(env, hazard, recorded_context, hazard.RecordedAccess()->TagEx().tag, command_buffer_index,
+                           resource_description);
+}
+
+std::string ErrorMessages::SubmitTimeError(const SyncEnvironment& env, const HazardResult& hazard,
+                                           const CommandBufferContext& recorded_context, ResourceUsageTag command_tag,
+                                           uint32_t command_buffer_index, const std::string& resource_description) const {
+    const ResourceUsageInfo prior_usage_info = env.usage_info_provider.GetResourceUsageInfo(hazard.TagEx());
+    const ResourceUsageInfo recorded_usage_info = recorded_context.GetResourceUsageInfo(ResourceUsageTagEx{command_tag});
 
     AdditionalMessageInfo additional_info;
     additional_info.properties.Add(kPropertyCommandBufferIndex, command_buffer_index);
@@ -463,11 +477,6 @@ std::string ErrorMessages::FirstUseError(const SyncEnvironment& env, const Hazar
         additional_info.properties.Add(kPropertyDebugRegion, recorded_usage_info.debug_region_name);
     }
 
-    // Use generic "resource" when resource handle is not specified for some reason (likely just a missing code).
-    // TODO: specify resources in EndRenderPass (NegativeSyncVal.QSOBarrierHazard).
-    const std::string resource_description = (recorded_usage_info.resource_handle != NullVulkanTypedHandle)
-                                                 ? validator_.FormatHandle(recorded_usage_info.resource_handle)
-                                                 : "resource";
     return Error(env, hazard, recorded_usage_info.command, resource_description, "SubmitTimeError", additional_info);
 }
 

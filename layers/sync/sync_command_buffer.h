@@ -272,6 +272,21 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     std::shared_ptr<CommandBufferSet> GetCBReferencesShared() const { return cbs_referenced_; }
     void ImportRecordedAccessLog(const CommandBufferContext& cb_context);
     const std::vector<ReplayEntry>& GetReplayEntries() const { return replay_entries_; }
+    const std::vector<CommandEntry>& GetCommands() const { return commands_; }
+    const CommandData& GetCommandData() const { return command_data_; }
+
+    // TODO: debug util, remove after convertion to commands is finished
+    bool HasAllCommands() const {
+        if (commands_.size() != access_log_->size()) {
+            return false;
+        }
+        for (size_t i = 0; i < commands_.size(); ++i) {
+            if (commands_[i].tag != i) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     // DebugNameProvider
     std::string GetDebugRegionName(const ResourceUsageRecord& record) const override;

@@ -133,6 +133,10 @@ class ErrorMessages {
     std::string FirstUseError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& recorded_context,
                               uint32_t command_buffer_index) const;
 
+    std::string SubmitTimeError(const SyncEnvironment& env, const HazardResult& hazard,
+                                const CommandBufferContext& recorded_context, ResourceUsageTag command_tag,
+                                uint32_t command_buffer_index, const std::string& resource_description) const;
+
     std::string PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, vvl::Func command,
                              const std::string& resource_description, uint32_t swapchain_index) const;
 

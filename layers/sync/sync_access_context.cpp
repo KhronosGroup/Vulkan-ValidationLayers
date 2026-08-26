@@ -462,7 +462,7 @@ AccessMap::iterator AccessContext::ResolveGapRecursePrev(const AccessRange& gap_
 // Map entries that intersect range.begin or range.end are split at the intersection point.
 AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, const AccessRange& range,
                                                        SyncAccessIndex access_index, const AttachmentAccess& attachment_access,
-                                                       ResourceUsageTagEx tag_ex, SyncFlags flags) {
+                                                       ResourceUsageTagEx tag_ex, SyncFlags flags, QueueId queue_id) {
     assert(range.non_empty());
     const SyncAccessInfo& access_info = GetAccessInfo(access_index);
 
@@ -499,7 +499,7 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
             // Update
             AccessState& new_access_state = infilled_it->second;
             ApplyGlobalBarriers(new_access_state);
-            new_access_state.Update(access_info, attachment_access, tag_ex, flags);
+            new_access_state.Update(access_info, attachment_access, tag_ex, flags, queue_id);
 
             // Advance current location.
             // Do not advance pos, as it's the next map entry to visit
@@ -516,7 +516,7 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
             // Update
             AccessState& access_state = pos->second;
             ApplyGlobalBarriers(access_state);
-            access_state.Update(access_info, attachment_access, tag_ex, flags);
+            access_state.Update(access_info, attachment_access, tag_ex, flags, queue_id);
 
             // Advance both current location and map entry
             current_begin = pos->first.end;
@@ -532,13 +532,13 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
         // Update
         AccessState& new_access_state = infilled_it->second;
         ApplyGlobalBarriers(new_access_state);
-        new_access_state.Update(access_info, attachment_access, tag_ex, flags);
+        new_access_state.Update(access_info, attachment_access, tag_ex, flags, queue_id);
     }
     return pos;
 }
 
 void AccessContext::UpdateAccessState(const vvl::Buffer& buffer, SyncAccessIndex current_usage, const AccessRange& range,
-                                      ResourceUsageTagEx tag_ex, SyncFlags flags) {
+                                      ResourceUsageTagEx tag_ex, SyncFlags flags, QueueId queue_id) {
     assert(range.valid());
     assert(!finalized_);
 
@@ -556,7 +556,7 @@ void AccessContext::UpdateAccessState(const vvl::Buffer& buffer, SyncAccessIndex
     const AccessRange buffer_range = range + base_address;
 
     auto pos = access_state_map_.LowerBound(buffer_range.begin);
-    DoUpdateAccessState(pos, buffer_range, current_usage, AttachmentAccess::NonAttachment(), tag_ex, flags);
+    DoUpdateAccessState(pos, buffer_range, current_usage, AttachmentAccess::NonAttachment(), tag_ex, flags, queue_id);
 }
 
 void AccessContext::UpdateAccessState(ImageRangeGen& range_gen, SyncAccessIndex current_usage, ResourceUsageTagEx tag_ex,

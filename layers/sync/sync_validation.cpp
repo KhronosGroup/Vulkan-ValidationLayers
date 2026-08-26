@@ -391,8 +391,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
         regions.emplace_back(BufferCopyRegion{region.srcOffset, region.dstOffset, region.size});
     }
     const BufferCopyCommand command{*src_buffer, *dst_buffer, regions};
-    return command.Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), error_obj.location,
-                            cb_state->Handle());
+    return command.Validate(cb_context, error_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
@@ -417,8 +416,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,
         regions.emplace_back(BufferCopyRegion{region.srcOffset, region.dstOffset, region.size});
     }
     const BufferCopyCommand command{*src_buffer, *dst_buffer, regions};
-    return command.Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), error_obj.location,
-                            cb_state->Handle());
+    return command.Validate(cb_context, error_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo,
@@ -2532,7 +2530,7 @@ void SyncValidator::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t 
 }
 
 void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject& record_obj) {
-    if (record_obj.result != VK_SUCCESS || !syncval_settings.legacy_submit_time_validation || queue == VK_NULL_HANDLE) {
+    if (record_obj.result != VK_SUCCESS || !syncval_settings.IsSubmitTimeProcessingEnabled() || queue == VK_NULL_HANDLE) {
         return;
     }
     const QueueId waited_queue = GetQueueId(queue);
@@ -2737,7 +2735,7 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
 bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    if (!syncval_settings.legacy_submit_time_validation) {
+    if (!syncval_settings.IsSubmitTimeProcessingEnabled()) {
         return skip;
     }
 
@@ -2752,7 +2750,7 @@ bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
 bool SyncValidator::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    if (!syncval_settings.legacy_submit_time_validation) {
+    if (!syncval_settings.IsSubmitTimeProcessingEnabled()) {
         return skip;
     }
     std::lock_guard lock_guard(queue_mutex_);

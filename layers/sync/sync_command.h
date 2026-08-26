@@ -25,11 +25,13 @@ struct VulkanTypedHandle;
 
 namespace vvl {
 class Buffer;
+enum class Func;
 }  // namespace vvl
 
 namespace syncval {
 
 class AccessContext;
+class CommandBufferContext;
 struct SyncEnvironment;
 
 struct BufferCopyRegion {
@@ -57,12 +59,14 @@ struct BufferCopyCommand {
         uint32_t region_count;
         uint32_t src_handle_index;
         uint32_t dst_handle_index;
+        BufferCopyCommand MakeCommand(const CommandData& command_data) const;
     };
-
     Storage MakeStorage(CommandData& command_data, uint32_t src_handle_index, uint32_t dst_handle_index) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const Location& loc,
-                  VulkanTypedHandle command_buffer_handle) const;
-    void Apply(AccessContext& access_context, ResourceUsageTagEx src_tag_ex, ResourceUsageTagEx dst_tag_ex) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag command_tag, const Location& loc) const;
+    void Apply(const SyncEnvironment& env, AccessContext& access_context, ResourceUsageTagEx src_tag_ex,
+               ResourceUsageTagEx dst_tag_ex) const;
 };
 
 using CommandStorage = std::variant<BufferCopyCommand::Storage>;
@@ -72,7 +76,10 @@ using CommandStorage = std::variant<BufferCopyCommand::Storage>;
 // use array of commands instead.
 struct CommandEntry {
     ResourceUsageTag tag;
-    CommandStorage command;
+    CommandStorage storage;
 };
+
+bool ReplayCommands(const SyncEnvironment& env, AccessContext& access_context, const CommandBufferContext& cb_context,
+                    ResourceUsageTag base_tag, const Location& loc);
 
 }  // namespace syncval
