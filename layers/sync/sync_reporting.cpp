@@ -125,9 +125,7 @@ static void GetAccessProperties(const SyncValidator& validator, const HazardResu
     const SyncAccessInfo& access_info = GetAccessInfo(hazard.access_index);
     const SyncAccessInfo& prior_access_info = GetAccessInfo(hazard.prior_access_index);
 
-    if (!hazard.recorded_access.get()) {
-        properties.Add(kPropertyAccess, FormatAccessProperty(access_info));
-    }
+    properties.Add(kPropertyAccess, FormatAccessProperty(access_info));
     properties.Add(kPropertyPriorAccess, FormatAccessProperty(prior_access_info));
 
     if (IsHazardVsRead(hazard.hazard)) {
