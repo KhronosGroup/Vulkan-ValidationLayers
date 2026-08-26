@@ -120,8 +120,13 @@ find_package(VulkanHeaders ${PROJECT_VERSION} CONFIG QUIET)
 
 find_package(VulkanUtilityLibraries CONFIG QUIET)
 
+find_package(SPIRV-Headers CONFIG QUIET)
+
+find_package(SPIRV-Tools-opt CONFIG QUIET)
+
 # Workaround AppleClang using the wrong headers when there are headers in /usr/local/include
-if (CMAKE_CXX_COMPILER_ID STREQUAL AppleClang AND TARGET Vulkan::Headers AND TARGET Vulkan::LayerSettings AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.25)
+if (CMAKE_CXX_COMPILER_ID STREQUAL AppleClang AND TARGET Vulkan::Headers AND TARGET Vulkan::LayerSettings
+    AND SPIRV-Headers::SPIRV-Headers AND SPIRV-Tools-opt AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.25)
     get_target_property(vulkan_headers_aliased Vulkan::Headers ALIASED_TARGET)
     if (NOT vulkan_headers_aliased)
         set_target_properties(Vulkan::Headers PROPERTIES SYSTEM OFF)
@@ -132,12 +137,15 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL AppleClang AND TARGET Vulkan::Headers AND TAR
         set_target_properties(Vulkan::SafeStruct PROPERTIES SYSTEM OFF)
         set_target_properties(Vulkan::UtilityHeaders PROPERTIES SYSTEM OFF)
     endif()
+    get_target_property(spirv_headers_aliased SPIRV-Headers::SPIRV-Headers ALIASED_TARGET)
+    if (NOT spirv_headers_aliased)
+        set_target_properties(SPIRV-Headers::SPIRV-Headers PROPERTIES SYSTEM OFF)
+    endif()
+    get_target_property(spirv_tools_opt_aliased SPIRV-Tools-opt  ALIASED_TARGET)
+    if (NOT spirv_tools_opt_aliased)
+        set_target_properties(SPIRV-Tools-opt  PROPERTIES SYSTEM OFF)
+    endif()
 endif()
-
-
-find_package(SPIRV-Headers CONFIG QUIET)
-
-find_package(SPIRV-Tools-opt CONFIG QUIET)
 
 # NOTE: Our custom code generation target isn't desirable for system package managers or add_subdirectory users.
 # So this target needs to be off by default to avoid obtuse build errors or patches.
