@@ -1290,7 +1290,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
                                       const ErrorObject& error_obj) const override;
 
-    bool ValidateCmdBufImageLayouts(const Location& loc, const vvl::CommandBuffer& cb_state,
+    bool ValidateCmdBufImageLayouts(const Location& loc, const vvl::CommandBufferSubmission& cb_submission,
                                     vvl::unordered_map<const vvl::Image*, ImageLayoutMap>& local_image_layout_state) const;
 
     void UpdateCmdBufImageLayouts(const vvl::CommandBuffer& cb_state);
@@ -1615,7 +1615,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                      const ErrorObject& error_obj) const override;
     bool ProcessSubmissionBatch(const vvl::SubmitTimeTracker& tracker,
-                                const std::vector<std::shared_ptr<vvl::CommandBuffer>>& command_buffers,
+                                const std::vector<vvl::CommandBufferSubmission>& command_buffers,
                                 vvl::span<const VkSemaphoreSubmitInfo> signal_semaphores, const Location& submit_loc) override;
     bool ProcessPresentBatch(const vvl::Image& swapchain_image, const Location& present_info_loc) override;
     bool IgnoreAllocationSize(const VkMemoryAllocateInfo& allocate_info) const;

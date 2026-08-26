@@ -22,6 +22,7 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
 #include <memory>
+#include "state_tracker/queue_state.h"
 #include "state_tracker/state_object.h"
 #include "state_tracker/image_layout_map.h"
 #include "state_tracker/pipeline_library_state.h"
@@ -46,6 +47,7 @@ class DeviceState;
 class Pipeline;
 class Framebuffer;
 class Queue;
+struct QueueSubmission;
 class RenderPass;
 class VideoSession;
 class VideoSessionParameters;
@@ -798,8 +800,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void TrackImageFirstLayout(const vvl::Image &image_state, const VkImageSubresourceRange &subresource_range,
                                int32_t depth_offset, uint32_t depth_extent, VkImageLayout layout);
 
-    void SubmitTimeValidate(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc);
-
     // Helpers to offset into |active_attachments|
     // [all color, all color resolve, depth, depth resolve, stencil, stencil resolve, FragmentDensityMap]
     uint32_t GetDynamicRenderingColorAttachmentCount() const;
@@ -824,6 +824,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     const std::vector<LabelCommand> &GetLabelCommands() const { return label_commands_; }
 
+    uint32_t GetLastLabelCommandIndex() const;
+
     // Applies label commands to the label_stack: for "begin label" command it pushes
     // a label on the stack, and for the "end label" command it removes the top label.
     static void ReplayLabelCommands(const vvl::span<const LabelCommand> &label_commands, std::vector<std::string> &label_stack);
@@ -831,6 +833,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     static std::string GetDebugRegionName(const std::vector<LabelCommand>& label_commands, uint32_t label_command_index,
                                           const std::vector<std::string>& initial_label_stack = {});
 
+    auto& GetSubstates() { return sub_states_; }
     // This command buffer might contain a push descriptor set, which is not tracked in the object maps.
     // So the only way to cleanup SubStates on the descriptor set is through here.
     void RemoveOwnedSubState(LayerObjectTypeId id);
@@ -856,6 +859,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordVideoEncodeQuantizationMap(const VkVideoEncodeQuantizationMapInfoKHR &quant_map_info);
     void UnbindResources();
 };
+
+struct CommandBufferSubmission;
 
 class CommandBufferSubState {
   public:
@@ -991,7 +996,7 @@ class CommandBufferSubState {
 
     virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
 
-    virtual void Submit(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc) {}
+    virtual void Submit(Queue& queue_state, const QueueSubmission& submission, const CommandBufferSubmission& cb_submission) {}
 
     VulkanTypedHandle Handle() const;
     VkCommandBuffer VkHandle() const;

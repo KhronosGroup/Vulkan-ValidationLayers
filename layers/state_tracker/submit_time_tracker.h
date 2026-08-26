@@ -19,6 +19,7 @@
 #include "containers/custom_containers.h"
 #include "containers/span.h"
 #include "error_message/error_location.h"
+#include "state_tracker/queue_state.h"
 #include <vulkan/vulkan.h>
 #include <memory>
 #include <mutex>
@@ -38,7 +39,7 @@ struct UnresolvedBatch {
     LocationCapture submit_loc_capture;
 
     // Command buffers to validate when dependencies are resolved
-    std::vector<std::shared_ptr<CommandBuffer>> command_buffers;
+    std::vector<CommandBufferSubmission> cb_submissions;
 
     // Timeline waits that block this batch
     std::vector<VkSemaphoreSubmitInfo> unresolved_timeline_waits;
@@ -67,8 +68,7 @@ class SubmitTimeTracker {
     std::optional<uint64_t> GetTimelineValue(VkSemaphore timeline) const;
 
   private:
-    bool ProcessBatch(std::vector<std::shared_ptr<CommandBuffer>>&& command_buffers,
-                      vvl::span<const VkSemaphoreSubmitInfo> wait_semaphores,
+    bool ProcessBatch(std::vector<CommandBufferSubmission>&& cb_submissions, vvl::span<const VkSemaphoreSubmitInfo> wait_semaphores,
                       vvl::span<const VkSemaphoreSubmitInfo> signal_semaphores, VkQueue queue, const Location& submit_loc);
     bool ProcessSignal(VkSemaphore timeline, uint64_t signal_value);
 

@@ -24,6 +24,7 @@
 #include <memory>
 
 #include "containers/custom_containers.h"
+#include "containers/limits.h"
 #include "containers/small_range_map.h"
 #include "state_tracker/subresource_adapter.h"
 
@@ -51,6 +52,10 @@ struct ImageLayoutState {
     // If not null, this vuid is used to report an error.
     // If null, the current implementation will use VUID-vkCmdDraw-None-09600 until we fix all the places
     const char* submit_time_layout_mismatch_vuid;
+
+    // Index into the recording command buffer's label-command stream at the moment
+    // first_layout was recorded
+    uint32_t label_command_i = vvl::kNoIndex32;
 };
 
 // Tracks image layout state of each subresource of a single image during record time.
@@ -66,13 +71,15 @@ using ImageLayoutRegistry = vvl::unordered_map<VkImage, std::shared_ptr<CommandB
 // Update image layout state during command buffer recording phase.
 // The VkImageLayout parameters must be unnormalized values (as defined by the API) so they can be used in the error messages.
 bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& range_gen,
-                         VkImageLayout layout, VkImageLayout expected_layout, VkImageAspectFlags aspect_mask);
+                         VkImageLayout layout, VkImageLayout expected_layout, VkImageAspectFlags aspect_mask,
+                         uint32_t label_command_i);
 
 // Track image layout at the beginning of the command buffer.
 // Typically called by the APIs that specify the expected layout but do not perform a layout transition.
 // The VkImageLayout parameter must be unnormalized value (as defined by the API) so it can be used in the error messages.
 void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& range_gen,
-                      VkImageLayout expected_layout, VkImageAspectFlags aspect_mask, const char* submit_time_layout_mismatch_vuid);
+                      VkImageLayout expected_layout, VkImageAspectFlags aspect_mask, const char* submit_time_layout_mismatch_vuid,
+                      uint32_t label_command_i);
 
 // Iterate over layout map subresource ranges that intersect with the ranges defined by RangeGenerator.
 // Runs the callback on each matching layout map range.

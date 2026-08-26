@@ -75,8 +75,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     using OnCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_submission_cb)>;
     using OnCommandBufferCompletion =
-        stdext::inplace_function<bool(Validator &gpuav, CommandBufferSubState &cb,
-                                      const CommandBufferSubState::LabelLogging &label_logging, const Location &submission_loc),
+        stdext::inplace_function<bool(Validator& gpuav, CommandBufferSubState& cb,
+                                      const vvl::CommandBufferSubmission& cb_submission, const Location& submission_loc),
                                  64>;
     using OnPreCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_pre_submission_cb), 48>;
@@ -106,7 +106,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     [[nodiscard]] bool PreSubmit(QueueSubState &queue, const Location &loc);
     [[nodiscard]] bool PostSubmit(QueueSubState &queue, const Location &loc);
-    void OnCompletion(VkQueue queue, const std::vector<std::string> &initial_label_stack, const Location &loc);
+    void OnCompletion(VkQueue queue, const vvl::CommandBufferSubmission& cb_submission, const Location& loc);
 
     const VkDescriptorSetLayout &GetInstrumentationDescriptorSetLayout() const {
         assert(instrumentation_desc_set_layout_ != VK_NULL_HANDLE);
@@ -124,8 +124,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         assert(cmd_errors_counts_buffer_.VkHandle() != VK_NULL_HANDLE);
         return cmd_errors_counts_buffer_.VkHandle();
     }
-
-    std::string GetDebugLabelRegion(uint32_t label_command_i, const std::vector<std::string> &initial_label_stack) const;
 
     void Destroy() final;
     void Reset(const Location &loc) final;

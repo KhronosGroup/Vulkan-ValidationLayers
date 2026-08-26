@@ -1906,7 +1906,7 @@ void CommandBuffer::SetImageLayout(const vvl::Image& image_state, const VkImageS
         if (image_state.subresource_encoder.InRange(normalized_subresource_range)) {
             RangeGenerator range_gen(image_state.subresource_encoder, normalized_subresource_range);
             if (UpdateCurrentLayout(*image_layout_map, std::move(range_gen), layout, expected_layout,
-                                    normalized_subresource_range.aspectMask)) {
+                                    normalized_subresource_range.aspectMask, GetLastLabelCommandIndex())) {
                 image_layout_change_count++;  // Change the version of this data to force revalidation
             }
         }
@@ -1918,7 +1918,7 @@ void CommandBuffer::TrackImageViewFirstLayout(const vvl::ImageView& view_state, 
     if (auto image_layout_map = GetOrCreateImageLayoutMap(*view_state.image_state.get())) {
         RangeGenerator range_gen(view_state.range_generator);
         TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, view_state.normalized_subresource_range.aspectMask,
-                         submit_time_layout_mismatch_vuid);
+                         submit_time_layout_mismatch_vuid, GetLastLabelCommandIndex());
     }
 }
 
@@ -1932,7 +1932,7 @@ void CommandBuffer::TrackDepthAttachmentFirstLayout(const vvl::ImageView& view_s
         RangeGenerator range_gen(view_state.image_state->subresource_encoder, image_layout_range);
 
         TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, VK_IMAGE_ASPECT_DEPTH_BIT,
-                         submit_time_layout_mismatch_vuid);
+                         submit_time_layout_mismatch_vuid, GetLastLabelCommandIndex());
     }
 }
 
@@ -1946,7 +1946,7 @@ void CommandBuffer::TrackStencilAttachmentFirstLayout(const vvl::ImageView& view
         RangeGenerator range_gen(view_state.image_state->subresource_encoder, image_layout_range);
 
         TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, VK_IMAGE_ASPECT_STENCIL_BIT,
-                         submit_time_layout_mismatch_vuid);
+                         submit_time_layout_mismatch_vuid, GetLastLabelCommandIndex());
     }
 }
 
@@ -1961,7 +1961,8 @@ void CommandBuffer::TrackImageFirstLayout(const vvl::Image& image_state, const V
         }
         if (image_state.subresource_encoder.InRange(normalized_subresource_range)) {
             RangeGenerator range_gen(image_state.subresource_encoder, normalized_subresource_range);
-            TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, normalized_subresource_range.aspectMask, nullptr);
+            TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, normalized_subresource_range.aspectMask, nullptr,
+                             GetLastLabelCommandIndex());
         }
     }
 }
@@ -2535,20 +2536,6 @@ void CommandBuffer::RecordSetRenderingInputAttachmentIndices(const VkRenderingIn
     SetRenderingInputAttachmentIndices(rendering_attachments, pLocationInfo);
 }
 
-void CommandBuffer::SubmitTimeValidate(Queue& queue_state, uint32_t perf_submit_pass, const Location& loc) {
-    for (const auto& it : video_session_updates) {
-        auto video_session_state = dev_data.Get<vvl::VideoSession>(it.first);
-        auto device_state = video_session_state->DeviceStateWrite();
-        for (const auto& function : it.second) {
-            function(video_session_state.get(), *device_state, /*do_validate*/ false);
-        }
-    }
-
-    for (auto& item : sub_states_) {
-        item.second->Submit(queue_state, perf_submit_pass, loc);
-    }
-}
-
 uint32_t CommandBuffer::GetDynamicRenderingColorAttachmentCount() const {
     return active_render_pass ? active_render_pass->dynamic_rendering_color_attachment_count : 0;
 }
@@ -2698,12 +2685,18 @@ void CommandBuffer::ReplayLabelCommands(const vvl::span<const LabelCommand>& lab
 
 std::string CommandBuffer::GetDebugRegionName(const std::vector<LabelCommand>& label_commands, uint32_t label_command_index,
                                               const std::vector<std::string>& initial_label_stack) {
-    if (label_command_index >= label_commands.size()) {
-        // Can happen due to core validation error when in-use command buffer was re-recorded.
-        // It's a bug if this happens in a valid vulkan program.
-        return {};
+    // If label_command_index is invalid, current command buffer did not open any debug label region.
+    // So just compute a region name from initial_label_stack
+    vvl::span<const LabelCommand> label_commands_to_replay;
+
+    if (label_command_index != vvl::kNoIndex32) {
+        if (label_command_index >= label_commands.size()) {
+            // Can happen due to core validation error when in-use command buffer was re-recorded.
+            // It's a bug if this happens in a valid vulkan program.
+            return {};
+        }
+        label_commands_to_replay = vvl::make_span(label_commands.data(), label_command_index + 1);
     }
-    auto label_commands_to_replay = vvl::make_span(label_commands.data(), label_command_index + 1);
     auto label_stack = initial_label_stack;
     vvl::CommandBuffer::ReplayLabelCommands(label_commands_to_replay, label_stack);
 
@@ -2716,6 +2709,10 @@ std::string CommandBuffer::GetDebugRegionName(const std::vector<LabelCommand>& l
         debug_region += label_name;
     }
     return debug_region;
+}
+
+uint32_t CommandBuffer::GetLastLabelCommandIndex() const {
+    return label_commands_.empty() ? vvl::kNoIndex32 : uint32_t(label_commands_.size() - 1);
 }
 
 std::string CommandBuffer::DescribeInvalidatedState(CBDynamicState dynamic_state) const {

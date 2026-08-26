@@ -36,11 +36,7 @@ void SubmitTimeTracker::OnDestroyTimelineSemaphore(VkSemaphore timeline) {
 }
 
 bool SubmitTimeTracker::ProcessQueueSubmission(VkQueue queue, const QueueSubmission& submission) const {
-    std::vector<std::shared_ptr<CommandBuffer>> command_buffers;
-    command_buffers.reserve(submission.cb_submissions.size());
-    for (const auto& cb_info : submission.cb_submissions) {
-        command_buffers.emplace_back(cb_info.cb);
-    }
+    std::vector<CommandBufferSubmission> command_buffers = submission.cb_submissions;
 
     std::vector<VkSemaphoreSubmitInfo> wait_semaphores;
     wait_semaphores.reserve(submission.wait_semaphores.size());
@@ -87,7 +83,7 @@ bool SubmitTimeTracker::ProcessPresent(const VkPresentInfoKHR& present_info, con
     return skip;
 }
 
-bool SubmitTimeTracker::ProcessBatch(std::vector<std::shared_ptr<CommandBuffer>>&& command_buffers,
+bool SubmitTimeTracker::ProcessBatch(std::vector<CommandBufferSubmission>&& cb_submissions,
                                      vvl::span<const VkSemaphoreSubmitInfo> wait_semaphores,
                                      vvl::span<const VkSemaphoreSubmitInfo> signal_semaphores, VkQueue queue,
                                      const Location& submit_loc) {
@@ -99,14 +95,14 @@ bool SubmitTimeTracker::ProcessBatch(std::vector<std::shared_ptr<CommandBuffer>>
     const bool has_pending_waits = !unresolved_batches.empty() || !unresolved_timeline_waits.empty();
     if (has_pending_waits) {
         UnresolvedBatch batch(submit_loc);
-        batch.command_buffers = std::move(command_buffers);
+        batch.cb_submissions = std::move(cb_submissions);
         batch.unresolved_timeline_waits = std::move(unresolved_timeline_waits);
         batch.signals.assign(signal_semaphores.begin(), signal_semaphores.end());
         unresolved_batches.emplace_back(std::move(batch));
         return skip;
     }
 
-    skip |= validator_.ProcessSubmissionBatch(*this, command_buffers, signal_semaphores, submit_loc);
+    skip |= validator_.ProcessSubmissionBatch(*this, cb_submissions, signal_semaphores, submit_loc);
 
     const bool new_timeline_signals = RegisterTimelineSignals(signal_semaphores);
     if (new_timeline_signals) {
@@ -166,7 +162,7 @@ bool SubmitTimeTracker::PropagateTimelineSignals() {
                     break;
                 }
                 const auto signals = vvl::span<const VkSemaphoreSubmitInfo>(batch.signals.data(), batch.signals.size());
-                skip |= validator_.ProcessSubmissionBatch(*this, batch.command_buffers, signals, batch.submit_loc_capture.Get());
+                skip |= validator_.ProcessSubmissionBatch(*this, batch.cb_submissions, signals, batch.submit_loc_capture.Get());
                 new_timeline_signals |= RegisterTimelineSignals(batch.signals);
                 batches.erase(batches.begin());
             }

@@ -31,6 +31,7 @@
 #include "state_tracker/event_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/query_state.h"
+#include "state_tracker/queue_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/shader_object_state.h"
 
@@ -312,9 +313,12 @@ void CommandBufferSubState::RecordCopyBufferCommon(vvl::Buffer& src_buffer_state
         dst_ranges_bounds.end = std::max(dst_ranges_bounds.end, region.dstOffset + region.size);
     }
 
+    const uint32_t label_command_i = base.GetLastLabelCommandIndex();
+
     auto queue_submit_validation = [this, &src_buffer_state, &dst_buffer_state, src_ranges = std::move(src_ranges),
-                                    dst_ranges = std::move(dst_ranges), src_ranges_bounds, dst_ranges_bounds,
-                                    loc](const class vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state) -> bool {
+                                    dst_ranges = std::move(dst_ranges), src_ranges_bounds, dst_ranges_bounds, loc,
+                                    label_command_i](const class vvl::Queue& queue_state,
+                                                     const vvl::CommandBufferSubmission& cb_submission) -> bool {
         bool skip = false;
 
         auto src_vk_memory_to_ranges_map = src_buffer_state.GetBoundRanges(src_ranges_bounds, src_ranges);
@@ -336,11 +340,15 @@ void CommandBufferSubState::RecordCopyBufferCommon(vvl::Buffer& src_buffer_state
                 if (src_ranges_it->first.intersects(dst_ranges_it->first)) {
                     auto memory_range_overlap = src_ranges_it->first & dst_ranges_it->first;
 
-                    const LogObjectList objlist(cb_state.Handle(), src_buffer_state.Handle(), dst_buffer_state.Handle(), vk_memory);
+                    const LogObjectList objlist(base.VkHandle(), src_buffer_state.Handle(), dst_buffer_state.Handle(),
+                                                vk_memory);
+                    const std::string dbg_region_name = vvl::CommandBuffer::GetDebugRegionName(
+                        base.GetLabelCommands(), label_command_i, cb_submission.initial_label_stack);
+                    const Location loc_with_dbg_region(loc, dbg_region_name);
                     const bool is_2 = loc.function == vvl::Func::vkCmdCopyBuffer2 || loc.function == vvl::Func::vkCmdCopyBuffer2KHR;
                     const char* vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-00117" : "VUID-vkCmdCopyBuffer-pRegions-00117";
                     skip |= validator.LogError(
-                        vuid, objlist, loc,
+                        vuid, objlist, loc_with_dbg_region,
                         "Copy source buffer range %s (from buffer %s) and destination buffer range %s (from buffer %s) are "
                         "bound to the same memory (%s), "
                         "and end up overlapping on memory range %s.",
@@ -1345,9 +1353,10 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_c
     });
 }
 
-void CommandBufferSubState::Submit(vvl::Queue& queue_state, uint32_t perf_submit_pass, const Location& loc) {
+void CommandBufferSubState::Submit(vvl::Queue& queue_state, const vvl::QueueSubmission& queue_submission,
+                                   const vvl::CommandBufferSubmission& cb_submission) {
     for (auto& func : queue_submit_functions) {
-        func(queue_state, base);
+        func(queue_state, cb_submission);
     }
 
     // Update global vvl:Event state with signaling state at the end of the command buffer
@@ -1375,7 +1384,7 @@ void CommandBufferSubState::Submit(vvl::Queue& queue_state, uint32_t perf_submit
     // Update vvl::QueryPool with a query state at the end of the command buffer.
     // Ultimately, it tracks the final query state for the entire submission.
     {
-        const QueryMap local_query_to_state_map = GetLocalQueryMap(perf_submit_pass);
+        const QueryMap local_query_to_state_map = GetLocalQueryMap(queue_submission.perf_submit_pass);
         for (const auto& [query_object, query_state] : local_query_to_state_map) {
             auto query_pool_state = base.dev_data.Get<vvl::QueryPool>(query_object.pool);
             if (!query_pool_state) continue;

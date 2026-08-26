@@ -225,7 +225,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordSetDepthTestEnable(VkBool32 depth_test_enable) final;
     void RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline& pipeline) final;
 
-    void Submit(vvl::Queue& queue_state, uint32_t perf_submit_pass, const Location& loc) final;
+    void Submit(vvl::Queue& queue_state, const vvl::QueueSubmission& queue_submission,
+                const vvl::CommandBufferSubmission& cb_submission) final;
 
     // Move to private when possible
     void RecordAttachmentAccess(uint32_t attachment, VkImageAspectFlags aspects);

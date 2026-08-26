@@ -454,19 +454,18 @@ void RegisterDebugPrintf(Validator& gpuav, CommandBufferSubState& cb_state) {
                                                             cb.base.GetObjectList(bind_point));
         });
 
-    cb_state.on_cb_completion_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
-                                                        const CommandBufferSubState::LabelLogging& label_logging,
-                                                        const Location& loc) {
-        debug_printf::CbState* debug_printf_cb_state = cb.shared_resources_cache.TryGet<debug_printf::CbState>();
-        if (!debug_printf_cb_state) {
+    cb_state.on_cb_completion_functions.emplace_back(
+        [](Validator& gpuav, CommandBufferSubState& cb, const vvl::CommandBufferSubmission&, const Location& loc) {
+            debug_printf::CbState* debug_printf_cb_state = cb.shared_resources_cache.TryGet<debug_printf::CbState>();
+            if (!debug_printf_cb_state) {
+                return true;
+            }
+            for (debug_printf::BufferInfo& buffer_info : debug_printf_cb_state->buffer_infos) {
+                uint32_t* output_ptr = (uint32_t*)buffer_info.output_mem_buffer.offset_mapped_ptr;
+                debug_printf::AnalyzeAndGenerateMessage(gpuav, cb.VkHandle(), buffer_info, output_ptr, loc);
+            }
             return true;
-        }
-        for (debug_printf::BufferInfo& buffer_info : debug_printf_cb_state->buffer_infos) {
-            uint32_t* output_ptr = (uint32_t*)buffer_info.output_mem_buffer.offset_mapped_ptr;
-            debug_printf::AnalyzeAndGenerateMessage(gpuav, cb.VkHandle(), buffer_info, output_ptr, loc);
-        }
-        return true;
-    });
+        });
 }
 
 }  // namespace debug_printf
