@@ -847,7 +847,6 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateGraphicsPipelineColorBlendAttachmentState(const vvl::Pipeline& pipeline,
                                                            const vku::safe_VkSubpassDescription2* subpass_desc,
                                                            const Location& color_loc) const;
-    bool IsColorBlendStateAttachmentCountIgnore(const vvl::Pipeline& pipeline) const;
     bool ValidatePipelineColorBlendAdvancedStateCreateInfo(
         const vvl::Pipeline& pipeline, const VkPipelineColorBlendAdvancedStateCreateInfoEXT& color_blend_advanced,
         const Location& color_loc) const;

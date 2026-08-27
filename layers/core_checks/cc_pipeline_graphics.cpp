@@ -1721,8 +1721,11 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendAttachmentState(const vvl::Pi
                                                                    const Location& color_loc) const {
     bool skip = false;
     const auto& attachment_states = pipeline.AttachmentStates();
-    if (attachment_states.empty()) return skip;
-    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) return skip;
+    if (attachment_states.empty()) {
+        return skip;
+    } else if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
+        return skip;
+    }
 
     if (!enabled_features.independentBlend && attachment_states.size() > 1) {
         for (size_t i = 1; i < attachment_states.size(); i++) {
@@ -1871,12 +1874,6 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendAttachmentState(const vvl::Pi
     return skip;
 }
 
-bool CoreChecks::IsColorBlendStateAttachmentCountIgnore(const vvl::Pipeline& pipeline) const {
-    return pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
-           pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
-           pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) &&
-           (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) || !enabled_features.advancedBlendCoherentOperations);
-}
 bool CoreChecks::ValidatePipelineColorBlendAdvancedStateCreateInfo(
     const vvl::Pipeline& pipeline, const VkPipelineColorBlendAdvancedStateCreateInfoEXT& color_blend_advanced,
     const Location& color_loc) const {
@@ -1931,11 +1928,13 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline& pi
     }
 
     if (!null_rp && subpass_desc && color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
-        if (!IsColorBlendStateAttachmentCountIgnore(pipeline)) {
+        if (!pipeline.IsColorBlendStateAttachmentCountIgnore(enabled_features.advancedBlendCoherentOperations)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-07609", device, color_loc.dot(Field::attachmentCount),
-                             "(%" PRIu32 ") is different than %s pSubpasses[%" PRIu32 "].colorAttachmentCount (%" PRIu32 ").",
+                             "(%" PRIu32 ") is different than %s pSubpasses[%" PRIu32 "].colorAttachmentCount (%" PRIu32
+                             ").\nattachmentCount can be ignored with all the following dynamic states set:\n%s",
                              color_blend_state->attachmentCount, FormatHandle(rp_state->Handle()).c_str(), pipeline.Subpass(),
-                             subpass_desc->colorAttachmentCount);
+                             subpass_desc->colorAttachmentCount,
+                             pipeline.DescribeDynamicStateSet(kColorBlendStateAttachmentCountDynamic).c_str());
         }
     }
 
@@ -2546,24 +2545,21 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline& pipeline
 
     const bool null_rp = pipeline.IsRenderPassNull();
     if (null_rp) {
-        if (!pipeline.DepthStencilState()) {
-            if (pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
-                if (!pipeline.IsDepthStencilStateDynamic() || !IsExtEnabled(extensions.vk_ext_extended_dynamic_state3)) {
-                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035", device,
-                                     create_info_loc.dot(Field::pDepthStencilState), "is NULL.");
-                }
+        if (!pipeline.DepthStencilState() && pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
+            if (!pipeline.IsDepthStencilStateDynamic() || !IsExtEnabled(extensions.vk_ext_extended_dynamic_state3)) {
+                skip |= LogError(
+                    "VUID-VkGraphicsPipelineCreateInfo-renderPass-09035", device, create_info_loc.dot(Field::pDepthStencilState),
+                    "is NULL.\nIf the following are all set, it can be NULL\n - VK_EXT_extended_dynamic_state3 (%senabled)\n%s",
+                    IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ? "" : "not ",
+                    pipeline.DescribeDynamicStateSet(kDepthStencilStateDynamic).c_str());
             }
         }
-    }
-
-    if (IsExtEnabled(extensions.vk_ext_graphics_pipeline_library)) {
+    } else if (IsExtEnabled(extensions.vk_ext_graphics_pipeline_library)) {
+        // if VK_KHR_dynamic_rendering is not enabled, can be null renderpass if using GPL
         if (pipeline.OwnsLibState(pipeline.fragment_output_state) && !pipeline.MultisampleState()) {
-            // if VK_KHR_dynamic_rendering is not enabled, can be null renderpass if using GPL
-            if (!null_rp) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderpass-06631", device,
-                                 create_info_loc.dot(Field::pMultisampleState),
-                                 "is NULL, but pipeline is being created with fragment shader that uses samples.");
-            }
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderpass-06631", device,
+                             create_info_loc.dot(Field::pMultisampleState),
+                             "is NULL, but pipeline is being created with fragment shader that uses samples.");
         }
     }
 
@@ -2579,11 +2575,11 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline& pipeline
                              create_info_loc.dot(Field::pMultisampleState),
                              "is NULL."
                              "\nIf the following are all set, it can be NULL"
-                             "\n  Enable VK_EXT_extended_dynamic_state3 (%senabled)"
-                             "\n  Use VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT (%s)"
-                             "\n  Use VK_DYNAMIC_STATE_SAMPLE_MASK_EXT (%s)"
-                             "\n  Use VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT (%s)"
-                             "\n  Use VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT (%s) or enable alphaToOne feature (%s)\n",
+                             "\n - VK_EXT_extended_dynamic_state3 (%senabled)"
+                             "\n - VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT (%s)"
+                             "\n - VK_DYNAMIC_STATE_SAMPLE_MASK_EXT (%s)"
+                             "\n - VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT (%s)"
+                             "\n - VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT (%s) or enable alphaToOne feature (%s)\n",
                              IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ? "" : "not ",
                              pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) ? "set" : "not set",
                              pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT) ? "set" : "not set",
@@ -2595,35 +2591,13 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline& pipeline
 
     if (!pipeline.RasterizationState()) {
         if (!pipeline_ci.pRasterizationState && pipeline.OwnsLibState(pipeline.pre_raster_state)) {
-            if (!IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ||
-                !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT) ||
-                !pipeline.IsDynamic(CB_DYNAMIC_STATE_POLYGON_MODE_EXT) ||
-                !pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) ||
-                !pipeline.IsDynamic(CB_DYNAMIC_STATE_CULL_MODE) || !pipeline.IsDynamic(CB_DYNAMIC_STATE_FRONT_FACE) ||
-                !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE) || !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS) ||
-                !pipeline.IsDynamic(CB_DYNAMIC_STATE_LINE_WIDTH)) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-06601", device,
-                                 create_info_loc.dot(Field::pRasterizationState),
-                                 "is NULL."
-                                 "\nIf the following are all set, it can be NULL"
-                                 "\n  Enable VK_EXT_extended_dynamic_state3 (%senabled)"
-                                 "\n  Use VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT (%s)"
-                                 "\n  Use VK_DYNAMIC_STATE_POLYGON_MODE_EXT (%s)"
-                                 "\n  Use VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE (%s)"
-                                 "\n  Use VK_DYNAMIC_STATE_CULL_MODE (%s)"
-                                 "\n  Use VK_DYNAMIC_STATE_FRONT_FACE (%s)"
-                                 "\n  Use VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE (%s)"
-                                 "\n  Use VK_DYNAMIC_STATE_DEPTH_BIAS (%s)"
-                                 "\n  Use VK_DYNAMIC_STATE_LINE_WIDTH (%s)\n",
-                                 IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ? "" : "not ",
-                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT) ? "set" : "not set",
-                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_POLYGON_MODE_EXT) ? "set" : "not set",
-                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) ? "set" : "not set",
-                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_CULL_MODE) ? "set" : "not set",
-                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_FRONT_FACE) ? "set" : "not set",
-                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE) ? "set" : "not set",
-                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS) ? "set" : "not set",
-                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_LINE_WIDTH) ? "set" : "not set");
+            if (!IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || !pipeline.IsRasterizationStateDynamic()) {
+                skip |= LogError(
+                    "VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-06601", device,
+                    create_info_loc.dot(Field::pRasterizationState),
+                    "is NULL.\nIf the following are all set, it can be NULL\n - VK_EXT_extended_dynamic_state3 (%senabled)\n%s",
+                    IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ? "" : "not ",
+                    pipeline.DescribeDynamicStateSet(kRasterizationStateDynamic).c_str());
             }
         }
     }
@@ -2769,13 +2743,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const vvl::Pipeline& pipel
     }
 
     if (api_version < VK_API_VERSION_1_3 && !enabled_features.extendedDynamicState &&
-        (pipeline.IsDynamic(CB_DYNAMIC_STATE_CULL_MODE) || pipeline.IsDynamic(CB_DYNAMIC_STATE_FRONT_FACE) ||
-         pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) || pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) ||
-         pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT) ||
-         pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE) ||
-         pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE) || pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) ||
-         pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_COMPARE_OP) || pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE) ||
-         pipeline.IsDynamic(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE) || pipeline.IsDynamic(CB_DYNAMIC_STATE_STENCIL_OP))) {
+        ((pipeline.dynamic_state & kExtendedDynamicState1) != 0)) {
         skip |= LogError(
             "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03378", device, create_info_loc.dot(Field::pDynamicState),
             "contains dynamic states from VK_EXT_extended_dynamic_state, but the extendedDynamicState feature was not enabled.");
@@ -3384,12 +3352,15 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline& p
         }
 
         if (color_blend_state && rendering_struct->colorAttachmentCount != color_blend_state->attachmentCount &&
-            !IsColorBlendStateAttachmentCountIgnore(pipeline)) {
+            !pipeline.IsColorBlendStateAttachmentCountIgnore(enabled_features.advancedBlendCoherentOperations)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06055", device,
                              create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
-                             "(%" PRIu32 ") is different from %s (%" PRIu32 ").", rendering_struct->colorAttachmentCount,
+                             "(%" PRIu32 ") is different from %s (%" PRIu32
+                             ").\nattachmentCount can be ignored with all the following dynamic states set:\n%s",
+                             rendering_struct->colorAttachmentCount,
                              create_info_loc.dot(Field::pColorBlendState).dot(Field::attachmentCount).Fields().c_str(),
-                             color_blend_state->attachmentCount);
+                             color_blend_state->attachmentCount,
+                             pipeline.DescribeDynamicStateSet(kColorBlendStateAttachmentCountDynamic).c_str());
         }
 
         if (const auto* custom_resolve = vku::FindStructInPNextChain<VkCustomResolveCreateInfoEXT>(pipeline.GetCreateInfoPNext())) {
