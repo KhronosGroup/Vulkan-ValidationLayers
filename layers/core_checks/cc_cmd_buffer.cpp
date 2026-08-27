@@ -341,7 +341,7 @@ bool CoreChecks::ValidateBeginCommandBufferInheritanceInfo(const vvl::CommandBuf
         if (descriptor_heap_info->pSamplerHeapBindInfo) {
             const Location sampler_heap_loc =
                 inheritance_loc.pNext(Struct::VkCommandBufferInheritanceDescriptorHeapInfoEXT, Field::pSamplerHeapBindInfo);
-            if (!enabled_features.descriptorHeapEXT) {
+            if (!enabled_features.descriptorHeap) {
                 skip |= LogError("VUID-VkCommandBufferInheritanceDescriptorHeapInfoEXT-descriptorHeap-11200", cb_state.Handle(),
                                  sampler_heap_loc, "(%p) is not null, but the descriptorHeap feature was not enabled.",
                                  descriptor_heap_info->pSamplerHeapBindInfo);
@@ -355,7 +355,7 @@ bool CoreChecks::ValidateBeginCommandBufferInheritanceInfo(const vvl::CommandBuf
         if (descriptor_heap_info->pResourceHeapBindInfo) {
             const Location resource_heap_loc =
                 inheritance_loc.pNext(Struct::VkCommandBufferInheritanceDescriptorHeapInfoEXT, Field::pResourceHeapBindInfo);
-            if (!enabled_features.descriptorHeapEXT) {
+            if (!enabled_features.descriptorHeap) {
                 skip |= LogError("VUID-VkCommandBufferInheritanceDescriptorHeapInfoEXT-descriptorHeap-11201", cb_state.Handle(),
                                  resource_heap_loc, "(%p) is not null, but the descriptorHeap feature was not enabled.",
                                  descriptor_heap_info->pResourceHeapBindInfo);
@@ -2552,7 +2552,7 @@ bool CoreChecks::ValidateCmdBeginTransformFeedback(const vvl::CommandBuffer& cb_
     }
 
     const auto* pipe = cb_state.GetLastBoundGraphics().pipeline_state;
-    if (!pipe && !enabled_features.shaderObjectEXT) {
+    if (!pipe && !enabled_features.shaderObject) {
         const char* vuid =
             is_xfb_2 ? "VUID-vkCmdBeginTransformFeedback2EXT-None-06233" : "VUID-vkCmdBeginTransformFeedbackEXT-None-06233";
         skip |= LogError(vuid, cb_state.VkHandle(), error_obj.location, "No graphics pipeline has been bound yet.");
@@ -2822,7 +2822,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer command
                                                          const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
                                                          const VkDeviceSize* pStrides, const ErrorObject& error_obj) const {
     bool skip = false;
-    if (!enabled_features.extendedDynamicState && !enabled_features.shaderObjectEXT) {
+    if (!enabled_features.extendedDynamicState && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdBindVertexBuffers2-None-08971", commandBuffer, error_obj.location,
                          "extendedDynamicState and shaderObject features were not enabled.");
     }

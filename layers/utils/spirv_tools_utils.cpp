@@ -103,7 +103,7 @@ void AdjustValidatorOptions(const DeviceExtensions& device_extensions, const Dev
         out_options.SetAllowVulkan32BitBitwise(true);
     }
 
-    if (enabled_features.descriptorHeapEXT) {
+    if (enabled_features.descriptorHeap) {
         // Added as this change caused strange issues on Android
         assert(IsExtEnabled(device_extensions.vk_ext_descriptor_heap) &&
                phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment > 0);

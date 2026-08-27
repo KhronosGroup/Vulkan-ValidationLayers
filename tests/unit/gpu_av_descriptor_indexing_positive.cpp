@@ -1180,7 +1180,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
@@ -1318,7 +1318,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitDynamicRenderTarget();
     // Create 2 pipeline layouts. Pipeline layout 2 starts the same as pipeline layout 1, with one push constant range,

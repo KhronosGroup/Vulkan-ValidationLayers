@@ -2138,7 +2138,7 @@ void DeviceState::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModu
 void DeviceState::PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator,
                                                 const RecordObject& record_obj) {
     // Don't do state lookup if not needed
-    if (enabled_features.descriptorHeapEXT) {
+    if (enabled_features.descriptorHeap) {
         if (const auto& shader_state = Get<ShaderObject>(shader)) {
             if (shader_state->descriptor_heap_embedded_samplers_count > 0) {
                 descriptor_heap_global_embedded_sampler_count_ -= shader_state->descriptor_heap_embedded_samplers_count;
@@ -2152,7 +2152,7 @@ void DeviceState::PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT sha
 void DeviceState::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator,
                                                const RecordObject& record_obj) {
     // Don't do state lookup if not needed
-    if (enabled_features.descriptorHeapEXT) {
+    if (enabled_features.descriptorHeap) {
         if (const auto& pipeline_state = Get<Pipeline>(pipeline)) {
             if (pipeline_state->descriptor_heap_embedded_samplers_count > 0) {
                 descriptor_heap_global_embedded_sampler_count_ -= pipeline_state->descriptor_heap_embedded_samplers_count;

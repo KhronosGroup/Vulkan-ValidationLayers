@@ -1537,7 +1537,7 @@ TEST_F(NegativeSecondaryCommandBuffer, CustomResolveDynamicRenderingInputAttachm
 TEST_F(NegativeSecondaryCommandBuffer, InheritanceDescriptorHeapInfo) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     AddRequiredFeature(vkt::Feature::inheritedQueries);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(Init());
@@ -1580,7 +1580,7 @@ TEST_F(NegativeSecondaryCommandBuffer, InheritanceDescriptorHeapInfo) {
 TEST_F(NegativeSecondaryCommandBuffer, InheritanceDescriptorHeapInfo_1_4) {
     SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     AddRequiredFeature(vkt::Feature::inheritedQueries);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(Init());

@@ -337,8 +337,8 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
         }
     }
 
-    if ((create_flags & VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT) &&
-        !enabled_features.descriptorHeapCaptureReplayEXT && !enabled_features.descriptorBufferCaptureReplay) {
+    if ((create_flags & VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT) && !enabled_features.descriptorHeapCaptureReplay &&
+        !enabled_features.descriptorBufferCaptureReplay) {
         skip |= LogError("VUID-VkImageCreateInfo-flags-08104", device, create_info_loc.dot(Field::flags),
                          "contains VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT but neither descriptorHeapCaptureReplay "
                          "nor descriptorBufferCaptureReplay "

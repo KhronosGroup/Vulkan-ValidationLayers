@@ -829,7 +829,7 @@ TEST_F(PositiveDescriptorBuffer, BindingOffsets) {
 
 TEST_F(PositiveDescriptorBuffer, ShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
     vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -2183,7 +2183,7 @@ TEST_F(PositiveDescriptorBuffer, IndependentSetMixShaderObject) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance11);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
     InitDynamicRenderTarget();
 

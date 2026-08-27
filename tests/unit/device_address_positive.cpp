@@ -131,7 +131,7 @@ TEST_F(PositiveDeviceAddress, ValidSubRange1) {
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
@@ -196,7 +196,7 @@ TEST_F(PositiveDeviceAddress, ValidSubRange2) {
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();

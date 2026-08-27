@@ -28,7 +28,7 @@ void DescriptorHeapTest::InitBasicDescriptorHeap() {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
     heap_props.pNext = &tensor_heap_props;
@@ -3031,7 +3031,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 

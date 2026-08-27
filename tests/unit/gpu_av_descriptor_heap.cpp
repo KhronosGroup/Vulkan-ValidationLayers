@@ -487,7 +487,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_DispatchWorkgroupSize) {
     TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand with descriptor heap");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     RETURN_IF_SKIP(InitGpuAvFramework());
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
@@ -650,7 +650,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HeapRebound) {
 TEST_F(NegativeGpuAVDescriptorHeap, ShaderObjects) {
     TEST_DESCRIPTION("Validate illegal index buffer values with shader objects");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitDynamicRenderTarget();
@@ -1023,7 +1023,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBIndirectIndex) {
 
 TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBShaderObjects) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());

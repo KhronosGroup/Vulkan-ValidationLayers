@@ -944,8 +944,8 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT: {
                 const VkPhysicalDeviceDescriptorHeapFeaturesEXT* enabled =
                     reinterpret_cast<const VkPhysicalDeviceDescriptorHeapFeaturesEXT*>(pNext);
-                features->descriptorHeapEXT |= enabled->descriptorHeap == VK_TRUE;
-                features->descriptorHeapCaptureReplayEXT |= enabled->descriptorHeapCaptureReplay == VK_TRUE;
+                features->descriptorHeap |= enabled->descriptorHeap == VK_TRUE;
+                features->descriptorHeapCaptureReplay |= enabled->descriptorHeapCaptureReplay == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT: {
@@ -1721,7 +1721,7 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT: {
                 const VkPhysicalDeviceShaderObjectFeaturesEXT* enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderObjectFeaturesEXT*>(pNext);
-                features->shaderObjectEXT |= enabled->shaderObject == VK_TRUE;
+                features->shaderObject |= enabled->shaderObject == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM: {

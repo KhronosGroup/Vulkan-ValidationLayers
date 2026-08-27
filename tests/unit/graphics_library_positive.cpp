@@ -2423,7 +2423,7 @@ TEST_F(PositiveGraphicsLibrary, CustomResolve) {
 TEST_F(PositiveGraphicsLibrary, DescriptorHeapSetLayoutCount) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
@@ -2458,7 +2458,7 @@ TEST_F(PositiveGraphicsLibrary, DescriptorHeapSetLayoutCount) {
 TEST_F(PositiveGraphicsLibrary, DescriptorHeapSetLayoutCountLinking) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
@@ -2502,7 +2502,7 @@ TEST_F(PositiveGraphicsLibrary, DescriptorHeapSetLayoutCountLinking) {
 TEST_F(PositiveGraphicsLibrary, DescriptorHeapPushConstantStages) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
@@ -2554,7 +2554,7 @@ TEST_F(PositiveGraphicsLibrary, DescriptorHeapPushConstantStages) {
 TEST_F(PositiveGraphicsLibrary, DescriptorHeapUnusedPipelineLayouts) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 

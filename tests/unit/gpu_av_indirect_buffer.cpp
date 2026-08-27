@@ -751,7 +751,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance3) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitGpuAvFramework());
 
     RETURN_IF_SKIP(InitState());
@@ -927,7 +927,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstanceIndexed3) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitGpuAvFramework());
 
     RETURN_IF_SKIP(InitState());
@@ -1078,7 +1078,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSize) {
 TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSizeShaderObjects) {
     TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitGpuAvFramework());
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
@@ -1094,7 +1094,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSizeShaderObjects) {
     props.limits.maxComputeWorkGroupCount[2] = 2;
     fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
 
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitState());
 
     vkt::Buffer indirect_buffer(*m_device, 5 * sizeof(VkDispatchIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,

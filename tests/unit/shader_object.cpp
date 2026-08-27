@@ -497,7 +497,7 @@ TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
 
     RETURN_IF_SKIP(Init());
 
@@ -523,7 +523,7 @@ TEST_F(NegativeShaderObject, CreateMeshShadersWithoutEnabledFeatures) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::maintenance4);
     RETURN_IF_SKIP(Init());
 
@@ -974,7 +974,7 @@ TEST_F(NegativeShaderObject, UnsupportedNextStage) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
 
     RETURN_IF_SKIP(Init());
 
@@ -1310,7 +1310,7 @@ TEST_F(NegativeShaderObject, InvalidShadingRatePaletteViewportCount) {
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shadingRateImage);
     AddRequiredFeature(vkt::Feature::multiViewport);
@@ -1447,7 +1447,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetLogicOp) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::logicOp);
     RETURN_IF_SKIP(Init());
@@ -1834,7 +1834,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetLogicOpEnableEXT) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::logicOp);
     RETURN_IF_SKIP(Init());
@@ -2465,7 +2465,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetShadingRateImageEnableNV) {
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shadingRateImage);
     RETURN_IF_SKIP(Init());
@@ -2493,7 +2493,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportShadingRatePaletteNV) {
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shadingRateImage);
     RETURN_IF_SKIP(Init());
@@ -2522,7 +2522,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoarseSampleOrderNV) {
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shadingRateImage);
     RETURN_IF_SKIP(Init());
@@ -2617,7 +2617,7 @@ TEST_F(NegativeShaderObject, MissingTessellationControlBind) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
@@ -2645,7 +2645,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationBind) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
@@ -2673,7 +2673,7 @@ TEST_F(NegativeShaderObject, MissingGeometryBind) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
@@ -4039,7 +4039,7 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvCapability) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
 
     RETURN_IF_SKIP(Init());
 
@@ -4102,7 +4102,7 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvExtension) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(Init());
 
     const char* vs_src = R"(
@@ -4134,7 +4134,7 @@ TEST_F(NegativeShaderObject, SpirvExtensionRequirementsNotMet) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(Init());
 
     const char* cs_src = R"(
@@ -4165,7 +4165,7 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
     TEST_DESCRIPTION("Create shader with unsupported spirv extension.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
 
     RETURN_IF_SKIP(Init());
@@ -4387,7 +4387,7 @@ TEST_F(NegativeShaderObject, ExtendedTypesDisabled) {
     AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
 
@@ -4608,7 +4608,7 @@ TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(Init());
 
@@ -5617,7 +5617,7 @@ TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
 
     RETURN_IF_SKIP(Init());
@@ -7067,7 +7067,7 @@ TEST_F(NegativeShaderObject, DescriptorHeapShaderObjectCreateFlag) {
     TEST_DESCRIPTION("Validate descriptor heap flag influence onto shader object creation.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
@@ -7136,7 +7136,7 @@ TEST_F(NegativeShaderObject, EmbeddedSamplerReservedArea) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -7257,7 +7257,7 @@ TEST_F(NegativeShaderObject, DescriptorHeapOpTypeImage) {
     TEST_DESCRIPTION("Validate that mapping is aligned for OpTypeImage");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -7602,7 +7602,7 @@ TEST_F(NegativeShaderObject, InvalidImageLayout) {
 TEST_F(NegativeShaderObject, HeapFlags) {
     TEST_DESCRIPTION("Create a linked shaders with mismatched heap flags.");
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
@@ -7621,7 +7621,7 @@ TEST_F(NegativeShaderObject, HeapFlags) {
 
 TEST_F(NegativeShaderObject, DrawWithHeap) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -7912,7 +7912,7 @@ TEST_F(NegativeShaderObject, MissingTessellationSpacing) {
 
 TEST_F(NegativeShaderObject, MissingHeapBind) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicShaderObject());

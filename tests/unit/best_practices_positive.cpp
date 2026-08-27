@@ -475,7 +475,7 @@ TEST_F(PositiveBestPractices, ShaderObjectDraw) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();

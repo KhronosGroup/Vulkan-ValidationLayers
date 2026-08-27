@@ -114,7 +114,7 @@ TEST_F(NegativeShaderUntyped, Atomics) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::shaderInt64);
     AddRequiredFeature(vkt::Feature::shaderSharedInt64Atomics);  // to allow OpCapability Int64Atomics
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);

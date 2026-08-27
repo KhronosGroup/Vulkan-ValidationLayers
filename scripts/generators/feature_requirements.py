@@ -49,9 +49,6 @@ class FeatureRequirementsGenerator(BaseGenerator):
             ('VkPhysicalDeviceBufferDeviceAddressFeaturesEXT', 'bufferDeviceAddressMultiDevice'): 'bufferDeviceAddressMultiDeviceEXT',
             ('VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV', 'deviceGeneratedCommands'): 'deviceGeneratedCommandsNV',
             ('VkPhysicalDeviceOpacityMicromapFeaturesEXT', 'micromap'): 'micromapEXT',
-            ('VkPhysicalDeviceShaderObjectFeaturesEXT', 'shaderObject'): 'shaderObjectEXT',
-            ('VkPhysicalDeviceDescriptorHeapFeaturesEXT', 'descriptorHeap'): 'descriptorHeapEXT',
-            ('VkPhysicalDeviceDescriptorHeapFeaturesEXT', 'descriptorHeapCaptureReplay'): 'descriptorHeapCaptureReplayEXT',
         }
 
     def generate(self):

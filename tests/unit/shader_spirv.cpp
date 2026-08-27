@@ -3050,7 +3050,7 @@ TEST_F(NegativeShaderSpirv, UntypedPointerInHeapsWithNoFeature) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4666");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
     RETURN_IF_SKIP(Init());
 
     const char* source = R"(

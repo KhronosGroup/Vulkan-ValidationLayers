@@ -1640,7 +1640,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdDrawColorIndexESOEnabled) {
         "Validate that mapping is not applied in CmdDraw call if rendering is not started by vkCmdBeginRendering (when "
         "VK_EXT_shader_object is enabled on the device");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
     VkFormat color_formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
