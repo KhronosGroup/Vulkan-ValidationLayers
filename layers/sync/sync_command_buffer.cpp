@@ -1605,15 +1605,15 @@ void CommandBufferSubState::RecordCopyBuffer(vvl::Buffer& src_buffer_state, vvl:
     for (const VkBufferCopy& region : vvl::make_span(p_regions, region_count)) {
         regions.emplace_back(BufferCopyRegion{region.srcOffset, region.dstOffset, region.size});
     }
-    const BufferCopyCommand command{src_buffer_state, dst_buffer_state, regions};
+    const BufferCopyCommand command{src_buffer_state, dst_buffer_state, regions, src_tag_ex.handle_index, dst_tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
     if (settings.IsRecordTimeValidationEnabled()) {
         AccessContext& access_context = cb_context.GetCbAccessContext();
-        command.Apply(cb_context.GetSyncEnvironment(), access_context, src_tag_ex, dst_tag_ex);
+        command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
     }
     if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command, src_tag_ex.handle_index, dst_tag_ex.handle_index);
+        cb_context.StoreCommand(tag, command);
     }
 }
 
@@ -1628,15 +1628,15 @@ void CommandBufferSubState::RecordCopyBuffer2(vvl::Buffer& src_buffer_state, vvl
     for (const VkBufferCopy2& region : vvl::make_span(p_regions, region_count)) {
         regions.emplace_back(BufferCopyRegion{region.srcOffset, region.dstOffset, region.size});
     }
-    const BufferCopyCommand command{src_buffer_state, dst_buffer_state, regions};
+    const BufferCopyCommand command{src_buffer_state, dst_buffer_state, regions, src_tag_ex.handle_index, dst_tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
     if (settings.IsRecordTimeValidationEnabled()) {
         AccessContext& access_context = cb_context.GetCbAccessContext();
-        command.Apply(cb_context.GetSyncEnvironment(), access_context, src_tag_ex, dst_tag_ex);
+        command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
     }
     if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command, src_tag_ex.handle_index, dst_tag_ex.handle_index);
+        cb_context.StoreCommand(tag, command);
     }
 }
 

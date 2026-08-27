@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "sync/sync_common.h"
+#include "sync_barrier.h"
 #include "containers/span.h"
 
 struct Location;
@@ -32,6 +32,7 @@ namespace syncval {
 
 class AccessContext;
 class CommandBufferContext;
+struct CommandData;
 struct SyncEnvironment;
 
 struct BufferCopyRegion {
@@ -40,17 +41,12 @@ struct BufferCopyRegion {
     VkDeviceSize size;
 };
 
-struct CommandData {
-    std::vector<std::shared_ptr<const vvl::Buffer>> buffers;
-    std::vector<BufferCopyRegion> buffer_copy_regions;
-
-    uint32_t AddBuffer(const vvl::Buffer& buffer);
-};
-
 struct BufferCopyCommand {
     const vvl::Buffer& src_buffer;
     const vvl::Buffer& dst_buffer;
     vvl::span<const BufferCopyRegion> regions;
+    uint32_t src_handle_index = vvl::kNoIndex32;
+    uint32_t dst_handle_index = vvl::kNoIndex32;
 
     struct Storage {
         uint32_t src_buffer_index;
@@ -61,15 +57,36 @@ struct BufferCopyCommand {
         uint32_t dst_handle_index;
         BufferCopyCommand MakeCommand(const CommandData& command_data) const;
     };
-    Storage MakeStorage(CommandData& command_data, uint32_t src_handle_index, uint32_t dst_handle_index) const;
+    Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
     bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
                   ResourceUsageTag command_tag, const Location& loc) const;
-    void Apply(const SyncEnvironment& env, AccessContext& access_context, ResourceUsageTagEx src_tag_ex,
-               ResourceUsageTagEx dst_tag_ex) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
-using CommandStorage = std::variant<BufferCopyCommand::Storage>;
+struct BarrierCommand {
+    const BarrierSet& barrier_set;
+
+    struct Storage {
+        uint32_t barrier_set_index;
+        BarrierCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
+using CommandStorage = std::variant<BufferCopyCommand::Storage, BarrierCommand::Storage>;
+
+struct CommandData {
+    std::vector<std::shared_ptr<const vvl::Buffer>> buffers;
+    std::vector<BufferCopyRegion> buffer_copy_regions;
+    std::vector<BarrierSet> barrier_sets;
+
+    uint32_t AddBuffer(const vvl::Buffer& buffer);
+};
 
 // TODO: CommandEntry won't be needed after all commands are introduced.
 // Tag could be derived from command index. Remove entry type when and
@@ -79,7 +96,7 @@ struct CommandEntry {
     CommandStorage storage;
 };
 
-bool ReplayCommands(const SyncEnvironment& env, AccessContext& access_context, const CommandBufferContext& cb_context,
+bool ReplayCommands(SyncEnvironment& env, AccessContext& access_context, const CommandBufferContext& cb_context,
                     ResourceUsageTag base_tag, const Location& loc);
 
 }  // namespace syncval

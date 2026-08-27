@@ -170,8 +170,6 @@ class SyncValidator : public vvl::DeviceProxy {
     bool PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
                                       const ErrorObject& error_obj) const override;
 
-    bool ValidateCmdPipelineBarrier(const CommandBufferContext& cb_context, const BarrierSet& barrier_set,
-                                    const Location& loc) const;
     bool PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                            VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                            uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,

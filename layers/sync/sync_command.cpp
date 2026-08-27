@@ -20,26 +20,25 @@
 #include "sync/sync_command_buffer.h"
 #include "sync/sync_validation.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/image_state.h"
 #include "error_message/logging.h"
+#include "utils/image_utils.h"
 
 namespace syncval {
 
-bool ReplayCommands(const SyncEnvironment& env, AccessContext& access_context, const CommandBufferContext& cb_context,
+bool ReplayCommands(SyncEnvironment& env, AccessContext& access_context, const CommandBufferContext& cb_context,
                     ResourceUsageTag base_tag, const Location& loc) {
     bool skip = false;
     const CommandData& command_data = cb_context.GetCommandData();
 
     for (const CommandEntry& entry : cb_context.GetCommands()) {
         const ResourceUsageTag tag = base_tag + entry.tag;
-
         std::visit(
             [&](const auto& storage) {
                 const auto& command = storage.MakeCommand(command_data);
                 const bool command_skip = command.Validate(env, access_context, cb_context, entry.tag, loc);
                 if (!command_skip) {
-                    const ResourceUsageTagEx src_tag_ex{tag, storage.src_handle_index};
-                    const ResourceUsageTagEx dst_tag_ex{tag, storage.dst_handle_index};
-                    command.Apply(env, access_context, src_tag_ex, dst_tag_ex);
+                    command.Apply(env, tag, access_context);
                 }
                 skip |= command_skip;
             },
@@ -61,11 +60,10 @@ BufferCopyCommand BufferCopyCommand::Storage::MakeCommand(const CommandData& com
     if (region_count != 0) {
         regions = vvl::make_span(&command_data.buffer_copy_regions[first_region], region_count);
     }
-    return {src_buffer, dst_buffer, regions};
+    return {src_buffer, dst_buffer, regions, src_handle_index, dst_handle_index};
 }
 
-BufferCopyCommand::Storage BufferCopyCommand::MakeStorage(CommandData& command_data, uint32_t src_handle_index,
-                                                          uint32_t dst_handle_index) const {
+BufferCopyCommand::Storage BufferCopyCommand::MakeStorage(CommandData& command_data) const {
     const uint32_t src_buffer_index = command_data.AddBuffer(src_buffer);
     const uint32_t dst_buffer_index = command_data.AddBuffer(dst_buffer);
 
@@ -124,15 +122,69 @@ bool BufferCopyCommand::Validate(const SyncEnvironment& env, const AccessContext
     return skip;
 }
 
-void BufferCopyCommand::Apply(const SyncEnvironment& env, AccessContext& access_context, ResourceUsageTagEx src_tag_ex,
-                              ResourceUsageTagEx dst_tag_ex) const {
+void BufferCopyCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    const ResourceUsageTagEx src_tag_ex{tag, src_handle_index};
+    const ResourceUsageTagEx dst_tag_ex{tag, dst_handle_index};
+
     for (const BufferCopyRegion& region : regions) {
         const AccessRange src_range = MakeRange(src_buffer, region.src_offset, region.size);
-        access_context.UpdateAccessState(src_buffer, SYNC_COPY_TRANSFER_READ, src_range, src_tag_ex, 0, env.queue_id);
-
         const AccessRange dst_range = MakeRange(dst_buffer, region.dst_offset, region.size);
+
+        access_context.UpdateAccessState(src_buffer, SYNC_COPY_TRANSFER_READ, src_range, src_tag_ex, 0, env.queue_id);
         access_context.UpdateAccessState(dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range, dst_tag_ex, 0, env.queue_id);
     }
+}
+
+BarrierCommand BarrierCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    return BarrierCommand{command_data.barrier_sets[barrier_set_index]};
+}
+
+BarrierCommand::Storage BarrierCommand::MakeStorage(CommandData& command_data) const {
+    const uint32_t barrier_set_index = uint32_t(command_data.barrier_sets.size());
+    command_data.barrier_sets.emplace_back(barrier_set);
+    return {barrier_set_index};
+}
+
+bool BarrierCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool BarrierCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                              const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    bool skip = false;
+    for (const auto& image_barrier : barrier_set.image_barriers) {
+        if (!image_barrier.layout_transition) {
+            // The only accesses that originate from the pipeline barrier are layout transitions
+            continue;
+        }
+        const vvl::Image& image_state = *image_barrier.image;
+        const bool can_transition_depth_slices =
+            CanTransitionDepthSlices(env.validator.extensions, image_state.GetImageType(), image_state.create_flags);
+
+        const auto hazard = access_context.DetectImageBarrierHazard(
+            image_state, image_barrier.barrier.src_exec_scope.exec_scope, image_barrier.barrier.src_access_scope,
+            image_barrier.subresource_range, can_transition_depth_slices, AccessContext::kDetectAll, env.queue_id);
+
+        if (hazard.IsHazard()) {
+            if (replay_tag != kInvalidTag) {
+                LogObjectList objlist(env.handle, cb_context.GetCBState().Handle());
+                const std::string error = env.validator.error_messages_.SubmitTimeError(
+                    env, hazard, cb_context, replay_tag, loc.index, env.validator.FormatHandle(image_state.Handle()));
+                skip |= env.validator.SyncError(hazard.Hazard(), objlist, loc, error);
+            } else {
+                LogObjectList objlist(cb_context.GetCBState().Handle(), image_state.Handle());
+                const std::string resource_description = env.validator.FormatHandle(image_state.Handle());
+                const std::string error =
+                    env.validator.error_messages_.ImageBarrierError(env, hazard, loc.function, resource_description, image_barrier);
+                skip |= env.validator.SyncError(hazard.Hazard(), objlist, loc, error);
+            }
+        }
+    }
+    return skip;
+}
+
+void BarrierCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    ApplyBarrier(env, access_context, barrier_set, tag, true);
 }
 
 }  // namespace syncval
