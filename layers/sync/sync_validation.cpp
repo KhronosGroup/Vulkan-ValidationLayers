@@ -510,41 +510,14 @@ bool SyncValidator::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffe
     return PreCallValidateCmdCopyImage2(commandBuffer, pCopyImageInfo, error_obj);
 }
 
-bool SyncValidator::ValidateCmdPipelineBarrier(const CommandBufferContext& cb_context, const BarrierSet& barrier_set,
-                                               const Location& loc) const {
-    bool skip = false;
-    const AccessContext& context = cb_context.GetCurrentAccessContext();
-
-    // Validate Image Layout transitions
-    for (const auto& image_barrier : barrier_set.image_barriers) {
-        if (!image_barrier.layout_transition) {
-            continue;
-        }
-        const vvl::Image& image_state = *image_barrier.image;
-        const bool can_transition_depth_slices =
-            CanTransitionDepthSlices(cb_context.GetSyncState().extensions, image_state.GetImageType(), image_state.create_flags);
-        const auto hazard = context.DetectImageBarrierHazard(
-            image_state, image_barrier.barrier.src_exec_scope.exec_scope, image_barrier.barrier.src_access_scope,
-            image_barrier.subresource_range, can_transition_depth_slices, AccessContext::kDetectAll);
-        if (hazard.IsHazard()) {
-            LogObjectList objlist(cb_context.GetCBState().Handle(), image_state.Handle());
-            const SyncValidator& sync_state = cb_context.GetSyncState();
-            const std::string resource_description = sync_state.FormatHandle(image_state.Handle());
-            const std::string error = sync_state.error_messages_.ImageBarrierError(
-                cb_context.GetSyncEnvironment(), hazard, loc.function, resource_description, image_barrier);
-            skip |= sync_state.SyncError(hazard.Hazard(), objlist, loc, error);
-        }
-    }
-    return skip;
-}
-
 bool SyncValidator::PreCallValidateCmdPipelineBarrier(
     VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
     VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
     const VkImageMemoryBarrier* pImageMemoryBarriers, const ErrorObject& error_obj) const {
-    bool skip = false;
-
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
     const VkQueueFlags queue_flags = cb_state->GetQueueFlags();
@@ -553,11 +526,11 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier(
     const SyncExecScope dst_exec_scope(SyncExecScope::MakeDst(queue_flags, dstStageMask));
     const BarrierSet barrier_set(*this, src_exec_scope, dst_exec_scope, memoryBarrierCount, pMemoryBarriers,
                                  bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-
-    skip |= ValidateCmdPipelineBarrier(cb_context, barrier_set, error_obj.location);
     stats.OnBarrierCommand(memoryBarrierCount, bufferMemoryBarrierCount, imageMemoryBarrierCount,
                            barrier_set.execution_dependency_barrier_count);
-    return skip;
+
+    const BarrierCommand command{barrier_set};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 void SyncValidator::RecordCmdPipelineBarrier(CommandBufferContext& cb_context, BarrierSet&& barrier_set,
@@ -572,7 +545,16 @@ void SyncValidator::RecordCmdPipelineBarrier(CommandBufferContext& cb_context, B
             image_barrier.handle_index = tag_ex.handle_index;
         }
     }
-    ApplyBarrier(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), barrier_set, tag);
+    const BarrierCommand command{barrier_set};
+    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+        AccessContext& access_context = cb_context.GetCurrentAccessContext();
+        command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
+    }
+    if (syncval_settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
+    }
+    // TODO: Keep this unconditional because secondary command buffer validation and
+    // recording still use replay entries. Revisit when secondaries use the command model.
     cb_context.AddReplayEntry(tag, true, PipelineBarrierReplay(std::move(barrier_set)));
 }
 
@@ -600,21 +582,22 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer comman
 
 bool SyncValidator::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
                                                        const ErrorObject& error_obj) const {
-    bool skip = false;
-
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
     if (!pDependencyInfo) {
-        return skip;
+        return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
     const VkQueueFlags queue_flags = cb_state->GetQueueFlags();
 
-    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
     const BarrierSet barrier_set(*this, queue_flags, *pDependencyInfo);
-
-    skip |= ValidateCmdPipelineBarrier(cb_context, barrier_set, error_obj.location);
     stats.OnBarrierCommand(pDependencyInfo->memoryBarrierCount, pDependencyInfo->bufferMemoryBarrierCount,
                            pDependencyInfo->imageMemoryBarrierCount, barrier_set.execution_dependency_barrier_count);
-    return skip;
+
+    const BarrierCommand command{barrier_set};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR* pDependencyInfo,

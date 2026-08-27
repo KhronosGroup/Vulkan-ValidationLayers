@@ -71,17 +71,17 @@ void ApplySingleBufferBarrierFunctor::operator()(const Iterator& pos) const {
 
 ApplySingleImageBarrierFunctor::ApplySingleImageBarrierFunctor(const AccessContext& access_context,
                                                                const BarrierScope& barrier_scope, const SyncBarrier& barrier,
-                                                               bool layout_transition, uint32_t layout_transition_handle_index,
-                                                               ResourceUsageTag exec_tag)
+                                                               bool layout_transition, bool apply_layout_transitions,
+                                                               uint32_t layout_transition_handle_index, ResourceUsageTag exec_tag)
     : access_context(access_context),
       barrier_scope(barrier_scope),
       barrier(barrier),
       exec_tag(exec_tag),
       layout_transition(layout_transition),
       layout_transition_handle_index(layout_transition_handle_index) {
-    // Suppress layout transition during submit time application.
-    // It adds write access but this is necessary only during recording.
-    if (barrier_scope.scope_queue != kQueueIdInvalid) {
+    // Suppress layout transition during legacy submit time application.
+    // It adds write access but it is needed only during recorded for legacy submit time mode.
+    if (!apply_layout_transitions) {
         this->layout_transition = false;
         this->layout_transition_handle_index = vvl::kNoIndex32;
     }

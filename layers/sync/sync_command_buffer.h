@@ -257,9 +257,9 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
         replay_entries_.emplace_back(tag, validate_layout_transition_first_use, std::forward<Operation>(operation));
     }
 
-    template <typename Command, typename... Args>
-    void StoreCommand(ResourceUsageTag tag, const Command& command, Args&&... args) {
-        auto storage = command.MakeStorage(command_data_, std::forward<Args>(args)...);
+    template <typename Command>
+    void StoreCommand(ResourceUsageTag tag, const Command& command) {
+        auto storage = command.MakeStorage(command_data_);
         commands_.push_back(CommandEntry{tag, std::move(storage)});
     }
 

@@ -193,15 +193,16 @@ struct HazardDetectorMarker {
 class BarrierHazardDetector {
   public:
     BarrierHazardDetector(const AccessContext& access_context, SyncAccessIndex access_index, VkPipelineStageFlags2 src_exec_scope,
-                          SyncAccessFlags src_access_scope)
+                          SyncAccessFlags src_access_scope, QueueId queue_id)
         : access_context_(access_context),
           access_info_(GetAccessInfo(access_index)),
           src_exec_scope_(src_exec_scope),
-          src_access_scope_(src_access_scope) {}
+          src_access_scope_(src_access_scope),
+          queue_id_(queue_id) {}
 
     HazardResult Detect(const AccessMap::const_iterator& pos) const {
         return DoDetect(access_context_, pos->second, [this](const AccessState& access_state) {
-            return access_state.DetectBarrierHazard(access_info_, kQueueIdInvalid, src_exec_scope_, src_access_scope_);
+            return access_state.DetectBarrierHazard(access_info_, queue_id_, src_exec_scope_, src_access_scope_);
         });
     }
 
@@ -216,6 +217,7 @@ class BarrierHazardDetector {
     const SyncAccessInfo& access_info_;
     VkPipelineStageFlags2 src_exec_scope_;
     SyncAccessFlags src_access_scope_;
+    QueueId queue_id_;
 };
 
 class EventBarrierHazardDetector {
@@ -406,8 +408,9 @@ HazardResult AccessContext::DetectImageBarrierHazard(const vvl::Image& image, co
 HazardResult AccessContext::DetectImageBarrierHazard(const vvl::Image& image, VkPipelineStageFlags2 src_exec_scope,
                                                      const SyncAccessFlags& src_access_scope,
                                                      const VkImageSubresourceRange& subresource_range, bool is_depth_sliced,
-                                                     const DetectOptions options) const {
-    BarrierHazardDetector detector(*this, SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_exec_scope, src_access_scope);
+                                                     const DetectOptions options, QueueId queue_id) const {
+    BarrierHazardDetector detector(*this, SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_exec_scope, src_access_scope,
+                                   queue_id);
     ImageRangeGen range_gen = SubState(image).MakeImageRangeGen(subresource_range, is_depth_sliced);
     return DetectHazardGeneratedRangeGen(detector, range_gen, options);
 }
@@ -415,7 +418,7 @@ HazardResult AccessContext::DetectImageBarrierHazard(const vvl::Image& image, Vk
 HazardResult AccessContext::DetectImageBarrierHazard(const AttachmentViewGen& view_gen, const SyncBarrier& barrier,
                                                      DetectOptions options) const {
     BarrierHazardDetector detector(*this, SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, barrier.src_exec_scope.exec_scope,
-                                   barrier.src_access_scope);
+                                   barrier.src_access_scope, kQueueIdInvalid);
     ImageRangeGen range_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kViewSubresource);
     return DetectHazardGeneratedRangeGen(detector, range_gen, options);
 }

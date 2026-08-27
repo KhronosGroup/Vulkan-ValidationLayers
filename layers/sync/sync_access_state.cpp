@@ -636,7 +636,7 @@ bool AccessState::ApplyBarrier(const BarrierScope& barrier_scope, const SyncBarr
         const OrderingBarrier layout_ordering{barrier.src_exec_scope.exec_scope, barrier.src_access_scope};
 
         // Register write access that models layout transition writes
-        SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, AttachmentAccess::NonAttachment(), tag_ex);
+        SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, AttachmentAccess::NonAttachment(), tag_ex, 0, barrier_scope.scope_queue);
         UpdateFirst(tag_ex, layout_transition_access_info, AttachmentAccess::NonAttachment());
         TouchupFirstForLayoutTransition(layout_transition_tag, layout_ordering);
 
@@ -681,7 +681,8 @@ void AccessState::CollectPendingBarriers(const BarrierScope& barrier_scope, cons
     if (layout_transition) {
         // Schedule layout transition first: layout transition creates WriteState if necessary
         const OrderingBarrier layout_transition_ordering_barrier{barrier.src_exec_scope.exec_scope, barrier.src_access_scope};
-        pending_barriers.AddLayoutTransition(this, layout_transition_ordering_barrier, layout_transition_handle_index);
+        pending_barriers.AddLayoutTransition(this, layout_transition_ordering_barrier, layout_transition_handle_index,
+                                             barrier_scope.scope_queue);
 
         // Apply barrier over layout trasition's write access
         pending_barriers.AddWriteBarrier(this, barrier);
@@ -752,7 +753,7 @@ void PendingBarriers::AddWriteBarrier(AccessState* access_state, const SyncBarri
 }
 
 void PendingBarriers::AddLayoutTransition(AccessState* access_state, const OrderingBarrier& layout_transition_ordering_barrier,
-                                          uint32_t layout_transition_handle_index) {
+                                          uint32_t layout_transition_handle_index, QueueId queue_id) {
     // NOTE: in contrast to read/write barriers, we don't do reuse search here,
     // mostly because we didn't see a beneficial use case yet.
     // Storing handle index can be a hint it would be harder to find duplicates.
@@ -763,6 +764,7 @@ void PendingBarriers::AddLayoutTransition(AccessState* access_state, const Order
 
     PendingLayoutTransition& layout_transition = layout_transitions.emplace_back();
     layout_transition.ordering = layout_transition_ordering_barrier;
+    layout_transition.queue_id = queue_id;
     layout_transition.handle_index = layout_transition_handle_index;
 }
 
@@ -853,7 +855,7 @@ void AccessState::ApplyPendingWriteBarrier(const PendingWriteBarrier& write_barr
 void AccessState::ApplyPendingLayoutTransition(const PendingLayoutTransition& layout_transition, ResourceUsageTag tag) {
     const SyncAccessInfo& layout_usage_info = GetAccessInfo(SYNC_IMAGE_LAYOUT_TRANSITION);
     const ResourceUsageTagEx tag_ex = ResourceUsageTagEx{tag, layout_transition.handle_index};
-    SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, AttachmentAccess::NonAttachment(), tag_ex);
+    SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, AttachmentAccess::NonAttachment(), tag_ex, 0, layout_transition.queue_id);
     UpdateFirst(tag_ex, layout_usage_info, AttachmentAccess::NonAttachment());
     TouchupFirstForLayoutTransition(tag, layout_transition.ordering);
 }

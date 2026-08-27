@@ -980,7 +980,7 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext* external_contex
             assert(&subpass_contexts_[transition.src_subpass] == dst_external_barrier.src_subpass_context);
             for (const auto& barrier : dst_external_barrier.barriers) {
                 const BarrierScope barrier_scope(barrier);
-                CollectBarriersFunctor collect_barriers(*external_context, barrier_scope, barrier, true, vvl::kNoIndex32,
+                CollectBarriersFunctor collect_barriers(*external_context, barrier_scope, barrier, true, true, vvl::kNoIndex32,
                                                         pending_barriers);
                 external_context->UpdateMemoryAccessState(collect_barriers, range_gen);
             }
@@ -988,7 +988,7 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext* external_contex
             // Unused attachments still transition from initialLayout to finalLayout, but no subpass
             // uses them, so record the transition without applying a subpass dependency barrier.
             const SyncBarrier empty_barrier;
-            CollectBarriersFunctor collect_barriers(*external_context, BarrierScope(empty_barrier), empty_barrier, true,
+            CollectBarriersFunctor collect_barriers(*external_context, BarrierScope(empty_barrier), empty_barrier, true, true,
                                                     vvl::kNoIndex32, pending_barriers);
             external_context->UpdateMemoryAccessState(collect_barriers, range_gen);
         }

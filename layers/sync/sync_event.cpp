@@ -495,7 +495,7 @@ void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
             if (SimpleBinding(*barrier.buffer)) {
                 const SyncBarrier event_barrier = RestrictToEvent(barrier.barrier, *sync_event);
                 const BarrierScope barrier_scope(event_barrier, env.queue_id, sync_event->first_scope_tag);
-                CollectBarriersFunctor collect_barriers(access_context, barrier_scope, event_barrier, false, vvl::kNoIndex32,
+                CollectBarriersFunctor collect_barriers(access_context, barrier_scope, event_barrier, false, false, vvl::kNoIndex32,
                                                         pending_barriers);
 
                 const VkDeviceSize base_address = ResourceBaseAddress(*barrier.buffer);
@@ -508,7 +508,7 @@ void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
         for (const SyncImageBarrier& barrier : barrier_set.image_barriers) {
             const SyncBarrier event_barrier = RestrictToEvent(barrier.barrier, *sync_event);
             const BarrierScope barrier_scope(event_barrier, env.queue_id, sync_event->first_scope_tag);
-            CollectBarriersFunctor collect_barriers(access_context, barrier_scope, event_barrier, barrier.layout_transition,
+            CollectBarriersFunctor collect_barriers(access_context, barrier_scope, event_barrier, barrier.layout_transition, false,
                                                     barrier.handle_index, pending_barriers);
 
             const auto& sub_state = SubState(*barrier.image);
@@ -525,7 +525,7 @@ void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
         for (const auto& barrier : barrier_set.memory_barriers) {
             const SyncBarrier event_barrier = RestrictToEvent(barrier, *sync_event);
             const BarrierScope barrier_scope(event_barrier, env.queue_id, sync_event->first_scope_tag);
-            CollectBarriersFunctor collect_barriers(access_context, barrier_scope, event_barrier, false, vvl::kNoIndex32,
+            CollectBarriersFunctor collect_barriers(access_context, barrier_scope, event_barrier, false, false, vvl::kNoIndex32,
                                                     pending_barriers);
 
             auto range_gen = global_range_gen;  // intentional copy

@@ -313,6 +313,7 @@ struct PendingWriteBarrier {
 
 struct PendingLayoutTransition {
     OrderingBarrier ordering;
+    QueueId queue_id;
     uint32_t handle_index;
 };
 
@@ -334,7 +335,7 @@ struct PendingBarriers {
     void AddReadBarrier(AccessState* access_state, uint32_t last_reads_index, const SyncBarrier& barrier);
     void AddWriteBarrier(AccessState* access_state, const SyncBarrier& barrier);
     void AddLayoutTransition(AccessState* access_state, const OrderingBarrier& layout_transition_ordering_barrier,
-                             uint32_t layout_transition_handle_index);
+                             uint32_t layout_transition_handle_index, QueueId queue_id = kQueueIdInvalid);
 
     // Update accesss state with collected barriers
     void Apply(const ResourceUsageTag exec_tag);

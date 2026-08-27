@@ -62,8 +62,8 @@ struct ApplySingleBufferBarrierFunctor {
 // the pending barriers functionality to ensure independent barrier application
 struct ApplySingleImageBarrierFunctor {
     ApplySingleImageBarrierFunctor(const AccessContext& access_context, const BarrierScope& barrier_scope,
-                                   const SyncBarrier& barrier, bool layout_transition, uint32_t layout_transition_handle_index,
-                                   ResourceUsageTag exec_tag);
+                                   const SyncBarrier& barrier, bool layout_transition, bool apply_layout_transitions,
+                                   uint32_t layout_transition_handle_index, ResourceUsageTag exec_tag);
 
     using Iterator = AccessMap::iterator;
     Iterator Infill(AccessMap* accesses, const Iterator& pos_hint, const AccessRange& range) const;
@@ -107,7 +107,8 @@ struct ApplyMarkupFunctor {
 // After this functor finished its work then PendingBarriers::Apply() can be used to update the access states.
 struct CollectBarriersFunctor {
     CollectBarriersFunctor(const AccessContext& access_context, const BarrierScope& barrier_scope, const SyncBarrier& barrier,
-                           bool layout_transition, uint32_t layout_transition_handle_index, PendingBarriers& pending_barriers)
+                           bool layout_transition, bool apply_layout_transitions, uint32_t layout_transition_handle_index,
+                           PendingBarriers& pending_barriers)
         : access_context(access_context),
           barrier_scope(barrier_scope),
           barrier(barrier),
@@ -116,7 +117,7 @@ struct CollectBarriersFunctor {
           pending_barriers(pending_barriers) {
         // Suppress layout transition during submit time application.
         // It add write access but this is necessary only during recording.
-        if (barrier_scope.scope_queue != kQueueIdInvalid) {
+        if (barrier_scope.scope_queue != kQueueIdInvalid && !apply_layout_transitions) {
             this->layout_transition = false;
             this->layout_transition_handle_index = vvl::kNoIndex32;
         }
@@ -377,7 +378,7 @@ class AccessContext {
                                           DetectOptions options) const;
     HazardResult DetectImageBarrierHazard(const vvl::Image& image, VkPipelineStageFlags2 src_exec_scope,
                                           const SyncAccessFlags& src_access_scope, const VkImageSubresourceRange& subresource_range,
-                                          bool is_depth_sliced, DetectOptions options) const;
+                                          bool is_depth_sliced, DetectOptions options, QueueId queue_id) const;
     HazardResult DetectImageBarrierHazard(const AttachmentViewGen& attachment_view, const SyncBarrier& barrier,
                                           DetectOptions options) const;
 
