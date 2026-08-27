@@ -101,7 +101,7 @@ bool SpirvValidator::Validate(const spirv::Module& module_state, const spirv::St
 
     // This is the exceptions, not the normal case
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4666
-    bool check_untyped_pointers = enabled_features.descriptorHeapEXT && !enabled_features.shaderUntypedPointers &&
+    bool check_untyped_pointers = enabled_features.descriptorHeap && !enabled_features.shaderUntypedPointers &&
                                   module_state.HasCapability(spv::CapabilityDescriptorHeapEXT);
 
     skip |= ValidateShaderClock(module_state, stateless_data, loc);

@@ -154,10 +154,6 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
             ''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        # Temp hack until the KHR heaps comes out
-        for spirv in [x for x in self.vk.spirv if x.name == 'DescriptorHeapEXT']:
-            spirv.enable[0].feature = 'descriptorHeapEXT'
-
         # Temp fix until 1.4.361 comes out with
         # https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8491
         spirv = [item for item in self.vk.spirv if item.name != "CooperativeMatrixReductionsNV" and item.name != "CooperativeMatrixPerElementOperationsNV"]

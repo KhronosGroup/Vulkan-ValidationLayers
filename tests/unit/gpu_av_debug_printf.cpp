@@ -277,7 +277,7 @@ TEST_F(NegativeGpuAVDebugPrintf, GPL) {
 
 TEST_F(NegativeGpuAVDebugPrintf, ShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
 
     RETURN_IF_SKIP(InitGpuAvDebugPrintfFramework());

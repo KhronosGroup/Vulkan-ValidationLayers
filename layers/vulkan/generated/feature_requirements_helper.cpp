@@ -1548,7 +1548,22 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
                     "VkPhysicalDeviceDescriptorBufferTensorFeaturesARM::descriptorBufferTensorDescriptors"};
         }
 
-        case Feature::descriptorHeapCaptureReplayEXT: {
+        case Feature::descriptorHeap: {
+            auto vk_struct = const_cast<VkPhysicalDeviceDescriptorHeapFeaturesEXT*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorHeapFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceDescriptorHeapFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->descriptorHeap, "VkPhysicalDeviceDescriptorHeapFeaturesEXT::descriptorHeap"};
+        }
+
+        case Feature::descriptorHeapCaptureReplay: {
             auto vk_struct = const_cast<VkPhysicalDeviceDescriptorHeapFeaturesEXT*>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorHeapFeaturesEXT>(*inout_pnext_chain));
             if (!vk_struct) {
@@ -1562,21 +1577,6 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
             }
             return {&vk_struct->descriptorHeapCaptureReplay,
                     "VkPhysicalDeviceDescriptorHeapFeaturesEXT::descriptorHeapCaptureReplay"};
-        }
-
-        case Feature::descriptorHeapEXT: {
-            auto vk_struct = const_cast<VkPhysicalDeviceDescriptorHeapFeaturesEXT*>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorHeapFeaturesEXT>(*inout_pnext_chain));
-            if (!vk_struct) {
-                vk_struct = new VkPhysicalDeviceDescriptorHeapFeaturesEXT;
-                *vk_struct = vku::InitStructHelper();
-                if (*inout_pnext_chain) {
-                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
-                } else {
-                    *inout_pnext_chain = vk_struct;
-                }
-            }
-            return {&vk_struct->descriptorHeap, "VkPhysicalDeviceDescriptorHeapFeaturesEXT::descriptorHeap"};
         }
 
         case Feature::descriptorBindingPartiallyBound:
@@ -7507,7 +7507,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
             return {&vk_struct->shaderMXInt8, "VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT::shaderMXInt8"};
         }
 
-        case Feature::shaderObjectEXT: {
+        case Feature::shaderObject: {
             auto vk_struct = const_cast<VkPhysicalDeviceShaderObjectFeaturesEXT*>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceShaderObjectFeaturesEXT>(*inout_pnext_chain));
             if (!vk_struct) {

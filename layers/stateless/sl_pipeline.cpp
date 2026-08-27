@@ -145,7 +145,7 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                                                               const Location& loc) const {
     bool skip = false;
 
-    if (!enabled_features.descriptorHeapEXT && mapping_info.mappingCount != 0) {
+    if (!enabled_features.descriptorHeap && mapping_info.mappingCount != 0) {
         const char* vuid = (loc.function == Func::vkCreateShadersEXT) ? "VUID-VkShaderCreateInfoEXT-descriptorHeap-11314"
                                                                       : "VUID-VkPipelineShaderStageCreateInfo-descriptorHeap-11314";
         skip |=

@@ -2204,7 +2204,7 @@ TEST_F(NegativeYcbcr, DescriptorIndexSlang) {
 TEST_F(NegativeYcbcr, DescriptorIndexShaderObject) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(Init());
 

@@ -207,9 +207,9 @@ enum class Feature {
     // VkPhysicalDeviceDescriptorBufferTensorFeaturesARM
     descriptorBufferTensorDescriptors,
     // VkPhysicalDeviceDescriptorHeapFeaturesEXT
-    descriptorHeapCaptureReplayEXT,
+    descriptorHeap,
     // VkPhysicalDeviceDescriptorHeapFeaturesEXT
-    descriptorHeapEXT,
+    descriptorHeapCaptureReplay,
     // VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceVulkan12Features
     descriptorBindingPartiallyBound,
     // VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceVulkan12Features
@@ -977,7 +977,7 @@ enum class Feature {
     // VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT
     shaderMXInt8,
     // VkPhysicalDeviceShaderObjectFeaturesEXT
-    shaderObjectEXT,
+    shaderObject,
     // VkPhysicalDeviceShaderQuadControlFeaturesKHR
     shaderQuadControl,
     // VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR

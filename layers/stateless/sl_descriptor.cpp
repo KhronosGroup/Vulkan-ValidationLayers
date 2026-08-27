@@ -1652,7 +1652,7 @@ bool Device::manual_PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, 
         return skip;
     }
 
-    if (!enabled_features.descriptorHeapEXT) {
+    if (!enabled_features.descriptorHeap) {
         skip |= LogError("VUID-vkWriteResourceDescriptorsEXT-descriptorHeap-11206", device, context.error_obj.location,
                          "descriptorHeap feature was not enabled.");
     }
@@ -1800,7 +1800,7 @@ bool Device::manual_PreCallValidateWriteSamplerDescriptorsEXT(VkDevice device, u
                                                               const Context& context) const {
     bool skip = false;
 
-    if (!enabled_features.descriptorHeapEXT) {
+    if (!enabled_features.descriptorHeap) {
         skip |= LogError("VUID-vkWriteSamplerDescriptorsEXT-descriptorHeap-11202", device, context.error_obj.location,
                          "descriptorHeap feature was not enabled.");
     }

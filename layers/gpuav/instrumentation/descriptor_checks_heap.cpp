@@ -54,7 +54,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
     if (!gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) {
         return;
     }
-    if (!gpuav.enabled_features.descriptorHeapEXT) {
+    if (!gpuav.enabled_features.descriptorHeap) {
         return;
     }
 

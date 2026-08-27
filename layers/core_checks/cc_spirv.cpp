@@ -1346,7 +1346,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
     }
     skip |= ValidateShader64BitIndexing(module_state, entrypoint, stage_state, pipeline, loc);
     skip |= ValidateVectorTypes(module_state, entrypoint, loc);
-    if (enabled_features.descriptorHeapEXT) {
+    if (enabled_features.descriptorHeap) {
         skip |= ValidateShaderDescriptorSetAndBindingMappingInfo(module_state, entrypoint, pipeline, stage_state, loc);
         skip |= ValidateDescriptorHeapStructs(module_state, entrypoint, loc);
     }

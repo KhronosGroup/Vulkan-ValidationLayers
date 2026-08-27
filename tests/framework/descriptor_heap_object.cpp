@@ -43,7 +43,7 @@ static bool IsImage(VkDescriptorType type) {
 void DescriptorHeap::AddDescriptorHeapRequirements(VkLayerTest& test) {
     test.AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     test.AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    test.AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    test.AddRequiredFeature(vkt::Feature::descriptorHeap);
 }
 
 void DescriptorHeap::AddUntypedDescriptorHeapRequirements(VkLayerTest &test) {
@@ -51,7 +51,7 @@ void DescriptorHeap::AddUntypedDescriptorHeapRequirements(VkLayerTest &test) {
     test.AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     test.AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     test.AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    test.AddRequiredFeature(vkt::Feature::descriptorHeapEXT);
+    test.AddRequiredFeature(vkt::Feature::descriptorHeap);
 }
 
 DescriptorHeap::DescriptorHeap(VkLayerTest& test) : test_(&test) {

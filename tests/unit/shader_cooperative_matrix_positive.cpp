@@ -340,7 +340,7 @@ TEST_F(PositiveShaderCooperativeMatrix, RequiredVulkanVersionShaderObject) {
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
     AddRequiredFeature(vkt::Feature::computeFullSubgroups);
@@ -738,7 +738,7 @@ TEST_F(PositiveShaderCooperativeMatrix, Properties2RuntimeQuerySelectors) {
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     AddRequiredFeature(vkt::Feature::subgroupSizeControl);
     AddRequiredFeature(vkt::Feature::computeFullSubgroups);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
     VkPhysicalDeviceSubgroupSizeControlProperties subgroup_size_control_props = vku::InitStructHelper();

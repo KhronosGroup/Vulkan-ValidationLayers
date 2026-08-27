@@ -1932,7 +1932,7 @@ TEST_F(NegativeTileShading, TileShadingDrawButHasActiveGeometryShaderObject) {
     TEST_DESCRIPTION("Try to launch a draw inside a tile-shading render pass scope, but a geometry "
                      "shader object is bound.");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::geometryShader);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitBasicTileShading());
@@ -2312,7 +2312,7 @@ TEST_F(NegativeTileShading, CapabilityInComputeShaderOutsideTileShadingRenderPas
 TEST_F(NegativeTileShading, CapabilityInComputeShaderObjectOutsideTileShadingRenderPass) {
     TEST_DESCRIPTION("Invoke a tile shading compute shader object outside a tile shading render pass.");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitBasicTileShading());
 
     const char* cs_source = R"asm(
@@ -2414,7 +2414,7 @@ TEST_F(NegativeTileShading, CapabilityInFragmentShaderOutsideTileShadingRenderPa
 TEST_F(NegativeTileShading, CapabilityInFragmentShaderObjectOutsideTileShadingRenderPass) {
     TEST_DESCRIPTION("Invoke a tile shading fragment shader object outside a tile shading render pass.");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObjectEXT);
+    AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::tileShadingFragmentStage);
     RETURN_IF_SKIP(InitBasicTileShading());
