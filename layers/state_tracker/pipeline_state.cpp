@@ -18,6 +18,7 @@
  */
 #include "state_tracker/pipeline_state.h"
 #include <vulkan/vulkan_core.h>
+#include <sstream>
 #include "error_message/error_location.h"
 #include "generated/dynamic_state_helper.h"
 #include "state_tracker/descriptor_sets.h"
@@ -603,6 +604,24 @@ static CBDynamicFlags GetRayTracingDynamicState(Pipeline& pipe_state) {
     }
 
     return flags;
+}
+
+std::string Pipeline::DescribeDynamicStateSet(const CBDynamicFlags& states) const {
+    std::ostringstream ss;
+    // enum is not zero based
+    for (int index = 1; index < CB_DYNAMIC_STATE_STATUS_NUM; ++index) {
+        CBDynamicState status = static_cast<CBDynamicState>(index);
+        if (states[status]) {
+            ss << " - " << string_VkDynamicState(ConvertToDynamicState(status)) << ": (" << (IsDynamic(status) ? "set" : "not set")
+               << ")";
+            // This makes no sense https://gitlab.khronos.org/vulkan/vulkan/-/work_items/4956
+            if (status == CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) {
+                ss << " (only needed if advancedBlendCoherentOperations is false)";
+            }
+            ss << '\n';
+        }
+    }
+    return ss.str();
 }
 
 static bool UsesPipelineRobustness(const void* pNext, const Pipeline& pipe_state) {
