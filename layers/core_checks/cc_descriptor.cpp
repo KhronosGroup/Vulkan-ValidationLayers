@@ -1766,15 +1766,18 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet& dst_set, const Vk
                          dsl_error_source.PrintMessage(*this).c_str());
     }
 
-    if (!vvl::IsBindless(dst_binding->binding_flags)) {
+    if ((dst_binding->binding_flags &
+         (VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT)) == 0) {
         if (const auto* used_handle = dst_set.InUse()) {
             const LogObjectList objlist(update.dstSet, dst_layout->Handle());
-            skip |= LogError("VUID-vkUpdateDescriptorSets-None-03047", objlist, dst_binding_loc,
-                             "(%" PRIu32
-                             ") was created with %s, but %s is in use by %s. This is only possible with flags found in "
-                             "VK_EXT_descriptor_indexing.",
-                             update.dstBinding, string_VkDescriptorBindingFlags(dst_binding->binding_flags).c_str(),
-                             FormatHandle(update.dstSet).c_str(), FormatHandle(*used_handle).c_str());
+            skip |=
+                LogError("VUID-vkUpdateDescriptorSets-None-03047", objlist, dst_binding_loc,
+                         "(%" PRIu32
+                         ") was created with %s, but %s is in use by %s.\nHint:\n  - UPDATE_AFTER_BIND_BIT is required to "
+                         "update descriptors after recording\n  - UPDATE_UNUSED_WHILE_PENDING is required to update descriptors "
+                         "while on the GPU\n  - While the goal of the flags are different, you technically need both.",
+                         update.dstBinding, string_VkDescriptorBindingFlags(dst_binding->binding_flags).c_str(),
+                         FormatHandle(update.dstSet).c_str(), FormatHandle(*used_handle).c_str());
         }
     }
 
