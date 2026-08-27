@@ -126,7 +126,7 @@ find_package(SPIRV-Tools-opt CONFIG QUIET)
 
 # Workaround AppleClang using the wrong headers when there are headers in /usr/local/include
 if (CMAKE_CXX_COMPILER_ID STREQUAL AppleClang AND TARGET Vulkan::Headers AND TARGET Vulkan::LayerSettings
-    AND SPIRV-Headers::SPIRV-Headers AND SPIRV-Tools-opt AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.25)
+    AND TARGET SPIRV-Headers::SPIRV-Headers AND TARGET SPIRV-Tools-static AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.25)
     get_target_property(vulkan_headers_aliased Vulkan::Headers ALIASED_TARGET)
     if (NOT vulkan_headers_aliased)
         set_target_properties(Vulkan::Headers PROPERTIES SYSTEM OFF)
@@ -143,7 +143,8 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL AppleClang AND TARGET Vulkan::Headers AND TAR
     endif()
     get_target_property(spirv_tools_opt_aliased SPIRV-Tools-opt  ALIASED_TARGET)
     if (NOT spirv_tools_opt_aliased)
-        set_target_properties(SPIRV-Tools-opt  PROPERTIES SYSTEM OFF)
+        set_target_properties(SPIRV-Tools-static PROPERTIES SYSTEM OFF)
+        set_target_properties(SPIRV-Tools-opt PROPERTIES SYSTEM OFF)
     endif()
 endif()
 
