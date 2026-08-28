@@ -58,7 +58,7 @@ class ErrorMessages {
                                            const AccessRange range, VkAccelerationStructureKHR as,
                                            const Location& as_location) const;
 
-    std::string ImageCopyResolveBlitError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
+    std::string ImageCopyResolveBlitError(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,
                                           const std::string& resource_description, uint32_t region_index, const VkOffset3D& offset,
                                           const VkExtent3D& extent, const VkImageSubresourceLayers& subresource) const;
 

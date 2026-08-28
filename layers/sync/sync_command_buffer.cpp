@@ -1642,35 +1642,46 @@ void CommandBufferSubState::RecordCopyBuffer2(vvl::Buffer& src_buffer_state, vvl
 
 void CommandBufferSubState::RecordCopyImage(vvl::Image& src_image_state, vvl::Image& dst_image_state,
                                             VkImageLayout src_image_layout, VkImageLayout dst_image_layout, uint32_t region_count,
-                                            const VkImageCopy* regions, const Location& loc) {
+                                            const VkImageCopy* p_regions, const Location& loc) {
     const auto tag = cb_context.NextCommandTag(loc.function);
-    AccessContext& context = cb_context.GetCbAccessContext();
+    const auto src_tag_ex = cb_context.AddCommandHandle(tag, src_image_state.Handle());
+    const auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_image_state.Handle());
 
-    auto src_tag_ex = cb_context.AddCommandHandle(tag, src_image_state.Handle());
-    auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_image_state.Handle());
+    const auto regions = vvl::make_span(p_regions, region_count);
+    const ImageCopyCommand command{src_image_state, dst_image_state, regions, src_tag_ex.handle_index, dst_tag_ex.handle_index};
 
-    for (const auto& copy_region : vvl::make_span(regions, region_count)) {
-        UpdateImageAccessState(context, src_image_state, SYNC_COPY_TRANSFER_READ, RangeFromLayers(copy_region.srcSubresource),
-                               copy_region.srcOffset, copy_region.extent, src_tag_ex);
-        UpdateImageAccessState(context, dst_image_state, SYNC_COPY_TRANSFER_WRITE, RangeFromLayers(copy_region.dstSubresource),
-                               copy_region.dstOffset, copy_region.extent, dst_tag_ex);
+    const auto& settings = cb_context.GetSyncState().syncval_settings;
+    if (settings.IsRecordTimeValidationEnabled()) {
+        AccessContext& access_context = cb_context.GetCbAccessContext();
+        command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
+    }
+    if (settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
     }
 }
 
 void CommandBufferSubState::RecordCopyImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state,
                                              VkImageLayout src_image_layout, VkImageLayout dst_image_layout, uint32_t region_count,
-                                             const VkImageCopy2* regions, const Location& loc) {
+                                             const VkImageCopy2* p_regions, const Location& loc) {
     const auto tag = cb_context.NextCommandTag(loc.function);
-    AccessContext& context = cb_context.GetCbAccessContext();
+    const auto src_tag_ex = cb_context.AddCommandHandle(tag, src_image_state.Handle());
+    const auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_image_state.Handle());
 
-    auto src_tag_ex = cb_context.AddCommandHandle(tag, src_image_state.Handle());
-    auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_image_state.Handle());
+    small_vector<VkImageCopy, 1> regions;
+    regions.reserve(region_count);
+    for (const VkImageCopy2& region : vvl::make_span(p_regions, region_count)) {
+        regions.emplace_back(
+            VkImageCopy{region.srcSubresource, region.srcOffset, region.dstSubresource, region.dstOffset, region.extent});
+    }
+    const ImageCopyCommand command{src_image_state, dst_image_state, regions, src_tag_ex.handle_index, dst_tag_ex.handle_index};
 
-    for (const auto& copy_region : vvl::make_span(regions, region_count)) {
-        UpdateImageAccessState(context, src_image_state, SYNC_COPY_TRANSFER_READ, RangeFromLayers(copy_region.srcSubresource),
-                               copy_region.srcOffset, copy_region.extent, src_tag_ex);
-        UpdateImageAccessState(context, dst_image_state, SYNC_COPY_TRANSFER_WRITE, RangeFromLayers(copy_region.dstSubresource),
-                               copy_region.dstOffset, copy_region.extent, dst_tag_ex);
+    const auto& settings = cb_context.GetSyncState().syncval_settings;
+    if (settings.IsRecordTimeValidationEnabled()) {
+        AccessContext& access_context = cb_context.GetCbAccessContext();
+        command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
+    }
+    if (settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
     }
 }
 

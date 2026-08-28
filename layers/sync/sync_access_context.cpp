@@ -560,14 +560,14 @@ void AccessContext::UpdateAccessState(const vvl::Buffer& buffer, SyncAccessIndex
 }
 
 void AccessContext::UpdateAccessState(ImageRangeGen& range_gen, SyncAccessIndex current_usage, ResourceUsageTagEx tag_ex,
-                                      SyncFlags flags) {
+                                      SyncFlags flags, QueueId queue_id) {
     assert(!finalized_);
     if (current_usage == SYNC_ACCESS_INDEX_NONE) {
         return;
     }
     auto pos = access_state_map_.LowerBound(range_gen->begin);
     for (; range_gen->non_empty(); ++range_gen) {
-        pos = DoUpdateAccessState(pos, *range_gen, current_usage, AttachmentAccess::NonAttachment(), tag_ex, flags);
+        pos = DoUpdateAccessState(pos, *range_gen, current_usage, AttachmentAccess::NonAttachment(), tag_ex, flags, queue_id);
     }
 }
 

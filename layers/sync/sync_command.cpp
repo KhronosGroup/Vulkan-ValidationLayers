@@ -18,6 +18,7 @@
 #include "sync/sync_command.h"
 #include "sync/sync_access_context.h"
 #include "sync/sync_command_buffer.h"
+#include "sync/sync_image.h"
 #include "sync/sync_validation.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
@@ -50,6 +51,12 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& access_context, const C
 uint32_t CommandData::AddBuffer(const vvl::Buffer& buffer) {
     const uint32_t index = uint32_t(buffers.size());
     buffers.emplace_back(std::static_pointer_cast<const vvl::Buffer>(buffer.shared_from_this()));
+    return index;
+}
+
+uint32_t CommandData::AddImage(const vvl::Image& image) {
+    const uint32_t index = uint32_t(images.size());
+    images.emplace_back(std::static_pointer_cast<const vvl::Image>(image.shared_from_this()));
     return index;
 }
 
@@ -132,6 +139,91 @@ void BufferCopyCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Access
 
         access_context.UpdateAccessState(src_buffer, SYNC_COPY_TRANSFER_READ, src_range, src_tag_ex, 0, env.queue_id);
         access_context.UpdateAccessState(dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range, dst_tag_ex, 0, env.queue_id);
+    }
+}
+
+ImageCopyCommand ImageCopyCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    const vvl::Image& src_image = *command_data.images[src_image_index];
+    const vvl::Image& dst_image = *command_data.images[dst_image_index];
+    vvl::span<const VkImageCopy> regions;
+    if (region_count != 0) {
+        regions = vvl::make_span(&command_data.image_copy_regions[first_region], region_count);
+    }
+    return {src_image, dst_image, regions, src_handle_index, dst_handle_index};
+}
+
+ImageCopyCommand::Storage ImageCopyCommand::MakeStorage(CommandData& command_data) const {
+    const uint32_t src_image_index = command_data.AddImage(src_image);
+    const uint32_t dst_image_index = command_data.AddImage(dst_image);
+
+    const uint32_t first_region = uint32_t(command_data.image_copy_regions.size());
+    const uint32_t region_count = uint32_t(regions.size());
+    command_data.image_copy_regions.insert(command_data.image_copy_regions.end(), regions.begin(), regions.end());
+
+    return {src_image_index, dst_image_index, first_region, region_count, src_handle_index, dst_handle_index};
+}
+
+bool ImageCopyCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool ImageCopyCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    bool skip = false;
+    const SyncValidator& validator = env.validator;
+    const bool submit_time = env.handle.type == kVulkanObjectTypeQueue;
+
+    for (const auto [region_index, region] : vvl::enumerate(regions)) {
+        auto src_hazard = access_context.DetectHazard(src_image, RangeFromLayers(region.srcSubresource), region.srcOffset,
+                                                      region.extent, SYNC_COPY_TRANSFER_READ);
+        if (src_hazard.IsHazard()) {
+            const LogObjectList objlist = submit_time ? LogObjectList(env.handle, cb_context.GetCBState().Handle())
+                                                      : LogObjectList(cb_context.GetCBState().Handle(), src_image.Handle());
+            const std::string error = submit_time
+                                          ? validator.error_messages_.SubmitTimeError(env, src_hazard, cb_context, replay_tag,
+                                                                                      loc.index, validator.FormatHandle(src_image))
+                                          : validator.error_messages_.ImageCopyResolveBlitError(
+                                                env, src_hazard, loc.function, validator.FormatHandle(src_image),
+                                                uint32_t(region_index), region.srcOffset, region.extent, region.srcSubresource);
+            skip |= validator.SyncError(src_hazard.Hazard(), objlist, loc, error);
+        }
+        auto dst_hazard = access_context.DetectHazard(dst_image, RangeFromLayers(region.dstSubresource), region.dstOffset,
+                                                      region.extent, SYNC_COPY_TRANSFER_WRITE);
+        if (dst_hazard.IsHazard()) {
+            const LogObjectList objlist = submit_time ? LogObjectList(env.handle, cb_context.GetCBState().Handle())
+                                                      : LogObjectList(cb_context.GetCBState().Handle(), dst_image.Handle());
+            const std::string error = submit_time
+                                          ? validator.error_messages_.SubmitTimeError(env, dst_hazard, cb_context, replay_tag,
+                                                                                      loc.index, validator.FormatHandle(dst_image))
+                                          : validator.error_messages_.ImageCopyResolveBlitError(
+                                                env, dst_hazard, loc.function, validator.FormatHandle(dst_image),
+                                                uint32_t(region_index), region.dstOffset, region.extent, region.dstSubresource);
+            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, loc, error);
+        }
+        if (skip) {
+            break;
+        }
+    }
+    return skip;
+}
+
+static void UpdateImageAccessState(AccessContext& access_context, const vvl::Image& image, SyncAccessIndex current_usage,
+                                   const VkImageSubresourceRange& subresource_range, const VkOffset3D& offset,
+                                   const VkExtent3D& extent, ResourceUsageTagEx tag_ex, QueueId queue_id) {
+    const auto& sub_state = SubState(image);
+    ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, offset, extent, false);
+    access_context.UpdateAccessState(range_gen, current_usage, tag_ex, 0, queue_id);
+}
+
+void ImageCopyCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    const ResourceUsageTagEx src_tag_ex{tag, src_handle_index};
+    const ResourceUsageTagEx dst_tag_ex{tag, dst_handle_index};
+
+    for (const VkImageCopy& region : regions) {
+        UpdateImageAccessState(access_context, src_image, SYNC_COPY_TRANSFER_READ, RangeFromLayers(region.srcSubresource),
+                               region.srcOffset, region.extent, src_tag_ex, env.queue_id);
+        UpdateImageAccessState(access_context, dst_image, SYNC_COPY_TRANSFER_WRITE, RangeFromLayers(region.dstSubresource),
+                               region.dstOffset, region.extent, dst_tag_ex, env.queue_id);
     }
 }
 
