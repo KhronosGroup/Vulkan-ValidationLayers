@@ -2606,6 +2606,17 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_BASE_HANDLE_FEATURES_NV: {
+                VkPhysicalDevicePrivateDataBaseHandleFeaturesNV supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDevicePrivateDataBaseHandleFeaturesNV* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePrivateDataBaseHandleFeaturesNV*>(current);
+                if (enabling->privateDataBaseHandle && !supported.privateDataBaseHandle) {
+                    ss << "VkPhysicalDevicePrivateDataBaseHandleFeaturesNV::privateDataBaseHandle is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES: {
                 VkPhysicalDevicePrivateDataFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

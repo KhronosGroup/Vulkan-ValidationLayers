@@ -774,6 +774,8 @@ struct DeviceFeatures {
     bool primitivesGeneratedQueryWithNonZeroStreams;
     // VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT
     bool primitivesGeneratedQueryWithRasterizerDiscard;
+    // VkPhysicalDevicePrivateDataBaseHandleFeaturesNV
+    bool privateDataBaseHandle;
     // VkPhysicalDevicePrivateDataFeatures, VkPhysicalDeviceVulkan13Features
     bool privateData;
     // VkPhysicalDeviceProtectedMemoryFeatures, VkPhysicalDeviceVulkan11Features

@@ -3732,6 +3732,17 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDevicePrivateDataBaseHandleFeaturesNV structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_BASE_HANDLE_FEATURES_NV: {  // Covers
+                                                                                        // VUID-VkPhysicalDevicePrivateDataBaseHandleFeaturesNV-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePrivateDataBaseHandleFeaturesNV);
+                VkPhysicalDevicePrivateDataBaseHandleFeaturesNV* structure =
+                    (VkPhysicalDevicePrivateDataBaseHandleFeaturesNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::privateDataBaseHandle), structure->privateDataBaseHandle);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceAccelerationStructureFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceAccelerationStructureFeaturesKHR-sType-sType
@@ -9239,7 +9250,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 286> allowed_structs_VkDeviceCreateInfo = {
+        constexpr std::array<VkStructureType, 287> allowed_structs_VkDeviceCreateInfo = {
             VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
@@ -9414,6 +9425,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVES_GENERATED_QUERY_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_BASE_HANDLE_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT,
@@ -14142,8 +14154,9 @@ bool Device::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPriva
                                             allowed_structs_VkPrivateDataSlotCreateInfo.data(), GeneratedVulkanHeaderVersion,
                                             "VUID-VkPrivateDataSlotCreateInfo-pNext-pNext", kVUIDUndefined, true);
 
-        skip |= context.ValidateReservedFlags(pCreateInfo_loc.dot(Field::flags), pCreateInfo->flags,
-                                              "VUID-VkPrivateDataSlotCreateInfo-flags-zerobitmask");
+        skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkPrivateDataSlotCreateFlagBits,
+                                      AllVkPrivateDataSlotCreateFlagBits, pCreateInfo->flags, kOptionalFlags,
+                                      "VUID-VkPrivateDataSlotCreateInfo-flags-parameter", nullptr, false);
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);

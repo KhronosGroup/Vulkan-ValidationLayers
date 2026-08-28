@@ -2125,6 +2125,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->cooperativeMatrixDecodeVector |= enabled->cooperativeMatrixDecodeVector == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_BASE_HANDLE_FEATURES_NV: {
+                const VkPhysicalDevicePrivateDataBaseHandleFeaturesNV* enabled =
+                    reinterpret_cast<const VkPhysicalDevicePrivateDataBaseHandleFeaturesNV*>(pNext);
+                features->privateDataBaseHandle |= enabled->privateDataBaseHandle == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {
                 const VkPhysicalDeviceAccelerationStructureFeaturesKHR* enabled =
                     reinterpret_cast<const VkPhysicalDeviceAccelerationStructureFeaturesKHR*>(pNext);

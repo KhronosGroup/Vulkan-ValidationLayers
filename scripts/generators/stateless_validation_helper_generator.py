@@ -448,6 +448,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         self.write("".join(out))
 
     def generateSource(self):
+        # Will be fixed in 1.4.362 (https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8513)
+        self.vk.structs['VkPrivateDataSlotCreateInfo'].members[2].optional = True
+
         # Structure fields to ignore
         structMemberBlacklist = {
             'VkWriteDescriptorSet' : ['dstSet'],

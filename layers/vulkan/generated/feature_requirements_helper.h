@@ -768,6 +768,8 @@ enum class Feature {
     primitivesGeneratedQueryWithNonZeroStreams,
     // VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT
     primitivesGeneratedQueryWithRasterizerDiscard,
+    // VkPhysicalDevicePrivateDataBaseHandleFeaturesNV
+    privateDataBaseHandle,
     // VkPhysicalDevicePrivateDataFeatures, VkPhysicalDeviceVulkan13Features
     privateData,
     // VkPhysicalDeviceProtectedMemoryFeatures, VkPhysicalDeviceVulkan11Features
