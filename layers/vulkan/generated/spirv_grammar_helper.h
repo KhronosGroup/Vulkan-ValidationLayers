@@ -311,6 +311,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpImageBlockMatchWindowSADQCOM:
         case spv::OpImageBlockMatchGatherSSDQCOM:
         case spv::OpImageBlockMatchGatherSADQCOM:
+        case spv::OpBFloat16MulAddQCOM:
         case spv::OpCompositeConstructCoopMatQCOM:
         case spv::OpCompositeExtractCoopMatQCOM:
         case spv::OpExtractSubArrayQCOM:
@@ -792,6 +793,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpImageBlockMatchWindowSADQCOM:
         case spv::OpImageBlockMatchGatherSSDQCOM:
         case spv::OpImageBlockMatchGatherSADQCOM:
+        case spv::OpBFloat16MulAddQCOM:
         case spv::OpCompositeConstructCoopMatQCOM:
         case spv::OpCompositeExtractCoopMatQCOM:
         case spv::OpExtractSubArrayQCOM:
