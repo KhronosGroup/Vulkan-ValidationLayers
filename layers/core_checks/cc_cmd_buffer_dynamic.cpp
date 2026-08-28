@@ -574,7 +574,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineRenderPass(const LastBound& las
 
     if (rp_state.UsesDynamicRendering()) {
         skip |= ValidateDrawRenderingAttachmentLocation(cb_state, pipeline, loc);
-        skip |= ValidateDrawRenderingInputAttachmentIndex(cb_state, pipeline, loc);
+        skip |= ValidateDrawRenderingInputAttachmentIndex(cb_state, last_bound_state, pipeline, loc);
     }
 
     return skip;
@@ -1434,8 +1434,36 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
     return skip;
 }
 
-bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline_state,
-                                                           const Location& loc) const {
+static bool IsInputAttachmentIndexStaticallyUsed(const spirv::EntryPoint& fragment_entry_point, uint32_t index) {
+    if (index == VK_ATTACHMENT_UNUSED || !fragment_entry_point.has_input_attachment) {
+        return false;
+    }
+    for (const auto& variable : fragment_entry_point.resource_interface_variables) {
+        if (!variable.is_input_attachment) {
+            continue;
+        }
+        const uint32_t start = variable.decorations.input_attachment_index_start;
+        if (start == spirv::kInvalidValue) {
+            continue;  // Variable is missing InputAttachmentIndex, validated elsewhere
+        }
+        for (const uint32_t offset : variable.input_attachment_index_read) {
+            const bool dynamic_indexing = offset == spirv::kInvalidValue;
+            if (dynamic_indexing || offset == spirv::kSpecConstant) {
+                if (variable.array_length == spirv::kRuntimeArray || variable.array_length == spirv::kSpecConstant) {
+                    return true;
+                } else if (index >= start && index < start + variable.array_length) {
+                    return true;
+                }
+            } else if (start + offset == index) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuffer& cb_state, const LastBound& last_bound_state,
+                                                           const vvl::Pipeline& pipeline_state, const Location& loc) const {
     bool skip = false;
     const uint32_t color_index_count = (uint32_t)cb_state.rendering_attachments.color_indexes.size();
 
@@ -1460,69 +1488,101 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         pipeline_stencil_index = info->pStencilInputAttachmentIndex;
     }
 
+    const spirv::EntryPoint* fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
+    if (!fragment_entry_point) {
+        return skip;
+    }
+
     // If the count mismatches, that will either be caught by 06179 or allowed,
     // and we should only check the attachments that will be rendered to
     uint32_t count = std::min(pipeline_color_count, color_index_count);
     for (uint32_t i = 0; i < count; i++) {
-        if (!pipeline_color_indexes && cb_state.rendering_attachments.color_indexes[i] == VK_ATTACHMENT_UNUSED) {
+        const uint32_t pipeline_color_index = pipeline_color_indexes ? pipeline_color_indexes[i] : i;
+        const uint32_t dynamic_color_index = cb_state.rendering_attachments.color_indexes[i];
+        if (pipeline_color_index == dynamic_color_index) {
             continue;
         }
-        uint32_t pipeline_color_index = pipeline_color_indexes ? pipeline_color_indexes[i] : i;
-        if (pipeline_color_index != cb_state.rendering_attachments.color_indexes[i]) {
+        const bool pipeline_index_used = IsInputAttachmentIndexStaticallyUsed(*fragment_entry_point, pipeline_color_index);
+        if (!pipeline_index_used && !IsInputAttachmentIndexStaticallyUsed(*fragment_entry_point, dynamic_color_index)) {
+            continue;
+        }
+        const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
+        std::ostringstream ss;
+        ss << "The pipeline VkRenderingInputAttachmentIndexInfo::pColorAttachmentInputIndices[" << i << "] is "
+           << pipeline_color_index;
+        if (!explicit_pipeline) {
+            ss << " (implicitly because the pipeline was created without VkRenderingInputAttachmentIndexInfo)";
+        }
+        ss << ", but doesn't match this render pass instance because vkCmdSetRenderingInputAttachmentIndices ";
+        if (cb_state.rendering_attachments.set_color_indexes) {
+            ss << "last set pColorAttachmentInputIndices[" << i << "] to " << dynamic_color_index;
+        } else {
+            ss << "was not called in this render pass so the index (" << i << ") is the implicit location";
+        }
+        ss << "\nThe values need to match because input attachment index "
+           << (pipeline_index_used ? pipeline_color_index : dynamic_color_index)
+           << " is statically used in the bound fragment shader.";
+        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_LOCAL_INDEX_09549), objlist, loc, "%s",
+                         ss.str().c_str());
+        break;
+    }
+
+    if (!EqualValuesOrBothNull(pipeline_depth_index, cb_state.rendering_attachments.depth_index)) {
+        const bool pipeline_index_used =
+            pipeline_depth_index && IsInputAttachmentIndexStaticallyUsed(*fragment_entry_point, *pipeline_depth_index);
+        const bool dynamic_index_used =
+            cb_state.rendering_attachments.depth_index &&
+            IsInputAttachmentIndexStaticallyUsed(*fragment_entry_point, *cb_state.rendering_attachments.depth_index);
+        if (pipeline_index_used || dynamic_index_used) {
             const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
             std::ostringstream ss;
-            ss << "The pipeline VkRenderingInputAttachmentIndexInfo::pColorAttachmentInputIndices[" << i << "] is "
-               << pipeline_color_index;
+            ss << "The pipeline VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex is "
+               << string_AttachmentPointer(pipeline_depth_index);
             if (!explicit_pipeline) {
                 ss << " (implicitly because the pipeline was created without VkRenderingInputAttachmentIndexInfo)";
             }
             ss << ", but doesn't match this render pass instance because vkCmdSetRenderingInputAttachmentIndices ";
             if (cb_state.rendering_attachments.set_color_indexes) {
-                ss << "last set pColorAttachmentInputIndices[" << i << "] to " << cb_state.rendering_attachments.color_indexes[i];
+                ss << "last set pDepthInputAttachmentIndex to "
+                   << string_AttachmentPointer(cb_state.rendering_attachments.depth_index);
             } else {
-                ss << "was not called in this render pass so the index (" << i << ") is the implicit location";
+                ss << "was not called in this render pass so pDepthInputAttachmentIndex is implicitly NULL";
             }
-            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_LOCAL_INDEX_09549), objlist, loc,
+            ss << "\nThe values need to match because input attachment index "
+               << (pipeline_index_used ? *pipeline_depth_index : *cb_state.rendering_attachments.depth_index)
+               << " is statically used in the bound fragment shader.";
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_LOCAL_INDEX_10927), objlist, loc,
                              "%s", ss.str().c_str());
-            break;
         }
-    }
-
-    if (!EqualValuesOrBothNull(pipeline_depth_index, cb_state.rendering_attachments.depth_index)) {
-        const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-        std::ostringstream ss;
-        ss << "The pipeline VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex is "
-           << string_AttachmentPointer(pipeline_depth_index);
-        if (!explicit_pipeline) {
-            ss << " (implicitly because the pipeline was created without VkRenderingInputAttachmentIndexInfo)";
-        }
-        ss << ", but doesn't match this render pass instance because vkCmdSetRenderingInputAttachmentIndices ";
-        if (cb_state.rendering_attachments.set_color_indexes) {
-            ss << "last set pDepthInputAttachmentIndex to " << string_AttachmentPointer(cb_state.rendering_attachments.depth_index);
-        } else {
-            ss << "was not called in this render pass so pDepthInputAttachmentIndex is implicitly NULL";
-        }
-        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_LOCAL_INDEX_10927), objlist, loc, "%s",
-                         ss.str().c_str());
     }
 
     if (!EqualValuesOrBothNull(pipeline_stencil_index, cb_state.rendering_attachments.stencil_index)) {
-        const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-        std::ostringstream ss;
-        ss << "The pipeline VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex is "
-           << string_AttachmentPointer(pipeline_stencil_index);
-        if (!explicit_pipeline) {
-            ss << " (implicitly because the pipeline was created without VkRenderingInputAttachmentIndexInfo)";
+        const bool pipeline_index_used =
+            pipeline_stencil_index && IsInputAttachmentIndexStaticallyUsed(*fragment_entry_point, *pipeline_stencil_index);
+        const bool dynamic_index_used =
+            cb_state.rendering_attachments.stencil_index &&
+            IsInputAttachmentIndexStaticallyUsed(*fragment_entry_point, *cb_state.rendering_attachments.stencil_index);
+        if (pipeline_index_used || dynamic_index_used) {
+            const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
+            std::ostringstream ss;
+            ss << "The pipeline VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex is "
+               << string_AttachmentPointer(pipeline_stencil_index);
+            if (!explicit_pipeline) {
+                ss << " (implicitly because the pipeline was created without VkRenderingInputAttachmentIndexInfo)";
+            }
+            ss << ", but doesn't match this render pass instance because vkCmdSetRenderingInputAttachmentIndices ";
+            if (cb_state.rendering_attachments.set_color_indexes) {
+                ss << "last set pStencilInputAttachmentIndex to "
+                   << string_AttachmentPointer(cb_state.rendering_attachments.stencil_index);
+            } else {
+                ss << "was not called in this render pass so pStencilInputAttachmentIndex is implicitly NULL";
+            }
+            ss << "\nThe values need to match because input attachment index "
+               << (pipeline_index_used ? *pipeline_stencil_index : *cb_state.rendering_attachments.stencil_index)
+               << " is statically used in the bound fragment shader.";
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_LOCAL_INDEX_10928), objlist, loc,
+                             "%s", ss.str().c_str());
         }
-        ss << ", but doesn't match this render pass instance because vkCmdSetRenderingInputAttachmentIndices ";
-        if (cb_state.rendering_attachments.set_color_indexes) {
-            ss << "last set pStencilInputAttachmentIndex to "
-               << string_AttachmentPointer(cb_state.rendering_attachments.stencil_index);
-        } else {
-            ss << "was not called in this render pass so pStencilInputAttachmentIndex is implicitly NULL";
-        }
-        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_LOCAL_INDEX_10928), objlist, loc, "%s",
-                         ss.str().c_str());
     }
     return skip;
 }

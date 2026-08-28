@@ -288,8 +288,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDrawDynamicStateValue(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline_state,
                                                  const Location& loc) const;
-    bool ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline_state,
-                                                   const Location& loc) const;
+    bool ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuffer& cb_state, const LastBound& last_bound_state,
+                                                   const vvl::Pipeline& pipeline_state, const Location& loc) const;
     bool ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                 const Location& loc) const;
     bool ValidateDrawPrimitivesGeneratedQuery(const LastBound& last_bound_state, const Location& loc) const;
