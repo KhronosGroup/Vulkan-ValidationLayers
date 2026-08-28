@@ -14164,6 +14164,7 @@ bool Device::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPriva
     }
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pPrivateDataSlot), pPrivateDataSlot,
                                             "VUID-vkCreatePrivateDataSlot-pPrivateDataSlot-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, context);
     return skip;
 }
 

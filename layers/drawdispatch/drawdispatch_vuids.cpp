@@ -223,10 +223,6 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::INDEPENDENT_SETS_13362: suffix = "flags-13362"; break;
         // ### VUID-vkCmdDraw-flags-13363
         case ActionVUID::INDEPENDENT_SETS_13363: suffix = "flags-13363"; break;
-        // ### VUID-vkCmdDraw-flags-13364
-        case ActionVUID::INDEPENDENT_SETS_13364: suffix = "flags-13364"; break;
-        // ### VUID-vkCmdDraw-flags-13365
-        case ActionVUID::INDEPENDENT_SETS_13365: suffix = "flags-13365"; break;
 
         // ### VUID-vkCmdDraw-None-08608
         case ActionVUID::DYNAMIC_STATE_ALL_SET_08608: suffix = "None-08608"; break;
@@ -424,9 +420,9 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::PIPELINE_VIEWPORT_W_SCALING_04137: suffix = "viewportCount-04137"; break;
         // ### VUID-vkCmdDraw-viewportCount-04139
         case ActionVUID::PIPELINE_SHADING_RATE_PALETTE_04139: suffix = "viewportCount-04139"; break;
-        // ### VUID-vkCmdDraw-viewportCount-04141
+        // ### VUID-vkCmdDraw-VkPipelineViewportCreateInfo-04141
         case ActionVUID::PIPELINE_VIEWPORT_SWIZZLE_04141: suffix = "VkPipelineViewportCreateInfo-04141"; break;
-        // ### VUID-vkCmdDraw-VkPipelineVie2portCreateInfo-04142
+        // ### VUID-vkCmdDraw-VkPipelineViewportCreateInfo-04142
         case ActionVUID::PIPELINE_EXCLUSIVE_SCISSOR_04142: suffix = "VkPipelineViewportCreateInfo-04142"; break;
         // ### VUID-vkCmdDraw-alphaToCoverageEnable-08920
         case ActionVUID::ALPHA_COMPONENT_WORD_08920: suffix = "alphaToCoverageEnable-08920"; break;
@@ -699,6 +695,10 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::PG_QUERIES_07075: suffix = "None-07075"; break;
         // ### VUID-vkCmdDrawMeshTasksEXT-pipelineStatistics-07076
         case ActionVUID::PIPELINE_STATISTICS_QUERIES_07076: suffix = "pipelineStatistics-07076"; break;
+        // ### VUID-vkCmdDrawMeshTasksEXT-flags-13364
+        case ActionVUID::INDEPENDENT_SETS_13364: suffix = "flags-13364"; break;
+        // ### VUID-vkCmdDrawMeshTasksEXT-flags-13365
+        case ActionVUID::INDEPENDENT_SETS_13365: suffix = "flags-13365"; break;
 
         // ### VUID-vkCmdTraceRaysKHR-None-09458
         case ActionVUID::RTX_STACK_SIZE_09458: suffix = "None-09458"; break;

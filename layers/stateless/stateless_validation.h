@@ -1382,6 +1382,9 @@ class Device : public vvl::BaseDevice {
                                                           const VkCalibratedTimestampInfoKHR *pTimestampInfos,
                                                           uint64_t *pTimestamps, uint64_t *pMaxDeviation,
                                                           const Context &context) const;
+    bool manual_PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot,
+                                                     const Context& context) const;
     bool manual_PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
                                                                      VkTilePropertiesQCOM* pProperties,
                                                                      const Context &context) const;

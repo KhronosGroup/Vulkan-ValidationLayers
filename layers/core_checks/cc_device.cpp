@@ -681,24 +681,6 @@ bool CoreChecks::PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffe
     return PreCallValidateCmdSetDeviceMask(commandBuffer, deviceMask, error_obj);
 }
 
-bool CoreChecks::PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT* pCreateInfo,
-                                                         const VkAllocationCallbacks* pAllocator,
-                                                         VkPrivateDataSlotEXT* pPrivateDataSlot,
-                                                         const ErrorObject& error_obj) const {
-    return PreCallValidateCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, error_obj);
-}
-
-bool CoreChecks::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
-                                                      const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot,
-                                                      const ErrorObject& error_obj) const {
-    bool skip = false;
-    if (!enabled_features.privateData) {
-        skip |= LogError("VUID-vkCreatePrivateDataSlot-privateData-04564", device, error_obj.location,
-                         "The privateData feature was not enabled.");
-    }
-    return skip;
-}
-
 bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
                                                   const ErrorObject& error_obj) const {
@@ -995,6 +977,10 @@ bool CoreChecks::ValidateDeviceQueueSupport(const Location& loc) const {
         case Func::vkCreateFramebuffer:
             vuid = "VUID-vkCreateFramebuffer-device-10002";
             flags = VK_QUEUE_GRAPHICS_BIT;
+            break;
+        case Func::vkWriteResourceDescriptorsEXT:
+            vuid = "VUID-vkWriteResourceDescriptorsEXT-pResources-12494";
+            flags = VK_QUEUE_VIDEO_ENCODE_BIT_KHR | VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
             break;
         default:
             assert(false);  // missing case

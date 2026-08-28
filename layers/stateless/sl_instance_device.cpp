@@ -1260,4 +1260,23 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertie
     return skip;
 }
 
+bool Device::manual_PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator,
+                                                         VkPrivateDataSlot* pPrivateDataSlot, const Context& context) const {
+    bool skip = false;
+    const auto& error_obj = context.error_obj;
+    if (!enabled_features.privateData) {
+        skip |= LogError("VUID-vkCreatePrivateDataSlot-privateData-04564", device, error_obj.location,
+                         "The privateData feature was not enabled.");
+    }
+    if (((pCreateInfo->flags & VK_PRIVATE_DATA_SLOT_CREATE_BASE_OBJECT_HANDLE_BIT_NV) != 0) &&
+        !enabled_features.privateDataBaseHandle) {
+        skip |= LogError("VUID-VkPrivateDataSlotCreateInfo-flags-12501", device,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::flags),
+                         "contains VK_PRIVATE_DATA_SLOT_CREATE_BASE_OBJECT_HANDLE_BIT_NV, but the privateDataBaseHandle feature "
+                         "was not enabled.");
+    }
+    return skip;
+}
+
 }  // namespace stateless
