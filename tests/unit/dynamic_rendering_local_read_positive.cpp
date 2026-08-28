@@ -686,3 +686,179 @@ TEST_F(PositiveDynamicRenderingLocalRead, InputAttachmentMissingSpecConstant) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+TEST_F(PositiveDynamicRenderingLocalRead, ColorIndexNotStaticallyUsed) {
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    VkFormat color_formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
+    uint32_t inputs[] = {0, 1};
+
+    VkRenderingInputAttachmentIndexInfo inputs_info = vku::InitStructHelper();
+    inputs_info.colorAttachmentCount = 2u;
+    inputs_info.pColorAttachmentInputIndices = inputs;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&inputs_info);
+    pipeline_rendering_info.colorAttachmentCount = 2u;
+    pipeline_rendering_info.pColorAttachmentFormats = color_formats;
+
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments(2);
+    VkPipelineColorBlendStateCreateInfo cbi = vku::InitStructHelper();
+    cbi.attachmentCount = 2u;
+    cbi.pAttachments = color_blend_attachments.data();
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.gp_ci_.pColorBlendState = &cbi;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfo color_attachment[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+    color_attachment[0].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    color_attachment[1].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 2;
+    rendering_info.pColorAttachments = &color_attachment[0];
+
+    uint32_t dynamic_inputs[] = {1u, 0u};
+    VkRenderingInputAttachmentIndexInfo input_info = vku::InitStructHelper();
+    input_info.colorAttachmentCount = 2u;
+    input_info.pColorAttachmentInputIndices = dynamic_inputs;
+
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer, &input_info);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDynamicRenderingLocalRead, ColorIndexSomeStaticallyUsed) {
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    VkFormat color_formats[] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM};
+    uint32_t inputs[] = {0, 1};
+
+    VkRenderingInputAttachmentIndexInfo inputs_info = vku::InitStructHelper();
+    inputs_info.colorAttachmentCount = 2u;
+    inputs_info.pColorAttachmentInputIndices = inputs;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&inputs_info);
+    pipeline_rendering_info.colorAttachmentCount = 2u;
+    pipeline_rendering_info.pColorAttachmentFormats = color_formats;
+
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments(2);
+    VkPipelineColorBlendStateCreateInfo cbi = vku::InitStructHelper();
+    cbi.attachmentCount = 2u;
+    cbi.pAttachments = color_blend_attachments.data();
+
+    const char* fs_source = R"glsl(
+        #version 450
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
+        layout(location=0) out vec4 color;
+        void main() {
+           color = subpassLoad(x);
+        }
+    )glsl";
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.gp_ci_.pColorBlendState = &cbi;
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Image image1(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::ImageView view1 = image1.CreateView();
+    vkt::Image image2(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::ImageView view2 = image2.CreateView();
+
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view1, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+                                                   VK_IMAGE_LAYOUT_GENERAL);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    VkRenderingAttachmentInfo color_attachment[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+    color_attachment[0].imageView = view1;
+    color_attachment[0].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment[1].imageView = view2;
+    color_attachment[1].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 2u;
+    rendering_info.pColorAttachments = &color_attachment[0];
+
+    uint32_t dynamic_inputs[] = {0u, 2u};
+    VkRenderingInputAttachmentIndexInfo input_info = vku::InitStructHelper();
+    input_info.colorAttachmentCount = 2u;
+    input_info.pColorAttachmentInputIndices = dynamic_inputs;
+
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer, &input_info);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDynamicRenderingLocalRead, DepthStencilIndexNotStaticallyUsed) {
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
+
+    uint32_t depthIndex = 0u;
+    uint32_t stencilIndex = 1u;
+    VkRenderingInputAttachmentIndexInfo inputs_info = vku::InitStructHelper();
+    inputs_info.pDepthInputAttachmentIndex = &depthIndex;
+    inputs_info.pStencilInputAttachmentIndex = &stencilIndex;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&inputs_info);
+    pipeline_rendering_info.depthAttachmentFormat = ds_format;
+    pipeline_rendering_info.stencilAttachmentFormat = ds_format;
+
+    const char* fs_source = R"glsl(
+        #version 450
+        void main() {}
+    )glsl";
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.ds_ci_ = vku::InitStructHelper();
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Image ds_image(*m_device, 32, 32, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView ds_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfo ds_attachment = vku::InitStructHelper();
+    ds_attachment.imageView = ds_view;
+    ds_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1u;
+    rendering_info.pDepthAttachment = &ds_attachment;
+    rendering_info.pStencilAttachment = &ds_attachment;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_command_buffer.BeginRendering(rendering_info);
+
+    VkRenderingInputAttachmentIndexInfo input_info = vku::InitStructHelper();
+    vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer, &input_info);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
