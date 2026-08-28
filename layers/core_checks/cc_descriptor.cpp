@@ -5449,6 +5449,8 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
             const VkImageViewCreateInfo& image_view_ci = *image_info->pView;
             const auto image_state = Get<vvl::Image>(image_view_ci.image);
             ASSERT_AND_CONTINUE(image_state);
+            skip |= ValidateDeviceQueueSupport(error_obj.location);
+
             if ((image_state->create_flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) != 0) {
                 VkPhysicalDeviceImageFormatInfo2 image_format_info = image_state->GetImageFormatInfo2();
                 VkSubsampledImageFormatPropertiesEXT subsampled_image_format_info = vku::InitStructHelper();

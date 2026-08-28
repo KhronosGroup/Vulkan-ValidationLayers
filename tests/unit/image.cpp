@@ -5881,5 +5881,5 @@ TEST_F(NegativeImage, DuplicatedImageViewUsage) {
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_view_create_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    CreateImageViewTest(image_view_create_info, "VUID-vkCreateImageView-pNext-12444");
+    CreateImageViewTest(image_view_create_info, "VUID-VkImageViewCreateInfo-pNext-12508");
 }

@@ -945,7 +945,7 @@ bool Device::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create_inf
     const auto has_image_view_usage = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(create_info.pNext) != nullptr;
     const auto has_image_view_usage_2 = vku::FindStructInPNextChain<VkImageViewUsage2CreateInfoKHR>(create_info.pNext) != nullptr;
     if (has_image_view_usage && has_image_view_usage_2) {
-        skip |= LogError("VUID-vkCreateImageView-pNext-12444", create_info.image, create_info_loc.dot(Field::pNext),
+        skip |= LogError("VUID-VkImageViewCreateInfo-pNext-12508", create_info.image, create_info_loc.dot(Field::pNext),
                          "contains both VkImageViewUsageCreateInfo and VkImageViewUsage2CreateInfoKHR.");
     }
 

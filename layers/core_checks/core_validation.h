@@ -2503,12 +2503,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                          Struct struct_name, const uint32_t struct_size, const uint32_t drawCount,
                                          const VkDeviceSize offset, const vvl::Buffer& buffer_state, const Location& loc) const;
     bool PreCallValidateReleaseProfilingLockKHR(VkDevice device, const ErrorObject& error_obj) const override;
-    bool PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT* pCreateInfo,
-                                                 const VkAllocationCallbacks* pAllocator, VkPrivateDataSlotEXT* pPrivateDataSlot,
-                                                 const ErrorObject& error_obj) const override;
-    bool PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
-                                              const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot,
-                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker,
                                            const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,

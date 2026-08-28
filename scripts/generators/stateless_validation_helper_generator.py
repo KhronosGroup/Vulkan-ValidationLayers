@@ -244,6 +244,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdBuildPartitionedAccelerationStructuresNV',
             'vkCmdBuildClusterAccelerationStructureIndirectNV',
             'vkGetClusterAccelerationStructureBuildSizesNV',
+            'vkCreatePrivateDataSlot',
             'vkCmdResolveImage',
             'vkCmdResolveImage2',
             'vkCmdBlitImage2',

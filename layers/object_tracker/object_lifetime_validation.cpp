@@ -1979,7 +1979,7 @@ bool Device::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uint32_
                     [[maybe_unused]] const Location pView_loc = pImage_loc.dot(Field::pView);
                     skip |= ValidateObject(pResources[index0].data.pImage->pView->image, kVulkanObjectTypeImage, false,
                                            "VUID-VkImageViewCreateInfo-image-parameter",
-                                           "UNASSIGNED-VkImageViewCreateInfo-image-parent", pView_loc.dot(Field::image));
+                                           "VUID-vkWriteResourceDescriptorsEXT-pResources-12495", pView_loc.dot(Field::image));
                     if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(
                             pResources[index0].data.pImage->pView->pNext)) {
                         [[maybe_unused]] const Location pNext_loc = pView_loc.pNext(Struct::VkSamplerYcbcrConversionInfo);
