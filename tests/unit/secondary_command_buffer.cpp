@@ -1506,9 +1506,21 @@ TEST_F(NegativeSecondaryCommandBuffer, CustomResolveDynamicRenderingInputAttachm
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
     pipeline_rendering_info.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
 
+    VkShaderObj fs(*m_device, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
     CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.ds_ci_ = vku::InitStructHelper();
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     pipe.CreateGraphicsPipeline();
+
+    vkt::Image input_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::ImageView input_view = input_image.CreateView();
+
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, input_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+                                                   VK_IMAGE_LAYOUT_GENERAL);
+    pipe.descriptor_set_->UpdateDescriptorSets();
 
     input_info.pDepthInputAttachmentIndex = nullptr;
 
@@ -1528,6 +1540,8 @@ TEST_F(NegativeSecondaryCommandBuffer, CustomResolveDynamicRenderingInputAttachm
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary.Begin(&cmdbuff_bi);
     vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1, &pipe.descriptor_set_->set_,
+                              0, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10927");
     vk::CmdDraw(secondary, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
