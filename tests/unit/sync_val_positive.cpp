@@ -829,10 +829,41 @@ TEST_F(PositiveSyncVal, LayoutTransition) {
 }
 
 TEST_F(PositiveSyncVal, LayoutTransitionAfterLayoutTransition) {
-    // TODO: check results of this dicussion https://gitlab.khronos.org/vulkan/vulkan/-/issues/4302
-    // NOTE: artem can't believe this does not cause race conditions
     TEST_DESCRIPTION("There should be no hazard for ILT after ILT");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
 
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    // The layout transitions are implicitly ordered, so we have execution dependency.
+    // The memory accesses also do not cause race conditions even though we don't specify
+    // a memory barrier below (no src/dst access masks).
+    //
+    // Before a layout transition, available accesses are automatically made visible, and
+    // after the transition, its accesses are automatically made available. So transition1
+    // makes its accesses available, and transition2 makes them visible before it starts.
+
+    VkImageMemoryBarrier2 transition1 = vku::InitStructHelper();
+    transition1.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    transition1.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transition1.image = image;
+    transition1.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkImageMemoryBarrier2 transition2 = vku::InitStructHelper();
+    transition2.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transition2.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    transition2.image = image;
+    transition2.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(transition1);
+    m_command_buffer.Barrier(transition2);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, QSLayoutTransitionAfterLayoutTransition) {
+    TEST_DESCRIPTION("Sequential layout transitions in separate command buffers");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncVal());
@@ -851,10 +882,19 @@ TEST_F(PositiveSyncVal, LayoutTransitionAfterLayoutTransition) {
     transition2.image = image;
     transition2.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    m_command_buffer.Begin();
-    m_command_buffer.Barrier(transition1);
-    m_command_buffer.Barrier(transition2);
-    m_command_buffer.End();
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+    cb1.Begin();
+    cb1.Barrier(transition1);
+    cb1.End();
+
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+    cb2.Begin();
+    cb2.Barrier(transition2);
+    cb2.End();
+
+    m_default_queue->Submit2(cb1);
+    m_default_queue->Submit2(cb2);
+    m_default_queue->Wait();
 }
 
 // Image transition ensures that image data is made visible and available when necessary.
