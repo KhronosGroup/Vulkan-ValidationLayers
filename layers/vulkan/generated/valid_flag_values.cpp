@@ -1071,6 +1071,14 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                 }
             }
             return {};
+        case vvl::FlagBitmask::VkPrivateDataSlotCreateFlagBits:
+            if (value & (VK_PRIVATE_DATA_SLOT_CREATE_BASE_OBJECT_HANDLE_BIT_NV)) {
+                if ((instance_function && !IsExtSupported(extensions.vk_nv_private_data_base_handle)) ||
+                    (!instance_function && !IsExtEnabled(extensions.vk_nv_private_data_base_handle))) {
+                    return {vvl::Extension::_VK_NV_private_data_base_handle};
+                }
+            }
+            return {};
         case vvl::FlagBitmask::VkRenderingFlagBits:
             if (value & (VK_RENDERING_ENABLE_LEGACY_DITHERING_BIT_EXT)) {
                 if ((instance_function && !IsExtSupported(extensions.vk_ext_legacy_dithering)) ||
@@ -1721,6 +1729,8 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkSemaphoreWaitFlags(value);
         case vvl::FlagBitmask::VkDescriptorBindingFlagBits:
             return string_VkDescriptorBindingFlags(value);
+        case vvl::FlagBitmask::VkPrivateDataSlotCreateFlagBits:
+            return string_VkPrivateDataSlotCreateFlags(value);
         case vvl::FlagBitmask::VkSubmitFlagBits:
             return string_VkSubmitFlags(value);
         case vvl::FlagBitmask::VkRenderingFlagBits:

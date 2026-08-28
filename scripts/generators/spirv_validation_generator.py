@@ -154,14 +154,6 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
             ''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        # Temp fix until 1.4.361 comes out with
-        # https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8491
-        spirv = [item for item in self.vk.spirv if item.name != "CooperativeMatrixReductionsNV" and item.name != "CooperativeMatrixPerElementOperationsNV"]
-        for spirv in [x for x in self.vk.spirv if x.name == 'CooperativeMatrixReductionsEXT' or x.name == 'CooperativeMatrixPerElementOperationsEXT']:
-            if (len(spirv.enable) == 1):
-                new_enable = SpirvEnables(feature=spirv.enable[0].feature, struct='VkPhysicalDeviceCooperativeMatrix2FeaturesNV', requires='VK_NV_cooperative_matrix2', version=None, extension=None, property=None, member=None, value=None)
-                spirv.enable.append(new_enable)
-
         if self.filename == 'spirv_validation_helper.h':
             self.generateHeader()
         elif self.filename == 'spirv_validation_helper.cpp':

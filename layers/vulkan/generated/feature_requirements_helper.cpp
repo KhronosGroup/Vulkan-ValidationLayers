@@ -5699,6 +5699,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
                     "VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT::primitivesGeneratedQueryWithRasterizerDiscard"};
         }
 
+        case Feature::privateDataBaseHandle: {
+            auto vk_struct = const_cast<VkPhysicalDevicePrivateDataBaseHandleFeaturesNV*>(
+                vku::FindStructInPNextChain<VkPhysicalDevicePrivateDataBaseHandleFeaturesNV>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDevicePrivateDataBaseHandleFeaturesNV;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->privateDataBaseHandle, "VkPhysicalDevicePrivateDataBaseHandleFeaturesNV::privateDataBaseHandle"};
+        }
+
         case Feature::privateData:
             if (api_version >= VK_API_VERSION_1_3) {
                 auto vk_struct = const_cast<VkPhysicalDeviceVulkan13Features*>(

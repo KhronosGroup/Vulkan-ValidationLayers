@@ -1749,6 +1749,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT", 49},
     {"VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT", 56},
     {"VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT", 52},
+    {"VkPhysicalDevicePrivateDataBaseHandleFeaturesNV", 48},
     {"VkPhysicalDevicePrivateDataFeatures", 36},
     {"VkPhysicalDeviceProperties", 27},
     {"VkPhysicalDeviceProperties2", 28},
@@ -4805,6 +4806,7 @@ const char* String(Field field) {
     {"priority", 9},
     {"priorityCount", 14},
     {"privateData", 12},
+    {"privateDataBaseHandle", 22},
     {"privateDataSlot", 16},
     {"privateDataSlotRequestCount", 28},
     {"processingEngineCount", 22},
@@ -6016,6 +6018,7 @@ const char* String(FlagBitmask value) {
     {"VkPresentScalingFlagBitsKHR", 28},
     {"VkPresentStageFlagBitsEXT", 26},
     {"VkPresentTimingInfoFlagBitsEXT", 31},
+    {"VkPrivateDataSlotCreateFlagBits", 32},
     {"VkQueryControlFlagBits", 23},
     {"VkQueryPipelineStatisticFlagBits", 33},
     {"VkQueryPoolCreateFlagBits", 26},
@@ -6509,6 +6512,7 @@ const char* String(Extension extension) {
     {"VK_NV_per_stage_descriptor_set", 31},
     {"VK_NV_present_barrier", 22},
     {"VK_NV_present_metering", 23},
+    {"VK_NV_private_data_base_handle", 31},
     {"VK_NV_push_constant_bank", 25},
     {"VK_NV_raw_access_chains", 24},
     {"VK_NV_ray_tracing", 18},
@@ -9682,6 +9686,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkImageTilingControlCreateInfoEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_DECODE_VECTOR_FEATURES_NV:
        return Struct::VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_BASE_HANDLE_FEATURES_NV:
+       return Struct::VkPhysicalDevicePrivateDataBaseHandleFeaturesNV;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:
        return Struct::VkAccelerationStructureGeometryTrianglesDataKHR;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR:

@@ -1,6 +1,6 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
 // See generate_spec_error_message.py for modifications
-// Based on Vulkan specification version: 1.4.360
+// Based on Vulkan specification version: 1.4.361
 
 /***************************************************************************
  *
