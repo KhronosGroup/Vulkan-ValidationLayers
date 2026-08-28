@@ -1757,10 +1757,8 @@ TEST_F(PositiveShaderInterface, BlockFragmentLocation) {
                OpSource Unknown 0
                OpMemberName %FsOut 0 "color"
                OpName %FsOut "FsOut"
-               OpMemberDecorate %FsOut 0 Offset 0
                OpDecorate %FsOut Block
                OpMemberDecorate %FsOut 0 Location 0
-               OpMemberDecorate %ShaderLink 0 Offset 0
                OpDecorate %ShaderLink Block
                OpMemberDecorate %ShaderLink 0 Location 0
        %void = OpTypeVoid

@@ -150,6 +150,7 @@ void AdjustValidatorOptions(const DeviceExtensions& device_extensions, const Dev
     }
 
     // Faster validation without friendly names.
+    // 25% faster when last looked in Aug 2026
     out_options.SetFriendlyNames(false);
 
     // The spv_validator_options_t in libspirv.h is hidden so we can't just hash that struct, so instead need to create our own.

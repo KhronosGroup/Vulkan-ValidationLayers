@@ -300,9 +300,7 @@ TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedBuffer) {
                OpFunctionEnd
 
     )";
-    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
-    // TODO - Move VUID to spirv-val
-    // m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-bufferDescriptorAlignment-11478");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-bufferDescriptorAlignment-11478");
     vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
@@ -369,11 +367,8 @@ TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedMixedType) {
                OpReturn
                OpFunctionEnd
     )";
-    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08737");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-imageDescriptorAlignment-11477");
     VkShaderObj::CreateFromASM(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
-    // TODO - Move VUID to spirv-val
-    // m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-imageDescriptorAlignment-11477");
-    // vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 

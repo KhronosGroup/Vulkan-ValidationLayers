@@ -725,6 +725,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpImageBlockMatchGatherSSDQCOM";
         case spv::OpImageBlockMatchGatherSADQCOM:
             return "OpImageBlockMatchGatherSADQCOM";
+        case spv::OpBFloat16MulAddQCOM:
+            return "OpBFloat16MulAddQCOM";
         case spv::OpCompositeConstructCoopMatQCOM:
             return "OpCompositeConstructCoopMatQCOM";
         case spv::OpCompositeExtractCoopMatQCOM:
@@ -1455,6 +1457,10 @@ const char* string_SpvExecutionMode(uint32_t execution_mode) {
             return "NonCoherentTileAttachmentReadQCOM";
         case spv::ExecutionModeTileShadingRateQCOM:
             return "TileShadingRateQCOM";
+        case spv::ExecutionModeSubgroupSizeHalfQCOM:
+            return "SubgroupSizeHalfQCOM";
+        case spv::ExecutionModeSubgroupSizeFullQCOM:
+            return "SubgroupSizeFullQCOM";
         case spv::ExecutionModeEarlyAndLateFragmentTestsAMD:
             return "EarlyAndLateFragmentTestsAMD";
         case spv::ExecutionModeStencilRefReplacingEXT:
@@ -2624,6 +2630,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpImageBlockMatchWindowSADQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpImageBlockMatchGatherSSDQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpImageBlockMatchGatherSADQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpBFloat16MulAddQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpCompositeConstructCoopMatQCOM, {{OperandKind::Id}}},
         {spv::OpCompositeExtractCoopMatQCOM, {{OperandKind::Id}}},
         {spv::OpExtractSubArrayQCOM, {{OperandKind::Id, OperandKind::Id}}},

@@ -691,6 +691,10 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "CooperativeMatrixConversionQCOM";
         case spv::CapabilityTextureBlockMatch2QCOM:
             return "TextureBlockMatch2QCOM";
+        case spv::CapabilityBFloat16MulAddQCOM:
+            return "BFloat16MulAddQCOM";
+        case spv::CapabilitySubgroupSizeQCOM:
+            return "SubgroupSizeQCOM";
         case spv::CapabilityMultipleWaitQueuesQCOM:
             return "MultipleWaitQueuesQCOM";
         case spv::CapabilityImageGatherLinearQCOM:
