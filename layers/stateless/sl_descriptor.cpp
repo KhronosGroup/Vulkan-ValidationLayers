@@ -1732,9 +1732,8 @@ bool Device::manual_PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, 
                                      resource.data.pAddressRange->address, phys_dev_props.limits.minUniformBufferOffsetAlignment);
                     }
                     if (resource.data.pAddressRange->size > phys_dev_props.limits.maxUniformBufferRange) {
-                        // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8269/diffs
                         skip |=
-                            LogError("UNASSIGNED-VkResourceDescriptorInfoEXT-size-UBO", device,
+                            LogError("VUID-VkResourceDescriptorInfoEXT-type-12496", device,
                                      data_loc.dot(Field::pAddressRange).dot(Field::size),
                                      "(%" PRIu64 ") is greater than maxUniformBufferRange (%" PRIu32
                                      ")\nHint: You can have multiple descriptors point to different parts of the Uniform Buffer.",
@@ -1752,8 +1751,7 @@ bool Device::manual_PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, 
 
                     if (!enabled_features.shader64BitIndexing &&
                         resource.data.pAddressRange->size > phys_dev_props.limits.maxStorageBufferRange) {
-                        // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8269/diffs
-                        skip |= LogError("UNASSIGNED-VkResourceDescriptorInfoEXT-size-SSBO", device,
+                        skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-12497", device,
                                          data_loc.dot(Field::pAddressRange).dot(Field::size),
                                          "(%" PRIu64 ") is greater than maxStorageBufferRange (%" PRIu32
                                          ")\nHint: You can have multiple descriptors point to different parts of the Storage "

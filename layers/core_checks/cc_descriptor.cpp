@@ -3276,15 +3276,13 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
             skip |= LogError("VUID-VkDescriptorAddressInfoEXT-nullDescriptor-08939", device, address_loc.dot(Field::range),
                              "is VK_WHOLE_SIZE.");
         } else if (address_loc.field == Field::pUniformBuffer && address_info.range > phys_dev_props.limits.maxUniformBufferRange) {
-            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8269/diffs
-            skip |= LogError("UNASSIGNED-VkDescriptorAddressInfoEXT-range-UBO", device, address_loc.dot(Field::range),
+            skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-12492", device, address_loc.dot(Field::range),
                              "(%" PRIu64 ") is greater than maxUniformBufferRange (%" PRIu32
                              ")\nHint: You can have multiple descriptors point to different parts of the Uniform Buffer.",
                              address_info.range, phys_dev_props.limits.maxUniformBufferRange);
         } else if (address_loc.field == Field::pStorageBuffer && !enabled_features.shader64BitIndexing &&
                    address_info.range > phys_dev_props.limits.maxStorageBufferRange) {
-            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8269/diffs
-            skip |= LogError("UNASSIGNED-VkDescriptorAddressInfoEXT-range-SSBO", device, address_loc.dot(Field::range),
+            skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-12493", device, address_loc.dot(Field::range),
                              "(%" PRIu64 ") is greater than maxStorageBufferRange (%" PRIu32
                              ")\nHint: You can have multiple descriptors point to different parts of the Storage Buffer\nHint: "
                              "This can be relaxed if shader64BitIndexing is enabled",

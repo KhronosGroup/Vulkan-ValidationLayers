@@ -5941,13 +5941,13 @@ TEST_F(NegativeDescriptorHeap, MaxBufferRange) {
     descriptor_info.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_info.data.pAddressRange = &device_range;
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkResourceDescriptorInfoEXT-size-UBO");
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-12496");
     vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
     m_errorMonitor->VerifyFound();
 
     device_range = buffer_ssbo.AddressRange();
     descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkResourceDescriptorInfoEXT-size-SSBO");
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-12497");
     vk::WriteResourceDescriptorsEXT(*m_device, 1, &descriptor_info, &descriptor_host);
     m_errorMonitor->VerifyFound();
 }

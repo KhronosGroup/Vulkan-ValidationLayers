@@ -1440,7 +1440,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoAddressRange) {
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorAddressInfoEXT-range-08045");
     // Might go over UBO range limit
-    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-VkDescriptorAddressInfoEXT-range-UBO");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDescriptorGetInfoEXT-type-12492");
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
     m_errorMonitor->VerifyFound();
 
@@ -2289,12 +2289,12 @@ TEST_F(NegativeDescriptorBuffer, MaxBufferRange) {
     uint8_t host_data[256];
 
     vkt::DescriptorGetInfo get_info_u(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, buffer_ubo, buffer_ubo.CreateInfo().size);
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorAddressInfoEXT-range-UBO");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-12492");
     vk::GetDescriptorEXT(device(), get_info_u, descriptor_buffer_properties.uniformBufferDescriptorSize, host_data);
     m_errorMonitor->VerifyFound();
 
     vkt::DescriptorGetInfo get_info_s(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_ssbo, buffer_ssbo.CreateInfo().size);
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorAddressInfoEXT-range-SSBO");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-12493");
     vk::GetDescriptorEXT(device(), get_info_s, descriptor_buffer_properties.storageBufferDescriptorSize, host_data);
     m_errorMonitor->VerifyFound();
 }
