@@ -274,7 +274,8 @@ class AccessContext {
 
     void UpdateAccessState(const vvl::Buffer& buffer, SyncAccessIndex current_usage, const AccessRange& range,
                            ResourceUsageTagEx tag_ex, SyncFlags flags = 0, QueueId queue_id = kQueueIdInvalid);
-    void UpdateAccessState(ImageRangeGen& range_gen, SyncAccessIndex current_usage, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
+    void UpdateAccessState(ImageRangeGen& range_gen, SyncAccessIndex current_usage, ResourceUsageTagEx tag_ex, SyncFlags flags = 0,
+                           QueueId queue_id = kQueueIdInvalid);
     void UpdateAttachmentAccessState(ImageRangeGen& range_gen, SyncAccessIndex current_usage,
                                      const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex);
     void UpdateAttachmentAccessState(const AttachmentViewGen& view_gen, AttachmentViewGen::Gen gen_type,

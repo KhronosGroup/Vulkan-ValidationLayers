@@ -25,6 +25,7 @@ struct VulkanTypedHandle;
 
 namespace vvl {
 class Buffer;
+class Image;
 enum class Func;
 }  // namespace vvl
 
@@ -60,7 +61,30 @@ struct BufferCopyCommand {
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
     bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag command_tag, const Location& loc) const;
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
+struct ImageCopyCommand {
+    const vvl::Image& src_image;
+    const vvl::Image& dst_image;
+    vvl::span<const VkImageCopy> regions;
+    uint32_t src_handle_index = vvl::kNoIndex32;
+    uint32_t dst_handle_index = vvl::kNoIndex32;
+
+    struct Storage {
+        uint32_t src_image_index;
+        uint32_t dst_image_index;
+        uint32_t first_region;
+        uint32_t region_count;
+        uint32_t src_handle_index;
+        uint32_t dst_handle_index;
+        ImageCopyCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -78,14 +102,17 @@ struct BarrierCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
-using CommandStorage = std::variant<BufferCopyCommand::Storage, BarrierCommand::Storage>;
+using CommandStorage = std::variant<BufferCopyCommand::Storage, ImageCopyCommand::Storage, BarrierCommand::Storage>;
 
 struct CommandData {
     std::vector<std::shared_ptr<const vvl::Buffer>> buffers;
+    std::vector<std::shared_ptr<const vvl::Image>> images;
     std::vector<BufferCopyRegion> buffer_copy_regions;
+    std::vector<VkImageCopy> image_copy_regions;
     std::vector<BarrierSet> barrier_sets;
 
     uint32_t AddBuffer(const vvl::Buffer& buffer);
+    uint32_t AddImage(const vvl::Image& image);
 };
 
 // TODO: CommandEntry won't be needed after all commands are introduced.

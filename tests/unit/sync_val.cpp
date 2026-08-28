@@ -1078,6 +1078,39 @@ TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeSyncVal, QSCopyImage) {
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image image_a(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, usage);
+    vkt::Image image_b(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, usage);
+    vkt::Image image_c(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, usage);
+    image_a.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image_b.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image_c.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageCopy region{};
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.extent = {32, 32, 1};
+
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    cb0.Begin();
+    vk::CmdCopyImage(cb0, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    cb0.End();
+
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+    cb1.Begin();
+    vk::CmdCopyImage(cb1, image_c, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    cb1.End();
+
+    m_default_queue->Submit(cb0);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    m_default_queue->Submit(cb1);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeSyncVal, CopyBufferImageHazards) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());

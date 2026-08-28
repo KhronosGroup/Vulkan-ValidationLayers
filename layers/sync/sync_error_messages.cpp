@@ -97,9 +97,9 @@ std::string ErrorMessages::AccelerationStructureError(const HazardResult& hazard
                  additional_info);
 }
 
-std::string ErrorMessages::ImageCopyResolveBlitError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                                     vvl::Func command, const std::string& resource_description,
-                                                     uint32_t region_index, const VkOffset3D& offset, const VkExtent3D& extent,
+std::string ErrorMessages::ImageCopyResolveBlitError(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,
+                                                     const std::string& resource_description, uint32_t region_index,
+                                                     const VkOffset3D& offset, const VkExtent3D& extent,
                                                      const VkImageSubresourceLayers& subresource) const {
     const char* action = nullptr;
     const char* message_type = nullptr;
@@ -125,7 +125,7 @@ std::string ErrorMessages::ImageCopyResolveBlitError(const HazardResult& hazard,
     additional_info.message_end_text = ss.str();
     additional_info.properties.Add(kPropertyRegionIndex, region_index);
 
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, message_type, additional_info);
+    return Error(env, hazard, command, resource_description, message_type, additional_info);
 }
 
 std::string ErrorMessages::ImageClearError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
