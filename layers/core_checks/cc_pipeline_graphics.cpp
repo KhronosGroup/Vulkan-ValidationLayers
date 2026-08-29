@@ -2148,7 +2148,7 @@ bool CoreChecks::ValidateGraphicsPipelineRenderPassRasterization(const vvl::Pipe
                         }
                         if (!(maxDepthBounds >= 0.0) || !(maxDepthBounds <= 1.0)) {
                             skip |= LogError(
-                                "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510", device, ds_loc.dot(Field::minDepthBounds),
+                                "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510", device, ds_loc.dot(Field::maxDepthBounds),
                                 "is %f, depthBoundsTestEnable is VK_TRUE, but VK_EXT_depth_range_unrestricted extension "
                                 "is not enabled (and not using VK_DYNAMIC_STATE_DEPTH_BOUNDS).",
                                 maxDepthBounds);
