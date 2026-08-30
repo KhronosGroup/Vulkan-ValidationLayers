@@ -3975,8 +3975,7 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
                                "(%" PRIu32 ") is larger than the %s maxSets (%" PRIu32
                                ") so you will likely get VK_ERROR_OUT_OF_POOL_MEMORY_KHR. While this might succeed on some "
                                "implementations, it will fail on others.",
-                               pAllocateInfo->descriptorSetCount, FormatHandle(*ds_pool_state).c_str(),
-                               ds_pool_state->GetAvailableSets());
+                               pAllocateInfo->descriptorSetCount, FormatHandle(*ds_pool_state).c_str(), ds_pool_state->maxSets);
         } else {
             // Same idea but if they are trying to allocate more descriptors of one type then possible in the whole pool
             for (auto it = ds_data.required_descriptors_by_type.begin(); it != ds_data.required_descriptors_by_type.end(); ++it) {
