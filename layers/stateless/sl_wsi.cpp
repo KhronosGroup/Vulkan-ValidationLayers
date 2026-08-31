@@ -126,7 +126,7 @@ bool Device::ValidateSwapchainCreateInfo(const Context& context, const VkSwapcha
             skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-04100", device,
                              loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount),
                              "is %" PRIu32 " but flag (%s) does not includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR.",
-                             view_format_count, string_VkImageCreateFlags(create_info.flags).c_str());
+                             view_format_count, string_VkSwapchainCreateFlagsKHR(create_info.flags).c_str());
         }
 
         // Using the first format, compare the rest of the formats against it that they are compatible
