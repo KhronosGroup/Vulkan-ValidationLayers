@@ -2114,7 +2114,7 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
     } else if (image_format != view_format) {
         skip |=
             LogError("VUID-VkImageViewCreateInfo-image-12397", create_info.image, create_info_loc.dot(Field::format),
-                     "%s is different from %s format (%s). Formats must be identical unless VK_IMAGE_CREATE_MUTABLE_FORMAT)BIT was "
+                     "%s is different from %s format (%s). Formats must be identical unless VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT was "
                      "set on image creation.",
                      string_VkFormat(view_format), FormatHandle(create_info.image).c_str(), string_VkFormat(image_format));
     }
