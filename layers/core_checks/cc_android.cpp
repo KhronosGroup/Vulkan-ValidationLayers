@@ -362,25 +362,39 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
                 }
             }
 
+            if ((image_state->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) != 0) {
+                if ((image_state->format_features & VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT) == 0) {
+                    skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-12500", mem_ded_alloc_info->image, dedicated_image_loc,
+                                     "was created with VK_IMAGE_USAGE_HOST_TRANSFER_BIT but the "
+                                     "VkAndroidHardwareBufferFormatProperties2ANDROID::formatFeatures does not contain "
+                                     "VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT. (AHB = %p)\nformatFeatures = %s",
+                                     import_ahb_info->buffer, string_VkFormatFeatureFlags2(image_state->format_features).c_str());
+                }
+            }
+
             // First check if any invalid Vulkan usages, then make sure for each used, the matching AHB usage is also included
-            const VkImageUsageFlags valid_vk_usages = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
-                                                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                                                      VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                                      VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+            // https://docs.vulkan.org/spec/latest/chapters/memory.html#memory-external-android-hardware-buffer-usage
+            const VkImageUsageFlags valid_vk_usages =
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+                VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT | VK_IMAGE_CREATE_PROTECTED_BIT |
+                VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
             if (image_state->usage & ~(valid_vk_usages)) {
                 skip |= LogError(
                     "VUID-VkMemoryAllocateInfo-pNext-02390", mem_ded_alloc_info->image, dedicated_image_loc,
-                    "was created with %s which are not listed in the AHardwareBuffer Usage Equivalence table. (AHB = %p).",
+                    "was created with %s which are not listed in the AHardwareBuffer Usage Equivalence table. (AHB = "
+                    "%p).\nhttps://docs.vulkan.org/spec/latest/chapters/memory.html#memory-external-android-hardware-buffer-usage",
                     string_VkImageUsageFlags2KHR(image_state->usage & ~(valid_vk_usages)).c_str(), import_ahb_info->buffer);
             }
 
-            // Based on vkspec.html#memory-external-android-hardware-buffer-usage
             static std::unordered_map<VkImageUsageFlags2KHR, uint64_t> ahb_usage_map_v2a = {
                 {VK_IMAGE_USAGE_SAMPLED_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE},
                 {VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE},
                 {VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER},
                 {VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER},
                 {VK_IMAGE_USAGE_STORAGE_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER},
+                {VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP},
+                {VK_IMAGE_CREATE_PROTECTED_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT},
             };
 
             for (const auto& [vk_usage, ahb_usage] : ahb_usage_map_v2a) {

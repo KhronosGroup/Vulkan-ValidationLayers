@@ -2181,6 +2181,11 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetAndroidHardwareBufferPropertiesANDROID(
         format_prop->format = VK_FORMAT_R8G8B8A8_UNORM;
         format_prop->externalFormat = 37;
     }
+    auto* format_prop2 = vku::FindStructInPNextChain<VkAndroidHardwareBufferFormatProperties2ANDROID>(pProperties->pNext);
+    if (format_prop2) {
+        format_prop2->format = VK_FORMAT_R8G8B8A8_UNORM;
+        format_prop2->externalFormat = 37;
+    }
 
     auto* format_resolve_prop =
         vku::FindStructInPNextChain<VkAndroidHardwareBufferFormatResolvePropertiesANDROID>(pProperties->pNext);
