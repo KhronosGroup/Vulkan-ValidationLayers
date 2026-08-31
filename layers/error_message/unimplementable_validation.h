@@ -834,6 +834,11 @@ const char* not_going_to_do[] = {
     // This falls under the failure of the sparse memory spec/testing
     // so going to skip until someone complains loudly
     "VUID-vkCmdDraw-None-08119",
+
+    // Until I am proven wrong, these are not needed VUs
+    // https://gitlab.khronos.org/vulkan/vulkan/-/work_items/4961
+    "VUID-VkImageViewCreateInfo-image-12504",
+    "VUID-VkImageViewCreateInfo-format-12505",
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working
