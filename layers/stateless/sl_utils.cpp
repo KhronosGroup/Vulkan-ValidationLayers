@@ -281,9 +281,13 @@ bool Context::ValidateStructPnext(const Location& loc, const void* next, size_t 
                                                  PrintPNextChain(Struct::Empty, next).c_str(), header_version,
                                                  pNext_loc.Fields().c_str());
                         } else {
-                            std::string message = "chain includes a structure with unexpected VkStructureType %s.\n%s\n";
+                            const bool likley_null = current->sType == VK_STRUCTURE_TYPE_APPLICATION_INFO;
+                            std::string message = "chain includes a structure with unexpected VkStructureType %s.%s\n%s\n";
                             message += disclaimer;
                             skip |= log.LogError(pnext_vuid, error_obj.handle, pNext_loc, message.c_str(), type_name.c_str(),
+                                                 likley_null ? "\nHint: You likely forgot to set the sType in the struct as "
+                                                               "VK_STRUCTURE_TYPE_APPLICATION_INFO is the value zero."
+                                                             : "",
                                                  PrintPNextChain(Struct::Empty, next).c_str(), header_version,
                                                  pNext_loc.Fields().c_str());
                         }

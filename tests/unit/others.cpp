@@ -11,7 +11,6 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-// stype-check off
 
 #include <vulkan/vulkan_core.h>
 #include <algorithm>
@@ -20,6 +19,9 @@
 #include "shader_templates.h"
 #include "utils/hash_util.h"
 #include "generated/vk_validation_error_messages.h"
+
+// These tests are likely going to need to test the sType actually
+// stype-check off
 
 class NegativeOther : public VkLayerTest {};
 
@@ -1349,7 +1351,6 @@ TEST_F(NegativeOther, PhysicalDeviceLayeredApiVulkanPropertiesKHR) {
     m_errorMonitor->VerifyFound();
 }
 
-// stype-check off
 // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9185
 TEST_F(NegativeOther, DISABLED_PhysicalDeviceLayeredApiVulkanPropertiesPNext) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1372,7 +1373,6 @@ TEST_F(NegativeOther, DISABLED_PhysicalDeviceLayeredApiVulkanPropertiesPNext) {
     vk::GetPhysicalDeviceProperties2(Gpu(), &phys_dev_props_2);
     m_errorMonitor->VerifyFound();
 }
-// stype-check on
 
 TEST_F(NegativeOther, UnrecognizedEnumExtension) {
     RETURN_IF_SKIP(Init());
@@ -1546,4 +1546,38 @@ TEST_F(NegativeOther, FeatureNotPresentNoCoreFeatures) {
     if (device != VK_NULL_HANDLE) {
         vk::DestroyDevice(device, nullptr);
     }
+}
+
+TEST_F(NegativeOther, FeatureWithNoSType) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12964");
+    RETURN_IF_SKIP(InitFramework());
+    if (!DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_16BIT_STORAGE_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_16bit_storage is supported";
+    }
+
+    VkPhysicalDevice16BitStorageFeatures enabled_features = vku::InitStructHelper();
+    enabled_features.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    enabled_features.storageBuffer16BitAccess = VK_TRUE;
+
+    float priority = 1.0f;
+    VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
+    queue_info.queueFamilyIndex = 0;
+    queue_info.queueCount = 1;
+    queue_info.pQueuePriorities = &priority;
+
+    VkDeviceCreateInfo dev_info = vku::InitStructHelper(&enabled_features);
+    dev_info.flags = 0;
+    dev_info.queueCreateInfoCount = 1;
+    dev_info.pQueueCreateInfos = &queue_info;
+    dev_info.enabledLayerCount = 0;
+    dev_info.ppEnabledLayerNames = nullptr;
+    dev_info.enabledExtensionCount = 0;
+    dev_info.ppEnabledExtensionNames = nullptr;
+    dev_info.pEnabledFeatures = nullptr;
+
+    VkDevice device = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError(
+        "You likely forgot to set the sType in the struct as VK_STRUCTURE_TYPE_APPLICATION_INFO is the value zero");
+    vk::CreateDevice(Gpu(), &dev_info, nullptr, &device);
+    m_errorMonitor->VerifyFound();
 }
