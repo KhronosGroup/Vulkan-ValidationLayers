@@ -125,7 +125,8 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo& create_inf
                          string_VkFormat(create_info.format), string_VkFormatFeatureFlags2(tiling_features).c_str());
     }
 
-    if (((tiling_features & VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT) == 0) && (usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT)) {
+    if (((tiling_features & VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT) == 0) && (usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) &&
+        GetExternalFormat(create_info.pNext) == 0) {
         skip |= LogError("VUID-VkImageCreateInfo-imageCreateFormatFeatures-09048", device, loc.dot(Field::usage),
                          "includes VK_IMAGE_USAGE_HOST_TRANSFER_BIT, but %s doesn't support "
                          "VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT.\n"
