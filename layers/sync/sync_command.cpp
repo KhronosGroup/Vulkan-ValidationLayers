@@ -27,6 +27,22 @@
 
 namespace syncval {
 
+static LogObjectList BaseObjectList(const SyncEnvironment& env, const CommandBufferContext& cb_context,
+                                    const VulkanTypedHandle& resource) {
+    LogObjectList objlist;
+    const VulkanTypedHandle& cb_handle = cb_context.GetCBState().Handle();
+
+    // During recording, env.handle is the command buffer handle. Skip to avoid duplication.
+    if (env.handle != cb_handle) {
+        // During replay, env.handle is the handle of the replayer (queue or primary command buffer).
+        objlist.add(env.handle);
+    }
+
+    objlist.add(cb_handle);
+    objlist.add(resource);
+    return objlist;
+}
+
 bool ReplayCommands(SyncEnvironment& env, AccessContext& access_context, const CommandBufferContext& cb_context,
                     ResourceUsageTag base_tag, const Location& loc) {
     bool skip = false;
@@ -86,40 +102,27 @@ bool BufferCopyCommand::Validate(const CommandBufferContext& cb_context, const L
 }
 
 bool BufferCopyCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                 const CommandBufferContext& cb_context, ResourceUsageTag command_tag, const Location& loc) const {
+                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
     bool skip = false;
     const SyncValidator& validator = env.validator;
-    const bool submit_time = env.handle.type == kVulkanObjectTypeQueue;
-
-    // TODO: Remove SubmitTimeError and extend BufferCopyError with submit-time details after
-    // command-base validation replaces current model. Until then, try to preserve identical
-    // error output so old and new can be compared during development.
 
     for (const auto [region_index, region] : vvl::enumerate(regions)) {
         const AccessRange src_range = MakeRange(src_buffer, region.src_offset, region.size);
         auto src_hazard = access_context.DetectHazard(src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
         if (src_hazard.IsHazard()) {
-            const LogObjectList objlist = submit_time ? LogObjectList(env.handle, cb_context.GetCBState().Handle())
-                                                      : LogObjectList(cb_context.GetCBState().Handle(), src_buffer.Handle());
-            const std::string error =
-                submit_time
-                    ? validator.error_messages_.SubmitTimeError(env, src_hazard, cb_context, command_tag, loc.index,
-                                                                validator.FormatHandle(src_buffer))
-                    : validator.error_messages_.BufferCopyError(env, src_hazard, loc.function, validator.FormatHandle(src_buffer),
-                                                                uint32_t(region_index), src_range);
+            const LogObjectList objlist = BaseObjectList(env, cb_context, src_buffer.Handle());
+            const std::string resource_description = validator.FormatHandle(src_buffer);
+            const std::string error = validator.error_messages_.BufferCopyError(
+                env, src_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), src_range);
             skip |= validator.SyncError(src_hazard.Hazard(), objlist, loc, error);
         }
         const AccessRange dst_range = MakeRange(dst_buffer, region.dst_offset, region.size);
         auto dst_hazard = access_context.DetectHazard(dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
         if (dst_hazard.IsHazard()) {
-            const LogObjectList objlist = submit_time ? LogObjectList(env.handle, cb_context.GetCBState().Handle())
-                                                      : LogObjectList(cb_context.GetCBState().Handle(), dst_buffer.Handle());
-            const std::string error =
-                submit_time
-                    ? validator.error_messages_.SubmitTimeError(env, dst_hazard, cb_context, command_tag, loc.index,
-                                                                validator.FormatHandle(dst_buffer))
-                    : validator.error_messages_.BufferCopyError(env, dst_hazard, loc.function, validator.FormatHandle(dst_buffer),
-                                                                uint32_t(region_index), dst_range);
+            const LogObjectList objlist = BaseObjectList(env, cb_context, dst_buffer.Handle());
+            const std::string resource_description = validator.FormatHandle(dst_buffer);
+            const std::string error = validator.error_messages_.BufferCopyError(
+                env, dst_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), dst_range);
             skip |= validator.SyncError(dst_hazard.Hazard(), objlist, loc, error);
         }
         if (skip) {
@@ -171,33 +174,26 @@ bool ImageCopyCommand::Validate(const SyncEnvironment& env, const AccessContext&
                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
     bool skip = false;
     const SyncValidator& validator = env.validator;
-    const bool submit_time = env.handle.type == kVulkanObjectTypeQueue;
 
     for (const auto [region_index, region] : vvl::enumerate(regions)) {
         auto src_hazard = access_context.DetectHazard(src_image, RangeFromLayers(region.srcSubresource), region.srcOffset,
                                                       region.extent, SYNC_COPY_TRANSFER_READ);
         if (src_hazard.IsHazard()) {
-            const LogObjectList objlist = submit_time ? LogObjectList(env.handle, cb_context.GetCBState().Handle())
-                                                      : LogObjectList(cb_context.GetCBState().Handle(), src_image.Handle());
-            const std::string error = submit_time
-                                          ? validator.error_messages_.SubmitTimeError(env, src_hazard, cb_context, replay_tag,
-                                                                                      loc.index, validator.FormatHandle(src_image))
-                                          : validator.error_messages_.ImageCopyResolveBlitError(
-                                                env, src_hazard, loc.function, validator.FormatHandle(src_image),
-                                                uint32_t(region_index), region.srcOffset, region.extent, region.srcSubresource);
+            const LogObjectList objlist = BaseObjectList(env, cb_context, src_image.Handle());
+            const std::string resource_description = validator.FormatHandle(src_image);
+            const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
+                env, src_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), region.srcOffset,
+                region.extent, region.srcSubresource);
             skip |= validator.SyncError(src_hazard.Hazard(), objlist, loc, error);
         }
         auto dst_hazard = access_context.DetectHazard(dst_image, RangeFromLayers(region.dstSubresource), region.dstOffset,
                                                       region.extent, SYNC_COPY_TRANSFER_WRITE);
         if (dst_hazard.IsHazard()) {
-            const LogObjectList objlist = submit_time ? LogObjectList(env.handle, cb_context.GetCBState().Handle())
-                                                      : LogObjectList(cb_context.GetCBState().Handle(), dst_image.Handle());
-            const std::string error = submit_time
-                                          ? validator.error_messages_.SubmitTimeError(env, dst_hazard, cb_context, replay_tag,
-                                                                                      loc.index, validator.FormatHandle(dst_image))
-                                          : validator.error_messages_.ImageCopyResolveBlitError(
-                                                env, dst_hazard, loc.function, validator.FormatHandle(dst_image),
-                                                uint32_t(region_index), region.dstOffset, region.extent, region.dstSubresource);
+            const LogObjectList objlist = BaseObjectList(env, cb_context, dst_image.Handle());
+            const std::string resource_description = validator.FormatHandle(dst_image);
+            const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
+                env, dst_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), region.dstOffset,
+                region.extent, region.dstSubresource);
             skip |= validator.SyncError(dst_hazard.Hazard(), objlist, loc, error);
         }
         if (skip) {
@@ -244,6 +240,8 @@ bool BarrierCommand::Validate(const CommandBufferContext& cb_context, const Loca
 bool BarrierCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
                               const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
     bool skip = false;
+    const SyncValidator& validator = env.validator;
+
     for (const auto& image_barrier : barrier_set.image_barriers) {
         if (!image_barrier.layout_transition) {
             // The only accesses that originate from the pipeline barrier are layout transitions
@@ -251,25 +249,18 @@ bool BarrierCommand::Validate(const SyncEnvironment& env, const AccessContext& a
         }
         const vvl::Image& image_state = *image_barrier.image;
         const bool can_transition_depth_slices =
-            CanTransitionDepthSlices(env.validator.extensions, image_state.GetImageType(), image_state.create_flags);
+            CanTransitionDepthSlices(validator.extensions, image_state.GetImageType(), image_state.create_flags);
 
         const auto hazard = access_context.DetectImageBarrierHazard(
             image_state, image_barrier.barrier.src_exec_scope.exec_scope, image_barrier.barrier.src_access_scope,
             image_barrier.subresource_range, can_transition_depth_slices, AccessContext::kDetectAll, env.queue_id);
 
         if (hazard.IsHazard()) {
-            if (replay_tag != kInvalidTag) {
-                LogObjectList objlist(env.handle, cb_context.GetCBState().Handle());
-                const std::string error = env.validator.error_messages_.SubmitTimeError(
-                    env, hazard, cb_context, replay_tag, loc.index, env.validator.FormatHandle(image_state.Handle()));
-                skip |= env.validator.SyncError(hazard.Hazard(), objlist, loc, error);
-            } else {
-                LogObjectList objlist(cb_context.GetCBState().Handle(), image_state.Handle());
-                const std::string resource_description = env.validator.FormatHandle(image_state.Handle());
-                const std::string error =
-                    env.validator.error_messages_.ImageBarrierError(env, hazard, loc.function, resource_description, image_barrier);
-                skip |= env.validator.SyncError(hazard.Hazard(), objlist, loc, error);
-            }
+            const LogObjectList objlist = BaseObjectList(env, cb_context, image_state.Handle());
+            const std::string resource_description = validator.FormatHandle(image_state.Handle());
+            const std::string error = validator.error_messages_.ImageBarrierError(env, hazard, cb_context, replay_tag, loc,
+                                                                                  resource_description, image_barrier);
+            skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
         }
     }
     return skip;
