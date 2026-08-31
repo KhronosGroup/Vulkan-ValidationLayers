@@ -29,7 +29,7 @@ layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorEn
     DescriptorEncoding data[];
 };
 
-layout(buffer_reference, buffer_reference_align = 8, scalar) buffer UnusedInitializedStatus;
+layout(buffer_reference) buffer UnusedInitializedStatus;
 
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, scalar) buffer BoundDescriptorSetsSSBO {
     UnusedInitializedStatus unused_initialized_status;
