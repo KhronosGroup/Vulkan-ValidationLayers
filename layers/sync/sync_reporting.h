@@ -61,6 +61,11 @@ struct AdditionalMessageInfo {
     std::string brief_description_end_text;
     std::string pre_synchronization_text;
     std::string message_end_text;
+
+    // TODO: remove when the command conversion is finished and clients are notified
+    // that instead of message_type = SubmitTimeError we will print more specific
+    // message type (as we do during record time validation).
+    const char* message_type_override = nullptr;
 };
 
 ReportProperties GetErrorMessageProperties(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,

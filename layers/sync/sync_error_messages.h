@@ -40,7 +40,7 @@ struct SyncImageBarrier;
 
 class ErrorMessages {
   public:
-    explicit ErrorMessages(SyncValidator& validator);
+    explicit ErrorMessages(SyncValidator& validator) : validator_(validator) {}
 
     std::string Error(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,
                       const std::string& resource_description, const char* message_type,
@@ -50,15 +50,28 @@ class ErrorMessages {
                             const std::string& resource_description, const AccessRange range,
                             AdditionalMessageInfo additional_info = {}) const;
 
+    // TODO: temp legacy version
     std::string BufferCopyError(const SyncEnvironment& env, const HazardResult& hazard, const vvl::Func command,
-                                const std::string& resouce_description, uint32_t region_index, AccessRange range) const;
+                                const std::string& resouce_description, uint32_t region_index, AccessRange range,
+                                AdditionalMessageInfo additional_info = {}) const;
+
+    std::string BufferCopyError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
+                                ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description,
+                                uint32_t region_index, AccessRange range) const;
 
     std::string AccelerationStructureError(const HazardResult& hazard, const CommandBufferContext& cb_context,
                                            const vvl::Func command, const std::string& resource_description,
                                            const AccessRange range, VkAccelerationStructureKHR as,
                                            const Location& as_location) const;
 
+    // TODO: temp legacy version
     std::string ImageCopyResolveBlitError(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,
+                                          const std::string& resource_description, uint32_t region_index, const VkOffset3D& offset,
+                                          const VkExtent3D& extent, const VkImageSubresourceLayers& subresource,
+                                          AdditionalMessageInfo additional_info = {}) const;
+
+    std::string ImageCopyResolveBlitError(const SyncEnvironment& env, const HazardResult& hazard,
+                                          const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
                                           const std::string& resource_description, uint32_t region_index, const VkOffset3D& offset,
                                           const VkExtent3D& extent, const VkImageSubresourceLayers& subresource) const;
 
@@ -127,14 +140,20 @@ class ErrorMessages {
                                                                      VkImageLayout old_layout, VkImageLayout new_layout,
                                                                      uint32_t store_resolve_subpass) const;
 
+    // TODO: temp legacy version
     std::string ImageBarrierError(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,
-                                  const std::string& resource_description, const SyncImageBarrier& barrier) const;
+                                  const std::string& resource_description, const SyncImageBarrier& barrier,
+                                  AdditionalMessageInfo additional_info = {}) const;
+
+    std::string ImageBarrierError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
+                                  ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description,
+                                  const SyncImageBarrier& barrier) const;
 
     std::string FirstUseError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& recorded_context,
                               uint32_t command_buffer_index) const;
 
     std::string SubmitTimeError(const SyncEnvironment& env, const HazardResult& hazard,
-                                const CommandBufferContext& recorded_context, ResourceUsageTag command_tag,
+                                const CommandBufferContext& recorded_context, ResourceUsageTag replay_tag,
                                 uint32_t command_buffer_index, const std::string& resource_description) const;
 
     std::string PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, vvl::Func command,
@@ -142,6 +161,10 @@ class ErrorMessages {
 
     std::string VideoError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
                            const std::string& resource_description) const;
+
+  private:
+    vvl::Func AddReplayInfo(const SyncEnvironment& env, ResourceUsageTagEx prior_tag_ex, const CommandBufferContext& cb_context,
+                            ResourceUsageTag replay_tag, const Location& loc, AdditionalMessageInfo& additional_info) const;
 
   private:
     SyncValidator& validator_;
