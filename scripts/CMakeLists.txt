@@ -34,7 +34,15 @@ if (UPDATE_DEPS)
 
     get_property(_is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 
-    if (_is_multi_config)
+
+    # If CMAKE_BUILD_TYPE is specified as a build parameter, respect it and
+    # only build dependencies for the specified config. This is to stop
+    # building all configs in CI when only one will be used.
+    # Note: Explicitly checking for CMAKE_BUILD_TYPE when using multi-config
+    # generators (like Visual Studio) is a hack to speedup CI builds which set
+    # CMAKE_BUILD_TYPE regardless of the generator used. Users should not
+    # be specifying CMAKE_BUILD_TYPE when using multi-config generators.
+    if (_is_multi_config AND NOT CMAKE_BUILD_TYPE)
         # CMAKE_BUILD_TYPE doesn't apply to multi-config generators (Visual
         # Studio, Xcode, Ninja Multi-Config): the config is picked at build
         # time, not configure time. Always prebuild dependencies for exactly
