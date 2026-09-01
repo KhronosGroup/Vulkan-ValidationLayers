@@ -88,7 +88,7 @@ class VideoSession;
 class VideoSessionParameters;
 class DataGraphPipelineSession;
 class SubmitTimeTracker;
-struct CommandBufferSubmission;
+struct CommandBufferSubmitInfo;
 struct DescriptorHashing;
 }  // namespace vvl
 
@@ -2346,8 +2346,7 @@ class DeviceProxy : public vvl::BaseDevice {
     // especially when a timeline signal resolves pending work on another queue.
     // This became even more important after the spec allowed internally synchronized queues,
     // which means the same queue can be used from multiple threads
-    virtual bool ProcessSubmissionBatch(const SubmitTimeTracker& tracker,
-                                        const std::vector<vvl::CommandBufferSubmission>& command_buffers,
+    virtual bool ProcessSubmissionBatch(const SubmitTimeTracker& tracker, const std::vector<vvl::CommandBufferSubmitInfo>& cb_infos,
                                         vvl::span<const VkSemaphoreSubmitInfo> signal_semaphores, const Location& submit_loc) {
         return false;
     }

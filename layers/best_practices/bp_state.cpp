@@ -866,7 +866,7 @@ void CommandBufferSubState::RecordBindPipeline(VkPipelineBindPoint bind_point, v
     }
 }
 
-void CommandBufferSubState::Submit(vvl::Queue& queue_state, const vvl::QueueSubmission&, const vvl::CommandBufferSubmission&) {
+void CommandBufferSubState::Submit(vvl::Queue& queue_state, const vvl::QueueSubmission&, const vvl::CommandBufferSubmitInfo&) {
     for (auto& func : queue_submit_functions) {
         func(queue_state, base);
     }

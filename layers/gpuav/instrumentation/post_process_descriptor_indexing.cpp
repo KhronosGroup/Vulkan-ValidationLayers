@@ -145,7 +145,7 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
 
     // Validate descriptor set accesses done by command buffer submission
     cb.on_cb_completion_functions.emplace_back([bound_desc_sets_to_pp_buffer_map](Validator& gpuav, CommandBufferSubState& cb,
-                                                                                  const vvl::CommandBufferSubmission& cb_submission,
+                                                                                  const vvl::CommandBufferSubmitInfo& cb_info,
                                                                                   const Location& submission_loc) {
         VVL_ZoneScoped;
 
@@ -255,7 +255,7 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                         cb.GetErrorLogger(descriptor_access.error_logger_i);
                     context.SetObjlistForGpuAv(&cmd_error_logger.objlist);
                     std::string debug_region_name = vvl::CommandBuffer::GetDebugRegionName(
-                        cb.base.GetLabelCommands(), cmd_error_logger.label_cmd_i, cb_submission.initial_label_stack);
+                        cb.base.GetLabelCommands(), cmd_error_logger.label_cmd_i, cb_info.initial_label_stack);
 
                     Location access_loc(cmd_error_logger.loc.Get(), debug_region_name);
                     context.SetLocationForGpuAv(access_loc);

@@ -226,7 +226,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline& pipeline) final;
 
     void Submit(vvl::Queue& queue_state, const vvl::QueueSubmission& queue_submission,
-                const vvl::CommandBufferSubmission& cb_submission) final;
+                const vvl::CommandBufferSubmitInfo& cb_info) final;
 
     // Move to private when possible
     void RecordAttachmentAccess(uint32_t attachment, VkImageAspectFlags aspects);

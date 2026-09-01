@@ -860,7 +860,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void UnbindResources();
 };
 
-struct CommandBufferSubmission;
+struct CommandBufferSubmitInfo;
 
 class CommandBufferSubState {
   public:
@@ -996,7 +996,7 @@ class CommandBufferSubState {
 
     virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
 
-    virtual void Submit(Queue& queue_state, const QueueSubmission& submission, const CommandBufferSubmission& cb_submission) {}
+    virtual void Submit(Queue& queue_state, const QueueSubmission& submission, const CommandBufferSubmitInfo& cb_info) {}
 
     VulkanTypedHandle Handle() const;
     VkCommandBuffer VkHandle() const;

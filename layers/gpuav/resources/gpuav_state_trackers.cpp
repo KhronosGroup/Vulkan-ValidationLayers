@@ -352,7 +352,7 @@ bool CommandBufferSubState::PostSubmit(QueueSubState& queue, const Location& loc
 bool CommandBufferSubState::NeedsPostProcess() { return error_output_buffer_range_.buffer != VK_NULL_HANDLE; }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void CommandBufferSubState::OnCompletion(VkQueue queue, const vvl::CommandBufferSubmission& cb_submission, const Location& loc) {
+void CommandBufferSubState::OnCompletion(VkQueue queue, const vvl::CommandBufferSubmitInfo& cb_info, const Location& loc) {
     VVL_ZoneScoped;
 
     // CommandBuffer::Destroy can happen on an other thread,
@@ -403,7 +403,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const vvl::CommandBuffer
                     const LogObjectList objlist(queue, error_logger.objlist);
 
                     std::string debug_region_name = vvl::CommandBuffer::GetDebugRegionName(
-                        base.GetLabelCommands(), error_logger.label_cmd_i, cb_submission.initial_label_stack);
+                        base.GetLabelCommands(), error_logger.label_cmd_i, cb_info.initial_label_stack);
                     Location loc_with_debug_region(error_logger.loc.Get(), debug_region_name);
                     error_logger.error_logger_func(error_record_ptr, loc_with_debug_region, objlist);
                 }
@@ -430,7 +430,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const vvl::CommandBuffer
 
     bool success = true;
     for (auto& on_cb_completion_func : on_cb_completion_functions) {
-        success = on_cb_completion_func(gpuav_, *this, cb_submission, loc);
+        success = on_cb_completion_func(gpuav_, *this, cb_info, loc);
         if (!success) {
             break;
         }
@@ -537,9 +537,9 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
     bool success = true;
     for (const auto& submission : submissions) {
         auto loc = submission.loc.Get();
-        for (auto& cb_submission : submission.cb_submissions) {
-            auto guard = cb_submission.cb->ReadLock();
-            auto& gpu_cb = SubState(*cb_submission.cb);
+        for (auto& cb_info : submission.cb_infos) {
+            auto guard = cb_info.cb->ReadLock();
+            auto& gpu_cb = SubState(*cb_info.cb);
             success = gpu_cb.PreSubmit(*this, loc);
             if (!success) {
                 return;
@@ -563,9 +563,9 @@ bool QueueSubState::PostSubmit(vvl::QueueSubmission& submission) {
         // must not submit the barrier (the same check as in Retire).
         return true;
     }
-    for (auto& cb_submission : submission.cb_submissions) {
-        auto guard = cb_submission.cb->ReadLock();
-        auto& gpu_cb = SubState(*cb_submission.cb);
+    for (auto& cb_info : submission.cb_infos) {
+        auto guard = cb_info.cb->ReadLock();
+        auto& gpu_cb = SubState(*cb_info.cb);
         if (!gpu_cb.PostSubmit(*this, loc)) {
             return false;
         }
@@ -591,7 +591,7 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
         // that signals barrier_sem_. The following timeline wait must not be called.
         return;
     }
-    retiring_.emplace_back(submission.cb_submissions);
+    retiring_.emplace_back(submission.cb_infos);
     if (submission.is_last_submission) {
         VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
         wait_info.semaphoreCount = 1;
@@ -618,16 +618,16 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
             }
         }
 
-        for (std::vector<vvl::CommandBufferSubmission>& cb_submissions : retiring_) {
-            for (vvl::CommandBufferSubmission& cb_submission : cb_submissions) {
-                auto guard = cb_submission.cb->WriteLock();
-                auto& gpu_cb = SubState(*cb_submission.cb);
+        for (std::vector<vvl::CommandBufferSubmitInfo>& cb_infos : retiring_) {
+            for (vvl::CommandBufferSubmitInfo& cb_info : cb_infos) {
+                auto guard = cb_info.cb->WriteLock();
+                auto& gpu_cb = SubState(*cb_info.cb);
                 auto loc = submission.loc.Get();
-                gpu_cb.OnCompletion(VkHandle(), cb_submission, loc);
+                gpu_cb.OnCompletion(VkHandle(), cb_info, loc);
                 for (vvl::CommandBuffer* secondary_cb : gpu_cb.base.linked_command_buffers) {
                     auto secondary_guard = secondary_cb->WriteLock();
                     auto& secondary_gpu_cb = SubState(*secondary_cb);
-                    secondary_gpu_cb.OnCompletion(VkHandle(), cb_submission, loc);
+                    secondary_gpu_cb.OnCompletion(VkHandle(), cb_info, loc);
                 }
             }
         }
