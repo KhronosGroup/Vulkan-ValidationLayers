@@ -322,17 +322,16 @@ jobs:
          -D BUILD_TESTS=ON `
          -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON `
          -D UPDATE_DEPS_DIR=${{ github.workspace }}/external
-      - name: Build and install Debug, Release and RelWithDebInfo without reconfiguring
+      - name: Build and install Debug without reconfiguring
         run: |
-         foreach ($config in "Debug", "Release", "RelWithDebInfo") {
-           # BUILD_WERROR's link_options(/WX) turns any link warning (e.g. LNK4098, mismatched
-           # Debug/Release runtimes) into a build failure, so a non-zero exit here already covers it.
-           cmake --build build --config $config
-           if ($LASTEXITCODE -ne 0) {
-             throw "cmake --build failed for config $config"
-           }
-           cmake --install build --config $config --prefix ${{ github.workspace }}/install/$config
-         }
+          # Only do Debug, release is done inside internal CI and this is really a "smoketest"
+          # BUILD_WERROR's link_options(/WX) turns any link warning (e.g. LNK4098, mismatched
+          # Debug/Release runtimes) into a build failure, so a non-zero exit here already covers it.
+          cmake --build build --config Debug
+          if ($LASTEXITCODE -ne 0) {
+            throw "cmake --build failed for Debug"
+          }
+          cmake --install build --config Debug --prefix ${{ github.workspace }}/install/Debug
 
   windowsUpload:
     needs: windows
