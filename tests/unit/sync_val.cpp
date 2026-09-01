@@ -152,22 +152,20 @@ TEST_F(NegativeSyncVal, BufferCopySecondary) {
     m_command_buffer.Begin();
     m_command_buffer.Copy(buffer_c, buffer_a);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_cb1.handle());
+    m_command_buffer.ExecuteCommands(secondary_cb1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
     // Two secondary CBs hazard with each other
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    VkCommandBuffer two_cbs[2] = {secondary_cb1, secondary_cb2};
-    vk::CmdExecuteCommands(m_command_buffer, 2, two_cbs);
+    m_command_buffer.ExecuteCommands({secondary_cb1, secondary_cb2});
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    VkCommandBuffer two_cbs2[2] = {secondary_cb1, secondary_cb3};
-    vk::CmdExecuteCommands(m_command_buffer, 2, two_cbs2);
+    m_command_buffer.ExecuteCommands({secondary_cb1, secondary_cb3});
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }

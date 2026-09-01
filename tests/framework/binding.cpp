@@ -2237,6 +2237,10 @@ void CommandBuffer::Copy(const Buffer& src, const Buffer& dst) {
 
 void CommandBuffer::ExecuteCommands(const CommandBuffer& secondary) { vk::CmdExecuteCommands(handle(), 1, &secondary.handle()); }
 
+void CommandBuffer::ExecuteCommands(const std::vector<VkCommandBuffer>& secondaries) {
+    vk::CmdExecuteCommands(handle(), static_cast<uint32_t>(secondaries.size()), secondaries.data());
+}
+
 void CommandBuffer::Barrier(VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                             const VkBufferMemoryBarrier& buffer_barrier, VkDependencyFlags dependency_flags) {
     vk::CmdPipelineBarrier(handle(), src_stage_mask, dst_stage_mask, dependency_flags, 0, nullptr, 1, &buffer_barrier, 0, nullptr);

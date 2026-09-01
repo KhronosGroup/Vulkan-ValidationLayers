@@ -2431,24 +2431,29 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
         }
 
         const auto recorded_cb = Get<vvl::CommandBuffer>(pCommandBuffers[cb_index]);
-        if (!recorded_cb) continue;
+        if (!recorded_cb) {
+            continue;
+        }
         const CommandBufferContext& recorded_cb_context = GetCommandBufferContext(*recorded_cb);
-
         const ResourceUsageTag base_tag = proxy_cb_context.GetTagCount();
         const Location cb_loc = error_obj.location.dot(vvl::Field::pCommandBuffers, cb_index);
-        skip |= ValidateFirstUseHazards(proxy_cb_context.GetSyncEnvironment(), recorded_cb_context,
-                                        proxy_cb_context.GetCbAccessContext(), base_tag, cb_loc);
 
         // Update proxy label commands so they can be used by ImportRecordedAccessLog
-        const auto& recorded_label_commands = recorded_cb->GetLabelCommands();
-        proxy_label_commands.insert(proxy_label_commands.end(), recorded_label_commands.begin(), recorded_label_commands.end());
+        vvl::Append(proxy_label_commands, recorded_cb->GetLabelCommands());
 
-        // The barriers have already been applied in ValidateFirstUseHazards
         proxy_cb_context.ImportRecordedAccessLog(recorded_cb_context);
-        proxy_cb_context.ResolveExecutedCommandBuffer(recorded_cb_context.GetCbAccessContext(), base_tag);
+
+        if (syncval_settings.full_validation && recorded_cb_context.HasAllCommands()) {
+            skip |= ReplayCommands(proxy_cb_context.GetSyncEnvironment(), proxy_cb_context.GetCbAccessContext(),
+                                   recorded_cb_context, base_tag, cb_loc);
+        } else {
+            skip |= ValidateFirstUseHazards(proxy_cb_context.GetSyncEnvironment(), recorded_cb_context,
+                                            proxy_cb_context.GetCbAccessContext(), base_tag, cb_loc);
+            // The barriers have already been applied in ValidateFirstUseHazards
+            proxy_cb_context.ResolveExecutedCommandBuffer(recorded_cb_context.GetCbAccessContext(), base_tag);
+        }
     }
     proxy_label_commands.clear();
-
     return skip;
 }
 
