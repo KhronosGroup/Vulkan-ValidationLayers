@@ -2536,6 +2536,21 @@ void CommandBuffer::RecordSetRenderingInputAttachmentIndices(const VkRenderingIn
     SetRenderingInputAttachmentIndices(rendering_attachments, pLocationInfo);
 }
 
+void CommandBuffer::SubmitTimeValidate(Queue& queue, const QueueSubmission& submission, uint32_t cb_index) {
+    assert(submission.cb_infos[cb_index].cb.get() == this);
+    for (const auto& it : video_session_updates) {
+        auto video_session_state = dev_data.Get<vvl::VideoSession>(it.first);
+        auto device_state = video_session_state->DeviceStateWrite();
+        for (const auto& function : it.second) {
+            function(video_session_state.get(), *device_state, /*do_validate*/ false);
+        }
+    }
+
+    for (auto& item : sub_states_) {
+        item.second->Submit(queue, submission, cb_index);
+    }
+}
+
 uint32_t CommandBuffer::GetDynamicRenderingColorAttachmentCount() const {
     return active_render_pass ? active_render_pass->dynamic_rendering_color_attachment_count : 0;
 }

@@ -38,8 +38,6 @@ class QueueSubState;
 struct QueueSubmission;
 
 struct CommandBufferSubmitInfo {
-    void SubmitTimeValidate(Queue& queue, const QueueSubmission& submission);
-
     std::shared_ptr<vvl::CommandBuffer> cb;
 
     // Snapshot of the queue's debug label stack at the start of this command buffer.

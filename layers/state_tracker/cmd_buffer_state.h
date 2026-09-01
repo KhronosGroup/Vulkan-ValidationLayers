@@ -22,7 +22,6 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
 #include <memory>
-#include "state_tracker/queue_state.h"
 #include "state_tracker/state_object.h"
 #include "state_tracker/image_layout_map.h"
 #include "state_tracker/pipeline_library_state.h"
@@ -800,6 +799,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void TrackImageFirstLayout(const vvl::Image &image_state, const VkImageSubresourceRange &subresource_range,
                                int32_t depth_offset, uint32_t depth_extent, VkImageLayout layout);
 
+    void SubmitTimeValidate(Queue &queue, const QueueSubmission &submission, uint32_t cb_index);
+
     // Helpers to offset into |active_attachments|
     // [all color, all color resolve, depth, depth resolve, stencil, stencil resolve, FragmentDensityMap]
     uint32_t GetDynamicRenderingColorAttachmentCount() const;
@@ -833,7 +834,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     static std::string GetDebugRegionName(const std::vector<LabelCommand>& label_commands, uint32_t label_command_index,
                                           const std::vector<std::string>& initial_label_stack = {});
 
-    auto& GetSubstates() { return sub_states_; }
     // This command buffer might contain a push descriptor set, which is not tracked in the object maps.
     // So the only way to cleanup SubStates on the descriptor set is through here.
     void RemoveOwnedSubState(LayerObjectTypeId id);
@@ -859,8 +859,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordVideoEncodeQuantizationMap(const VkVideoEncodeQuantizationMapInfoKHR &quant_map_info);
     void UnbindResources();
 };
-
-struct CommandBufferSubmitInfo;
 
 class CommandBufferSubState {
   public:
@@ -996,7 +994,7 @@ class CommandBufferSubState {
 
     virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
 
-    virtual void Submit(Queue& queue_state, const QueueSubmission& submission, const CommandBufferSubmitInfo& cb_info) {}
+    virtual void Submit(Queue& queue_state, const QueueSubmission& submission, uint32_t cb_index) {}
 
     VulkanTypedHandle Handle() const;
     VkCommandBuffer VkHandle() const;
