@@ -316,9 +316,8 @@ void CommandBufferSubState::RecordCopyBufferCommon(vvl::Buffer& src_buffer_state
     const uint32_t label_command_i = base.GetLastLabelCommandIndex();
 
     auto queue_submit_validation = [this, &src_buffer_state, &dst_buffer_state, src_ranges = std::move(src_ranges),
-                                    dst_ranges = std::move(dst_ranges), src_ranges_bounds, dst_ranges_bounds, loc,
-                                    label_command_i](const class vvl::Queue& queue_state,
-                                                     const vvl::CommandBufferSubmission& cb_submission) -> bool {
+                                    dst_ranges = std::move(dst_ranges), src_ranges_bounds, dst_ranges_bounds, loc, label_command_i](
+                                       const class vvl::Queue& queue_state, const vvl::CommandBufferSubmitInfo& cb_info) -> bool {
         bool skip = false;
 
         auto src_vk_memory_to_ranges_map = src_buffer_state.GetBoundRanges(src_ranges_bounds, src_ranges);
@@ -343,7 +342,7 @@ void CommandBufferSubState::RecordCopyBufferCommon(vvl::Buffer& src_buffer_state
                     const LogObjectList objlist(base.VkHandle(), src_buffer_state.Handle(), dst_buffer_state.Handle(),
                                                 vk_memory);
                     const std::string dbg_region_name = vvl::CommandBuffer::GetDebugRegionName(
-                        base.GetLabelCommands(), label_command_i, cb_submission.initial_label_stack);
+                        base.GetLabelCommands(), label_command_i, cb_info.initial_label_stack);
                     const Location loc_with_dbg_region(loc, dbg_region_name);
                     const bool is_2 = loc.function == vvl::Func::vkCmdCopyBuffer2 || loc.function == vvl::Func::vkCmdCopyBuffer2KHR;
                     const char* vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-00117" : "VUID-vkCmdCopyBuffer-pRegions-00117";
@@ -1354,9 +1353,9 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_c
 }
 
 void CommandBufferSubState::Submit(vvl::Queue& queue_state, const vvl::QueueSubmission& queue_submission,
-                                   const vvl::CommandBufferSubmission& cb_submission) {
+                                   const vvl::CommandBufferSubmitInfo& cb_info) {
     for (auto& func : queue_submit_functions) {
-        func(queue_state, cb_submission);
+        func(queue_state, cb_info);
     }
 
     // Update global vvl:Event state with signaling state at the end of the command buffer
@@ -1398,7 +1397,7 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
         submit_time_tracker->ProcessQueueSubmission(VkHandle(), submission);
 
         // Register pending event wait commands
-        for (const auto& cb_info : submission.cb_submissions) {
+        for (const auto& cb_info : submission.cb_infos) {
             CommandBufferSubState& cb_sub_state = SubState(*cb_info.cb);
             for (const auto& [event, wait_command] : cb_sub_state.first_event_wait_commands) {
                 submission.event_wait_commands.insert({event, wait_command});
@@ -1421,16 +1420,16 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
                 first_batch = false;
                 continue;
             }
-            for (const vvl::CommandBufferSubmission& cb_submission : queue_submission.cb_submissions) {
-                submission_snapshot.emplace_back(queue_submission.perf_submit_pass, cb_submission.cb);
+            for (const vvl::CommandBufferSubmitInfo& cb_info : queue_submission.cb_infos) {
+                submission_snapshot.emplace_back(queue_submission.perf_submit_pass, cb_info.cb);
             }
         }
     }
 
-    for (vvl::CommandBufferSubmission& cb_submission : submission.cb_submissions) {
-        CommandBufferSubState& cb_sub_state = SubState(*cb_submission.cb);
+    for (vvl::CommandBufferSubmitInfo& cb_info : submission.cb_infos) {
+        CommandBufferSubState& cb_sub_state = SubState(*cb_info.cb);
         auto cb_guard = cb_sub_state.base.WriteLock();
-        for (vvl::CommandBuffer* secondary_cmd_buffer : cb_submission.cb->linked_command_buffers) {
+        for (vvl::CommandBuffer* secondary_cmd_buffer : cb_info.cb->linked_command_buffers) {
             CommandBufferSubState& secondary_sub_state = SubState(*secondary_cmd_buffer);
             auto secondary_guard = secondary_sub_state.base.WriteLock();
             secondary_sub_state.RetireQueries(submission.perf_submit_pass, submission_snapshot);

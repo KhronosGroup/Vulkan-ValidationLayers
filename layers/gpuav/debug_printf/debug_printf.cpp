@@ -455,7 +455,7 @@ void RegisterDebugPrintf(Validator& gpuav, CommandBufferSubState& cb_state) {
         });
 
     cb_state.on_cb_completion_functions.emplace_back(
-        [](Validator& gpuav, CommandBufferSubState& cb, const vvl::CommandBufferSubmission&, const Location& loc) {
+        [](Validator& gpuav, CommandBufferSubState& cb, const vvl::CommandBufferSubmitInfo&, const Location& loc) {
             debug_printf::CbState* debug_printf_cb_state = cb.shared_resources_cache.TryGet<debug_printf::CbState>();
             if (!debug_printf_cb_state) {
                 return true;

@@ -140,7 +140,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     // Called from the Command Buffer state
     void Submit(vvl::Queue& queue_state, const vvl::QueueSubmission& queue_submission,
-                const vvl::CommandBufferSubmission& cb_submission) final;
+                const vvl::CommandBufferSubmitInfo& cb_info) final;
 
     CoreChecks &validator;
 
@@ -211,8 +211,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     std::vector<WaitEvent2SubmitInfo> wait_event2_submit_infos;
 
     // Validation functions run at primary CB queue submit time
-    using QueueCallback =
-        std::function<bool(const class vvl::Queue& queue_state, const vvl::CommandBufferSubmission& cb_submission)>;
+    using QueueCallback = std::function<bool(const class vvl::Queue& queue_state, const vvl::CommandBufferSubmitInfo& cb_info)>;
     std::vector<QueueCallback> queue_submit_functions;
 
     // Validation functions run when secondary CB is executed in primary

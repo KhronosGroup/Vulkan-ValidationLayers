@@ -27,7 +27,7 @@
 
 #include "profiling/profiling.h"
 
-void vvl::CommandBufferSubmission::SubmitTimeValidate(Queue& queue, const QueueSubmission& submission) {
+void vvl::CommandBufferSubmitInfo::SubmitTimeValidate(Queue& queue, const QueueSubmission& submission) {
     for (const auto& it : cb->video_session_updates) {
         auto video_session_state = cb->dev_data.Get<vvl::VideoSession>(it.first);
         auto device_state = video_session_state->DeviceStateWrite();
@@ -45,8 +45,8 @@ void vvl::QueueSubmission::BeginUse() {
     for (SemaphoreInfo& wait : wait_semaphores) {
         wait.semaphore->BeginUse();
     }
-    for (CommandBufferSubmission& cb_submission : cb_submissions) {
-        cb_submission.cb->BeginUse();
+    for (CommandBufferSubmitInfo& cb_info : cb_infos) {
+        cb_info.cb->BeginUse();
     }
     for (SemaphoreInfo& signal : signal_semaphores) {
         signal.semaphore->BeginUse();
@@ -63,8 +63,8 @@ void vvl::QueueSubmission::EndUse() {
     for (SemaphoreInfo& wait : wait_semaphores) {
         wait.semaphore->EndUse();
     }
-    for (CommandBufferSubmission& cb_submission : cb_submissions) {
-        cb_submission.cb->EndUse();
+    for (CommandBufferSubmitInfo& cb_info : cb_infos) {
+        cb_info.cb->EndUse();
     }
     for (SemaphoreInfo& signal : signal_semaphores) {
         signal.semaphore->EndUse();
@@ -83,14 +83,14 @@ uint64_t vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission>&& submissions) 
     }
     uint64_t last_batch_seq = 0;
     for (QueueSubmission& submission : submissions) {
-        for (CommandBufferSubmission& cb_submission : submission.cb_submissions) {
-            auto cb_guard = cb_submission.cb->WriteLock();
-            for (CommandBuffer* secondary_cmd_buffer : cb_submission.cb->linked_command_buffers) {
+        for (CommandBufferSubmitInfo& cb_info : submission.cb_infos) {
+            auto cb_guard = cb_info.cb->WriteLock();
+            for (CommandBuffer* secondary_cmd_buffer : cb_info.cb->linked_command_buffers) {
                 auto secondary_guard = secondary_cmd_buffer->WriteLock();
                 secondary_cmd_buffer->submit_count++;
             }
-            cb_submission.cb->submit_count++;
-            cb_submission.SubmitTimeValidate(*this, submission);
+            cb_info.cb->submit_count++;
+            cb_info.SubmitTimeValidate(*this, submission);
         }
         // seq_ is atomic so we don't need a lock until updating the deque below.
         // Note that this relies on the external synchonization requirements for the

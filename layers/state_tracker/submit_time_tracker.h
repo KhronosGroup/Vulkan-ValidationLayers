@@ -39,7 +39,7 @@ struct UnresolvedBatch {
     LocationCapture submit_loc_capture;
 
     // Command buffers to validate when dependencies are resolved
-    std::vector<CommandBufferSubmission> cb_submissions;
+    std::vector<CommandBufferSubmitInfo> cb_infos;
 
     // Timeline waits that block this batch
     std::vector<VkSemaphoreSubmitInfo> unresolved_timeline_waits;
@@ -68,7 +68,7 @@ class SubmitTimeTracker {
     std::optional<uint64_t> GetTimelineValue(VkSemaphore timeline) const;
 
   private:
-    bool ProcessBatch(std::vector<CommandBufferSubmission>&& cb_submissions, vvl::span<const VkSemaphoreSubmitInfo> wait_semaphores,
+    bool ProcessBatch(const std::vector<CommandBufferSubmitInfo>& cb_infos, vvl::span<const VkSemaphoreSubmitInfo> wait_semaphores,
                       vvl::span<const VkSemaphoreSubmitInfo> signal_semaphores, VkQueue queue, const Location& submit_loc);
     bool ProcessSignal(VkSemaphore timeline, uint64_t signal_value);
 

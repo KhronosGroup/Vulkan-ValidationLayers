@@ -75,8 +75,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     using OnCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_submission_cb)>;
     using OnCommandBufferCompletion =
-        stdext::inplace_function<bool(Validator& gpuav, CommandBufferSubState& cb,
-                                      const vvl::CommandBufferSubmission& cb_submission, const Location& submission_loc),
+        stdext::inplace_function<bool(Validator& gpuav, CommandBufferSubState& cb, const vvl::CommandBufferSubmitInfo& cb_info,
+                                      const Location& submission_loc),
                                  64>;
     using OnPreCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_pre_submission_cb), 48>;
@@ -106,7 +106,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     [[nodiscard]] bool PreSubmit(QueueSubState &queue, const Location &loc);
     [[nodiscard]] bool PostSubmit(QueueSubState &queue, const Location &loc);
-    void OnCompletion(VkQueue queue, const vvl::CommandBufferSubmission& cb_submission, const Location& loc);
+    void OnCompletion(VkQueue queue, const vvl::CommandBufferSubmitInfo& cb_info, const Location& loc);
 
     const VkDescriptorSetLayout &GetInstrumentationDescriptorSetLayout() const {
         assert(instrumentation_desc_set_layout_ != VK_NULL_HANDLE);
@@ -267,7 +267,7 @@ class QueueSubState : public vvl::QueueSubState {
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
     VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
     VkSemaphore barrier_sem_{VK_NULL_HANDLE};
-    std::deque<std::vector<vvl::CommandBufferSubmission>> retiring_;
+    std::deque<std::vector<vvl::CommandBufferSubmitInfo>> retiring_;
     const bool timeline_khr_;
 };
 
