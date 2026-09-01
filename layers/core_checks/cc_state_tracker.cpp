@@ -317,7 +317,8 @@ void CommandBufferSubState::RecordCopyBufferCommon(vvl::Buffer& src_buffer_state
 
     auto queue_submit_validation = [this, &src_buffer_state, &dst_buffer_state, src_ranges = std::move(src_ranges),
                                     dst_ranges = std::move(dst_ranges), src_ranges_bounds, dst_ranges_bounds, loc, label_command_i](
-                                       const class vvl::Queue& queue_state, const vvl::CommandBufferSubmitInfo& cb_info) -> bool {
+                                       const class vvl::Queue& queue_state, const vvl::QueueSubmission& submission,
+                                       uint32_t cb_index) -> bool {
         bool skip = false;
 
         auto src_vk_memory_to_ranges_map = src_buffer_state.GetBoundRanges(src_ranges_bounds, src_ranges);
@@ -342,7 +343,7 @@ void CommandBufferSubState::RecordCopyBufferCommon(vvl::Buffer& src_buffer_state
                     const LogObjectList objlist(base.VkHandle(), src_buffer_state.Handle(), dst_buffer_state.Handle(),
                                                 vk_memory);
                     const std::string dbg_region_name = vvl::CommandBuffer::GetDebugRegionName(
-                        base.GetLabelCommands(), label_command_i, cb_info.initial_label_stack);
+                        base.GetLabelCommands(), label_command_i, submission.cb_infos[cb_index].initial_label_stack);
                     const Location loc_with_dbg_region(loc, dbg_region_name);
                     const bool is_2 = loc.function == vvl::Func::vkCmdCopyBuffer2 || loc.function == vvl::Func::vkCmdCopyBuffer2KHR;
                     const char* vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-00117" : "VUID-vkCmdCopyBuffer-pRegions-00117";
@@ -1352,10 +1353,9 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_c
     });
 }
 
-void CommandBufferSubState::Submit(vvl::Queue& queue_state, const vvl::QueueSubmission& queue_submission,
-                                   const vvl::CommandBufferSubmitInfo& cb_info) {
+void CommandBufferSubState::Submit(vvl::Queue& queue_state, const vvl::QueueSubmission& queue_submission, uint32_t cb_index) {
     for (auto& func : queue_submit_functions) {
-        func(queue_state, cb_info);
+        func(queue_state, queue_submission, cb_index);
     }
 
     // Update global vvl:Event state with signaling state at the end of the command buffer

@@ -27,20 +27,6 @@
 
 #include "profiling/profiling.h"
 
-void vvl::CommandBufferSubmitInfo::SubmitTimeValidate(Queue& queue, const QueueSubmission& submission) {
-    for (const auto& it : cb->video_session_updates) {
-        auto video_session_state = cb->dev_data.Get<vvl::VideoSession>(it.first);
-        auto device_state = video_session_state->DeviceStateWrite();
-        for (const auto& function : it.second) {
-            function(video_session_state.get(), *device_state, /*do_validate*/ false);
-        }
-    }
-
-    for (auto& item : cb->GetSubstates()) {
-        item.second->Submit(queue, submission, *this);
-    }
-}
-
 void vvl::QueueSubmission::BeginUse() {
     for (SemaphoreInfo& wait : wait_semaphores) {
         wait.semaphore->BeginUse();
@@ -83,14 +69,15 @@ uint64_t vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission>&& submissions) 
     }
     uint64_t last_batch_seq = 0;
     for (QueueSubmission& submission : submissions) {
-        for (CommandBufferSubmitInfo& cb_info : submission.cb_infos) {
+        for (uint32_t cb_index = 0; cb_index < submission.cb_infos.size(); cb_index++) {
+            CommandBufferSubmitInfo& cb_info = submission.cb_infos[cb_index];
             auto cb_guard = cb_info.cb->WriteLock();
             for (CommandBuffer* secondary_cmd_buffer : cb_info.cb->linked_command_buffers) {
                 auto secondary_guard = secondary_cmd_buffer->WriteLock();
                 secondary_cmd_buffer->submit_count++;
             }
             cb_info.cb->submit_count++;
-            cb_info.SubmitTimeValidate(*this, submission);
+            cb_info.cb->SubmitTimeValidate(*this, submission, cb_index);
         }
         // seq_ is atomic so we don't need a lock until updating the deque below.
         // Note that this relies on the external synchonization requirements for the
