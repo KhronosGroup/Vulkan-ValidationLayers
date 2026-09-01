@@ -42,7 +42,7 @@ TEST_F(PositiveDescriptorHeapUntyped, BasicBuffer) {
     desc_heap.CreateResourceHeap(resource_stride);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
 
     char const* cs_source = R"glsl(
         #version 450
@@ -82,8 +82,6 @@ TEST_F(PositiveDescriptorHeapUntyped, BasicBuffer) {
 }
 
 TEST_F(PositiveDescriptorHeapUntyped, Buffer) {
-    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
     vkt::DescriptorHeap desc_heap(*this);
@@ -91,7 +89,7 @@ TEST_F(PositiveDescriptorHeapUntyped, Buffer) {
     desc_heap.CreateResourceHeap(resource_stride);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -286,7 +284,7 @@ TEST_F(PositiveDescriptorHeapUntyped, ImageAndSamplerSlang) {
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
     desc_heap.WriteImageDescriptorAtOffset(image, image_offset);
 
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
@@ -437,7 +435,7 @@ TEST_F(PositiveDescriptorHeapUntyped, ImageAndSamplerSlangUnified) {
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
     desc_heap.WriteImageDescriptorAtOffset(image, image_offset);
 
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
@@ -678,7 +676,7 @@ TEST_F(PositiveDescriptorHeapUntyped, SecondaryCmdBufferCompute) {
     desc_heap.CreateResourceHeap(resource_stride);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
 
     char const* cs_source = R"glsl(
         #version 450
@@ -745,7 +743,7 @@ TEST_F(PositiveDescriptorHeapUntyped, SecondaryCmdBufferGraphics) {
     desc_heap.CreateResourceHeap(resource_stride);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
 
     char const* vs_source = R"glsl(
         #version 450
@@ -1007,7 +1005,7 @@ TEST_F(PositiveDescriptorHeapUntyped, SingleElementNoArray) {
     desc_heap.CreateResourceHeap(resource_stride);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
 
     // GLSL can go
     //    layout(descriptor_heap) buffer A { uint a; } heap[];
@@ -1090,7 +1088,7 @@ TEST_F(PositiveDescriptorHeapUntyped, BadArrayStrideWithSingleDescriptor) {
     desc_heap.CreateResourceHeap(resource_stride);
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
 
     char const* cs_source = R"(
                OpCapability Shader
@@ -1164,9 +1162,9 @@ TEST_F(PositiveDescriptorHeapUntyped, StrideByTwoSpecConstantOp) {
     desc_heap.CreateResourceHeap(resource_stride * 6);
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 2);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 4);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 2);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 4);
 
     // layout() buffer SSBO {
     //                         uint a;
@@ -1259,9 +1257,9 @@ TEST_F(PositiveDescriptorHeapUntyped, StaticHeapArraySize) {
     desc_heap.CreateResourceHeap(resource_stride * 6);
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 2);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 4);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 2);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 4);
 
     // Heap is a buffer[6] and accesses [0], [2], [4]
     // where each index is the SAME descriptor
@@ -1350,9 +1348,9 @@ TEST_F(PositiveDescriptorHeapUntyped, OffsetId) {
     vkt::Buffer buffer_1(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     vkt::Buffer buffer_2(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
 
-    desc_heap.WriteBufferDescriptorAtOffset(buffer_0.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer_1.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer_2.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 2);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer_0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer_1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer_2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 2);
 
     // layout(storage_buffer) SSBO {
     //     uint a;
@@ -1442,7 +1440,7 @@ TEST_F(PositiveDescriptorHeapUntyped, OffsetIdStaticArraySize) {
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     // heap: [null, null, null, buffer]
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 3);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 3);
 
     // layout(storage_buffer) SSBO {
     //     uint a;
@@ -1526,7 +1524,7 @@ TEST_F(PositiveDescriptorHeapUntyped, MultidimensionalArray) {
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     const VkDeviceAddress offset = ((1 * 3) + 2) * resource_stride;
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, offset);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, offset);
 
     // layout(descriptor_heap) buffer Heap { uint data; } heap[3][3];
     // void main() {
@@ -1783,8 +1781,8 @@ TEST_F(PositiveDescriptorHeapUntyped, SlangBasicBuffer) {
 
     vkt::Buffer buffer_0(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     vkt::Buffer buffer_1(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer_0.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer_1.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer_0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer_1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride);
 
     // Heap support not yet in any release build
     //   will need -capability spvDescriptorHeapEXT -spirv-unified-descriptor-heap-stride
@@ -1982,8 +1980,6 @@ TEST_F(PositiveDescriptorHeapUntyped, PushDataUnused) {
 }
 
 TEST_F(PositiveDescriptorHeapUntyped, DirectAccessUint) {
-    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
     vkt::DescriptorHeap desc_heap(*this);
@@ -1993,8 +1989,7 @@ TEST_F(PositiveDescriptorHeapUntyped, DirectAccessUint) {
     memcpy(desc_heap.resource_heap_data_, in_data, sizeof(uint32_t) * 4);
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                            heap_props.bufferDescriptorSize * 3);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, heap_props.bufferDescriptorSize * 3);
 
     // layout(descriptor_heap) buffer {
     //     uint data[4];
@@ -2091,8 +2086,6 @@ TEST_F(PositiveDescriptorHeapUntyped, DirectAccessUint) {
 }
 
 TEST_F(PositiveDescriptorHeapUntyped, DirectAccessUintWithMapping) {
-    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
     vkt::DescriptorHeap desc_heap(*this);
@@ -2102,8 +2095,7 @@ TEST_F(PositiveDescriptorHeapUntyped, DirectAccessUintWithMapping) {
     memcpy(desc_heap.resource_heap_data_, in_data, sizeof(uint32_t) * 4);
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                            heap_props.bufferDescriptorSize * 3);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, heap_props.bufferDescriptorSize * 3);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
@@ -2198,5 +2190,206 @@ TEST_F(PositiveDescriptorHeapUntyped, DirectAccessUintWithMapping) {
         ASSERT_EQ(data[1], 33u);
         ASSERT_EQ(data[2], 44u);
         ASSERT_EQ(data[3], 55u);
+    }
+}
+
+TEST_F(PositiveDescriptorHeapUntyped, GlslStructuredBasic) {
+    // https://github.com/KhronosGroup/GLSL/blob/main/extensions/ext/GLSL_EXT_structured_descriptor_heap.txt
+    TEST_DESCRIPTION("Basic usage of GLSL_EXT_structured_descriptor_heap");
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
+
+    vkt::Buffer ssbo_a(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer ssbo_b(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    desc_heap.WriteBufferDescriptor(ssbo_a, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_heap.WriteBufferDescriptor(ssbo_b, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    char const* cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_descriptor_heap : require
+        #extension GL_EXT_structured_descriptor_heap : require
+        #extension GL_EXT_scalar_block_layout : require
+
+        layout(buffer_type, scalar) buffer SSBO_A {
+            uint x;
+            uint y;
+        };
+
+        layout(buffer_type, scalar) buffer SSBO_B {
+            uint z;
+        };
+
+        layout(heap_offset = 0) resourceheap BufferHeap0 {
+            SSBO_A buf_a;
+            SSBO_B buf_b;
+        } bufferHeap;
+
+        void main() {
+            bufferHeap.buf_b.z = bufferHeap.buf_a.x;
+        }
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+
+    uint32_t* data = static_cast<uint32_t*>(ssbo_a.Memory().Map());
+    data[0] = 42;
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        data = static_cast<uint32_t*>(ssbo_b.Memory().Map());
+        ASSERT_EQ(data[0], 42);
+    }
+}
+
+TEST_F(PositiveDescriptorHeapUntyped, GlslStructuredWithMapping) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
+
+    vkt::Buffer ssbo_a(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer ssbo_b(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    desc_heap.WriteBufferDescriptor(ssbo_a, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_heap.WriteBufferDescriptor(ssbo_b, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_descriptor_heap : require
+        #extension GL_EXT_structured_descriptor_heap : require
+        #extension GL_EXT_scalar_block_layout : require
+
+        layout (constant_id = 0) const uint spec_offset = 0;
+
+        layout(set = 0, binding = 0) buffer SSBO_A {
+            uint x_a;
+            uint y_a;
+        } buf_a;
+
+        layout(buffer_type, scalar) buffer SSBO_B {
+            uint x_b;
+            uint y_b;
+        };
+
+        layout(heap_offset = spec_offset) resourceheap BufferHeap {
+            SSBO_B buf_b; // starts at offset = bufferDescriptorSize
+        } bufferHeap;
+
+        void main() {
+            bufferHeap.buf_b.x_b = buf_a.x_a;
+            buf_a.y_a = bufferHeap.buf_b.y_b;
+        }
+    )glsl";
+    const uint32_t offset_size = (uint32_t)heap_props.bufferDescriptorSize;
+    const VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
+    const VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &offset_size};
+
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_GLSL, &specialization_info);
+
+    uint32_t* data_a = static_cast<uint32_t*>(ssbo_a.Memory().Map());
+    data_a[0] = 22;
+    data_a[1] = 33;
+    uint32_t* data_b = static_cast<uint32_t*>(ssbo_b.Memory().Map());
+    data_b[0] = 44;
+    data_b[1] = 55;
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        ASSERT_EQ(data_b[0], 22);
+        ASSERT_EQ(data_a[1], 55);
+    }
+}
+
+TEST_F(PositiveDescriptorHeapUntyped, GlslStructuredSampler) {
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+    InitRenderTarget();
+    vkt::DescriptorHeap desc_heap(*this);
+    desc_heap.CreateResourceHeap((heap_props.bufferDescriptorSize * 3) + (heap_props.imageDescriptorSize * 2));
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    desc_heap.WriteImageDescriptorAtOffset(image, 0);
+    desc_heap.WriteImageDescriptorAtOffset(image, heap_props.imageDescriptorSize);
+
+    const VkDeviceSize image_offset = 2 * heap_props.imageDescriptorSize;
+    const VkDeviceSize buffer_offset =
+        ((image_offset + heap_props.bufferDescriptorSize - 1) / heap_props.bufferDescriptorSize) * heap_props.bufferDescriptorSize;
+
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                            buffer_offset + heap_props.bufferDescriptorSize);
+
+    desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize * 2);
+    desc_heap.WriteSamplerDescriptor();
+    desc_heap.WriteSamplerDescriptor();
+
+    char const* cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_descriptor_heap : require
+        #extension GL_EXT_structured_descriptor_heap : require
+        #extension GL_EXT_scalar_block_layout : require
+
+        layout(buffer_type, scalar) buffer SSBO {
+            vec4 x;
+        };
+
+        layout(heap_offset = 0) resourceheap ResourceHeap {
+            texture2D tex[2];
+            SSBO buf[2];
+        } r_heap;
+
+        layout(heap_offset = 0) samplerheap SamplerHeap {
+            sampler s[2];
+        } s_heap;
+
+        void main() {
+            r_heap.buf[1].x = texture(sampler2D(r_heap.tex[1], s_heap.s[1]), vec2(0.5f));
+        }
+
+    )glsl";
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+
+    m_command_buffer.Begin();
+
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkClearColorValue color = {{0.2f, 0.4f, 0.6f, 0.8f}};
+    VkImageSubresourceRange sub_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1u, &sub_range);
+
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    desc_heap.BindSamplerHeap(m_command_buffer);
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        float* data = static_cast<float*>(buffer.Memory().Map());
+        for (uint32_t i = 0; i < 4; ++i) {
+            ASSERT_EQ(data[i], color.float32[i]);
+        }
     }
 }

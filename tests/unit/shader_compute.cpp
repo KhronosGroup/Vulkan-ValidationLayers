@@ -14,6 +14,7 @@
 
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
+#include "shader_helper.h"
 #include <algorithm>
 
 class NegativeShaderCompute : public VkLayerTest {};
@@ -188,11 +189,31 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstant) {
     const VkPhysicalDeviceLimits limits = m_device->Physical().limits_;
 
     // Make sure compute pipeline has a compute shader stage set
-    const char* cs_source = R"glsl(
-        #version 450
-        layout(local_size_x_id = 3, local_size_y_id = 4) in;
-        void main(){}
-    )glsl";
+    // glslang regression at https://github.com/KhronosGroup/glslang/pull/4052 caused use to use SPIR-V
+    // This is just https://godbolt.org/z/WWjdjfE4P
+    //  layout(local_size_x_id = 3, local_size_y_id = 4) in;
+    const char* cs_source = R"(
+               OpCapability Shader
+          %2 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %8 SpecId 3
+               OpDecorate %9 SpecId 4
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+          %8 = OpSpecConstant %uint 1
+          %9 = OpSpecConstant %uint 1
+     %uint_1 = OpConstant %uint 1
+     %v3uint = OpTypeVector %uint 3
+%gl_WorkGroupSize = OpSpecConstantComposite %v3uint %8 %9 %uint_1
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
 
     VkSpecializationMapEntry entries[2];
     entries[0].constantID = 3;
@@ -214,7 +235,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstant) {
     specialization_info.pData = data;
 
     const auto set_info = [&](CreateComputePipelineHelper& helper) {
-        helper.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
+        helper.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
                                  &specialization_info);
     };
     m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-x-06432");

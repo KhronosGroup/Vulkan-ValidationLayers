@@ -1785,7 +1785,8 @@ uint32_t Module::ResolveConstantFoldHeaps(const VkPhysicalDeviceDescriptorHeapPr
                                           const spirv::Instruction& spec_constant_op) const {
     assert(spec_constant_op.Opcode() == spv::OpSpecConstantOp);
     const uint32_t spec_op = spec_constant_op.Word(3);
-    if (!IsValueIn((spv::Op)spec_op, {spv::OpIMul, spv::OpIAdd, spv::OpISub, spv::OpUGreaterThan, spv::OpUGreaterThanEqual, spv::OpULessThan, spv::OpULessThanEqual, spv::OpSelect})) {
+    if (!IsValueIn((spv::Op)spec_op, {spv::OpIMul, spv::OpIAdd, spv::OpISub, spv::OpUMod, spv::OpUGreaterThan,
+                                      spv::OpUGreaterThanEqual, spv::OpULessThan, spv::OpULessThanEqual, spv::OpSelect})) {
         assert(false);  // hit another case
         return 0;
     }
@@ -1804,6 +1805,8 @@ uint32_t Module::ResolveConstantFoldHeaps(const VkPhysicalDeviceDescriptorHeapPr
         return operand_0 + operand_1;
     } else if (spec_op == spv::OpISub) {
         return operand_0 - operand_1;
+    } else if (spec_op == spv::OpUMod) {
+        return operand_0 % operand_1;
     } else if (spec_op == spv::OpUGreaterThan) {
         return operand_0 > operand_1;
     } else if (spec_op == spv::OpUGreaterThanEqual) {
