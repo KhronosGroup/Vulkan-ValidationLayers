@@ -279,14 +279,13 @@ bool CoreChecks::ValidateDependencyCompatibility(const VulkanTypedHandle& rp1_ob
     VkAccessFlags2 secondary_src_access_mask = secondary_dep.srcAccessMask;
     VkAccessFlags2 secondary_dst_access_mask = secondary_dep.dstAccessMask;
 
-    if (const auto primary_barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(rp1_state.create_info.pNext); primary_barrier) {
+    if (const auto primary_barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(primary_dep.pNext); primary_barrier) {
         primary_src_stage_mask = primary_barrier->srcStageMask;
         primary_dst_stage_mask = primary_barrier->dstStageMask;
         primary_src_access_mask = primary_barrier->srcAccessMask;
         primary_dst_access_mask = primary_barrier->dstAccessMask;
     }
-    if (const auto secondary_barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(rp2_state.create_info.pNext);
-        secondary_barrier) {
+    if (const auto secondary_barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(secondary_dep.pNext); secondary_barrier) {
         secondary_src_stage_mask = secondary_barrier->srcStageMask;
         secondary_dst_stage_mask = secondary_barrier->dstStageMask;
         secondary_src_access_mask = secondary_barrier->srcAccessMask;
