@@ -1145,8 +1145,9 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void SetEvent2(const Event& event, const VkMemoryBarrier2& memory_barrier);
     void WaitEvent2(const Event& event, const VkMemoryBarrier2& memory_barrier);
 
-    void Copy(const Buffer &src, const Buffer &dst);
-    void ExecuteCommands(const CommandBuffer &secondary);
+    void Copy(const Buffer& src, const Buffer& dst);
+    void ExecuteCommands(const CommandBuffer& secondary);
+    void ExecuteCommands(const std::vector<VkCommandBuffer>& secondaries);
 
     void Barrier(VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                  const VkBufferMemoryBarrier& buffer_barrier, VkDependencyFlags dependency_flags = 0);

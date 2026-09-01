@@ -1372,19 +1372,32 @@ void CommandBufferContext::RecordDestroyEvent(vvl::Event* event_state) { events_
 
 void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContext& recorded_cb_context) {
     const AccessContext& recorded_context = recorded_cb_context.GetCbAccessContext();
-
-    // Replay synchronization actions against the current destination state. The
-    // secondary's recorded access state already includes their effects and is resolved below.
     const ResourceUsageTag base_tag = GetTagCount();
-    for (const ReplayEntry& entry : recorded_cb_context.GetReplayEntries()) {
-        const bool replay_action = GetReplayContextChange(entry.operation) == nullptr;
-        if (replay_action) {
-            ApplyReplayAction(environment_, entry.operation, *current_context_, base_tag + entry.tag);
-        }
-    }
 
     ImportRecordedAccessLog(recorded_cb_context);
-    ResolveExecutedCommandBuffer(recorded_context, base_tag);
+
+    const auto& settings = GetSyncState().syncval_settings;
+    if (settings.full_validation && recorded_cb_context.HasAllCommands()) {
+        for (const CommandEntry& entry : recorded_cb_context.GetCommands()) {
+            std::visit(
+                [&](const auto& storage) {
+                    const auto command = storage.MakeCommand(recorded_cb_context.GetCommandData());
+                    command.Apply(environment_, base_tag + entry.tag, *current_context_);
+                    StoreCommand(base_tag + entry.tag, command);
+                },
+                entry.storage);
+        }
+    } else {
+        // Replay synchronization actions against the current destination state. The
+        // secondary's recorded access state already includes their effects and is resolved below.
+        for (const ReplayEntry& entry : recorded_cb_context.GetReplayEntries()) {
+            const bool replay_action = GetReplayContextChange(entry.operation) == nullptr;
+            if (replay_action) {
+                ApplyReplayAction(environment_, entry.operation, *current_context_, base_tag + entry.tag);
+            }
+        }
+        ResolveExecutedCommandBuffer(recorded_context, base_tag);
+    }
 }
 
 void CommandBufferContext::ResolveExecutedCommandBuffer(const AccessContext& recorded_context, ResourceUsageTag offset) {
@@ -1394,7 +1407,7 @@ void CommandBufferContext::ResolveExecutedCommandBuffer(const AccessContext& rec
 
 void CommandBufferContext::ImportRecordedAccessLog(const CommandBufferContext& recorded_context) {
     cbs_referenced_->emplace_back(recorded_context.GetCBStateShared());
-    access_log_->insert(access_log_->end(), recorded_context.access_log_->cbegin(), recorded_context.access_log_->cend());
+    vvl::Append(*access_log_, *recorded_context.access_log_);
 
     // Adjust command indices for the log records added from recorded_context.
     const auto& recorded_label_commands = recorded_context.cb_state_->GetLabelCommands();

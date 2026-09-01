@@ -277,15 +277,20 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     // TODO: debug util, remove after convertion to commands is finished
     bool HasAllCommands() const {
-        if (commands_.size() != access_log_->size()) {
+        size_t command_index = 0;
+        for (ResourceUsageTag tag = 0; tag < access_log_->size(); tag++) {
+            if (command_index < commands_.size() && commands_[command_index].tag == tag) {
+                command_index++;
+                continue;
+            }
+            // We dont create replay commands for CmdExecuteCommands
+            const ResourceUsageRecord& record = (*access_log_)[tag];
+            if (record.command == vvl::Func::vkCmdExecuteCommands && record.sub_command_type == SubCommandType::kIndex) {
+                continue;
+            }
             return false;
         }
-        for (size_t i = 0; i < commands_.size(); ++i) {
-            if (commands_[i].tag != i) {
-                return false;
-            }
-        }
-        return true;
+        return command_index == commands_.size();
     }
 
     // DebugNameProvider
