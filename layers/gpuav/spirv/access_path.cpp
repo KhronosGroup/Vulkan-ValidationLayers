@@ -236,13 +236,18 @@ AccessPath::AccessPath(const Module& module, TypeManager& type_manager, const Fu
                                                                               : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
             const uint32_t buffer_pointer_id = next_inst->Operand(0);
-            // For now assume this is a 1D array into the descriptor array
+
+            // We might have chains of OpUntypedAccessChainKHR here
+            // TODO - Handle non-1D array of descriptor arrays (not tested)
             // https://gitlab.khronos.org/spirv/SPIR-V/-/issues/942
-            next_inst = function.FindInstruction(buffer_pointer_id);
-            assert(next_inst->Opcode() == spv::OpUntypedAccessChainKHR);
-            ac_list.insert(ac_list.begin(), next_inst);
-            const uint32_t untyped_variable_id = next_inst->Operand(1);
-            variable = type_manager.FindVariableById(untyped_variable_id);
+            uint32_t current_id = buffer_pointer_id;
+            while (!variable) {
+                next_inst = function.FindInstruction(current_id);
+                assert(next_inst && next_inst->Opcode() == spv::OpUntypedAccessChainKHR);
+                ac_list.insert(ac_list.begin(), next_inst);
+                current_id = next_inst->Operand(1);
+                variable = type_manager.FindVariableById(current_id);
+            }
         } else if (next_inst->Opcode() == spv::OpImageTexelPointer || next_inst->Opcode() == spv::OpUntypedImageTexelPointerEXT) {
             // Atomic Storage Image
             descriptor.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;

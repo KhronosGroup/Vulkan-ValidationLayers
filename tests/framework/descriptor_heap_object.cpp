@@ -109,6 +109,11 @@ VkDeviceSize DescriptorHeap::WriteBufferDescriptor(VkDeviceAddressRangeKHR addr_
     return write_offset;
 }
 
+VkDeviceSize DescriptorHeap::WriteBufferDescriptorAtOffset(const vkt::Buffer& buffer, VkDescriptorType desc_type,
+                                                           VkDeviceSize heap_offset) {
+    return WriteBufferDescriptorAtOffset(buffer.AddressRange(), desc_type, heap_offset);
+}
+
 VkDeviceSize DescriptorHeap::WriteBufferDescriptorAtOffset(VkDeviceAddressRangeKHR addr_range, VkDescriptorType desc_type,
                                                            VkDeviceSize heap_offset) {
     assert(IsValueIn(desc_type, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -162,7 +167,7 @@ VkDeviceSize DescriptorHeap::WriteAccelerationStructureDescriptor(VkDeviceAddres
 VkDeviceSize DescriptorHeap::WriteSamplerDescriptor(VkSamplerCreateInfo* sampler_create_info) {
     VkSamplerCreateInfo safe_create_info = SafeSaneSamplerCreateInfo();
 
-    sampler_heap_offset_ = Align(sampler_heap_offset_, heap_props.samplerHeapAlignment);
+    sampler_heap_offset_ = Align(sampler_heap_offset_, heap_props.samplerDescriptorAlignment);
     const VkDeviceSize write_offset = sampler_heap_offset_;
 
     VkHostAddressRangeEXT sampler_host_data{};

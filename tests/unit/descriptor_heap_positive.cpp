@@ -629,7 +629,7 @@ TEST_F(PositiveDescriptorHeap, Sampler) {
 
     vkt::Buffer buffer(*m_device, sizeof(float) * 4u, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
     desc_heap.WriteImageDescriptorAtOffset(image, image_offset);
 
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
@@ -700,7 +700,7 @@ TEST_F(PositiveDescriptorHeap, CombinedImageSampler) {
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 
     desc_heap.WriteImageDescriptorAtOffset(image, image_offset);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
     desc_heap.WriteSamplerDescriptor();
 
     char const* cs_source = R"glsl(
@@ -1004,7 +1004,7 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSampler) {
 
     vkt::Buffer buffer(*m_device, sizeof(float) * 4u, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
     desc_heap.WriteImageDescriptorAtOffset(image, image_offset);
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -1081,7 +1081,7 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSamplerNoBoundHeap) {
     vkt::Buffer ssbo_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 
-    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
+    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
     desc_heap.WriteImageDescriptorAtOffset(image, image_offset);
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
@@ -1142,7 +1142,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithPushIndex) {
     desc_heap.CreateResourceHeap(offset + resource_stride);
 
     vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, offset);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, offset);
 
     VkDescriptorSetAndBindingMappingEXT mapping =
         MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT);
@@ -1222,7 +1222,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndex) {
     desc_heap.CreateResourceHeap(offset + resource_stride);
 
     vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, offset);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, offset);
 
     VkDescriptorSetAndBindingMappingEXT mapping =
         MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT);
@@ -1306,7 +1306,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndexArray) {
     desc_heap.CreateResourceHeap(offset + resource_stride);
 
     vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, offset);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, offset);
 
     VkDescriptorSetAndBindingMappingEXT mapping =
         MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT);
@@ -1391,7 +1391,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapData) {
 
     const VkDeviceSize write_data_offset = heap_props.bufferDescriptorSize * 4;
     vkt::Buffer write_buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(write_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, write_data_offset);
+    desc_heap.WriteBufferDescriptorAtOffset(write_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, write_data_offset);
 
     const uint32_t push_data_offset = 48u;
     VkDescriptorSetAndBindingMappingEXT mappings[2];
@@ -1475,7 +1475,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourcePushData) {
 
     vkt::DescriptorHeap desc_heap(*this);
     desc_heap.CreateResourceHeap(write_offset + resource_stride);
-    desc_heap.WriteBufferDescriptorAtOffset(write_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, write_offset);
+    desc_heap.WriteBufferDescriptorAtOffset(write_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, write_offset);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
@@ -1568,7 +1568,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourcePushAddress) {
 
     vkt::DescriptorHeap desc_heap(*this);
     desc_heap.CreateResourceHeap(write_offset + resource_stride);
-    desc_heap.WriteBufferDescriptorAtOffset(write_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, write_offset);
+    desc_heap.WriteBufferDescriptorAtOffset(write_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, write_offset);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
@@ -1664,7 +1664,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceIndirectAddress) {
 
     vkt::DescriptorHeap desc_heap(*this);
     desc_heap.CreateResourceHeap(write_offset + resource_stride);
-    desc_heap.WriteBufferDescriptorAtOffset(write_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, write_offset);
+    desc_heap.WriteBufferDescriptorAtOffset(write_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, write_offset);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
@@ -2243,11 +2243,10 @@ TEST_F(PositiveDescriptorHeap, ResourceMask) {
     desc_heap.WriteImageDescriptorAtOffset(combined_image, combined_sampled_image_offset, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                                            VK_IMAGE_LAYOUT_GENERAL);
 
-    desc_heap.WriteBufferDescriptorAtOffset(uniform_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                            uniform_buffer_offset);
-    desc_heap.WriteBufferDescriptorAtOffset(read_only_storage_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    desc_heap.WriteBufferDescriptorAtOffset(uniform_buffer, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniform_buffer_offset);
+    desc_heap.WriteBufferDescriptorAtOffset(read_only_storage_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                             read_only_storage_buffer_offset);
-    desc_heap.WriteBufferDescriptorAtOffset(read_write_storage_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    desc_heap.WriteBufferDescriptorAtOffset(read_write_storage_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                             read_write_storage_buffer_offset);
 
     desc_heap.WriteSamplerDescriptor();
@@ -2356,11 +2355,10 @@ TEST_F(PositiveDescriptorHeap, ResourceMaskSameBinding) {
     desc_heap.WriteImageDescriptorAtOffset(combined_image, combined_sampled_image_offset, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                                            VK_IMAGE_LAYOUT_GENERAL);
 
-    desc_heap.WriteBufferDescriptorAtOffset(uniform_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                            uniform_buffer_offset);
-    desc_heap.WriteBufferDescriptorAtOffset(read_only_storage_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    desc_heap.WriteBufferDescriptorAtOffset(uniform_buffer, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniform_buffer_offset);
+    desc_heap.WriteBufferDescriptorAtOffset(read_only_storage_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                             read_only_storage_buffer_offset);
-    desc_heap.WriteBufferDescriptorAtOffset(read_write_storage_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    desc_heap.WriteBufferDescriptorAtOffset(read_write_storage_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                             read_write_storage_buffer_offset);
 
     desc_heap.WriteSamplerDescriptor();
@@ -3242,7 +3240,7 @@ TEST_F(PositiveDescriptorHeap, DescriptorIndexing) {
     uint32_t push_data_uint[8] = {0, 1, 2, 4, 8, 16, 32, 64};
     VkDeviceAddress indirect_ubo = ubo_buffer.Address();
 
-    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
 
     // One descriptor for each uint inside the UBO buffer
     for (uint32_t i = 0; i < 16; i++) {
@@ -3378,7 +3376,7 @@ TEST_F(PositiveDescriptorHeap, ReservedRangeInFront) {
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 
     desc_heap.WriteImageDescriptorAtOffset(image, desc_heap.GetResourceHeapReservedRangeOffset() + image_offset);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                             desc_heap.GetResourceHeapReservedRangeOffset() + buffer_offset);
     desc_heap.WriteSamplerDescriptor();
 
@@ -3481,9 +3479,8 @@ TEST_F(PositiveDescriptorHeap, MaxBindingCount) {
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
-    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
-    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                            heap_props.bufferDescriptorSize);
+    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, heap_props.bufferDescriptorSize);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 0);

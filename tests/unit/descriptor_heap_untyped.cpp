@@ -9,6 +9,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <gtest/gtest.h>
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include "descriptor_heap_object.h"
@@ -107,7 +108,7 @@ TEST_F(NegativeDescriptorHeapUntyped, SecondaryCmdBufferHeapMissingInheritance) 
     desc_heap.CreateResourceHeap(resource_stride);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
 
     char const* vs_source = R"glsl(
         #version 450
@@ -174,7 +175,7 @@ TEST_F(NegativeDescriptorHeapUntyped, SecondaryCmdBufferResourceHeapUnbound) {
     desc_heap.CreateResourceHeap(resource_stride);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
 
     char const* vs_source = R"glsl(
         #version 450
@@ -513,4 +514,34 @@ TEST_F(NegativeDescriptorHeapUntyped, SamplerHeapBoundResourceHeapNotBound) {
     vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeDescriptorHeapUntyped, GlslStructuredBadSize) {
+    RETURN_IF_SKIP(InitUntypedDescriptorHeap());
+    if (heap_props.bufferDescriptorSize <= 4) {
+        GTEST_SKIP() << "bufferDescriptorSize too small";
+    }
+    char const* cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_descriptor_heap : require
+        #extension GL_EXT_structured_descriptor_heap : require
+        #extension GL_EXT_scalar_block_layout : require
+
+        layout(buffer_type, scalar) buffer SSBO_A {
+            uint x;
+            uint y;
+        };
+
+        layout(heap_offset = 0) resourceheap BufferHeap0 {
+            layout(descriptor_size = 4) SSBO_A buf_a;
+            layout(descriptor_size = 4) SSBO_A buf_b;
+        } bufferHeap;
+
+        void main() {
+            bufferHeap.buf_a.x = 4;
+        }
+    )glsl";
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-bufferDescriptorAlignment-11478");
+    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    m_errorMonitor->VerifyFound();
 }

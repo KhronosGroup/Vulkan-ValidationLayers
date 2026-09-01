@@ -53,6 +53,7 @@ class DescriptorHeap {
     // Write at supplied heap offset
     // *Warning* Internally maintained heap write offset will not be touched at all,
     // so this probably should not be used with the above functions.
+    VkDeviceSize WriteBufferDescriptorAtOffset(const vkt::Buffer& buffer, VkDescriptorType desc_type, VkDeviceSize heap_offset);
     VkDeviceSize WriteBufferDescriptorAtOffset(VkDeviceAddressRangeKHR addr_range, VkDescriptorType desc_type,
                                                VkDeviceSize heap_offset);
     VkDeviceSize WriteImageDescriptorAtOffset(const vkt::Image& image, VkDeviceSize heap_offset,

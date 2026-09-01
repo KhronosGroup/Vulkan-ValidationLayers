@@ -1090,7 +1090,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBRebindHeap) {
     desc_heap.CreateResourceHeap(resource_stride * 2, true);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                             desc_heap.GetResourceHeapReservedRangeOffset() + resource_stride);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
@@ -1726,8 +1726,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, UntypedPointersOffsetIdNonArray) {
 
     vkt::Buffer buffer_0(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     vkt::Buffer buffer_1(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer_0.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 2);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer_1.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 1);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer_0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 2);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer_1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_stride * 1);
 
     // layout(storage_buffer) SSBO {
     //     uint data;
@@ -3094,7 +3094,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptor) {
     desc_heap.CreateResourceHeap(resource_stride * 2);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer.AddressRange(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
