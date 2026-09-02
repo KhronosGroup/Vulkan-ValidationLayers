@@ -11,6 +11,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include "descriptor_heap_object.h"
+#include "render_pass_helper.h"
 #include "shader_helper.h"
 #include "shader_templates.h"
 #include "test_framework.h"
@@ -6218,5 +6219,49 @@ TEST_F(NegativeDescriptorHeap, ImageViewUsage) {
     VkHostAddressRangeEXT descriptors = {data.data(), data.size()};
     m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11458");
     vk::WriteResourceDescriptorsEXT(device(), 1u, &resource_desc_info, &descriptors);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorHeap, InputAttachmentReadOnly) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    InitRenderTarget();
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.CreateRenderPass();
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = 0u;
+    mapping.sourceData.constantOffset.heapArrayStride = 0u;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1;
+    mapping_info.pMappings = &mapping;
+
+    char const* fs_source = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 color;
+        layout(set = 0, binding = 0, input_attachment_index = 0) uniform subpassInput inputColor;
+        void main() {
+            color = subpassLoad(inputColor);
+        }
+    )glsl";
+
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineShaderStageCreateInfo stages[2] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo(&mapping_info)};
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.gp_ci_.layout = VK_NULL_HANDLE;
+    pipe.gp_ci_.stageCount = 2;
+    pipe.gp_ci_.pStages = stages;
+    pipe.gp_ci_.renderPass = rp;
+    // VUID-VkGraphicsPipelineCreateInfo-flags-11312
+    m_errorMonitor->SetDesiredError(
+        "Note: InputAttachments actually use READ_WRITE_IMAGE_BIT not READ_ONLY_IMAGE_BIT without NonWritable");
+    pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
