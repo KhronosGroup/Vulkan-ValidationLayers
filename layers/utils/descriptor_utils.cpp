@@ -169,6 +169,9 @@ std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_ty
                 return "is not decorated with NonWritable on the OpVariable, but is in the OpTypeStruct. This likely is hitting a "
                        "known DXC code generation bug (DirectXShaderCompiler/issues/8492). Simple work around is to just use "
                        "VK_SPIRV_RESOURCE_TYPE_ALL_EXT here as that will give the desired behavior.";
+            } else if (resource_variable.is_input_attachment) {
+                return "is not decorated with NonWritable (Note: InputAttachments actually use READ_WRITE_IMAGE_BIT not "
+                       "READ_ONLY_IMAGE_BIT without NonWritable, but your shader toolchains is likely not supplying it.)";
             } else {
                 return "is not decorated with NonWritable";
             }
