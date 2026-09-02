@@ -17,7 +17,7 @@
 #include "test_framework.h"
 #include "utils/math_utils.h"
 
-void ShaderObjectTest::InitBasicShaderObject(void* instance_pnext) {
+void ShaderObjectTestEXT::InitBasicShaderObject(void* instance_pnext) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -26,7 +26,7 @@ void ShaderObjectTest::InitBasicShaderObject(void* instance_pnext) {
     RETURN_IF_SKIP(Init(nullptr, nullptr, instance_pnext));
 }
 
-void ShaderObjectTest::InitBasicMeshShaderObject(APIVersion target_api_version) {
+void ShaderObjectTestEXT::InitBasicMeshShaderObject(APIVersion target_api_version) {
     SetTargetApiVersion(target_api_version);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
@@ -41,9 +41,9 @@ void ShaderObjectTest::InitBasicMeshShaderObject(APIVersion target_api_version) 
     RETURN_IF_SKIP(Init());
 }
 
-class PositiveShaderObject : public ShaderObjectTest {};
+class PositiveShaderObjectEXT : public ShaderObjectTestEXT {};
 
-void ShaderObjectTest::CreateMinimalShaders() {
+void ShaderObjectTestEXT::CreateMinimalShaders() {
     std::vector<uint32_t> vert_spirv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
     create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -68,7 +68,7 @@ void ShaderObjectTest::CreateMinimalShaders() {
     m_frag_shader.Init(*m_device, create_info);
 }
 
-TEST_F(PositiveShaderObject, CreateAndDestroyShaderObject) {
+TEST_F(PositiveShaderObjectEXT, CreateAndDestroyShaderObject) {
     TEST_DESCRIPTION("Create and destroy shader object.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -87,7 +87,7 @@ TEST_F(PositiveShaderObject, CreateAndDestroyShaderObject) {
     vk::DestroyShaderEXT(*m_device, shader, nullptr);
 }
 
-TEST_F(PositiveShaderObject, BindShaderObject) {
+TEST_F(PositiveShaderObjectEXT, BindShaderObject) {
     TEST_DESCRIPTION("Use graphics shaders with unsupported command pool.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -100,7 +100,7 @@ TEST_F(PositiveShaderObject, BindShaderObject) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, DrawWithVertAndFragShaderObjects) {
+TEST_F(PositiveShaderObjectEXT, DrawWithVertAndFragShaderObjects) {
     TEST_DESCRIPTION("Draw with only vertex and fragment shader objects bound.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -116,7 +116,7 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragShaderObjects) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, DrawWithVertAndFragBinaryShaderObjects) {
+TEST_F(PositiveShaderObjectEXT, DrawWithVertAndFragBinaryShaderObjects) {
     TEST_DESCRIPTION("Draw with binary vertex and fragment shader objects bound.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -149,7 +149,7 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragBinaryShaderObjects) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, LinkedVertexAndFragmentShaders) {
+TEST_F(PositiveShaderObjectEXT, LinkedVertexAndFragmentShaders) {
     TEST_DESCRIPTION("Create linked vertex and fragment shaders.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -169,7 +169,7 @@ TEST_F(PositiveShaderObject, LinkedVertexAndFragmentShaders) {
     }
 }
 
-TEST_F(PositiveShaderObject, LinkedGraphicsShaders) {
+TEST_F(PositiveShaderObjectEXT, LinkedGraphicsShaders) {
     TEST_DESCRIPTION("Create linked vertex and fragment shaders.");
     AddRequiredFeature(vkt::Feature::geometryShader);
     AddRequiredFeature(vkt::Feature::tessellationShader);
@@ -197,7 +197,7 @@ TEST_F(PositiveShaderObject, LinkedGraphicsShaders) {
     }
 }
 
-TEST_F(PositiveShaderObject, MissingCmdSetDepthBiasEnable) {
+TEST_F(PositiveShaderObjectEXT, MissingCmdSetDepthBiasEnable) {
     TEST_DESCRIPTION("Draw with shaders without setting depth bias enable.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -214,7 +214,7 @@ TEST_F(PositiveShaderObject, MissingCmdSetDepthBiasEnable) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, VertFragShaderDraw) {
+TEST_F(PositiveShaderObjectEXT, VertFragShaderDraw) {
     TEST_DESCRIPTION("Test drawing with a vertex and fragment shader");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -288,7 +288,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
+TEST_F(PositiveShaderObjectEXT, DrawWithAllGraphicsShaderStagesUsed) {
     TEST_DESCRIPTION("Test drawing using all graphics shader");
 
     AddRequiredFeature(vkt::Feature::geometryShader);
@@ -398,7 +398,7 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveShaderObject, ComputeShader) {
+TEST_F(PositiveShaderObjectEXT, ComputeShader) {
     TEST_DESCRIPTION("Test dispatching with compute shader");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -438,7 +438,7 @@ TEST_F(PositiveShaderObject, ComputeShader) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
+TEST_F(PositiveShaderObjectEXT, TaskMeshShadersDraw) {
     TEST_DESCRIPTION("Test drawing using task and mesh shaders");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -509,7 +509,7 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveShaderObject, FailCreateShaders) {
+TEST_F(PositiveShaderObjectEXT, FailCreateShaders) {
     TEST_DESCRIPTION("Test failing to create shaders");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -636,7 +636,7 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
     }
 }
 
-TEST_F(PositiveShaderObject, DrawMinimalDynamicStates) {
+TEST_F(PositiveShaderObjectEXT, DrawMinimalDynamicStates) {
     TEST_DESCRIPTION("Draw with only required dynamic states set.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -681,7 +681,7 @@ TEST_F(PositiveShaderObject, DrawMinimalDynamicStates) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, DrawMinimalDynamicStatesRasterizationDisabled) {
+TEST_F(PositiveShaderObjectEXT, DrawMinimalDynamicStatesRasterizationDisabled) {
     TEST_DESCRIPTION("Draw with only required dynamic states set.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -707,7 +707,7 @@ TEST_F(PositiveShaderObject, DrawMinimalDynamicStatesRasterizationDisabled) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
+TEST_F(PositiveShaderObjectEXT, ShadersDescriptorSets) {
     TEST_DESCRIPTION("Draw with shaders using multiple descriptor sets.");
 
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
@@ -780,7 +780,7 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, DescriptorBuffer) {
+TEST_F(PositiveShaderObjectEXT, DescriptorBuffer) {
     TEST_DESCRIPTION("use VK_EXT_descriptor_buffer and do a basic draw.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
@@ -830,7 +830,7 @@ TEST_F(PositiveShaderObject, DescriptorBuffer) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, MultiplePushConstants) {
+TEST_F(PositiveShaderObjectEXT, MultiplePushConstants) {
     TEST_DESCRIPTION("Draw with shaders using multiple push constants.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -886,7 +886,7 @@ TEST_F(PositiveShaderObject, MultiplePushConstants) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, MultipleSpecializationConstants) {
+TEST_F(PositiveShaderObjectEXT, MultipleSpecializationConstants) {
     TEST_DESCRIPTION("Draw with shaders using multiple specialization constants.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -946,7 +946,7 @@ TEST_F(PositiveShaderObject, MultipleSpecializationConstants) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, IndirectDraw) {
+TEST_F(PositiveShaderObjectEXT, IndirectDraw) {
     TEST_DESCRIPTION("Draw with all 5 shaders stages using indirect draw and seconary command buffers.");
 
     AddRequiredFeature(vkt::Feature::geometryShader);
@@ -1040,7 +1040,7 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
+TEST_F(PositiveShaderObjectEXT, DrawInSecondaryCommandBuffers) {
     TEST_DESCRIPTION("Draw in secondary command buffers.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1064,7 +1064,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
+TEST_F(PositiveShaderObjectEXT, OutputToMultipleAttachments) {
     TEST_DESCRIPTION("Draw with fragment shader writing to multiple attachments.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1125,7 +1125,7 @@ TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, DrawWithNonBlendableFormat) {
+TEST_F(PositiveShaderObjectEXT, DrawWithNonBlendableFormat) {
     TEST_DESCRIPTION("Draw with shader objects to an attachment format that does not support blending.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1152,7 +1152,7 @@ TEST_F(PositiveShaderObject, DrawWithNonBlendableFormat) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue) {
+TEST_F(PositiveShaderObjectEXT, DrawInSecondaryCommandBuffersWithRenderPassContinue) {
     TEST_DESCRIPTION("Draw in secondary command buffers with render pass continue flag.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -1199,7 +1199,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, DrawRebindingShaders) {
+TEST_F(PositiveShaderObjectEXT, DrawRebindingShaders) {
     TEST_DESCRIPTION("Draw after rebinding only some shaders.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -1257,7 +1257,7 @@ TEST_F(PositiveShaderObject, DrawRebindingShaders) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
+TEST_F(PositiveShaderObjectEXT, DrawWithBinaryShaders) {
     TEST_DESCRIPTION("Draw using binary shaders.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::geometryShader);
@@ -1325,7 +1325,7 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
     }
 }
 
-TEST_F(PositiveShaderObject, DrawNotLastStage) {
+TEST_F(PositiveShaderObjectEXT, DrawNotLastStage) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7320");
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -1348,7 +1348,7 @@ TEST_F(PositiveShaderObject, DrawNotLastStage) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, NotSettingDepthBounds) {
+TEST_F(PositiveShaderObjectEXT, NotSettingDepthBounds) {
     TEST_DESCRIPTION("Draw without setting depth bounds.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1365,7 +1365,7 @@ TEST_F(PositiveShaderObject, NotSettingDepthBounds) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, CreateAndDrawLinkedAndUnlinkedShaders) {
+TEST_F(PositiveShaderObjectEXT, CreateAndDrawLinkedAndUnlinkedShaders) {
     TEST_DESCRIPTION("Create and draw with some linked and some unlinked shaders.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -1415,7 +1415,7 @@ TEST_F(PositiveShaderObject, CreateAndDrawLinkedAndUnlinkedShaders) {
     }
 }
 
-TEST_F(PositiveShaderObject, IgnoredColorAttachmentCount) {
+TEST_F(PositiveShaderObjectEXT, IgnoredColorAttachmentCount) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6523/diffs");
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -1436,7 +1436,7 @@ TEST_F(PositiveShaderObject, IgnoredColorAttachmentCount) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, DisabledColorBlend) {
+TEST_F(PositiveShaderObjectEXT, DisabledColorBlend) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetColorBlendEquationEXT when color blend is disabled.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1454,7 +1454,7 @@ TEST_F(PositiveShaderObject, DisabledColorBlend) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, DrawWithVertGeomFragShaderObjects) {
+TEST_F(PositiveShaderObjectEXT, DrawWithVertGeomFragShaderObjects) {
     TEST_DESCRIPTION("Draw with vertex, geometry and fragment shader objects bound.");
 
     AddRequiredFeature(vkt::Feature::geometryShader);
@@ -1524,7 +1524,7 @@ TEST_F(PositiveShaderObject, DrawWithVertGeomFragShaderObjects) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, LineRasterization) {
+TEST_F(PositiveShaderObjectEXT, LineRasterization) {
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::smoothLines);
     AddRequiredFeature(vkt::Feature::alphaToOne);
@@ -1545,7 +1545,7 @@ TEST_F(PositiveShaderObject, LineRasterization) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, DiscardRectangleModeEXT) {
+TEST_F(PositiveShaderObjectEXT, DiscardRectangleModeEXT) {
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
     if (!DeviceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
@@ -1569,7 +1569,7 @@ TEST_F(PositiveShaderObject, DiscardRectangleModeEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, SetPatchControlPointsEXT) {
+TEST_F(PositiveShaderObjectEXT, SetPatchControlPointsEXT) {
     AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -1590,7 +1590,7 @@ TEST_F(PositiveShaderObject, SetPatchControlPointsEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, SetPointTopologyNoWrite) {
+TEST_F(PositiveShaderObjectEXT, SetPointTopologyNoWrite) {
     TEST_DESCRIPTION("Point size is ignored with maintenance5");
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
@@ -1608,7 +1608,7 @@ TEST_F(PositiveShaderObject, SetPointTopologyNoWrite) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, SetColorBlendAdvancedEXT) {
+TEST_F(PositiveShaderObjectEXT, SetColorBlendAdvancedEXT) {
     AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -1636,7 +1636,7 @@ TEST_F(PositiveShaderObject, SetColorBlendAdvancedEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, MultiCreateGraphicsCompute) {
+TEST_F(PositiveShaderObjectEXT, MultiCreateGraphicsCompute) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
@@ -1675,7 +1675,7 @@ TEST_F(PositiveShaderObject, MultiCreateGraphicsCompute) {
     }
 }
 
-TEST_F(PositiveShaderObject, CustomResolve) {
+TEST_F(PositiveShaderObjectEXT, CustomResolve) {
     AddRequiredExtensions(VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -1721,7 +1721,7 @@ TEST_F(PositiveShaderObject, CustomResolve) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, DisableShaderValidation) {
+TEST_F(PositiveShaderObjectEXT, DisableShaderValidation) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -1743,7 +1743,7 @@ TEST_F(PositiveShaderObject, DisableShaderValidation) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, DescriptorHeapPushConstant) {
+TEST_F(PositiveShaderObjectEXT, DescriptorHeapPushConstant) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
@@ -1763,7 +1763,7 @@ TEST_F(PositiveShaderObject, DescriptorHeapPushConstant) {
     vkt::Shader shader(*m_device, create_info);
 }
 
-TEST_F(PositiveShaderObject, DescriptorHeapStorageBuffer) {
+TEST_F(PositiveShaderObjectEXT, DescriptorHeapStorageBuffer) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
@@ -1795,7 +1795,7 @@ TEST_F(PositiveShaderObject, DescriptorHeapStorageBuffer) {
     const vkt::Shader comp_shader(*m_device, create_info);
 }
 
-TEST_F(PositiveShaderObject, HeapFlags) {
+TEST_F(PositiveShaderObjectEXT, HeapFlags) {
     TEST_DESCRIPTION("Create a linked shaders with mismatched heap flags.");
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
@@ -1814,7 +1814,7 @@ TEST_F(PositiveShaderObject, HeapFlags) {
     vk::DestroyShaderEXT(*m_device, shaders[1], nullptr);
 }
 
-TEST_F(PositiveShaderObject, DrawWithHeap) {
+TEST_F(PositiveShaderObjectEXT, DrawWithHeap) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
@@ -1889,7 +1889,7 @@ TEST_F(PositiveShaderObject, DrawWithHeap) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveShaderObject, IdenticallyDefinedLayouts) {
+TEST_F(PositiveShaderObjectEXT, IdenticallyDefinedLayouts) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -1916,7 +1916,7 @@ TEST_F(PositiveShaderObject, IdenticallyDefinedLayouts) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, IndependentSets) {
+TEST_F(PositiveShaderObjectEXT, IndependentSets) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance11);
@@ -1986,7 +1986,7 @@ TEST_F(PositiveShaderObject, IndependentSets) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveShaderObject, IndependentSetsDifferentSetLayoutCount) {
+TEST_F(PositiveShaderObjectEXT, IndependentSetsDifferentSetLayoutCount) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4812");
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);

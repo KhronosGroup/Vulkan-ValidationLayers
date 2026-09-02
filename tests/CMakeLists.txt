@@ -126,7 +126,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/gpu_av_positive.cpp
     unit/gpu_av_scoped.cpp
     unit/gpu_av_scoped_positive.cpp
-    unit/gpu_av_shader_object_positive.cpp
+    unit/gpu_av_shader_object_ext_positive.cpp
     unit/gpu_av_shader_debug_info.cpp
     unit/gpu_av_shader_sanitizer.cpp
     unit/gpu_av_shader_sanitizer_positive.cpp
@@ -222,8 +222,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/shader_limits_positive.cpp
     unit/shader_mesh.cpp
     unit/shader_mesh_positive.cpp
-    unit/shader_object.cpp
-    unit/shader_object_positive.cpp
+    unit/shader_object_ext.cpp
+    unit/shader_object_ext_positive.cpp
     unit/shader_push_constants.cpp
     unit/shader_push_constants_positive.cpp
     unit/shader_spirv.cpp

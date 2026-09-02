@@ -22,9 +22,9 @@
 #include "shader_templates.h"
 #include "utils/math_utils.h"
 
-class NegativeShaderObject : public ShaderObjectTest {};
+class NegativeShaderObjectEXT : public ShaderObjectTestEXT {};
 
-TEST_F(NegativeShaderObject, SpirvCodeSize) {
+TEST_F(NegativeShaderObjectEXT, SpirvCodeSize) {
     TEST_DESCRIPTION("Create shader with invalid spirv code size.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -44,7 +44,7 @@ TEST_F(NegativeShaderObject, SpirvCodeSize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, LinkedComputeShader) {
+TEST_F(NegativeShaderObjectEXT, LinkedComputeShader) {
     TEST_DESCRIPTION("Create compute shader with linked flag.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -65,7 +65,7 @@ TEST_F(NegativeShaderObject, LinkedComputeShader) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, InvalidFlags) {
+TEST_F(NegativeShaderObjectEXT, InvalidFlags) {
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::computeFullSubgroups);
@@ -98,7 +98,7 @@ TEST_F(NegativeShaderObject, InvalidFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, InvalidMeshShaderExtFlags) {
+TEST_F(NegativeShaderObjectEXT, InvalidMeshShaderExtFlags) {
     TEST_DESCRIPTION("Create mesh shader with invalid flags.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_1));
@@ -119,7 +119,7 @@ TEST_F(NegativeShaderObject, InvalidMeshShaderExtFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, VertexNextStage) {
+TEST_F(NegativeShaderObjectEXT, VertexNextStage) {
     TEST_DESCRIPTION("Create vertex shader with invalid next stage.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -140,7 +140,7 @@ TEST_F(NegativeShaderObject, VertexNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, TessellationControlNextStage) {
+TEST_F(NegativeShaderObjectEXT, TessellationControlNextStage) {
     TEST_DESCRIPTION("Create tessellation control shader with invalid next stage.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -161,7 +161,7 @@ TEST_F(NegativeShaderObject, TessellationControlNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, TessellationEvaluationNextStage) {
+TEST_F(NegativeShaderObjectEXT, TessellationEvaluationNextStage) {
     TEST_DESCRIPTION("Create tessellation evaluation shader with invalid next stage.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -182,7 +182,7 @@ TEST_F(NegativeShaderObject, TessellationEvaluationNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, GeometryNextStage) {
+TEST_F(NegativeShaderObjectEXT, GeometryNextStage) {
     TEST_DESCRIPTION("Create geometry shader with invalid next stage.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -203,7 +203,7 @@ TEST_F(NegativeShaderObject, GeometryNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, FragmentNextStage) {
+TEST_F(NegativeShaderObjectEXT, FragmentNextStage) {
     TEST_DESCRIPTION("Create fragment shader with invalid next stage.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -224,7 +224,7 @@ TEST_F(NegativeShaderObject, FragmentNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, TaskNextStage) {
+TEST_F(NegativeShaderObjectEXT, TaskNextStage) {
     TEST_DESCRIPTION("Create task shader with invalid next stage.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_2));
@@ -245,7 +245,7 @@ TEST_F(NegativeShaderObject, TaskNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MeshNextStage) {
+TEST_F(NegativeShaderObjectEXT, MeshNextStage) {
     TEST_DESCRIPTION("Create mesh shader with invalid next stage.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_2));
@@ -266,7 +266,7 @@ TEST_F(NegativeShaderObject, MeshNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, TaskNVNextStage) {
+TEST_F(NegativeShaderObjectEXT, TaskNVNextStage) {
     TEST_DESCRIPTION("Create task shader with invalid next stage.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_2));
@@ -287,7 +287,7 @@ TEST_F(NegativeShaderObject, TaskNVNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MeshNVNextStage) {
+TEST_F(NegativeShaderObjectEXT, MeshNVNextStage) {
     TEST_DESCRIPTION("Create mesh shader with invalid next stage.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -320,7 +320,7 @@ TEST_F(NegativeShaderObject, MeshNVNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, BinaryCodeAlignment) {
+TEST_F(NegativeShaderObjectEXT, BinaryCodeAlignment) {
     TEST_DESCRIPTION("Create binary shader with invalid binary code alignment.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -342,7 +342,7 @@ TEST_F(NegativeShaderObject, BinaryCodeAlignment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, SpirvCodeAlignment) {
+TEST_F(NegativeShaderObjectEXT, SpirvCodeAlignment) {
     TEST_DESCRIPTION("Create shader with invalid binary code alignment.");
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -363,7 +363,7 @@ TEST_F(NegativeShaderObject, SpirvCodeAlignment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, SpirvMagic) {
+TEST_F(NegativeShaderObjectEXT, SpirvMagic) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     uint32_t bad_magic = 4175232508U;
@@ -380,7 +380,7 @@ TEST_F(NegativeShaderObject, SpirvMagic) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, InvalidStage) {
+TEST_F(NegativeShaderObjectEXT, InvalidStage) {
     TEST_DESCRIPTION("Create shader with invalid stage.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -413,7 +413,7 @@ TEST_F(NegativeShaderObject, InvalidStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, ExceedsSetLimit) {
+TEST_F(NegativeShaderObjectEXT, ExceedsSetLimit) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     vkt::DescriptorSetLayout ds_layout(*m_device, {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr});
@@ -436,7 +436,7 @@ TEST_F(NegativeShaderObject, ExceedsSetLimit) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, BindVertexAndTaskShaders) {
+TEST_F(NegativeShaderObjectEXT, BindVertexAndTaskShaders) {
     TEST_DESCRIPTION("Bind vertex and task shaders in the same call.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -464,7 +464,7 @@ TEST_F(NegativeShaderObject, BindVertexAndTaskShaders) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, BindVertexAndMeshShaders) {
+TEST_F(NegativeShaderObjectEXT, BindVertexAndMeshShaders) {
     TEST_DESCRIPTION("Bind vertex and mesh shaders in the same call.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -492,7 +492,7 @@ TEST_F(NegativeShaderObject, BindVertexAndMeshShaders) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
+TEST_F(NegativeShaderObjectEXT, CreateShadersWithoutEnabledFeatures) {
     TEST_DESCRIPTION("Create tessellation shader without tessellationShader feature enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -516,7 +516,7 @@ TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
     }
 }
 
-TEST_F(NegativeShaderObject, CreateMeshShadersWithoutEnabledFeatures) {
+TEST_F(NegativeShaderObjectEXT, CreateMeshShadersWithoutEnabledFeatures) {
     TEST_DESCRIPTION("Create mesh and task shaders without features enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -542,7 +542,7 @@ TEST_F(NegativeShaderObject, CreateMeshShadersWithoutEnabledFeatures) {
     }
 }
 
-TEST_F(NegativeShaderObject, ComputeShaderNotSupportedByCommandPool) {
+TEST_F(NegativeShaderObjectEXT, ComputeShaderNotSupportedByCommandPool) {
     TEST_DESCRIPTION("Use compute shaders with unsupported command pool.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -568,7 +568,7 @@ TEST_F(NegativeShaderObject, ComputeShaderNotSupportedByCommandPool) {
     command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, GraphicsShadersNotSupportedByCommandPool) {
+TEST_F(NegativeShaderObjectEXT, GraphicsShadersNotSupportedByCommandPool) {
     TEST_DESCRIPTION("Use graphics shaders with unsupported command pool.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -596,7 +596,7 @@ TEST_F(NegativeShaderObject, GraphicsShadersNotSupportedByCommandPool) {
     command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, GraphicsMeshShadersNotSupportedByCommandPool) {
+TEST_F(NegativeShaderObjectEXT, GraphicsMeshShadersNotSupportedByCommandPool) {
     TEST_DESCRIPTION("Use mesh shaders with unsupported command pool.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -624,7 +624,7 @@ TEST_F(NegativeShaderObject, GraphicsMeshShadersNotSupportedByCommandPool) {
     command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, NonUniqueShadersBind) {
+TEST_F(NegativeShaderObjectEXT, NonUniqueShadersBind) {
     TEST_DESCRIPTION("Bind multiple shaders with same stage.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -653,7 +653,7 @@ TEST_F(NegativeShaderObject, NonUniqueShadersBind) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, InvalidShaderStageBind) {
+TEST_F(NegativeShaderObjectEXT, InvalidShaderStageBind) {
     TEST_DESCRIPTION("Bind shader with invalid stage.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -673,7 +673,7 @@ TEST_F(NegativeShaderObject, InvalidShaderStageBind) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, GetShaderBinaryDataInvalidPointer) {
+TEST_F(NegativeShaderObjectEXT, GetShaderBinaryDataInvalidPointer) {
     TEST_DESCRIPTION("Get shader binary data with invalid pointer.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -695,7 +695,7 @@ TEST_F(NegativeShaderObject, GetShaderBinaryDataInvalidPointer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, DrawWithNoShadersBound) {
+TEST_F(NegativeShaderObjectEXT, DrawWithNoShadersBound) {
     TEST_DESCRIPTION("Call vkCmdDraw when there are no shaders or pipeline bound.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -714,7 +714,7 @@ TEST_F(NegativeShaderObject, DrawWithNoShadersBound) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DrawWithMissingShaders) {
+TEST_F(NegativeShaderObjectEXT, DrawWithMissingShaders) {
     TEST_DESCRIPTION("Draw without setting all of the shader objects.");
 
     AddRequiredFeature(vkt::Feature::geometryShader);
@@ -736,7 +736,7 @@ TEST_F(NegativeShaderObject, DrawWithMissingShaders) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, DrawWithoutBindingMeshShadersWhenEnabled) {
+TEST_F(NegativeShaderObjectEXT, DrawWithoutBindingMeshShadersWhenEnabled) {
     TEST_DESCRIPTION("Draw without binding all of the shader objects supported by graphics.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_1));
@@ -758,7 +758,7 @@ TEST_F(NegativeShaderObject, DrawWithoutBindingMeshShadersWhenEnabled) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, FlagAttachmentFragmentShadingRate) {
+TEST_F(NegativeShaderObjectEXT, FlagAttachmentFragmentShadingRate) {
     TEST_DESCRIPTION("Create shader with invalid flags.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -772,7 +772,7 @@ TEST_F(NegativeShaderObject, FlagAttachmentFragmentShadingRate) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, FlagFragmentDensityMap) {
+TEST_F(NegativeShaderObjectEXT, FlagFragmentDensityMap) {
     TEST_DESCRIPTION("Create shader with invalid flags.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -786,7 +786,7 @@ TEST_F(NegativeShaderObject, FlagFragmentDensityMap) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, OMMShaderFlag) {
+TEST_F(NegativeShaderObjectEXT, OMMShaderFlag) {
     AddRequiredExtensions(VK_KHR_OPACITY_MICROMAP_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
@@ -798,7 +798,7 @@ TEST_F(NegativeShaderObject, OMMShaderFlag) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MissingLinkStageBit) {
+TEST_F(NegativeShaderObjectEXT, MissingLinkStageBit) {
     TEST_DESCRIPTION("Create a linked and non-linked shader in the same call.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -816,7 +816,7 @@ TEST_F(NegativeShaderObject, MissingLinkStageBit) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MissingLinkStageBitMesh) {
+TEST_F(NegativeShaderObjectEXT, MissingLinkStageBitMesh) {
     TEST_DESCRIPTION("Create a linked and non-linked mesh shader in the same call.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -834,7 +834,7 @@ TEST_F(NegativeShaderObject, MissingLinkStageBitMesh) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, LinkedVertexAndMeshStages) {
+TEST_F(NegativeShaderObjectEXT, LinkedVertexAndMeshStages) {
     TEST_DESCRIPTION("Attempt to create linked vertex and mesh stages.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -852,7 +852,7 @@ TEST_F(NegativeShaderObject, LinkedVertexAndMeshStages) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, LinkedGeometryAndMeshStages) {
+TEST_F(NegativeShaderObjectEXT, LinkedGeometryAndMeshStages) {
     TEST_DESCRIPTION("Attempt to create linked geometry and mesh stages.");
     AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -870,7 +870,7 @@ TEST_F(NegativeShaderObject, LinkedGeometryAndMeshStages) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, LinkedTaskAndMeshNoTaskShaders) {
+TEST_F(NegativeShaderObjectEXT, LinkedTaskAndMeshNoTaskShaders) {
     TEST_DESCRIPTION("Attempt to create linked task shader and linked mesh shader with no task shader flag.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -889,7 +889,7 @@ TEST_F(NegativeShaderObject, LinkedTaskAndMeshNoTaskShaders) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MissingNextStage) {
+TEST_F(NegativeShaderObjectEXT, MissingNextStage) {
     TEST_DESCRIPTION("Attempt to linked vertex and fragment shaders with missing nextStage.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -913,7 +913,7 @@ TEST_F(NegativeShaderObject, MissingNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, SameLinkedStage) {
+TEST_F(NegativeShaderObjectEXT, SameLinkedStage) {
     TEST_DESCRIPTION("Create multiple linked shaders with the same stage.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -930,7 +930,7 @@ TEST_F(NegativeShaderObject, SameLinkedStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, LinkedStagesWithDifferentCodeType) {
+TEST_F(NegativeShaderObjectEXT, LinkedStagesWithDifferentCodeType) {
     TEST_DESCRIPTION("Create linked shaders with different code types.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08411");
@@ -967,7 +967,7 @@ TEST_F(NegativeShaderObject, LinkedStagesWithDifferentCodeType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, UnsupportedNextStage) {
+TEST_F(NegativeShaderObjectEXT, UnsupportedNextStage) {
     TEST_DESCRIPTION("Create shader with unsupported next stage.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -994,7 +994,7 @@ TEST_F(NegativeShaderObject, UnsupportedNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, InvalidTessellationControlNextStage) {
+TEST_F(NegativeShaderObjectEXT, InvalidTessellationControlNextStage) {
     TEST_DESCRIPTION("Create tessellation control shader with invalid nextStage.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1007,7 +1007,7 @@ TEST_F(NegativeShaderObject, InvalidTessellationControlNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, InvalidTessellationEvaluationNextStage) {
+TEST_F(NegativeShaderObjectEXT, InvalidTessellationEvaluationNextStage) {
     TEST_DESCRIPTION("Create tessellation evaluation shader with invalid nextStage.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1020,7 +1020,7 @@ TEST_F(NegativeShaderObject, InvalidTessellationEvaluationNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, InvalidGeometryNextStage) {
+TEST_F(NegativeShaderObjectEXT, InvalidGeometryNextStage) {
     TEST_DESCRIPTION("Create geometry shader with invalid nextStage.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1032,7 +1032,7 @@ TEST_F(NegativeShaderObject, InvalidGeometryNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, InvalidFragmentNextStage) {
+TEST_F(NegativeShaderObjectEXT, InvalidFragmentNextStage) {
     TEST_DESCRIPTION("Create fragment shader with invalid nextStage.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1044,7 +1044,7 @@ TEST_F(NegativeShaderObject, InvalidFragmentNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, InvalidTaskNextStage) {
+TEST_F(NegativeShaderObjectEXT, InvalidTaskNextStage) {
     TEST_DESCRIPTION("Create task shader with invalid nextStage.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_1));
@@ -1056,7 +1056,7 @@ TEST_F(NegativeShaderObject, InvalidTaskNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, InvalidMeshNextStage) {
+TEST_F(NegativeShaderObjectEXT, InvalidMeshNextStage) {
     TEST_DESCRIPTION("Create mesh shader with invalid nextStage.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_1));
@@ -1068,7 +1068,7 @@ TEST_F(NegativeShaderObject, InvalidMeshNextStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, BindInvalidShaderStage) {
+TEST_F(NegativeShaderObjectEXT, BindInvalidShaderStage) {
     TEST_DESCRIPTION("Bind shader with different stage than it was created with.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1085,7 +1085,7 @@ TEST_F(NegativeShaderObject, BindInvalidShaderStage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DrawWithShadersOutsideRenderPass) {
+TEST_F(NegativeShaderObjectEXT, DrawWithShadersOutsideRenderPass) {
     TEST_DESCRIPTION("Draw with shaders outside of a render pass.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1102,7 +1102,7 @@ TEST_F(NegativeShaderObject, DrawWithShadersOutsideRenderPass) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
+TEST_F(NegativeShaderObjectEXT, DrawWithShadersInNonDynamicRenderPass) {
     TEST_DESCRIPTION("Draw with shaders inside a non-dynamic render pass.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1136,7 +1136,7 @@ TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, IncompatibleDescriptorSet) {
+TEST_F(NegativeShaderObjectEXT, IncompatibleDescriptorSet) {
     TEST_DESCRIPTION("Bind an incompatible descriptor set.");
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -1168,7 +1168,7 @@ TEST_F(NegativeShaderObject, IncompatibleDescriptorSet) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DescriptorSetNotBound) {
+TEST_F(NegativeShaderObjectEXT, DescriptorSetNotBound) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* cs_source = R"glsl(
@@ -1191,7 +1191,7 @@ TEST_F(NegativeShaderObject, DescriptorSetNotBound) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DescriptorSetBoundRange) {
+TEST_F(NegativeShaderObjectEXT, DescriptorSetBoundRange) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* cs_source = R"glsl(
@@ -1223,7 +1223,7 @@ TEST_F(NegativeShaderObject, DescriptorSetBoundRange) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, NotSettingViewportAndScissor) {
+TEST_F(NegativeShaderObjectEXT, NotSettingViewportAndScissor) {
     TEST_DESCRIPTION("Draw with shader object without setting viewport and scissor.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1243,7 +1243,7 @@ TEST_F(NegativeShaderObject, NotSettingViewportAndScissor) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DifferentViewportAndScissorCount) {
+TEST_F(NegativeShaderObjectEXT, DifferentViewportAndScissorCount) {
     TEST_DESCRIPTION("Draw with shader object with different viewport and scissor count.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1269,7 +1269,7 @@ TEST_F(NegativeShaderObject, DifferentViewportAndScissorCount) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, InvalidViewportWScaling) {
+TEST_F(NegativeShaderObjectEXT, InvalidViewportWScaling) {
     TEST_DESCRIPTION("Draw with shader object with invalid viewport count in vkCmdSetViewportWScaling.");
 
     AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
@@ -1303,7 +1303,7 @@ TEST_F(NegativeShaderObject, InvalidViewportWScaling) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, InvalidShadingRatePaletteViewportCount) {
+TEST_F(NegativeShaderObjectEXT, InvalidShadingRatePaletteViewportCount) {
     TEST_DESCRIPTION("Draw with shader object with invalid viewport count in vkCmdSetViewportShadingRatePaletteNV.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1345,7 +1345,7 @@ TEST_F(NegativeShaderObject, InvalidShadingRatePaletteViewportCount) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetExclusiveScissorEnableNV) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetExclusiveScissorEnableNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetExclusiveScissorEnableNV.");
 
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
@@ -1367,7 +1367,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetExclusiveScissorEnableNV) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, InvalidExclusiveScissorCount) {
+TEST_F(NegativeShaderObjectEXT, InvalidExclusiveScissorCount) {
     TEST_DESCRIPTION("Draw with shader object with invalid viewport count in vkCmdSetExclusiveScissorNV.");
 
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
@@ -1403,7 +1403,7 @@ TEST_F(NegativeShaderObject, InvalidExclusiveScissorCount) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetRasterizerDiscardEnable) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetRasterizerDiscardEnable) {
     TEST_DESCRIPTION("Draw with shaders without setting vkCmdSetRasterizerDiscardEnable.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1423,7 +1423,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetRasterizerDiscardEnable) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetDepthBiasEnable) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetDepthBiasEnable) {
     TEST_DESCRIPTION("Draw with shaders without setting vkCmdSetDepthBiasEnable.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1442,7 +1442,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBiasEnable) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetLogicOp) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetLogicOp) {
     TEST_DESCRIPTION("Draw with shaders without setting vkCmdSetLogicOp.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1468,7 +1468,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetLogicOp) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, BlendEnabledWithNonBlendableFormat) {
+TEST_F(NegativeShaderObjectEXT, BlendEnabledWithNonBlendableFormat) {
     TEST_DESCRIPTION("Draw with shader objects with blend enabled for attachment format that does not support blending.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1499,7 +1499,7 @@ TEST_F(NegativeShaderObject, BlendEnabledWithNonBlendableFormat) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, RasterizationSamplesMismatch) {
+TEST_F(NegativeShaderObjectEXT, RasterizationSamplesMismatch) {
     TEST_DESCRIPTION("Draw with shader objects with invalid rasterization samples in vkCmdSetRasterizationSamplesEXT().");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1520,7 +1520,7 @@ TEST_F(NegativeShaderObject, RasterizationSamplesMismatch) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingColorWriteEnable) {
+TEST_F(NegativeShaderObjectEXT, MissingColorWriteEnable) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetColorWriteEnableEXT().");
 
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
@@ -1542,7 +1542,7 @@ TEST_F(NegativeShaderObject, MissingColorWriteEnable) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, ColorWriteEnableAttachmentCount) {
+TEST_F(NegativeShaderObjectEXT, ColorWriteEnableAttachmentCount) {
     TEST_DESCRIPTION("Draw with shader objects without setting color write enable for all attachments.");
 
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
@@ -1596,7 +1596,7 @@ TEST_F(NegativeShaderObject, ColorWriteEnableAttachmentCount) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleEnableEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetDiscardRectangleEnableEXT) {
     TEST_DESCRIPTION("Draw with shaders without setting vkCmdSetDiscardRectangleEnableEXT.");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
@@ -1617,7 +1617,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleEnableEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleModeEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetDiscardRectangleModeEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDiscardRectangleModeEXT().");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
@@ -1646,7 +1646,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleModeEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetDiscardRectangleEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDiscardRectangleEXT().");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
@@ -1672,7 +1672,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleMaxDiscardRectangles) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetDiscardRectangleMaxDiscardRectangles) {
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
     if (!DeviceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
@@ -1706,7 +1706,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleMaxDiscardRectangles) 
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetDepthClampEnableEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetDepthClampEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthClampEnableEXT().");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1728,7 +1728,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthClampEnableEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetPolygonModeEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetPolygonModeEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetPolygonModeEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1748,7 +1748,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetPolygonModeEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetRasterizationSamplesEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetRasterizationSamplesEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetRasterizationSamplesEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1768,7 +1768,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetRasterizationSamplesEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetSampleMaskEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetSampleMaskEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetSampleMaskEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1788,7 +1788,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetSampleMaskEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetAlphaToCoverageEnableEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetAlphaToCoverageEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetAlphaToCoverageEnableEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1808,7 +1808,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetAlphaToCoverageEnableEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetAlphaToOneEnableEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetAlphaToOneEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetAlphaToOneEnableEXT.");
 
     AddRequiredFeature(vkt::Feature::alphaToOne);
@@ -1829,7 +1829,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetAlphaToOneEnableEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetLogicOpEnableEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetLogicOpEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetLogicOpEnableEXT.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1854,7 +1854,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetLogicOpEnableEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEnableEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetColorBlendEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetColorBlendEnableEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1874,7 +1874,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEnableEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEnableEXTForActiveAttachment) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetColorBlendEnableEXTForActiveAttachment) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetColorBlendEnableEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1896,7 +1896,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEnableEXTForActiveAttachment
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEquationEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetColorBlendEquationEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetColorBlendEquationEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1918,7 +1918,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEquationEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEquationEXTActiveAttachments) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetColorBlendEquationEXTActiveAttachments) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetColorBlendEquationEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1944,7 +1944,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEquationEXTActiveAttachments
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetFragmentShadingRateKHR) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetFragmentShadingRateKHR) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetFragmentShadingRateKHR.");
 
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
@@ -1966,7 +1966,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetFragmentShadingRateKHR) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetColorWriteMaskEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetColorWriteMaskEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetColorWriteMaskEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1986,7 +1986,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorWriteMaskEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetColorWriteMaskEXTActiveAttachments) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetColorWriteMaskEXTActiveAttachments) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetColorWriteMaskEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -2008,7 +2008,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorWriteMaskEXTActiveAttachments) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetRasterizationStreamEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetRasterizationStreamEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetRasterizationStreamEXT.");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -2032,7 +2032,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetRasterizationStreamEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetConservativeRasterizationModeEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetConservativeRasterizationModeEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetConservativeRasterizationModeEXT.");
 
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
@@ -2053,7 +2053,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetConservativeRasterizationModeEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetExtraPrimitiveOverestimationSizeEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetExtraPrimitiveOverestimationSizeEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetExtraPrimitiveOverestimationSizeEXT.");
 
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
@@ -2075,7 +2075,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetExtraPrimitiveOverestimationSizeEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetDepthClipEnableEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetDepthClipEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthClipEnableEXT.");
 
     AddRequiredExtensions(VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME);
@@ -2097,7 +2097,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthClipEnableEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetSampleLocationsEnableEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetSampleLocationsEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetSampleLocationsEnableEXT.");
 
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
@@ -2118,7 +2118,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetSampleLocationsEnableEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetProvokingVertexModeEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetProvokingVertexModeEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetProvokingVertexModeEXT.");
 
     AddRequiredExtensions(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
@@ -2139,7 +2139,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetProvokingVertexModeEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingPolygonModeCmdSetLineRasterizationModeEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingPolygonModeCmdSetLineRasterizationModeEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetLineRasterizationModeEXT.");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
@@ -2165,7 +2165,7 @@ TEST_F(NegativeShaderObject, MissingPolygonModeCmdSetLineRasterizationModeEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingPrimitiveTopologyCmdSetLineRasterizationModeEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingPrimitiveTopologyCmdSetLineRasterizationModeEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetLineRasterizationModeEXT.");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
@@ -2189,7 +2189,7 @@ TEST_F(NegativeShaderObject, MissingPrimitiveTopologyCmdSetLineRasterizationMode
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingPolygonModeCmdSetLineStippleEnableEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingPolygonModeCmdSetLineStippleEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetLineStippleEnableEXT.");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
@@ -2215,7 +2215,7 @@ TEST_F(NegativeShaderObject, MissingPolygonModeCmdSetLineStippleEnableEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingPrimitiveTopologyCmdSetLineStippleEnableEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingPrimitiveTopologyCmdSetLineStippleEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetLineStippleEnableEXT.");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
@@ -2239,7 +2239,7 @@ TEST_F(NegativeShaderObject, MissingPrimitiveTopologyCmdSetLineStippleEnableEXT)
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetLineStippleEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetLineStippleEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetLineStippleEXT.");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
@@ -2262,7 +2262,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetLineStippleEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetDepthClipNegativeOneToOneEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetDepthClipNegativeOneToOneEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthClipNegativeOneToOneEXT.");
 
     AddRequiredExtensions(VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME);
@@ -2284,7 +2284,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthClipNegativeOneToOneEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetViewportWScalingEnableNV) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetViewportWScalingEnableNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetViewportWScalingEnableNV.");
 
     AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
@@ -2305,7 +2305,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportWScalingEnableNV) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetViewportWScalingNV) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetViewportWScalingNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetViewportWScalingNV.");
 
     AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
@@ -2327,7 +2327,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportWScalingNV) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetViewportSwizzleNV) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetViewportSwizzleNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetViewportSwizzleNV.");
 
     AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
@@ -2348,7 +2348,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportSwizzleNV) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetCoverageToColorEnableNV) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetCoverageToColorEnableNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetCoverageToColorEnableNV.");
 
     AddRequiredExtensions(VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME);
@@ -2369,7 +2369,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoverageToColorEnableNV) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetCoverageToColorLocationNV) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetCoverageToColorLocationNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetCoverageToColorLocationNV.");
 
     AddRequiredExtensions(VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME);
@@ -2391,7 +2391,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoverageToColorLocationNV) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetCoverageModulationModeNV) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetCoverageModulationModeNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetCoverageModulationModeNV.");
 
     AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
@@ -2413,7 +2413,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoverageModulationModeNV) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetCoverageModulationTableEnableNV) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetCoverageModulationTableEnableNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetCoverageModulationTableEnableNV.");
 
     AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
@@ -2435,7 +2435,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoverageModulationTableEnableNV) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetCoverageModulationTableNV) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetCoverageModulationTableNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetCoverageModulationTableNV.");
 
     AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
@@ -2458,7 +2458,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoverageModulationTableNV) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetShadingRateImageEnableNV) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetShadingRateImageEnableNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetShadingRateImageEnableNV.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2486,7 +2486,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetShadingRateImageEnableNV) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetViewportShadingRatePaletteNV) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetViewportShadingRatePaletteNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetViewportShadingRatePaletteNV.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2515,7 +2515,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportShadingRatePaletteNV) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetCoarseSampleOrderNV) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetCoarseSampleOrderNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetCoarseSampleOrderNV.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2543,7 +2543,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoarseSampleOrderNV) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetRepresentativeFragmentTestEnableNV) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetRepresentativeFragmentTestEnableNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetRepresentativeFragmentTestEnableNV.");
 
     AddRequiredExtensions(VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME);
@@ -2565,7 +2565,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetRepresentativeFragmentTestEnableNV) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetCoverageReductionModeNV) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetCoverageReductionModeNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetCoverageReductionModeNV.");
 
     AddRequiredExtensions(VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME);
@@ -2589,7 +2589,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCoverageReductionModeNV) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingVertexShaderBind) {
+TEST_F(NegativeShaderObjectEXT, MissingVertexShaderBind) {
     TEST_DESCRIPTION("Draw with shader objects without binding vertex shader.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -2611,7 +2611,7 @@ TEST_F(NegativeShaderObject, MissingVertexShaderBind) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingTessellationControlBind) {
+TEST_F(NegativeShaderObjectEXT, MissingTessellationControlBind) {
     TEST_DESCRIPTION("Draw with shader objects without binding tessellation control shader.");
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -2639,7 +2639,7 @@ TEST_F(NegativeShaderObject, MissingTessellationControlBind) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingTessellationEvaluationBind) {
+TEST_F(NegativeShaderObjectEXT, MissingTessellationEvaluationBind) {
     TEST_DESCRIPTION("Draw with shader objects without binding tessellation evaluation shader.");
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -2667,7 +2667,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationBind) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingGeometryBind) {
+TEST_F(NegativeShaderObjectEXT, MissingGeometryBind) {
     TEST_DESCRIPTION("Draw with shader objects without binding geometry shader.");
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -2692,7 +2692,7 @@ TEST_F(NegativeShaderObject, MissingGeometryBind) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingFragmentShaderBind) {
+TEST_F(NegativeShaderObjectEXT, MissingFragmentShaderBind) {
     TEST_DESCRIPTION("Draw with shader objects without binding fragment shader.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -2716,7 +2716,7 @@ TEST_F(NegativeShaderObject, MissingFragmentShaderBind) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingTaskShaderBind) {
+TEST_F(NegativeShaderObjectEXT, MissingTaskShaderBind) {
     TEST_DESCRIPTION("Draw with shader objects without binding task shader.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_1));
@@ -2741,7 +2741,7 @@ TEST_F(NegativeShaderObject, MissingTaskShaderBind) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingMeshShaderBind) {
+TEST_F(NegativeShaderObjectEXT, MissingMeshShaderBind) {
     TEST_DESCRIPTION("Draw with shader objects without binding mesh shader.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_1));
@@ -2762,7 +2762,7 @@ TEST_F(NegativeShaderObject, MissingMeshShaderBind) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, VertAndMeshShaderBothBound) {
+TEST_F(NegativeShaderObjectEXT, VertAndMeshShaderBothBound) {
     TEST_DESCRIPTION("Draw with both vertex and mesh shader objects bound.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -2790,7 +2790,7 @@ TEST_F(NegativeShaderObject, VertAndMeshShaderBothBound) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MeshShaderWithMissingTaskShader) {
+TEST_F(NegativeShaderObjectEXT, MeshShaderWithMissingTaskShader) {
     TEST_DESCRIPTION("Draw with a mesh shader that was created without the no task shader flag, but no task shader bound.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -2812,7 +2812,7 @@ TEST_F(NegativeShaderObject, MeshShaderWithMissingTaskShader) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, TaskAndMeshShaderWithNoTaskFlag) {
+TEST_F(NegativeShaderObjectEXT, TaskAndMeshShaderWithNoTaskFlag) {
     TEST_DESCRIPTION("Draw with a task and a mesh shader that was created with the no task shader flag.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -2839,7 +2839,7 @@ TEST_F(NegativeShaderObject, TaskAndMeshShaderWithNoTaskFlag) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingLinkedShaderBind) {
+TEST_F(NegativeShaderObjectEXT, MissingLinkedShaderBind) {
     TEST_DESCRIPTION("Draw with not all linked shaders bound.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -2870,7 +2870,7 @@ TEST_F(NegativeShaderObject, MissingLinkedShaderBind) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, BindShaderBetweenLinkedShaders) {
+TEST_F(NegativeShaderObjectEXT, BindShaderBetweenLinkedShaders) {
     TEST_DESCRIPTION("Draw when a shader is bound between linked shaders.");
 
     AddRequiredFeature(vkt::Feature::geometryShader);
@@ -2902,7 +2902,7 @@ TEST_F(NegativeShaderObject, BindShaderBetweenLinkedShaders) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DifferentShaderPushConstantRangesSize) {
+TEST_F(NegativeShaderObjectEXT, DifferentShaderPushConstantRangesSize) {
     TEST_DESCRIPTION("Draw with shaders that have different push constant ranges.");
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -2924,7 +2924,7 @@ TEST_F(NegativeShaderObject, DifferentShaderPushConstantRangesSize) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DifferentMultiPushConstantRanges) {
+TEST_F(NegativeShaderObjectEXT, DifferentMultiPushConstantRanges) {
     TEST_DESCRIPTION("Draw with shaders that have different push constant ranges.");
     AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -2980,7 +2980,7 @@ TEST_F(NegativeShaderObject, DifferentMultiPushConstantRanges) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DifferentShaderPushConstantRanges) {
+TEST_F(NegativeShaderObjectEXT, DifferentShaderPushConstantRanges) {
     TEST_DESCRIPTION("Draw with shaders that have different push constant ranges.");
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -3004,7 +3004,7 @@ TEST_F(NegativeShaderObject, DifferentShaderPushConstantRanges) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DifferentShaderDescriptorLayoutsSize) {
+TEST_F(NegativeShaderObjectEXT, DifferentShaderDescriptorLayoutsSize) {
     TEST_DESCRIPTION("Draw with shaders that have different descriptor layouts.");
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -3032,7 +3032,7 @@ TEST_F(NegativeShaderObject, DifferentShaderDescriptorLayoutsSize) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DifferentShaderDescriptorLayouts) {
+TEST_F(NegativeShaderObjectEXT, DifferentShaderDescriptorLayouts) {
     TEST_DESCRIPTION("Draw with shaders that have different descriptor layouts.");
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -3066,7 +3066,7 @@ TEST_F(NegativeShaderObject, DifferentShaderDescriptorLayouts) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetAttachmentFeedbackLoopEnableEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetAttachmentFeedbackLoopEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetAttachmentFeedbackLoopEnableEXT.");
 
     AddRequiredExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME);
@@ -3088,7 +3088,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetAttachmentFeedbackLoopEnableEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetPrimitiveTopologyEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetPrimitiveTopologyEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetPrimitiveTopologyEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3108,7 +3108,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetPrimitiveTopologyEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetPatchControlPointsEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetPatchControlPointsEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetPatchControlPointsEXT.");
 
     AddRequiredFeature(vkt::Feature::tessellationShader);
@@ -3132,7 +3132,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetPatchControlPointsEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetTessellationDomainOriginEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetTessellationDomainOriginEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetTessellationDomainOriginEXT.");
 
     AddRequiredFeature(vkt::Feature::tessellationShader);
@@ -3155,7 +3155,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetTessellationDomainOriginEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetPrimitiveRestartEnableEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetPrimitiveRestartEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetPrimitiveRestartEnableEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3175,7 +3175,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetPrimitiveRestartEnableEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, PrimitiveRestartEnable) {
+TEST_F(NegativeShaderObjectEXT, PrimitiveRestartEnable) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
     CreateMinimalShaders();
@@ -3194,7 +3194,7 @@ TEST_F(NegativeShaderObject, PrimitiveRestartEnable) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetVertexInput) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetVertexInput) {
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
@@ -3216,7 +3216,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetVertexInput) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DrawWithGraphicsShadersWhenMeshShaderIsBound) {
+TEST_F(NegativeShaderObjectEXT, DrawWithGraphicsShadersWhenMeshShaderIsBound) {
     TEST_DESCRIPTION("Draw with graphics shader objects when a mesh shader is bound.");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -3242,7 +3242,7 @@ TEST_F(NegativeShaderObject, DrawWithGraphicsShadersWhenMeshShaderIsBound) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingPolygonLineCmdSetLineWidthEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingPolygonLineCmdSetLineWidthEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetLineWidthEXT when polygon mode is line.");
 
     AddRequiredFeature(vkt::Feature::fillModeNonSolid);
@@ -3264,7 +3264,7 @@ TEST_F(NegativeShaderObject, MissingPolygonLineCmdSetLineWidthEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingPrimitiveTopologyLineCmdSetLineWidthEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingPrimitiveTopologyLineCmdSetLineWidthEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetLineWidthEXT when primitive topology is line.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3285,7 +3285,7 @@ TEST_F(NegativeShaderObject, MissingPrimitiveTopologyLineCmdSetLineWidthEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetDepthBiasEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetDepthBiasEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthBiasEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3306,7 +3306,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBiasEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetBlendConstantsEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetBlendConstantsEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetBlendConstantsEXT.");
     AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3344,7 +3344,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetBlendConstantsEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetDepthBoundsEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetDepthBoundsEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthBoundsEXT.");
 
     AddRequiredFeature(vkt::Feature::depthBounds);
@@ -3366,7 +3366,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBoundsEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetStencilCompareMaskEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetStencilCompareMaskEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetStencilCompareMaskEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3387,7 +3387,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilCompareMaskEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetStencilWriteMaskEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetStencilWriteMaskEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetStencilWriteMaskEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3408,7 +3408,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilWriteMaskEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetStencilReferenceEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetStencilReferenceEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetStencilReferenceEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3429,7 +3429,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilReferenceEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetSampleLocationsEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetSampleLocationsEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetSampleLocationsEXT.");
 
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
@@ -3451,7 +3451,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetSampleLocationsEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetCullModeEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetCullModeEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetCullModeEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3471,7 +3471,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetCullModeEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetFrontFaceEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetFrontFaceEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetFrontFaceEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3492,7 +3492,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetFrontFaceEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetDepthTestEnableEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetDepthTestEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthTestEnableEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3512,7 +3512,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthTestEnableEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetDepthWriteEnableEXT) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetDepthWriteEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthWriteEnableEXT.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3533,7 +3533,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthWriteEnableEXT) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetDepthCompareOp) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetDepthCompareOp) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthCompareOp.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3554,7 +3554,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthCompareOp) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetDepthBoundsTestEnable) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetDepthBoundsTestEnable) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthBoundsTestEnable.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3576,7 +3576,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBoundsTestEnable) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetStencilTestEnable) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetStencilTestEnable) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetStencilTestEnable.");
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -3595,7 +3595,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilTestEnable) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetStencilOp) {
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetStencilOp) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetStencilOp.");
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -3615,7 +3615,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilOp) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, ComputeShaderGroupCount) {
+TEST_F(NegativeShaderObjectEXT, ComputeShaderGroupCount) {
     TEST_DESCRIPTION("Dispatch with group count higher than maxComputeWorkGroupCount.");
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -3650,7 +3650,7 @@ TEST_F(NegativeShaderObject, ComputeShaderGroupCount) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, ComputeShaderMissingPushConst) {
+TEST_F(NegativeShaderObjectEXT, ComputeShaderMissingPushConst) {
     TEST_DESCRIPTION("Dispatch with a shader object using push const, but not setting it.");
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -3695,7 +3695,7 @@ TEST_F(NegativeShaderObject, ComputeShaderMissingPushConst) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, SharedMemoryOverLimit) {
+TEST_F(NegativeShaderObjectEXT, SharedMemoryOverLimit) {
     TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize");
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -3723,7 +3723,7 @@ TEST_F(NegativeShaderObject, SharedMemoryOverLimit) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, InvalidRequireFullSubgroupsFlag) {
+TEST_F(NegativeShaderObjectEXT, InvalidRequireFullSubgroupsFlag) {
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::computeFullSubgroups);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3737,7 +3737,7 @@ TEST_F(NegativeShaderObject, InvalidRequireFullSubgroupsFlag) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, SpecializationMapEntryOffset) {
+TEST_F(NegativeShaderObjectEXT, SpecializationMapEntryOffset) {
     TEST_DESCRIPTION("Create shader with invalid specialization map entry offset.");
     // Should work without looking at the SPIR-V
     const VkLayerSettingEXT settings[] = {{OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse}};
@@ -3775,7 +3775,7 @@ TEST_F(NegativeShaderObject, SpecializationMapEntryOffset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, SpecializationMapEntrySize) {
+TEST_F(NegativeShaderObjectEXT, SpecializationMapEntrySize) {
     TEST_DESCRIPTION("Create shader with specialization map entry out of bounds.");
     // Should work without looking at the SPIR-V
     const VkLayerSettingEXT settings[] = {{OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse}};
@@ -3814,7 +3814,7 @@ TEST_F(NegativeShaderObject, SpecializationMapEntrySize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, SpecializationMismatch) {
+TEST_F(NegativeShaderObjectEXT, SpecializationMismatch) {
     TEST_DESCRIPTION("Create shader with invalid spirv code size.");
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -3850,7 +3850,7 @@ TEST_F(NegativeShaderObject, SpecializationMismatch) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, SpecializationSameConstantId) {
+TEST_F(NegativeShaderObjectEXT, SpecializationSameConstantId) {
     TEST_DESCRIPTION("Create shader with non unique specialization map entries.");
     // Should work without looking at the SPIR-V
     const VkLayerSettingEXT settings[] = {{OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse}};
@@ -3892,7 +3892,7 @@ TEST_F(NegativeShaderObject, SpecializationSameConstantId) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MissingEntrypoint) {
+TEST_F(NegativeShaderObjectEXT, MissingEntrypoint) {
     TEST_DESCRIPTION("Create shader with invalid spirv code size.");
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -3906,7 +3906,7 @@ TEST_F(NegativeShaderObject, MissingEntrypoint) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, SpecializationApplied) {
+TEST_F(NegativeShaderObjectEXT, SpecializationApplied) {
     TEST_DESCRIPTION(
         "Make sure specialization constants get applied during shader validation by using a value that breaks compilation.");
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -3961,7 +3961,7 @@ TEST_F(NegativeShaderObject, SpecializationApplied) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MinTexelGatherOffset) {
+TEST_F(NegativeShaderObjectEXT, MinTexelGatherOffset) {
     TEST_DESCRIPTION("Create shader with texel gather offset lower than minimum.");
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -4033,7 +4033,7 @@ TEST_F(NegativeShaderObject, MinTexelGatherOffset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, UnsupportedSpirvCapability) {
+TEST_F(NegativeShaderObjectEXT, UnsupportedSpirvCapability) {
     TEST_DESCRIPTION("Create shader with unsupported spirv capability.");
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
@@ -4096,7 +4096,7 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvCapability) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, UnsupportedSpirvExtension) {
+TEST_F(NegativeShaderObjectEXT, UnsupportedSpirvExtension) {
     TEST_DESCRIPTION("Create shader with unsupported spirv extension.");
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
@@ -4128,7 +4128,7 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvExtension) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, SpirvExtensionRequirementsNotMet) {
+TEST_F(NegativeShaderObjectEXT, SpirvExtensionRequirementsNotMet) {
     TEST_DESCRIPTION("Create shader with extension requirements not met.");
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
@@ -4161,7 +4161,7 @@ TEST_F(NegativeShaderObject, SpirvExtensionRequirementsNotMet) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
+TEST_F(NegativeShaderObjectEXT, MemoryModelNotEnabled) {
     TEST_DESCRIPTION("Create shader with unsupported spirv extension.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
@@ -4190,7 +4190,7 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MaxTransformFeedbackStream) {
+TEST_F(NegativeShaderObjectEXT, MaxTransformFeedbackStream) {
     TEST_DESCRIPTION("Test maxTransformFeedbackStream with shader objects.");
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::geometryShader);
@@ -4255,7 +4255,7 @@ TEST_F(NegativeShaderObject, MaxTransformFeedbackStream) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, TransformFeedbackStride) {
+TEST_F(NegativeShaderObjectEXT, TransformFeedbackStride) {
     TEST_DESCRIPTION("Test maxTransformFeedbackStream with shader objects.");
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::geometryShader);
@@ -4310,7 +4310,7 @@ TEST_F(NegativeShaderObject, TransformFeedbackStride) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MeshOutputVertices) {
+TEST_F(NegativeShaderObjectEXT, MeshOutputVertices) {
     TEST_DESCRIPTION("Create mesh shader with output vertices higher than max.");
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
 
@@ -4351,7 +4351,7 @@ TEST_F(NegativeShaderObject, MeshOutputVertices) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, Atomics) {
+TEST_F(NegativeShaderObjectEXT, Atomics) {
     TEST_DESCRIPTION("Test atomics with shader objects.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::shaderInt64);
@@ -4380,7 +4380,7 @@ TEST_F(NegativeShaderObject, Atomics) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, ExtendedTypesDisabled) {
+TEST_F(NegativeShaderObjectEXT, ExtendedTypesDisabled) {
     TEST_DESCRIPTION("Test VK_KHR_shader_subgroup_extended_types.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
@@ -4420,7 +4420,7 @@ TEST_F(NegativeShaderObject, ExtendedTypesDisabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, ReadShaderClock) {
+TEST_F(NegativeShaderObjectEXT, ReadShaderClock) {
     TEST_DESCRIPTION("Test VK_KHR_shader_clock");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
@@ -4444,7 +4444,7 @@ TEST_F(NegativeShaderObject, ReadShaderClock) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, WriteLessComponent) {
+TEST_F(NegativeShaderObjectEXT, WriteLessComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -4488,7 +4488,7 @@ TEST_F(NegativeShaderObject, WriteLessComponent) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, LocalSizeIdExecutionMode) {
+TEST_F(NegativeShaderObjectEXT, LocalSizeIdExecutionMode) {
     TEST_DESCRIPTION("Test LocalSizeId spirv execution mode.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -4520,7 +4520,7 @@ TEST_F(NegativeShaderObject, LocalSizeIdExecutionMode) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, ZeroInitializeWorkgroupMemory) {
+TEST_F(NegativeShaderObjectEXT, ZeroInitializeWorkgroupMemory) {
     TEST_DESCRIPTION("Test initializing workgroup memory in compute shader.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME);
@@ -4553,7 +4553,7 @@ TEST_F(NegativeShaderObject, ZeroInitializeWorkgroupMemory) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MissingNonReadableDecorationFormatRead) {
+TEST_F(NegativeShaderObjectEXT, MissingNonReadableDecorationFormatRead) {
     TEST_DESCRIPTION("Create a shader with a storage image without an image format not marked as non readable.");
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -4603,7 +4603,7 @@ TEST_F(NegativeShaderObject, MissingNonReadableDecorationFormatRead) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
+TEST_F(NegativeShaderObjectEXT, MaxSampleMaskWords) {
     TEST_DESCRIPTION("Test limit of maxSampleMaskWords");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
@@ -4680,7 +4680,7 @@ TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, ConservativeRasterizationPostDepthCoverage) {
+TEST_F(NegativeShaderObjectEXT, ConservativeRasterizationPostDepthCoverage) {
     TEST_DESCRIPTION("Make sure conservativeRasterizationPostDepthCoverage is set if needed.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
@@ -4727,7 +4727,7 @@ TEST_F(NegativeShaderObject, ConservativeRasterizationPostDepthCoverage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, LocalSizeExceedLimits) {
+TEST_F(NegativeShaderObjectEXT, LocalSizeExceedLimits) {
     TEST_DESCRIPTION("Create shader where local size exceeds limits.");
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -4770,7 +4770,7 @@ TEST_F(NegativeShaderObject, LocalSizeExceedLimits) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MissingLineWidthSet) {
+TEST_F(NegativeShaderObjectEXT, MissingLineWidthSet) {
     TEST_DESCRIPTION("Draw with shaders outputing lines but not setting line width dynamic state.");
     AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -4802,7 +4802,7 @@ TEST_F(NegativeShaderObject, MissingLineWidthSet) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, InvalidViewportCount) {
+TEST_F(NegativeShaderObjectEXT, InvalidViewportCount) {
     TEST_DESCRIPTION("Draw with a shader that uses PrimitiveShadingRateKHR with invalid viewport count.");
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::pipelineFragmentShadingRate);
@@ -4853,7 +4853,7 @@ TEST_F(NegativeShaderObject, InvalidViewportCount) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, AlphaToCoverage) {
+TEST_F(NegativeShaderObjectEXT, AlphaToCoverage) {
     TEST_DESCRIPTION("Draw with fragment shader missing alpha to coverage.");
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -4883,7 +4883,7 @@ TEST_F(NegativeShaderObject, AlphaToCoverage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingLineRasterizationMode) {
+TEST_F(NegativeShaderObjectEXT, MissingLineRasterizationMode) {
     TEST_DESCRIPTION("Draw with shaders outputing lines but not setting line rasterization mode dynamic state.");
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::stippledRectangularLines);
@@ -4918,7 +4918,7 @@ TEST_F(NegativeShaderObject, MissingLineRasterizationMode) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingLineStippleEnable) {
+TEST_F(NegativeShaderObjectEXT, MissingLineStippleEnable) {
     TEST_DESCRIPTION("Draw with shaders outputing lines but not setting line stipple enable dynamic state.");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
@@ -4954,7 +4954,7 @@ TEST_F(NegativeShaderObject, MissingLineStippleEnable) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, InvalidColorWriteMask) {
+TEST_F(NegativeShaderObjectEXT, InvalidColorWriteMask) {
     TEST_DESCRIPTION("Draw with invalid color write mask.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -4997,7 +4997,7 @@ TEST_F(NegativeShaderObject, InvalidColorWriteMask) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, Mismatched64BitAttributeType) {
+TEST_F(NegativeShaderObjectEXT, Mismatched64BitAttributeType) {
     TEST_DESCRIPTION("Draw with vertex format not matching vertex input format.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -5046,7 +5046,7 @@ TEST_F(NegativeShaderObject, Mismatched64BitAttributeType) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, Mismatched32BitAttributeType) {
+TEST_F(NegativeShaderObjectEXT, Mismatched32BitAttributeType) {
     TEST_DESCRIPTION("Draw with vertex format not matching vertex input format.");
 
     AddRequiredFeature(vkt::Feature::shaderInt64);
@@ -5092,7 +5092,7 @@ TEST_F(NegativeShaderObject, Mismatched32BitAttributeType) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MismatchedFormat64Components) {
+TEST_F(NegativeShaderObjectEXT, MismatchedFormat64Components) {
     TEST_DESCRIPTION("Draw with vertex format components not matching vertex input format components.");
 
     AddRequiredFeature(vkt::Feature::shaderInt64);
@@ -5143,7 +5143,7 @@ TEST_F(NegativeShaderObject, MismatchedFormat64Components) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MismatchedAttributeType) {
+TEST_F(NegativeShaderObjectEXT, MismatchedAttributeType) {
     TEST_DESCRIPTION("Draw with vertex format not matching vertex input format.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -5184,7 +5184,7 @@ TEST_F(NegativeShaderObject, MismatchedAttributeType) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DescriptorNotUpdated) {
+TEST_F(NegativeShaderObjectEXT, DescriptorNotUpdated) {
     TEST_DESCRIPTION("Draw with shaders using a descriptor set that was never updated.");
 
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
@@ -5253,7 +5253,7 @@ TEST_F(NegativeShaderObject, DescriptorNotUpdated) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, ComputeVaryingAndFullSubgroups) {
+TEST_F(NegativeShaderObjectEXT, ComputeVaryingAndFullSubgroups) {
     TEST_DESCRIPTION("Dispatch with compute shader using required full subgroups and allow varying subgroup size flags.");
 
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
@@ -5283,7 +5283,7 @@ TEST_F(NegativeShaderObject, ComputeVaryingAndFullSubgroups) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, ComputeVaryingSubgroups) {
+TEST_F(NegativeShaderObjectEXT, ComputeVaryingSubgroups) {
     TEST_DESCRIPTION("Dispatch with compute shader using required full subgroups and allow varying subgroup size flags.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -5312,7 +5312,7 @@ TEST_F(NegativeShaderObject, ComputeVaryingSubgroups) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, GeometryShaderMaxOutputVertices) {
+TEST_F(NegativeShaderObjectEXT, GeometryShaderMaxOutputVertices) {
     TEST_DESCRIPTION("Create geometry shader with output vertices higher than maximum.");
 
     AddRequiredFeature(vkt::Feature::geometryShader);
@@ -5371,7 +5371,7 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxOutputVertices) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, GeometryShaderMaxInvocations) {
+TEST_F(NegativeShaderObjectEXT, GeometryShaderMaxInvocations) {
     TEST_DESCRIPTION("Create geometry shader with invocations higher than maximum.");
 
     AddRequiredFeature(vkt::Feature::geometryShader);
@@ -5431,7 +5431,7 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxInvocations) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MissingImageFilterLinearBit) {
+TEST_F(NegativeShaderObjectEXT, MissingImageFilterLinearBit) {
     TEST_DESCRIPTION("Draw with shaders sampling from an image which does not have required filter linear bit.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -5492,7 +5492,7 @@ TEST_F(NegativeShaderObject, MissingImageFilterLinearBit) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, Multiview) {
+TEST_F(NegativeShaderObjectEXT, Multiview) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4269");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::multiview);
@@ -5529,7 +5529,7 @@ TEST_F(NegativeShaderObject, Multiview) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
+TEST_F(NegativeShaderObjectEXT, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     TEST_DESCRIPTION(
         "Test drawing with dual source blending with too many fragment output attachments, but using dynamic blending.");
     AddRequiredFeature(vkt::Feature::dualSrcBlend);
@@ -5609,7 +5609,7 @@ TEST_F(NegativeShaderObject, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
+TEST_F(NegativeShaderObjectEXT, PrimitivesGeneratedQuery) {
     TEST_DESCRIPTION("Draw with primitives generated query.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -5642,7 +5642,7 @@ TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, CooperativeMatrix) {
+TEST_F(NegativeShaderObjectEXT, CooperativeMatrix) {
     TEST_DESCRIPTION("Test cooperative matrix with shader objects");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -5684,7 +5684,7 @@ TEST_F(NegativeShaderObject, CooperativeMatrix) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MismatchedTessellationSubdivision) {
+TEST_F(NegativeShaderObjectEXT, MismatchedTessellationSubdivision) {
     TEST_DESCRIPTION("Create linked tessellation control and evaluation shaders with different subdivision.");
 
     AddRequiredFeature(vkt::Feature::tessellationShader);
@@ -5793,7 +5793,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSubdivision) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MismatchedTessellationOrientation) {
+TEST_F(NegativeShaderObjectEXT, MismatchedTessellationOrientation) {
     TEST_DESCRIPTION("Create linked tessellation control and evaluation shaders with different orientations.");
 
     AddRequiredFeature(vkt::Feature::tessellationShader);
@@ -5902,7 +5902,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationOrientation) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MismatchedTessellationSpacing) {
+TEST_F(NegativeShaderObjectEXT, MismatchedTessellationSpacing) {
     TEST_DESCRIPTION("Create linked tessellation control and evaluation shaders with different spacing.");
 
     AddRequiredFeature(vkt::Feature::tessellationShader);
@@ -6011,7 +6011,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSpacing) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MismatchedTessellationPatchSize) {
+TEST_F(NegativeShaderObjectEXT, MismatchedTessellationPatchSize) {
     AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -6099,7 +6099,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationPatchSize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MissingSubgroupSizeControlFeature) {
+TEST_F(NegativeShaderObjectEXT, MissingSubgroupSizeControlFeature) {
     TEST_DESCRIPTION("Create shader with invalid flags when subgroupSizeControl is not enabled.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -6114,7 +6114,7 @@ TEST_F(NegativeShaderObject, MissingSubgroupSizeControlFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MissingComputeFullSubgroups) {
+TEST_F(NegativeShaderObjectEXT, MissingComputeFullSubgroups) {
     TEST_DESCRIPTION("Create shader with invalid flags when computeFullSubgroups is not enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -6142,7 +6142,7 @@ TEST_F(NegativeShaderObject, MissingComputeFullSubgroups) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, CoverageToColorInvalidFormat) {
+TEST_F(NegativeShaderObjectEXT, CoverageToColorInvalidFormat) {
     TEST_DESCRIPTION("Use coverage to color with invalid format.");
 
     AddRequiredExtensions(VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME);
@@ -6165,7 +6165,7 @@ TEST_F(NegativeShaderObject, CoverageToColorInvalidFormat) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, InvalidViewportSwizzleCount) {
+TEST_F(NegativeShaderObjectEXT, InvalidViewportSwizzleCount) {
     TEST_DESCRIPTION("Set invalid viewport count for viewport swizzle.");
 
     AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
@@ -6197,7 +6197,7 @@ TEST_F(NegativeShaderObject, InvalidViewportSwizzleCount) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingTessellationEvaluationSubdivision) {
+TEST_F(NegativeShaderObjectEXT, MissingTessellationEvaluationSubdivision) {
     TEST_DESCRIPTION("Create tessellation evaluation shader with missing subdivision.");
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeType-08872");
@@ -6253,7 +6253,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationSubdivision) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MissingTessellationControlPatchSize) {
+TEST_F(NegativeShaderObjectEXT, MissingTessellationControlPatchSize) {
     AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -6300,7 +6300,7 @@ TEST_F(NegativeShaderObject, MissingTessellationControlPatchSize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, TessellationPatchSize) {
+TEST_F(NegativeShaderObjectEXT, TessellationPatchSize) {
     TEST_DESCRIPTION("Create tessellation shader with invalid patch size.");
 
     AddRequiredFeature(vkt::Feature::tessellationShader);
@@ -6369,7 +6369,7 @@ TEST_F(NegativeShaderObject, TessellationPatchSize) {
     }
 }
 
-TEST_F(NegativeShaderObject, DispatchBaseFlag) {
+TEST_F(NegativeShaderObjectEXT, DispatchBaseFlag) {
     TEST_DESCRIPTION("Compute dispatch without VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT");
     RETURN_IF_SKIP(InitBasicShaderObject());
     const vkt::Shader compShader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
@@ -6381,7 +6381,7 @@ TEST_F(NegativeShaderObject, DispatchBaseFlag) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, SetPrimitiveTopologyNonPatch) {
+TEST_F(NegativeShaderObjectEXT, SetPrimitiveTopologyNonPatch) {
     AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -6402,7 +6402,7 @@ TEST_F(NegativeShaderObject, SetPrimitiveTopologyNonPatch) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, SetPrimitiveTopologyPatch) {
+TEST_F(NegativeShaderObjectEXT, SetPrimitiveTopologyPatch) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
     CreateMinimalShaders();
@@ -6420,7 +6420,7 @@ TEST_F(NegativeShaderObject, SetPrimitiveTopologyPatch) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, SetPointTopologyNoWrite) {
+TEST_F(NegativeShaderObjectEXT, SetPointTopologyNoWrite) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
     CreateMinimalShaders();
@@ -6438,7 +6438,7 @@ TEST_F(NegativeShaderObject, SetPointTopologyNoWrite) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DescriptorWrongStage) {
+TEST_F(NegativeShaderObjectEXT, DescriptorWrongStage) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     // wrong stage
@@ -6462,7 +6462,7 @@ TEST_F(NegativeShaderObject, DescriptorWrongStage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, DescriptorWrongStageMultipleBindings) {
+TEST_F(NegativeShaderObjectEXT, DescriptorWrongStageMultipleBindings) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
@@ -6486,7 +6486,7 @@ TEST_F(NegativeShaderObject, DescriptorWrongStageMultipleBindings) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, DescriptorWrongStageMultipleSets) {
+TEST_F(NegativeShaderObjectEXT, DescriptorWrongStageMultipleSets) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     OneOffDescriptorSet descriptor_set0(m_device,
@@ -6513,7 +6513,7 @@ TEST_F(NegativeShaderObject, DescriptorWrongStageMultipleSets) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, DescriptorNotProvided) {
+TEST_F(NegativeShaderObjectEXT, DescriptorNotProvided) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char comp_src[] = R"glsl(
@@ -6529,7 +6529,7 @@ TEST_F(NegativeShaderObject, DescriptorNotProvided) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, DescriptorTypeMismatch) {
+TEST_F(NegativeShaderObjectEXT, DescriptorTypeMismatch) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char comp_src[] = R"glsl(
@@ -6547,7 +6547,7 @@ TEST_F(NegativeShaderObject, DescriptorTypeMismatch) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, DescriptorCount) {
+TEST_F(NegativeShaderObjectEXT, DescriptorCount) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char comp_src[] = R"glsl(
@@ -6565,7 +6565,7 @@ TEST_F(NegativeShaderObject, DescriptorCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, InlineUniformBlockArray) {
+TEST_F(NegativeShaderObjectEXT, InlineUniformBlockArray) {
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::inlineUniformBlock);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -6595,7 +6595,7 @@ TEST_F(NegativeShaderObject, InlineUniformBlockArray) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, PushConstantNotDeclared) {
+TEST_F(NegativeShaderObjectEXT, PushConstantNotDeclared) {
     TEST_DESCRIPTION("Test missing push constant declaration.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -6649,7 +6649,7 @@ TEST_F(NegativeShaderObject, PushConstantNotDeclared) {
     const vkt::Shader validShader(*m_device, createInfo);
 }
 
-TEST_F(NegativeShaderObject, BindWithoutFeature) {
+TEST_F(NegativeShaderObjectEXT, BindWithoutFeature) {
     TEST_DESCRIPTION("Use vkCmdBindShadersEXT without enabling shaderObject feature");
 
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
@@ -6663,7 +6663,7 @@ TEST_F(NegativeShaderObject, BindWithoutFeature) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, InvalidRayTracingStage) {
+TEST_F(NegativeShaderObjectEXT, InvalidRayTracingStage) {
     TEST_DESCRIPTION("Use vkCmdBindShadersEXT without enabling shaderObject feature");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -6677,7 +6677,7 @@ TEST_F(NegativeShaderObject, InvalidRayTracingStage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, TaskMeshShadersDrawWithoutBindingVertex) {
+TEST_F(NegativeShaderObjectEXT, TaskMeshShadersDrawWithoutBindingVertex) {
     TEST_DESCRIPTION("Test drawing using task and mesh shaders without binding anything to vertex stage");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -6752,7 +6752,7 @@ TEST_F(NegativeShaderObject, TaskMeshShadersDrawWithoutBindingVertex) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DrawMeshTasksWithoutMeshShader) {
+TEST_F(NegativeShaderObjectEXT, DrawMeshTasksWithoutMeshShader) {
     TEST_DESCRIPTION("Test calling vkCmdDrawMeshTasksEXT when VK_NULL_HANDLE is bound to mesh stage");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -6795,7 +6795,7 @@ TEST_F(NegativeShaderObject, DrawMeshTasksWithoutMeshShader) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(NegativeShaderObject, VertAndMeshShaderBothNotBound) {
+TEST_F(NegativeShaderObjectEXT, VertAndMeshShaderBothNotBound) {
     TEST_DESCRIPTION("Draw with a neither a vertex or mesh bound");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -6828,7 +6828,7 @@ TEST_F(NegativeShaderObject, VertAndMeshShaderBothNotBound) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, LineRasterization) {
+TEST_F(NegativeShaderObjectEXT, LineRasterization) {
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::smoothLines);
     AddRequiredFeature(vkt::Feature::alphaToOne);
@@ -6852,7 +6852,7 @@ TEST_F(NegativeShaderObject, LineRasterization) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MeshShaderPayloadMemoryOverLimit) {
+TEST_F(NegativeShaderObjectEXT, MeshShaderPayloadMemoryOverLimit) {
     TEST_DESCRIPTION("Validate Mesh shader shared memory limit");
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
@@ -6888,7 +6888,7 @@ TEST_F(NegativeShaderObject, MeshShaderPayloadMemoryOverLimit) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, DrawMissingNextStage) {
+TEST_F(NegativeShaderObjectEXT, DrawMissingNextStage) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -6911,7 +6911,7 @@ TEST_F(NegativeShaderObject, DrawMissingNextStage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DrawWrongNextStage) {
+TEST_F(NegativeShaderObjectEXT, DrawWrongNextStage) {
     AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -6939,7 +6939,7 @@ TEST_F(NegativeShaderObject, DrawWrongNextStage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, NoBoundCompute) {
+TEST_F(NegativeShaderObjectEXT, NoBoundCompute) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10743");
@@ -6947,7 +6947,7 @@ TEST_F(NegativeShaderObject, NoBoundCompute) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, BoundNullCompute) {
+TEST_F(NegativeShaderObjectEXT, BoundNullCompute) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     m_command_buffer.Begin();
 
@@ -6960,7 +6960,7 @@ TEST_F(NegativeShaderObject, BoundNullCompute) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, UnbindCompute) {
+TEST_F(NegativeShaderObjectEXT, UnbindCompute) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     m_command_buffer.Begin();
 
@@ -6977,7 +6977,7 @@ TEST_F(NegativeShaderObject, UnbindCompute) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, CommandBufferRecording) {
+TEST_F(NegativeShaderObjectEXT, CommandBufferRecording) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT;
     const vkt::Shader vert_shader(*m_device, stage, kVertexMinimalGlsl);
@@ -6986,7 +6986,7 @@ TEST_F(NegativeShaderObject, CommandBufferRecording) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, AdvancedBlendMaxAttachments) {
+TEST_F(NegativeShaderObjectEXT, AdvancedBlendMaxAttachments) {
     TEST_DESCRIPTION("Attempt to use more than maximum attachments in subpass when advanced blend is enabled");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
@@ -7063,7 +7063,7 @@ TEST_F(NegativeShaderObject, AdvancedBlendMaxAttachments) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DescriptorHeapShaderObjectCreateFlag) {
+TEST_F(NegativeShaderObjectEXT, DescriptorHeapShaderObjectCreateFlag) {
     TEST_DESCRIPTION("Validate descriptor heap flag influence onto shader object creation.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
@@ -7102,7 +7102,7 @@ TEST_F(NegativeShaderObject, DescriptorHeapShaderObjectCreateFlag) {
     }
 }
 
-TEST_F(NegativeShaderObject, PipelineShaderStageCreateInfoNotEnabled) {
+TEST_F(NegativeShaderObjectEXT, PipelineShaderStageCreateInfoNotEnabled) {
     TEST_DESCRIPTION("Validate VkPipelineShaderStageCreateInfo mappingCount to be zero when descriptorHeap is not enabled");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
@@ -7131,7 +7131,7 @@ TEST_F(NegativeShaderObject, PipelineShaderStageCreateInfoNotEnabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, EmbeddedSamplerReservedArea) {
+TEST_F(NegativeShaderObjectEXT, EmbeddedSamplerReservedArea) {
     TEST_DESCRIPTION("Validate that embedded sampler mapping have reserved area");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
@@ -7253,7 +7253,7 @@ TEST_F(NegativeShaderObject, EmbeddedSamplerReservedArea) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(NegativeShaderObject, DescriptorHeapOpTypeImage) {
+TEST_F(NegativeShaderObjectEXT, DescriptorHeapOpTypeImage) {
     TEST_DESCRIPTION("Validate that mapping is aligned for OpTypeImage");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
@@ -7331,7 +7331,7 @@ TEST_F(NegativeShaderObject, DescriptorHeapOpTypeImage) {
     }
 }
 
-TEST_F(NegativeShaderObject, CustomResolveSampleShadingImplicit) {
+TEST_F(NegativeShaderObjectEXT, CustomResolveSampleShadingImplicit) {
     AddRequiredExtensions(VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
@@ -7378,7 +7378,7 @@ TEST_F(NegativeShaderObject, CustomResolveSampleShadingImplicit) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, InvalidVertexBuffer) {
+TEST_F(NegativeShaderObjectEXT, InvalidVertexBuffer) {
     TEST_DESCRIPTION("Have Binding not be in a linear order");
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitRenderTarget();
@@ -7454,7 +7454,7 @@ TEST_F(NegativeShaderObject, InvalidVertexBuffer) {
 }
 
 // VU being reworked in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8276
-TEST_F(NegativeShaderObject, DISABLED_VertexStride) {
+TEST_F(NegativeShaderObjectEXT, DISABLED_VertexStride) {
     TEST_DESCRIPTION("Draw with vertex format components not matching vertex input format components.");
 
     AddRequiredFeature(vkt::Feature::shaderInt64);
@@ -7499,7 +7499,7 @@ TEST_F(NegativeShaderObject, DISABLED_VertexStride) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, VertexMisalignedAccess) {
+TEST_F(NegativeShaderObjectEXT, VertexMisalignedAccess) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -7544,7 +7544,7 @@ TEST_F(NegativeShaderObject, VertexMisalignedAccess) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, InvalidImageLayout) {
+TEST_F(NegativeShaderObjectEXT, InvalidImageLayout) {
     TEST_DESCRIPTION("Test sampling from an image whose layout was never transitioned.");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -7599,7 +7599,7 @@ TEST_F(NegativeShaderObject, InvalidImageLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, HeapFlags) {
+TEST_F(NegativeShaderObjectEXT, HeapFlags) {
     TEST_DESCRIPTION("Create a linked shaders with mismatched heap flags.");
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
@@ -7619,7 +7619,7 @@ TEST_F(NegativeShaderObject, HeapFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, DrawWithHeap) {
+TEST_F(NegativeShaderObjectEXT, DrawWithHeap) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
@@ -7696,7 +7696,7 @@ TEST_F(NegativeShaderObject, DrawWithHeap) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MissingTessellationOrientation) {
+TEST_F(NegativeShaderObjectEXT, MissingTessellationOrientation) {
     TEST_DESCRIPTION("Create linked tessellation control and evaluation shaders with neither specifying orientation.");
 
     AddRequiredFeature(vkt::Feature::tessellationShader);
@@ -7803,7 +7803,7 @@ TEST_F(NegativeShaderObject, MissingTessellationOrientation) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MissingTessellationSpacing) {
+TEST_F(NegativeShaderObjectEXT, MissingTessellationSpacing) {
     TEST_DESCRIPTION("Create linked tessellation control and evaluation shaders with different spacing.");
 
     AddRequiredFeature(vkt::Feature::tessellationShader);
@@ -7910,7 +7910,7 @@ TEST_F(NegativeShaderObject, MissingTessellationSpacing) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MissingHeapBind) {
+TEST_F(NegativeShaderObjectEXT, MissingHeapBind) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
@@ -7961,7 +7961,7 @@ TEST_F(NegativeShaderObject, MissingHeapBind) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(NegativeShaderObject, ResetShaderObjectBinding) {
+TEST_F(NegativeShaderObjectEXT, ResetShaderObjectBinding) {
     TEST_DESCRIPTION("Bind a pipeline after shader objects to invalidate the shader object bindings.");
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -8000,7 +8000,7 @@ TEST_F(NegativeShaderObject, ResetShaderObjectBinding) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, NotAllShadersWithIndependentSetFlag) {
+TEST_F(NegativeShaderObjectEXT, NotAllShadersWithIndependentSetFlag) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance11);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -8029,7 +8029,7 @@ TEST_F(NegativeShaderObject, NotAllShadersWithIndependentSetFlag) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, PipelineLayoutNoMissingIndependentSetFlag) {
+TEST_F(NegativeShaderObjectEXT, PipelineLayoutNoMissingIndependentSetFlag) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance11);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -8071,7 +8071,7 @@ TEST_F(NegativeShaderObject, PipelineLayoutNoMissingIndependentSetFlag) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, PipelineLayoutNoMissingIndependentSetFlagPushConstant) {
+TEST_F(NegativeShaderObjectEXT, PipelineLayoutNoMissingIndependentSetFlagPushConstant) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance11);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -8110,7 +8110,7 @@ TEST_F(NegativeShaderObject, PipelineLayoutNoMissingIndependentSetFlagPushConsta
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, PipelineLayoutIndependentSetsTaskStage) {
+TEST_F(NegativeShaderObjectEXT, PipelineLayoutIndependentSetsTaskStage) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -8158,7 +8158,7 @@ TEST_F(NegativeShaderObject, PipelineLayoutIndependentSetsTaskStage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, PipelineLayoutIndependentSetsTaskStageDifferentSets) {
+TEST_F(NegativeShaderObjectEXT, PipelineLayoutIndependentSetsTaskStageDifferentSets) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -8211,7 +8211,7 @@ TEST_F(NegativeShaderObject, PipelineLayoutIndependentSetsTaskStageDifferentSets
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, PipelineLayoutIndependentSetsMissingNoTaskShaderFlag) {
+TEST_F(NegativeShaderObjectEXT, PipelineLayoutIndependentSetsMissingNoTaskShaderFlag) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -8252,7 +8252,7 @@ TEST_F(NegativeShaderObject, PipelineLayoutIndependentSetsMissingNoTaskShaderFla
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MeshWithIndeSetAndNoTaskFlapsButBoundTaskShader) {
+TEST_F(NegativeShaderObjectEXT, MeshWithIndeSetAndNoTaskFlapsButBoundTaskShader) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -8302,7 +8302,7 @@ TEST_F(NegativeShaderObject, MeshWithIndeSetAndNoTaskFlapsButBoundTaskShader) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, NoIndependentSetFlagAndNullSetLayout) {
+TEST_F(NegativeShaderObjectEXT, NoIndependentSetFlagAndNullSetLayout) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance11);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -8317,7 +8317,7 @@ TEST_F(NegativeShaderObject, NoIndependentSetFlagAndNullSetLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, NoIndependentSetFlagAndInvalidSetLayout) {
+TEST_F(NegativeShaderObjectEXT, NoIndependentSetFlagAndInvalidSetLayout) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance11);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -8333,7 +8333,7 @@ TEST_F(NegativeShaderObject, NoIndependentSetFlagAndInvalidSetLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, IndependentSetsNotNull) {
+TEST_F(NegativeShaderObjectEXT, IndependentSetsNotNull) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance11);
@@ -8411,7 +8411,7 @@ TEST_F(NegativeShaderObject, IndependentSetsNotNull) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, IndependentSetsCompute) {
+TEST_F(NegativeShaderObjectEXT, IndependentSetsCompute) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance11);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -8428,7 +8428,7 @@ TEST_F(NegativeShaderObject, IndependentSetsCompute) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, DestroyBoundShaderObject) {
+TEST_F(NegativeShaderObjectEXT, DestroyBoundShaderObject) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const VkShaderStageFlagBits stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -8446,7 +8446,7 @@ TEST_F(NegativeShaderObject, DestroyBoundShaderObject) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeShaderObject, DestroyedLinkedShader) {
+TEST_F(NegativeShaderObjectEXT, DestroyedLinkedShader) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -8479,7 +8479,7 @@ TEST_F(NegativeShaderObject, DestroyedLinkedShader) {
     vk::DestroyShaderEXT(*m_device, shaders[0], nullptr);
 }
 
-TEST_F(NegativeShaderObject, DestroyedLinkedShader2) {
+TEST_F(NegativeShaderObjectEXT, DestroyedLinkedShader2) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
