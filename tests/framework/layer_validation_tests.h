@@ -440,7 +440,7 @@ class RayTracingTest : public virtual VkLayerTest {
 
 class GpuAVRayTracingTest : public GpuAVTest, public RayTracingTest {};
 
-class ShaderObjectTest : public virtual VkLayerTest {
+class ShaderObjectTestEXT : public virtual VkLayerTest {
   public:
     void InitBasicShaderObject(void *instance_pnext = nullptr);
     void InitBasicMeshShaderObject(APIVersion target_api_version);

@@ -14,7 +14,7 @@
 #include "shader_object_helper.h"
 #include "pipeline_helper.h"
 
-class PositiveGpuAVShaderObject : public GpuAVTest {
+class PositiveGpuAVShaderObjectEXT : public GpuAVTest {
   public:
     void InitBasicShaderObject() {
         SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -25,7 +25,7 @@ class PositiveGpuAVShaderObject : public GpuAVTest {
     }
 };
 
-TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
+TEST_F(PositiveGpuAVShaderObjectEXT, RestoreUserPushConstants) {
     TEST_DESCRIPTION("Test that user supplied push constants are correctly restored. One graphics pipeline, indirect draw.");
     InitBasicShaderObject();
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -159,7 +159,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     }
 }
 
-TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
+TEST_F(PositiveGpuAVShaderObjectEXT, RestoreUserPushConstants2) {
     TEST_DESCRIPTION(
         "Test that user supplied push constants are correctly restored. One graphics pipeline, one compute pipeline, indirect draw "
         "and dispatch.");
@@ -355,7 +355,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     }
 }
 
-TEST_F(PositiveGpuAVShaderObject, GetShaderBinaryDataSimple) {
+TEST_F(PositiveGpuAVShaderObjectEXT, GetShaderBinaryDataSimple) {
     InitBasicShaderObject();
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -371,7 +371,7 @@ TEST_F(PositiveGpuAVShaderObject, GetShaderBinaryDataSimple) {
     vkt::Shader binary_frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_data);
 }
 
-TEST_F(PositiveGpuAVShaderObject, GetShaderBinaryData) {
+TEST_F(PositiveGpuAVShaderObjectEXT, GetShaderBinaryData) {
     InitBasicShaderObject();
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -400,7 +400,7 @@ TEST_F(PositiveGpuAVShaderObject, GetShaderBinaryData) {
     vkt::Shader binary_frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_data, &descriptor_set.layout_.handle());
 }
 
-TEST_F(PositiveGpuAVShaderObject, BinaryShaderObjects) {
+TEST_F(PositiveGpuAVShaderObjectEXT, BinaryShaderObjects) {
     InitBasicShaderObject();
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
