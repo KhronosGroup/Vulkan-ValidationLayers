@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "error_message/logging.h"
 #include "generated/error_location_helper.h"
 #include "generated/sync_validation_types.h"
 
@@ -25,8 +26,11 @@ class Logger;
 namespace syncval {
 
 struct SyncEnvironment;
+class CommandBufferContext;
 class HazardResult;
 class SyncValidator;
+
+LogObjectList BaseObjectList(const SyncEnvironment& env, const CommandBufferContext& cb_context, const VulkanTypedHandle& resource);
 
 // Collection of named values that describe key information associated with an error message.
 // This can be useful to filter out messages or for quick inspection as a more structured (but lose)

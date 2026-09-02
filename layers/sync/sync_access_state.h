@@ -575,11 +575,10 @@ bool AccessState::ClearPredicatedAccesses(Predicate& predicate) {
     return all_clear;
 }
 
-// A helper function to apply multiple barriers.
-// NOTE: That's for use cases when BarrierScope does not use queue id or tag (record time, not-event barriers).
-// This can be extended if necessary to provide BarrierScope for each barrier.
+// Applies a set of barriers that do not require BarrierScope::scope_tag.
+// Event barriers, which require scope tags, use a different path.
 void ApplyBarriers(AccessState& access_state, const std::vector<SyncBarrier>& barriers, bool layout_transition = false,
-                   ResourceUsageTag layout_transition_tag = kInvalidTag);
+                   ResourceUsageTag layout_transition_tag = kInvalidTag, QueueId queue_id = kQueueIdInvalid);
 
 // Global registry of layout transition ordering barriers
 ThreadSafeLookupTable<OrderingBarrier>& GetLayoutOrderingBarrierLookup();

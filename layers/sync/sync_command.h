@@ -26,6 +26,8 @@ struct VulkanTypedHandle;
 namespace vvl {
 class Buffer;
 class Image;
+class ImageView;
+class RenderPass;
 enum class Func;
 }  // namespace vvl
 
@@ -33,6 +35,7 @@ namespace syncval {
 
 class AccessContext;
 class CommandBufferContext;
+class RenderPassAccessContext;
 struct CommandData;
 struct SyncEnvironment;
 
@@ -102,17 +105,45 @@ struct BarrierCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
-using CommandStorage = std::variant<BufferCopyCommand::Storage, ImageCopyCommand::Storage, BarrierCommand::Storage>;
+struct BeginRenderPassCommand {
+    // Initial layout transition and loadOp tags
+    static constexpr uint32_t kTagCount = 2;
+
+    const vvl::RenderPass& render_pass;
+    vvl::span<const std::shared_ptr<const vvl::ImageView>> attachment_views;
+    VkRect2D render_area{};
+    uint32_t render_pass_instance_id = 0;
+
+    struct Storage {
+        uint32_t render_pass_index;
+        uint32_t first_attachment_view_index;
+        uint32_t attachment_count;
+        VkRect2D render_area;
+        uint32_t render_pass_instance_id;
+        BeginRenderPassCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, RenderPassAccessContext& rp_context) const;
+};
+
+using CommandStorage =
+    std::variant<BufferCopyCommand::Storage, ImageCopyCommand::Storage, BarrierCommand::Storage, BeginRenderPassCommand::Storage>;
 
 struct CommandData {
     std::vector<std::shared_ptr<const vvl::Buffer>> buffers;
     std::vector<std::shared_ptr<const vvl::Image>> images;
+    std::vector<std::shared_ptr<const vvl::ImageView>> image_views;
+    std::vector<std::shared_ptr<const vvl::RenderPass>> render_passes;
     std::vector<BufferCopyRegion> buffer_copy_regions;
     std::vector<VkImageCopy> image_copy_regions;
     std::vector<BarrierSet> barrier_sets;
 
     uint32_t AddBuffer(const vvl::Buffer& buffer);
     uint32_t AddImage(const vvl::Image& image);
+    uint32_t AddRenderPass(const vvl::RenderPass& render_pass);
 };
 
 // TODO: CommandEntry won't be needed after all commands are introduced.
@@ -120,6 +151,7 @@ struct CommandData {
 // use array of commands instead.
 struct CommandEntry {
     ResourceUsageTag tag;
+    uint32_t tag_count;
     CommandStorage storage;
 };
 

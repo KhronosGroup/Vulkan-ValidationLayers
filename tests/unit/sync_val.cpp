@@ -1354,14 +1354,10 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
     TEST_DESCRIPTION("Copying to attachment creates hazard with attachment load operation");
     RETURN_IF_SKIP(InitSyncVal());
 
-    const uint32_t w = 64;
-    const uint32_t h = 64;
-    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-
-    vkt::Image src_image(*m_device, w, h, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-
-    vkt::Image attachment_image(*m_device, w, h, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    vkt::ImageView attachment_view = attachment_image.CreateView();
+    vkt::Image src_image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image attachment(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
+                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView attachment_view = attachment.CreateView();
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
@@ -1372,16 +1368,15 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
     VkImageCopy region = {};
     region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.extent = {w, h, 1};
+    region.extent = {64, 64, 1};
 
     m_command_buffer.Begin();
     // Write to attachment
-    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, attachment_image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, attachment, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
 
     // Execution barrier to ensure that copy and loadOp operations do not overlap.
     // This does not synchronize memory accesses though and WAW hazard remains.
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0,
-                           nullptr, 0, nullptr, 0, nullptr);
+    m_command_buffer.ExecutionBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
     // Attachment load operation collides with copy
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");

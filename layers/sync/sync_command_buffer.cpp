@@ -336,6 +336,7 @@ void CommandBufferContext::Reset() {
     render_pass_contexts_.clear();
     current_context_ = &cb_access_context_;
     current_renderpass_context_ = nullptr;
+    current_render_pass_instance_id_ = 0;
     events_context_.Clear();
     dynamic_rendering_info_.reset();
 }
@@ -1325,14 +1326,12 @@ QueueId CommandBufferContext::GetQueueId() const { return kQueueIdInvalid; }
 ResourceUsageTag CommandBufferContext::RecordBeginRenderPass(
     vvl::Func command, const vvl::RenderPass& rp_state, const VkRect2D& render_area,
     const std::vector<std::shared_ptr<const vvl::ImageView>>& attachment_views) {
-    // Create an access context the current renderpass.
-    const auto barrier_tag = NextCommandTag(command, SubCommandType::kSubpassTransition, 0);
+    const ResourceUsageTag barrier_tag = NextCommandTag(command, SubCommandType::kSubpassTransition, 0);
     AddCommandHandle(barrier_tag, rp_state.Handle());
-    const auto load_tag = NextSubCommandTag(command, SubCommandType::kLoadOp, 0);
+    NextSubCommandTag(command, SubCommandType::kLoadOp, 0);
     render_pass_contexts_.emplace_back(std::make_unique<RenderPassAccessContext>(
         rp_state, render_area, environment_.queue_flags, attachment_views, cb_access_context_, current_render_pass_instance_id_));
     current_renderpass_context_ = render_pass_contexts_.back().get();
-    current_renderpass_context_->RecordBeginRenderPass(barrier_tag, load_tag);
     current_context_ = &current_renderpass_context_->CurrentContext();
     return barrier_tag;
 }
@@ -1382,8 +1381,11 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
             std::visit(
                 [&](const auto& storage) {
                     const auto command = storage.MakeCommand(recorded_cb_context.GetCommandData());
-                    command.Apply(environment_, base_tag + entry.tag, *current_context_);
-                    StoreCommand(base_tag + entry.tag, command);
+                    using CommandType = std::decay_t<decltype(command)>;
+                    if constexpr (!std::is_same_v<CommandType, BeginRenderPassCommand>) {
+                        command.Apply(environment_, base_tag + entry.tag, *current_context_);
+                        StoreCommand(base_tag + entry.tag, command, entry.tag_count);
+                    }
                 },
                 entry.storage);
         }
@@ -2028,23 +2030,31 @@ void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& r
     if (!base.IsPrimary()) {
         return;  // [core validation check]: only primary command buffer can begin render pass
     }
-
     const SyncValidator& validator = cb_context.GetSyncState();
     auto rp_state = validator.Get<vvl::RenderPass>(render_pass_begin.renderPass);
     if (!rp_state) {
         return;
     }
-
     std::vector<std::shared_ptr<const vvl::ImageView>> attachments;
     auto fb_state = validator.Get<vvl::Framebuffer>(render_pass_begin.framebuffer);
     if (fb_state) {
         attachments = validator.device_state->GetAttachmentViews(render_pass_begin, *fb_state);
     }
+    const uint32_t render_pass_instance_id = cb_context.GetCurrentRenderPassInstanceId();
+    const BeginRenderPassCommand command{*rp_state, attachments, render_pass_begin.renderArea, render_pass_instance_id};
 
     const ResourceUsageTag begin_tag =
         cb_context.RecordBeginRenderPass(loc.function, *rp_state, render_pass_begin.renderArea, attachments);
-    const RenderPassAccessContext* rp_context = cb_context.GetCurrentRenderPassContext();
-    cb_context.AddReplayEntry(begin_tag, true, ReplayContextChange(std::move(rp_state), std::move(attachments), rp_context));
+    RenderPassAccessContext& rp_context = *cb_context.GetCurrentRenderPassContext();
+
+    const auto& settings = cb_context.GetSyncState().syncval_settings;
+    if (settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), begin_tag, rp_context);
+    }
+    if (validator.syncval_settings.full_validation) {
+        cb_context.StoreCommand(begin_tag, command, BeginRenderPassCommand::kTagCount);
+    }
+    cb_context.AddReplayEntry(begin_tag, true, ReplayContextChange(std::move(rp_state), std::move(attachments), &rp_context));
 }
 
 void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo& subpass_begin_info,
