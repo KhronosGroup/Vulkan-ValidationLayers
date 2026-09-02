@@ -65,7 +65,8 @@ target_sources(gpu_av_spirv PRIVATE
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/spirv_grammar_helper.cpp
 
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.h
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.cpp
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_glsl.cpp
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_slang.cpp
 )
 
 target_include_directories(gpu_av_spirv PRIVATE .
@@ -103,17 +104,23 @@ set(GPUAV_SHADERS_DIR "${VVL_SOURCE_DIR}/layers/gpuav/shaders")
 file(GLOB_RECURSE GPUAV_SHADERS CONFIGURE_DEPENDS
     "${GPUAV_SHADERS_DIR}/*.vert"
     "${GPUAV_SHADERS_DIR}/*.comp"
+    "${GPUAV_SHADERS_DIR}/*.slang"
     "${GPUAV_SHADERS_DIR}/*.h"
 )
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+# Slang compiler still being optional, do not list its output here
 add_custom_command(
-    OUTPUT "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.h" "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.cpp"
+    OUTPUT
+      "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.h"
+      "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_glsl.cpp"
     COMMAND Python3::Interpreter "scripts/generate_spirv.py"
     DEPENDS ${GPUAV_SHADERS}
     WORKING_DIRECTORY ${VVL_SOURCE_DIR}
     VERBATIM
 )
 add_custom_target(vvl_gpu_av_shaders_spirv
-    DEPENDS "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.h" "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.cpp"
+    DEPENDS
+    "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.h"
+    "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_glsl.cpp"
 )
 add_dependencies(gpu_av_spirv vvl_gpu_av_shaders_spirv)
