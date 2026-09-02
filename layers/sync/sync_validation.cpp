@@ -643,60 +643,30 @@ void SyncValidator::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore s
 
 bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                             const VkSubpassBeginInfo* pSubpassBeginInfo, const ErrorObject& error_obj) const {
-    bool skip = false;
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
     if (!pRenderPassBegin) {
-        return skip;
+        return false;
     }
     auto rp_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     if (!rp_state) {
-        return skip;
+        return false;
     }
     auto fb_state = Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
     if (!fb_state) {
-        return skip;
+        return false;
     }
-
-    const std::vector<std::shared_ptr<const vvl::ImageView>> attachments =
-        device_state->GetAttachmentViews(*pRenderPassBegin, *fb_state);
+    const auto attachments = device_state->GetAttachmentViews(*pRenderPassBegin, *fb_state);
     if (attachments.empty()) {
-        return skip;
+        return false;
     }
-
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const VkQueueFlags queue_flags = cb_state->GetQueueFlags();
-
-    const uint32_t subpass_zero = 0;
-    const uint32_t view_mask = rp_state->create_info.pSubpasses[0].viewMask;
-
-    // Construct the state to validate against (since validation is const and RecordCmdBeginRenderPass hasn't happened yet).
-    AccessContext temp_context(cb_context.GetSyncState());
-
-    // TODO: investigate if using nullptr in InitFrom is safe (this just follows the initial implementation - it assumes
-    // that array of subpass dependencies won't be indexed, but it's not obvious).
-    temp_context.InitFrom(subpass_zero, queue_flags, rp_state->subpass_dependency_infos, nullptr, cb_context.GetCbAccessContext());
-
-    // Validate attachment operations
     const uint32_t render_pass_instance_id = cb_context.GetCurrentRenderPassInstanceId();
 
-    // Since the isn't a valid RenderPassAccessContext until Record, needs to create the view/generator list.
-    // We could limit this by predicating on whether subpass 0 uses the attachment if it is too expensive
-    // to create the full list redundantly here. More broadly we could look at thread specific state shared
-    // between Validate and Record as is done for other heavyweight operations.
-    const AttachmentViewGenVector view_gens =
-        RenderPassAccessContext::CreateAttachmentViewGen(pRenderPassBegin->renderArea, attachments);
-
-    // Check if any of the layout transitions are hazardous
-    skip |= RenderPassAccessContext::ValidateLayoutTransitions(cb_context, temp_context, *rp_state, render_pass_instance_id,
-                                                               subpass_zero, view_mask, view_gens, error_obj.location.function);
-
-    // Validate load operations if there were no layout transition hazards
-    if (!skip) {
-        RenderPassAccessContext::RecordLayoutTransitions(*rp_state, subpass_zero, view_gens, kInvalidTag, temp_context);
-        skip |= RenderPassAccessContext::ValidateLoadOperation(cb_context, temp_context, *rp_state, render_pass_instance_id,
-                                                               subpass_zero, view_mask, view_gens, error_obj.location.function);
-    }
-    return skip;
+    const BeginRenderPassCommand command{*rp_state, attachments, pRenderPassBegin->renderArea, render_pass_instance_id};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,

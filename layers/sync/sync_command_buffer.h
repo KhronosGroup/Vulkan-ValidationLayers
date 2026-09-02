@@ -258,9 +258,9 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     }
 
     template <typename Command>
-    void StoreCommand(ResourceUsageTag tag, const Command& command) {
+    void StoreCommand(ResourceUsageTag tag, const Command& command, uint32_t tag_count = 1) {
         auto storage = command.MakeStorage(command_data_);
-        commands_.push_back(CommandEntry{tag, std::move(storage)});
+        commands_.push_back(CommandEntry{tag, tag_count, std::move(storage)});
     }
 
     const std::vector<HandleRecord>& GetHandleRecords() const { return handles_; }
@@ -275,11 +275,12 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     const std::vector<CommandEntry>& GetCommands() const { return commands_; }
     const CommandData& GetCommandData() const { return command_data_; }
 
-    // TODO: debug util, remove after convertion to commands is finished
+    // TODO: remove after convertion to commands is finished
     bool HasAllCommands() const {
         size_t command_index = 0;
         for (ResourceUsageTag tag = 0; tag < access_log_->size(); tag++) {
             if (command_index < commands_.size() && commands_[command_index].tag == tag) {
+                tag += commands_[command_index].tag_count - 1;
                 command_index++;
                 continue;
             }
@@ -346,7 +347,11 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     SyncEnvironment environment_;
 
-    // Don't need the following for an active proxy cb context
+        // NOTE: Don't need the following for proxy contexts (that validate secondary execution).
+        // They flatten the source's current access state into cb_access_context_
+    //
+    // TODO: After removing legacy submit-time replay, replace this context history and the
+    // non-owning current pointer with a single owning current context.
     std::vector<std::unique_ptr<RenderPassAccessContext>> render_pass_contexts_;
     RenderPassAccessContext* current_renderpass_context_;
     std::vector<ReplayEntry> replay_entries_;

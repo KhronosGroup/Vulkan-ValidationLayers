@@ -116,17 +116,18 @@ class HazardDetector {
 class HazardDetectorAttachment {
   public:
     HazardDetectorAttachment(SyncAccessIndex access_index, const AttachmentAccess& attachment_access,
-                             const AccessContext& access_context, bool detect_load_op_after_store_op_hazards)
+                             const AccessContext& access_context, QueueId queue_id, bool detect_load_op_after_store_op_hazards)
         : access_info_(GetAccessInfo(access_index)),
           attachment_access_(attachment_access),
           access_context_(access_context),
-          detect_load_op_after_store_op_hazards(detect_load_op_after_store_op_hazards) {}
+          queue_id_(queue_id),
+          detect_load_op_after_store_op_hazards_(detect_load_op_after_store_op_hazards) {}
 
     HazardResult Detect(const AccessMap::const_iterator& pos) const {
         const OrderingBarrier& ordering = GetOrderingRules(attachment_access_.ordering);
         return DoDetect(access_context_, pos->second, [this, &ordering](const AccessState& access_state) {
-            return access_state.DetectHazard(access_info_, ordering, attachment_access_, 0, kQueueIdInvalid,
-                                             detect_load_op_after_store_op_hazards);
+            return access_state.DetectHazard(access_info_, ordering, attachment_access_, 0, queue_id_,
+                                             detect_load_op_after_store_op_hazards_);
         });
     }
 
@@ -140,7 +141,8 @@ class HazardDetectorAttachment {
     const SyncAccessInfo& access_info_;
     const AttachmentAccess attachment_access_;
     const AccessContext& access_context_;
-    const bool detect_load_op_after_store_op_hazards;
+    const QueueId queue_id_;
+    const bool detect_load_op_after_store_op_hazards_;
 };
 
 class HazardDetectFirstUse {
@@ -348,24 +350,24 @@ HazardResult AccessContext::DetectHazard(const vvl::ImageView& image_view, const
 }
 
 HazardResult AccessContext::DetectAttachmentHazard(ImageRangeGen& range_gen, SyncAccessIndex current_usage,
-                                                   const AttachmentAccess& attachment_access) const {
-    HazardDetectorAttachment detector(current_usage, attachment_access, *this,
+                                                   const AttachmentAccess& attachment_access, QueueId queue_id) const {
+    HazardDetectorAttachment detector(current_usage, attachment_access, *this, queue_id,
                                       validator->syncval_settings.load_op_after_store_op_validation);
     return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
 }
 
 HazardResult AccessContext::DetectAttachmentHazard(const AttachmentViewGen& view_gen, AttachmentViewGen::Gen gen_type,
                                                    SyncAccessIndex current_usage, const AttachmentAccess& attachment_access,
-                                                   uint32_t view_mask) const {
+                                                   uint32_t view_mask, QueueId queue_id) const {
     if (view_mask == 0) {
         ImageRangeGen range_gen = view_gen.GetRangeGen(gen_type);
-        return DetectAttachmentHazard(range_gen, current_usage, attachment_access);
+        return DetectAttachmentHazard(range_gen, current_usage, attachment_access, queue_id);
     } else {
         uint32_t view_index = 0;
         while (view_mask) {
             if (view_mask & 1) {
                 ImageRangeGen range_gen = view_gen.GetRangeGen(gen_type, view_index);
-                auto hazard = DetectAttachmentHazard(range_gen, current_usage, attachment_access);
+                auto hazard = DetectAttachmentHazard(range_gen, current_usage, attachment_access, queue_id);
                 if (hazard.IsHazard()) {
                     return hazard;
                 }
@@ -379,17 +381,17 @@ HazardResult AccessContext::DetectAttachmentHazard(const AttachmentViewGen& view
 
 HazardResult AccessContext::DetectAttachmentHazard(const vvl::Image& image, const VkImageSubresourceRange& subresource_range,
                                                    bool is_depth_sliced, SyncAccessIndex current_usage,
-                                                   const AttachmentAccess& attachment_access) const {
+                                                   const AttachmentAccess& attachment_access, QueueId queue_id) const {
     const auto& sub_state = SubState(image);
-    HazardDetectorAttachment detector(current_usage, attachment_access, *this, false);
+    HazardDetectorAttachment detector(current_usage, attachment_access, *this, queue_id, false);
     ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, is_depth_sliced);
     return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
 }
 
 HazardResult AccessContext::DetectAttachmentHazard(const vvl::ImageView& image_view, const VkOffset3D& offset,
                                                    const VkExtent3D& extent, SyncAccessIndex current_usage,
-                                                   const AttachmentAccess& attachment_access) const {
-    HazardDetectorAttachment detector(current_usage, attachment_access, *this,
+                                                   const AttachmentAccess& attachment_access, QueueId queue_id) const {
+    HazardDetectorAttachment detector(current_usage, attachment_access, *this, queue_id,
                                       validator->syncval_settings.load_op_after_store_op_validation);
     ImageRangeGen range_gen(MakeImageRangeGen(image_view, offset, extent));
     return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
@@ -416,24 +418,24 @@ HazardResult AccessContext::DetectImageBarrierHazard(const vvl::Image& image, Vk
 }
 
 HazardResult AccessContext::DetectImageBarrierHazard(const AttachmentViewGen& view_gen, const SyncBarrier& barrier,
-                                                     DetectOptions options) const {
+                                                     DetectOptions options, QueueId queue_id) const {
     BarrierHazardDetector detector(*this, SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, barrier.src_exec_scope.exec_scope,
-                                   barrier.src_access_scope, kQueueIdInvalid);
+                                   barrier.src_access_scope, queue_id);
     ImageRangeGen range_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kViewSubresource);
     return DetectHazardGeneratedRangeGen(detector, range_gen, options);
 }
 
 HazardResult AccessContext::DetectSubpassTransitionHazard(const SubpassBarrier& subpass_barrier,
-                                                          const AttachmentViewGen& attach_view) const {
+                                                          const AttachmentViewGen& attach_view, QueueId queue_id) const {
     // Do the detection against the specific prior context independent of other contexts.  (Synchronous only)
     // Hazard detection for the transition can be against the merged of the barriers (it only uses src_...)
     const SyncBarrier merged_barrier(subpass_barrier.barriers);
     const AccessContext& src_subpass_context = *subpass_barrier.src_subpass_context;
-    HazardResult hazard = src_subpass_context.DetectImageBarrierHazard(attach_view, merged_barrier, kDetectPrevious);
+    HazardResult hazard = src_subpass_context.DetectImageBarrierHazard(attach_view, merged_barrier, kDetectPrevious, queue_id);
     if (!hazard.IsHazard()) {
         // The Async hazard check is against the current context's async set.
         SyncBarrier null_barrier = {};
-        hazard = DetectImageBarrierHazard(attach_view, null_barrier, kDetectAsync);
+        hazard = DetectImageBarrierHazard(attach_view, null_barrier, kDetectAsync, queue_id);
     }
 
     return hazard;

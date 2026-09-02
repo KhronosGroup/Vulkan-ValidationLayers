@@ -175,11 +175,15 @@ struct ApplySubpassBarrierAction {
 };
 
 struct ApplySubpassTransitionBarrierAction {
-    ApplySubpassTransitionBarrierAction(const SubpassBarrier& subpass_barrier, ResourceUsageTag layout_transition_tag)
-        : subpass_barrier(subpass_barrier), layout_transition_tag(layout_transition_tag) {}
-    void operator()(AccessState* access) const { ApplyBarriers(*access, subpass_barrier.barriers, true, layout_transition_tag); }
+    ApplySubpassTransitionBarrierAction(const SubpassBarrier& subpass_barrier, ResourceUsageTag layout_transition_tag,
+                                        QueueId queue_id)
+        : subpass_barrier(subpass_barrier), layout_transition_tag(layout_transition_tag), queue_id(queue_id) {}
+    void operator()(AccessState* access) const {
+        ApplyBarriers(*access, subpass_barrier.barriers, true, layout_transition_tag, queue_id);
+    }
     const SubpassBarrier& subpass_barrier;
     const ResourceUsageTag layout_transition_tag;
+    const QueueId queue_id;
 };
 
 class AttachmentViewGen {
@@ -277,10 +281,11 @@ class AccessContext {
     void UpdateAccessState(ImageRangeGen& range_gen, SyncAccessIndex current_usage, ResourceUsageTagEx tag_ex, SyncFlags flags = 0,
                            QueueId queue_id = kQueueIdInvalid);
     void UpdateAttachmentAccessState(ImageRangeGen& range_gen, SyncAccessIndex current_usage,
-                                     const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex);
+                                     const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex,
+                                     QueueId queue_id = kQueueIdInvalid);
     void UpdateAttachmentAccessState(const AttachmentViewGen& view_gen, AttachmentViewGen::Gen gen_type,
                                      SyncAccessIndex current_usage, const AttachmentAccess& attachment_access,
-                                     ResourceUsageTagEx tag_ex, uint32_t view_mask = 0);
+                                     ResourceUsageTagEx tag_ex, uint32_t view_mask = 0, QueueId queue_id = kQueueIdInvalid);
 
     void ImportAsyncContexts(const AccessContext& from);
     void ClearAsyncContexts() { async_.clear(); }
@@ -363,15 +368,16 @@ class AccessContext {
                               SyncAccessIndex current_usage) const;
 
     HazardResult DetectAttachmentHazard(ImageRangeGen& range_gen, SyncAccessIndex current_usage,
-                                        const AttachmentAccess& attachment_access) const;
+                                        const AttachmentAccess& attachment_access, QueueId queue_id = kQueueIdInvalid) const;
     HazardResult DetectAttachmentHazard(const AttachmentViewGen& view_gen, AttachmentViewGen::Gen gen_type,
                                         SyncAccessIndex current_usage, const AttachmentAccess& attachment_access,
-                                        uint32_t view_mask) const;
+                                        uint32_t view_mask, QueueId queue_id = kQueueIdInvalid) const;
     HazardResult DetectAttachmentHazard(const vvl::Image& image, const VkImageSubresourceRange& subresource_range,
                                         bool is_depth_sliced, SyncAccessIndex current_usage,
-                                        const AttachmentAccess& attachment_access) const;
+                                        const AttachmentAccess& attachment_access, QueueId queue_id = kQueueIdInvalid) const;
     HazardResult DetectAttachmentHazard(const vvl::ImageView& image_view, const VkOffset3D& offset, const VkExtent3D& extent,
-                                        SyncAccessIndex current_usage, const AttachmentAccess& attachment_access) const;
+                                        SyncAccessIndex current_usage, const AttachmentAccess& attachment_access,
+                                        QueueId queue_id = kQueueIdInvalid) const;
 
     HazardResult DetectImageBarrierHazard(const vvl::Image& image, const VkImageSubresourceRange& subresource_range,
                                           VkPipelineStageFlags2 src_exec_scope, const SyncAccessFlags& src_access_scope,
@@ -381,9 +387,10 @@ class AccessContext {
                                           const SyncAccessFlags& src_access_scope, const VkImageSubresourceRange& subresource_range,
                                           bool is_depth_sliced, DetectOptions options, QueueId queue_id) const;
     HazardResult DetectImageBarrierHazard(const AttachmentViewGen& attachment_view, const SyncBarrier& barrier,
-                                          DetectOptions options) const;
+                                          DetectOptions options, QueueId queue_id = kQueueIdInvalid) const;
 
-    HazardResult DetectSubpassTransitionHazard(const SubpassBarrier& subpass_barrier, const AttachmentViewGen& attach_view) const;
+    HazardResult DetectSubpassTransitionHazard(const SubpassBarrier& subpass_barrier, const AttachmentViewGen& attach_view,
+                                               QueueId queue_id) const;
 
     HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange& tag_range,
                                       const AccessContext& destination_context) const;

@@ -2251,6 +2251,11 @@ void CommandBuffer::Barrier(VkPipelineStageFlags src_stage_mask, VkPipelineStage
     vk::CmdPipelineBarrier(handle(), src_stage_mask, dst_stage_mask, dependency_flags, 1, &barrier, 0, nullptr, 0, nullptr);
 }
 
+void CommandBuffer::ExecutionBarrier(VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                                     VkDependencyFlags dependency_flags) {
+    vk::CmdPipelineBarrier(handle(), src_stage_mask, dst_stage_mask, dependency_flags, 0, nullptr, 0, nullptr, 0, nullptr);
+}
+
 void CommandBuffer::Barrier(const VkMemoryBarrier2& barrier, VkDependencyFlags dependency_flags) {
     VkDependencyInfo dep_info = DependencyInfo(barrier, dependency_flags);
     vk::CmdPipelineBarrier2(handle(), &dep_info);

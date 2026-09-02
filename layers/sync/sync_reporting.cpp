@@ -359,6 +359,22 @@ static void ReportAcquireImageSynchronizationInsight(std::ostringstream& ss) {
           "example, by including them in the barrier's srcStageMask).";
 }
 
+LogObjectList BaseObjectList(const SyncEnvironment& env, const CommandBufferContext& cb_context,
+                             const VulkanTypedHandle& resource) {
+    LogObjectList objlist;
+    const VulkanTypedHandle& cb_handle = cb_context.GetCBState().Handle();
+
+    // During recording, env.handle is the command buffer handle. Skip to avoid duplication.
+    if (env.handle != cb_handle) {
+        // During replay, env.handle is the handle of the replayer (queue or primary command buffer).
+        objlist.add(env.handle);
+    }
+
+    objlist.add(cb_handle);
+    objlist.add(resource);
+    return objlist;
+}
+
 void ReportProperties::Add(std::string_view property_name, std::string_view value) {
     name_values.emplace_back(NameValue{std::string(property_name), std::string(value)});
 }

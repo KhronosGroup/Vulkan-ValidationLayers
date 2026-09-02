@@ -572,29 +572,30 @@ void AccessContext::UpdateAccessState(ImageRangeGen& range_gen, SyncAccessIndex 
 }
 
 void AccessContext::UpdateAttachmentAccessState(ImageRangeGen& range_gen, SyncAccessIndex current_usage,
-                                                const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex) {
+                                                const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex,
+                                                QueueId queue_id) {
     assert(!finalized_);
     if (current_usage == SYNC_ACCESS_INDEX_NONE) {
         return;
     }
     auto pos = access_state_map_.LowerBound(range_gen->begin);
     for (; range_gen->non_empty(); ++range_gen) {
-        pos = DoUpdateAccessState(pos, *range_gen, current_usage, attachment_access, tag_ex, 0);
+        pos = DoUpdateAccessState(pos, *range_gen, current_usage, attachment_access, tag_ex, 0, queue_id);
     }
 }
 
 void AccessContext::UpdateAttachmentAccessState(const AttachmentViewGen& view_gen, AttachmentViewGen::Gen gen_type,
                                                 SyncAccessIndex current_usage, const AttachmentAccess& attachment_access,
-                                                ResourceUsageTagEx tag_ex, uint32_t view_mask) {
+                                                ResourceUsageTagEx tag_ex, uint32_t view_mask, QueueId queue_id) {
     if (view_mask == 0) {
         ImageRangeGen range_gen = view_gen.GetRangeGen(gen_type);
-        UpdateAttachmentAccessState(range_gen, current_usage, attachment_access, tag_ex);
+        UpdateAttachmentAccessState(range_gen, current_usage, attachment_access, tag_ex, queue_id);
     } else {
         uint32_t view_index = 0;
         while (view_mask) {
             if (view_mask & 1) {
                 ImageRangeGen range_gen = view_gen.GetRangeGen(gen_type, view_index);
-                UpdateAttachmentAccessState(range_gen, current_usage, attachment_access, tag_ex);
+                UpdateAttachmentAccessState(range_gen, current_usage, attachment_access, tag_ex, queue_id);
             }
             view_mask >>= 1;
             view_index++;
