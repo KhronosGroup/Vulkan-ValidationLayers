@@ -1,5 +1,5 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See generate_spirv.py for modifications
+// See compile_gpuav_shaders.py for modifications
 
 /***************************************************************************
  *

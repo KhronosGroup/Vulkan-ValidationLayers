@@ -1,18 +1,18 @@
 # GPU Assisted Validation Shaders
 
-This directory is for holding shaders that are used for [shader instrumentation](../../docs/gpu_av_shader_instrumentation.md) inside [GPU Assisted Validation](../../docs/gpuav.md). These are turned in SPIR-V when generating code with `generate_spirv.py`　and turned into a header file in [layers/vulkan/generated](../generated/).
+This directory is for holding shaders that are used for [shader instrumentation](../../docs/gpu_av_shader_instrumentation.md) inside [GPU Assisted Validation](../../docs/gpuav.md). These are turned in SPIR-V when generating code with `compile_gpuav_shaders.py`　and turned into a header file in [layers/vulkan/generated](../generated/).
 
 To regenerate the validation shader, run the following:
 
 ```bash
 # generate all the shaders with glslangValidator at external/glslang/build/install/bin/glslangValidator
-python3 ./scripts/generate_spirv.py
+python3 ./scripts/compile_gpuav_shaders.py
 
 # Using own glslangValidator executable
-python3 ./scripts/generate_spirv.py --glslang path/to/glslangValidator
+python3 ./scripts/compile_gpuav_shaders.py --glslang path/to/glslangValidator
 
 # generate a single shader
-python3 ./scripts/generate_spirv.py --shader layers/gpuav/shaders/gpu_pre_draw.vert
+python3 ./scripts/compile_gpuav_shaders.py --shader layers/gpuav/shaders/gpu_pre_draw.vert
 ```
 
 ## Adding a new shader
