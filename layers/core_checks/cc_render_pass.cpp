@@ -2996,19 +2996,23 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(const core::RenderingAttachment
     const VkFormat image_view_format = image_view_state.create_info.format;
     if ((!vkuFormatIsSINT(image_view_format) && !vkuFormatIsUINT(image_view_format)) && vkuFormatIsColor(image_view_format) &&
         !IsValueIn(vvl_attachment.info.resolveMode,
-                   {VK_RESOLVE_MODE_NONE, VK_RESOLVE_MODE_AVERAGE_BIT, VK_RESOLVE_MODE_CUSTOM_BIT_EXT})) {
+                   {VK_RESOLVE_MODE_NONE, VK_RESOLVE_MODE_AVERAGE_BIT, VK_RESOLVE_MODE_CUSTOM_BIT_EXT,
+                    VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID})) {
         skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06129", vvl_attachment.GetObjectList(),
                          vvl_attachment.Loc().dot(Field::resolveMode),
-                         "(%s) must be VK_RESOLVE_MODE_NONE or VK_RESOLVE_MODE_AVERAGE_BIT for non-integer formats (%s)",
+                         "(%s) is not valid for for non-integer formats (%s)\nValid resolveMode: NONE, AVERAGE, CUSTOM, "
+                         "EXTERNAL_FORMAT_DOWNSAMPLE",
                          string_VkResolveModeFlagBits(vvl_attachment.info.resolveMode), string_VkFormat(image_view_format));
     }
 
     if ((vkuFormatIsSINT(image_view_format) || vkuFormatIsUINT(image_view_format)) && vkuFormatIsColor(image_view_format) &&
         !IsValueIn(vvl_attachment.info.resolveMode,
-                   {VK_RESOLVE_MODE_NONE, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT, VK_RESOLVE_MODE_CUSTOM_BIT_EXT})) {
+                   {VK_RESOLVE_MODE_NONE, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT, VK_RESOLVE_MODE_CUSTOM_BIT_EXT,
+                    VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID})) {
         skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06130", vvl_attachment.GetObjectList(),
                          vvl_attachment.Loc().dot(Field::resolveMode),
-                         "(%s) must be VK_RESOLVE_MODE_NONE or VK_RESOLVE_MODE_SAMPLE_ZERO_BIT for integer formats (%s)",
+                         "(%s) is not valid for for integer formats (%s)\nValid resolveMode: NONE, SAMPLE_ZERO, CUSTOM, "
+                         "EXTERNAL_FORMAT_DOWNSAMPLE",
                          string_VkResolveModeFlagBits(vvl_attachment.info.resolveMode), string_VkFormat(image_view_format));
     }
 
@@ -3118,15 +3122,16 @@ bool CoreChecks::ValidateRenderingAttachmentInfoResolveMode(const core::Renderin
     if (vvl_attachment.image_view_state) {
         if (resolve_view_state.samples != VK_SAMPLE_COUNT_1_BIT && vvl_attachment.info.resolveMode != VK_RESOLVE_MODE_NONE) {
             skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06864", vvl_attachment.GetObjectList(),
-                             vvl_attachment.Loc().dot(Field::resolveMode), "%s but resolveImageView has a sample count of %s",
+                             vvl_attachment.Loc().dot(Field::resolveMode),
+                             "is %s but resolveImageView has a sample count of %s (only valid with VK_RESOLVE_MODE_NONE)",
                              string_VkResolveModeFlagBits(vvl_attachment.info.resolveMode),
                              string_VkSampleCountFlagBits(resolve_view_state.samples));
         }
 
         const VkFormat image_view_format = vvl_attachment.image_view_state->create_info.format;
-        if (vvl_attachment.info.resolveMode != VK_RESOLVE_MODE_CUSTOM_BIT_EXT &&
-            vvl_attachment.info.resolveMode != VK_RESOLVE_MODE_NONE &&
-            (image_view_format != resolve_view_state.create_info.format)) {
+        if (image_view_format != resolve_view_state.create_info.format &&
+            !IsValueIn(vvl_attachment.info.resolveMode, {VK_RESOLVE_MODE_NONE, VK_RESOLVE_MODE_CUSTOM_BIT_EXT,
+                                                         VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID})) {
             skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06865", vvl_attachment.GetObjectList(),
                              vvl_attachment.Loc().dot(Field::resolveImageView),
                              "format (%s) and %s format (%s) are different (resolveMode is %s).",
@@ -3240,7 +3245,8 @@ bool CoreChecks::ValidateRenderingAttachmentInfoMultisampledResolveMode(const co
                              vvl_attachment.Loc().dot(Field::resolveMode),
                              "(%s) is not VK_RESOLVE_MODE_NONE, resolveImageView must not be VK_NULL_HANDLE",
                              string_VkResolveModeFlagBits(vvl_attachment.info.resolveMode));
-        } else if (image_view_samples == VK_SAMPLE_COUNT_1_BIT) {
+        } else if (image_view_samples == VK_SAMPLE_COUNT_1_BIT &&
+                   vvl_attachment.info.resolveMode != VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID) {
             skip |=
                 LogError("VUID-VkRenderingAttachmentInfo-imageView-06861", vvl_attachment.GetObjectList(),
                          vvl_attachment.Loc().dot(Field::imageView), "must not have a VK_SAMPLE_COUNT_1_BIT when resolveMode is %s",
