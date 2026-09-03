@@ -2621,7 +2621,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound& last_bound_st
                              " and the color write enable state of the remaining attachments is undefined.%s\n%s",
                              blend_attachment_count, dynamic_attachment_count,
                              cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT).c_str(),
-                             cb_state.DescribeActiveColorAttachment());
+                             cb_state.DescribeActiveColorAttachment().c_str());
             }
         }
     }
@@ -2650,7 +2650,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound& last_bound_st
                              "vkCmdSetColorWriteMaskEXT was not set for color attachment index %" PRIu32
                              " for this command buffer.%s\n%s",
                              color_index, cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT).c_str(),
-                             cb_state.DescribeActiveColorAttachment());
+                             cb_state.DescribeActiveColorAttachment().c_str());
         }
 
         if (dynamic_blend_enable && cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
@@ -2661,7 +2661,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound& last_bound_st
                              "vkCmdSetColorBlendEnableEXT was not set for color attachment index %" PRIu32
                              " for this command buffer.%s\n%s",
                              color_index, cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT).c_str(),
-                             cb_state.DescribeActiveColorAttachment());
+                             cb_state.DescribeActiveColorAttachment().c_str());
             continue;  // If no value is set, IsColorBlendEnabled will give garbage
         }
         // The following all rely on color blend
@@ -2696,31 +2696,33 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound& last_bound_st
                                      : "vkCmdSetColorBlendEquationEXT",
                                  color_index, attachment_info.Describe(cb_state, i).c_str(),
                                  last_bound_state.DescribeColorBlendEnabled(color_index).c_str(),
-                                 cb_state.DescribeActiveColorAttachment());
+                                 cb_state.DescribeActiveColorAttachment().c_str());
             }
         } else if (dynamic_equation) {
             // Only possible with pipelines
             if (!cb_state.dynamic_state_value.color_blend_equation_attachments[color_index]) {
                 const LogObjectList objlist(cb_state.Handle(), attachment->VkHandle(), last_bound_state.pipeline_state->Handle());
-                skip |= LogError(
-                    CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_BLEND_EQUATION_10862), objlist, loc,
-                    "The pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, but "
-                    "vkCmdSetColorBlendEquationEXT was never set for color attachment index %" PRIu32 " (%s).%s\n%s\n%s",
-                    color_index, attachment_info.Describe(cb_state, i).c_str(),
-                    cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT).c_str(),
-                    last_bound_state.DescribeColorBlendEnabled(color_index).c_str(), cb_state.DescribeActiveColorAttachment());
+                skip |=
+                    LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_BLEND_EQUATION_10862), objlist, loc,
+                             "The pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, but "
+                             "vkCmdSetColorBlendEquationEXT was never set for color attachment index %" PRIu32 " (%s).%s\n%s\n%s",
+                             color_index, attachment_info.Describe(cb_state, i).c_str(),
+                             cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT).c_str(),
+                             last_bound_state.DescribeColorBlendEnabled(color_index).c_str(),
+                             cb_state.DescribeActiveColorAttachment().c_str());
             }
         } else if (dynamic_advanced) {
             // Only possible with pipelines
             if (!cb_state.dynamic_state_value.color_blend_advanced_attachments[color_index]) {
                 const LogObjectList objlist(cb_state.Handle(), attachment->VkHandle(), last_bound_state.pipeline_state->Handle());
-                skip |= LogError(
-                    CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_BLEND_EQUATION_10863), objlist, loc,
-                    "The pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT, but "
-                    "vkCmdSetColorBlendAdvancedEXT was never set for color attachment index %" PRIu32 " (%s).%s\n%s\n%s",
-                    color_index, attachment_info.Describe(cb_state, i).c_str(),
-                    cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT).c_str(),
-                    last_bound_state.DescribeColorBlendEnabled(color_index).c_str(), cb_state.DescribeActiveColorAttachment());
+                skip |=
+                    LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_BLEND_EQUATION_10863), objlist, loc,
+                             "The pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT, but "
+                             "vkCmdSetColorBlendAdvancedEXT was never set for color attachment index %" PRIu32 " (%s).%s\n%s\n%s",
+                             color_index, attachment_info.Describe(cb_state, i).c_str(),
+                             cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT).c_str(),
+                             last_bound_state.DescribeColorBlendEnabled(color_index).c_str(),
+                             cb_state.DescribeActiveColorAttachment().c_str());
             }
         }
 
@@ -2729,15 +2731,16 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound& last_bound_st
                 phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
                 LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
                 objlist.add(attachment->Handle());
-                skip |= LogError(
-                    CreateActionVuid(loc.function, vvl::ActionVUID::BLEND_ADVANCED_07480), objlist, loc,
-                    "vkCmdSetColorBlendAdvancedEXT has set color attachment index %" PRIu32
-                    " (%s) to advanced blending, but the total active color attachment count (%zu) is greater than "
-                    "advancedBlendMaxColorAttachments (%" PRIu32 ").%s\n%s\n%s",
-                    color_index, attachment_info.Describe(cb_state, i).c_str(), cb_state.active_color_attachments_index.size(),
-                    phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments,
-                    cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT).c_str(),
-                    last_bound_state.DescribeColorBlendEnabled(color_index).c_str(), cb_state.DescribeActiveColorAttachment());
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::BLEND_ADVANCED_07480), objlist, loc,
+                                 "vkCmdSetColorBlendAdvancedEXT has set color attachment index %" PRIu32
+                                 " (%s) to advanced blending, but the total active color attachment count (%zu) is greater than "
+                                 "advancedBlendMaxColorAttachments (%" PRIu32 ").%s\n%s\n%s",
+                                 color_index, attachment_info.Describe(cb_state, i).c_str(),
+                                 cb_state.active_color_attachments_index.size(),
+                                 phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments,
+                                 cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT).c_str(),
+                                 last_bound_state.DescribeColorBlendEnabled(color_index).c_str(),
+                                 cb_state.DescribeActiveColorAttachment().c_str());
             }
         }
 
@@ -2753,7 +2756,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound& last_bound_st
                              last_bound_state.DescribeColorBlendEnabled(color_index).c_str(),
                              last_bound_state.DescribeBlendFactorEquation(color_index).c_str(),
                              cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_BLEND_CONSTANTS).c_str(),
-                             cb_state.DescribeActiveColorAttachment());
+                             cb_state.DescribeActiveColorAttachment().c_str());
         }
 
         // Validation needing access to spir-v information

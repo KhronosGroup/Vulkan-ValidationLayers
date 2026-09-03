@@ -1150,7 +1150,7 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
                                      "coverageToColorLocation (%" PRIu32
                                      ") set by vkCmdSetCoverageToColorLocationNV points to a color attachment with format %s.\n%s",
                                      cb_state.dynamic_state_value.coverage_to_color_location, string_VkFormat(format),
-                                     cb_state.DescribeActiveColorAttachment());
+                                     cb_state.DescribeActiveColorAttachment().c_str());
                     }
                 }
             }

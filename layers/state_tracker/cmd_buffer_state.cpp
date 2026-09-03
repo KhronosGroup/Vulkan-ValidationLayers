@@ -23,6 +23,7 @@
 #include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_format_utils.h>
 #include <memory>
+#include <sstream>
 #include "containers/limits.h"
 #include "error_message/error_location.h"
 #include "generated/command_validation.h"
@@ -113,6 +114,14 @@ std::string AttachmentInfo::Describe(const vvl::CommandBuffer& cb_state, uint32_
 
         ss << ")";
     }
+
+    ss << " (";
+    if (image_view) {
+        ss << cb_state.dev_data.FormatHandle(image_view->Handle());
+    } else {
+        ss << "VK_NULL_HANDLE";
+    }
+    ss << ')';
     return ss.str();
 }
 
@@ -166,14 +175,21 @@ void CommandBuffer::SetActiveSubpass(uint32_t subpass) {
 }
 
 // Put here, instead of vvl::RenderPass for ease of access
-const char* CommandBuffer::DescribeActiveColorAttachment() const {
+std::string CommandBuffer::DescribeActiveColorAttachment() const {
+    std::ostringstream ss;
     if (!active_render_pass) {
-        return "";
-    } else if (active_render_pass->UsesDynamicRendering()) {
-        return "Active color attachments are those where VkRenderingInfo::pColorAttachments[i].imageView != VK_NULL_HANDLE";
+        ss << "[No active rendering instance]";
     } else {
-        return "Active color attachments are those where pSubpasses[i].pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED";
+        ss << "Active color attachments are:\n";
+        for (uint32_t i = 0; i < active_attachments.size(); ++i) {
+            const AttachmentInfo& attachment_info = active_attachments[i];
+            if (!attachment_info.IsColor() || !attachment_info.image_view) {
+                continue;
+            }
+            ss << "  " << attachment_info.Describe(*this, i) << '\n';
+        }
     }
+    return ss.str();
 }
 
 CommandBuffer::CommandBuffer(DeviceState& dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* allocate_info,
