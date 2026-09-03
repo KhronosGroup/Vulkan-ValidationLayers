@@ -866,7 +866,7 @@ TEST_F(NegativeGpuAVScoped, SelectInstrumentedShadersShaderObject) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExcludeEXT();
-    m_command_buffer.BindShaders(vert_shader, frag_shader);
+    m_command_buffer.BindShadersEXT(vert_shader, frag_shader);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 1u, &vert_descriptor_set.set_,
                               0u, nullptr);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
@@ -946,7 +946,7 @@ TEST_F(NegativeGpuAVScoped, SelectInstrumentedShadersShaderObjectDrawIndexedIndi
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExcludeEXT();
-    m_command_buffer.BindShaders(vert_shader, frag_shader);
+    m_command_buffer.BindShadersEXT(vert_shader, frag_shader);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 1u, &vert_descriptor_set.set_,
                               0u, nullptr);
 

@@ -1968,7 +1968,7 @@ TEST_F(NegativeTileShading, TileShadingDrawButHasActiveGeometryShaderObject) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
     SetDefaultDynamicStatesExcludeEXT();
-    m_command_buffer.BindShaders(vert_shader, geom_shader, frag_shader);
+    m_command_buffer.BindShadersEXT(vert_shader, geom_shader, frag_shader);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10678");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -2335,7 +2335,7 @@ TEST_F(NegativeTileShading, CapabilityInComputeShaderObjectOutsideTileShadingRen
     vkt::Shader cs{*m_device, ShaderCreateInfo(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT)};
 
     m_command_buffer.Begin();
-    m_command_buffer.BindCompShader(cs);
+    m_command_buffer.BindCompShaderEXT(cs);
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-TileShadingQCOM-10700");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-TileShadingQCOM-10701");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -2455,7 +2455,7 @@ TEST_F(NegativeTileShading, CapabilityInFragmentShaderObjectOutsideTileShadingRe
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExcludeEXT();
-    m_command_buffer.BindShaders(vs, fs);
+    m_command_buffer.BindShadersEXT(vs, fs);
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-TileShadingQCOM-10700");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();

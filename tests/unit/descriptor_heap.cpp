@@ -4174,7 +4174,7 @@ TEST_F(NegativeDescriptorHeap, PushDataAssignedShaderObject) {
         if (i != 0) {
             vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
         }
-        m_command_buffer.BindCompShader(comp_shader);
+        m_command_buffer.BindCompShaderEXT(comp_shader);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
         vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);

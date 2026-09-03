@@ -2114,21 +2114,21 @@ void CommandBuffer::PushData(uint32_t offset, size_t size, const void* address) 
     vk::CmdPushDataEXT(handle(), &push_data);
 }
 
-void CommandBuffer::BindShaders(const vkt::Shader& vert_shader, const vkt::Shader& frag_shader) {
+void CommandBuffer::BindShadersEXT(const vkt::Shader& vert_shader, const vkt::Shader& frag_shader) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
     vk::CmdBindShadersEXT(handle(), 1u, &stages[0], &vert_shader.handle());
     vk::CmdBindShadersEXT(handle(), 1u, &stages[1], &frag_shader.handle());
 }
 
-void CommandBuffer::BindShaders(const vkt::Shader& vert_shader, const vkt::Shader& geom_shader, const vkt::Shader& frag_shader) {
+void CommandBuffer::BindShadersEXT(const vkt::Shader& vert_shader, const vkt::Shader& geom_shader, const vkt::Shader& frag_shader) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_GEOMETRY_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
     vk::CmdBindShadersEXT(handle(), 1u, &stages[0], &vert_shader.handle());
     vk::CmdBindShadersEXT(handle(), 1u, &stages[1], &geom_shader.handle());
     vk::CmdBindShadersEXT(handle(), 1u, &stages[2], &frag_shader.handle());
 }
 
-void CommandBuffer::BindShaders(const vkt::Shader& vert_shader, const vkt::Shader& tesc_shader, const vkt::Shader& tese_shader,
-                                const vkt::Shader& frag_shader) {
+void CommandBuffer::BindShadersEXT(const vkt::Shader& vert_shader, const vkt::Shader& tesc_shader, const vkt::Shader& tese_shader,
+                                   const vkt::Shader& frag_shader) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
                                             VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
     vk::CmdBindShadersEXT(handle(), 1u, &stages[0], &vert_shader.handle());
@@ -2137,8 +2137,8 @@ void CommandBuffer::BindShaders(const vkt::Shader& vert_shader, const vkt::Shade
     vk::CmdBindShadersEXT(handle(), 1u, &stages[3], &frag_shader.handle());
 }
 
-void CommandBuffer::BindShaders(const vkt::Shader& vert_shader, const vkt::Shader& tesc_shader, const vkt::Shader& tese_shader,
-                                const vkt::Shader& geom_shader, const vkt::Shader& frag_shader) {
+void CommandBuffer::BindShadersEXT(const vkt::Shader& vert_shader, const vkt::Shader& tesc_shader, const vkt::Shader& tese_shader,
+                                   const vkt::Shader& geom_shader, const vkt::Shader& frag_shader) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
                                             VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
                                             VK_SHADER_STAGE_FRAGMENT_BIT};
@@ -2149,21 +2149,21 @@ void CommandBuffer::BindShaders(const vkt::Shader& vert_shader, const vkt::Shade
     vk::CmdBindShadersEXT(handle(), 1u, &stages[4], &frag_shader.handle());
 }
 
-void CommandBuffer::BindCompShader(const vkt::Shader& comp_shader) {
+void CommandBuffer::BindCompShaderEXT(const vkt::Shader& comp_shader) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
     const VkShaderEXT shaders[] = {comp_shader};
     vk::CmdBindShadersEXT(handle(), 1u, stages, shaders);
 }
 
-void CommandBuffer::BindMeshShaders(const vkt::Shader& mesh_shader, const vkt::Shader& frag_shader) {
+void CommandBuffer::BindMeshShadersEXT(const vkt::Shader& mesh_shader, const vkt::Shader& frag_shader) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_MESH_BIT_EXT,
                                             VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_STAGE_VERTEX_BIT};
     const VkShaderEXT shaders[] = {VK_NULL_HANDLE, mesh_shader, frag_shader, VK_NULL_HANDLE};
     vk::CmdBindShadersEXT(handle(), 4u, stages, shaders);
 }
 
-void CommandBuffer::BindMeshShaders(const vkt::Shader& task_shader, const vkt::Shader& mesh_shader,
-                                    const vkt::Shader& frag_shader) {
+void CommandBuffer::BindMeshShadersEXT(const vkt::Shader& task_shader, const vkt::Shader& mesh_shader,
+                                       const vkt::Shader& frag_shader) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_MESH_BIT_EXT,
                                             VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_STAGE_VERTEX_BIT};
     const VkShaderEXT shaders[] = {task_shader, mesh_shader, frag_shader, VK_NULL_HANDLE};

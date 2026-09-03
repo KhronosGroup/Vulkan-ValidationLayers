@@ -1937,7 +1937,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsGraphics) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    m_command_buffer.BindShaders(vs, fs);
+    m_command_buffer.BindShadersEXT(vs, fs);
     SetDefaultDynamicStatesAllEXT(m_command_buffer);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
@@ -2069,7 +2069,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
     multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 3;
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    m_command_buffer.BindShaders(vs, fs);
+    m_command_buffer.BindShadersEXT(vs, fs);
     SetDefaultDynamicStatesAllEXT(m_command_buffer);
     vk::CmdDrawMultiEXT(m_command_buffer, 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
     m_command_buffer.EndRendering();
@@ -2088,7 +2088,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
     ptr[2] = 2;
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    m_command_buffer.BindShaders(vs, fs);
+    m_command_buffer.BindShadersEXT(vs, fs);
     SetDefaultDynamicStatesAllEXT(m_command_buffer);
     vk::CmdBindIndexBuffer(m_command_buffer, buffer, 0, VK_INDEX_TYPE_UINT16);
     vk::CmdDrawMultiIndexedEXT(m_command_buffer, 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
@@ -2153,7 +2153,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesAllEXT(m_command_buffer);
     vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer, VK_TRUE);
-    m_command_buffer.BindMeshShaders(ts, ms, fs);
+    m_command_buffer.BindMeshShadersEXT(ts, ms, fs);
     vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
@@ -2358,7 +2358,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectFragment) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(renderingInfo);
     SetDefaultDynamicStatesExcludeEXT({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
-    m_command_buffer.BindShaders(vert_shader, frag_shader);
+    m_command_buffer.BindShadersEXT(vert_shader, frag_shader);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
@@ -2385,7 +2385,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectCompute) {
     const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source));
 
     m_command_buffer.Begin();
-    m_command_buffer.BindCompShader(comp_shader);
+    m_command_buffer.BindCompShaderEXT(comp_shader);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -2886,7 +2886,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsShaderObjectReserved) {
         m_errorMonitor->VerifyFound();
 
         m_command_buffer.Begin();
-        m_command_buffer.BindCompShader(comp_shader);
+        m_command_buffer.BindCompShaderEXT(comp_shader);
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
@@ -2907,7 +2907,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsShaderObjectReserved) {
                                       ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, under_set_limit, layouts.data()));
 
         m_command_buffer.Begin();
-        m_command_buffer.BindCompShader(comp_shader);
+        m_command_buffer.BindCompShaderEXT(comp_shader);
         vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_layout, 0, 1, &descriptor_set.set_, 0,
                                   nullptr);
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -2955,7 +2955,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsShaderObjectNotReserved) {
         m_errorMonitor->VerifyFound();
 
         m_command_buffer.Begin();
-        m_command_buffer.BindCompShader(comp_shader);
+        m_command_buffer.BindCompShaderEXT(comp_shader);
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
@@ -2976,7 +2976,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsShaderObjectNotReserved) {
                                       ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, set_limit - 1, layouts.data()));
 
         m_command_buffer.Begin();
-        m_command_buffer.BindCompShader(comp_shader);
+        m_command_buffer.BindCompShaderEXT(comp_shader);
         vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_layout, 0, 1, &descriptor_set.set_, 0,
                                   nullptr);
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -3082,7 +3082,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectBoundDescriptor) {
     const vkt::Shader comp_shader(*m_device,
                                   ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle()));
     m_command_buffer.Begin();
-    m_command_buffer.BindCompShader(comp_shader);
+    m_command_buffer.BindCompShaderEXT(comp_shader);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -3122,7 +3122,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectUnusedBoundDescriptor) {
     VkDescriptorSetLayout layouts[2] = {descriptor_set0.layout_, descriptor_set1.layout_};
     const vkt::Shader comp_shader(*m_device, ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 2, layouts));
     m_command_buffer.Begin();
-    m_command_buffer.BindCompShader(comp_shader);
+    m_command_buffer.BindCompShaderEXT(comp_shader);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set0.set_, 0,
                               nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);

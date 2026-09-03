@@ -138,7 +138,7 @@ TEST_F(PositiveGpuAVShaderObjectEXT, RestoreUserPushConstants) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExcludeEXT();
-    m_command_buffer.BindShaders(vs, fs);
+    m_command_buffer.BindShadersEXT(vs, fs);
 
     vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size, &push_constants);
     vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size,
@@ -327,8 +327,8 @@ TEST_F(PositiveGpuAVShaderObjectEXT, RestoreUserPushConstants2) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExcludeEXT();
 
-    m_command_buffer.BindShaders(vs, fs);
-    m_command_buffer.BindCompShader(cs);
+    m_command_buffer.BindShadersEXT(vs, fs);
+    m_command_buffer.BindCompShaderEXT(cs);
 
     vk::CmdPushConstants(m_command_buffer, graphics_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                          sizeof(graphics_push_constants), &graphics_push_constants);

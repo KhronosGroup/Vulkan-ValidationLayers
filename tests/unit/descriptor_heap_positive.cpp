@@ -3121,7 +3121,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
 
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesAllEXT(m_command_buffer);
-    m_command_buffer.BindShaders(vert_shader, frag_shader);
+    m_command_buffer.BindShadersEXT(vert_shader, frag_shader);
     desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_command_buffer.EndRendering();
