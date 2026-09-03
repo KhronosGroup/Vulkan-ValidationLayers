@@ -258,7 +258,8 @@ bool CoreChecks::ValidateShaderInputAttachmentDynamicRendering(const spirv::Modu
     assert(variable.is_input_attachment);
 
     // VUID 06061 requires dynamicRenderingLocalRead and if they have, we can just check the colorAttachmentCount
-    if (vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(pipeline.GetCreateInfoPNext())) {
+    if (pipeline.fragment_shader_state && vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(
+                                              pipeline.fragment_shader_state->parent.GetCreateInfoPNext())) {
         return skip;  // has input attachment remapping
     }
 
