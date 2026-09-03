@@ -1213,8 +1213,8 @@ void VkRenderFramework::DestroyRenderTarget() {
     m_framebuffer = nullptr;
 }
 
-void VkRenderFramework::SetDefaultDynamicStatesExclude(const std::vector<VkDynamicState>& exclude, bool tessellation,
-                                                       VkCommandBuffer commandBuffer) {
+void VkRenderFramework::SetDefaultDynamicStatesExcludeEXT(const std::vector<VkDynamicState>& exclude, bool tessellation,
+                                                          VkCommandBuffer commandBuffer) {
     const auto excluded = [&exclude](VkDynamicState state) {
         for (const auto& check_state : exclude) {
             if (check_state == state) {
@@ -1288,7 +1288,7 @@ void VkRenderFramework::SetDefaultDynamicStatesExclude(const std::vector<VkDynam
     if (!excluded(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) vk::CmdSetColorWriteMaskEXT(cmdBuffer, 0u, 1u, &colorWriteMask);
 }
 
-void VkRenderFramework::SetDefaultDynamicStatesAll(VkCommandBuffer cmdBuffer) {
+void VkRenderFramework::SetDefaultDynamicStatesAllEXT(VkCommandBuffer cmdBuffer) {
     uint32_t width = 32;
     uint32_t height = 32;
     VkViewport viewport = {0, 0, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f};

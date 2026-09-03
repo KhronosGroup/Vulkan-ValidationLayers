@@ -355,7 +355,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex32ShaderObject) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     m_command_buffer.BindShaders(vs, fs);
-    SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE});
+    SetDefaultDynamicStatesExcludeEXT({VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE});
 
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, 666, 42});
     vkt::Buffer vertex_buffer = vkt::VertexBuffer<float>(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});

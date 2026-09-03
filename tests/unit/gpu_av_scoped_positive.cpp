@@ -125,7 +125,7 @@ TEST_F(PositiveGpuAVScoped, DispatchShaderObjectAndPipeline) {
     indirect_dispatch_parameters.z = 1u;
 
     m_command_buffer.Begin();
-    SetDefaultDynamicStatesExclude();
+    SetDefaultDynamicStatesExcludeEXT();
     m_command_buffer.BindCompShader(compShader);
     vk::CmdDispatchIndirect(m_command_buffer, indirect_dispatch_parameters_buffer, 0u);
 

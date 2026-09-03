@@ -508,7 +508,7 @@ TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectVertex) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT};
     vk::CmdBindShadersEXT(m_command_buffer, 1u, stages, shaders);
-    SetDefaultDynamicStatesAll(m_command_buffer);
+    SetDefaultDynamicStatesAllEXT(m_command_buffer);
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
@@ -572,7 +572,7 @@ TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectMesh) {
     vk::CmdBindShadersEXT(m_command_buffer, 1u, &null_stages, &null_shader);
     null_stages = VK_SHADER_STAGE_TASK_BIT_EXT;
     vk::CmdBindShadersEXT(m_command_buffer, 1u, &null_stages, &null_shader);
-    SetDefaultDynamicStatesAll(m_command_buffer);
+    SetDefaultDynamicStatesAllEXT(m_command_buffer);
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
@@ -785,7 +785,7 @@ TEST_F(PositiveDeviceGeneratedCommands, ShaderObjectQuery) {
 
     vk::CmdBindShadersEXT(m_command_buffer, 7u, stages, shaders);
 
-    SetDefaultDynamicStatesAll(m_command_buffer);
+    SetDefaultDynamicStatesAllEXT(m_command_buffer);
     VkVertexInputBindingDescription2EXT binding_desc = vku::InitStructHelper();
     binding_desc.binding = 0;
     binding_desc.stride = 16;

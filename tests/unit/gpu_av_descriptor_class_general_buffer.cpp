@@ -389,7 +389,7 @@ void NegativeGpuAVDescriptorClassGeneralBuffer::ShaderBufferSizeTest(VkDeviceSiz
                                                 VK_SHADER_STAGE_FRAGMENT_BIT};
         const VkShaderEXT shaders[] = {vso->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, fso->handle()};
         vk::CmdBindShadersEXT(m_command_buffer, 5u, stages, shaders);
-        SetDefaultDynamicStatesAll(m_command_buffer);
+        SetDefaultDynamicStatesAllEXT(m_command_buffer);
     } else {
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     }

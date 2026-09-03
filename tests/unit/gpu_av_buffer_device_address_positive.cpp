@@ -2204,7 +2204,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushC
     vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_1_size, &push_constants_data[0]);
     vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, pc_1_size, sizeof(uint32_t),
                          &push_constants_data[2]);
-    SetDefaultDynamicStatesAll(m_command_buffer);
+    SetDefaultDynamicStatesAllEXT(m_command_buffer);
 
     vk::CmdBindShadersEXT(m_command_buffer, size32(stages), stages.data(), shaders_2.data());
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
