@@ -626,9 +626,9 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
                 ss << rasterizer_discard_enable_static;
             }
             if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) {
-                ss << "vkCmdSetDepthBiasEnable last set depthTestEnable to VK_TRUE.\n";
+                ss << "vkCmdSetDepthBiasEnable last set depthBiasEnable to VK_TRUE.\n";
             } else {
-                ss << "VkPipelineRasterizationStateCreateInfo::depthTestEnable was VK_TRUE in the last bound graphics pipeline.\n";
+                ss << "VkPipelineRasterizationStateCreateInfo::depthBiasEnable was VK_TRUE in the last bound graphics pipeline.\n";
             }
             break;
         case CB_DYNAMIC_STATE_BLEND_CONSTANTS:

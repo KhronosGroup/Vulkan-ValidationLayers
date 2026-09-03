@@ -432,9 +432,9 @@ class DynamicStateOutputGenerator(BaseGenerator):
             if dynamicState.stateRequired == 'VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE':
                 out.append('''
                 if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) {
-                    ss << "vkCmdSetDepthBiasEnable last set depthTestEnable to VK_TRUE.\\n";
+                    ss << "vkCmdSetDepthBiasEnable last set depthBiasEnable to VK_TRUE.\\n";
                 } else {
-                    ss << "VkPipelineRasterizationStateCreateInfo::depthTestEnable was VK_TRUE in the last bound graphics pipeline.\\n";
+                    ss << "VkPipelineRasterizationStateCreateInfo::depthBiasEnable was VK_TRUE in the last bound graphics pipeline.\\n";
                 }''')
             if dynamicState.stateRequired == 'VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT':
                 out.append('''
