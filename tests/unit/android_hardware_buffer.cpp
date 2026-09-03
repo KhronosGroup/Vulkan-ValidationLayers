@@ -569,25 +569,8 @@ TEST_F(NegativeAndroidHardwareBuffer, HostImageTransferUsage) {
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT;
     // https://gitlab.khronos.org/vulkan/vulkan/-/work_items/4959#note_626777
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-pNext-02397");
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-pNext-02397");
     vkt::Image image(*m_device, ici, vkt::no_mem);
-
-    VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
-    dedicated_allocation_info.image = image;
-    dedicated_allocation_info.buffer = VK_NULL_HANDLE;
-
-    VkImportAndroidHardwareBufferInfoANDROID import_ahb_info = vku::InitStructHelper(&dedicated_allocation_info);
-    import_ahb_info.buffer = ahb.handle();
-
-    VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper(&import_ahb_info);
-    if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
-        GTEST_SKIP() << "No valid memory type index could be found";
-    }
-
-    // https://gitlab.khronos.org/vulkan/vulkan/-/work_items/4959
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkMemoryAllocateInfo-pNext-02390");
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-pNext-12500");
-    vkt::DeviceMemory memory(*m_device, memory_allocate_info);
     m_errorMonitor->VerifyFound();
 }
 

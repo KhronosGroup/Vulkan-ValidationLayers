@@ -362,16 +362,6 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
                 }
             }
 
-            if ((image_state->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) != 0) {
-                if ((image_state->format_features & VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT) == 0) {
-                    skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-12500", mem_ded_alloc_info->image, dedicated_image_loc,
-                                     "was created with VK_IMAGE_USAGE_HOST_TRANSFER_BIT but the "
-                                     "VkAndroidHardwareBufferFormatProperties2ANDROID::formatFeatures does not contain "
-                                     "VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT. (AHB = %p)\nformatFeatures = %s",
-                                     import_ahb_info->buffer, string_VkFormatFeatureFlags2(image_state->format_features).c_str());
-                }
-            }
-
             // First check if any invalid Vulkan usages, then make sure for each used, the matching AHB usage is also included
             // https://docs.vulkan.org/spec/latest/chapters/memory.html#memory-external-android-hardware-buffer-usage
             const VkImageUsageFlags valid_vk_usages =
