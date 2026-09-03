@@ -801,7 +801,8 @@ bool CoreChecks::ValidateFramebufferAndRenderPassLayouts(const vvl::CommandBuffe
     return skip;
 }
 
-bool CoreChecks::ValidateRenderingAttachmentCurrentLayout(const core::RenderingAttachment& vvl_attachment) const {
+bool CoreChecks::ValidateRenderingAttachmentCurrentLayout(const vvl::CommandBuffer& cb_state,
+                                                          const core::RenderingAttachment& vvl_attachment) const {
     bool skip = false;
     if (disabled[image_layout_validation]) {
         return skip;
@@ -816,7 +817,7 @@ bool CoreChecks::ValidateRenderingAttachmentCurrentLayout(const core::RenderingA
             continue;
         }
         const vvl::Image& image_state = *image_view_state->image_state;
-        const auto image_layout_map = vvl_attachment.cb_state.GetImageLayoutMap(image_state.VkHandle());
+        const auto image_layout_map = cb_state.GetImageLayoutMap(image_state.VkHandle());
         if (!image_layout_map) {
             continue;
         };
