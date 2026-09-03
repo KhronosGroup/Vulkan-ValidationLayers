@@ -1114,17 +1114,17 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
 
     void PushData(uint32_t offset, size_t size, const void* address);
 
-    void BindShaders(const vkt::Shader &vert_shader, const vkt::Shader &frag_shader);
-    void BindShaders(const vkt::Shader &vert_shader, const vkt::Shader &geom_shader, const vkt::Shader &frag_shader);
-    void BindShaders(const vkt::Shader &vert_shader, const vkt::Shader &tesc_shader, const vkt::Shader &tese_shader,
-                     const vkt::Shader &frag_shader);
-    void BindShaders(const vkt::Shader &vert_shader, const vkt::Shader &tesc_shader, const vkt::Shader &tese_shader,
-                     const vkt::Shader &geom_shader, const vkt::Shader &frag_shader);
-    void BindCompShader(const vkt::Shader &comp_shader);
-    void BindMeshShaders(const vkt::Shader &mesh_shader, const vkt::Shader &frag_shader);
-    void BindMeshShaders(const vkt::Shader &task_shader, const vkt::Shader &mesh_shader, const vkt::Shader &frag_shader);
+    void BindShadersEXT(const vkt::Shader& vert_shader, const vkt::Shader& frag_shader);
+    void BindShadersEXT(const vkt::Shader& vert_shader, const vkt::Shader& geom_shader, const vkt::Shader& frag_shader);
+    void BindShadersEXT(const vkt::Shader& vert_shader, const vkt::Shader& tesc_shader, const vkt::Shader& tese_shader,
+                        const vkt::Shader& frag_shader);
+    void BindShadersEXT(const vkt::Shader& vert_shader, const vkt::Shader& tesc_shader, const vkt::Shader& tese_shader,
+                        const vkt::Shader& geom_shader, const vkt::Shader& frag_shader);
+    void BindCompShaderEXT(const vkt::Shader& comp_shader);
+    void BindMeshShadersEXT(const vkt::Shader& mesh_shader, const vkt::Shader& frag_shader);
+    void BindMeshShadersEXT(const vkt::Shader& task_shader, const vkt::Shader& mesh_shader, const vkt::Shader& frag_shader);
 
-    void BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo);
+    void BeginVideoCoding(const VkVideoBeginCodingInfoKHR& beginInfo);
     void ControlVideoCoding(const VkVideoCodingControlInfoKHR &controlInfo);
     void DecodeVideo(const VkVideoDecodeInfoKHR &decodeInfo);
     void EncodeVideo(const VkVideoEncodeInfoKHR &encodeInfo);

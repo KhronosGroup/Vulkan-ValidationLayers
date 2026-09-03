@@ -772,7 +772,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance3) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExcludeEXT();
-    m_command_buffer.BindShaders(vert_shader, frag_shader);
+    m_command_buffer.BindShadersEXT(vert_shader, frag_shader);
 
     VkVertexInputBindingDescription2EXT binding = vku::InitStructHelper();
     binding.stride = 4;
@@ -948,7 +948,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstanceIndexed3) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExcludeEXT();
-    m_command_buffer.BindShaders(vert_shader, frag_shader);
+    m_command_buffer.BindShadersEXT(vert_shader, frag_shader);
 
     VkVertexInputBindingDescription2EXT binding = vku::InitStructHelper();
     binding.stride = 4;

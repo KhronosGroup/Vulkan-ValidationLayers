@@ -706,7 +706,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfoWithSourceShader
     const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, cs_spv, &descriptor_set.layout_.handle());
 
     m_command_buffer.Begin();
-    m_command_buffer.BindCompShader(comp_shader);
+    m_command_buffer.BindCompShaderEXT(comp_shader);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);

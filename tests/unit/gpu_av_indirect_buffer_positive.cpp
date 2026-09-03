@@ -365,12 +365,12 @@ TEST_F(PositiveGpuAVIndirectBuffer, RestoreStress) {
                               nullptr);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe);
-    m_command_buffer.BindShaders(vs_shader_object, fs_shader_object);
+    m_command_buffer.BindShadersEXT(vs_shader_object, fs_shader_object);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, c_pipe);
     vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
 
-    m_command_buffer.BindCompShader(cs_shader_object);
+    m_command_buffer.BindCompShaderEXT(cs_shader_object);
     vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe);
@@ -378,9 +378,9 @@ TEST_F(PositiveGpuAVIndirectBuffer, RestoreStress) {
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
 
-    m_command_buffer.BindCompShader(cs_shader_object);
+    m_command_buffer.BindCompShaderEXT(cs_shader_object);
     vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
-    m_command_buffer.BindShaders(vs_shader_object, fs_shader_object);
+    m_command_buffer.BindShadersEXT(vs_shader_object, fs_shader_object);
     vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, c_pipe);
