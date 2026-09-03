@@ -1938,7 +1938,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsGraphics) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     m_command_buffer.BindShaders(vs, fs);
-    SetDefaultDynamicStatesAll(m_command_buffer);
+    SetDefaultDynamicStatesAllEXT(m_command_buffer);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
@@ -2070,7 +2070,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     m_command_buffer.BindShaders(vs, fs);
-    SetDefaultDynamicStatesAll(m_command_buffer);
+    SetDefaultDynamicStatesAllEXT(m_command_buffer);
     vk::CmdDrawMultiEXT(m_command_buffer, 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
     m_command_buffer.EndRendering();
     m_command_buffer.End();
@@ -2089,7 +2089,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     m_command_buffer.BindShaders(vs, fs);
-    SetDefaultDynamicStatesAll(m_command_buffer);
+    SetDefaultDynamicStatesAllEXT(m_command_buffer);
     vk::CmdBindIndexBuffer(m_command_buffer, buffer, 0, VK_INDEX_TYPE_UINT16);
     vk::CmdDrawMultiIndexedEXT(m_command_buffer, 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_command_buffer.EndRendering();
@@ -2151,7 +2151,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    SetDefaultDynamicStatesAll(m_command_buffer);
+    SetDefaultDynamicStatesAllEXT(m_command_buffer);
     vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer, VK_TRUE);
     m_command_buffer.BindMeshShaders(ts, ms, fs);
     vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
@@ -2357,7 +2357,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectFragment) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(renderingInfo);
-    SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
+    SetDefaultDynamicStatesExcludeEXT({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
     m_command_buffer.BindShaders(vert_shader, frag_shader);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
@@ -3037,7 +3037,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectMultiCreate) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
-    SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
+    SetDefaultDynamicStatesExcludeEXT({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
     vk::CmdBindShadersEXT(m_command_buffer, 2, stages, shaders);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
@@ -5583,7 +5583,7 @@ TEST_F(NegativeDebugPrintf, DrawMeshTasksIndirectCountEXT) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    SetDefaultDynamicStatesExclude();
+    SetDefaultDynamicStatesExcludeEXT();
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_STAGE_FRAGMENT_BIT};
     const VkShaderEXT shaders[] = {VK_NULL_HANDLE, mesh, frag};
     vk::CmdBindShadersEXT(m_command_buffer, 3u, stages, shaders);

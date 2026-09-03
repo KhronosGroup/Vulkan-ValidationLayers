@@ -1967,7 +1967,7 @@ TEST_F(NegativeTileShading, TileShadingDrawButHasActiveGeometryShaderObject) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
-    SetDefaultDynamicStatesExclude();
+    SetDefaultDynamicStatesExcludeEXT();
     m_command_buffer.BindShaders(vert_shader, geom_shader, frag_shader);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10678");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
@@ -2454,7 +2454,7 @@ TEST_F(NegativeTileShading, CapabilityInFragmentShaderObjectOutsideTileShadingRe
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    SetDefaultDynamicStatesExclude();
+    SetDefaultDynamicStatesExcludeEXT();
     m_command_buffer.BindShaders(vs, fs);
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-TileShadingQCOM-10700");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);

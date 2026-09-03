@@ -2407,7 +2407,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteShaderObjectStages) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT};
     vk::CmdBindShadersEXT(m_command_buffer, 1u, stages, shaders);
-    SetDefaultDynamicStatesAll(m_command_buffer);
+    SetDefaultDynamicStatesAllEXT(m_command_buffer);
     m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-indirectCommandsLayout-11002");
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
     m_errorMonitor->VerifyFound();

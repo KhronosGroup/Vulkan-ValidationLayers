@@ -3120,7 +3120,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
     m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    SetDefaultDynamicStatesAll(m_command_buffer);
+    SetDefaultDynamicStatesAllEXT(m_command_buffer);
     m_command_buffer.BindShaders(vert_shader, frag_shader);
     desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);

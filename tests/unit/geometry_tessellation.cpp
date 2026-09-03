@@ -424,7 +424,7 @@ TEST_F(NegativeGeometryTessellation, BuiltinBlockSizeMismatchVsGsShaderObject) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    SetDefaultDynamicStatesExclude();
+    SetDefaultDynamicStatesExcludeEXT();
     vk::CmdBindShadersEXT(m_command_buffer, 5, stages, shaders);
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpVariable-08746");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
@@ -1584,7 +1584,7 @@ TEST_F(NegativeGeometryTessellation, MismatchedTessellationExecutionModesDraw) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    SetDefaultDynamicStatesExclude();
+    SetDefaultDynamicStatesExcludeEXT();
     vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
     vk::CmdBindShadersEXT(m_command_buffer, 4, stages, shaders);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-OpExecutionMode-12239");

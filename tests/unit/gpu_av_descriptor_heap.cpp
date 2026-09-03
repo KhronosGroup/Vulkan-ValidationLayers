@@ -1072,7 +1072,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBShaderObjects) {
     VkShaderEXT shaders[2] = {vert_shader.handle(), frag_shader.handle()};
     vk::CmdBindShadersEXT(m_command_buffer, 2, stages, shaders);
 
-    SetDefaultDynamicStatesExclude();
+    SetDefaultDynamicStatesExcludeEXT();
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
     m_command_buffer.EndRendering();

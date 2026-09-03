@@ -1296,7 +1296,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
                               nullptr);
 
     vk::CmdBindShadersEXT(m_command_buffer, size32(stages), stages.data(), shaders_2.data());
-    SetDefaultDynamicStatesAll(m_command_buffer);
+    SetDefaultDynamicStatesAllEXT(m_command_buffer);
 
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
@@ -1402,7 +1402,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
                          &push_constants_data[2]);
 
     vk::CmdBindShadersEXT(m_command_buffer, size32(stages), stages.data(), shaders_2.data());
-    SetDefaultDynamicStatesAll(m_command_buffer);
+    SetDefaultDynamicStatesAllEXT(m_command_buffer);
 
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 

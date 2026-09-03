@@ -311,7 +311,7 @@ TEST_F(NegativeGpuAVMesh, DISABLED_TaskPayloadSharedMissingShaderObject) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     m_command_buffer.BindMeshShaders(task_shader, mesh_shader, frag_shader);
-    SetDefaultDynamicStatesExclude();
+    SetDefaultDynamicStatesExcludeEXT();
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-12380");
     vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();

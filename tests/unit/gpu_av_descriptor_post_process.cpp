@@ -191,7 +191,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnlyShaderObject) {
                                             VK_SHADER_STAGE_FRAGMENT_BIT};
     const VkShaderEXT shaders[] = {vs, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, fs};
     vk::CmdBindShadersEXT(m_command_buffer, 5u, stages, shaders);
-    SetDefaultDynamicStatesAll(m_command_buffer);
+    SetDefaultDynamicStatesAllEXT(m_command_buffer);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();

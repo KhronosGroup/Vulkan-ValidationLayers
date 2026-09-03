@@ -2227,7 +2227,7 @@ TEST_F(PositiveDescriptorBuffer, IndependentSetMixShaderObject) {
     vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
-    SetDefaultDynamicStatesExclude();
+    SetDefaultDynamicStatesExcludeEXT();
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
     VkShaderEXT shaders[] = {vert_shader, frag_shader};
     vk::CmdBindShadersEXT(m_command_buffer, 2u, stages, shaders);
