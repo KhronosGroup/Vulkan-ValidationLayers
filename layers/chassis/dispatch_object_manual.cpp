@@ -117,7 +117,7 @@ StatelessDeviceData::StatelessDeviceData(DispatchInstance* instance, VkPhysicalD
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_driver_properties, &driver_properties);
             phys_dev_props_core12.driverID = driver_properties.driverID;
             memcpy(phys_dev_props_core12.driverName, driver_properties.driverName, VK_MAX_DRIVER_NAME_SIZE);
-            memcpy(phys_dev_props_core12.driverInfo, driver_properties.driverName, VK_MAX_DRIVER_INFO_SIZE);
+            memcpy(phys_dev_props_core12.driverInfo, driver_properties.driverInfo, VK_MAX_DRIVER_INFO_SIZE);
             phys_dev_props_core12.conformanceVersion = driver_properties.conformanceVersion;
         }
 

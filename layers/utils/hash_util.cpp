@@ -25,7 +25,7 @@
 // Only include xxhash.h once!
 #include "external/xxhash.h"
 
-// Currently using version v0.8.2 of xxhash
+// Current version of xxhash
 static_assert(XXH_VERSION_MAJOR == 0);
 static_assert(XXH_VERSION_MINOR == 8);
 static_assert(XXH_VERSION_RELEASE == 3);

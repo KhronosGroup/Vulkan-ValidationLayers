@@ -146,7 +146,7 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
                 case kErrorSubCode_PreTraceRays_LimitDepth: {
                     const uint32_t depth = error_record[kValCmd_ErrorPayloadDword_0];
                     skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-depth-03640", objlist, loc_with_debug_region,
-                                           "Indirect trace rays of VkTraceRaysIndirectCommandKHR::height of %" PRIu32
+                                           "Indirect trace rays of VkTraceRaysIndirectCommandKHR::depth of %" PRIu32
                                            " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2] * "
                                            "VkPhysicalDeviceLimits::maxComputeWorkGroupSize[2] limit of %" PRIu64 ".",
                                            depth,

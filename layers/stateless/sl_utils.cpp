@@ -241,7 +241,6 @@ bool Context::ValidateStructPnext(const Location& loc, const void* next, size_t 
     }
 
     if (next != nullptr) {
-        vvl::unordered_set<const void*> cycle_check;
         vvl::unordered_set<VkStructureType, vvl::hash<int>> unique_stype_check;
         const char* disclaimer =
             "This error is based on the Valid Usage documentation for version %" PRIu32

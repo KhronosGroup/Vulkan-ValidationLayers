@@ -110,10 +110,6 @@ template <typename T>
 span<T> make_span(T *begin, size_t count) {
     return span<T>(begin, count);
 }
-template <typename T>
-span<T> make_span(T *begin, T *end) {
-    return make_span<T>(begin, end);
-}
 
 template <typename Container>
 auto make_span(Container &container) {

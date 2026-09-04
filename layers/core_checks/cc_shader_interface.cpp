@@ -713,7 +713,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module& module_
         // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7923
         // Need to redo logic to handle array of outputs
         if (variable->array_size > 1) {
-            return false;
+            return skip;
         }
         // It is not allowed to have Block Fragment or 64-bit vectors output in Frag shader
         // This means all Locations in slots will be the same

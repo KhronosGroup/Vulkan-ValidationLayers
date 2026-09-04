@@ -274,6 +274,8 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::Comm
             const ImageLayoutState& cb_layout_state = pos->second;
             VkImageLayout first_layout = cb_layout_state.first_layout;
             if (first_layout == kInvalidLayout) {
+                // TODO never advances `pos`/`current_layout` and would be an infinite loop
+                // (This is caught by an assert already in image_layout_map.cpp)
                 continue;
             }
 

@@ -85,10 +85,10 @@ bool Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreate
                                              VkInstance* pInstance, const ErrorObject& error_obj) const {
     bool skip = false;
 
+    const uint32_t specified_version =
+        pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0;
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
-        const uint32_t specified_version =
-            pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0;
         skip |= ValidateLegacyExtensions(error_obj.location, extension, specified_version);
     }
 

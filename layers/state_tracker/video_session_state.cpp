@@ -1236,7 +1236,7 @@ std::string string_VideoProfileDesc(const vvl::VideoProfileDesc& profile) {
                << (internal_profile.decode_av1.filmGrainSupport ? " with film grain support" : " without film grain support");
             break;
         case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
-            ss << string_std_video_av1_profile_idc(internal_profile.decode_av1.stdProfile);
+            ss << string_std_video_av1_profile_idc(internal_profile.encode_av1.stdProfile);
             break;
         case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR:
             ss << string_std_video_vp9_profile(internal_profile.decode_vp9.stdProfile);

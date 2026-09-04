@@ -167,14 +167,14 @@ std::string string_VkDependencyInfo(const Logger& logger, VkDependencyInfo set_d
                      << string_VkAccessFlags2(dependency_info.pImageMemoryBarriers[i].dstAccessMask);
             } else if (dependency_info.pImageMemoryBarriers[i].oldLayout != set_dependency_info.pImageMemoryBarriers[i].oldLayout) {
                 set << "pImageMemoryBarriers[" << i << "].oldLayout "
-                    << string_VkAccessFlags2(set_dependency_info.pImageMemoryBarriers[i].oldLayout);
+                    << string_VkImageLayout(set_dependency_info.pImageMemoryBarriers[i].oldLayout);
                 wait << "pImageMemoryBarriers[" << i << "].oldLayout "
-                     << string_VkAccessFlags2(dependency_info.pImageMemoryBarriers[i].oldLayout);
+                     << string_VkImageLayout(dependency_info.pImageMemoryBarriers[i].oldLayout);
             } else if (dependency_info.pImageMemoryBarriers[i].newLayout != set_dependency_info.pImageMemoryBarriers[i].newLayout) {
                 set << "pImageMemoryBarriers[" << i << "].newLayout "
-                    << string_VkAccessFlags2(set_dependency_info.pImageMemoryBarriers[i].newLayout);
+                    << string_VkImageLayout(set_dependency_info.pImageMemoryBarriers[i].newLayout);
                 wait << "pImageMemoryBarriers[" << i << "].newLayout "
-                     << string_VkAccessFlags2(dependency_info.pImageMemoryBarriers[i].newLayout);
+                     << string_VkImageLayout(dependency_info.pImageMemoryBarriers[i].newLayout);
             } else if (dependency_info.pImageMemoryBarriers[i].srcQueueFamilyIndex !=
                        set_dependency_info.pImageMemoryBarriers[i].srcQueueFamilyIndex) {
                 set << "pImageMemoryBarriers[" << i << "].srcQueueFamilyIndex "

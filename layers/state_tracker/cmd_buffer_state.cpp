@@ -78,7 +78,7 @@ std::string AttachmentInfo::Describe(const vvl::CommandBuffer& cb_state, uint32_
         } else if (type == Type::Depth) {
             ss << "pDepthAttachment->imageView";
         } else if (type == Type::DepthResolve) {
-            ss << "pStencilAttachment->resolveImageView";
+            ss << "pDepthAttachment->resolveImageView";
         } else if (type == Type::Stencil) {
             ss << "pStencilAttachment->imageView";
         } else if (type == Type::StencilResolve) {
@@ -1749,7 +1749,7 @@ static bool PushDescriptorCleanup(LastBound& last_bound, uint32_t set_idx) {
         last_bound.push_descriptor_set = nullptr;
         return true;
     }
-    return true;
+    return false;
 }
 
 // Update pipeline_layout bind points applying the "Pipeline Layout Compatibility" rules.
@@ -2007,21 +2007,21 @@ void CommandBuffer::SetImageViewLayout(const vvl::ImageView& view_state, VkImage
     }
 }
 
-void CommandBuffer::RecordStateCmd(CBDynamicState state) {
+void CommandBuffer::RecordStateCmd(CBDynamicState dynamic_state) {
     // NOTE: this can be extended to use RecordCommand for state commands if needed (currently not needed)
     command_count++;
-    RecordDynamicState(state);
+    RecordDynamicState(dynamic_state);
 
     vvl::Pipeline* pipeline = GetLastBoundGraphics().pipeline_state;
-    if (pipeline && !pipeline->IsDynamic(state)) {
+    if (pipeline && !pipeline->IsDynamic(dynamic_state)) {
         dirty_static_state = true;
     }
 }
 
-void CommandBuffer::RecordDynamicState(CBDynamicState state) {
-    dynamic_state_status.cb.set(state);
-    dynamic_state_status.pipeline.set(state);
-    dynamic_state_status.history.set(state);
+void CommandBuffer::RecordDynamicState(CBDynamicState dynamic_state) {
+    dynamic_state_status.cb.set(dynamic_state);
+    dynamic_state_status.pipeline.set(dynamic_state);
+    dynamic_state_status.history.set(dynamic_state);
 }
 
 void CommandBuffer::RecordSetViewport(uint32_t first_viewport, uint32_t viewport_count, const VkViewport* viewports) {

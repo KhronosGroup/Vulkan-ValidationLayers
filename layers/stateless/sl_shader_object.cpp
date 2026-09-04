@@ -245,7 +245,7 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
             }
 
             if ((create_info.flags & VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR) != 0) {
-                skip |= LogError(" VUID-VkShaderCreateInfoEXT-flags-12490", device, create_info_loc.dot(Field::flags),
+                skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-12490", device, create_info_loc.dot(Field::flags),
                                  "includes both VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT and "
                                  "VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR\nflags = %s",
                                  string_VkShaderCreateFlagsEXT(create_info.flags).c_str());
