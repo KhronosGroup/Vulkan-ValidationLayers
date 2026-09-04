@@ -62,7 +62,8 @@ class ReplayContexts {
 
         rp_context_ = &rp_context;
         current_subpass_ = 0;
-        destination_subpass_contexts_ = InitSubpassContexts(queue_flags_, render_pass, destination_context_);
+        destination_subpass_contexts_ =
+            InitSubpassContexts(queue_flags_, render_pass, destination_context_, kQueueIdInvalid);
 
         // Replace the Async contexts with the async context of the "external" context.
         // For replay we don't care about async subpasses, only async queue batches

@@ -426,16 +426,17 @@ HazardResult AccessContext::DetectImageBarrierHazard(const AttachmentViewGen& vi
 }
 
 HazardResult AccessContext::DetectSubpassTransitionHazard(const SubpassBarrier& subpass_barrier,
-                                                          const AttachmentViewGen& attach_view, QueueId queue_id) const {
+                                                          const AttachmentViewGen& attach_view) const {
     // Do the detection against the specific prior context independent of other contexts.  (Synchronous only)
     // Hazard detection for the transition can be against the merged of the barriers (it only uses src_...)
     const SyncBarrier merged_barrier(subpass_barrier.barriers);
     const AccessContext& src_subpass_context = *subpass_barrier.src_subpass_context;
-    HazardResult hazard = src_subpass_context.DetectImageBarrierHazard(attach_view, merged_barrier, kDetectPrevious, queue_id);
+    HazardResult hazard = src_subpass_context.DetectImageBarrierHazard(attach_view, merged_barrier, kDetectPrevious,
+                                                                       subpass_barrier.queue_id);
     if (!hazard.IsHazard()) {
         // The Async hazard check is against the current context's async set.
         SyncBarrier null_barrier = {};
-        hazard = DetectImageBarrierHazard(attach_view, null_barrier, kDetectAsync, queue_id);
+        hazard = DetectImageBarrierHazard(attach_view, null_barrier, kDetectAsync, subpass_barrier.queue_id);
     }
 
     return hazard;

@@ -30,12 +30,12 @@ VkDeviceSize ResourceBaseAddress(const vvl::Buffer& buffer) { return buffer.GetF
 
 void AccessContext::InitFrom(uint32_t subpass, VkQueueFlags queue_flags,
                              const std::vector<SubpassDependencyInfo>& subpass_dependency_infos, const AccessContext* contexts,
-                             const AccessContext& external_context) {
+                             const AccessContext& external_context, QueueId queue_id) {
     const SubpassDependencyInfo& info = subpass_dependency_infos[subpass];
     async_.reserve(info.async.size());
     for (const uint32_t async_subpass : info.async) {
         // Start tags are not known at creation time (as it's done at BeginRenderpass)
-        async_.emplace_back(contexts[async_subpass], kInvalidTag, kQueueIdInvalid);
+        async_.emplace_back(contexts[async_subpass], kInvalidTag, queue_id);
     }
 
     // Initialize barriers for the preceding subpasses and the external src barrier.
@@ -43,12 +43,12 @@ void AccessContext::InitFrom(uint32_t subpass, VkQueueFlags queue_flags,
     // src context, so the corresponding barriers are stored together.
     subpass_barriers_.resize(subpass + 1);
     for (const auto& [src_subpass, subpass_dependencies] : info.dependencies) {
-        subpass_barriers_[src_subpass] = SubpassBarrier(contexts[src_subpass], queue_flags, subpass_dependencies);
+        subpass_barriers_[src_subpass] = SubpassBarrier(contexts[src_subpass], queue_flags, subpass_dependencies, queue_id);
     }
-    subpass_barriers_[subpass] = SubpassBarrier(external_context, queue_flags, info.barrier_from_external);
+    subpass_barriers_[subpass] = SubpassBarrier(external_context, queue_flags, info.barrier_from_external, queue_id);
 
     // External dst barrier
-    dst_external_ = SubpassBarrier(*this, queue_flags, info.barrier_to_external);
+    dst_external_ = SubpassBarrier(*this, queue_flags, info.barrier_to_external, queue_id);
 }
 
 ApplySingleBufferBarrierFunctor::ApplySingleBufferBarrierFunctor(const AccessContext& access_context,
@@ -740,8 +740,8 @@ AttachmentViewGen::Gen AttachmentViewGen::GetDepthStencilRenderAreaGenType(bool 
 }
 
 SubpassBarrier::SubpassBarrier(const AccessContext& src_subpass_context, VkQueueFlags queue_flags,
-                               const std::vector<const VkSubpassDependency2*>& subpass_dependencies)
-    : src_subpass_context(&src_subpass_context) {
+                               const std::vector<const VkSubpassDependency2*>& subpass_dependencies, QueueId queue_id)
+    : src_subpass_context(&src_subpass_context), queue_id(queue_id) {
     barriers.reserve(subpass_dependencies.size());
     for (const VkSubpassDependency2* dependency : subpass_dependencies) {
         barriers.emplace_back(queue_flags, *dependency);

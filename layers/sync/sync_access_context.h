@@ -150,6 +150,7 @@ struct QueueTagOffsetBarrierAction {
 
 struct SubpassBarrier {
     const AccessContext* src_subpass_context = nullptr;
+    QueueId queue_id = kQueueIdInvalid;
 
     // Multiple subpass dependencies may be defined for the same (src_subpass, dst_subpass) pair.
     // Each subpass dependency adds a separate barrier.
@@ -157,7 +158,7 @@ struct SubpassBarrier {
 
     SubpassBarrier() = default;
     SubpassBarrier(const AccessContext& src_subpass_context, VkQueueFlags queue_flags,
-                   const std::vector<const VkSubpassDependency2*>& subpass_dependencies);
+                   const std::vector<const VkSubpassDependency2*>& subpass_dependencies, QueueId queue_id);
 };
 
 struct ApplySubpassBarrierAction {
@@ -165,7 +166,7 @@ struct ApplySubpassBarrierAction {
                                        const AccessStateFunction* previous_barrier_action = nullptr)
         : subpass_barrier(subpass_barrier), previous_barrier_action(previous_barrier_action) {}
     void operator()(AccessState* access) const {
-        ApplyBarriers(*access, subpass_barrier.barriers);
+        ApplyBarriers(*access, subpass_barrier.barriers, false, kInvalidTag, subpass_barrier.queue_id);
         if (previous_barrier_action) {
             (*previous_barrier_action)(access);
         }
@@ -175,15 +176,13 @@ struct ApplySubpassBarrierAction {
 };
 
 struct ApplySubpassTransitionBarrierAction {
-    ApplySubpassTransitionBarrierAction(const SubpassBarrier& subpass_barrier, ResourceUsageTag layout_transition_tag,
-                                        QueueId queue_id)
-        : subpass_barrier(subpass_barrier), layout_transition_tag(layout_transition_tag), queue_id(queue_id) {}
+    ApplySubpassTransitionBarrierAction(const SubpassBarrier& subpass_barrier, ResourceUsageTag layout_transition_tag)
+        : subpass_barrier(subpass_barrier), layout_transition_tag(layout_transition_tag) {}
     void operator()(AccessState* access) const {
-        ApplyBarriers(*access, subpass_barrier.barriers, true, layout_transition_tag, queue_id);
+        ApplyBarriers(*access, subpass_barrier.barriers, true, layout_transition_tag, subpass_barrier.queue_id);
     }
     const SubpassBarrier& subpass_barrier;
     const ResourceUsageTag layout_transition_tag;
-    const QueueId queue_id;
 };
 
 class AttachmentViewGen {
@@ -300,7 +299,7 @@ class AccessContext {
     AccessContext& operator=(const AccessContext&) = delete;
 
     void InitFrom(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyInfo>& subpass_dependency_infos,
-                  const AccessContext* contexts, const AccessContext& external_context);
+                  const AccessContext* contexts, const AccessContext& external_context, QueueId queue_id);
     void InitFrom(const AccessContext& other);
     void Reset();
 
@@ -389,8 +388,8 @@ class AccessContext {
     HazardResult DetectImageBarrierHazard(const AttachmentViewGen& attachment_view, const SyncBarrier& barrier,
                                           DetectOptions options, QueueId queue_id = kQueueIdInvalid) const;
 
-    HazardResult DetectSubpassTransitionHazard(const SubpassBarrier& subpass_barrier, const AttachmentViewGen& attach_view,
-                                               QueueId queue_id) const;
+    HazardResult DetectSubpassTransitionHazard(const SubpassBarrier& subpass_barrier,
+                                               const AttachmentViewGen& attach_view) const;
 
     HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange& tag_range,
                                       const AccessContext& destination_context) const;
