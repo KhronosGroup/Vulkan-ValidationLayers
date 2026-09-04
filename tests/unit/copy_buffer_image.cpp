@@ -3933,7 +3933,7 @@ TEST_F(NegativeCopyBufferImage, BlitImage) {
     region.srcOffsets[0] = {0u, 0u, 0u};
     region.srcOffsets[1] = {1u, 1u, 1u};
     region.dstOffsets[0] = {1u, 1u, 0u};
-    region.dstOffsets[1] = {1u, 1u, 1u};
+    region.dstOffsets[1] = {2u, 2u, 1u};
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-09459");
     vk::CmdBlitImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u,
@@ -5425,5 +5425,49 @@ TEST_F(NegativeCopyBufferImage, BC3Copy) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-pRegions-00171");
     vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCopyBufferImage, BlitEqualDstOffsets) {
+    RETURN_IF_SKIP(Init());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
+    vkt::Image src_image_2d(*m_device, image_ci);
+    vkt::Image dst_image_2d(*m_device, image_ci);
+
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.extent.depth = 4u;
+    vkt::Image src_image_3d(*m_device, image_ci);
+    vkt::Image dst_image_3d(*m_device, image_ci);
+
+    m_command_buffer.Begin();
+
+    VkImageBlit region;
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    region.srcOffsets[0] = {0, 0, 0};
+    region.srcOffsets[1] = {32, 32, 1};
+
+    region.dstOffsets[0] = {16, 0, 0};
+    region.dstOffsets[1] = {16, 32, 1};
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffsets-12518");
+    vk::CmdBlitImage(m_command_buffer, src_image_2d, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image_2d,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &region, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
+    region.dstOffsets[0] = {0, 16, 0};
+    region.dstOffsets[1] = {32, 16, 1};
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffsets-12519");
+    vk::CmdBlitImage(m_command_buffer, src_image_2d, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image_2d,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &region, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
+    region.dstOffsets[0] = {0, 0, 2};
+    region.dstOffsets[1] = {32, 32, 2};
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffsets-12520");
+    vk::CmdBlitImage(m_command_buffer, src_image_3d, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image_3d,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &region, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
     m_command_buffer.End();
 }

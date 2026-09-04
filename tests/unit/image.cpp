@@ -495,6 +495,7 @@ TEST_F(NegativeImage, BlitOffsets) {
 
     blit_region.srcOffsets[0] = {0, 0, 0};
     blit_region.dstOffsets[0] = {32, 1, 0};
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffsets-12519");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstImage-00250");
     vk::CmdBlitImage(m_command_buffer, image_1D, VK_IMAGE_LAYOUT_GENERAL, image_1D, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
@@ -512,6 +513,7 @@ TEST_F(NegativeImage, BlitOffsets) {
 
     blit_region.srcOffsets[0] = {0, 0, 0};
     blit_region.dstOffsets[0] = {32, 32, 1};
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffsets-12520");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstImage-00252");
     vk::CmdBlitImage(m_command_buffer, image_2D, VK_IMAGE_LAYOUT_GENERAL, image_2D, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);

@@ -793,7 +793,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     blit_region.dstSubresource = image_subresource;
     blit_region.srcOffsets[0] = {0, 0, 0};
     blit_region.srcOffsets[1] = {8, 8, 1};
-    blit_region.dstOffsets[0] = {0, 8, 0};
+    blit_region.dstOffsets[0] = {0, 4, 0};
     blit_region.dstOffsets[1] = {8, 8, 1};
     VkClearColorValue clear_color = {{0, 0, 0, 0}};
     VkImageSubresourceRange subresource_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};

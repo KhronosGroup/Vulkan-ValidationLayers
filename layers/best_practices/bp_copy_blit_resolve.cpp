@@ -287,43 +287,6 @@ bool BestPractices::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
     return skip;
 }
 
-template <typename RegionType>
-bool BestPractices::ValidateCmdBlitImage(VkCommandBuffer command_buffer, uint32_t region_count, const RegionType* regions,
-                                         const Location& loc) const {
-    bool skip = false;
-    for (uint32_t i = 0; i < region_count; i++) {
-        const RegionType region = regions[i];
-        if ((region.srcOffsets[0].x == region.srcOffsets[1].x) || (region.srcOffsets[0].y == region.srcOffsets[1].y) ||
-            (region.srcOffsets[0].z == region.srcOffsets[1].z)) {
-            skip |= LogWarning("BestPractices-DrawState-InvalidExtents-src", command_buffer,
-                               loc.dot(Field::pRegions, i).dot(Field::srcOffsets), "specify a zero-volume area");
-        }
-        if ((region.dstOffsets[0].x == region.dstOffsets[1].x) || (region.dstOffsets[0].y == region.dstOffsets[1].y) ||
-            (region.dstOffsets[0].z == region.dstOffsets[1].z)) {
-            skip |= LogWarning("BestPractices-DrawState-InvalidExtents-dst", command_buffer,
-                               loc.dot(Field::pRegions, i).dot(Field::dstOffsets), "specify a zero-volume area");
-        }
-    }
-    return skip;
-}
-
-bool BestPractices::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                const VkImageBlit* pRegions, VkFilter filter, const ErrorObject& error_obj) const {
-    return ValidateCmdBlitImage(commandBuffer, regionCount, pRegions, error_obj.location);
-}
-
-bool BestPractices::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo,
-                                                    const ErrorObject& error_obj) const {
-    return PreCallValidateCmdBlitImage2(commandBuffer, pBlitImageInfo, error_obj);
-}
-
-bool BestPractices::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
-                                                 const ErrorObject& error_obj) const {
-    return ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                                error_obj.location.dot(Field::pBlitImageInfo));
-}
-
 bool BestPractices::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                       const VkClearColorValue* pColor, uint32_t rangeCount,
                                                       const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const {

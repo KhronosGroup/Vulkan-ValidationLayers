@@ -548,7 +548,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
                                          "(SPIR-V Interface) starting at Location %" PRIu32 " Component %" PRIu32
                                          "\nThe output %s has a Vec%" PRIu32 "\nThe input %s has a Vec%" PRIu32
                                          "\nThis mismatch between vector sizes is not allowed, but can be relaxed by enabling "
-                                         "VK_KHR_maintenance4.",
+                                         "maintenance4.",
                                          location, component, producer_entrypoint.Describe().c_str(), output_vec_size,
                                          consumer_entrypoint.Describe().c_str(), input_vec_size);
                         break;  // Only need to report for the first component found
@@ -588,7 +588,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
                         "WARNING-Shader-OutputNotConsumed", objlist, create_info_loc,
                         "(SPIR-V Interface) %s has an Output value declared at Location %" PRIu32 " Component %" PRIu32
                         ", but there is no corresponding Input declared in %s.\nThis is not invalid, but the write to the "
-                        "unused Output is discarded.\nThe Output variable is:\n  %s",
+                        "unused Output is discarded.\nThe Output variable is:\n  %s\nThis mismatch between vector sizes is not "
+                        "allowed, but can be relaxed by enabling maintenance4.",
                         producer_entrypoint.Describe().c_str(), location, component, consumer_entrypoint.Describe().c_str(),
                         producer_module.DescribeType(output_var->type_id).c_str());
                 }

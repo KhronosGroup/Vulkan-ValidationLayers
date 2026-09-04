@@ -208,32 +208,6 @@ TEST_F(NegativeBestPractices, CmdClearAttachmentTestSecondary) {
     m_command_buffer.EndRenderPass();
 }
 
-TEST_F(NegativeBestPractices, ZeroSizeBlitRegion) {
-    TEST_DESCRIPTION("vkCmdBlitImage with a zero area region");
-
-    RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState());
-
-    vkt::Image image_src(*m_device, 128, 128, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    vkt::Image image_dst(*m_device, 128, 128, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-
-    VkImageBlit blit_region = {};
-    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    blit_region.srcOffsets[0] = {128, 0, 0};
-    blit_region.srcOffsets[1] = {128, 128, 1};
-    blit_region.dstOffsets[0] = {0, 128, 0};
-    blit_region.dstOffsets[1] = {128, 128, 1};
-
-    m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredWarning("BestPractices-DrawState-InvalidExtents-src");
-    m_errorMonitor->SetDesiredWarning("BestPractices-DrawState-InvalidExtents-dst");
-    vk::CmdBlitImage(m_command_buffer, image_src, VK_IMAGE_LAYOUT_GENERAL, image_dst, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
-                     VK_FILTER_LINEAR);
-    m_errorMonitor->VerifyFound();
-    m_command_buffer.End();
-}
-
 TEST_F(NegativeBestPractices, SecondaryCommandBuffer) {
     TEST_DESCRIPTION("Test for validating usage of vkCreateCommandPool with VK_COMMAND_BUFFER_LEVEL_SECONDARY");
 
