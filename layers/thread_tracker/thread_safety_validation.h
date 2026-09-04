@@ -23,6 +23,7 @@
 #include <string>
 #include <thread>
 #include "chassis/validation_object.h"
+#include "generated/error_location_helper.h"
 
 namespace threadsafety {
 
@@ -232,6 +233,12 @@ class Counter {
             // The other side of the race is not recorded yet (other_internal_tid == 0).
             // Report only this side.
             ss << "another thread";
+        }
+
+        if (loc.function == vvl::Func::vkMapMemory || loc.function == vvl::Func::vkMapMemory2 ||
+            other_func == vvl::Func::vkMapMemory || other_func == vvl::Func::vkMapMemory2) {
+            ss << "\nNote: mapping memory may seem like a read-only operation, but the memory object (not the underlying memory) "
+                  "might be modified during the call.";
         }
 
         logger->LogError(vuid, object, loc, "%s", ss.str().c_str());
