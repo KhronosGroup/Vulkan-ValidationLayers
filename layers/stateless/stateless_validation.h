@@ -659,6 +659,10 @@ class Device : public vvl::BaseDevice {
     bool ValidateCreateBufferFlags(const VkBufferCreateFlags flags, const Location &flag_loc) const;
     bool ValidateCreateBufferBufferDeviceAddress(const VkBufferCreateInfo &create_info, const Location &create_info_loc) const;
     bool ValidateCreateBufferTileMemory(const VkBufferCreateInfo &create_info, const Location &create_info_loc) const;
+    bool ValidateCreateBufferDeviceAddressAllocationAlignment(const VkBufferCreateInfo& create_info,
+                                                              const Location& create_info_loc) const;
+    bool ValidateBufferDeviceAddressAlignmentAllocateInfo(const VkBufferDeviceAddressAlignmentAllocateInfoVALVE& alignment_info,
+                                                          const Location& alignment_loc) const;
 
     bool ValidateDependencyInfo(const Context &context, const VkDependencyInfo &dep_info, const Location &loc) const;
     bool manual_PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,

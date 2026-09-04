@@ -993,3 +993,96 @@ TEST_F(NegativeBuffer, ZeroQueueFamilyIndexCountMaintenance11) {
     vkt::Buffer buffer(*m_device, buff_ci, vkt::no_mem);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeBuffer, BufferDeviceAddressAllocationAlignmentFeature) {
+    AddRequiredExtensions(VK_VALVE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    RETURN_IF_SKIP(Init());
+
+    VkBufferDeviceAddressAlignmentAllocateInfoVALVE alignment_info = vku::InitStructHelper();
+    alignment_info.alignment = 4;
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&alignment_info);
+    buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    buffer_ci.size = 4096;
+    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    CreateBufferTest(buffer_ci, "VUID-VkBufferDeviceAddressAlignmentAllocateInfoVALVE-alignment-12513");
+}
+
+TEST_F(NegativeBuffer, BufferDeviceAddressAllocationAlignmentLimit) {
+    AddRequiredExtensions(VK_VALVE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddressAllocationAlignment);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentPropertiesVALVE alignment_props = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&alignment_props);
+    vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
+    if (alignment_props.maxBufferDeviceAddressAllocationAlignment >= (UINT32_MAX / 2)) {
+        GTEST_SKIP() << "maxBufferDeviceAddressAllocationAlignment is too large to safely exceed with a uint32_t";
+    }
+
+    VkBufferDeviceAddressAlignmentAllocateInfoVALVE alignment_info = vku::InitStructHelper();
+    alignment_info.alignment = alignment_props.maxBufferDeviceAddressAllocationAlignment * 2;
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&alignment_info);
+    buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    buffer_ci.size = 4096;
+    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    CreateBufferTest(buffer_ci, "VUID-VkBufferDeviceAddressAlignmentAllocateInfoVALVE-alignment-12514");
+}
+
+TEST_F(NegativeBuffer, BufferDeviceAddressAllocationAlignment) {
+    AddRequiredExtensions(VK_VALVE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddressAllocationAlignment);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    RETURN_IF_SKIP(Init());
+
+    VkBufferDeviceAddressAlignmentAllocateInfoVALVE alignment_info = vku::InitStructHelper();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&alignment_info);
+
+    {
+        alignment_info.alignment = 3;
+        buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+        buffer_ci.size = 4096;
+        buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        CreateBufferTest(buffer_ci, "VUID-VkBufferDeviceAddressAlignmentAllocateInfoVALVE-alignment-12512");
+    }
+    {
+        alignment_info.alignment = 4;
+        buffer_ci.flags = 0;
+        buffer_ci.size = 4096;
+        buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-flags-12515");
+    }
+    {
+        alignment_info.alignment = 4;
+        buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+        buffer_ci.size = 4096;
+        buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-alignment-12516");
+    }
+}
+
+TEST_F(NegativeBuffer, BufferDeviceAddressAllocationAlignmentCapture) {
+    AddRequiredExtensions(VK_VALVE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddressAllocationAlignment);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddressCaptureReplay);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    RETURN_IF_SKIP(Init());
+
+    VkBufferOpaqueCaptureAddressCreateInfo opaque_addr_info = vku::InitStructHelper();
+    opaque_addr_info.opaqueCaptureAddress = 1024;
+    VkBufferDeviceAddressAlignmentAllocateInfoVALVE alignment_info = vku::InitStructHelper(&opaque_addr_info);
+    alignment_info.alignment = 4;
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&alignment_info);
+    buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT | VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT;
+    buffer_ci.size = 4096;
+    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-alignment-12517");
+}
