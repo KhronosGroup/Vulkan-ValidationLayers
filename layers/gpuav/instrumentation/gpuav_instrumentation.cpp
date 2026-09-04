@@ -500,7 +500,7 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator& gpuav, Command
 
                 // If the number of binding of the currently bound pipeline's layout (or the equivalent for shader objects) is
                 // less that the number of bindings in the pipeline layout used to bind descriptor sets,
-                // GPU-AV needs to create a temporary pipeline layout matching the the currently bound pipeline's layout
+                // GPU-AV needs to create a temporary pipeline layout matching the currently bound pipeline's layout
                 // to bind the instrumentation descriptor set
                 if (last_pipe_bindings_count < (uint32_t)inst_binding_pipe_layout.state->set_layouts.list.size() ||
                     last_pipe_pcr_count < (uint32_t)inst_binding_pipe_layout.state->push_constant_ranges_layout->size()) {

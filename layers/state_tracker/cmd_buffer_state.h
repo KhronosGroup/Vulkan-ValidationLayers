@@ -423,7 +423,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     enum class SuspendState { Empty, Suspended, Resumed };
     SuspendState last_suspend_state;
 
-    // Used by submit time validation to check for invalild commands when render pass instance is suspended.
+    // Used by submit time validation to check for invalid commands when render pass instance is suspended.
     vvl::Func first_action_or_sync_command;
 
     // Rendering info from the first/last vkCmdBeginRendering.
@@ -683,7 +683,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
                                        const uint32_t *p_dynamic_offsets, const Location &loc);
 
     void UpdateLastBoundDescriptorBuffers(LastBound& last_bound, std::shared_ptr<const vvl::PipelineLayout> pipeline_layout,
-                                          uint32_t first_set, uint32_t set_count, const uint32_t* buffer_indicies,
+                                          uint32_t first_set, uint32_t set_count, const uint32_t* buffer_indices,
                                           const VkDeviceSize* buffer_offsets);
     void UpdateLastBoundDescriptorBuffersEmbedded(LastBound& last_bound, std::shared_ptr<const vvl::PipelineLayout> pipeline_layout,
                                                   uint32_t set);
@@ -842,9 +842,9 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     // Keep track of how many CmdBeginDebugUtilsLabelEXT calls have been made without a matching CmdEndDebugUtilsLabelEXT.
     // Negative value for a secondary command buffer indicates invalid state.
-    // Negative value for a primary command buffer is allowed. Validation is done at submit time accross all command buffers.
+    // Negative value for a primary command buffer is allowed. Validation is done at submit time across all command buffers.
     int32_t label_stack_depth_ = 0;
-    // Used during sumbit time validation.
+    // Used during submit time validation.
     std::vector<LabelCommand> label_commands_;
 
     uint32_t active_subpass_;

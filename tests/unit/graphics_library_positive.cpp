@@ -2061,7 +2061,7 @@ TEST_F(PositiveGraphicsLibrary, LinkWithNonIndependent) {
     vkt::PipelineLayout pipeline_layout_fs(*m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
     vkt::PipelineLayout pipeline_layout_link(*m_device, {&ds.layout_, &ds.layout_, &ds2.layout_}, {});
-    // seperate layout to test compatibility
+    // separate layout to test compatibility
     vkt::PipelineLayout pipeline_layout_ds(*m_device, {&ds.layout_, &ds.layout_, &ds2.layout_}, {});
     const std::array<VkDescriptorSet, 3> desc_sets = {ds.set_, ds.set_, ds2.set_};
 
@@ -2150,7 +2150,7 @@ TEST_F(PositiveGraphicsLibrary, LinkWithIndependent) {
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
     vkt::PipelineLayout pipeline_layout_link(*m_device, {&ds.layout_, &ds.layout_, &ds2.layout_}, {},
                                              VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    // seperate layout to test compatibility
+    // separate layout to test compatibility
     vkt::PipelineLayout pipeline_layout_ds(*m_device, {&ds.layout_, &ds.layout_, &ds2.layout_}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
     const std::array<VkDescriptorSet, 3> desc_sets = {ds.set_, ds.set_, ds2.set_};

@@ -346,7 +346,7 @@ class DispatchDevice : public HandleWrapper {
     const VkPhysicalDeviceVulkan14Properties& phys_dev_props_core14;
     // To store the 2 lists from VkPhysicalDeviceHostImageCopyProperties
     const std::vector<VkImageLayout>& host_image_copy_props_copy_src_layouts;
-    const std::vector<VkImageLayout>& host_imape_copy_props_copy_dst_layouts;
+    const std::vector<VkImageLayout>& host_image_copy_props_copy_dst_layouts;
     const DeviceExtensionProperties& phys_dev_ext_props;
 
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;

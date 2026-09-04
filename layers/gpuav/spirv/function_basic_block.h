@@ -35,7 +35,7 @@ using Instruction = ::spirv::Instruction;
 using InstructionList = std::vector<std::unique_ptr<Instruction>>;
 using InstructionIt = InstructionList::iterator;
 
-// Since CFG analysis/manipulation is not a main focus, Blocks/Funcitons are just simple containers for ordering Instructions
+// Since CFG analysis/manipulation is not a main focus, Blocks/Functions are just simple containers for ordering Instructions
 struct BasicBlock {
     // Used when loading initial SPIR-V
     BasicBlock(std::unique_ptr<Instruction> label);

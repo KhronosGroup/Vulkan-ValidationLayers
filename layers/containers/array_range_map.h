@@ -126,7 +126,7 @@ class array_range_map {
 
     // Find entry with an exact key match (uncommon use case)
     iterator find(const key_type &key) {
-        RANGE_AassertSSERT(in_bounds(key));
+        RANGE_ASSERT(in_bounds(key));
         if (key.begin < limit_) {
             const SmallIndex small_begin = static_cast<SmallIndex>(key.begin);
             const auto &range = ranges_[small_begin];

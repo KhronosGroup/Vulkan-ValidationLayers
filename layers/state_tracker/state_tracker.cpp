@@ -84,7 +84,7 @@ void DeviceState::RemoveProxy(LayerObjectTypeId id) {
     RemoveSubState(id);
 }
 
-// Seperate function so GPU-AV (or other objects) can destroy its substate before it destroys itself (and then the leaked object
+// Separate function so GPU-AV (or other objects) can destroy its substate before it destroys itself (and then the leaked object
 // cleanup tries to destroy the substate)
 void DeviceState::RemoveSubState(LayerObjectTypeId id) {
     // Currently we have not good way to track all objects that have a substate, so this is a list from manual inspection
@@ -264,7 +264,7 @@ DescriptorSetLayoutId DeviceState::GetCanonicalId(const VkDescriptorSetLayoutCre
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Android-specific validation that uses types defined only with VK_USE_PLATFORM_ANDROID_KHR
-// This could also move into a seperate core_validation_android.cpp file... ?
+// This could also move into a separate core_validation_android.cpp file... ?
 
 VkFormatFeatureFlags2 DeviceState::GetExternalFormatFeaturesANDROID(const void* pNext) const {
     VkFormatFeatureFlags2 format_features = 0;

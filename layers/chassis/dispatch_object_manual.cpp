@@ -908,7 +908,7 @@ DispatchDevice::DispatchDevice(DispatchInstance* instance, VkPhysicalDevice gpu,
       phys_dev_props_core13(stateless_device_data.phys_dev_props_core13),
       phys_dev_props_core14(stateless_device_data.phys_dev_props_core14),
       host_image_copy_props_copy_src_layouts(stateless_device_data.host_image_copy_props_copy_src_layouts),
-      host_imape_copy_props_copy_dst_layouts(stateless_device_data.host_image_copy_props_copy_dst_layouts),
+      host_image_copy_props_copy_dst_layouts(stateless_device_data.host_image_copy_props_copy_dst_layouts),
       phys_dev_ext_props(stateless_device_data.phys_dev_ext_props),
       physical_device(gpu) {
     InitValidationObjects();

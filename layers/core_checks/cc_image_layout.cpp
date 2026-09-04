@@ -403,7 +403,7 @@ bool CoreChecks::ValidateLayoutVsAttachmentDescription(const VkImageLayout first
 
     // Verify that initial loadOp on READ_ONLY attachments is not CLEAR
     // for both loadOp and stencilLoaOp rp2 has it in 1 VU while rp1 has it in 2 VU with half behind Maintenance2 extension
-    // Each is VUID is below in following order: rp2 -> rp1 with Maintenance2 -> rp1 with no extenstion
+    // Each is VUID is below in following order: rp2 -> rp1 with Maintenance2 -> rp1 with no extension
     if (attachment_description.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
         if (use_rp2 && ((first_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) ||
                         (first_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) ||

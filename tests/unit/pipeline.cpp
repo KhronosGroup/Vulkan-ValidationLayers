@@ -2166,7 +2166,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     VkShaderObj fs_combined(*m_device, fs_source_combined, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // maps to VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE and VK_DESCRIPTOR_TYPE_SAMPLER
-    const char* fs_source_seperate = R"glsl(
+    const char* fs_source_separate = R"glsl(
         #version 450
         layout (set=0, binding=0) uniform texture2D textureColor;
         layout (set=0, binding=1) uniform sampler samplers;
@@ -2179,7 +2179,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
            color = foo(textureColor, samplers);
         }
     )glsl";
-    VkShaderObj fs_seperate(*m_device, fs_source_seperate, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs_separate(*m_device, fs_source_separate, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // maps to an unused image sampler that should not trigger validation as it is never sampled
     const char* fs_source_unused = R"glsl(
@@ -2206,32 +2206,32 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     VkShaderObj fs_function(*m_device, fs_source_function, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipeline_combined(*this);
-    CreatePipelineHelper pipeline_seperate(*this);
+    CreatePipelineHelper pipeline_separate(*this);
     CreatePipelineHelper pipeline_unused(*this);
     CreatePipelineHelper pipeline_function(*this);
 
     // 4 different pipelines for 4 different shaders
     // 3 are invalid and 1 (pipeline_unused) is valid
     pipeline_combined.shader_stages_[1] = fs_combined.GetStageCreateInfo();
-    pipeline_seperate.shader_stages_[1] = fs_seperate.GetStageCreateInfo();
+    pipeline_separate.shader_stages_[1] = fs_separate.GetStageCreateInfo();
     pipeline_unused.shader_stages_[1] = fs_unused.GetStageCreateInfo();
     pipeline_function.shader_stages_[1] = fs_function.GetStageCreateInfo();
 
     OneOffDescriptorSet combined_descriptor_set(
         m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
-    OneOffDescriptorSet seperate_descriptor_set(m_device,
+    OneOffDescriptorSet separate_descriptor_set(m_device,
                                                 {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                                  {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
     const vkt::PipelineLayout combined_pipeline_layout(*m_device, {&combined_descriptor_set.layout_});
-    const vkt::PipelineLayout seperate_pipeline_layout(*m_device, {&seperate_descriptor_set.layout_});
+    const vkt::PipelineLayout separate_pipeline_layout(*m_device, {&separate_descriptor_set.layout_});
 
     pipeline_combined.gp_ci_.layout = combined_pipeline_layout;
-    pipeline_seperate.gp_ci_.layout = seperate_pipeline_layout;
+    pipeline_separate.gp_ci_.layout = separate_pipeline_layout;
     pipeline_unused.gp_ci_.layout = combined_pipeline_layout;
     pipeline_function.gp_ci_.layout = combined_pipeline_layout;
 
     pipeline_combined.CreateGraphicsPipeline();
-    pipeline_seperate.CreateGraphicsPipeline();
+    pipeline_separate.CreateGraphicsPipeline();
     pipeline_unused.CreateGraphicsPipeline();
     pipeline_function.CreateGraphicsPipeline();
 
@@ -2251,10 +2251,10 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     combined_descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler_filter);
     combined_descriptor_set.UpdateDescriptorSets();
 
-    seperate_descriptor_set.WriteDescriptorImageInfo(0, imageView, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    seperate_descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler_filter, VK_DESCRIPTOR_TYPE_SAMPLER,
+    separate_descriptor_set.WriteDescriptorImageInfo(0, imageView, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    separate_descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler_filter, VK_DESCRIPTOR_TYPE_SAMPLER,
                                                      VK_IMAGE_LAYOUT_UNDEFINED);
-    seperate_descriptor_set.UpdateDescriptorSets();
+    separate_descriptor_set.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -2279,10 +2279,10 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
         vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
-        // Same error, but not with seperate descriptors
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate);
-        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout, 0, 1,
-                                  &seperate_descriptor_set.set_, 0, nullptr);
+        // Same error, but not with separate descriptors
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_separate);
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, separate_pipeline_layout, 0, 1,
+                                  &separate_descriptor_set.set_, 0, nullptr);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-magFilter-04553");
         vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
@@ -2294,10 +2294,10 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
         combined_descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler_mipmap);
         combined_descriptor_set.UpdateDescriptorSets();
 
-        seperate_descriptor_set.Clear();
-        seperate_descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler_mipmap, VK_DESCRIPTOR_TYPE_SAMPLER,
+        separate_descriptor_set.Clear();
+        separate_descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler_mipmap, VK_DESCRIPTOR_TYPE_SAMPLER,
                                                          VK_IMAGE_LAYOUT_UNDEFINED);
-        seperate_descriptor_set.UpdateDescriptorSets();
+        separate_descriptor_set.UpdateDescriptorSets();
 
         vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, combined_pipeline_layout, 0, 1,
                                   &combined_descriptor_set.set_, 0, nullptr);
@@ -2314,10 +2314,10 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
         vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
-        // Same error, but not with seperate descriptors
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate);
-        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout, 0, 1,
-                                  &seperate_descriptor_set.set_, 0, nullptr);
+        // Same error, but not with separate descriptors
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_separate);
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, separate_pipeline_layout, 0, 1,
+                                  &separate_descriptor_set.set_, 0, nullptr);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-mipmapMode-04770");
         vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();

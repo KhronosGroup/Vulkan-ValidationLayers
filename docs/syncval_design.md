@@ -161,7 +161,7 @@ Memory extent can be specified in a variety of ways:
   <tr>
    <td>Tiled (opaque) image subresource range
    </td>
-   <td>A VkImage handle to an opaque (optimal tiling) image with a VkSubresourceRange which cannot be mapped to a specific subset of the the <code>VkMemory </code>bound to the <code>VkImage</code>.  The subresources are encoded to the opaque range reserved for the resource, specific to the image creation parameters which can only be compared relative to “compatible” aliases.  Otherwise all subresources within the range are assumed to alias to *every* device memory address bound to the image.
+   <td>A VkImage handle to an opaque (optimal tiling) image with a VkSubresourceRange which cannot be mapped to a specific subset of the <code>VkMemory </code>bound to the <code>VkImage</code>.  The subresources are encoded to the opaque range reserved for the resource, specific to the image creation parameters which can only be compared relative to “compatible” aliases.  Otherwise all subresources within the range are assumed to alias to *every* device memory address bound to the image.
    </td>
   </tr>
   <tr>
@@ -816,7 +816,7 @@ Load operations have guarantees memory access order guarantees:
 
 > The load operation for each sample in an attachment happens-before any recorded command which accesses the sample
 
-To support these guarantees, load operations update resource access state to reflect the effective stage/access of the load operation, and then apply an effective barrier with the source execution and access scopes reflecting the load operation stage/access and the destination execution and access scopes based on the the valid stages and accesses listed. _(Note: some consideration was given to simply zeroing out the access state  s.t. no hazard relative to the access could occur, however, given the presence of asynchronous access hazards, conserving the record of the operation, while providing a correct effective barrier was preferred, here and elsewhere in the design.)_
+To support these guarantees, load operations update resource access state to reflect the effective stage/access of the load operation, and then apply an effective barrier with the source execution and access scopes reflecting the load operation stage/access and the destination execution and access scopes based on the valid stages and accesses listed. _(Note: some consideration was given to simply zeroing out the access state  s.t. no hazard relative to the access could occur, however, given the presence of asynchronous access hazards, conserving the record of the operation, while providing a correct effective barrier was preferred, here and elsewhere in the design.)_
 
 **_PHASE1 TODO: review both in document and code (in light of the DetectHazard time Ordering Guarantee support) whether this effective barrier is still required, as there are good reasons (such as synchronization operation chaining) not to pollute the barrier state._**
 
@@ -895,7 +895,7 @@ Apply global execution barriers from the src/dstStageMask.
 
 **TODO/KNOWN LIMITATION:** host set event not supported through at least phase 2.
 
-vkCmdSetEvent defines the source execution scope for the matching vkCmdWaitEvent but does not cause any update to the resource access state.  While a simplistic model would allow simple recording of the resource usage tag to define the set of resource accesses affected at wait time, the access state’s storage of dependency chain information is not time-stamped.  Thus to record the accesses within the scope of the the set event, a range map (containing potentially simply a boolean) is constructed to record the address ranges containing “in scope” accesses.  This map should likely have a “merge operation” run, combining adjacent ranges with the same value to minimize the memory footprint of the map.  Additionally, vkCmdSetEvent must record the usage tag (or equivalent sequence/timestamp).
+vkCmdSetEvent defines the source execution scope for the matching vkCmdWaitEvent but does not cause any update to the resource access state.  While a simplistic model would allow simple recording of the resource usage tag to define the set of resource accesses affected at wait time, the access state’s storage of dependency chain information is not time-stamped.  Thus to record the accesses within the scope of the set event, a range map (containing potentially simply a boolean) is constructed to record the address ranges containing “in scope” accesses.  This map should likely have a “merge operation” run, combining adjacent ranges with the same value to minimize the memory footprint of the map.  Additionally, vkCmdSetEvent must record the usage tag (or equivalent sequence/timestamp).
 
 CmdWaitEvent uses both the source execution scope map and the usage tag to determine the _effective _source scopes.  Resource access state barrier information are _only _updated if they lie within a range of the source scope map, have not (by means of testing usage tags) been updated since the CmdSetEvent call, and (as appropriate) lie within the access scopes defined by the wait event command.
 
@@ -1369,7 +1369,7 @@ Depth/Stencil Attachment usage is controlled by `VkPipelineRasterizationStateCre
 </table>
 
 
-Stencil attachments are controlled by `stencilTestEnable`, with additional state to determine the type of access.  The type of access is controlled by the the `VkStencilOpState`. Stencil aspect access is read-only If  `writeMask `is zero, or the one of the following combination of stencil parameters is set for all  non-culled (see `VkPipelineRasterizationStateCreateInfo::cullMode)` faces front or back.
+Stencil attachments are controlled by `stencilTestEnable`, with additional state to determine the type of access.  The type of access is controlled by the `VkStencilOpState`. Stencil aspect access is read-only If  `writeMask `is zero, or the one of the following combination of stencil parameters is set for all  non-culled (see `VkPipelineRasterizationStateCreateInfo::cullMode)` faces front or back.
 
 
 <table>

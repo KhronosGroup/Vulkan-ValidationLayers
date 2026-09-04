@@ -123,7 +123,7 @@ struct DescriptorHashing {
 
     DescriptorHashTable table;
     // Users can pass in VkDebugUtilsObjectNameInfoEXT when getting the descriptor to provide a name
-    // We make a seperate map to prevent adding 32-bytes to every Entry as this might not be used
+    // We make a separate map to prevent adding 32-bytes to every Entry as this might not be used
     vvl::unordered_map<uint64_t, std::string> debug_names;
     mutable std::shared_mutex map_lock;
 

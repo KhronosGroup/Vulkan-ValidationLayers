@@ -412,7 +412,7 @@ bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2& create_info
                                  string_VkFormat(attachment.format));
             }
 
-            // rp2 can have seperate depth/stencil layout and need to look in pNext
+            // rp2 can have separate depth/stencil layout and need to look in pNext
             if (attachment_description_stencil_layout) {
                 if (attachment_description_stencil_layout->stencilInitialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
                     skip |=

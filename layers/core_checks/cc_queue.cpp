@@ -44,7 +44,7 @@ struct CommandBufferSubmitState {
     std::string last_closed_cmdbuf_label;
     bool found_unbalanced_cmdbuf_label;
 
-    // The "local" prefix is about tracking state accross command buffers of a *single* QueueSubmit command.
+    // The "local" prefix is about tracking state across command buffers of a *single* QueueSubmit command.
     // This does not accumulate state from the previous submissions.
     QueryMap local_query_to_state_map;
     EventSignalStateMap local_event_signal_states;

@@ -218,7 +218,7 @@ std::string DescriptorHashing::Describe(const DeviceState& device_state, uint64_
     return ss.str();
 }
 
-// Samplers aare nasty because it can be both seperate or combined.
+// Samplers are nasty because it can be both separate or combined.
 // We have |vvlDescriptorType::CombinedSampler| purely to pass in |desc_encoding| to let the error message know it was a combined
 // image sampler. I don't have 1 bit to spare in |desc_encoding|
 // We could find this information in some lookup, but that would add overhead.

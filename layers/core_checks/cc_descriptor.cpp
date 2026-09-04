@@ -908,7 +908,7 @@ bool CoreChecks::VerifyUpdateDescriptorRange(const vvl::DescriptorSet& set, cons
     auto& orig_binding = **current_iter;  // save for error message
     const char* vuid = is_copy ? "VUID-VkCopyDescriptorSet-srcSet-00349" : "VUID-VkWriteDescriptorSet-dstArrayElement-00321";
 
-    // check if srcArrayElement/dstArrayElement is so large it is skipping the the srcBinding/dstBinding
+    // check if srcArrayElement/dstArrayElement is so large it is skipping the srcBinding/dstBinding
     // If it, find the first binding being updated
     uint32_t offset = array_element;
     while (offset >= (*current_iter)->count) {
@@ -2783,7 +2783,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |= ValidateInheritanceDescriptorHeapInfo(*cb_state, error_obj.location);
 
-    // A "descriptor buffer" binding is seperate from a "VkBuffer" so you can have the same address to the same VkBuffer and it will
+    // A "descriptor buffer" binding is separate from a "VkBuffer" so you can have the same address to the same VkBuffer and it will
     // count as 2, not 1, towards the limit. (more info at https://gitlab.khronos.org/vulkan/vulkan/-/issues/4086)
     std::vector<VkBuffer> sampler_buffers;
     std::vector<VkBuffer> resource_buffers;

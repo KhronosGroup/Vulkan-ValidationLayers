@@ -63,7 +63,7 @@ class range_map {
     static WrappedIterator lower_bound_impl(ThisType &that, const key_type &key) {
         if (key.valid()) {
             // ImplMap doesn't give us what want with a direct query, it will give us the first entry contained (if any) in key,
-            // not the first entry intersecting key, so, first look for the the first entry that starts at or after key.begin
+            // not the first entry intersecting key, so, first look for the first entry that starts at or after key.begin
             // with the operator > in range, we can safely use an empty range for comparison
             auto lower = that.impl_map_.lower_bound(key_type(key.begin, key.begin));
 
@@ -214,7 +214,7 @@ class range_map {
         if (bounds.begin > first_begin) {
             // Preserve the portion of lower bound excluded from bounds
             if (current->first.end <= bounds.end) {
-                // If current ends within the erased bound we can discard the the upper portion of current
+                // If current ends within the erased bound we can discard the upper portion of current
                 current = split_impl_keep_only_lower(current, bounds.begin);
             } else {
                 // Keep the upper portion of current for the later split below
@@ -601,7 +601,7 @@ class cached_lower_bound_impl {
         return seek(next);
     }
 
-    // invalidate() resets the the lower_bound_ cache, needed after insert/erase/overwrite/split operations
+    // invalidate() resets the lower_bound_ cache, needed after insert/erase/overwrite/split operations
     // Pass index by value in case we are invalidating to index_ and set_value does a modify-in-place on index_
     cached_lower_bound_impl &invalidate(index_type index) {
         set_value(index, lower_bound(index));
@@ -766,7 +766,7 @@ void infill_update_range(RangeMap &map, const typename RangeMap::key_type &range
 }
 
 // Parallel iterator
-// Traverse to range maps over the the same range, but without assumptions of aligned ranges.
+// Traverse to range maps over the same range, but without assumptions of aligned ranges.
 // ++ increments to the next point where on of the two maps changes range, giving a range over which the two
 // maps do not transition ranges
 template <typename MapA, typename MapB = MapA, typename KeyType = typename MapA::key_type>

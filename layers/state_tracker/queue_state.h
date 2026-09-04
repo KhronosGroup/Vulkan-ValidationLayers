@@ -174,7 +174,7 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
 
     const VkDeviceQueueCreateFlags create_flags;
 
-    // Track command buffer label stack accross all command buffers submitted to this queue.
+    // Track command buffer label stack across all command buffers submitted to this queue.
     // Access to this variable relies on external queue synchronization.
     std::vector<std::string> cmdbuf_label_stack;
 

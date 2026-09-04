@@ -233,7 +233,7 @@ class LegacyGenerator(BaseGenerator):
                         print(f'WARNING - need to fix supersededBy logic for {command.name} with {command.legacy.supersededBy}')
                     replacement = f'which contains {new_command} that can be used instead'
 
-                # seperate message depending on legacy_detection_settings
+                # separate message depending on legacy_detection_settings
                 out.append(f'''
                     {logic} (legacy_detection_settings.only_enabled && IsExtEnabled(extensions.{extension.lower()})) {{
                         {reportedMember} = true;

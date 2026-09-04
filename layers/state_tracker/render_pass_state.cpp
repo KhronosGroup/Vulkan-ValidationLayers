@@ -102,7 +102,7 @@ static void RecordRenderPassDAG(const VkRenderPassCreateInfo2* pCreateInfo, vvl:
 
     //
     // Determine "asynchrononous" subpassess
-    // syncronization is only interested in asyncronous stages *earlier* that the current one... so we'll only look towards those.
+    // synchronization is only interested in asynchronous stages *earlier* that the current one... so we'll only look towards those.
     // NOTE: This is O(N^3), which we could shrink to O(N^2logN) using sets instead of arrays, but given that N is likely to be
     // small and the K for |= from the prev is must less than for set, we'll accept the brute force.
     std::vector<std::vector<bool>> pass_depends(pCreateInfo->subpassCount);

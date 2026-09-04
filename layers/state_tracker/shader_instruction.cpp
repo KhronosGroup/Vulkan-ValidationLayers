@@ -136,7 +136,7 @@ std::string Instruction::Describe() const {
 
 // While simple, function name provides a more human readable description why Word(3) is used.
 //
-// The current various uses for constant values (OpAccessChain, OpTypeArray, LocalSize, etc) all have spec langauge making sure they
+// The current various uses for constant values (OpAccessChain, OpTypeArray, LocalSize, etc) all have spec language making sure they
 // are scalar ints. It is also not valid for any of these use cases to have a negative value. While it is valid SPIR-V to use 64-bit
 // int, found writting test there is no way to create something valid that also calls this function. So until a use-case is found,
 // we can safely assume returning a uint32_t is ok.

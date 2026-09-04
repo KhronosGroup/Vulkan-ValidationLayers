@@ -179,7 +179,7 @@ This is handled by having the `Resource Interface` variable track if it has a `O
 
 - If it has `OpTypeSampledImage`, there is **no way** for it to be part of a `SAMPLER`/`SAMPLED_IMAGE` combo
 - If it has a `OpTypeImage` or `OpTypeSampler`, we need to know if they are **accessed together**
-    - This means the the `ValidateDescriptor` logic needs to know every `OpTypeSampler` variable accessed together with a `OpTypeImage` variable
+    - This means the `ValidateDescriptor` logic needs to know every `OpTypeSampler` variable accessed together with a `OpTypeImage` variable
     - There is no case where only a `OpTypeSampler` variable can be used by itself, so no need to track it the other way
 
 If the Image Access is in a function, it might point to multiple `OpVariable`

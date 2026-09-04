@@ -72,7 +72,7 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorHeap, sc
 uint inst_heap_mapping_constant_offset(const uint inst_offset, const uint heap_offset, const uint heap_array_stride, const uint desc_index, const uint desc_encoding, const bool is_sampler) {
     uint error = 0;
 
-    // TOOD - add descriptorSize as well
+    // TODO - add descriptorSize as well
     uint offset = heap_offset + (desc_index * heap_array_stride);
     BoundHeapInfo bound_heap_info = is_sampler ? gpuav.bound_sampler_heap : gpuav.bound_resource_heap;
     if (offset >= bound_heap_info.heap_size) {

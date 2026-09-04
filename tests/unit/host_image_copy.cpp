@@ -757,7 +757,7 @@ TEST_F(NegativeHostImageCopy, DepthStencil) {
     vkt::Image image_separate_stencil(*m_device, image_ci);
     image_separate_stencil.SetLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
 
-    // Seperate stencil, no VK_IMAGE_USAGE_HOST_TRANSFER_BIT
+    // separate stencil, no VK_IMAGE_USAGE_HOST_TRANSFER_BIT
     region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
     copy_to_image.dstImage = image_separate_stencil;
     m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-09112");
@@ -1092,7 +1092,7 @@ TEST_F(NegativeHostImageCopy, CopyImageToImageUsageFlagsStencil) {
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
 
-    // Seperate stencil, no VK_IMAGE_USAGE_HOST_TRANSFER_BIT
+    // separate stencil, no VK_IMAGE_USAGE_HOST_TRANSFER_BIT
     VkImageStencilUsageCreateInfo stencil_usage_ci = vku::InitStructHelper();
     stencil_usage_ci.stencilUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     image_ci.pNext = &stencil_usage_ci;

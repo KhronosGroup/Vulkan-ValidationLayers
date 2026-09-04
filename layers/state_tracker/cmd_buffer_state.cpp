@@ -255,7 +255,7 @@ std::string CommandBuffer::DescriptorHeap::Describe(bool is_sampler) const {
 //   - Set graphics to use classic descriptor
 //   - Set compute to use Descriptor buffer
 //   - Override both using Heaps
-// To "properly" do this, we would need to really devide LastBound state into 3 structs for each
+// To "properly" do this, we would need to really divide LastBound state into 3 structs for each
 // For the practical future, we will try and get away just assuming these crazy cases are not happening
 void CommandBuffer::SetDescriptorMode(vvl::DescriptorMode new_mode, vvl::Func function) {
     // 99% of time, all LastBound will be the same mode
@@ -391,7 +391,7 @@ void CommandBuffer::ResetCBState() {
     bind_vertex_buffer_3_used = false;
     stride_set_with_bind_vertex_buffer_3 = false;
 
-    // Need to reset on initalization
+    // Need to reset on initialization
     descriptor_heap.Reset();
     descriptor_buffer.Reset();
 
@@ -965,7 +965,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo& rendering_info, 
     attachment_source = AttachmentSource::DynamicRendering;
     active_attachments.clear();
     // add 2 for the Depth and Stencil
-    // multiple by 2 because every attachment might have a resolve
+    // multiply by 2 because every attachment might have a resolve
     uint32_t attachment_count = (rendering_info.colorAttachmentCount + 2) * 2;
     attachment_count += 1;  // FragmentDensityMap (doesn't need a resolve)
     attachment_count += 1;  // FragmentShadingRate (doesn't need a resolve)
@@ -1511,9 +1511,9 @@ void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secon
             }
         }
 
-        // Propagate inital layout and current layout state to the primary cmd buffer
+        // Propagate initial layout and current layout state to the primary cmd buffer
         // NOTE: The update/population of the image_layout_map is done in CoreChecks, but for other classes derived from
-        // Device these maps will be empty, so leaving the propagation in the the state tracker should be a no-op
+        // Device these maps will be empty, so leaving the propagation in the state tracker should be a no-op
         // for those other classes.
         for (const auto& [image, secondary_cb_layout_map] : secondary_cb_state->image_layout_registry) {
             const auto image_state = dev_data.Get<vvl::Image>(image);
@@ -1596,7 +1596,7 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
     const auto& dsl = pipeline_layout->set_layouts.list[set];
     auto& last_bound = lastBound[ConvertToVvlBindPoint(pipelineBindPoint)];
     auto& push_descriptor_set = last_bound.push_descriptor_set;
-    // If we are disturbing the current push_desriptor_set clear it
+    // If we are disturbing the current push_descriptor_set clear it
     if (!push_descriptor_set || !last_bound.IsBoundSetCompatible(set, *pipeline_layout)) {
         last_bound.UnbindAndResetPushDescriptorSet(dev_data.CreatePushDescriptorSet(dsl));
     }
@@ -1830,7 +1830,7 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
 
 void CommandBuffer::UpdateLastBoundDescriptorBuffers(LastBound& last_bound,
                                                      std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, uint32_t first_set,
-                                                     uint32_t set_count, const uint32_t* buffer_indicies,
+                                                     uint32_t set_count, const uint32_t* buffer_indices,
                                                      const VkDeviceSize* buffer_offsets) {
     uint32_t required_size = first_set + set_count;
     const uint32_t last_binding_index = required_size - 1;
@@ -1876,7 +1876,7 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(LastBound& last_bound,
         ds_slot.Reset();
 
         // Record binding
-        ds_slot.descriptor_buffer_binding = {vvl::kNoIndex32, buffer_indicies[input_idx], buffer_offsets[input_idx]};
+        ds_slot.descriptor_buffer_binding = {vvl::kNoIndex32, buffer_indices[input_idx], buffer_offsets[input_idx]};
         ds_slot.compat_id_for_set = pipe_compat_ids[set_idx];  // compat ids are canonical *per* set index
     }
 }

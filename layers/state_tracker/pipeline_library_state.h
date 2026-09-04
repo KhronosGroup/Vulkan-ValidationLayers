@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2017, 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2017, 2019-2025 Valve Corporation
- * Copyright (c) 2015-2017, 2019-2025 LunarG, Inc.
+/* Copyright (c) 2015-2017, 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2017, 2019-2026 Valve Corporation
+ * Copyright (c) 2015-2017, 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
 
 // Graphics pipeline library (GPL) state as defined by VK_KHR_graphics_pipeline_library
 //
-// We break up the pipeline into 4 seperate states (vertex input, pre-rast, frag shader, frag output)
+// We break up the pipeline into 4 separate states (vertex input, pre-rast, frag shader, frag output)
 
 namespace vvl {
 class DeviceState;

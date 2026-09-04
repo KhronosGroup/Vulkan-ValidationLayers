@@ -205,7 +205,7 @@ void BufferAddressRange::NotifyInvalidate(const StateObject::NodeList& invalid_n
             StateObject::NotifyInvalidate(invalid_nodes, unlink);
         } else {
             // Shift non-null elements to the front and truncate the vector
-            // There is no erase() helpe in small_vector, but this still does the same thing with the memory in-place
+            // There is no erase() helper in small_vector, but this still does the same thing with the memory in-place
             auto new_end = std::remove(buffer_states.begin(), buffer_states.end(), nullptr);
             uint32_t new_size = (uint32_t)std::distance(buffer_states.begin(), new_end);
             buffer_states.resize(new_size);

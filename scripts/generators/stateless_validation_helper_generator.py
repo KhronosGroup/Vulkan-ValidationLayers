@@ -964,7 +964,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         # TODO Using a regex in this context is not ideal. Would be nicer if usedLines were a list of objects with "settings"
         validatePNextRegex = re.compile(r'(.*ValidateStructPnext\(.*)(\).*\n*)', re.M)
 
-        # Special struct since lots of functions have this, but it can be all combined to the same call (since it is always from the top level of a funciton)
+        # Special struct since lots of functions have this, but it can be all combined to the same call (since it is always from the top level of a function)
         if structTypeName == 'VkAllocationCallbacks' :
             lines.append(f'skip |= {context}ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);')
             return lines
@@ -1070,7 +1070,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         paramVuid = self.GetVuid(callerName, f"{member.name}-parameter")
                         if lengthMember:
                             countRequiredVuid = self.GetVuid(callerName, f"{member.length}-arraylength")
-                            # There is no way to test checking a non-null pointer to be valid, so don't falsly print the VUID out
+                            # There is no way to test checking a non-null pointer to be valid, so don't falsely print the VUID out
                             if paramVuid != 'kVUIDUndefined' and arrayRequired == 'false':
                                 paramVuid = 'kVUIDUndefined'
                             # This is an array of struct pointers

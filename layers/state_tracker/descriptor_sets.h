@@ -266,7 +266,7 @@ class DescriptorSetLayoutDef {
     // The vector is allocated only if there is at least one binding with immutable samplers
     std::vector<size_t> immutable_sampler_combined_hashes_;
 
-    // Help detect if any of the the immutable samplers used are YCbCr
+    // Help detect if any of the immutable samplers used are YCbCr
     bool has_ycbcr_samplers_;
 
     // Track if task/mesh shader in the set (saves looking at draw time)
@@ -1154,7 +1154,7 @@ class DescriptorSet : public StateObject, public SubStateManager<DescriptorSetSu
     std::atomic<bool> some_update_;  // has any part of the set ever been updated?
     vvl::DescriptorPool *pool_state_;
     const std::shared_ptr<DescriptorSetLayout const> layout_;
-    // NOTE: the the backing store for the bindings must be declared *before* it so it will be destructed *after* it
+    // NOTE: the backing store for the bindings must be declared *before* it so it will be destructed *after* it
     // "Destructors for nonstatic member objects are called in the reverse order in which they appear in the class declaration."
     std::vector<BindingBackingStore> bindings_store_;
     std::vector<BindingPtr> bindings_;

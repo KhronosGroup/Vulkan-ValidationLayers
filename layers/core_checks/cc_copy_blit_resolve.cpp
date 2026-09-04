@@ -673,7 +673,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const RegionType& region, const v
     return skip;
 }
 
-// This is just a way to put the "imageless" (really stateless) checks in a seperate area
+// This is just a way to put the "imageless" (really stateless) checks in a separate area
 // (We don't do this in the stateless validation object because pain of duplicating the logic to route the various functions here)
 template <typename RegionType>
 bool CoreChecks::ValidateHeterogeneousCopyImageless(const RegionType& region, const LogObjectList& objlist,

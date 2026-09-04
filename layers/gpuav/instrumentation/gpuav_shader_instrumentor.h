@@ -27,7 +27,7 @@
 
 // There is a spirv::Instruction used for normal validation.
 // There is a gpuav::spirv::Instruction that is ONLY intended for shader instrumentation (designed so we can build the shader
-// instrumentation as a seperate library). For logging GPU-AV will want to make use of the normal validaiton instruction class, just
+// instrumentation as a separate library). For logging GPU-AV will want to make use of the normal validaiton instruction class, just
 // alias it with "Instruction" as that name shouldn't collide with anything.
 using Instruction = ::spirv::Instruction;
 

@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 #pragma once
 
 // Validation requires "special" handling for some extensions/feature because the VU depends on if the feature is "supported" not
-// "enabled". This struct/file is dedicatd to contain them in a single location, while also giving background for each.
+// "enabled". This struct/file is dedicated to contain them in a single location, while also giving background for each.
 struct SpecialSupported {
-    // Adds flags that need to be queried and if the device supports the flags, we look for the app
+    // Adds flags that need to be queried and if the device supports the flags, we track it
     bool vk_khr_format_feature_flags2{false};  // VK_KHR_format_feature_flags2
 
     // VK_EXT_pipeline_robustness was designed to be a subset of robustness extensions

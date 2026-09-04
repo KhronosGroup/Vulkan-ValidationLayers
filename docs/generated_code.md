@@ -138,7 +138,7 @@ Before the workflow was:
 
 This is an issue because having to decide to write things out to the file during a `genCmd` or `endFile` call gets messy.
 
-The new flow creates a seperate base class so the workflow now looks like:
+The new flow creates a separate base class so the workflow now looks like:
 
 1. `BaseGenerator::beginFile()`
 2. `OutputGenerator::beginFile()` (in `./external/Vulkan-Headers/registry/`)
