@@ -36,7 +36,8 @@ struct CommandReplayContext {
     }
     void BeginRenderPass(const BeginRenderPassCommand& command) {
         render_pass_context.emplace(command.render_pass, command.render_area, env.queue_flags, command.attachment_views,
-                                    destination_access_context, command.render_pass_instance_id + render_pass_instance_offset);
+                                    destination_access_context, command.render_pass_instance_id + render_pass_instance_offset,
+                                    env.queue_id);
     }
     void NextSubpass() { render_pass_context->AdvanceSubpass(); }
     void EndRenderPass() { render_pass_context.reset(); }
@@ -331,7 +332,7 @@ bool BeginRenderPassCommand::Validate(const SyncEnvironment& env, const AccessCo
     //     for src_subpass < dst_subpass but dst_subpass is zero)
     //  b) async list for subpass 0 is also empty (needs prev subpass too)
     AccessContext temp_context(env.validator);
-    temp_context.InitFrom(0, env.queue_flags, render_pass.subpass_dependency_infos, nullptr, access_context);
+    temp_context.InitFrom(0, env.queue_flags, render_pass.subpass_dependency_infos, nullptr, access_context, env.queue_id);
 
     // Validation runs before the render-pass context exists, so create the attachment view generators locally
     const AttachmentViewGenVector view_gens = RenderPassAccessContext::CreateAttachmentViewGen(render_area, attachment_views);
@@ -340,7 +341,7 @@ bool BeginRenderPassCommand::Validate(const SyncEnvironment& env, const AccessCo
                                                                view_mask, view_gens, cb_context, replay_tag, loc);
     if (!skip) {
         // Simulate initial layout transitions in the temporary context before validating load operations
-        RenderPassAccessContext::RecordLayoutTransitions(render_pass, 0, view_gens, kInvalidTag, temp_context, env.queue_id);
+        RenderPassAccessContext::RecordLayoutTransitions(render_pass, 0, view_gens, kInvalidTag, temp_context);
 
         skip |= RenderPassAccessContext::ValidateLoadOperation(env, temp_context, render_pass, render_pass_instance_id, 0,
                                                                view_mask, view_gens, cb_context, replay_tag, loc);

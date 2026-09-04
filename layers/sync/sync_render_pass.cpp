@@ -93,14 +93,14 @@ class UpdateStateResolveAction {
 };
 
 std::unique_ptr<AccessContext[]> InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass& rp_state,
-                                                     const AccessContext& external_context) {
+                                                     const AccessContext& external_context, QueueId queue_id) {
     const uint32_t subpass_count = rp_state.create_info.subpassCount;
     auto subpass_contexts = std::make_unique<AccessContext[]>(subpass_count);
     // Add this for all subpasses here so that they exsist during next subpass validation
     for (uint32_t pass = 0; pass < subpass_count; pass++) {
         subpass_contexts[pass].validator = external_context.validator;
         subpass_contexts[pass].InitFrom(pass, queue_flags, rp_state.subpass_dependency_infos, subpass_contexts.get(),
-                                        external_context);
+                                        external_context, queue_id);
     }
     return subpass_contexts;
 }
@@ -205,8 +205,7 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const SyncEnvironment& e
             }
             p_subpass_barrier = &proxy_subpass_barrier;
         }
-        auto hazard =
-            access_context.DetectSubpassTransitionHazard(*p_subpass_barrier, attachment_views[transition.attachment], env.queue_id);
+        auto hazard = access_context.DetectSubpassTransitionHazard(*p_subpass_barrier, attachment_views[transition.attachment]);
         if (hazard.IsHazard()) {
             const SyncValidator& validator = env.validator;
             const LogObjectList objlist = BaseObjectList(env, cb_context, rp_state.Handle());
@@ -570,7 +569,7 @@ void RenderPassAccessContext::UpdateAttachmentStoreAccess(const vvl::RenderPass&
 
 void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass& rp_state, uint32_t subpass,
                                                       const AttachmentViewGenVector& attachment_views, const ResourceUsageTag tag,
-                                                      AccessContext& access_context, QueueId queue_id) {
+                                                      AccessContext& access_context) {
     const auto& transitions = rp_state.subpass_transitions[subpass];
     for (const auto& transition : transitions) {
         const auto& view_gen = attachment_views[transition.attachment];
@@ -578,7 +577,7 @@ void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass& rp_
         const AccessContext& src_subpass_context = *subpass_barrier.src_subpass_context;
 
         // Import the attachments into the current context
-        ApplySubpassTransitionBarrierAction barrier_action(subpass_barrier, tag, queue_id);
+        ApplySubpassTransitionBarrierAction barrier_action(subpass_barrier, tag);
         ImageRangeGen attachment_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kViewSubresource);
         access_context.ResolveFromSubpassContext(barrier_action, src_subpass_context, attachment_gen);
     }
@@ -767,7 +766,7 @@ bool RenderPassAccessContext::ValidateNextSubpass(const SyncEnvironment& env, co
         // Note: The resource access map should be empty so hopefully this copy isn't too horrible from a perf POV.
         AccessContext temp_context(cb_context.GetSyncState());
         temp_context.InitFrom(next_context);
-        RecordLayoutTransitions(*rp_state_, next_subpass, attachment_views_, kInvalidTag, temp_context, env.queue_id);
+        RecordLayoutTransitions(*rp_state_, next_subpass, attachment_views_, kInvalidTag, temp_context);
         skip |= ValidateLoadOperation(env, temp_context, *rp_state_, render_pass_instance_id_, next_subpass, next_subpass_view_mask,
                                       attachment_views_, cb_context, replay_tag, loc);
     }
@@ -858,8 +857,8 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const SyncEn
     return skip;
 }
 
-void RenderPassAccessContext::RecordLayoutTransitions(const ResourceUsageTag tag, QueueId queue_id) {
-    RecordLayoutTransitions(*rp_state_, current_subpass_, attachment_views_, tag, CurrentContext(), queue_id);
+void RenderPassAccessContext::RecordLayoutTransitions(const ResourceUsageTag tag) {
+    RecordLayoutTransitions(*rp_state_, current_subpass_, attachment_views_, tag, CurrentContext());
 }
 
 void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag tag, QueueId queue_id) {
@@ -930,11 +929,12 @@ AttachmentViewGenVector RenderPassAccessContext::CreateAttachmentViewGen(
 RenderPassAccessContext::RenderPassAccessContext(const vvl::RenderPass& rp_state, const VkRect2D& render_area,
                                                  VkQueueFlags queue_flags,
                                                  vvl::span<const std::shared_ptr<const vvl::ImageView>> attachment_views,
-                                                 const AccessContext& external_context, uint32_t render_pass_instance_id)
+                                                 const AccessContext& external_context, uint32_t render_pass_instance_id,
+                                                 QueueId queue_id)
     : rp_state_(&rp_state),
       attachment_views_(CreateAttachmentViewGen(render_area, attachment_views)),
       external_context_(&external_context),
-      subpass_contexts_(InitSubpassContexts(queue_flags, rp_state, external_context)),
+      subpass_contexts_(InitSubpassContexts(queue_flags, rp_state, external_context, queue_id)),
       render_pass_instance_id_(render_pass_instance_id),
       current_subpass_(0) {}
 
@@ -943,7 +943,7 @@ void RenderPassAccessContext::RecordBeginRenderPass(const ResourceUsageTag trans
     AccessContext& current_context = CurrentContext();
     current_context.SetStartTag(transition_tag);
 
-    RecordLayoutTransitions(transition_tag, queue_id);
+    RecordLayoutTransitions(transition_tag);
     RecordLoadOperations(load_op_tag, queue_id);
 }
 
@@ -972,7 +972,7 @@ void RenderPassAccessContext::RecordNextSubpass(ResourceUsageTag resolve_tag, co
     // Layout transition and load are from the current subpass
     AccessContext& current_context = CurrentContext();
     current_context.SetStartTag(transition_tag);
-    RecordLayoutTransitions(transition_tag, queue_id);
+    RecordLayoutTransitions(transition_tag);
     RecordLoadOperations(load_tag, queue_id);
 }
 

@@ -1330,7 +1330,8 @@ ResourceUsageTag CommandBufferContext::RecordBeginRenderPass(
     AddCommandHandle(barrier_tag, rp_state.Handle());
     NextSubCommandTag(command, SubCommandType::kLoadOp, 0);
     render_pass_contexts_.emplace_back(std::make_unique<RenderPassAccessContext>(
-        rp_state, render_area, environment_.queue_flags, attachment_views, cb_access_context_, current_render_pass_instance_id_));
+        rp_state, render_area, environment_.queue_flags, attachment_views, cb_access_context_, current_render_pass_instance_id_,
+        environment_.queue_id));
     current_renderpass_context_ = render_pass_contexts_.back().get();
     current_context_ = &current_renderpass_context_->CurrentContext();
     return barrier_tag;

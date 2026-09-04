@@ -82,7 +82,7 @@ struct BeginRenderingCmdState {
 };
 
 std::unique_ptr<AccessContext[]> InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass& rp_state,
-                                                     const AccessContext& external_context);
+                                                     const AccessContext& external_context, QueueId queue_id);
 
 using AttachmentViewGenVector = std::vector<AttachmentViewGen>;
 
@@ -92,7 +92,7 @@ class RenderPassAccessContext {
                                                            vvl::span<const std::shared_ptr<const vvl::ImageView>> attachment_views);
     RenderPassAccessContext(const vvl::RenderPass& rp_state, const VkRect2D& render_area, VkQueueFlags queue_flags,
                             vvl::span<const std::shared_ptr<const vvl::ImageView>> attachment_views,
-                            const AccessContext& external_context, uint32_t render_pass_instance_id);
+                            const AccessContext& external_context, uint32_t render_pass_instance_id, QueueId queue_id);
 
     static bool ValidateLayoutTransitions(const SyncEnvironment& env, const AccessContext& access_context,
                                           const vvl::RenderPass& rp_state, uint32_t render_pass_instance_id, uint32_t subpass,
@@ -119,7 +119,7 @@ class RenderPassAccessContext {
 
     static void RecordLayoutTransitions(const vvl::RenderPass& rp_state, uint32_t subpass,
                                         const AttachmentViewGenVector& attachment_views, const ResourceUsageTag tag,
-                                        AccessContext& access_context, QueueId queue_id);
+                                        AccessContext& access_context);
 
     bool ValidateDrawSubpassAttachment(const CommandBufferContext& cb_context, vvl::Func command) const;
     void RecordDrawSubpassAttachment(const vvl::CommandBuffer& cmd_buffer, ResourceUsageTag tag);
@@ -133,7 +133,7 @@ class RenderPassAccessContext {
     bool ValidateFinalSubpassLayoutTransitions(const SyncEnvironment& env, const CommandBufferContext& cb_context,
                                                ResourceUsageTag replay_tag, const Location& loc) const;
 
-    void RecordLayoutTransitions(ResourceUsageTag tag, QueueId queue_id);
+    void RecordLayoutTransitions(ResourceUsageTag tag);
     void RecordLoadOperations(ResourceUsageTag tag, QueueId queue_id);
     void RecordBeginRenderPass(ResourceUsageTag transition_tag, ResourceUsageTag load_op_tag, QueueId queue_id);
     bool AdvanceSubpass();
