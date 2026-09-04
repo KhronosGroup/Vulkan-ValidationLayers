@@ -1013,8 +1013,9 @@ bool CoreChecks::ValidateImageSubresourceLayers(const LogObjectList& objlist, co
     bool skip = false;
     if (subresource_layers.layerCount == VK_REMAINING_ARRAY_LAYERS) {
         if (!enabled_features.maintenance5) {
-            skip |= LogError("VUID-VkImageSubresourceLayers-layerCount-09243", objlist, subresource_loc.dot(Field::layerCount),
-                             "is VK_REMAINING_ARRAY_LAYERS.");
+            skip |= LogError(
+                "VUID-VkImageSubresourceLayers-layerCount-09243", objlist, subresource_loc.dot(Field::layerCount),
+                "is VK_REMAINING_ARRAY_LAYERS.\nHint: This can be allowed in some cases if maintenance5 feature is enabled.");
         }
     } else if (subresource_layers.layerCount == 0) {
         skip |=
@@ -1643,7 +1644,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01551" : "VUID-vkCmdCopyImage-srcImage-01551";
                 skip |= LogError(
                     vuid, all_objlist, src_subresource_loc.dot(Field::aspectMask),
-                    "(%s) does not match %s (%s). (This can be allowed in some cases if maintenance8 feature is enabled)",
+                    "(%s) does not match %s (%s).\nHint: This can be allowed in some cases if maintenance8 feature is enabled.",
                     string_VkImageAspectFlags(src_aspect).c_str(), dst_subresource_loc.dot(Field::aspectMask).Fields().c_str(),
                     string_VkImageAspectFlags(dst_aspect).c_str());
             }
@@ -1852,11 +1853,13 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                             vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-10218" : "VUID-vkCmdCopyImage-commandBuffer-10218";
                         }
                         const LogObjectList objlist(cb_state.Handle(), depth_img.Handle());
-                        skip |= LogError(
-                            vuid, objlist, subresource_1_loc.dot(Field::aspectMask), "is %s and %s is %s, but command is %s",
-                            string_VkImageAspectFlags(subresource_1.aspectMask).c_str(), subresource_2_loc.StringField(),
-                            string_VkImageAspectFlags(subresource_2.aspectMask).c_str(),
-                            DescribeRequiredQueueFlag(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT).c_str());
+                        skip |=
+                            LogError(vuid, objlist, subresource_1_loc.dot(Field::aspectMask),
+                                     "is %s and %s is %s, but command is %s\nHint: This can be allowed in some cases if "
+                                     "maintenance10 feature is enabled.",
+                                     string_VkImageAspectFlags(subresource_1.aspectMask).c_str(), subresource_2_loc.StringField(),
+                                     string_VkImageAspectFlags(subresource_2.aspectMask).c_str(),
+                                     DescribeRequiredQueueFlag(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT).c_str());
                     }
                     if (queue_supports_compute) {
                         if (invalid_depth_copy_on_compute || invalid_stencil_copy_on_compute) {
@@ -2397,9 +2400,11 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
             if (!enabled_features.maintenance10) {
                 vuid =
                     is_2 ? "VUID-vkCmdCopyImageToBuffer2-commandBuffer-10216" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-10216";
-                skip |= LogError(vuid, objlist, subresource_loc.dot(Field::aspectMask), "is %s, but command is %s",
-                                 string_VkImageAspectFlags(region.imageSubresource.aspectMask).c_str(),
-                                 DescribeRequiredQueueFlag(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT).c_str());
+                skip |= LogError(
+                    vuid, objlist, subresource_loc.dot(Field::aspectMask),
+                    "is %s, but command is %s\nHint: This can be allowed in some cases if maintenance10 feature is enabled.",
+                    string_VkImageAspectFlags(region.imageSubresource.aspectMask).c_str(),
+                    DescribeRequiredQueueFlag(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT).c_str());
             }
             if (queue_supports_compute) {
                 if (invalid_depth_copy_on_compute || invalid_stencil_copy_on_compute) {
@@ -2576,9 +2581,11 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
             if (!enabled_features.maintenance10) {
                 vuid =
                     is_2 ? "VUID-vkCmdCopyBufferToImage2-commandBuffer-07739" : "VUID-vkCmdCopyBufferToImage-commandBuffer-07739";
-                skip |= LogError(vuid, objlist, subresource_loc.dot(Field::aspectMask), "is %s, but command is %s",
-                                 string_VkImageAspectFlags(region.imageSubresource.aspectMask).c_str(),
-                                 DescribeRequiredQueueFlag(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT).c_str());
+                skip |= LogError(
+                    vuid, objlist, subresource_loc.dot(Field::aspectMask),
+                    "is %s, but command is %s\nHint: This can be allowed in some cases if maintenance10 feature is enabled.",
+                    string_VkImageAspectFlags(region.imageSubresource.aspectMask).c_str(),
+                    DescribeRequiredQueueFlag(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT).c_str());
             }
             if (queue_supports_compute) {
                 if (invalid_depth_copy_on_compute || invalid_stencil_copy_on_compute) {
@@ -3448,6 +3455,26 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                                      "dstOffsets[0].z is %" PRId32 " and dstOffsets[1].z is %" PRId32 " but dstImage is %s.",
                                      region.dstOffsets[0].z, region.dstOffsets[1].z, string_VkImageType(dst_type));
                 }
+            }
+
+            if (region.dstOffsets[0].x == region.dstOffsets[1].x) {
+                vuid = is_2 ? "VUID-VkBlitImageInfo2-dstOffsets-12518" : "VUID-vkCmdBlitImage-dstOffsets-12518";
+                skip |=
+                    LogError(vuid, dst_objlist, region_loc,
+                             "dstOffsets[0].x and dstOffsets[1].x are both %" PRId32 " which results in a zero extent copy region",
+                             region.dstOffsets[0].x);
+            } else if (region.dstOffsets[0].y == region.dstOffsets[1].y) {
+                vuid = is_2 ? "VUID-VkBlitImageInfo2-dstOffsets-12519" : "VUID-vkCmdBlitImage-dstOffsets-12519";
+                skip |=
+                    LogError(vuid, dst_objlist, region_loc,
+                             "dstOffsets[0].y and dstOffsets[1].y are both %" PRId32 " which results in a zero extent copy region",
+                             region.dstOffsets[0].y);
+            } else if (region.dstOffsets[0].z == region.dstOffsets[1].z) {
+                vuid = is_2 ? "VUID-VkBlitImageInfo2-dstOffsets-12520" : "VUID-vkCmdBlitImage-dstOffsets-12520";
+                skip |=
+                    LogError(vuid, dst_objlist, region_loc,
+                             "dstOffsets[0].z and dstOffsets[1].z are both %" PRId32 " which results in a zero extent copy region",
+                             region.dstOffsets[0].z);
             }
 
             VkExtent3D dst_extent = dst_image_state->GetEffectiveSubresourceExtent(dst_subresource);
@@ -4361,13 +4388,16 @@ bool CoreChecks::ValidateCmdCopyMemoryToImage(VkCommandBuffer command_buffer,
             }
         }
 
-        if (!IsIntegerMultipleOf(region.addressRange.address, 4)) {
+        if (!enabled_features.maintenance11 && !IsIntegerMultipleOf(region.addressRange.address, 4)) {
             const VkQueueFlags required_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
             if (!HasRequiredQueueFlags(cb_state, *physical_device_state, required_flags)) {
                 const char* vuid = is_memory_to_image ? "VUID-vkCmdCopyMemoryToImageKHR-commandBuffer-13104"
                                                       : "VUID-vkCmdCopyImageToMemoryKHR-commandBuffer-13104";
                 skip |= LogError(vuid, objlist, region_loc.dot(Field::addressRange).dot(Field::address),
-                                 "(%" PRIu64 ") is not a multiple of 4, but is %s (From %s)", region.addressRange.address,
+                                 "(%" PRIu64
+                                 ") is not a multiple of 4, but is %s (From %s)\nHint: This can be allowed in some cases if "
+                                 "maintenance11 feature is enabled.",
+                                 region.addressRange.address,
                                  DescribeRequiredQueueFlag(cb_state, *physical_device_state, required_flags).c_str(),
                                  FormatHandle(cb_state.command_pool.Handle()).c_str());
             }

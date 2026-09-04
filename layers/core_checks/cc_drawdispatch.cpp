@@ -2337,7 +2337,8 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound& last_bound_sta
                         skip |=
                             LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PUSH_CONSTANT_08601), objlist, loc,
                                      "shader %s uses push-constant statically but vkCmdPushConstants was not called yet for "
-                                     "%s bound by vkCmdBindPipeline.",
+                                     "%s bound by vkCmdBindPipeline.\nHint: This can be allowed in some cases if maintenance4 "
+                                     "feature is enabled.",
                                      stage_state.entrypoint->Describe().c_str(), FormatHandle(pipeline_layout->Handle()).c_str());
                     }
                 }
@@ -2356,7 +2357,8 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound& last_bound_sta
                 if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
                     const LogObjectList objlist(cb_state.Handle(), shader_object->Handle());
                     skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PUSH_CONSTANT_08601), objlist, loc,
-                                     "shader %s uses push-constant statically but vkCmdPushConstants was not called yet.",
+                                     "shader %s uses push-constant statically but vkCmdPushConstants was not called yet.\nHint: "
+                                     "This can be allowed in some cases if maintenance4 feature is enabled.",
                                      shader_object->stage.entrypoint->Describe().c_str());
                 }
             }

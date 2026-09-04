@@ -40,7 +40,8 @@ bool Device::ValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer 
     if (buffer == VK_NULL_HANDLE) {
         if (!enabled_features.maintenance6) {
             vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-None-09493" : "VUID-vkCmdBindIndexBuffer-None-09493";
-            skip |= LogError(vuid, commandBuffer, loc.dot(Field::buffer), "is VK_NULL_HANDLE.");
+            skip |= LogError(vuid, commandBuffer, loc.dot(Field::buffer),
+                             "is VK_NULL_HANDLE.\nHint: This can be allowed in some cases if maintenance6 feature is enabled.");
         } else if (offset != 0) {
             vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-buffer-09494" : "VUID-vkCmdBindIndexBuffer-buffer-09494";
             skip |= LogError(vuid, commandBuffer, loc.dot(Field::buffer), "is VK_NULL_HANDLE but offset is (%" PRIu64 ").", offset);

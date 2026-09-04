@@ -2802,8 +2802,8 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuf
             if (size == VK_WHOLE_SIZE) {
                 if (!enabled_features.maintenance5) {
                     skip |= LogError("VUID-vkCmdBindVertexBuffers2-pSizes-03358", objlist, error_obj.location.dot(Field::pSizes, i),
-                                     "is VK_WHOLE_SIZE, which is not valid in this context. This can be fixed by enabling the "
-                                     "maintenance5 feature.");
+                                     "is VK_WHOLE_SIZE, which is not valid in this context.\nHint: This can be allowed in some "
+                                     "cases if maintenance5 feature is enabled.");
                 }
             } else if (offset + size > buffer_state->GetSize()) {
                 skip |= LogError("VUID-vkCmdBindVertexBuffers2-pSizes-03358", objlist, error_obj.location.dot(Field::pOffsets, i),

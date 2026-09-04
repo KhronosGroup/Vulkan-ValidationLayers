@@ -1528,10 +1528,11 @@ bool SpirvValidator::ValidateExecutionModes(const spirv::Module& module_state, c
                              entrypoint.Describe().c_str());
         }
         if (!IsExtEnabled(extensions.vk_khr_maintenance4)) {
-            skip |= LogError("VUID-RuntimeSpirv-LocalSizeId-06434", module_state.handle(), loc,
-                             "shader %s OpExecutionMode LocalSizeId is used but maintenance4 extension is not enabled and used "
-                             "Vulkan api version is 1.2 or less.",
-                             entrypoint.Describe().c_str());
+            skip |=
+                LogError("VUID-RuntimeSpirv-LocalSizeId-06434", module_state.handle(), loc,
+                         "shader %s OpExecutionMode LocalSizeId is used but VK_KHR_maintenance4 extension is not enabled and used "
+                         "Vulkan api version is 1.2 or less.",
+                         entrypoint.Describe().c_str());
         }
     }
 

@@ -993,7 +993,8 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
             if (!vert_entrypoint.written_built_in_point_size && !enabled_features.maintenance5) {
                 skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PRIMITIVE_TOPOLOGY_10748), cb_state.Handle(), loc,
                                  "The bound vertex shader (%s) has a PointSize that is not written to, but the bound topology "
-                                 "is set to VK_PRIMITIVE_TOPOLOGY_POINT_LIST.",
+                                 "is set to VK_PRIMITIVE_TOPOLOGY_POINT_LIST.\nHint: This can be allowed in some cases if "
+                                 "maintenance5 feature is enabled.",
                                  FormatHandle(vert_spirv_state.handle()).c_str());
             }
         }
@@ -2258,7 +2259,7 @@ bool CoreChecks::PreCallValidateCmdSetSampleMaskEXT(VkCommandBuffer commandBuffe
     }
     if (!enabled_features.maintenance10 && !pSampleMask) {
         skip |= LogError("VUID-vkCmdSetSampleMaskEXT-pSampleMask-10999", commandBuffer, error_obj.location.dot(Field::pSampleMask),
-                         "is NULL.");
+                         "is NULL.\nHint: This can be allowed in some cases if maintenance10 feature is enabled.");
     }
     skip |= ValidateCmd(*cb_state, error_obj.location);
     return skip;

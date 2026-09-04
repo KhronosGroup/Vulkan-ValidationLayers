@@ -974,6 +974,9 @@
                 "VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE": {
                     "descriptorSetHostMapping": true
                 },
+                "VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE": {
+                    "bufferDeviceAddressAllocationAlignment": true
+                },
                 "VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE": {
                     "fragmentDensityMapLayered": true
                 },
@@ -1086,6 +1089,9 @@
                     "multiviewPerViewViewports": true
                 },
                 "VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT": {
+                    "pipelineLibraryGroupHandles": true
+                },
+                "VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR": {
                     "pipelineLibraryGroupHandles": true
                 },
                 "VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT": {
@@ -1558,6 +1564,9 @@
                 "VkPhysicalDeviceFragmentDensityMapLayeredPropertiesVALVE": {
                     "maxFragmentDensityMapLayers": 4
                 },
+                "VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentPropertiesVALVE": {
+                    "maxBufferDeviceAddressAllocationAlignment": 1048576
+                },
                 "VkPhysicalDeviceDriverProperties": {},
                 "VkPhysicalDeviceIDProperties": {},
                 "VkPhysicalDeviceMultiviewProperties": {
@@ -1630,8 +1639,8 @@
                     "quadOperationsInAllStages": true
                 },
                 "VkPhysicalDeviceSubgroupSizeControlProperties": {
-                    "minSubgroupSize" : 16,
-                    "maxSubgroupSize" : 64,
+                    "minSubgroupSize": 16,
+                    "maxSubgroupSize": 64,
                     "maxComputeWorkgroupSubgroups": 128,
                     "requiredSubgroupSizeStages": [
                         "VK_SHADER_STAGE_VERTEX_BIT",
@@ -2587,6 +2596,7 @@
                 "VK_EXT_pipeline_protected_access": 1,
                 "VK_EXT_pipeline_robustness": 1,
                 "VK_EXT_pipeline_library_group_handles": 1,
+                "VK_KHR_pipeline_library_group_handles": 1,
                 "VK_EXT_post_depth_coverage": 1,
                 "VK_EXT_present_mode_fifo_latest_ready": 1,
                 "VK_KHR_present_mode_fifo_latest_ready": 1,
@@ -2900,6 +2910,7 @@
                 "VK_VALVE_mutable_descriptor_type": 1,
                 "VK_VALVE_fragment_density_map_layered": 1,
                 "VK_VALVE_video_encode_rgb_conversion": 1,
+                "VK_VALVE_buffer_device_address_allocation_alignment": 1,
                 "VK_EXT_image_sliced_view_of_3d": 1,
                 "VK_EXT_dynamic_rendering_unused_attachments": 1
             },
